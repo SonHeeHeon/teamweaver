@@ -172,7 +172,7 @@ def test_hand_computed_weights_change_result():
 
 def test_edge_case_empty_graph():
     """Test that matching_fulfillment handles empty graph.projects without ZeroDivisionError."""
-    from core.domain.models import Dataset, Grade
+    from core.domain.models import Dataset
 
     ds = Dataset(people=[], projects=[], coworks=[], reviews=[])
     g = MemoryGraph.build(ds, [])
@@ -216,3 +216,122 @@ def test_edge_case_project_no_requirements():
 
     result = matching_fulfillment(g, plan, {})
     assert result == 0.0, "Project with no requirements should return 0.0"
+
+
+def test_multiskill_person_capacity_is_split_not_duplicated():
+    """Test revised spec §4.4: capacity-consuming allocation splits across qualified slots.
+
+    Scenario:
+    - 1 person: p1 (Java=3, Python=3) — qualifies for BOTH skills
+    - 1 project with 2 requirements (different skills):
+      - Req1: Java>=3, h=1
+      - Req2: Python>=3, h=1
+    - Assign p1 to project with alloc=1.0
+
+    Revised formula (capacity-consuming):
+    - Q_p1,proj1 = {Req1, Req2} (size 2)
+    - Each slot receives p1's alloc split: 1.0/2 = 0.5
+    - Req1 (Java): got = 0.5, f_1 = min(1, 0.5/1) = 0.5, w = 3.0
+    - Req2 (Python): got = 0.5, f_2 = min(1, 0.5/1) = 0.5, w = 3.0
+    - num = 3.0*0.5 + 3.0*0.5 = 3.0
+    - den = 3.0 + 3.0 = 6.0
+    - result = 3.0 / 6.0 = 0.5
+
+    Old (gameable) formula would wrongly give:
+    - Req1: got = 1.0, f_1 = 1.0
+    - Req2: got = 1.0, f_2 = 1.0
+    - result = 1.0 (both fully satisfied with one person's alloc)
+    """
+    from core.domain.models import (
+        Dataset, Person, Project, SkillRequirement, Grade, Sector, ProjectPhase
+    )
+
+    people = [
+        Person(
+            id="p1", name="Person1", grade=Grade.MID,
+            monthly_rate=5000,
+            skills={"Java": 3, "Python": 3},
+            availability=[1.0] * 6
+        ),
+    ]
+
+    projects = [
+        Project(
+            id="proj1", name="Project1", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+            start_month=0, end_month=2,
+            grade_headcount={Grade.MID: 1},
+            requirements=[
+                SkillRequirement(skill="Java", min_level=3, headcount=1),
+                SkillRequirement(skill="Python", min_level=3, headcount=1),
+            ],
+            monthly_budget=100000
+        )
+    ]
+
+    ds = Dataset(people=people, projects=projects, coworks=[], reviews=[])
+    g = MemoryGraph.build(ds, [])
+
+    entries = [AssignEntry(person_id="p1", project_id="proj1", alloc=1.0)]
+    plan = PlanAssignment(entries=entries, objective=0.0, unfilled=[], violations=[])
+
+    result = matching_fulfillment(g, plan, {})
+    assert abs(result - 0.5) < 1e-9, f"Expected 0.5 (capacity split), got {result}"
+
+
+def test_plan_assignment_pairs():
+    """Test PlanAssignment.pairs() returns (person_id, project_id) set."""
+    entries = [
+        AssignEntry(person_id="p1", project_id="proj1", alloc=0.5),
+        AssignEntry(person_id="p2", project_id="proj1", alloc=0.5),
+        AssignEntry(person_id="p3", project_id="proj2", alloc=1.0),
+    ]
+    plan = PlanAssignment(entries=entries, objective=0.8, unfilled=[], violations=[])
+    pairs = plan.pairs()
+    expected = {("p1", "proj1"), ("p2", "proj1"), ("p3", "proj2")}
+    assert pairs == expected, f"Expected {expected}, got {pairs}"
+
+
+def test_unknown_person_entry_is_skipped():
+    """Test that entries referencing unknown persons are skipped without KeyError.
+
+    Scenario:
+    - 1 person in graph: p1
+    - 1 project with requirement: Java>=3, h=1
+    - 1 entry in plan for unknown person: p_unknown
+    - Expected: p_unknown skipped, no KeyError, result = 0.0 (no qualified person)
+    """
+    from core.domain.models import (
+        Dataset, Person, Project, SkillRequirement, Grade, Sector, ProjectPhase
+    )
+
+    people = [
+        Person(
+            id="p1", name="Person1", grade=Grade.MID,
+            monthly_rate=5000,
+            skills={"Java": 3},
+            availability=[1.0] * 6
+        ),
+    ]
+
+    projects = [
+        Project(
+            id="proj1", name="Project1", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+            start_month=0, end_month=2,
+            grade_headcount={Grade.MID: 1},
+            requirements=[
+                SkillRequirement(skill="Java", min_level=3, headcount=1),
+            ],
+            monthly_budget=100000
+        )
+    ]
+
+    ds = Dataset(people=people, projects=projects, coworks=[], reviews=[])
+    g = MemoryGraph.build(ds, [])
+
+    # Entry with unknown person
+    entries = [AssignEntry(person_id="p_unknown", project_id="proj1", alloc=1.0)]
+    plan = PlanAssignment(entries=entries, objective=0.0, unfilled=[], violations=[])
+
+    # Should not raise KeyError; unknown person is skipped
+    result = matching_fulfillment(g, plan, {})
+    assert result == 0.0, f"Unknown person should be skipped; expected 0.0, got {result}"
