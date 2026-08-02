@@ -1,0 +1,60 @@
+import json
+from core.datagen.generator import generate_dataset
+from core.datagen.parse_reviews import parse_reviews_llm, parse_reviews_rule_based
+
+
+class _FakeCompletions:
+    def create(self, **kw):
+        out = {"text_polarity": 0.4, "evidence": ["일정 압박 속에서도 침착했습니다."]}
+        class Msg: content = json.dumps(out, ensure_ascii=False)
+        class Choice: message = Msg()
+        class Resp: choices = [Choice()]
+        return Resp()
+
+
+class FakeClient:
+    class chat:
+        completions = _FakeCompletions()
+
+
+def test_llm_parse_shape():
+    ds = generate_dataset(10, 3, seed=5)
+    parsed = parse_reviews_llm(ds.reviews, FakeClient(), model="m")
+    assert len(parsed) == len(ds.reviews)
+    p = parsed[0]
+    assert -1 <= p.text_polarity <= 1 and p.reviewer_id == ds.reviews[0].reviewer_id
+
+
+def test_rule_based_polarity_sign():
+    ds = generate_dataset(10, 3, seed=5)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    for r, p in zip(ds.reviews, parsed):
+        expected = (len(r.positive.items) - len(r.negative.items)) / (
+            len(r.positive.items) + len(r.negative.items))
+        assert abs(p.text_polarity - expected) < 1e-9 and len(p.evidence) >= 1
+
+
+def test_llm_parse_malformed_response():
+    """Test that malformed LLM response raises ValueError with reviewer_id."""
+
+    class MalformedCompletions:
+        def create(self, **kw):
+            # Return invalid JSON
+            class Msg: content = "not valid json"
+            class Choice: message = Msg()
+            class Resp: choices = [Choice()]
+            return Resp()
+
+    class MalformedClient:
+        class chat:
+            completions = MalformedCompletions()
+
+    ds = generate_dataset(5, 3, seed=5)
+    try:
+        parse_reviews_llm(ds.reviews, MalformedClient(), model="m")
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        error_msg = str(e)
+        # Check that the error message contains reviewer_id
+        assert "reviewer=" in error_msg
+        assert ds.reviews[0].reviewer_id in error_msg
