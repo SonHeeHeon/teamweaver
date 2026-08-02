@@ -49,7 +49,7 @@ def synergy_context_sql(conn, person_ids: list[str], hops: int) -> list[tuple]:
     q = f"""
     WITH RECURSIVE reach(src, node, depth) AS (
         SELECT id, id, 0 FROM person WHERE id IN ({ph})
-        UNION ALL
+        UNION
         SELECT r.src,
                CASE WHEN c.a_id = r.node THEN c.b_id ELSE c.a_id END,
                r.depth + 1
@@ -66,7 +66,7 @@ def synergy_context_sql(conn, person_ids: list[str], hops: int) -> list[tuple]:
         FROM review
         GROUP BY reviewee_id
     )
-    SELECT DISTINCT dr.src, dr.node, np.avg_polarity
+    SELECT dr.src, dr.node, np.avg_polarity
     FROM deduped_reach dr
     LEFT JOIN node_polarity np ON dr.node = np.reviewee_id
     WHERE dr.node != dr.src"""
