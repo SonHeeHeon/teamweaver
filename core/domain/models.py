@@ -1,5 +1,5 @@
 from enum import StrEnum
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 HORIZON_MONTHS = 6
 
@@ -44,6 +44,12 @@ class Project(BaseModel):
     grade_headcount: dict[Grade, int]
     requirements: list[SkillRequirement]
     monthly_budget: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _month_order(self):
+        if self.end_month < self.start_month:
+            raise ValueError("end_month must be >= start_month")
+        return self
 
     @property
     def months(self) -> list[int]:

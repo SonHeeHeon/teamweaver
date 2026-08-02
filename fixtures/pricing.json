@@ -4,7 +4,8 @@
   "gen_model": "gpt-5",
   "parse_model": "gpt-5-mini",
   "models": {
-    "gpt-5":      {"input_per_1m": 1.25, "output_per_1m": 10.0},
+    "gpt-5":      {"input_per_1m": 0.625, "output_per_1m": 5.0},
     "gpt-5-mini": {"input_per_1m": 0.25, "output_per_1m": 2.0}
-  }
+  },
+  "source_note": "verified via public aggregators (pricepertoken.com, benchlm.ai) on 2026-08-02"
 }

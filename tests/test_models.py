@@ -30,6 +30,13 @@ def test_project_months():
                  requirements=[SkillRequirement(skill="Java", min_level=3, headcount=2)])
     assert pj.months == [1, 2, 3, 4]
 
+def test_project_rejects_end_before_start():
+    with pytest.raises(ValidationError):
+        Project(id="j1", name="x", sector=Sector.INTERNAL,
+                phase=ProjectPhase.EXECUTION, start_month=3, end_month=1,
+                grade_headcount={Grade.SENIOR: 1}, monthly_budget=1000,
+                requirements=[SkillRequirement(skill="Java", min_level=3, headcount=1)])
+
 def test_review_section_item_count_bounds():
     with pytest.raises(ValidationError):
         ReviewSection(items=[], text="x")
