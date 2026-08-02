@@ -49,14 +49,25 @@ def synergy_context_sql(conn, person_ids: list[str], hops: int) -> list[tuple]:
     q = f"""
     WITH RECURSIVE reach(src, node, depth) AS (
         SELECT id, id, 0 FROM person WHERE id IN ({ph})
-        UNION
+        UNION ALL
         SELECT r.src,
                CASE WHEN c.a_id = r.node THEN c.b_id ELSE c.a_id END,
                r.depth + 1
         FROM reach r JOIN collaboration c ON r.node IN (c.a_id, c.b_id)
         WHERE r.depth < ?
+    ),
+    deduped_reach AS (
+        SELECT src, node, MIN(depth) AS depth
+        FROM reach
+        GROUP BY src, node
+    ),
+    node_polarity AS (
+        SELECT reviewee_id, AVG(text_polarity) AS avg_polarity
+        FROM review
+        GROUP BY reviewee_id
     )
-    SELECT DISTINCT r.src, r.node,
-           (SELECT AVG(text_polarity) FROM review WHERE reviewee_id = r.node)
-    FROM reach r WHERE r.node != r.src"""
+    SELECT DISTINCT dr.src, dr.node, np.avg_polarity
+    FROM deduped_reach dr
+    LEFT JOIN node_polarity np ON dr.node = np.reviewee_id
+    WHERE dr.node != dr.src"""
     return conn.execute(q, [*person_ids, hops]).fetchall()
