@@ -1,0 +1,11 @@
+.omc/
+.superpowers/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.neo4j/
+node_modules/
+.ipynb_checkpoints/
+.DS_Store
