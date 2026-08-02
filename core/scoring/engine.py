@@ -22,7 +22,6 @@ class ScoringEngine:
 
     def synergy_matrix(self) -> np.ndarray:
         g = self.g
-        n = len(g.people)
         cw = np.minimum(g.cowork_months.toarray() / 12.0, 1.0)
         C = self.alpha * cw
         for (i, j), v in g.pair_review_score.items():

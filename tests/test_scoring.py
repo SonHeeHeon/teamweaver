@@ -34,3 +34,22 @@ def test_synergy_symmetric_bounded():
     C = eng.synergy_matrix()
     assert np.allclose(C, C.T) and np.all(np.diag(C) == 0)
     assert C.min() >= -1.0 and C.max() <= 1.0
+
+def test_synergy_matrix_hand_computed_pair():
+    ds, g, eng = _eng()
+    # Find a pair with nonzero cowork_months
+    (i, j), review_score = next(iter(g.pair_review_score.items()))
+    co_months = g.cowork_months[i, j]
+    # Hand-compute expected value
+    expected = 0.4 * min(co_months / 12.0, 1.0) + 0.6 * review_score
+    C = eng.synergy_matrix()
+    assert abs(C[i, j] - expected) < 1e-9
+    assert abs(C[j, i] - expected) < 1e-9
+
+def test_synergy_matrix_respects_alpha_beta():
+    ds, g, _ = _eng()
+    from core.scoring.engine import ScoringEngine
+    (i, j), review_score = next(iter(g.pair_review_score.items()))
+    co = min(g.cowork_months[i, j] / 12.0, 1.0)
+    swapped = ScoringEngine(g, alpha=0.6, beta=0.4).synergy_matrix()
+    assert abs(swapped[i, j] - (0.6 * co + 0.4 * review_score)) < 1e-9
