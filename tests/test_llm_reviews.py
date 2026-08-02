@@ -1,4 +1,5 @@
 import json
+import pytest
 from core.datagen.generator import generate_dataset
 from core.datagen.llm_reviews import rewrite_reviews_with_llm
 
@@ -25,3 +26,29 @@ def test_rewrite_preserves_items_and_replaces_text():
         assert new.negative.items == old.negative.items
         assert new.positive.text != old.positive.text
         assert new.positive.items[0] in new.positive.text
+
+
+class _BadCompletions:
+    def __init__(self, content): self.content = content
+    def create(self, **kw):
+        class Msg: pass
+        m = Msg(); m.content = self.content
+        class Choice: pass
+        c = Choice(); c.message = m
+        class Resp: pass
+        r = Resp(); r.choices = [c]
+        return r
+
+def _bad_client(content):
+    class C:
+        class chat:
+            pass
+    C.chat.completions = _BadCompletions(content)
+    return C()
+
+@pytest.mark.parametrize("content", ["not json at all", '{"positive_text": "ok"}'])
+def test_rewrite_raises_with_context_on_bad_response(content):
+    ds = generate_dataset(10, 3, seed=5)
+    with pytest.raises(ValueError) as e:
+        rewrite_reviews_with_llm(ds, _bad_client(content), model="m", seed=1)
+    assert ds.reviews[0].reviewer_id in str(e.value)

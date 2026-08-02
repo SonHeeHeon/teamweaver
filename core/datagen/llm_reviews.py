@@ -16,7 +16,12 @@ def rewrite_reviews_with_llm(ds: Dataset, client, model: str, seed: int) -> Data
             response_format={"type": "json_object"},
             messages=[{"role": "system", "content": _SYSTEM},
                       {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}])
-        out = json.loads(resp.choices[0].message.content)
-        r.positive.text = out["positive_text"]
-        r.negative.text = out["negative_text"]
+        try:
+            out = json.loads(resp.choices[0].message.content)
+            r.positive.text = out["positive_text"]
+            r.negative.text = out["negative_text"]
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ValueError(
+                f"리뷰 재작성 실패 (index={i}, reviewer={r.reviewer_id}, reviewee={r.reviewee_id}): {exc}"
+            ) from exc
     return ds
