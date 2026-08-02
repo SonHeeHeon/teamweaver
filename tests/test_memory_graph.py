@@ -2,10 +2,27 @@ import numpy as np
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.memory_graph import MemoryGraph, _item_score
+from core.domain.models import PeerReview, ReviewSection
 
 def _graph(n=30, j=6, seed=3):
     ds = generate_dataset(n, j, seed=seed)
     return ds, MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+
+def _expected_item_score(review):
+    """Local helper for testing: computes item score without importing production function."""
+    p = len(review.positive.items)
+    n = len(review.negative.items)
+    return (p - n) / (p + n)
+
+def _classify_review_pairs(reviews):
+    """Extract bidirectional and unidirectional pairs from review list."""
+    review_pairs = {}
+    for r in reviews:
+        pair = tuple(sorted([r.reviewer_id, r.reviewee_id]))
+        if pair not in review_pairs:
+            review_pairs[pair] = []
+        review_pairs[pair].append((r.reviewer_id, r.reviewee_id))
+    return review_pairs
 
 def test_skill_levels_shape_and_values():
     ds, g = _graph()
@@ -33,12 +50,7 @@ def test_pair_evidence_attribution_with_bidirectional_reviews():
     g = MemoryGraph.build(ds, parsed)
 
     # Find a bidirectional pair
-    review_pairs = {}
-    for r in ds.reviews:
-        pair = tuple(sorted([r.reviewer_id, r.reviewee_id]))
-        if pair not in review_pairs:
-            review_pairs[pair] = []
-        review_pairs[pair].append((r.reviewer_id, r.reviewee_id))
+    review_pairs = _classify_review_pairs(ds.reviews)
 
     bi_pair = None
     for pair, dirs in review_pairs.items():
@@ -76,12 +88,7 @@ def test_pair_review_score_formula_bidirectional():
     g = MemoryGraph.build(ds, parsed)
 
     # Find a bidirectional pair
-    review_pairs = {}
-    for r in ds.reviews:
-        pair = tuple(sorted([r.reviewer_id, r.reviewee_id]))
-        if pair not in review_pairs:
-            review_pairs[pair] = []
-        review_pairs[pair].append((r.reviewer_id, r.reviewee_id))
+    review_pairs = _classify_review_pairs(ds.reviews)
 
     bi_pair = None
     for pair, dirs in review_pairs.items():
@@ -102,9 +109,9 @@ def test_pair_review_score_formula_bidirectional():
     pol_a = polarity_dict.get((bi_pair[0], bi_pair[1]), 0.0)
     pol_b = polarity_dict.get((bi_pair[1], bi_pair[0]), 0.0)
 
-    # Compute expected scores
-    score_a = 0.5 * _item_score(rev_a) + 0.5 * pol_a
-    score_b = 0.5 * _item_score(rev_b) + 0.5 * pol_b
+    # Compute expected scores using local helper (not production function)
+    score_a = 0.5 * _expected_item_score(rev_a) + 0.5 * pol_a
+    score_b = 0.5 * _expected_item_score(rev_b) + 0.5 * pol_b
     expected_score = (score_a + score_b) / 2.0
 
     # Get actual score
@@ -123,41 +130,21 @@ def test_pair_review_score_formula_unidirectional():
     g = MemoryGraph.build(ds, parsed)
 
     # Find a unidirectional pair (only one direction exists)
-    review_pairs = {}
-    for r in ds.reviews:
-        pair = tuple(sorted([r.reviewer_id, r.reviewee_id]))
-        if pair not in review_pairs:
-            review_pairs[pair] = []
-        review_pairs[pair].append((r.reviewer_id, r.reviewee_id))
-
-    uni_pair = None
-    for pair, dirs in review_pairs.items():
-        if len(set(dirs)) == 1:  # Only one direction
-            uni_pair = pair
-            break
-
-    # If no unidirectional pair, we can create a synthetic one for testing
-    # But since the generator likely creates mostly bidirectional pairs,
-    # let's just verify the single-direction scoring on an existing pair.
-    # Actually, the test should check: if only (a, b) exists (not (b, a)),
-    # then score[(i,j)] should equal 0.5*item_score(a->b) + 0.5*pol(a->b), not halved
-
-    if uni_pair is None:
-        # Use any pair and just test one direction
-        uni_pair = list(review_pairs.keys())[0]
+    review_pairs = _classify_review_pairs(ds.reviews)
 
     # Get the one-directional review
     reviews_dict = {(r.reviewer_id, r.reviewee_id): r for r in ds.reviews}
     polarity_dict = {(p.reviewer_id, p.reviewee_id): p.text_polarity for p in parsed}
 
     # Try to find a truly unidirectional pair by checking both directions
+    found_unidirectional = False
     for pair in review_pairs:
         rev_forward = reviews_dict.get((pair[0], pair[1]))
         rev_backward = reviews_dict.get((pair[1], pair[0]))
 
         if rev_forward and not rev_backward:
             # Found unidirectional pair: forward exists, backward doesn't
-            score_forward = 0.5 * _item_score(rev_forward) + \
+            score_forward = 0.5 * _expected_item_score(rev_forward) + \
                            0.5 * polarity_dict.get((pair[0], pair[1]), 0.0)
             expected = score_forward  # Should NOT be halved or averaged
 
@@ -167,11 +154,12 @@ def test_pair_review_score_formula_unidirectional():
 
             assert abs(actual - expected) < 1e-9, \
                 f"Unidirectional score mismatch: actual={actual}, expected={expected}"
-            return
+            found_unidirectional = True
+            break
 
         if rev_backward and not rev_forward:
             # Found unidirectional pair: backward exists, forward doesn't
-            score_backward = 0.5 * _item_score(rev_backward) + \
+            score_backward = 0.5 * _expected_item_score(rev_backward) + \
                             0.5 * polarity_dict.get((pair[1], pair[0]), 0.0)
             expected = score_backward
 
@@ -181,7 +169,19 @@ def test_pair_review_score_formula_unidirectional():
 
             assert abs(actual - expected) < 1e-9, \
                 f"Unidirectional score mismatch: actual={actual}, expected={expected}"
-            return
+            found_unidirectional = True
+            break
 
-    # If we get here, all pairs are bidirectional, which is fine for this dataset
-    # The test still passes because we're testing the bidirectional case
+    assert found_unidirectional, "No unidirectional pair found in this seed"
+
+def test_item_score_arithmetic_hand_computed():
+    """Direct unit test of _item_score with literal hand-computed values."""
+    # Create a review with 3 positive items and 1 negative item
+    r = PeerReview(reviewer_id="a", reviewee_id="b",
+                   positive=ReviewSection(items=["책임감", "소통", "전문성"], text="좋았습니다."),
+                   negative=ReviewSection(items=["꼼꼼함"], text="아쉬웠습니다."))
+    # Expected: (3 - 1) / (3 + 1) = 2 / 4 = 0.5
+    expected = 0.5
+    actual = _item_score(r)
+    assert abs(actual - expected) < 1e-9, \
+        f"Item score mismatch: actual={actual}, expected={expected}"
