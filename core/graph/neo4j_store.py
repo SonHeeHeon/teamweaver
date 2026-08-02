@@ -46,7 +46,8 @@ def load_neo4j(driver, ds: Dataset, parsed: list[ParsedReview]) -> None:
 def synergy_context_cypher(driver, person_ids: list[str], hops: int) -> list[dict]:
     q = (f"MATCH (p:Person)-[:WORKED_WITH*1..{hops}]-(o:Person) "
          "WHERE p.id IN $ids AND o.id <> p.id "
+         "WITH DISTINCT p, o "
          "OPTIONAL MATCH (o)<-[v:REVIEWED]-() "
-         "RETURN DISTINCT p.id AS src, o.id AS other, avg(v.polarity) AS avg_polarity")
+         "RETURN p.id AS src, o.id AS other, avg(v.polarity) AS avg_polarity")
     with driver.session() as s:
         return [dict(r) for r in s.run(q, ids=person_ids)]
