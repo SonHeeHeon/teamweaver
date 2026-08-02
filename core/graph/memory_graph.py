@@ -17,7 +17,7 @@ class MemoryGraph:
     skill_levels: np.ndarray
     cowork_months: csr_matrix
     pair_review_score: dict[tuple[int, int], float]
-    pair_evidence: dict[tuple[int, int], list[str]] = field(default_factory=dict)
+    pair_evidence: dict[tuple[int, int], list[tuple[str, str]]] = field(default_factory=dict)
 
     @classmethod
     def build(cls, ds: Dataset, parsed: list[ParsedReview]) -> "MemoryGraph":
@@ -38,7 +38,7 @@ class MemoryGraph:
 
         pol = {(r.reviewer_id, r.reviewee_id): r.text_polarity for r in parsed}
         acc: dict[tuple[int, int], list[float]] = defaultdict(list)
-        ev: dict[tuple[int, int], list[str]] = defaultdict(list)
+        ev: dict[tuple[int, int], list[tuple[str, str]]] = defaultdict(list)
         pr_by_dir = {(r.reviewer_id, r.reviewee_id): r for r in ds.reviews}
         for (rv, re_), r in pr_by_dir.items():
             key = tuple(sorted((pid[rv], pid[re_])))
@@ -46,6 +46,7 @@ class MemoryGraph:
             acc[key].append(score)
         for p_ in parsed:
             key = tuple(sorted((pid[p_.reviewer_id], pid[p_.reviewee_id])))
-            ev[key].extend(p_.evidence)
+            for evidence in p_.evidence:
+                ev[key].append((p_.reviewer_id, evidence))
         pair_score = {k: float(np.mean(v)) for k, v in acc.items()}
         return cls(ds.people, ds.projects, pid, sidx, L, cw, pair_score, dict(ev))
