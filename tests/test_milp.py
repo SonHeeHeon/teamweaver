@@ -1,13 +1,14 @@
 import numpy as np
+import pulp
 import pytest
 from collections import defaultdict
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
-from core.domain.models import (Grade, Project, ProjectPhase, Sector,
+from core.domain.models import (Grade, Person, Project, ProjectPhase, Sector,
     SkillRequirement)
 from core.graph.memory_graph import MemoryGraph
 from core.scoring.engine import ScoringEngine
-from core.optimize.milp import MilpParams, solve_milp, pruned_pairs
+from core.optimize.milp import MilpParams, solve_milp, pruned_pairs, _overfamiliar_pairs
 
 
 def _setup(n=25, j=5, seed=3):
@@ -76,7 +77,6 @@ def _budget_tight_project():
     2*1000*0.2=400보다 작다 -> 두 자리 모두 채우는 것은 예산상 불가능하므로
     MILP는 slack(미충원)을 반드시 사용해야 하며, 그래도 예산은 위반하지 않아야 한다.
     """
-    from core.domain.models import Person
     people = [
         Person(id="p0", name="A", grade=Grade.SENIOR, monthly_rate=1000,
                skills={"Java": 3}, availability=[1.0] * 6),
@@ -113,13 +113,144 @@ def test_milp_budget_tight_underfills_instead_of_violating():
     assert tight_entries[0].alloc >= 0.2 - 1e-6
 
 
-@pytest.mark.parametrize("seed", [1, 4])
-def test_milp_violations_always_empty(seed):
-    """MILP는 slack으로 흡수하므로 violations는 항상 빈 리스트여야 한다 (Greedy와의 구분점)."""
-    ds, g, S, C = _setup(seed=seed)
-    plan = solve_milp(g, S, C, MilpParams(time_limit=60))
-    assert plan.violations == []
-    assert isinstance(plan.violations, list)
+def test_milp_no_violations_by_construction_on_budget_tight_scenario():
+    """`solve_milp`은 `violations=[]`를 항상 하드코드로 반환하므로, `plan.violations`
+    필드를 읽는 것만으로는 아무 것도 증명하지 못한다(소스 코드 리터럴을 되읽는 tautology).
+    이 테스트는 그 필드를 전혀 참조하지 않고, `entries`/`unfilled`로부터 예산·정원
+    불변식을 직접 재계산해 검증한다 — naive(정원을 최소 투입률로라도 무조건 다 채우는)
+    접근이면 반드시 예산을 초과하는 시나리오를 골라서 확인한다.
+    """
+    people, projects, S, C = _budget_tight_project()
+    g = _MockGraph(people, projects, n=2)
+    plan = solve_milp(g, S, C, MilpParams(time_limit=30))
+    tight = projects[0]
+
+    # 시나리오 자체 검증: naive하게 정원을 min_alloc으로라도 전원 채우면 예산 초과여야
+    # 이 테스트가 "naive 솔버라면 위반했을 상황"이라는 전제가 성립한다.
+    naive_full_fill_cost = sum(p.monthly_rate * 0.2 for p in people)
+    assert naive_full_fill_cost > tight.monthly_budget, (
+        "시나리오 전제 실패: 전원을 최소 투입률로 채워도 예산 이내라면 이 테스트가 "
+        "'예산 위반 방지'를 검증하지 못한다")
+
+    # plan.violations를 참조하지 않고 entries만으로 예산 재계산
+    by_pid = {p.id: p for p in people}
+    cost = sum(by_pid[e.person_id].monthly_rate * e.alloc
+               for e in plan.entries if e.project_id == tight.id)
+    assert cost <= tight.monthly_budget + 1e-6
+
+    # plan.violations를 참조하지 않고 entries+unfilled로 정원 불변식 재계산
+    placed = sum(1 for e in plan.entries
+                 if e.project_id == tight.id and by_pid[e.person_id].grade == Grade.SENIOR)
+    short = 0
+    for u in plan.unfilled:
+        jid, gname, rest = u.split(":")
+        if jid == tight.id and gname == Grade.SENIOR.value:
+            short += int(rest.replace("명 미충원", ""))
+    assert placed + short == tight.grade_headcount[Grade.SENIOR]
+
+
+def test_overfamiliar_pairs_independent_of_pruning():
+    """Finding 1 회귀 테스트(단위): |C|가 작아 pair_keep_ratio에 의해 pruning되는 쌍이라도
+    cowork_months가 임계값 이상이면 `_overfamiliar_pairs`는 이를 포함해야 한다 — 클리크
+    페널티 대상 집합은 시너지 pruning과 무관하게 전수 계산되어야 한다."""
+    n = 4
+    C = np.zeros((n, n))
+    C[0, 1] = C[1, 0] = 0.01     # |C| 최소 -> pruning으로 제외될 쌍
+    C[2, 3] = C[3, 2] = 0.9      # |C| 최대 -> pruning으로 유지될 쌍
+    C[0, 2] = C[2, 0] = 0.02
+    C[0, 3] = C[3, 0] = 0.03
+    C[1, 2] = C[2, 1] = 0.04
+    C[1, 3] = C[3, 1] = 0.05
+
+    ratio = 0.17  # 총 6쌍 중 top-1만 유지 -> (2,3)만 pruned set에 남음
+    pruned = set(pruned_pairs(C, ratio))
+    assert pruned == {(2, 3)}
+    assert (0, 1) not in pruned  # (0,1)은 |C|가 작아 pruning으로 제외됨
+
+    class _CoworkOnlyGraph:
+        def __init__(self):
+            self.cowork_months = np.zeros((n, n))
+            self.cowork_months[0, 1] = self.cowork_months[1, 0] = 10  # >= threshold(6)
+
+    overfam = _overfamiliar_pairs(_CoworkOnlyGraph(), threshold=6)
+    assert (0, 1) in overfam, "pruning으로 제외된 쌍도 cowork 임계값을 넘으면 overfam에 포함되어야 함"
+
+    # 옛(버그) 방식: overfam을 pruned 집합과 교집합으로 구했다면 (0,1)은 사라졌을 것
+    old_buggy_overfam = {(p, q) for (p, q) in pruned if (p, q) == (0, 1)}
+    assert old_buggy_overfam == set(), "구버그 재현: pruned 교집합 방식이면 (0,1)이 소실됨을 확인"
+
+
+def test_milp_clique_penalty_applies_even_when_pair_pruned_from_reward():
+    """Finding 1 회귀 테스트(종단): |C|가 작아 시너지 보상 항(pruned 집합)에서는 제외되지만
+    cowork_months가 임계값을 넘는 쌍이, 실제로 목적함수의 -mu 페널티를 받는지 검증한다.
+
+    설계: p0/p1이 스킬 적합도가 압도적으로 높아(0.95/0.9 vs 0.1/0.1) mu 값과 무관하게
+    항상 함께 배치되지만, C[0,1]은 매우 작아 pruning으로 시너지 보상 대상에서는 제외됨.
+    cowork_months[0,1]=10(임계값 6 이상)이므로 mu>0이면 반드시 -mu 페널티가 적용되어야
+    한다 — mu=0.2와 mu=0 두 번 풀어 objective 차이가 정확히 0.2인지로 검증한다(부동소수
+    오차만 허용). 이 차이가 0에 가깝다면(구버그처럼 pruning과 교집합해 overfam을 구했다면)
+    페널티가 조용히 무력화된 것이므로 테스트가 실패한다.
+    """
+    people = [Person(id=f"p{i}", name=f"P{i}", grade=Grade.MID, monthly_rate=1000,
+                     skills={"Java": 3}, availability=[1.0] * 6) for i in range(4)]
+    projects = [Project(id="proj", name="proj", sector=Sector.INTERNAL,
+                        phase=ProjectPhase.EXECUTION, start_month=0, end_month=1,
+                        grade_headcount={Grade.MID: 2}, monthly_budget=5000,
+                        requirements=[SkillRequirement(skill="Java", min_level=1, headcount=2)])]
+    S = np.array([[0.95], [0.9], [0.1], [0.1]])
+    C = np.zeros((4, 4))
+    C[0, 1] = C[1, 0] = 0.01
+    C[2, 3] = C[3, 2] = 0.9
+    C[0, 2] = C[2, 0] = 0.02
+    C[0, 3] = C[3, 0] = 0.03
+    C[1, 2] = C[2, 1] = 0.04
+    C[1, 3] = C[3, 1] = 0.05
+
+    class _Graph:
+        def __init__(self):
+            self.people = people
+            self.projects = projects
+            self.cowork_months = np.zeros((4, 4))
+            self.cowork_months[0, 1] = self.cowork_months[1, 0] = 10
+
+    g = _Graph()
+    ratio = 0.17  # (0,1)은 |C|가 작아 pruning으로 시너지 보상 대상에서 제외됨 (top-1 = (2,3)만 유지)
+    assert (0, 1) not in set(pruned_pairs(C, ratio))
+
+    results = {}
+    for mu in (0.2, 0.0):
+        params = MilpParams(mu=mu, lam=0.3, pair_keep_ratio=ratio,
+                            clique_threshold_months=6, min_alloc=0.2, time_limit=30)
+        plan = solve_milp(g, S, C, params)
+        results[mu] = plan
+        assigned = {e.person_id for e in plan.entries}
+        assert assigned == {"p0", "p1"}, \
+            f"p0/p1이 스킬상 압도적으로 우수해 mu={mu}에서도 항상 선택되어야 함, got {assigned}"
+
+    diff = results[0.0].objective - results[0.2].objective
+    assert diff == pytest.approx(0.2, abs=1e-4), (
+        f"클리크 페널티(mu=0.2)가 pruned된 (0,1) 쌍에 적용되지 않은 것으로 보임 "
+        f"(objective 차이={diff}, 기대값=0.2). 구버그(overfam을 pruned와 교집합)라면 "
+        f"이 차이가 0이 되어 테스트가 실패한다.")
+
+
+def test_milp_raises_on_no_incumbent(monkeypatch):
+    """Finding 2 회귀 테스트: CBC가 time_limit 안에 실행가능해조차 하나도 못 찾으면
+    모든 변수의 .value()가 None이 된다. 이 경우 구버그는 `aval is not None` 가드
+    때문에 텅 빈/부분적인 PlanAssignment를 정상 결과처럼 조용히 반환했다. 실제 CBC를
+    "무해 발견 실패" 상태로 몰아넣는 것은 결정론적이지 않으므로, `LpProblem.solve`를
+    monkeypatch해 "Not Solved" 상태에서 변수 값이 전혀 채워지지 않은 상황을 결정론적으로
+    재현한다."""
+    def _fake_solve(self, solver=None, **kwargs):
+        self.status = pulp.LpStatusNotSolved
+        return pulp.LpStatusNotSolved
+
+    monkeypatch.setattr(pulp.LpProblem, "solve", _fake_solve)
+
+    people, projects, S, C = _budget_tight_project()
+    g = _MockGraph(people, projects, n=2)
+    with pytest.raises(RuntimeError, match="no incumbent"):
+        solve_milp(g, S, C, MilpParams(time_limit=1))
 
 
 def test_pruned_pairs_selects_highest_abs_c_not_arbitrary():

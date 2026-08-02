@@ -37,6 +37,28 @@ def pruned_pairs(C: np.ndarray, keep_ratio: float) -> list[tuple[int, int]]:
     return sorted(all_pairs, key=lambda p: -abs(C[p]))[:k]
 
 
+def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, int]]:
+    """All (p, q), p < q, whose cowork history meets the over-familiarity
+    threshold — scanned over ALL pairs, independent of |C| pruning.
+
+    pair_keep_ratio prunes by |C_pq| (skill-synergy strength), which has no
+    relation to cowork_months. If the Clique Penalty only ranged over the
+    |C|-pruned set, a long-tenured pair with low synergy score would be
+    pruned away and silently escape the penalty it's specifically meant to
+    apply to — defeating the "과숙련 방지" (over-familiarity prevention)
+    guarantee. So this is computed independently and unioned into the y
+    variable set by the caller.
+    """
+    cw = graph.cowork_months
+    rows, cols = cw.nonzero() if hasattr(cw, "nonzero") else np.nonzero(cw)
+    result = set()
+    for r, c in zip(rows, cols):
+        r, c = int(r), int(c)
+        if r < c and cw[r, c] >= threshold:
+            result.add((r, c))
+    return result
+
+
 def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
                params: MilpParams, extra_constraints=None) -> PlanAssignment:
     people, projects = graph.people, graph.projects
@@ -44,18 +66,17 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
-    pairs = pruned_pairs(C, params.pair_keep_ratio)
+    pruned = pruned_pairs(C, params.pair_keep_ratio)         # top |C| pairs -> synergy reward term
+    overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)  # ALL over-familiar pairs -> penalty term
+    pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
          for (p, q) in pairs for j in range(nJ)}
-    grades = sorted({g for pj in projects for g in pj.grade_headcount}, key=lambda g: g.value)
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
              for j, pj in enumerate(projects) for g in pj.grade_headcount}
-    overfam = {(p, q) for (p, q) in pairs
-               if graph.cowork_months[p, q] >= params.clique_threshold_months}
 
     prob += (
         pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ))
-        + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pairs for j in range(nJ))
+        + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
         - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
         - params.slack_penalty * pulp.lpSum(slack.values()))
 
@@ -84,8 +105,18 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         extra_constraints(prob, z)
 
     prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap))
-    if pulp.LpStatus[prob.status] not in ("Optimal", "Not Solved"):
-        raise RuntimeError(f"MILP failed: {pulp.LpStatus[prob.status]}")
+    status = pulp.LpStatus[prob.status]
+    if status not in ("Optimal", "Not Solved"):
+        raise RuntimeError(f"MILP failed: {status}")
+    if pulp.value(prob.objective) is None:
+        # "Not Solved" can mean either "time limit hit with a valid incumbent"
+        # (fine — a time-limited but real solution) or "time limit hit with NO
+        # incumbent at all" (every variable's .value() is None). The latter
+        # must not silently fall through to an empty/partial PlanAssignment
+        # that looks like a legitimate answer.
+        raise RuntimeError(
+            f"MILP found no incumbent solution within time_limit={params.time_limit}s "
+            f"(status={status}) — cannot extract a plan")
 
     entries = []
     for i in range(nP):
