@@ -18,6 +18,8 @@ def _template_text(items: list[str], positive: bool) -> str:
     return f"{', '.join(items)} 측면이 {tone}."
 
 def generate_dataset(n_people: int, n_projects: int, seed: int) -> Dataset:
+    if n_people < 3:
+        raise ValueError("n_people must be >= 3 (need at least 2 reviewers per person)")
     rng = random.Random(seed)
     review_items = load_review_items()
 
@@ -100,8 +102,13 @@ def capacity_ratio(ds: Dataset) -> float:
 
 def _calibrate_capacity(people: list[Person], projects: list[Project]) -> None:
     ds = Dataset(people=people, projects=projects, coworks=[], reviews=[])
+    bottomed_out = set()
     while capacity_ratio(ds) > 0.85:
-        pj = max(projects, key=lambda p: sum(p.grade_headcount.values()))
+        # Find the largest project not yet bottomed out
+        shrinkable = [p for p in projects if id(p) not in bottomed_out]
+        if not shrinkable:
+            raise ValueError("cannot calibrate: demand floor exceeds 0.85 * supply")
+        pj = max(shrinkable, key=lambda p: sum(p.grade_headcount.values()))
         g = max(pj.grade_headcount, key=pj.grade_headcount.get)
         if pj.grade_headcount[g] > 1:
             pj.grade_headcount[g] -= 1
@@ -109,4 +116,4 @@ def _calibrate_capacity(people: list[Person], projects: list[Project]) -> None:
             pj.grade_headcount.pop(g)
         if not pj.grade_headcount:
             pj.grade_headcount[Grade.MID] = 1
-            break
+            bottomed_out.add(id(pj))

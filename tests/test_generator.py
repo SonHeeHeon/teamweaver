@@ -29,3 +29,16 @@ def test_reviews_reference_taxonomy_and_have_korean_text():
 def test_capacity_calibrated_feasible():
     ds = generate_dataset(100, 20, seed=42)
     assert capacity_ratio(ds) <= 0.85   # 월별 수요가 공급의 85% 이하로 보정됨
+
+def test_rejects_tiny_people_pool():
+    import pytest
+    with pytest.raises(ValueError):
+        generate_dataset(2, 2, seed=1)
+
+def test_calibration_contract_small_pool():
+    # 공급이 극단적으로 부족한 구성: 보정 성공(≤0.85) 또는 명시적 ValueError만 허용
+    try:
+        ds = generate_dataset(3, 10, seed=1)
+    except ValueError:
+        return
+    assert capacity_ratio(ds) <= 0.85
