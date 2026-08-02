@@ -33,44 +33,62 @@ def test_greedy_deterministic_and_reports_violations():
     assert isinstance(p1.violations, list) and isinstance(p1.unfilled, list)
 
 
-def test_greedy_violations_check_implemented():
-    """Verify that greedy solver checks budget and records violations.
-    Even if generated datasets don't naturally trigger violations due to generous budgets,
-    the violation-checking mechanism must be in place and functional."""
-    ds, g, S = _setup(seed=3)
+def test_greedy_violations_populated_deterministic():
+    """Deterministic test that greedy violates budget on a tight-budget project.
+    Constructs a project whose monthly_budget is far below the cost of its
+    required grade composition, forcing greedy to produce violations."""
+    from core.domain.models import Person, Project, Grade, Sector, ProjectPhase, SkillRequirement
+
+    # Create people at fixed monthly rates
+    people = [
+        Person(id="p1", name="Senior1", grade=Grade.SENIOR, monthly_rate=1000,
+               skills={"python": 3}, availability=[1.0] * 6),
+        Person(id="p2", name="Senior2", grade=Grade.SENIOR, monthly_rate=1000,
+               skills={"python": 3}, availability=[1.0] * 6),
+    ]
+
+    # Create a project that needs 2 senior staff (cost = 2*1000 = 2000)
+    # but has a tiny budget (e.g., 1000), forcing budget violation
+    projects = [
+        Project(id="tight_proj", name="Tight Budget", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+                grade_headcount={Grade.SENIOR: 2}, monthly_budget=1000,
+                start_month=0, end_month=1,
+                requirements=[SkillRequirement(skill="python", min_level=1, headcount=2)]),
+    ]
+
+    # Scoring matrix: both seniors score well
+    S = np.array([[0.8],   # p1 -> tight_proj: score 0.8
+                  [0.7]])  # p2 -> tight_proj: score 0.7
+
+    # Mock MemoryGraph
+    class MockMemoryGraph:
+        def __init__(self, people, projects):
+            self.people = people
+            self.projects = projects
+            self.pid_index = {p.id: i for i, p in enumerate(people)}
+
+    g = MockMemoryGraph(people, projects)
     plan = solve_greedy(g, S)
-    # The violations list should always exist (even if empty in this dataset)
-    assert isinstance(plan.violations, list), "violations field must be a list"
 
-    # Verify the budget check mechanism is correctly implemented by examining the code path
-    # Calculate actual costs and verify they match what the solver computed
-    from collections import defaultdict
-    calculated_costs = defaultdict(float)
-    for e in plan.entries:
-        person = next(p for p in ds.people if p.id == e.person_id)
-        calculated_costs[e.project_id] += person.monthly_rate * e.alloc
-
-    # If any project actual cost exceeded its budget, it should be in violations
-    for proj in ds.projects:
-        if calculated_costs[proj.id] > proj.monthly_budget:
-            assert any(proj.id in v for v in plan.violations), \
-                f"Project {proj.id} exceeded budget but not in violations list"
+    # Greedy should fill both slots (cost = 1.0*1000 + 1.0*1000 = 2000 > budget 1000)
+    # and record a violation
+    assert len(plan.violations) > 0, "Expected violations for over-budget project"
+    assert "tight_proj" in plan.violations[0], \
+        f"Expected 'tight_proj' in violation message, got: {plan.violations[0]}"
+    assert "초과" in plan.violations[0], \
+        f"Expected '초과' (overage) in violation message, got: {plan.violations[0]}"
 
 
 def test_greedy_unfilled_populated():
     """Verify that unfilled list is populated when demand exceeds supply.
-    This can happen when available people are insufficient or unavailable."""
-    # Try multiple seeds to find a case where unfilled is populated
-    for seed in [1, 2, 3, 4, 5]:
-        ds, g, S = _setup(seed=seed)
-        plan = solve_greedy(g, S)
-        if len(plan.unfilled) > 0:
-            # Found at least one seed where unfilled is populated
-            assert any("未充職" in str(u) or "充職" in str(u) for u in plan.unfilled), \
-                f"Unfilled entries don't have expected format: {plan.unfilled}"
-            return
-    # If no seed produced unfilled, that's acceptable but worth noting
-    # (means supply is abundant relative to demand in generated datasets)
+    Uses seed=4 which is known to produce unfilled slots."""
+    ds, g, S = _setup(seed=4)
+    plan = solve_greedy(g, S)
+    # Seed 4 is known to have unfilled slots
+    assert len(plan.unfilled) > 0, f"Expected unfilled slots with seed=4, got empty list"
+    # Verify the format contains Korean text
+    assert any("미충원" in str(u) for u in plan.unfilled), \
+        f"Expected '미충원' in unfilled entries, got: {plan.unfilled}"
 
 
 def test_greedy_selects_highest_s_candidate():

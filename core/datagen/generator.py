@@ -54,7 +54,7 @@ def generate_dataset(n_people: int, n_projects: int, seed: int) -> Dataset:
                                  headcount=rng.randint(1, 2)) for s in req_skills]
         if sector != Sector.INTERNAL:
             reqs.append(SkillRequirement(skill=SECTOR_DOMAIN[sector], min_level=3, headcount=1))
-        budget = int(sum(GRADE_RATES[g] * n for g, n in hc.items()) * rng.uniform(1.0, 1.2))
+        budget = int(sum(GRADE_RATES[g] * n for g, n in hc.items()) * rng.uniform(0.85, 1.15))
         projects.append(Project(id=f"j{j:02d}", name=f"{sector.value} 프로젝트 {j:02d}",
                                 sector=sector, phase=phase, start_month=start, end_month=end,
                                 grade_headcount=hc, requirements=reqs, monthly_budget=budget))
