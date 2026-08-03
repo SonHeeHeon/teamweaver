@@ -6,6 +6,7 @@ from core.optimize.types import PlanAssignment
 
 _LABELS = "ABCDEFG"
 _QUALITY_FLOOR = 0.95
+_PLAN_A_GAP = 0.01
 
 
 def meets_quality_floor(alt_objective: float, plan_a_objective: float,
@@ -52,7 +53,16 @@ def _diversity_cut(prev_sets: list[set[tuple[str, str]]],
 
 def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
                    n_alternatives: int = 3) -> list[PlanAssignment]:
-    plan_a = solve_milp(graph, S, C, params)
+    # Plan A anchors both the headline "95% of Plan A" quality floor (meets_quality_floor)
+    # and Task 14's E2E assertion. If Plan A is solved only to the caller's gap (default
+    # 0.05), it is itself merely guaranteed within 5% of the TRUE optimum -- so the
+    # end-to-end worst-case guarantee for an alternative vs. the true optimum compounds to
+    # roughly floor*(1-gap) = 0.95*0.95 ~= 90.25%, not the 95% the "quality floor" name
+    # implies. Plan A is solved exactly once (alternatives are solved n_alternatives times),
+    # so tightening just its gap is cheap -- solve it far closer to true-optimal and leave
+    # alternatives at the caller's (looser, faster) gap.
+    plan_a_params = params.model_copy(update={"gap": min(params.gap, _PLAN_A_GAP)})
+    plan_a = solve_milp(graph, S, C, plan_a_params)
     plans = [plan_a]
     jdx = {j.id: k for k, j in enumerate(graph.projects)}
     pdx = graph.pid_index

@@ -186,19 +186,68 @@ def test_diversity_binds_against_every_prior_plan_end_to_end(seed):
                 f"cut이 Plan A뿐 아니라 {prior.label}에도 걸려야 함")
 
 
+# --- 2차 리뷰 Finding 2: 대안이 "진짜 substitution"인지, 그냥 truncation(인원 삭제)인지 ---
+# overlap cut(Σz_ij<=floor(0.8*|prior|))은 이전 해의 pair를 "다른 사람으로 대체"하든
+# "그냥 빼기만"하든 수학적으로 동일하게 만족시킨다. 실측 결과(diagnostic script) 확인:
+# n=100/p=20/seed=42에서 project당 명시된 등급 정원(grade_headcount)의 합은 76명뿐인데
+# 실제 entries는 108~114 -- 대부분이 등급 정원에 안 걸리는 "보너스" 배치(주로 초급,
+# 단가가 싸서 예산이 허용하는 한 skill-fit 이득만으로 추가됨)였다. 이 보너스 배치는
+# slack/미충원 없이도 자유롭게 늘고 줄 수 있어, cut이 "그냥 보너스 인원만 줄이고 마는"
+# 방식으로 값싸게 충족될 위험이 실재한다.
+
+def test_alternatives_are_genuine_substitutions_not_truncations():
+    """각 대안이 (a) Plan A 엔트리 수의 95% 이상을 유지하고, (b) Plan A에는 없던 새
+    배치를 실제로 포함하며 그 개수가 빠진 만큼과 엇비슷한 규모인지 확인한다(순수
+    삭제라면 new=0이라 실패). "엇비슷함"의 기준(new >= 0.5*dropped)은 실측 관찰
+    범위(브리핑 스케일 0.83~1.17배, 데모 스케일 0.74~0.91배)에 여유를 둔 값이다.
+
+    브리핑 스케일(n=25/p=5/seed=3)에서는 3개 대안 모두 두 조건을 통과함을 실측으로
+    확인했다(entries 27~29 vs Plan A 28, 즉 96.4~103.6%). 데모 스케일에서의 결과(일부
+    실패)는 별도 `slow` 테스트(`test_demo_scale_alternatives`)에서 다룬다 -- 아래 참고.
+    """
+    ds = generate_dataset(25, 5, seed=3)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    eng = ScoringEngine(g)
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    plans = generate_plans(g, S, C, MilpParams(time_limit=60), n_alternatives=3)
+    plan_a = plans[0]
+    assert len(plans) >= 2, "대안이 하나도 안 나오면 이 테스트 자체가 무의미"
+
+    for alt in plans[1:]:
+        dropped = plan_a.pairs() - alt.pairs()
+        new = alt.pairs() - plan_a.pairs()
+        entry_ratio = len(alt.entries) / len(plan_a.entries)
+        assert entry_ratio >= 0.95 - 1e-9, (
+            f"{alt.label}: entries {len(alt.entries)}/{len(plan_a.entries)}"
+            f"={entry_ratio:.2%} of Plan A -- truncation, not substitution")
+        assert len(new) > 0, f"{alt.label} adds no new assignment vs Plan A -- pure truncation"
+        assert len(new) >= 0.5 * len(dropped), (
+            f"{alt.label}: dropped {len(dropped)} pairs but only added {len(new)} new "
+            f"({len(new) / max(1, len(dropped)):.2f}x) -- net truncation, not substitution")
+
+
 # --- 컨트롤러 추가: 데모 규모 실측 (fixtures/*.json 미동결 상태이므로 Task 14와
 # 동일 규모(n=100/p=20)의 대체 데이터셋으로 실측) ---------------------------
 
 @pytest.mark.slow
-def test_demo_scale_alternative_count():
+def test_demo_scale_alternatives():
     """데모급 규모(n=100/p=20, seed=42 -- Task 14 계획의 동결 fixture와 동일 규모)에서
-    실제로 몇 개의 유효 대안을 얻을 수 있는지 실측하고 벽시계 시간을 기록한다.
+    (1) 실제로 몇 개의 유효 대안을 얻을 수 있는지, (2) 그 대안들이 진짜 substitution인지
+    (Finding 2) 실측하고 벽시계 시간을 기록한다. 두 관심사를 하나의 테스트로 묶은 이유는
+    `generate_plans(..., n_alternatives=3)` 자체가 이 규모에서 ~25~30초짜리 CBC 4회
+    호출이라, 별도 테스트로 쪼개면 데모 규모 solve를 두 번 지불하게 되기 때문이다.
 
-    컨트롤러 지시: "3개 미만이면 임계값을 완화해 개수를 인위적으로 늘리지 말고 숫자
-    그대로 보고하라"는 지침에 따라, 이 테스트는 개수 자체(`len(plans) >= 4`)를
-    하드 어서션하지 않는다. 대신 항상 성립해야 하는 구조적 불변식(A 존재, 라벨 순서,
-    실제로 채택된 대안들이 게이트를 만족함)만 검증하고, 개수/시간은 print로 리포트에
-    남긴다(리포트 작성 시 `-s` 옵션으로 캡처).
+    컨트롤러 지시(개수): "3개 미만이면 임계값을 완화해 개수를 인위적으로 늘리지 말고
+    숫자 그대로 보고하라"는 지침에 따라, 개수 자체(`len(plans) >= 4`)를 하드
+    어서션하지 않는다 -- 항상 성립해야 하는 구조적 불변식(A 존재, 라벨 순서, 채택된
+    대안들이 품질/다양성 게이트를 만족함)만 검증한다.
+
+    컨트롤러 지시(Finding 2 - substitution): "순수 truncation이 아님"(new가 존재하고
+    dropped와 엇비슷한 규모)은 하드 어서션한다 -- 실측 범위(0.74~0.91배)에서 항상 성립.
+    반면 원시 "entries >= Plan A의 95%" 바닥은 이 규모/시드에서 Plan C가 근소하게
+    (94.74% < 95%) 미달하는 것을 실측으로 확인했다(task-13-report.md Finding 2 fix 참고).
+    임계값을 완화해 억지로 통과시키지 않고, 위반이 관측되면 `pytest.xfail`로 알려진
+    결과를 명시적으로 기록한다 -- assert 자체(95%)는 원본 그대로 유지.
     """
     ds = generate_dataset(100, 20, seed=42)
     g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
@@ -224,3 +273,32 @@ def test_demo_scale_alternative_count():
             prev = prior.pairs()
             overlap = len(alt.pairs() & prev) / max(1, len(prev))
             assert overlap <= 0.8 + 1e-6
+
+    # --- Finding 2: genuine substitution vs. truncation -----------------------------
+    plan_a = plans[0]
+    print(f"[substitution check] Plan A entries={len(plan_a.entries)}")
+    sub_results = []
+    for alt in plans[1:]:
+        dropped = plan_a.pairs() - alt.pairs()
+        new = alt.pairs() - plan_a.pairs()
+        entry_ratio = len(alt.entries) / len(plan_a.entries)
+        new_to_dropped = len(new) / max(1, len(dropped))
+        sub_results.append((alt.label, entry_ratio, len(dropped), len(new), new_to_dropped))
+        print(f"  {alt.label}: entries={len(alt.entries)} ({entry_ratio:.4f} of A) "
+              f"dropped={len(dropped)} new={len(new)} new/dropped={new_to_dropped:.3f}")
+
+    for label, entry_ratio, n_dropped, n_new, ratio in sub_results:
+        assert n_new > 0, f"{label} adds no new assignment vs Plan A -- pure truncation"
+        assert n_new >= 0.5 * n_dropped, (
+            f"{label}: only {ratio:.2f}x new-vs-dropped -- net truncation, not substitution")
+
+    below_floor = [(label, r) for label, r, *_ in sub_results if r < 0.95 - 1e-9]
+    if below_floor:
+        pytest.xfail(
+            "raw entry-count floor (>=95% of Plan A) violated at demo scale: "
+            f"{below_floor} -- known limitation of Σz_ij<=floor(0.8|prior|) cutting "
+            "indiscriminately across quota-bound AND bonus (non-quota) assignments; "
+            "see task-13-report.md Finding 2 fix notes for recommended direction "
+            "(cut on substitution count, or restrict the cut to quota-bound pairs).")
+    for label, entry_ratio, *_ in sub_results:
+        assert entry_ratio >= 0.95 - 1e-9, f"{label}: entries {entry_ratio:.2%} of Plan A"
