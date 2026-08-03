@@ -1,0 +1,2123 @@
+[
+ {
+  "id": "p000",
+  "name": "김나윤",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "iOS": 3,
+   "Vue": 3,
+   "React": 2
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p001",
+  "name": "서지훈",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "React": 5,
+   "AWS": 4,
+   "Spark": 4,
+   "Vue": 3,
+   "Java": 3,
+   "Python": 4,
+   "금융도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p002",
+  "name": "강나윤",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Spark": 3,
+   "React": 4,
+   "iOS": 2,
+   "Spring": 3,
+   "Java": 2,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p003",
+  "name": "조채원",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AWS": 3,
+   "MSA": 4,
+   "Vue": 2,
+   "AI/ML": 3
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p004",
+  "name": "권건우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Python": 4,
+   "Vue": 5,
+   "PM": 5,
+   "React": 4,
+   "Kubernetes": 3,
+   "AI/ML": 3,
+   "금융도메인": 2
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p005",
+  "name": "최유진",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "AI/ML": 4,
+   "iOS": 4,
+   "Spring": 2,
+   "그룹사업무": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   0.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p006",
+  "name": "정예은",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Python": 2,
+   "OracleDB": 4,
+   "Android": 5,
+   "PM": 2,
+   "제조도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "id": "p007",
+  "name": "윤태윤",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Vue": 3,
+   "Kubernetes": 3,
+   "Spark": 4,
+   "MSA": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p008",
+  "name": "황지우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "iOS": 3,
+   "AI/ML": 2,
+   "Java": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p009",
+  "name": "박시우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "React": 5,
+   "Spring": 5,
+   "QA": 5,
+   "AI/ML": 2,
+   "MSA": 2,
+   "OracleDB": 2,
+   "금융도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p010",
+  "name": "권유진",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Java": 2,
+   "AI/ML": 2,
+   "Kubernetes": 3,
+   "그룹사업무": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p011",
+  "name": "이가은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Python": 2,
+   "React": 4,
+   "Vue": 2,
+   "QA": 2,
+   "Java": 5,
+   "Spark": 3,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p012",
+  "name": "오지훈",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "PM": 3,
+   "Vue": 4,
+   "React": 5,
+   "AI/ML": 3,
+   "OracleDB": 4,
+   "금융도메인": 2
+  },
+  "availability": [
+   1.0,
+   0.0,
+   0.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p013",
+  "name": "황준서",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Vue": 2,
+   "Python": 4,
+   "AWS": 2,
+   "Kubernetes": 3,
+   "PM": 4,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p014",
+  "name": "정나윤",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spring": 4,
+   "AI/ML": 2,
+   "MSA": 2,
+   "제조도메인": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p015",
+  "name": "윤도현",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Spark": 2,
+   "Kubernetes": 4,
+   "Python": 4,
+   "MSA": 2,
+   "Android": 4,
+   "금융도메인": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   0.0,
+   0.5,
+   0.0
+  ]
+ },
+ {
+  "id": "p016",
+  "name": "윤지우",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "PM": 4,
+   "MSA": 5,
+   "Java": 3,
+   "Python": 4,
+   "그룹사업무": 2
+  },
+  "availability": [
+   0.5,
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p017",
+  "name": "신소율",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "MSA": 4,
+   "OracleDB": 4,
+   "Vue": 5,
+   "Spring": 4
+  },
+  "availability": [
+   1.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p018",
+  "name": "임건우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "MSA": 3,
+   "Spark": 4,
+   "Kubernetes": 2,
+   "Spring": 5,
+   "PM": 2,
+   "제조도메인": 3
+  },
+  "availability": [
+   1.0,
+   0.0,
+   0.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p019",
+  "name": "조건우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "OracleDB": 3,
+   "MSA": 5,
+   "iOS": 5,
+   "Vue": 3,
+   "Kubernetes": 4,
+   "Python": 5,
+   "제조도메인": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p020",
+  "name": "조재원",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AI/ML": 4,
+   "Spring": 2,
+   "Vue": 3,
+   "Kubernetes": 4,
+   "공공SI": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p021",
+  "name": "권건우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Python": 2,
+   "AI/ML": 5,
+   "iOS": 3,
+   "Java": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p022",
+  "name": "장현우",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Android": 5,
+   "AWS": 5,
+   "Spark": 3,
+   "iOS": 5,
+   "Kubernetes": 5,
+   "제조도메인": 3
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p023",
+  "name": "김태윤",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Python": 5,
+   "PM": 3,
+   "React": 3,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p024",
+  "name": "정가은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "OracleDB": 5,
+   "Vue": 5,
+   "Android": 3,
+   "그룹사업무": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "id": "p025",
+  "name": "황민준",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Spark": 3,
+   "PM": 5,
+   "AI/ML": 3,
+   "Java": 2,
+   "Spring": 4,
+   "MSA": 5,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p026",
+  "name": "조시우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "OracleDB": 2,
+   "React": 2,
+   "AI/ML": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p027",
+  "name": "임가은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Python": 3,
+   "Spark": 4,
+   "QA": 2,
+   "iOS": 2,
+   "Spring": 4,
+   "그룹사업무": 5
+  },
+  "availability": [
+   0.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p028",
+  "name": "안준서",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "OracleDB": 4,
+   "Kubernetes": 2,
+   "MSA": 4,
+   "그룹사업무": 5
+  },
+  "availability": [
+   1.0,
+   0.0,
+   1.0,
+   0.5,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p029",
+  "name": "장나윤",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AWS": 3,
+   "MSA": 2,
+   "iOS": 4,
+   "Spark": 5,
+   "Vue": 3,
+   "OracleDB": 5,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p030",
+  "name": "오다은",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Spring": 5,
+   "React": 3,
+   "iOS": 5,
+   "MSA": 5,
+   "금융도메인": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p031",
+  "name": "최하은",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "OracleDB": 4,
+   "iOS": 3,
+   "AWS": 2,
+   "Vue": 3,
+   "QA": 4,
+   "공공SI": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p032",
+  "name": "권현우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Python": 3,
+   "Vue": 4,
+   "Java": 2,
+   "iOS": 2,
+   "Kubernetes": 4
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p033",
+  "name": "윤건우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Vue": 2,
+   "QA": 2,
+   "AWS": 5,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p034",
+  "name": "임시우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Vue": 2,
+   "QA": 2,
+   "Spark": 3,
+   "MSA": 3,
+   "PM": 4,
+   "Android": 2,
+   "금융도메인": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p035",
+  "name": "임시우",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "PM": 3,
+   "Vue": 5,
+   "Android": 2,
+   "AI/ML": 3
+  },
+  "availability": [
+   0.0,
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p036",
+  "name": "김준서",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "iOS": 5,
+   "MSA": 5,
+   "Vue": 2,
+   "Kubernetes": 2,
+   "PM": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p037",
+  "name": "황유진",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AWS": 4,
+   "Kubernetes": 3,
+   "AI/ML": 5,
+   "PM": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p038",
+  "name": "이하은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "QA": 4,
+   "Android": 4,
+   "Kubernetes": 4,
+   "Java": 2,
+   "AWS": 5,
+   "Spring": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p039",
+  "name": "최예은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "PM": 5,
+   "Vue": 2,
+   "AWS": 2,
+   "iOS": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p040",
+  "name": "임유진",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Kubernetes": 5,
+   "iOS": 3,
+   "Vue": 5,
+   "MSA": 3,
+   "AWS": 5,
+   "금융도메인": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p041",
+  "name": "정채원",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "QA": 4,
+   "Python": 5,
+   "AWS": 5,
+   "Kubernetes": 4,
+   "Android": 3,
+   "OracleDB": 3,
+   "그룹사업무": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p042",
+  "name": "서지훈",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Kubernetes": 5,
+   "Spark": 2,
+   "OracleDB": 5,
+   "Spring": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p043",
+  "name": "한서연",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "OracleDB": 2,
+   "AI/ML": 3,
+   "iOS": 4,
+   "AWS": 3,
+   "Kubernetes": 2,
+   "Java": 5
+  },
+  "availability": [
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p044",
+  "name": "김시우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "MSA": 3,
+   "Python": 3,
+   "React": 3,
+   "Kubernetes": 2,
+   "PM": 5
+  },
+  "availability": [
+   1.0,
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p045",
+  "name": "임민준",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spring": 4,
+   "AWS": 5,
+   "OracleDB": 4,
+   "Spark": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p046",
+  "name": "이유진",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Vue": 5,
+   "Java": 4,
+   "Spark": 3,
+   "AI/ML": 4,
+   "QA": 3,
+   "Android": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p047",
+  "name": "강준서",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Spark": 3,
+   "OracleDB": 2,
+   "iOS": 4,
+   "공공SI": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p048",
+  "name": "오수빈",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Android": 2,
+   "Vue": 3,
+   "iOS": 3,
+   "OracleDB": 5,
+   "Spring": 4,
+   "AWS": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p049",
+  "name": "신태윤",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Java": 2,
+   "Spark": 5,
+   "Kubernetes": 4,
+   "OracleDB": 5,
+   "QA": 2,
+   "React": 3,
+   "제조도메인": 2
+  },
+  "availability": [
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p050",
+  "name": "오서연",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "PM": 5,
+   "MSA": 5,
+   "AI/ML": 4,
+   "Spring": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p051",
+  "name": "정가은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Spring": 3,
+   "QA": 2,
+   "AWS": 2,
+   "PM": 4,
+   "공공SI": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p052",
+  "name": "권소율",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Python": 2,
+   "Kubernetes": 2,
+   "Vue": 3,
+   "PM": 2,
+   "제조도메인": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p053",
+  "name": "권지훈",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AWS": 2,
+   "Kubernetes": 4,
+   "React": 5
+  },
+  "availability": [
+   1.0,
+   0.0,
+   0.5,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p054",
+  "name": "한다은",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spark": 4,
+   "Python": 5,
+   "Spring": 4,
+   "QA": 5,
+   "Vue": 5,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p055",
+  "name": "신소율",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "OracleDB": 2,
+   "Python": 2,
+   "AI/ML": 2,
+   "AWS": 5,
+   "Spring": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p056",
+  "name": "김가은",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "QA": 4,
+   "iOS": 2,
+   "Java": 3,
+   "Vue": 3,
+   "Spark": 5,
+   "PM": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p057",
+  "name": "한도현",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Java": 4,
+   "Python": 4,
+   "Vue": 2,
+   "iOS": 3,
+   "Android": 3,
+   "금융도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p058",
+  "name": "황건우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Android": 3,
+   "Spark": 3,
+   "QA": 2,
+   "Spring": 2,
+   "Java": 4,
+   "그룹사업무": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p059",
+  "name": "윤건우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "React": 2,
+   "MSA": 2,
+   "Spark": 3,
+   "공공SI": 3
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p060",
+  "name": "오지훈",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Spring": 2,
+   "MSA": 5,
+   "iOS": 2,
+   "Java": 4,
+   "QA": 5,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p061",
+  "name": "조소율",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "React": 5,
+   "MSA": 2,
+   "Spark": 5
+  },
+  "availability": [
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p062",
+  "name": "한현우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "React": 3,
+   "Spring": 3,
+   "Python": 3,
+   "Vue": 2,
+   "그룹사업무": 5
+  },
+  "availability": [
+   0.5,
+   0.5,
+   1.0,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p063",
+  "name": "박가은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "AWS": 4,
+   "PM": 4,
+   "AI/ML": 2,
+   "제조도메인": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p064",
+  "name": "강소율",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AWS": 3,
+   "Spark": 4,
+   "Kubernetes": 5,
+   "iOS": 3,
+   "Java": 2,
+   "PM": 5,
+   "금융도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p065",
+  "name": "정소율",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "MSA": 2,
+   "PM": 4,
+   "Android": 2,
+   "OracleDB": 4,
+   "AI/ML": 2,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p066",
+  "name": "임수빈",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Python": 5,
+   "Spark": 4,
+   "iOS": 3,
+   "Spring": 2,
+   "Vue": 5,
+   "Kubernetes": 4,
+   "공공SI": 4
+  },
+  "availability": [
+   0.0,
+   1.0,
+   0.5,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p067",
+  "name": "권지우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "AI/ML": 3,
+   "OracleDB": 5,
+   "Android": 3,
+   "그룹사업무": 3
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   0.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p068",
+  "name": "최건우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Android": 5,
+   "PM": 5,
+   "AWS": 4,
+   "React": 5,
+   "OracleDB": 5
+  },
+  "availability": [
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p069",
+  "name": "윤민준",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spring": 3,
+   "Android": 5,
+   "Python": 2,
+   "Vue": 3,
+   "AWS": 5
+  },
+  "availability": [
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p070",
+  "name": "정나윤",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "QA": 4,
+   "iOS": 3,
+   "AI/ML": 3,
+   "공공SI": 5
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p071",
+  "name": "김가은",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spring": 2,
+   "Android": 3,
+   "Vue": 5,
+   "React": 5,
+   "QA": 2,
+   "PM": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p072",
+  "name": "한예은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Python": 2,
+   "AI/ML": 2,
+   "QA": 5,
+   "Spring": 5,
+   "Kubernetes": 2,
+   "OracleDB": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p073",
+  "name": "황준서",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "QA": 5,
+   "AI/ML": 3,
+   "Python": 3,
+   "PM": 2,
+   "AWS": 5,
+   "금융도메인": 3
+  },
+  "availability": [
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p074",
+  "name": "안준서",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Vue": 4,
+   "OracleDB": 4,
+   "Android": 2,
+   "Java": 4,
+   "그룹사업무": 5
+  },
+  "availability": [
+   0.5,
+   1.0,
+   0.0,
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p075",
+  "name": "장서연",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Spring": 4,
+   "MSA": 2,
+   "Spark": 2,
+   "Python": 4,
+   "Kubernetes": 4,
+   "Vue": 4,
+   "공공SI": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p076",
+  "name": "박태윤",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "OracleDB": 2,
+   "Kubernetes": 3,
+   "Android": 5,
+   "iOS": 2,
+   "AI/ML": 3,
+   "Python": 2,
+   "제조도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p077",
+  "name": "황하은",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "MSA": 2,
+   "OracleDB": 2,
+   "AI/ML": 3,
+   "Vue": 5,
+   "React": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p078",
+  "name": "강소율",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "AWS": 5,
+   "Python": 2,
+   "iOS": 4
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p079",
+  "name": "황건우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "React": 3,
+   "Android": 5,
+   "Python": 2,
+   "그룹사업무": 4
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p080",
+  "name": "안유진",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "QA": 5,
+   "Spark": 5,
+   "Spring": 4,
+   "Python": 3,
+   "OracleDB": 3,
+   "Android": 3,
+   "금융도메인": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p081",
+  "name": "이태윤",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "React": 4,
+   "AI/ML": 2,
+   "Kubernetes": 3,
+   "Vue": 3,
+   "Python": 3
+  },
+  "availability": [
+   0.5,
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p082",
+  "name": "정현우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Android": 2,
+   "Spark": 5,
+   "MSA": 4,
+   "QA": 4,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p083",
+  "name": "강현우",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "iOS": 4,
+   "QA": 2,
+   "OracleDB": 4,
+   "MSA": 3,
+   "Python": 5,
+   "공공SI": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.0,
+   0.5,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p084",
+  "name": "황유진",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "React": 5,
+   "Android": 5,
+   "Python": 4,
+   "AWS": 5,
+   "Kubernetes": 2,
+   "그룹사업무": 5
+  },
+  "availability": [
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p085",
+  "name": "최예은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "MSA": 4,
+   "Python": 5,
+   "Vue": 4,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p086",
+  "name": "한도현",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "OracleDB": 3,
+   "Android": 5,
+   "PM": 2,
+   "Kubernetes": 2,
+   "QA": 2,
+   "Python": 3
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p087",
+  "name": "윤서연",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "Spark": 5,
+   "OracleDB": 4,
+   "Kubernetes": 5,
+   "Android": 2,
+   "iOS": 4,
+   "그룹사업무": 2
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p088",
+  "name": "황서연",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Kubernetes": 5,
+   "AI/ML": 3,
+   "iOS": 3,
+   "Spark": 2,
+   "공공SI": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.5
+  ]
+ },
+ {
+  "id": "p089",
+  "name": "황하은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Kubernetes": 5,
+   "OracleDB": 4,
+   "AI/ML": 3,
+   "AWS": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p090",
+  "name": "정유진",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Kubernetes": 3,
+   "Vue": 5,
+   "React": 4,
+   "QA": 5,
+   "iOS": 4,
+   "제조도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   0.5,
+   0.0
+  ]
+ },
+ {
+  "id": "p091",
+  "name": "윤서연",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "OracleDB": 4,
+   "AWS": 5,
+   "AI/ML": 3,
+   "제조도메인": 4
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p092",
+  "name": "윤나윤",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "iOS": 2,
+   "AWS": 3,
+   "Spring": 5,
+   "AI/ML": 5,
+   "Python": 5
+  },
+  "availability": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p093",
+  "name": "최현우",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "PM": 3,
+   "Python": 2,
+   "MSA": 5
+  },
+  "availability": [
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p094",
+  "name": "안현우",
+  "grade": "고급",
+  "monthly_rate": 1300,
+  "skills": {
+   "PM": 2,
+   "Python": 4,
+   "Kubernetes": 3,
+   "AWS": 5,
+   "Vue": 4,
+   "React": 3,
+   "제조도메인": 4
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   0.5,
+   0.5,
+   0.5
+  ]
+ },
+ {
+  "id": "p095",
+  "name": "윤서연",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Python": 4,
+   "PM": 3,
+   "AWS": 2,
+   "그룹사업무": 3
+  },
+  "availability": [
+   0.5,
+   0.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p096",
+  "name": "윤가은",
+  "grade": "중급",
+  "monthly_rate": 1000,
+  "skills": {
+   "Vue": 2,
+   "Python": 4,
+   "MSA": 4,
+   "AI/ML": 3,
+   "Kubernetes": 3,
+   "PM": 3,
+   "제조도메인": 5
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "id": "p097",
+  "name": "안시우",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Kubernetes": 4,
+   "AWS": 2,
+   "PM": 2,
+   "공공SI": 3
+  },
+  "availability": [
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   0.5,
+   1.0
+  ]
+ },
+ {
+  "id": "p098",
+  "name": "박채원",
+  "grade": "초급",
+  "monthly_rate": 750,
+  "skills": {
+   "Python": 5,
+   "Kubernetes": 4,
+   "MSA": 2,
+   "AWS": 5,
+   "Spark": 4,
+   "Java": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ {
+  "id": "p099",
+  "name": "안예은",
+  "grade": "특급",
+  "monthly_rate": 1600,
+  "skills": {
+   "Python": 4,
+   "Android": 5,
+   "PM": 5,
+   "AI/ML": 5,
+   "iOS": 5,
+   "MSA": 2
+  },
+  "availability": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ]
+ }
+]

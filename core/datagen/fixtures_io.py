@@ -6,7 +6,8 @@ from core.domain.models import Dataset, ParsedReview
 def _dump(path: Path, obj) -> None:
     path.write_text(json.dumps(obj, ensure_ascii=False, indent=1), "utf-8")
 
-def save_fixtures(ds: Dataset, parsed: list[ParsedReview] | None, out_dir: Path) -> None:
+def save_fixtures(ds: Dataset, parsed: list[ParsedReview] | None, out_dir: Path,
+                  review_mode: str = "template") -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     d = ds.model_dump(mode="json")
     _dump(out_dir / "people.json", d["people"])
@@ -17,7 +18,8 @@ def save_fixtures(ds: Dataset, parsed: list[ParsedReview] | None, out_dir: Path)
           [p.model_dump(mode="json") for p in (parsed or [])])
     _dump(out_dir / "meta.json",
           {"n_people": len(ds.people), "n_projects": len(ds.projects),
-           "horizon_start": "2026-09", "frozen_at": date.today().isoformat()})
+           "horizon_start": "2026-09", "frozen_at": date.today().isoformat(),
+           "review_mode": review_mode})
 
 def load_fixtures(dir: Path) -> tuple[Dataset, list[ParsedReview]]:
     j = lambda n: json.loads((dir / n).read_text("utf-8"))

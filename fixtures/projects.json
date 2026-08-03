@@ -1,0 +1,688 @@
+[
+ {
+  "id": "j00",
+  "name": "대외금융 프로젝트 00",
+  "sector": "대외금융",
+  "phase": "제안",
+  "start_month": 1,
+  "end_month": 1,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2
+  },
+  "requirements": [
+   {
+    "skill": "AI/ML",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "iOS",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 2958
+ },
+ {
+  "id": "j01",
+  "name": "대내 프로젝트 01",
+  "sector": "대내",
+  "phase": "제안",
+  "start_month": 0,
+  "end_month": 0,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 1
+  },
+  "requirements": [
+   {
+    "skill": "React",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "Spring",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 3601
+ },
+ {
+  "id": "j02",
+  "name": "대내 프로젝트 02",
+  "sector": "대내",
+  "phase": "제안",
+  "start_month": 3,
+  "end_month": 3,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 1
+  },
+  "requirements": [
+   {
+    "skill": "Kubernetes",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "Vue",
+    "min_level": 4,
+    "headcount": 2
+   }
+  ],
+  "monthly_budget": 2118
+ },
+ {
+  "id": "j03",
+  "name": "대외공공 프로젝트 03",
+  "sector": "대외공공",
+  "phase": "제안",
+  "start_month": 4,
+  "end_month": 4,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 2
+  },
+  "requirements": [
+   {
+    "skill": "Java",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "Spark",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "공공SI",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4233
+ },
+ {
+  "id": "j04",
+  "name": "대내 프로젝트 04",
+  "sector": "대내",
+  "phase": "제안",
+  "start_month": 3,
+  "end_month": 4,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 2
+  },
+  "requirements": [
+   {
+    "skill": "Vue",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "MSA",
+    "min_level": 2,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4607
+ },
+ {
+  "id": "j05",
+  "name": "대외금융 프로젝트 05",
+  "sector": "대외금융",
+  "phase": "제안",
+  "start_month": 3,
+  "end_month": 3,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 2
+  },
+  "requirements": [
+   {
+    "skill": "Kubernetes",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "Python",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "MSA",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "React",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4240
+ },
+ {
+  "id": "j06",
+  "name": "대내 프로젝트 06",
+  "sector": "대내",
+  "phase": "제안",
+  "start_month": 4,
+  "end_month": 4,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 1
+  },
+  "requirements": [
+   {
+    "skill": "iOS",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "AI/ML",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "React",
+    "min_level": 2,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 2470
+ },
+ {
+  "id": "j07",
+  "name": "대외공공 프로젝트 07",
+  "sector": "대외공공",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 1,
+   "초급": 2
+  },
+  "requirements": [
+   {
+    "skill": "MSA",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "AWS",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "공공SI",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 6037
+ },
+ {
+  "id": "j08",
+  "name": "대외공공 프로젝트 08",
+  "sector": "대외공공",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 1,
+   "초급": 2
+  },
+  "requirements": [
+   {
+    "skill": "Spark",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "QA",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "공공SI",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 7213
+ },
+ {
+  "id": "j09",
+  "name": "대외금융 프로젝트 09",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "Spark",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "QA",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "React",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4990
+ },
+ {
+  "id": "j10",
+  "name": "대외금융 프로젝트 10",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 4,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "Java",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "QA",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "Spring",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "AI/ML",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4562
+ },
+ {
+  "id": "j11",
+  "name": "대외금융 프로젝트 11",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 4,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 1,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "Kubernetes",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "MSA",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "Java",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "Android",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 7821
+ },
+ {
+  "id": "j12",
+  "name": "대외금융 프로젝트 12",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 3,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 1,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "OracleDB",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "MSA",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 8177
+ },
+ {
+  "id": "j13",
+  "name": "대외공공 프로젝트 13",
+  "sector": "대외공공",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 1,
+   "초급": 2
+  },
+  "requirements": [
+   {
+    "skill": "Kubernetes",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "AWS",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "Java",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "공공SI",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 6400
+ },
+ {
+  "id": "j14",
+  "name": "대외금융 프로젝트 14",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "PM",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "Spark",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "AWS",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "Vue",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 3461
+ },
+ {
+  "id": "j15",
+  "name": "대내 프로젝트 15",
+  "sector": "대내",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 5,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 1,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "React",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "Spark",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "MSA",
+    "min_level": 4,
+    "headcount": 1
+   },
+   {
+    "skill": "AI/ML",
+    "min_level": 4,
+    "headcount": 2
+   }
+  ],
+  "monthly_budget": 5759
+ },
+ {
+  "id": "j16",
+  "name": "대내 프로젝트 16",
+  "sector": "대내",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 4,
+  "grade_headcount": {
+   "특급": 1,
+   "고급": 1,
+   "중급": 1,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "AWS",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "React",
+    "min_level": 3,
+    "headcount": 1
+   },
+   {
+    "skill": "OracleDB",
+    "min_level": 4,
+    "headcount": 2
+   }
+  ],
+  "monthly_budget": 6742
+ },
+ {
+  "id": "j17",
+  "name": "대외금융 프로젝트 17",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 0,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 3,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "iOS",
+    "min_level": 2,
+    "headcount": 2
+   },
+   {
+    "skill": "Android",
+    "min_level": 3,
+    "headcount": 2
+   },
+   {
+    "skill": "AI/ML",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 4300
+ },
+ {
+  "id": "j18",
+  "name": "대내 프로젝트 18",
+  "sector": "대내",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2,
+   "초급": 1
+  },
+  "requirements": [
+   {
+    "skill": "AWS",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "QA",
+    "min_level": 2,
+    "headcount": 2
+   }
+  ],
+  "monthly_budget": 4115
+ },
+ {
+  "id": "j19",
+  "name": "대외금융 프로젝트 19",
+  "sector": "대외금융",
+  "phase": "실행",
+  "start_month": 1,
+  "end_month": 5,
+  "grade_headcount": {
+   "고급": 1,
+   "중급": 2,
+   "초급": 2
+  },
+  "requirements": [
+   {
+    "skill": "iOS",
+    "min_level": 2,
+    "headcount": 1
+   },
+   {
+    "skill": "Kubernetes",
+    "min_level": 4,
+    "headcount": 2
+   },
+   {
+    "skill": "금융도메인",
+    "min_level": 3,
+    "headcount": 1
+   }
+  ],
+  "monthly_budget": 6396
+ }
+]

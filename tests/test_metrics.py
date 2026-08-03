@@ -1,8 +1,10 @@
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.memory_graph import MemoryGraph
+from core.scoring.engine import ScoringEngine
+from core.optimize.milp import MilpParams, solve_milp
 from core.optimize.types import AssignEntry, PlanAssignment
-from core.optimize.metrics import matching_fulfillment
+from core.optimize.metrics import matching_fulfillment, optimization_ratio
 
 
 def _graph():
@@ -335,3 +337,91 @@ def test_unknown_person_entry_is_skipped():
     # Should not raise KeyError; unknown person is skipped
     result = matching_fulfillment(g, plan, {})
     assert result == 0.0, f"Unknown person should be skipped; expected 0.0, got {result}"
+
+
+# --- optimization_ratio (spec §4.4, 2026-08-04 확정) -----------------------
+# 최적화율 = plan의 스킬적합 목적값(Σ S_ij·a_ij) / LP 완화 상한(UB, 동일 제약에서
+# z를 연속으로 완화한 LP의 스킬 목적값). 매칭 충족률(용량 소모형)과 달리 "가용
+# 자원 대비 얼마나 최적에 가까운가"를 측정한다 -- 헤드라인 목표 0.90.
+
+def _single_slot_setup():
+    """1명/1프로젝트/1요구사항 -- S_p1,proj1 = 1.0(만점)이 되도록 구성해 UB를
+    손으로 예측 가능하게 만든 시나리오. p1의 Java=5, 요구 min_level=5, headcount=1,
+    grade_headcount={MID:1}(정확히 1명), 예산·가동률은 비제약적(널널)."""
+    from core.domain.models import (
+        Dataset, Person, Project, SkillRequirement, Grade, Sector, ProjectPhase
+    )
+    people = [
+        Person(id="p1", name="P1", grade=Grade.MID, monthly_rate=1000,
+              skills={"Java": 5}, availability=[1.0] * 6),
+    ]
+    projects = [
+        Project(id="proj1", name="Proj1", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+               start_month=0, end_month=0, grade_headcount={Grade.MID: 1},
+               requirements=[SkillRequirement(skill="Java", min_level=5, headcount=1)],
+               monthly_budget=1_000_000)
+    ]
+    ds = Dataset(people=people, projects=projects, coworks=[], reviews=[])
+    g = MemoryGraph.build(ds, [])
+    eng = ScoringEngine(g)
+    S = eng.skill_matrix({})
+    assert S[0, 0] == 1.0, "setup 전제 붕괴: S_p1,proj1이 1.0이어야 손계산이 성립"
+    return g, S
+
+
+def test_optimization_ratio_perfect_plan_is_one():
+    """단일 슬롯을 정확히 최적으로 채운 실제 CBC 해는 UB와 정확히 같아야 한다
+    (numerator == UB == 1.0*1.0 == 1.0 -> ratio == 1.0). 손계산: S=1.0인 유일한
+    (사람,프로젝트) 쌍에서 제약(가동률 1.0, 예산 널널, 정원 1명)이 전혀 걸리지
+    않으므로 a=z=1이 정수해에서도 최적 -> LP 완화 UB와 일치해야 한다."""
+    g, S = _single_slot_setup()
+    plan = solve_milp(g, S, __import__("numpy").zeros((1, 1)), MilpParams(time_limit=30))
+    assert plan.entries == [AssignEntry(person_id="p1", project_id="proj1", alloc=1.0)]
+    ratio = optimization_ratio(g, S, plan, MilpParams())
+    assert abs(ratio - 1.0) < 1e-6, f"완벽 배치인데 ratio={ratio} (기대 1.0)"
+
+
+def test_optimization_ratio_hand_computed_suboptimal_plan():
+    """같은 셋업에서 '진짜 최적'이 아닌 plan을 손으로 만들어 ratio < 1을 확인한다.
+
+    UB(손계산): S_p1,proj1=1.0, 제약 무해 -> LP 완화 최적은 a=z=1 -> UB=1.0.
+    Plan(손으로 구성, CBC 미사용): a_11=0.5 (0.2<=a<=z=1 만족하는 valid 값이지만
+    스킬적합 목적값 관점에서 진짜 최적(a=1)에는 못 미침) -> numerator = 1.0*0.5=0.5.
+    ratio = 0.5/1.0 = 0.5 (정확히 손계산과 일치해야 함).
+    """
+    g, S = _single_slot_setup()
+    plan = PlanAssignment(
+        entries=[AssignEntry(person_id="p1", project_id="proj1", alloc=0.5)],
+        objective=0.0, unfilled=[], violations=[])
+    ratio = optimization_ratio(g, S, plan, MilpParams())
+    assert abs(ratio - 0.5) < 1e-6, f"손계산 기대값 0.5, 실제 {ratio}"
+
+
+def test_optimization_ratio_empty_plan_zero():
+    g, S = _single_slot_setup()
+    plan = PlanAssignment(entries=[], objective=0.0, unfilled=[], violations=[])
+    assert optimization_ratio(g, S, plan, MilpParams()) == 0.0
+
+
+def test_optimization_ratio_never_exceeds_one_on_real_solved_plan():
+    """실제 CBC로 (synergy 포함) 전체 목적함수로 푼 plan에 대해서도 ratio가
+    이론적 상한 1.0을 넘지 않는지(LP relaxation duality) 구조적으로 검증한다.
+    synergy 항이 목적함수에 있으므로 실제 plan의 skill-only term은 순수
+    skill-maximizing LP의 UB보다 낮을 수 있다(=ratio<1이 자연스러움) -- 이 테스트는
+    '항상 1.0'이 아니라 '항상 <=1.0'만 확인한다."""
+    ds = generate_dataset(25, 5, seed=3)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    eng = ScoringEngine(g)
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    params = MilpParams(time_limit=60)
+    plan = solve_milp(g, S, C, params)
+    ratio = optimization_ratio(g, S, plan, params)
+    assert 0.0 <= ratio <= 1.0 + 1e-6, f"ratio={ratio}가 [0,1] 범위를 벗어남"
+
+
+def test_optimization_ratio_unknown_person_entry_is_skipped():
+    g, S = _single_slot_setup()
+    plan = PlanAssignment(
+        entries=[AssignEntry(person_id="p_unknown", project_id="proj1", alloc=1.0)],
+        objective=0.0, unfilled=[], violations=[])
+    assert optimization_ratio(g, S, plan, MilpParams()) == 0.0
