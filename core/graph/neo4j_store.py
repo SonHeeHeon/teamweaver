@@ -10,6 +10,18 @@ def get_driver(uri: str | None = None) -> neo4j.Driver:
 def load_neo4j(driver, ds: Dataset, parsed: list[ParsedReview]) -> None:
     pol = {(p.reviewer_id, p.reviewee_id): p for p in parsed}
     with driver.session() as s:
+        # Uniqueness constraints implicitly create backing indexes on the properties
+        # MERGE keys on below (Person.id, Skill.name, Project.id). Without these,
+        # every MERGE is a full label scan (see 2026-08-02-neo4j-store.md PROFILE:
+        # NodeByLabelScan rows=300 dbHits=301, 78% of a 1-hop synergy query's total
+        # dbHits) and the loader's n MERGEs against an unindexed label is O(n^2)
+        # overall. IF NOT EXISTS makes this safe to call on every load.
+        s.run("CREATE CONSTRAINT person_id_unique IF NOT EXISTS "
+              "FOR (p:Person) REQUIRE p.id IS UNIQUE")
+        s.run("CREATE CONSTRAINT skill_name_unique IF NOT EXISTS "
+              "FOR (k:Skill) REQUIRE k.name IS UNIQUE")
+        s.run("CREATE CONSTRAINT project_id_unique IF NOT EXISTS "
+              "FOR (j:Project) REQUIRE j.id IS UNIQUE")
         s.run("MATCH (n) DETACH DELETE n")
         s.run("UNWIND $rows AS r MERGE (p:Person {id: r.id}) "
               "SET p.name = r.name, p.grade = r.grade, p.rate = r.rate",
