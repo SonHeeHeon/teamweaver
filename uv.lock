@@ -403,7 +403,7 @@ requires-dist = [
     { name = "neo4j", specifier = ">=5.20" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "openai", specifier = ">=1.40" },
-    { name = "pulp", specifier = ">=2.8" },
+    { name = "pulp", specifier = ">=2.8,<4" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "scipy", specifier = ">=1.13" },
     { name = "tiktoken", specifier = ">=0.7" },
