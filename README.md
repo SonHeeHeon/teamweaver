@@ -27,12 +27,24 @@ uv run python scripts/generate_fixtures.py --people 100 --projects 20 --seed 42 
 - `reviews_ko.json` contains deterministic **template-generated** Korean text
   (`"{items} 측면이 뛰어나/아쉬워 ..."`), not natural LLM-written peer reviews.
 - `parsed_reviews.json` was produced by the **rule-based** parser
-  (`parse_reviews_rule_based`), not the LLM structured-output parser.
+  (`parse_reviews_rule_based`), not the LLM structured-output parser. Its
+  `text_polarity` comes from `core.datagen.parse_reviews._text_polarity`, a
+  small deterministic **Korean sentiment-cue lexicon** (weighted substring
+  matches over words like `뛰어나`/`좋았습니다` vs `아쉬워`/`어려움`/`부족`,
+  normalized to `[-1, 1]`) applied to each review's own text — a stand-in for
+  the LLM path, not a reproduction of it. It is intentionally simple, so on
+  this template-generated corpus (whose closing clause is fixed per polarity)
+  it comes out to the same value for every review; see
+  `.omc/reports/2026-08-04-final-review-fixes.md` (FIX 3) for the measured
+  numbers and why that's an honest limitation of a template-only fallback
+  rather than the parser ignoring the text.
 - The `--review-mode llm` code path in `scripts/generate_fixtures.py`
   (`rewrite_reviews_with_llm` + `parse_reviews_llm`, wired through
   `core.config.load_env`/`load_pricing`) is implemented and reviewed against
   its interfaces, but has **not been executed** — it is untested by actual
-  execution.
+  execution. The real "Hybrid Data Pipeline" signal (LLM-parsed free text
+  contributing information structured checkboxes don't) only materializes
+  once this path is actually run against real natural-language reviews.
 
 **Once an `OPENAI_API_KEY` is available**, regenerate the fixture for real
 before relying on it for anything reviewer-facing:
@@ -53,6 +65,8 @@ divided by the LP-relaxation upper bound of that same skill objective
 fulfillment. On this fixture Plan A reaches optimization_ratio ≈ 0.93 with
 zero unfilled required slots, while matching fulfillment (a stricter,
 capacity-consuming secondary metric — the same person's allocation is split
-across every skill slot they qualify for) reads ≈ 0.54 by construction, not
+across every skill slot they qualify for) reads ≈ 0.55 by construction, not
 because staffing is short. Exact numbers, formulas, and the reasoning are in
-the report above.
+the report above. `tests/test_e2e_smoke.py` also solves Greedy on the same
+frozen fixture and asserts MILP's optimization_ratio beats it
+(MILP ≈ 0.93 vs Greedy ≈ 0.71) as a regression guard on the metric itself.
