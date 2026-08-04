@@ -13,6 +13,7 @@ class MemoryGraph:
     people: list[Person]
     projects: list[Project]
     pid_index: dict[str, int]
+    project_index: dict[str, int]
     skill_index: dict[str, int]
     skill_levels: np.ndarray
     cowork_months: csr_matrix
@@ -22,6 +23,7 @@ class MemoryGraph:
     @classmethod
     def build(cls, ds: Dataset, parsed: list[ParsedReview]) -> "MemoryGraph":
         pid = {p.id: i for i, p in enumerate(ds.people)}
+        jidx = {j.id: k for k, j in enumerate(ds.projects)}
         skills = sorted({s for p in ds.people for s in p.skills}
                         | {r.skill for j in ds.projects for r in j.requirements})
         sidx = {s: k for k, s in enumerate(skills)}
@@ -49,4 +51,4 @@ class MemoryGraph:
             for evidence in p_.evidence:
                 ev[key].append((p_.reviewer_id, evidence))
         pair_score = {k: float(np.mean(v)) for k, v in acc.items()}
-        return cls(ds.people, ds.projects, pid, sidx, L, cw, pair_score, dict(ev))
+        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev))

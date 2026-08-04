@@ -1,4 +1,3 @@
-import numpy as np
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.memory_graph import MemoryGraph, _item_score

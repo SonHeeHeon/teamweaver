@@ -1,5 +1,4 @@
 import sqlite3
-from pathlib import Path
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.sqlite_store import build_sqlite, synergy_context_sql

@@ -1,7 +1,6 @@
 import numpy as np
+from core.config import DEFAULT_WEIGHT
 from core.graph.memory_graph import MemoryGraph
-
-DEFAULT_WEIGHT = 3.0
 
 class ScoringEngine:
     def __init__(self, graph: MemoryGraph, alpha: float = 0.4, beta: float = 0.6):

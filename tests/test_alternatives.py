@@ -87,6 +87,7 @@ class _FakeGraph:
     def __init__(self, project_ids, pid_index):
         self.projects = [SimpleNamespace(id=jid) for jid in project_ids]
         self.pid_index = pid_index
+        self.project_index = {jid: k for k, jid in enumerate(project_ids)}
 
 
 def test_generate_plans_still_finds_alternatives_when_planA_objective_is_negative(monkeypatch):

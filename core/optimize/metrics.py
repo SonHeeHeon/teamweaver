@@ -1,10 +1,9 @@
 import numpy as np
 import pulp
+from core.config import DEFAULT_WEIGHT
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.milp import MilpParams
 from core.optimize.types import PlanAssignment
-
-DEFAULT_WEIGHT = 3.0
 
 
 def matching_fulfillment(graph: MemoryGraph, plan: PlanAssignment,
@@ -130,7 +129,7 @@ def optimization_ratio(graph: MemoryGraph, S: np.ndarray, plan: PlanAssignment,
     ratio는 이론상 항상 <= 1.0.
     """
     pidx = graph.pid_index
-    jidx = {j.id: k for k, j in enumerate(graph.projects)}
+    jidx = graph.project_index
     numerator = sum(
         S[pidx[e.person_id], jidx[e.project_id]] * e.alloc
         for e in plan.entries

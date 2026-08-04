@@ -66,6 +66,7 @@ def test_greedy_violations_populated_deterministic():
             self.people = people
             self.projects = projects
             self.pid_index = {p.id: i for i, p in enumerate(people)}
+            self.project_index = {p.id: i for i, p in enumerate(projects)}
 
     g = MockMemoryGraph(people, projects)
     plan = solve_greedy(g, S)
@@ -123,6 +124,7 @@ def test_greedy_selects_highest_s_candidate():
             self.people = people
             self.projects = projects
             self.pid_index = {p.id: i for i, p in enumerate(people)}
+            self.project_index = {p.id: i for i, p in enumerate(projects)}
 
     g = MockMemoryGraph(people, projects)
     plan = solve_greedy(g, S)

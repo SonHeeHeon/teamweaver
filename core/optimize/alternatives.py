@@ -64,7 +64,7 @@ def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
     plan_a_params = params.model_copy(update={"gap": min(params.gap, _PLAN_A_GAP)})
     plan_a = solve_milp(graph, S, C, plan_a_params)
     plans = [plan_a]
-    jdx = {j.id: k for k, j in enumerate(graph.projects)}
+    jdx = graph.project_index
     pdx = graph.pid_index
     for _ in range(n_alternatives):
         prev_sets = [p.pairs() for p in plans]

@@ -6,7 +6,7 @@ from core.optimize.types import AssignEntry, PlanAssignment
 def solve_greedy(graph: MemoryGraph, S: np.ndarray) -> PlanAssignment:
     remaining = {p.id: list(p.availability) for p in graph.people}
     entries, unfilled, violations = [], [], []
-    proj_index = {p.id: k for k, p in enumerate(graph.projects)}
+    proj_index = graph.project_index
 
     for j, proj in sorted(enumerate(graph.projects), key=lambda t: t[1].start_month):
         cost = 0.0
