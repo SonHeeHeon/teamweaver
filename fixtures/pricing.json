@@ -1,11 +1,15 @@
 {
-  "as_of": "2026-08-02",
+  "as_of": "2026-08-05",
   "currency": "USD",
-  "gen_model": "gpt-5",
-  "parse_model": "gpt-5-mini",
+  "_policy": "개발/반복 단계는 mini·nano로 비용을 억제하고, 최종 산출물 생성 시에만 gen_model을 gpt-5로 올린다. 모델 교체는 이 파일만 수정하면 되며 코드 변경은 불필요하다.",
+  "gen_model": "gpt-5-mini",
+  "parse_model": "gpt-5-nano",
+  "final_gen_model": "gpt-5",
+  "final_parse_model": "gpt-5-mini",
   "models": {
-    "gpt-5":      {"input_per_1m": 0.625, "output_per_1m": 5.0},
-    "gpt-5-mini": {"input_per_1m": 0.25, "output_per_1m": 2.0}
+    "gpt-5":      {"input_per_1m": 1.25, "output_per_1m": 10.0},
+    "gpt-5-mini": {"input_per_1m": 0.25, "output_per_1m": 2.0},
+    "gpt-5-nano": {"input_per_1m": 0.05, "output_per_1m": 0.40}
   },
-  "source_note": "verified via public aggregators (pricepertoken.com, benchlm.ai) on 2026-08-02"
+  "source_note": "OpenAI 공식 가격 페이지(developers.openai.com/api/docs/pricing)에서 2026-08-05 확인. 표준(Standard) 티어 기준."
 }
