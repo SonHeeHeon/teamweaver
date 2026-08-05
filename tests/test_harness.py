@@ -12,14 +12,18 @@ def test_measure_shape_and_ordering():
 
 def test_measure_excludes_warmup_from_stats():
     calls = []
-    harness.measure(lambda: calls.append(1), repeats=4, warmup=3)
-    assert len(calls) == 7           # 웜업 3 + 측정 4 = 총 7회 실행
+    def fn():
+        calls.append(1)
+        time.sleep(0.02 if len(calls) <= 3 else 0.001)   # 웜업 3회만 느리게
+    r = harness.measure(fn, repeats=4, warmup=3)
+    assert len(calls) == 7                      # 웜업 3 + 측정 4
+    assert r["max_ms"] < 15.0, "웜업(20ms)이 통계에 섞이면 실패한다"
 
 
 def test_environment_records_versions():
     env = harness.environment()
     assert env["python"].startswith("3.12")
-    for key in ("platform", "cpu_count", "packages"):
+    for key in ("platform", "cpu_count", "packages", "cbc"):
         assert key in env
     assert "numpy" in env["packages"]
 

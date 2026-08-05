@@ -3,6 +3,7 @@ import json
 import os
 import platform
 import statistics as st
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -12,6 +13,23 @@ from core.config import REPO_ROOT
 
 RESULTS_DIR = REPO_ROOT / "experiments" / "results"
 _TRACKED = ("numpy", "scipy", "pulp", "neo4j", "tiktoken", "openai", "pandas")
+
+
+def _cbc_version() -> str:
+    """Defensively get CBC binary version. Returns string suitable for environment record."""
+    try:
+        import pulp
+        solver = pulp.PULP_CBC_CMD(msg=0)
+        path = getattr(solver, "path", None)
+        if not path:
+            return "unknown (no solver path)"
+        out = subprocess.run([path, "-quit"], capture_output=True, text=True, timeout=10)
+        for line in (out.stdout or "").splitlines():
+            if "Version" in line:
+                return line.strip()
+        return f"unknown (path={path})"
+    except Exception as exc:
+        return f"unavailable ({type(exc).__name__})"
 
 
 def measure(fn, repeats: int = 20, warmup: int = 3) -> dict:
@@ -38,6 +56,7 @@ def environment() -> dict:
             pkgs[name] = "not installed"
     return {"python": sys.version.split()[0], "platform": platform.platform(),
             "machine": platform.machine(), "cpu_count": os.cpu_count(),
+            "cbc": _cbc_version(),
             "packages": pkgs}
 
 
