@@ -19,6 +19,7 @@ class MemoryGraph:
     cowork_months: csr_matrix
     pair_review_score: dict[tuple[int, int], float]
     pair_evidence: dict[tuple[int, int], list[tuple[str, str]]] = field(default_factory=dict)
+    node_polarity: dict[int, float] = field(default_factory=dict)
 
     @classmethod
     def build(cls, ds: Dataset, parsed: list[ParsedReview]) -> "MemoryGraph":
@@ -51,4 +52,36 @@ class MemoryGraph:
             for evidence in p_.evidence:
                 ev[key].append((p_.reviewer_id, evidence))
         pair_score = {k: float(np.mean(v)) for k, v in acc.items()}
-        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev))
+        pol_acc: dict[int, list[float]] = defaultdict(list)
+        for p_ in parsed:
+            pol_acc[pid[p_.reviewee_id]].append(p_.text_polarity)
+        node_pol = {k: float(np.mean(v)) for k, v in pol_acc.items()}
+        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev), node_pol)
+
+    def synergy_context_memory(self, person_ids: list[str],
+                               hops: int) -> list[tuple[str, str, float | None]]:
+        """hops 이내 도달 인력과 그들의 평균 리뷰 극성.
+
+        sqlite_store.synergy_context_sql / neo4j_store.synergy_context_cypher 와
+        동일 의미론: (src, node, avg_polarity), node != src, 도달 집합은 hops
+        이내 전부. 희소행렬 프론티어 확장으로 계산한다 — 이것이 인메모리 방식의
+        정직한 구현이며, 실험 1의 세 번째 비교 주체다.
+        """
+        adj = (self.cowork_months > 0)          # 불린 인접행렬
+        ids = [p.id for p in self.people]
+        out: list[tuple[str, str, float | None]] = []
+        for pid_str in person_ids:
+            src = self.pid_index[pid_str]
+            frontier = np.zeros(len(ids), dtype=bool)
+            frontier[src] = True
+            reached = frontier.copy()
+            for _ in range(hops):
+                nxt = (adj.T @ frontier.astype(np.int8)) > 0   # 한 홉 확장
+                frontier = nxt & ~reached
+                if not frontier.any():
+                    break
+                reached |= frontier
+            reached[src] = False
+            for idx in np.flatnonzero(reached):
+                out.append((pid_str, ids[int(idx)], self.node_polarity.get(int(idx))))
+        return out

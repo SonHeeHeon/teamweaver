@@ -184,3 +184,55 @@ def test_item_score_arithmetic_hand_computed():
     actual = _item_score(r)
     assert abs(actual - expected) < 1e-9, \
         f"Item score mismatch: actual={actual}, expected={expected}"
+
+def _chain_graph():
+    """A–B–C 체인 + 고립 노드 D. 인덱스: A=0,B=1,C=2,D=3"""
+    from core.domain.models import CoworkRecord, Dataset, Grade, Person, HORIZON_MONTHS
+    people = [Person(id=f"p{i:03d}", name=f"사람{i}", grade=Grade.MID, monthly_rate=1000,
+                     skills={"Java": 3}, availability=[1.0] * HORIZON_MONTHS) for i in range(4)]
+    coworks = [CoworkRecord(a_id="p000", b_id="p001", co_months=3, project_count=1),
+               CoworkRecord(a_id="p001", b_id="p002", co_months=3, project_count=1)]
+    ds = Dataset(people=people, projects=[], coworks=coworks, reviews=[])
+    return ds, MemoryGraph.build(ds, [])
+
+def test_memory_traversal_1hop():
+    _, g = _chain_graph()
+    rows = g.synergy_context_memory(["p000"], hops=1)
+    assert {r[1] for r in rows} == {"p001"}
+    assert all(r[0] == "p000" for r in rows)
+
+def test_memory_traversal_2hop_reaches_transitively():
+    _, g = _chain_graph()
+    assert {r[1] for r in g.synergy_context_memory(["p000"], hops=2)} == {"p001", "p002"}
+
+def test_memory_traversal_excludes_source_and_isolated():
+    _, g = _chain_graph()
+    nodes = {r[1] for r in g.synergy_context_memory(["p000"], hops=3)}
+    assert "p000" not in nodes and "p003" not in nodes
+
+def test_memory_traversal_multisource_keeps_src_separate():
+    _, g = _chain_graph()
+    rows = g.synergy_context_memory(["p000", "p002"], hops=1)
+    by_src = {}
+    for src, node, _ in rows:
+        by_src.setdefault(src, set()).add(node)
+    assert by_src == {"p000": {"p001"}, "p002": {"p001"}}
+
+def test_memory_traversal_matches_sqlite_backend(tmp_path):
+    """세 백엔드 공정성: 인메모리 결과가 SQLite와 동일한 도달 집합이어야 한다."""
+    from core.datagen.generator import generate_dataset
+    from core.datagen.parse_reviews import parse_reviews_rule_based
+    from core.graph.sqlite_store import build_sqlite, synergy_context_sql
+    import sqlite3
+    ds = generate_dataset(60, 12, seed=11)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    g = MemoryGraph.build(ds, parsed)
+    db = tmp_path / "cmp.db"
+    build_sqlite(ds, parsed, db)
+    conn = sqlite3.connect(db)
+    seeds = [p.id for p in ds.people[:5]]
+    for hops in (1, 2, 3):
+        mem = {(r[0], r[1]) for r in g.synergy_context_memory(seeds, hops)}
+        sql = {(r[0], r[1]) for r in synergy_context_sql(conn, seeds, hops)}
+        assert mem == sql, f"hops={hops} 도달 집합 불일치"
+    conn.close()
