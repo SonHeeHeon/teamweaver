@@ -281,3 +281,41 @@ def test_pruned_pairs_selects_highest_abs_c_not_arbitrary():
     assert (0, 1) in pairs
     # 원래 값 기준으로 두번째로 작았던 쌍(값=2.0, (0,2))은 포함되면 안 됨
     assert (0, 2) not in pairs
+
+
+def test_pruned_pairs_respects_absolute_cap():
+    rng = np.random.default_rng(0)
+    C = rng.normal(size=(200, 200)); C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    # 200명 → 19,900쌍, 15% = 2,985쌍. 상한 500이면 500이 이겨야 한다.
+    pairs = pruned_pairs(C, 0.15, max_pairs=500)
+    assert len(pairs) == 500
+    assert all(i < j for i, j in pairs)
+    assert len(set(pairs)) == 500
+
+
+def test_pruned_pairs_cap_selects_strongest_by_abs_c():
+    rng = np.random.default_rng(1)
+    C = rng.normal(size=(60, 60)); C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    pairs = pruned_pairs(C, 1.0, max_pairs=25)
+    chosen = min(abs(C[p]) for p in pairs)
+    rejected = [(i, j) for i in range(60) for j in range(i + 1, 60) if (i, j) not in set(pairs)]
+    assert chosen >= max(abs(C[p]) for p in rejected) - 1e-12
+
+
+def test_pruned_pairs_ratio_wins_when_smaller_than_cap():
+    rng = np.random.default_rng(2)
+    C = rng.normal(size=(50, 50)); C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    # 50명 → 1,225쌍, 10% = 122쌍 < 상한 1000
+    assert len(pruned_pairs(C, 0.10, max_pairs=1000)) == 122
+
+
+def test_pruned_pairs_default_cap_bounds_large_n():
+    rng = np.random.default_rng(3)
+    C = rng.normal(size=(400, 400)); C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    # 기본 MilpParams.max_pairs 가 적용되어 상한을 넘지 않아야 한다
+    p = MilpParams()
+    assert len(pruned_pairs(C, p.pair_keep_ratio, max_pairs=p.max_pairs)) <= p.max_pairs

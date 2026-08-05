@@ -28,13 +28,31 @@ class MilpParams(BaseModel):
     slack_penalty: float = 100.0
     time_limit: int = 120
     gap: float = 0.05
+    max_pairs: int = 5000
 
 
-def pruned_pairs(C: np.ndarray, keep_ratio: float) -> list[tuple[int, int]]:
+def pruned_pairs(C: np.ndarray, keep_ratio: float,
+                 max_pairs: int | None = None) -> list[tuple[int, int]]:
+    """|C| 상위 쌍만 남긴다. keep_ratio 기반 개수와 max_pairs 중 작은 값을 채택.
+
+    keep_ratio 단독으로는 상한이 되지 못한다 — 쌍 수가 n(n-1)/2로 제곱 증가하므로
+    그 15%도 여전히 제곱이다. 규모 스윕(최대 1000명)에서 y 변수가 1,500만 개까지
+    늘어 CBC가 풀지 못하므로 절대 상한이 필요하다. 잘라낸 양은 호출부에서 로그로
+    남겨 리포트에 명시할 것(조용한 절삭은 '전부 고려했다'는 오해를 부른다).
+    """
     n = C.shape[0]
-    all_pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
-    k = int(keep_ratio * len(all_pairs))
-    return sorted(all_pairs, key=lambda p: -abs(C[p]))[:k]
+    iu = np.triu_indices(n, k=1)                  # 상삼각 = i<j 쌍 전체
+    total = iu[0].size
+    k = int(keep_ratio * total)
+    if max_pairs is not None:
+        k = min(k, max_pairs)
+    k = max(0, min(k, total))
+    if k == 0:
+        return []
+    mags = np.abs(C[iu])
+    top = np.argpartition(mags, total - k)[total - k:]   # 부분 선택 O(N)
+    top = top[np.argsort(-mags[top], kind="stable")]      # 상위 k개만 정렬
+    return [(int(iu[0][t]), int(iu[1][t])) for t in top]
 
 
 def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, int]]:
@@ -66,7 +84,7 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
-    pruned = pruned_pairs(C, params.pair_keep_ratio)         # top |C| pairs -> synergy reward term
+    pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)         # top |C| pairs -> synergy reward term
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)  # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
