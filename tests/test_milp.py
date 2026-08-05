@@ -319,3 +319,64 @@ def test_pruned_pairs_default_cap_bounds_large_n():
     # 기본 MilpParams.max_pairs 가 적용되어 상한을 넘지 않아야 한다
     p = MilpParams()
     assert len(pruned_pairs(C, p.pair_keep_ratio, max_pairs=p.max_pairs)) <= p.max_pairs
+
+
+def test_pruned_pairs_tie_break_is_deterministic_by_index():
+    """Ties in |C| values must resolve deterministically by (i,j) index order."""
+    # (0,1), (0,2), (0,3) all have |C|=0.5 (tied). Asking for k=2 should pick (0,1), (0,2).
+    C = np.zeros((4, 4))
+    for i, j in [(0, 1), (0, 2), (0, 3)]:
+        C[i, j] = C[j, i] = 0.5
+    assert pruned_pairs(C, 1.0, max_pairs=2) == [(0, 1), (0, 2)]
+
+
+def test_pruned_pairs_matches_reference_sort_on_real_fixture():
+    """On the real demo fixture, must match the reference sorted() implementation
+    (deterministic, reproducible enumeration order) to ensure sweep benchmark numbers
+    don't silently diverge due to tie-breaking randomness."""
+    # Generate the demo fixture exactly as test_e2e_smoke does
+    ds = generate_dataset(100, 20, seed=0)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    eng = ScoringEngine(g)
+    C = eng.synergy_matrix()
+
+    n = C.shape[0]
+    k = int(0.15 * (n * (n - 1) // 2))
+
+    # Reference: the original sorted() implementation
+    reference = sorted([(i, j) for i in range(n) for j in range(i + 1, n)],
+                       key=lambda p: -abs(C[p]))[:k]
+
+    # New implementation must produce identical ordered list, not just set
+    result = pruned_pairs(C, 0.15, max_pairs=5000)
+    assert result == reference, f"Mismatch: {len(result)} vs {len(reference)} or ordering differs"
+
+
+def test_pruned_pairs_boundary_k_zero():
+    """Edge case: keep_ratio=0 should return empty list."""
+    C = np.random.default_rng(10).normal(size=(10, 10))
+    C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    assert pruned_pairs(C, 0.0, max_pairs=5000) == []
+    assert pruned_pairs(C, 0.0, max_pairs=10) == []
+
+
+def test_pruned_pairs_boundary_k_one():
+    """Edge case: asking for exactly 1 pair."""
+    C = np.random.default_rng(11).normal(size=(10, 10))
+    C = (C + C.T) / 2
+    np.fill_diagonal(C, 0.0)
+    pairs = pruned_pairs(C, 1.0 / 45, max_pairs=5000)  # C(10,2)=45, so 1/45 ≈ 0.022 -> int(1)
+    assert len(pairs) == 1
+
+
+def test_pruned_pairs_boundary_k_total():
+    """Edge case: keep_ratio=1.0 returns all pairs (unless capped)."""
+    C = np.ones((5, 5))  # All pairs equally strong
+    np.fill_diagonal(C, 0.0)
+    total = 5 * 4 // 2  # 10
+    pairs = pruned_pairs(C, 1.0, max_pairs=5000)
+    assert len(pairs) == total
+    # With a cap smaller than total, should return exactly the cap count
+    pairs_capped = pruned_pairs(C, 1.0, max_pairs=5)
+    assert len(pairs_capped) == 5

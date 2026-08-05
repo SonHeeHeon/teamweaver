@@ -1,9 +1,12 @@
+import logging
 import math
 import numpy as np
 import pulp
 from pydantic import BaseModel
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.types import AssignEntry, PlanAssignment
+
+logger = logging.getLogger(__name__)
 
 
 def _floor2(v: float) -> float:
@@ -39,6 +42,11 @@ def pruned_pairs(C: np.ndarray, keep_ratio: float,
     그 15%도 여전히 제곱이다. 규모 스윕(최대 1000명)에서 y 변수가 1,500만 개까지
     늘어 CBC가 풀지 못하므로 절대 상한이 필요하다. 잘라낸 양은 호출부에서 로그로
     남겨 리포트에 명시할 것(조용한 절삭은 '전부 고려했다'는 오해를 부른다).
+
+    Tie-breaking: when |C| values are equal (including the common case of many
+    zero-synergy pairs), selection is deterministic by index order (i, j) to
+    ensure reproducible results across runs and to match the reference sorted()
+    implementation.
     """
     n = C.shape[0]
     iu = np.triu_indices(n, k=1)                  # 상삼각 = i<j 쌍 전체
@@ -50,9 +58,17 @@ def pruned_pairs(C: np.ndarray, keep_ratio: float,
     if k == 0:
         return []
     mags = np.abs(C[iu])
-    top = np.argpartition(mags, total - k)[total - k:]   # 부분 선택 O(N)
-    top = top[np.argsort(-mags[top], kind="stable")]      # 상위 k개만 정렬
-    return [(int(iu[0][t]), int(iu[1][t])) for t in top]
+
+    # Use argsort with stable sort to get deterministic, reproducible ordering that
+    # matches the reference sorted() implementation exactly. When |C| values are tied,
+    # stable sort preserves enumeration order (which argsort respects).
+    # This is O(N log N) but correctly handles the common case of many zero-synergy
+    # pairs (4,749 of 4,950 in the demo fixture) tied at |C|=0.
+    order = np.argsort(-mags, kind="stable")
+    top_indices = order[:k]
+
+    # Return pairs in the order they appear in the sorted result (by descending |C|)
+    return [(int(iu[0][t]), int(iu[1][t])) for t in top_indices]
 
 
 def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, int]]:
@@ -85,6 +101,8 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)         # top |C| pairs -> synergy reward term
+    if len(pruned) == params.max_pairs:
+        logger.info(f"Synergy pair pruning: cap applied (limited to {params.max_pairs}/{int(0.5 * C.shape[0] * (C.shape[0] - 1))} total pairs)")
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)  # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
