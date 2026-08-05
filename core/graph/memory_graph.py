@@ -76,7 +76,7 @@ class MemoryGraph:
             frontier[src] = True
             reached = frontier.copy()
             for _ in range(hops):
-                nxt = (adj.T @ frontier.astype(np.int8)) > 0   # 한 홉 확장
+                nxt = (adj @ frontier.astype(np.int8)) > 0     # 한 홉 확장 (cowork_months는 대칭이므로 .T 불필요)
                 frontier = nxt & ~reached
                 if not frontier.any():
                     break

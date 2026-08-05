@@ -1,3 +1,4 @@
+import pytest
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.memory_graph import MemoryGraph, _item_score
@@ -236,3 +237,34 @@ def test_memory_traversal_matches_sqlite_backend(tmp_path):
         sql = {(r[0], r[1]) for r in synergy_context_sql(conn, seeds, hops)}
         assert mem == sql, f"hops={hops} 도달 집합 불일치"
     conn.close()
+
+@pytest.mark.slow
+def test_memory_matches_sqlite_at_larger_scale_and_full_hop_range(tmp_path):
+    """실험 1의 3자 비교 전제: 인메모리와 SQLite가 더 크고 조밀한 그래프에서도
+    hops 1~4 전 구간에 걸쳐 동일한 도달 집합과 극성을 반환해야 한다."""
+    import sqlite3
+    from core.datagen.generator import generate_dataset
+    from core.datagen.parse_reviews import parse_reviews_rule_based
+    from core.graph.sqlite_store import build_sqlite, synergy_context_sql
+
+    ds = generate_dataset(200, 40, seed=7)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    g = MemoryGraph.build(ds, parsed)
+    db = tmp_path / "parity.db"
+    build_sqlite(ds, parsed, db)
+    conn = sqlite3.connect(db)
+    seeds = [p.id for p in ds.people[:5]]
+    try:
+        for hops in (1, 2, 3, 4):
+            mem = {(r[0], r[1]): r[2] for r in g.synergy_context_memory(seeds, hops)}
+            sql = {(r[0], r[1]): r[2] for r in synergy_context_sql(conn, seeds, hops)}
+            assert mem.keys() == sql.keys(), f"hops={hops} 도달 집합 불일치"
+            for key in mem:
+                a, b = mem[key], sql[key]
+                if a is None or b is None:
+                    assert a == b, f"hops={hops} {key} 극성 None 불일치"
+                else:
+                    assert abs(a - b) < 1e-9, f"hops={hops} {key} 극성 불일치"
+            print(f"hops={hops}: reached={len(mem)}")
+    finally:
+        conn.close()
