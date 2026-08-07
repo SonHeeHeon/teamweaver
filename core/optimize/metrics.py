@@ -127,6 +127,11 @@ def optimization_ratio(graph: MemoryGraph, S: np.ndarray, plan: PlanAssignment,
     UB는 plan이 만족해야 했던 것과 동일한 제약의 완화 문제 최적값이므로, 어떤
     feasible plan의 skill term도 이를 넘을 수 없다(LP relaxation duality) --
     ratio는 이론상 항상 <= 1.0.
+
+    단, 이 보장은 plan이 모든 제약(특히 예산 제약 포함)을 **만족할 때만** 유효하다.
+    Greedy 등의 근사 알고리즘이 내는 해가 제약을 위반하면 이 ratio는 보장의 대상이
+    아니다. 실제 측정값들은 그 여부와 무관하게 모두 1.0 이하로 나타나지만, 정식적인
+    ≤1.0 보장 자체는 feasible plan을 가정한다.
     """
     pidx = graph.pid_index
     jidx = graph.project_index
