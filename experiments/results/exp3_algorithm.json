@@ -24,7 +24,7 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 0.23833289742469788,
+    "solve_ms": 0.2222089096903801,
     "hit_time_limit": false,
     "objective": 12.713888888888892,
     "optimization_ratio": 0.7218497929512414,
@@ -38,7 +38,7 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 766.6702498681843,
+    "solve_ms": 913.9581250492483,
     "hit_time_limit": false,
     "objective": 16.785188155615085,
     "optimization_ratio": 0.9169329720292404,
@@ -52,7 +52,7 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 711.9980829302222,
+    "solve_ms": 749.9156249687076,
     "hit_time_limit": false,
     "objective": 16.785188155615085,
     "optimization_ratio": 0.9169329720292404,
@@ -66,7 +66,7 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 0.6604169029742479,
+    "solve_ms": 0.6561670452356339,
     "hit_time_limit": false,
     "objective": 30.366666666666653,
     "optimization_ratio": 0.7069558993323737,
@@ -80,7 +80,7 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 6933.463125023991,
+    "solve_ms": 7371.729125035927,
     "hit_time_limit": false,
     "objective": 41.05753743334324,
     "optimization_ratio": 0.9277687114186225,
@@ -94,7 +94,7 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 6880.548665998504,
+    "solve_ms": 7524.408249882981,
     "hit_time_limit": false,
     "objective": 41.05753743334324,
     "optimization_ratio": 0.9277687114186225,
@@ -108,7 +108,7 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 2.38204188644886,
+    "solve_ms": 2.603166038170457,
     "hit_time_limit": false,
     "objective": 67.68749999999999,
     "optimization_ratio": 0.6732659697943829,
@@ -122,7 +122,7 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 22628.731499891728,
+    "solve_ms": 24664.450875017792,
     "hit_time_limit": false,
     "objective": 92.05234059490077,
     "optimization_ratio": 0.8854971969806842,
@@ -136,7 +136,7 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 42584.66000016779,
+    "solve_ms": 47327.49816705473,
     "hit_time_limit": false,
     "objective": 92.05799393025396,
     "optimization_ratio": 0.8829425577453427,
@@ -158,6 +158,16 @@
     "algorithm": "milp",
     "n_people": 50,
     "seed": 42,
+    "pair_cap": 1000,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 50,
+    "seed": 42,
+    "pair_cap": 5000,
     "budget_violations": 0,
     "reported_violations": 0,
     "unfilled_slots": 0
@@ -174,6 +184,16 @@
     "algorithm": "milp",
     "n_people": 100,
     "seed": 42,
+    "pair_cap": 1000,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 100,
+    "seed": 42,
+    "pair_cap": 5000,
     "budget_violations": 0,
     "reported_violations": 0,
     "unfilled_slots": 0
@@ -190,6 +210,16 @@
     "algorithm": "milp",
     "n_people": 200,
     "seed": 42,
+    "pair_cap": 1000,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 200,
+    "seed": 42,
+    "pair_cap": 5000,
     "budget_violations": 0,
     "reported_violations": 0,
     "unfilled_slots": 0
@@ -200,7 +230,7 @@
     "n_people": 50,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 3243.773458059877,
+    "total_ms": 3447.1095842309296,
     "labels": [
      "A",
      "B",
@@ -224,7 +254,7 @@
     "n_people": 100,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 27984.765541972592,
+    "total_ms": 30552.357166074216,
     "labels": [
      "A",
      "B",
@@ -248,7 +278,7 @@
     "n_people": 200,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 176878.96449980326,
+    "total_ms": 184764.91637481377,
     "labels": [
      "A",
      "B",
@@ -271,22 +301,25 @@
   ],
   "failures": [
    {
+    "n_people": 300,
+    "n_projects": 60,
+    "seed": 42,
+    "status": "skipped",
+    "reason": "extrapolated beyond practical session budget: milp cap=1000 solve_ms 766.7 -> 6933.5 -> 22628.7 at n=50/100/200 (9.04x, then 3.26x per doubling); n=300 was attempted twice and killed (CBC healthy, not hung, but not converging inside budget) before this skip list was added"
+   },
+   {
     "n_people": 500,
     "n_projects": 100,
-    "status": "not attempted - extrapolated beyond practical budget",
-    "observed": "basis: milp cap=1000 solve_ms 767 -> 6934 -> 22629 at n=50/100/200 (~9x per doubling); n=500 would extrapolate far past any reasonable session budget"
+    "seed": 42,
+    "status": "skipped",
+    "reason": "extrapolated beyond practical session budget: milp cap=1000 solve_ms 766.7 -> 6933.5 -> 22628.7 at n=50/100/200 (9.04x, then 3.26x per doubling); n=300 was attempted twice and killed (CBC healthy, not hung, but not converging inside budget) before this skip list was added"
    },
    {
     "n_people": 1000,
     "n_projects": 200,
-    "status": "not attempted - extrapolated beyond practical budget",
-    "observed": "basis: milp cap=1000 solve_ms 767 -> 6934 -> 22629 at n=50/100/200 (~9x per doubling); n=1000 would extrapolate far beyond any reasonable session budget"
-   },
-   {
-    "n_people": 300,
-    "n_projects": 60,
-    "status": "killed - exceeded practical budget",
-    "observed": "two attempts made. Attempt 1 (default pair_caps=(1000,5000), full alternatives generation): ran continuously, CBC actively solving (not hung), still within its own per-solve budget when terminated after several minutes to switch to a tighter watchdog. Attempt 2 (20-min wall-clock ceiling, self-recording watchdog): CBC was 58s into the first MILP solve (well under its own 180s cap, 99% CPU, healthy progress) when terminated at ~94s total elapsed to finalize the report rather than exhaust the full 1200s budget — extrapolating from n=50/100/200 (0.77s/6.9s/22.6s, ~9x growth per doubling) a full scale (2 milp cap solves + up to 4 alternative-plan solves, each up to 180s CBC time_limit plus model-build overhead) was judged very unlikely to finish inside a practical session budget"
+    "seed": 42,
+    "status": "skipped",
+    "reason": "extrapolated beyond practical session budget: milp cap=1000 solve_ms 766.7 -> 6933.5 -> 22628.7 at n=50/100/200 (9.04x, then 3.26x per doubling); n=300 was attempted twice and killed (CBC healthy, not hung, but not converging inside budget) before this skip list was added"
    }
   ]
  }

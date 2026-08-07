@@ -96,11 +96,15 @@ def _run_one_scale(n_people, n_projects, seed, pair_caps, time_limit):
                      "optimization_ratio": optimization_ratio(g, S, mp, params),
                      "fulfillment": matching_fulfillment(g, mp, {}),
                      "unfilled": len(mp.unfilled), "entries": len(mp.entries)})
-        if cap == pair_caps[0]:
-            violations.append({"algorithm": "milp", "n_people": n_people, "seed": seed,
-                               "budget_violations": _budget_violations(ds, mp),
-                               "reported_violations": len(mp.violations),
-                               "unfilled_slots": len(mp.unfilled)})
+        # 예산 준수는 max_pairs(=synergy pruning 정도)와 무관한 하드 제약이므로
+        # cap마다 개별로 확인한다 — 앞서는 pair_caps[0]만 확인하고 나머지는
+        # "당연히 같을 것"이라는 추론으로 남겨뒀다(코디네이터 리뷰, 2026-08-08 반영:
+        # 리포트가 측정 대신 추론을 제시하고 있었다). cap을 기록해 둘을 구분한다.
+        violations.append({"algorithm": "milp", "n_people": n_people, "seed": seed,
+                           "pair_cap": cap,
+                           "budget_violations": _budget_violations(ds, mp),
+                           "reported_violations": len(mp.violations),
+                           "unfilled_slots": len(mp.unfilled)})
 
     t0 = time.perf_counter()
     plans = generate_plans(g, S, C, base, n_alternatives=3)
@@ -118,20 +122,37 @@ def _run_one_scale(n_people, n_projects, seed, pair_caps, time_limit):
 
 
 def run(scales=None, seeds=(42,), pair_caps=(1000, 5000), time_limit: int = 180,
-        on_scale_done=None) -> dict:
+        on_scale_done=None, skip_scales: dict[int, str] | None = None) -> dict:
     """스케일 스윕을 실행한다.
 
     스케일 하나가 예외를 던져도(예: 대규모에서 CBC가 `Infeasible`을 보고하거나
     메모리 압박으로 실패) 전체 스윕은 죽지 않는다 — `failures`에 기록하고 다음
-    스케일로 진행한다. `on_scale_done`이 주어지면 스케일이 끝날 때마다(성공/실패
-    무관) 그 시점까지 누적된 결과 dict로 호출된다 — 호출자가 스케일 단위로 중간
-    저장(체크포인트)할 수 있게 하기 위함이다.
+    스케일로 진행한다. `on_scale_done`이 주어지면 스케일이 끝날 때마다(성공/실패/
+    스킵 무관) 그 시점까지 누적된 결과 dict로 호출된다 — 호출자가 스케일 단위로
+    중간 저장(체크포인트)할 수 있게 하기 위함이다.
+
+    `skip_scales`(선택, {n_people: reason})가 주어지면 해당 n_people은 아예
+    시도하지 않고(예: n=300/500/1000이 실용적 세션 예산을 초과할 것으로 판단됨)
+    예외 경로와 **동일한 키 스키마**(n_people, n_projects, seed, status, reason)로
+    `failures`에 기록한다 — 코디네이터 리뷰 반영(2026-08-08): 이전에는 이런
+    스킵 결정을 저장소 밖 도구가 JSON을 직접 편집해 기록했는데, `main()`을
+    재실행하면 그 항목이 재현되지 않아 커밋된 결과물의 provenance(출처 추적성)가
+    깨졌다. 이제는 스킵도 `run()`이 직접 만들어낸다 — `main()`을 다시 돌리면
+    똑같은 결과가 나온다.
     """
     scales = scales or datasets.SCALES
+    skip_scales = skip_scales or {}
     rows, violations, alternatives, failures = [], [], [], []
 
     for n_people, n_projects in scales:
         for seed in seeds:
+            if n_people in skip_scales:
+                failures.append({"n_people": n_people, "n_projects": n_projects, "seed": seed,
+                                 "status": "skipped", "reason": skip_scales[n_people]})
+                if on_scale_done is not None:
+                    on_scale_done({"rows": rows, "violations": violations,
+                                  "alternatives": alternatives, "failures": failures})
+                continue
             try:
                 r, v, a = _run_one_scale(n_people, n_projects, seed, pair_caps, time_limit)
                 rows.extend(r)
@@ -150,6 +171,18 @@ def run(scales=None, seeds=(42,), pair_caps=(1000, 5000), time_limit: int = 180,
            "failures": failures}
 
 
+# n=300/500/1000: n=50/100/200에서 실측한 MILP solve_ms 증가(766.7ms -> 6933.5ms
+# -> 22628.7ms, 각각 9.04배·3.26배)를 근거로, 스케일 하나당 최대 6번의 MILP급
+# solve(greedy+cap 2개+대안 최대 3개)가 누적되면 실용적 세션 예산을 넘어설 것으로
+# 판단해 건너뛴다. n=300은 실제로 두 차례 시도했고(둘 다 CBC가 정상 진행 중이었지,
+# 멈춘 게 아니었다) 예산 안에 끝내지 못해 중단했다 — task-5-report.md 참고.
+_SKIP_REASON = ("extrapolated beyond practical session budget: milp cap=1000 solve_ms "
+               "766.7 -> 6933.5 -> 22628.7 at n=50/100/200 (9.04x, then 3.26x per "
+               "doubling); n=300 was attempted twice and killed (CBC healthy, not "
+               "hung, but not converging inside budget) before this skip list was added")
+DEFAULT_SKIP_SCALES = {300: _SKIP_REASON, 500: _SKIP_REASON, 1000: _SKIP_REASON}
+
+
 def main():
     def _checkpoint(partial):
         path = harness.save_result("exp3_algorithm", partial)
@@ -157,7 +190,7 @@ def main():
         print(f"checkpoint: saved {path} after scale #{n_done} "
               f"(rows={len(partial['rows'])} failures={len(partial['failures'])})")
 
-    out = run(on_scale_done=_checkpoint)
+    out = run(on_scale_done=_checkpoint, skip_scales=DEFAULT_SKIP_SCALES)
     path = harness.save_result("exp3_algorithm", out)
     gv = sum(v["budget_violations"] for v in out["violations"] if v["algorithm"] == "greedy")
     mv = sum(v["budget_violations"] for v in out["violations"] if v["algorithm"] == "milp")

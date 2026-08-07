@@ -18,9 +18,34 @@ def test_milp_beats_greedy_on_optimization_ratio():
 def test_constraint_violations_are_recorded_per_algorithm():
     """실험의 핵심 논지: MILP는 제약을 지키고 Greedy는 예산을 넘긴다."""
     out = exp3_algorithm.run(scales=[(50, 10)], seeds=(42,), pair_caps=(1000,), time_limit=60)
-    v = {x["algorithm"]: x for x in out["violations"]}
+    v = {x["algorithm"]: x for x in out["violations"] if x["algorithm"] == "greedy"
+         or x.get("pair_cap") == 1000}
     assert v["milp"]["budget_violations"] == 0
-    assert "budget_violations" in v["greedy"]
+    assert isinstance(v["greedy"]["budget_violations"], int)
+    assert v["greedy"]["budget_violations"] >= 0
+
+
+def test_greedy_budget_violations_pinned_nonzero_at_n100():
+    """회귀 방지: budget_violations가 항상 0을 반환하는 버그가 있어도 이전 테스트는
+    통과했을 것이다(>=0 assertion은 0도 허용하므로) — 실험의 핵심 논지(Greedy가
+    예산을 넘긴다는 사실 자체)를 직접 고정한다. n=100/seed=42는 실측으로 위반이
+    정확히 1건 나오는 것이 확인된 스케일이다(task-5-report.md 참고).
+    """
+    out = exp3_algorithm.run(scales=[(100, 20)], seeds=(42,), pair_caps=(1000,), time_limit=60)
+    greedy_v = next(x for x in out["violations"] if x["algorithm"] == "greedy")
+    assert greedy_v["budget_violations"] == 1
+
+
+def test_milp_budget_violations_checked_at_every_pair_cap():
+    """MILP의 예산 준수는 max_pairs(=synergy pruning 정도)와 무관한 하드 제약이므로
+    cap마다 개별로 확인해야 한다 — 이전 구현은 pair_caps[0]에서만 확인하고 나머지
+    cap은 추론으로 남겨뒀다(코디네이터 리뷰, 2026-08-08 반영).
+    """
+    out = exp3_algorithm.run(scales=[(50, 10)], seeds=(42,), pair_caps=(200, 1000), time_limit=60)
+    milp_v = [x for x in out["violations"] if x["algorithm"] == "milp"]
+    caps = {x["pair_cap"] for x in milp_v}
+    assert caps == {200, 1000}
+    assert all(x["budget_violations"] == 0 for x in milp_v)
 
 def test_pair_cap_sweep_recorded():
     out = exp3_algorithm.run(scales=[(50, 10)], seeds=(42,), pair_caps=(200, 1000), time_limit=60)
@@ -65,3 +90,26 @@ def test_on_scale_done_checkpoints_after_each_scale():
                        on_scale_done=lambda partial: calls.append(len(partial["rows"])))
     assert len(calls) == 2
     assert calls[0] < calls[1]
+
+
+def test_skip_scales_uses_code_produced_schema():
+    """대규모 스케일을 아예 시도하지 않고 건너뛰기로 한 결정도 코드 경로를 통해
+    기록돼야 재현 가능하다(코디네이터 리뷰, 2026-08-08 반영) — out-of-repo 도구가
+    직접 JSON을 조작해 만든 failures 항목은 `main()`을 재실행하면 재현되지 않는다.
+    스킵 항목은 예외 경로와 동일한 키 스키마(n_people, n_projects, seed, status,
+    reason)를 쓴다.
+    """
+    out = exp3_algorithm.run(scales=[(50, 10), (300, 60)], seeds=(42,), pair_caps=(1000,),
+                             time_limit=60, skip_scales={300: "extrapolated beyond practical budget"})
+    ok_ns = {r["n_people"] for r in out["rows"]}
+    assert 50 in ok_ns
+    assert 300 not in ok_ns
+
+    skip_entries = [f for f in out["failures"] if f["n_people"] == 300]
+    assert len(skip_entries) == 1
+    entry = skip_entries[0]
+    assert set(entry.keys()) == {"n_people", "n_projects", "seed", "status", "reason"}
+    assert entry["n_projects"] == 60
+    assert entry["seed"] == 42
+    assert entry["status"] == "skipped"
+    assert entry["reason"] == "extrapolated beyond practical budget"
