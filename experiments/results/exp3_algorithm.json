@@ -1,0 +1,293 @@
+{
+ "environment": {
+  "python": "3.12.13",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "cbc": "Version: 2.10.3",
+  "packages": {
+   "numpy": "2.5.1",
+   "scipy": "1.18.0",
+   "pulp": "3.3.2",
+   "neo4j": "6.2.0",
+   "tiktoken": "0.13.0",
+   "openai": "2.52.0",
+   "pandas": "3.0.5"
+  }
+ },
+ "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
+ "data": {
+  "rows": [
+   {
+    "algorithm": "greedy",
+    "n_people": 50,
+    "n_projects": 10,
+    "seed": 42,
+    "pair_cap": null,
+    "solve_ms": 0.23833289742469788,
+    "hit_time_limit": false,
+    "objective": 12.713888888888892,
+    "optimization_ratio": 0.7218497929512414,
+    "fulfillment": 0.4561965811965812,
+    "unfilled": 1,
+    "entries": 39
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 50,
+    "n_projects": 10,
+    "seed": 42,
+    "pair_cap": 1000,
+    "solve_ms": 766.6702498681843,
+    "hit_time_limit": false,
+    "objective": 16.785188155615085,
+    "optimization_ratio": 0.9169329720292404,
+    "fulfillment": 0.4803418803418803,
+    "unfilled": 0,
+    "entries": 54
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 50,
+    "n_projects": 10,
+    "seed": 42,
+    "pair_cap": 5000,
+    "solve_ms": 711.9980829302222,
+    "hit_time_limit": false,
+    "objective": 16.785188155615085,
+    "optimization_ratio": 0.9169329720292404,
+    "fulfillment": 0.4803418803418803,
+    "unfilled": 0,
+    "entries": 54
+   },
+   {
+    "algorithm": "greedy",
+    "n_people": 100,
+    "n_projects": 20,
+    "seed": 42,
+    "pair_cap": null,
+    "solve_ms": 0.6604169029742479,
+    "hit_time_limit": false,
+    "objective": 30.366666666666653,
+    "optimization_ratio": 0.7069558993323737,
+    "fulfillment": 0.4606164383561644,
+    "unfilled": 0,
+    "entries": 76
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 100,
+    "n_projects": 20,
+    "seed": 42,
+    "pair_cap": 1000,
+    "solve_ms": 6933.463125023991,
+    "hit_time_limit": false,
+    "objective": 41.05753743334324,
+    "optimization_ratio": 0.9277687114186225,
+    "fulfillment": 0.5436187214611873,
+    "unfilled": 0,
+    "entries": 114
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 100,
+    "n_projects": 20,
+    "seed": 42,
+    "pair_cap": 5000,
+    "solve_ms": 6880.548665998504,
+    "hit_time_limit": false,
+    "objective": 41.05753743334324,
+    "optimization_ratio": 0.9277687114186225,
+    "fulfillment": 0.5436187214611873,
+    "unfilled": 0,
+    "entries": 114
+   },
+   {
+    "algorithm": "greedy",
+    "n_people": 200,
+    "n_projects": 40,
+    "seed": 42,
+    "pair_cap": null,
+    "solve_ms": 2.38204188644886,
+    "hit_time_limit": false,
+    "objective": 67.68749999999999,
+    "optimization_ratio": 0.6732659697943829,
+    "fulfillment": 0.4781609195402299,
+    "unfilled": 3,
+    "entries": 153
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 200,
+    "n_projects": 40,
+    "seed": 42,
+    "pair_cap": 1000,
+    "solve_ms": 22628.731499891728,
+    "hit_time_limit": false,
+    "objective": 92.05234059490077,
+    "optimization_ratio": 0.8854971969806842,
+    "fulfillment": 0.5939022988505747,
+    "unfilled": 0,
+    "entries": 234
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 200,
+    "n_projects": 40,
+    "seed": 42,
+    "pair_cap": 5000,
+    "solve_ms": 42584.66000016779,
+    "hit_time_limit": false,
+    "objective": 92.05799393025396,
+    "optimization_ratio": 0.8829425577453427,
+    "fulfillment": 0.5871321839080459,
+    "unfilled": 0,
+    "entries": 236
+   }
+  ],
+  "violations": [
+   {
+    "algorithm": "greedy",
+    "n_people": 50,
+    "seed": 42,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 1
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 50,
+    "seed": 42,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "greedy",
+    "n_people": 100,
+    "seed": 42,
+    "budget_violations": 1,
+    "reported_violations": 1,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 100,
+    "seed": 42,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   },
+   {
+    "algorithm": "greedy",
+    "n_people": 200,
+    "seed": 42,
+    "budget_violations": 2,
+    "reported_violations": 2,
+    "unfilled_slots": 3
+   },
+   {
+    "algorithm": "milp",
+    "n_people": 200,
+    "seed": 42,
+    "budget_violations": 0,
+    "reported_violations": 0,
+    "unfilled_slots": 0
+   }
+  ],
+  "alternatives": [
+   {
+    "n_people": 50,
+    "seed": 42,
+    "plan_count": 4,
+    "total_ms": 3243.773458059877,
+    "labels": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "quality_vs_a": [
+     1.0,
+     0.997882812404406,
+     0.9966110592974056,
+     0.9961274035419928
+    ],
+    "jaccard_vs_a": [
+     1.0,
+     0.6461538461538462,
+     0.6461538461538462,
+     0.6825396825396826
+    ]
+   },
+   {
+    "n_people": 100,
+    "seed": 42,
+    "plan_count": 4,
+    "total_ms": 27984.765541972592,
+    "labels": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "quality_vs_a": [
+     1.0,
+     0.995344651326425,
+     0.9902007883152111,
+     0.9873692514636278
+    ],
+    "jaccard_vs_a": [
+     1.0,
+     0.6893939393939394,
+     0.6946564885496184,
+     0.674074074074074
+    ]
+   },
+   {
+    "n_people": 200,
+    "seed": 42,
+    "plan_count": 4,
+    "total_ms": 176878.96449980326,
+    "labels": [
+     "A",
+     "B",
+     "C",
+     "D"
+    ],
+    "quality_vs_a": [
+     1.0,
+     0.9967467208396124,
+     0.9924008531121437,
+     0.9957389080546157
+    ],
+    "jaccard_vs_a": [
+     1.0,
+     0.6861313868613139,
+     0.7014925373134329,
+     0.6690647482014388
+    ]
+   }
+  ],
+  "failures": [
+   {
+    "n_people": 500,
+    "n_projects": 100,
+    "status": "not attempted - extrapolated beyond practical budget",
+    "observed": "basis: milp cap=1000 solve_ms 767 -> 6934 -> 22629 at n=50/100/200 (~9x per doubling); n=500 would extrapolate far past any reasonable session budget"
+   },
+   {
+    "n_people": 1000,
+    "n_projects": 200,
+    "status": "not attempted - extrapolated beyond practical budget",
+    "observed": "basis: milp cap=1000 solve_ms 767 -> 6934 -> 22629 at n=50/100/200 (~9x per doubling); n=1000 would extrapolate far beyond any reasonable session budget"
+   },
+   {
+    "n_people": 300,
+    "n_projects": 60,
+    "status": "killed - exceeded practical budget",
+    "observed": "two attempts made. Attempt 1 (default pair_caps=(1000,5000), full alternatives generation): ran continuously, CBC actively solving (not hung), still within its own per-solve budget when terminated after several minutes to switch to a tighter watchdog. Attempt 2 (20-min wall-clock ceiling, self-recording watchdog): CBC was 58s into the first MILP solve (well under its own 180s cap, 99% CPU, healthy progress) when terminated at ~94s total elapsed to finalize the report rather than exhaust the full 1200s budget — extrapolating from n=50/100/200 (0.77s/6.9s/22.6s, ~9x growth per doubling) a full scale (2 milp cap solves + up to 4 alternative-plan solves, each up to 180s CBC time_limit plus model-build overhead) was judged very unlikely to finish inside a practical session budget"
+   }
+  ]
+ }
+}
