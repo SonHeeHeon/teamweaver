@@ -36,47 +36,19 @@ def test_rule_based_polarity_sign():
         assert abs(p.text_polarity - expected) < 1e-9 and len(p.evidence) >= 1
 
 
-def test_template_mode_text_polarity_duplicates_item_score():
-    """Known, DOCUMENTED property of the committed (template-mode) fixture --
-    not an accident and not something a better lexicon can fix.
+def test_llm_mode_text_polarity_is_independent_of_item_score():
+    """LLM 모드에서는 자유서술 감성이 항목 선택의 결정론적 함수가 아니어야 한다.
 
-    `_template_text` (core/datagen/generator.py) builds each review's free
-    text FROM the selected checkbox items with a fixed closing clause per
-    polarity ("...측면이 뛰어나 함께 일하기 좋았습니다." / "...아쉬워 협업에
-    어려움이 있었습니다."). The text's sentiment is therefore a deterministic
-    function of len(items) by construction -- no text parser, rule-based or
-    otherwise, can extract signal from that text independent of the item
-    counts, because the text contains none. (A prior fix attempt replaced the
-    item-count formula with a small Korean sentiment-cue lexicon over the
-    text; it produced a CONSTANT text_polarity across the whole corpus since
-    the cue words don't vary with item count, which halved
-    pair_review_score's standard deviation -- 0.325 -> 0.163 measured on this
-    fixture -- making the synergy score's dynamic range worse, not better.
-    Reverted; see README's "Hybrid Data Pipeline" disclosure and
-    .omc/reports/2026-08-04-final-review-fixes.md.)
-
-    parse_reviews_rule_based therefore derives text_polarity directly from
-    item counts (matching _item_score in core/graph/memory_graph.py), and
-    this test pins that as expected for the committed template-mode fixture.
-
-    This WILL legitimately change once the fixture is regenerated with
-    --review-mode llm (real, independently-written review text is not a
-    deterministic function of the checkboxes). If this test starts failing
-    after such a regeneration, that's expected -- update the README
-    disclosure and this test (or remove it) together.
+    TEMPLATE 모드에서는 두 값이 완전히 동일해(정보량 0) 하이브리드 파이프라인의
+    비정형 축이 무의미했다. LLM 재동결 후 이 테스트가 그 해소를 고정한다.
     """
-    assert (FIXTURES_DIR / "people.json").exists(), "fixture 동결이 선행되어야 함"
+    from core.graph.memory_graph import _item_score
+    meta = json.loads((FIXTURES_DIR / "meta.json").read_text("utf-8"))
+    assert meta["review_mode"] == "llm", "LLM 모드 재동결이 선행되어야 함"
     ds, parsed = load_fixtures(FIXTURES_DIR)
-    diffs = []
-    for r, p in zip(ds.reviews, parsed):
-        item_score = (len(r.positive.items) - len(r.negative.items)) / (
-            len(r.positive.items) + len(r.negative.items))
-        diffs.append(abs(p.text_polarity - item_score))
-    assert max(diffs) < 1e-9, (
-        "template-mode text_polarity no longer duplicates item_score -- either "
-        "the fixture was regenerated with real review text (update the README "
-        "disclosure and this test) or parse_reviews_rule_based changed "
-        "unexpectedly")
+    pol = {(p.reviewer_id, p.reviewee_id): p.text_polarity for p in parsed}
+    diffs = [abs(pol[(r.reviewer_id, r.reviewee_id)] - _item_score(r)) for r in ds.reviews]
+    assert max(diffs) > 0.05, "text_polarity 가 item_score 와 사실상 동일 — 비정형 축이 무의미"
 
 
 def test_llm_parse_malformed_response():

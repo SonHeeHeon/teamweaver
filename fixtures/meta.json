@@ -2,6 +2,6 @@
  "n_people": 100,
  "n_projects": 20,
  "horizon_start": "2026-09",
- "frozen_at": "2026-08-04",
- "review_mode": "template"
+ "frozen_at": "2026-08-07",
+ "review_mode": "llm"
 }

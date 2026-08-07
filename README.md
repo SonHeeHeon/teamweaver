@@ -17,80 +17,85 @@ the E2E smoke test (`tests/test_e2e_smoke.py`), and demos consume as the single
 source of truth. Generate/refresh them with `scripts/generate_fixtures.py`:
 
 ```bash
-uv run python scripts/generate_fixtures.py --people 100 --projects 20 --seed 42 --review-mode template
-```
-
-**⚠️ The fixture currently committed to this repo was generated with
-`--review-mode template`, not `--review-mode llm`.** No `OPENAI_API_KEY` /
-`.env` was available at freeze time (Task 14), so:
-
-- `reviews_ko.json` contains deterministic **template-generated** Korean text
-  (`"{items} 측면이 뛰어나/아쉬워 ..."`), not natural LLM-written peer reviews.
-- `parsed_reviews.json` was produced by the **rule-based** parser
-  (`parse_reviews_rule_based`), not the LLM structured-output parser.
-- The `--review-mode llm` code path in `scripts/generate_fixtures.py`
-  (`rewrite_reviews_with_llm` + `parse_reviews_llm`, wired through
-  `core.config.load_env`/`load_pricing`) is implemented and reviewed against
-  its interfaces, but has **not been executed** — it is untested by actual
-  execution.
-
-### Known limitation: in template mode, `text_polarity` duplicates `item_score`
-
-**The free-text sentiment in this committed fixture carries no information
-beyond the structured checkbox items — this is expected, not a bug, and it
-cannot be fixed by a better text parser.** `_template_text`
-(`core/datagen/generator.py`) *builds* each review's narrative text from the
-selected positive/negative items with a fixed closing clause per polarity
-("...측면이 뛰어나 함께 일하기 좋았습니다." / "...아쉬워 협업에 어려움이 있었습니다.").
-The text's sentiment is therefore a deterministic function of the item
-counts by construction, so `parse_reviews_rule_based` derives `text_polarity`
-directly from those counts
-(`(n_pos - n_neg) / (n_pos + n_neg)`, identical to `_item_score` in
-`core/graph/memory_graph.py`) rather than pretending a lexicon over the text
-adds independent signal. (An earlier attempt replaced this with a small
-Korean sentiment-cue lexicon scored over the text; because the cue words
-don't vary with item count on this template-generated corpus, it came out
-**constant** for every review, which *halved* `pair_review_score`'s standard
-deviation — 0.325 → 0.163, measured on this fixture — making the synergy
-score's dynamic range worse than the honest duplicate. Reverted; see
-`.omc/reports/2026-08-04-final-review-fixes.md`.)
-
-**Practical consequence**: in the committed fixture, the β term of the
-synergy matrix `C` (`core/scoring/engine.py::synergy_matrix`,
-`0.5*item_score + 0.5*text_polarity` inside `MemoryGraph.build`) is
-**effectively item-only** — the "Hybrid Data Pipeline" architecture element's
-free-text arm contributes **no independent signal** here. **Experiment 2's
-premise (that LLM-parsed free text adds information structured checkboxes
-don't) is unverified on this fixture and requires regenerating with
-`--review-mode llm`** — real, independently-written review text is not a
-deterministic function of the checkboxes — **before any claim about
-LLM-parsed text adding information is published.**
-`tests/test_parse_reviews.py::test_template_mode_text_polarity_duplicates_item_score`
-pins the current (template-mode) duplication as a documented property and
-will fail loudly once an LLM-mode fixture lands, forcing this disclosure to
-be updated.
-
-**Once an `OPENAI_API_KEY` is available**, regenerate the fixture for real
-before relying on it for anything reviewer-facing:
-
-```bash
-echo "OPENAI_API_KEY=sk-..." > .env
 uv run python scripts/generate_fixtures.py --people 100 --projects 20 --seed 42 --review-mode llm
-uv run pytest -m slow -v   # re-verify headline numbers after LLM regeneration
 ```
 
-**No datagen tuning was applied to hit any headline number.** `core/datagen/generator.py`
-is unchanged from Task 3 — people/project skill difficulty is realistic (not
-eased to make the optimizer's job trivial). See
-`.omc/reports/2026-08-03-fixture-freeze-e2e.md` for why: the spec's headline
-metric is **최적화율 (optimization ratio)** — `Σ S_ij·a_ij` of the solved plan
-divided by the LP-relaxation upper bound of that same skill objective
-(`core/optimize/metrics.py::optimization_ratio`) — not raw matching
-fulfillment. On this fixture Plan A reaches optimization_ratio ≈ 0.93 with
-zero unfilled required slots, while matching fulfillment (a stricter,
-capacity-consuming secondary metric — the same person's allocation is split
-across every skill slot they qualify for) reads ≈ 0.54 by construction, not
-because staffing is short. Exact numbers, formulas, and the reasoning are in
-the report above. `tests/test_e2e_smoke.py` also solves Greedy on the same
-frozen fixture and asserts MILP's optimization_ratio beats it
-(MILP ≈ 0.93 vs Greedy ≈ 0.71) as a regression guard on the metric itself.
+**The fixture committed to this repo is LLM mode** (`review_mode: "llm"` in
+`meta.json`, refrozen 2026-08-07):
+
+- `reviews_ko.json` contains natural, independently-written Korean peer
+  reviews generated by `gpt-5-mini` (`core/datagen/llm_reviews.py`'s prompt,
+  via `rewrite_reviews_with_llm`).
+- `parsed_reviews.json` was produced by the LLM structured-output parser
+  running on `gpt-5-nano` (`parse_reviews_llm`).
+- Both models are pinned in `fixtures/pricing.json` (`gen_model`/`parse_model`,
+  `as_of: 2026-08-05`).
+
+**Actual cost of the 2026-08-07 refreeze**: 266 reviews × (1 generation call +
+1 parse call) = 532 API calls, **$0.7021 total** — `gpt-5-mini` generation:
+40,922 prompt + 258,137 completion tokens ($0.5265); `gpt-5-nano` parsing:
+74,390 prompt + 429,783 completion tokens ($0.1756). Full token/cost breakdown
+in `.omc/reports/2026-08-07-llm-refreeze.md`.
+
+**LLM regeneration is resumable / checkpointed.** A 266-review run is 500+
+sequential API calls at reasoning-model latency (~10–25s/call observed) —
+well over an hour end to end — and this environment has been observed to
+kill long-running background processes outright (the same failure mode that
+hit the earlier CBC benchmark sweeps). `scripts/generate_fixtures.py
+--review-mode llm` therefore checkpoints every review's generate+parse result
+to `.omc/llm_checkpoint/seed{seed}_p{people}_pr{projects}.json`
+(`core/datagen/llm_checkpoint.py`) immediately after that review completes,
+and skips reviews already present in the checkpoint on the next invocation —
+a kill loses at most one in-flight review, and a review is never billed
+twice. Use `--llm-batch-size N` to bound how many *new* reviews a single
+invocation processes (the 2026-08-07 refreeze used `--llm-batch-size 13`,
+~5–8 min/invocation, run ~20 times); re-run the identical command until it
+prints `frozen: ...` instead of `NOT DONE: ... remaining`.
+
+### `text_polarity` is now independent of `item_score`
+
+Previously (template mode), the free-text sentiment carried no information
+beyond the structured checkbox items: `text_polarity` was a deterministic
+function of item counts (`(n_pos-n_neg)/(n_pos+n_neg)`), because
+`_template_text` (`core/datagen/generator.py`) built the narrative text
+*from* the selected items with a fixed closing clause per polarity. (An
+earlier attempt to fix this with a small Korean sentiment-cue lexicon made it
+worse — constant `text_polarity` across the corpus, which halved
+`pair_review_score`'s standard deviation, 0.325 → 0.163 — and was reverted;
+see `.omc/reports/2026-08-04-final-review-fixes.md`.)
+
+**On the 2026-08-07 LLM-mode fixture this limitation no longer holds**:
+measured `max |text_polarity − item_score| = 0.9167` (mean 0.281) across all
+266 reviews — the LLM parser reads free-text sentiment independently of the
+checkbox selections. (Example: one review with 5 positive / 1 negative items,
+`item_score = 0.667`, parsed at `text_polarity = 0.0` because the prose read
+as more balanced than the checkbox tally.) The β term of the synergy matrix
+`C` (`core/scoring/engine.py::synergy_matrix`, `0.5*item_score +
+0.5*text_polarity` inside `MemoryGraph.build`) now has a real, independent
+free-text arm — the "Hybrid Data Pipeline" architecture element and
+**Experiment 2's premise (that LLM-parsed free text adds information
+structured checkboxes don't) are both substantiated on this fixture.**
+`tests/test_parse_reviews.py::test_llm_mode_text_polarity_is_independent_of_item_score`
+pins this as a regression guard (asserts `meta["review_mode"] == "llm"` and
+`max |text_polarity − item_score| > 0.05`).
+
+**No datagen tuning was applied to hit any headline number** (spec §4.4
+forbids it) — not for the original template freeze, and not for this LLM
+refreeze. `core/datagen/generator.py` is unchanged from Task 3 —
+people/project skill difficulty is realistic (not eased to make the
+optimizer's job trivial). See `.omc/reports/2026-08-03-fixture-freeze-e2e.md`
+for why: the spec's headline metric is **최적화율 (optimization ratio)** —
+`Σ S_ij·a_ij` of the solved plan divided by the LP-relaxation upper bound of
+that same skill objective (`core/optimize/metrics.py::optimization_ratio`) —
+not raw matching fulfillment. New LLM-generated review text changes the C
+matrix, so the ratio moved slightly on refreeze: **0.9278 → 0.9300**
+(matching_fulfillment 0.5436 → 0.5476, unfilled=0 both before and after) —
+still comfortably above the ≥0.90 gate, recorded as-is with no tuning. Plan A
+reaches optimization_ratio ≈ 0.93 with zero unfilled required slots, while
+matching fulfillment (a stricter, capacity-consuming secondary metric — the
+same person's allocation is split across every skill slot they qualify for)
+reads ≈ 0.55 by construction, not because staffing is short. Exact numbers,
+formulas, and the reasoning are in the report above. `tests/test_e2e_smoke.py`
+also solves Greedy on the same frozen fixture and asserts MILP's
+optimization_ratio beats it (MILP ≈ 0.93 vs Greedy ≈ 0.71) as a regression
+guard on the metric itself.
