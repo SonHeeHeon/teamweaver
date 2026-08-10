@@ -1,0 +1,72 @@
+{
+ "environment": {
+  "python": "3.12.13",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "cbc": "Version: 2.10.3",
+  "packages": {
+   "numpy": "2.5.1",
+   "scipy": "1.18.0",
+   "pulp": "3.3.2",
+   "neo4j": "6.2.0",
+   "tiktoken": "0.13.0",
+   "openai": "2.52.0",
+   "pandas": "3.0.5"
+  }
+ },
+ "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
+ "data": {
+  "model": "gpt-5-nano",
+  "pricing_as_of": "2026-08-05",
+  "token_counts": {
+   "full_llm": 87896,
+   "hybrid": 60292,
+   "review_count": 266
+  },
+  "cost_usd": {
+   "full_llm": 0.20751960000000003,
+   "hybrid": 0.1423474
+  },
+  "savings_pct": 31.405322677954274,
+  "accuracy": {
+   "checked": 0,
+   "item_match_rate": null,
+   "note": "live=False 이므로 미측정"
+  },
+  "sensitivity": [
+   {
+    "freetext_multiplier": 0.25,
+    "full_llm_tokens": 50305,
+    "hybrid_tokens": 22701,
+    "savings_pct": 54.873273034489614
+   },
+   {
+    "freetext_multiplier": 0.5,
+    "full_llm_tokens": 62926,
+    "hybrid_tokens": 35322,
+    "savings_pct": 43.86739980294314
+   },
+   {
+    "freetext_multiplier": 1.0,
+    "full_llm_tokens": 87896,
+    "hybrid_tokens": 60292,
+    "savings_pct": 31.405297169381996
+   },
+   {
+    "freetext_multiplier": 2.0,
+    "full_llm_tokens": 138007,
+    "hybrid_tokens": 110403,
+    "savings_pct": 20.001883962407707
+   },
+   {
+    "freetext_multiplier": 4.0,
+    "full_llm_tokens": 238229,
+    "hybrid_tokens": 210625,
+    "savings_pct": 11.587170327709895
+   }
+  ],
+  "output_token_assumption": 5.777429762064794,
+  "output_token_assumption_basis": "Task 6 체크포인트 실측 gpt-5-nano(parse_model) completion/prompt = 429,783/74,390 (266건 전량, .omc/llm_checkpoint/seed42_p100_pr20.json)"
+ }
+}
