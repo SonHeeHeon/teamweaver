@@ -86,7 +86,11 @@ def exp1_crossover(result: dict) -> Path:
 
 def exp2_savings(result: dict) -> Path:
     d = result["data"]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.6))
+    # constrained_layout: 기본 레이아웃은 서브플롯 타이틀("민감도 — …")과
+    # fig.suptitle("실험 2 — …")이 같은 수평 밴드에서 겹쳐 글자가 뒤섞였다
+    # (실측 확인 후 발견) — constrained_layout이 suptitle을 위한 공간을
+    # 자동으로 예약해 이를 피한다.
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.6), constrained_layout=True)
     tokens = d["token_counts"]
     ax1.bar(["Full-LLM", "Hybrid"], [tokens["full_llm"], tokens["hybrid"]],
             color=["#E45756", "#54A24B"])
