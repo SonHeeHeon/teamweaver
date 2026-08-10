@@ -34,6 +34,13 @@
    "item_match_rate": null,
    "note": "live=False 이므로 미측정"
   },
+  "latency": {
+   "measured": false,
+   "note": "이번 실험은 라이브 타이밍 호출을 하지 않았다(비용 절감을 위해 오프라인 토큰 카운팅만 수행). 아래는 Task 6에서 실측된 파싱 워크로드 지연을 참고치로 인용한 것이며, 이번 실험의 Full-LLM/Hybrid 페이로드 형태로 직접 측정된 값이 아니다.",
+   "basis": "Task 6 체크포인트 실행(gpt-5-mini gen + gpt-5-nano parse, 266건 리뷰 = 532회 API 호출): 리뷰당(gen+parse 2회 합산) 관측 지연 ~24-28초, foreground 배치 실행 1회당 5.1-8.5분(회당 3~18건, 20회 실행). 개별 API 호출 단위로는 ~10-28초로 추정(추론 모델 특성상 completion에 내부 추론 토큰이 실려 지연이 커짐 — MEASURED_OUT_RATIO가 큰 것과 동일한 원인).",
+   "source": ".superpowers/sdd/2026-08-05-teamweaver-plan-2-experiments/task-6-report.md",
+   "caveat": "이 지연은 parse_reviews_llm의 기존 프롬프트(좋은점/나쁜점 서술만 전달)로 측정된 것이다. 이번 실험의 Full-LLM 페이로드는 정형 이력+항목선택+서술 전부를 담아 입력 토큰이 더 크므로 지연이 이보다 클 것으로 추정되나 직접 측정되지 않았다 — Full-LLM 페이로드 형태의 실측이 아니라 parse 워크로드 실측을 그대로 인용한 하한(lower-bound) 성격의 참고치다."
+  },
   "sensitivity": [
    {
     "freetext_multiplier": 0.25,

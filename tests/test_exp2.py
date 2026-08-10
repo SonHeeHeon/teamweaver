@@ -41,3 +41,18 @@ def test_run_offline_produces_all_axes():
         assert key in out
     assert out["sensitivity"], "자유서술 비중별 민감도 곡선이 있어야 한다"
     assert set(out["cost_usd"]) == {"full_llm", "hybrid"}
+    assert "savings_pct" in out and 0 < out["savings_pct"] < 100
+
+
+def test_savings_pct_is_independent_of_out_ratio():
+    """out_ratio가 절감률에 영향을 주지 않아야 한다 — 이 불변식이 깨지면
+    31.4%라는 수치가 추정 가정에 의존하게 되어 방어력을 잃는다."""
+    a = e2.run(live=False)
+    original = e2.MEASURED_OUT_RATIO
+    try:
+        e2.MEASURED_OUT_RATIO = 0.2
+        b = e2.run(live=False)
+    finally:
+        e2.MEASURED_OUT_RATIO = original
+    assert abs(a["savings_pct"] - b["savings_pct"]) < 0.01
+    assert a["cost_usd"]["full_llm"] != b["cost_usd"]["full_llm"]   # 절대금액은 달라져야 함
