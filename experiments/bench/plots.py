@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from matplotlib.ticker import FuncFormatter
 
-from core.config import REPO_ROOT
+from core.config import OPT_RATIO_TARGET, REPO_ROOT
 
 FIGURES_DIR = REPO_ROOT / "experiments" / "figures"
 _COLORS = {"sqlite": "#4C78A8", "neo4j": "#F58518", "memory": "#54A24B",
@@ -65,7 +65,8 @@ def _save(fig, name: str) -> Path:
 def exp1_crossover(result: dict) -> Path:
     rows = result["data"]["rows"]
     hops = sorted({r["hops"] for r in rows})
-    fig, axes = plt.subplots(1, len(hops), figsize=(4.2 * len(hops), 3.6), sharey=True)
+    fig, axes = plt.subplots(1, len(hops), figsize=(4.2 * len(hops), 3.6), sharey=True,
+                             constrained_layout=True)
     axes = [axes] if len(hops) == 1 else list(axes)
     for ax, h in zip(axes, hops):
         for backend in ("sqlite", "neo4j", "memory"):
@@ -107,7 +108,7 @@ def exp2_savings(result: dict) -> Path:
 
 def exp3_tradeoff(result: dict) -> Path:
     d = result["data"]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.6))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.6), constrained_layout=True)
     for algo in ("greedy", "milp"):
         pts = [(r["solve_ms"], r["optimization_ratio"]) for r in d["rows"]
                if r["algorithm"] == algo]
@@ -116,7 +117,7 @@ def exp3_tradeoff(result: dict) -> Path:
                         label=algo, color=_COLORS[algo], s=45)
     ax1.set_xscale("log"); ax1.set_xlabel("solve time (ms)")
     ax1.xaxis.set_major_formatter(_plain_log_formatter())
-    ax1.set_ylabel("최적화율"); ax1.axhline(0.90, ls="--", c="gray", lw=1)
+    ax1.set_ylabel("최적화율"); ax1.axhline(OPT_RATIO_TARGET, ls="--", c="gray", lw=1)
     ax1.set_title("품질 vs 소요 시간"); ax1.legend(); ax1.grid(alpha=0.3)
 
     # violations는 algorithm별로 그룹화하는 것만으로는 부족하다: MILP는

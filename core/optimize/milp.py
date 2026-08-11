@@ -101,8 +101,14 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)         # top |C| pairs -> synergy reward term
-    if len(pruned) == params.max_pairs:
-        logger.info(f"Synergy pair pruning: cap applied (limited to {params.max_pairs}/{int(0.5 * C.shape[0] * (C.shape[0] - 1))} total pairs)")
+    # len(pruned) == max_pairs is not by itself evidence that the cap did anything --
+    # keep_ratio alone can happen to select exactly max_pairs pairs, which would log a
+    # "cap applied" message even though max_pairs never bound anything (false positive,
+    # final review Minor). Compare against the pre-cap (keep_ratio-only) count instead.
+    total_pairs = int(0.5 * C.shape[0] * (C.shape[0] - 1))
+    precap_count = min(int(params.pair_keep_ratio * total_pairs), total_pairs)
+    if precap_count > params.max_pairs:
+        logger.info(f"Synergy pair pruning: cap applied (limited to {params.max_pairs}/{total_pairs} total pairs)")
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)  # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)

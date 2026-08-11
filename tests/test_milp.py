@@ -330,6 +330,33 @@ def test_pruned_pairs_tie_break_is_deterministic_by_index():
     assert pruned_pairs(C, 1.0, max_pairs=2) == [(0, 1), (0, 2)]
 
 
+def test_cap_applied_log_fires_when_keep_ratio_exceeds_cap(caplog):
+    """solve_milp이 실제로 max_pairs에 의해 절삭될 때만 '캡 적용' 로그를 낸다."""
+    import logging
+    ds, g, S, C = _setup(n=25, j=5, seed=3)
+    # n=25 -> total_pairs = 300, keep_ratio=0.15 -> precap=45 > max_pairs=10: 진짜로 캡됨.
+    params = MilpParams(max_pairs=10, time_limit=30)
+    with caplog.at_level(logging.INFO, logger="core.optimize.milp"):
+        solve_milp(g, S, C, params)
+    assert any("cap applied" in r.message for r in caplog.records)
+
+
+def test_cap_applied_log_does_not_false_positive_when_keep_ratio_equals_cap(caplog):
+    """최종 리뷰 Minor: keep_ratio만으로 고른 쌍 수가 우연히 max_pairs와 정확히
+    같을 때는 max_pairs가 아무것도 잘라내지 않은 것이므로 '캡 적용' 로그가 뜨면
+    안 된다(예전 구현은 len(pruned) == max_pairs만 비교해 이 경우도 캡이 걸린
+    것처럼 오탐했다)."""
+    import logging
+    ds, g, S, C = _setup(n=25, j=5, seed=3)
+    # n=25 -> total_pairs = 300, keep_ratio=0.15 -> precap = int(0.15*300) = 45.
+    # max_pairs를 정확히 45로 맞추면 precap == max_pairs -> 캡이 실제로 아무것도
+    # 자르지 않는다(precap이 이미 45였으므로).
+    params = MilpParams(max_pairs=45, pair_keep_ratio=0.15, time_limit=30)
+    with caplog.at_level(logging.INFO, logger="core.optimize.milp"):
+        solve_milp(g, S, C, params)
+    assert not any("cap applied" in r.message for r in caplog.records)
+
+
 def test_pruned_pairs_matches_reference_sort_on_real_fixture():
     """On the real demo fixture, must match the reference sorted() implementation
     (deterministic, reproducible enumeration order) to ensure sweep benchmark numbers
