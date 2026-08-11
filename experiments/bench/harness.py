@@ -47,6 +47,60 @@ def measure(fn, repeats: int = 20, warmup: int = 3) -> dict:
             "repeats": repeats, "warmup": warmup}
 
 
+def _cpu_model() -> str:
+    """Defensively get a human-readable CPU model string. Best-effort only --
+    never raises, never blocks a run (final review Important 9: the report's
+    headline is "Neo4j is 5x slower", which is exactly the kind of claim that
+    needs the hardware it was measured on disclosed)."""
+    try:
+        if sys.platform == "darwin":
+            out = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                 capture_output=True, text=True, timeout=5)
+            name = out.stdout.strip()
+            if name:
+                return name
+        elif sys.platform.startswith("linux"):
+            with open("/proc/cpuinfo") as f:
+                for line in f:
+                    if line.lower().startswith("model name"):
+                        return line.split(":", 1)[1].strip()
+        return platform.processor() or "unknown"
+    except Exception as exc:                       # noqa: BLE001 -- defensive probe
+        return f"unavailable ({type(exc).__name__})"
+
+
+def _ram_gb() -> str:
+    """Defensively get total RAM in GiB via POSIX sysconf. Best-effort only."""
+    try:
+        pages = os.sysconf("SC_PHYS_PAGES")
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        return f"{pages * page_size / (1024 ** 3):.1f} GiB"
+    except (ValueError, OSError, AttributeError) as exc:
+        return f"unavailable ({type(exc).__name__})"
+
+
+def _neo4j_server_version() -> str:
+    """Defensively query the running Neo4j server's own version (read-only) --
+    distinct from the `neo4j` Python driver version already tracked in
+    `packages`. Never lets a probe failure (server down, auth, etc.) break a
+    benchmark run; degrades to an "unavailable" string instead."""
+    try:
+        from core.graph.neo4j_store import get_driver
+        driver = get_driver()
+        try:
+            driver.verify_connectivity()
+            with driver.session() as s:
+                rec = s.run("CALL dbms.components() YIELD name, versions, edition "
+                            "RETURN name, versions, edition").single()
+                if rec is None:
+                    return "unknown (empty dbms.components() result)"
+                return f"{rec['name']} {rec['versions'][0]} ({rec['edition']})"
+        finally:
+            driver.close()
+    except Exception as exc:                        # noqa: BLE001 -- defensive probe
+        return f"unavailable ({type(exc).__name__})"
+
+
 def environment() -> dict:
     pkgs = {}
     for name in _TRACKED:
@@ -56,7 +110,8 @@ def environment() -> dict:
             pkgs[name] = "not installed"
     return {"python": sys.version.split()[0], "platform": platform.platform(),
             "machine": platform.machine(), "cpu_count": os.cpu_count(),
-            "cbc": _cbc_version(),
+            "cpu_model": _cpu_model(), "ram": _ram_gb(),
+            "cbc": _cbc_version(), "neo4j_server": _neo4j_server_version(),
             "packages": pkgs}
 
 

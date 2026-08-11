@@ -28,6 +28,28 @@ def test_environment_records_versions():
     assert "numpy" in env["packages"]
 
 
+def test_environment_records_neo4j_server_cpu_and_ram():
+    """최종 리뷰 Important 9: 헤드라인이 'Neo4j가 5배 느리다'인 벤치마크인데
+    environment()가 Neo4j *서버* 버전(클라이언트 드라이버 버전과 별개)도, CPU
+    모델·RAM도 기록하지 않았다. 세 값 모두 방어적으로 수집돼야 하고(probe 실패가
+    벤치마크 자체를 깨면 안 됨), 실패 시에도 문자열 키는 항상 존재해야 한다."""
+    env = harness.environment()
+    for key in ("neo4j_server", "cpu_model", "ram"):
+        assert key in env
+        assert isinstance(env[key], str) and env[key]
+
+
+def test_neo4j_server_version_never_raises_when_neo4j_down(monkeypatch):
+    """Neo4j가 죽어 있어도(또는 접속 정보가 잘못돼도) environment() 전체가 죽으면
+    안 된다 -- probe는 항상 방어적이어야 한다."""
+    def _boom(*a, **kw):
+        raise RuntimeError("connection refused")
+    import core.graph.neo4j_store as neo4j_store
+    monkeypatch.setattr(neo4j_store, "get_driver", _boom)
+    result = harness._neo4j_server_version()
+    assert isinstance(result, str) and "unavailable" in result
+
+
 def test_save_and_load_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr(harness, "RESULTS_DIR", tmp_path)
     p = harness.save_result("demo", {"a": 1})
