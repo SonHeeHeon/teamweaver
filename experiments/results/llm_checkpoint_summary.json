@@ -1,0 +1,26 @@
+{
+ "source_note": "이 파일은 로컬 체크포인트(.omc/llm_checkpoint/, git 추적 안 됨)에서 토큰 총계·호출 수·비용만 집계한 redacted 요약이다 — 프롬프트 원문, 리뷰 텍스트, evidence는 포함하지 않는다. experiments/bench/checkpoint_summary.py로 재생성한다(API 호출 없음, 로컬 체크포인트 파일이 있어야 함).",
+ "checkpoint_file": "seed42_p100_pr20.json",
+ "seed": 42,
+ "n_people": 100,
+ "n_projects": 20,
+ "review_count": 266,
+ "pricing_as_of": "2026-08-05",
+ "models": {
+  "gen_model": {
+   "name": "gpt-5-mini",
+   "calls": 266,
+   "prompt_tokens": 40922,
+   "completion_tokens": 258137,
+   "cost_usd": 0.5265
+  },
+  "parse_model": {
+   "name": "gpt-5-nano",
+   "calls": 266,
+   "prompt_tokens": 74390,
+   "completion_tokens": 429783,
+   "cost_usd": 0.1756
+  }
+ },
+ "total_cost_usd": 0.7021
+}
