@@ -361,3 +361,19 @@ def test_exp3_missing_optional_fields_do_not_crash(monkeypatch):
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()  # must not raise
     assert "실험 3" in md
+
+
+def test_ipc_dominance_wording_when_floor_exceeds_query_time(monkeypatch):
+    """바닥값이 쿼리 시간을 넘어서면(비율 > 100%) '몇 %를 차지한다'는 표현은
+    성립하지 않는다 — 측정 오차 내 구별 불가로 서술해야 한다."""
+    rows = []
+    for backend, ms in (("memory", 0.05), ("sqlite", 0.10), ("neo4j", 0.50)):
+        rows.append({"backend": backend, "n_people": 100, "n_projects": 20, "hops": 1,
+                     "median_ms": ms, "p95_ms": ms, "repeats": 20, "warmup": 3,
+                     "result_count": 10})
+    d = {"rows": rows, "parity": [{"n_people": 100, "hops": 1, "match": True}],
+         "skipped": [], "protocol_floor": {"median_ms": 0.60, "p95_ms": 0.9}}
+    md = report._exp1(d)          # floor 0.60 > neo4j 0.50 → 120%
+    assert "구별되지 않는다" in md, "오차 내 구별 불가로 서술해야 한다"
+    assert "차지한다" not in md.split("스코프 명시")[1].split("2.")[0], \
+        "100%를 넘는 비율에 '차지한다'를 쓰면 안 된다"

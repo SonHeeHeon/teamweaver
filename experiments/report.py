@@ -261,10 +261,24 @@ def _exp1(d: dict) -> str:
     if ipc:
         lo, hi = ipc
         pct_str = f"{lo:.0f}%" if lo == hi else f"{lo:.0f}~{hi:.0f}%"
-        lines.append(f"{n_stmt}. **hops=1 비교는 순회가 아니라 IPC가 지배한다.** "
-                      f"protocol_floor(중앙값 {floor['median_ms']:.3f}ms)가 hops=1 neo4j 시간의 "
-                      f"{pct_str}를 차지한다 — 얕은 hop만 보고 백엔드를 비교하는 것은 "
-                      "그래프 순회 비용보다 프로토콜 왕복 비용을 주로 재는 셈이라 오해를 부른다.")
+        # 바닥값이 hops=1 쿼리 시간을 넘어서는 구간(비율 > 100%)이 나오면 "몇 %를
+        # 차지한다"는 표현 자체가 성립하지 않는다 — 둘이 측정 오차 안에서 구별되지
+        # 않는다는 뜻이고, 그게 오히려 더 강한 진술이다(순회 작업이 사실상 없다).
+        if hi > 100:
+            lines.append(
+                f"{n_stmt}. **hops=1 비교는 순회가 아니라 IPC가 지배한다.** "
+                f"hops=1 neo4j 시간은 순수 왕복 비용(protocol_floor, 중앙값 "
+                f"{floor['median_ms']:.3f}ms)과 측정 오차 안에서 구별되지 않는다 "
+                f"— 바닥값이 쿼리 시간의 {pct_str}에 해당해 일부 구간에서는 바닥값이 "
+                "쿼리 시간을 넘어서기까지 한다. 즉 이 구간에서 잰 것은 그래프 순회 "
+                "비용이 아니라 프로토콜 왕복 비용이므로, 얕은 hop만 보고 백엔드를 "
+                "비교하면 오해를 부른다.")
+        else:
+            lines.append(
+                f"{n_stmt}. **hops=1 비교는 순회가 아니라 IPC가 지배한다.** "
+                f"protocol_floor(중앙값 {floor['median_ms']:.3f}ms)가 hops=1 neo4j 시간의 "
+                f"{pct_str}를 차지한다 — 얕은 hop만 보고 백엔드를 비교하는 것은 "
+                "그래프 순회 비용보다 프로토콜 왕복 비용을 주로 재는 셈이라 오해를 부른다.")
         n_stmt += 1
     lines.append(f"{n_stmt}. **인메모리 백엔드의 승리는 거의 동어반복적(near-tautological)이다.** "
                  "이 측정은 빌드/적재 비용을 제외했고, 인메모리 구조는 이미 전량 RAM에 상주하며 "
