@@ -149,3 +149,30 @@ def test_build_propagates_missing_results_file(monkeypatch):
     monkeypatch.setattr(report.harness, "load_result", _raise)
     with pytest.raises(FileNotFoundError):
         report.build()
+
+
+def test_exp1_headline_does_not_claim_unverified_memory_ordering(monkeypatch):
+    """headline이 검증하지 않은 3자 순서를 단정하면 안 된다.
+
+    memory가 sqlite보다 느린 조합이 있으면(= 3자 순서 미유지) neo4j 미역전
+    사실만 말하고 'memory < sqlite < neo4j'는 주장하지 않아야 한다.
+    """
+    rows = []
+    # neo4j는 항상 가장 느리지만(역전 없음), memory가 sqlite보다 느린 구간이 있다
+    for backend, ms in (("memory", 5.0), ("sqlite", 1.0), ("neo4j", 9.0)):
+        rows.append({"backend": backend, "n_people": 100, "n_projects": 20, "hops": 1,
+                     "median_ms": ms, "p95_ms": ms, "repeats": 20, "warmup": 3,
+                     "result_count": 10})
+    head = report._exp1_headline(rows)
+    assert "기각" in head, "역전이 없으므로 원 가설은 기각으로 판정돼야 한다"
+    assert "memory < sqlite < neo4j" not in head, \
+        "검증되지 않은 3자 순서를 단정하면 안 된다"
+
+
+def test_exp1_headline_claims_full_order_when_data_supports_it():
+    rows = []
+    for backend, ms in (("memory", 0.1), ("sqlite", 1.0), ("neo4j", 9.0)):
+        rows.append({"backend": backend, "n_people": 100, "n_projects": 20, "hops": 1,
+                     "median_ms": ms, "p95_ms": ms, "repeats": 20, "warmup": 3,
+                     "result_count": 10})
+    assert "memory < sqlite < neo4j" in report._exp1_headline(rows)

@@ -84,17 +84,27 @@ def _exp1_headline(rows: list[dict]) -> str | None:
     if not keys:
         return None
     crossovers = []
+    full_order_holds = True          # memory < sqlite < neo4j 가 전 구간에서 유지되는가
     for n, h in keys:
         neo = _median(rows, "neo4j", n, h)
         sql = _median(rows, "sqlite", n, h)
+        mem = _median(rows, "memory", n, h)
         if neo is not None and sql is not None and neo < sql:
             crossovers.append((n, h))
+        # 3자 순서도 데이터에서 판정한다 — headline이 검증하지 않은 주장을 하면
+        # 재실행에서 순서가 바뀌어도 문장이 그대로 남아 사실과 어긋난다.
+        if None in (neo, sql, mem) or not (mem < sql < neo):
+            full_order_holds = False
     n_lo, n_hi = keys[0][0], keys[-1][0]
     h_lo, h_hi = min(h for _, h in keys), max(h for _, h in keys)
     n_scope = f"{n_lo}~{n_hi}명" if n_lo != n_hi else f"{n_lo}명"
     scope = f"{n_scope}, hops {h_lo}~{h_hi}" if h_lo != h_hi else f"{n_scope}, hops {h_lo}"
     if not crossovers:
-        return (f"**측정 범위({scope}) 전 구간에서 memory < sqlite < neo4j 순서가 유지된다 — "
+        order = ("전 구간에서 memory < sqlite < neo4j 순서가 유지된다"
+                 if full_order_holds else
+                 "전 구간에서 neo4j가 sqlite보다 느리다(단, memory를 포함한 3자 순서가 "
+                 "모든 조합에서 유지되지는 않는다 — 표 참조)")
+        return (f"**측정 범위({scope}) {order} — "
                 "\"규모·hops가 커지면 Neo4j가 역전한다\"는 이 실험의 원 가설은 기각된다.**")
     pts = ", ".join(f"n={n}·hops={h}" for n, h in crossovers)
     return (f"**측정 범위({scope})에서 neo4j가 sqlite보다 빠른 구간이 존재한다({pts}) — "
