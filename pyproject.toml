@@ -26,7 +26,6 @@ packages = ["core"]
 testpaths = ["tests"]
 markers = [
     "neo4j: requires running Neo4j (docker-compose up)",
-    "llm: requires OPENAI_API_KEY (never run in CI/pytest default)",
     "slow: long-running (full-scale MILP smoke)",
 ]
-addopts = "-m 'not neo4j and not llm and not slow'"
+addopts = "-m 'not neo4j and not slow'"
