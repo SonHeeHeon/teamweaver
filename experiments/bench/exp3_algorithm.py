@@ -31,6 +31,21 @@ from experiments.bench import datasets, harness
 
 logger = logging.getLogger(__name__)
 
+# 최종 리뷰 Critical 2: 리포트가 이 스윕을 "100인 데모 fixture"라고 불러 -- 커밋된
+# fixture(fixtures/*.json, LLM 모드 리뷰)를 실제로 로드하는 것으로 오해하게 만들었다.
+# 실제로는 datasets.build_scale()이 매 스케일마다 core.datagen.generator로 데이터를
+# *새로 생성*한다(rule-based 파싱의 템플릿 리뷰) -- 스케일 스윕은 fixture에 없는
+# n=50/200/300/...까지 다뤄야 하므로 애초에 fixture만으로는 불가능하고, 이 자체는
+# 정상이다. 문제는 라벨이었다: n=100 지점조차 커밋된 fixture와 인원·프로젝트 수만
+# 같을 뿐 리뷰 텍스트(따라서 C 행렬, optimization_ratio)는 다르다. 이 상수를
+# run()의 반환값에 실어 report.py가 "100인 데모 fixture"라고 잘못 부르지 않도록 한다.
+DATA_SOURCE_NOTE = (
+    "이 스윕의 모든 행은 datasets.build_scale()이 규모마다 새로 생성한 데이터셋을 쓴다 "
+    "(core.datagen.generator, seed=42 고정, rule-based 파싱의 템플릿 리뷰) — 커밋된 "
+    "LLM 모드 데모 fixture(fixtures/*.json)를 로드하지 않는다. n=100 지점도 인원·"
+    "프로젝트 수만 fixture와 같을 뿐 리뷰 텍스트가 달라 C 행렬과 optimization_ratio가 "
+    "fixture와 다르다 — 프로젝트 개수/인원 수가 같다고 같은 데이터가 아니다.")
+
 # solve_ms(벽시계)가 time_limit(초)의 이 비율 이상이면 "시간 상한에 도달"로 간주한다.
 # CBC의 timeLimit 파라미터는 자체 솔브 시간만 제한하고, 우리가 측정하는 solve_ms는
 # 모델 구성(파이썬 쪽) 오버헤드까지 포함하므로 100%가 아니라 약간의 여유(5%)를 둔다.
@@ -75,7 +90,8 @@ def _run_one_scale(n_people, n_projects, seed, pair_caps, time_limit):
                  "optimization_ratio": optimization_ratio(g, S, gp, base),
                  "fulfillment": matching_fulfillment(g, gp, {}),
                  "unfilled": len(gp.unfilled), "entries": len(gp.entries)})
-    violations.append({"algorithm": "greedy", "n_people": n_people, "seed": seed,
+    violations.append({"algorithm": "greedy", "n_people": n_people, "n_projects": n_projects,
+                       "seed": seed,
                        "budget_violations": _budget_violations(ds, gp),
                        "reported_violations": len(gp.violations),
                        "unfilled_slots": len(gp.unfilled)})
@@ -95,12 +111,19 @@ def _run_one_scale(n_people, n_projects, seed, pair_caps, time_limit):
                      "objective": mp.objective,
                      "optimization_ratio": optimization_ratio(g, S, mp, params),
                      "fulfillment": matching_fulfillment(g, mp, {}),
-                     "unfilled": len(mp.unfilled), "entries": len(mp.entries)})
+                     "unfilled": len(mp.unfilled), "entries": len(mp.entries),
+                     # 최종 리뷰 Important 6: optimization_ratio는 분자·분모 모두 skill 항만
+                     # 쓰지만(core/optimize/metrics.py), 배치 자체는 solve_milp가 skill +
+                     # lam*synergy - mu*clique - slack_penalty를 최대화해 고른 것이다.
+                     # 어떤 lam/mu로 solve됐는지를 기록해 두지 않으면 "ratio가 skill 항만
+                     # 잰다"는 사실을 리포트가 서술할 근거가 없다.
+                     "milp_params": params.model_dump()})
         # 예산 준수는 max_pairs(=synergy pruning 정도)와 무관한 하드 제약이므로
         # cap마다 개별로 확인한다 — 앞서는 pair_caps[0]만 확인하고 나머지는
         # "당연히 같을 것"이라는 추론으로 남겨뒀다(코디네이터 리뷰, 2026-08-08 반영:
         # 리포트가 측정 대신 추론을 제시하고 있었다). cap을 기록해 둘을 구분한다.
-        violations.append({"algorithm": "milp", "n_people": n_people, "seed": seed,
+        violations.append({"algorithm": "milp", "n_people": n_people, "n_projects": n_projects,
+                           "seed": seed,
                            "pair_cap": cap,
                            "budget_violations": _budget_violations(ds, mp),
                            "reported_violations": len(mp.violations),
@@ -168,7 +191,7 @@ def run(scales=None, seeds=(42,), pair_caps=(1000, 5000), time_limit: int = 180,
                               "alternatives": alternatives, "failures": failures})
 
     return {"rows": rows, "violations": violations, "alternatives": alternatives,
-           "failures": failures}
+           "failures": failures, "data_source": DATA_SOURCE_NOTE}
 
 
 # n=300/500/1000: n=50/100/200에서 실측한 MILP solve_ms 증가(766.7ms -> 6933.5ms
