@@ -4,7 +4,10 @@
   "platform": "macOS-26.5.2-arm64-arm-64bit",
   "machine": "arm64",
   "cpu_count": 10,
+  "cpu_model": "Apple M4",
+  "ram": "16.0 GiB",
   "cbc": "Version: 2.10.3",
+  "neo4j_server": "Neo4j Kernel 5.26.28 (community)",
   "packages": {
    "numpy": "2.5.1",
    "scipy": "1.18.0",
@@ -38,7 +41,7 @@
    "measured": false,
    "note": "이번 실험은 라이브 타이밍 호출을 하지 않았다(비용 절감을 위해 오프라인 토큰 카운팅만 수행). 아래는 Task 6에서 실측된 파싱 워크로드 지연을 참고치로 인용한 것이며, 이번 실험의 Full-LLM/Hybrid 페이로드 형태로 직접 측정된 값이 아니다.",
    "basis": "Task 6 체크포인트 실행(gpt-5-mini gen + gpt-5-nano parse, 266건 리뷰 = 532회 API 호출): 리뷰당(gen+parse 2회 합산) 관측 지연 ~24-28초, foreground 배치 실행 1회당 5.1-8.5분(회당 3~18건, 20회 실행). 개별 API 호출 단위로는 ~10-28초로 추정(추론 모델 특성상 completion에 내부 추론 토큰이 실려 지연이 커짐 — MEASURED_OUT_RATIO가 큰 것과 동일한 원인).",
-   "source": ".superpowers/sdd/2026-08-05-teamweaver-plan-2-experiments/task-6-report.md",
+   "source": "experiments/results/llm_checkpoint_summary.json",
    "caveat": "이 지연은 parse_reviews_llm의 기존 프롬프트(좋은점/나쁜점 서술만 전달)로 측정된 것이다. 이번 실험의 Full-LLM 페이로드는 정형 이력+항목선택+서술 전부를 담아 입력 토큰이 더 크므로 지연이 이보다 클 것으로 추정되나 직접 측정되지 않았다 — Full-LLM 페이로드 형태의 실측이 아니라 parse 워크로드 실측을 그대로 인용한 하한(lower-bound) 성격의 참고치다."
   },
   "sensitivity": [
@@ -74,6 +77,34 @@
    }
   ],
   "output_token_assumption": 5.777429762064794,
-  "output_token_assumption_basis": "Task 6 체크포인트 실측 gpt-5-nano(parse_model) completion/prompt = 429,783/74,390 (266건 전량, .omc/llm_checkpoint/seed42_p100_pr20.json)"
+  "output_token_assumption_basis": "Task 6 체크포인트 실측 gpt-5-nano(parse_model) completion/prompt = 429,783/74,390 (266건 전량, experiments/results/llm_checkpoint_summary.json — hybrid-shaped parse 워크로드에서 측정, Full-LLM 페이로드로의 적용은 다른 형태 간 외삽임)",
+  "output_model_sensitivity": [
+   {
+    "model": "output_proportional_to_input",
+    "description": "출력 토큰 = 입력 토큰 × out_ratio (이 실험이 실제로 쓰는 가정, MEASURED_OUT_RATIO=5.777)",
+    "output_tokens": {
+     "full_llm": 507812,
+     "hybrid": 348332
+    },
+    "cost_usd": {
+     "full_llm": 0.20751960000000003,
+     "hybrid": 0.1423474
+    },
+    "savings_pct": 31.405322677954274
+   },
+   {
+    "model": "output_constant_across_arms",
+    "description": "출력 토큰이 두 arm에서 동일 — 체크포인트 실측 completion 토큰 합계(429,783)를 두 arm 모두에 사용",
+    "output_tokens": {
+     "full_llm": 429783,
+     "hybrid": 429783
+    },
+    "cost_usd": {
+     "full_llm": 0.17630800000000002,
+     "hybrid": 0.17492780000000002
+    },
+    "savings_pct": 0.7828345849309137
+   }
+  ]
  }
 }

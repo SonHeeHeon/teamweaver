@@ -4,7 +4,10 @@
   "platform": "macOS-26.5.2-arm64-arm-64bit",
   "machine": "arm64",
   "cpu_count": 10,
+  "cpu_model": "Apple M4",
+  "ram": "16.0 GiB",
   "cbc": "Version: 2.10.3",
+  "neo4j_server": "Neo4j Kernel 5.26.28 (community)",
   "packages": {
    "numpy": "2.5.1",
    "scipy": "1.18.0",
@@ -24,7 +27,7 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 0.2222089096903801,
+    "solve_ms": 0.22620800882577896,
     "hit_time_limit": false,
     "objective": 12.713888888888892,
     "optimization_ratio": 0.7218497929512414,
@@ -38,13 +41,24 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 913.9581250492483,
+    "solve_ms": 751.4381248038262,
     "hit_time_limit": false,
     "objective": 16.785188155615085,
     "optimization_ratio": 0.9169329720292404,
     "fulfillment": 0.4803418803418803,
     "unfilled": 0,
-    "entries": 54
+    "entries": 54,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 1000
+    }
    },
    {
     "algorithm": "milp",
@@ -52,13 +66,24 @@
     "n_projects": 10,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 749.9156249687076,
+    "solve_ms": 705.6764999870211,
     "hit_time_limit": false,
     "objective": 16.785188155615085,
     "optimization_ratio": 0.9169329720292404,
     "fulfillment": 0.4803418803418803,
     "unfilled": 0,
-    "entries": 54
+    "entries": 54,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 5000
+    }
    },
    {
     "algorithm": "greedy",
@@ -66,7 +91,7 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 0.6561670452356339,
+    "solve_ms": 0.662707956507802,
     "hit_time_limit": false,
     "objective": 30.366666666666653,
     "optimization_ratio": 0.7069558993323737,
@@ -80,13 +105,24 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 7371.729125035927,
+    "solve_ms": 7090.195416007191,
     "hit_time_limit": false,
     "objective": 41.05753743334324,
     "optimization_ratio": 0.9277687114186225,
     "fulfillment": 0.5436187214611873,
     "unfilled": 0,
-    "entries": 114
+    "entries": 114,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 1000
+    }
    },
    {
     "algorithm": "milp",
@@ -94,13 +130,24 @@
     "n_projects": 20,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 7524.408249882981,
+    "solve_ms": 6994.2947088275105,
     "hit_time_limit": false,
     "objective": 41.05753743334324,
     "optimization_ratio": 0.9277687114186225,
     "fulfillment": 0.5436187214611873,
     "unfilled": 0,
-    "entries": 114
+    "entries": 114,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 5000
+    }
    },
    {
     "algorithm": "greedy",
@@ -108,7 +155,7 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": null,
-    "solve_ms": 2.603166038170457,
+    "solve_ms": 2.4215420708060265,
     "hit_time_limit": false,
     "objective": 67.68749999999999,
     "optimization_ratio": 0.6732659697943829,
@@ -122,13 +169,24 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": 1000,
-    "solve_ms": 24664.450875017792,
+    "solve_ms": 23321.143333101645,
     "hit_time_limit": false,
     "objective": 92.05234059490077,
     "optimization_ratio": 0.8854971969806842,
     "fulfillment": 0.5939022988505747,
     "unfilled": 0,
-    "entries": 234
+    "entries": 234,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 1000
+    }
    },
    {
     "algorithm": "milp",
@@ -136,19 +194,31 @@
     "n_projects": 40,
     "seed": 42,
     "pair_cap": 5000,
-    "solve_ms": 47327.49816705473,
+    "solve_ms": 44700.058582937345,
     "hit_time_limit": false,
     "objective": 92.05799393025396,
     "optimization_ratio": 0.8829425577453427,
     "fulfillment": 0.5871321839080459,
     "unfilled": 0,
-    "entries": 236
+    "entries": 236,
+    "milp_params": {
+     "lam": 0.3,
+     "mu": 0.2,
+     "min_alloc": 0.2,
+     "clique_threshold_months": 6,
+     "pair_keep_ratio": 0.15,
+     "slack_penalty": 100.0,
+     "time_limit": 180,
+     "gap": 0.05,
+     "max_pairs": 5000
+    }
    }
   ],
   "violations": [
    {
     "algorithm": "greedy",
     "n_people": 50,
+    "n_projects": 10,
     "seed": 42,
     "budget_violations": 0,
     "reported_violations": 0,
@@ -157,6 +227,7 @@
    {
     "algorithm": "milp",
     "n_people": 50,
+    "n_projects": 10,
     "seed": 42,
     "pair_cap": 1000,
     "budget_violations": 0,
@@ -166,6 +237,7 @@
    {
     "algorithm": "milp",
     "n_people": 50,
+    "n_projects": 10,
     "seed": 42,
     "pair_cap": 5000,
     "budget_violations": 0,
@@ -175,6 +247,7 @@
    {
     "algorithm": "greedy",
     "n_people": 100,
+    "n_projects": 20,
     "seed": 42,
     "budget_violations": 1,
     "reported_violations": 1,
@@ -183,6 +256,7 @@
    {
     "algorithm": "milp",
     "n_people": 100,
+    "n_projects": 20,
     "seed": 42,
     "pair_cap": 1000,
     "budget_violations": 0,
@@ -192,6 +266,7 @@
    {
     "algorithm": "milp",
     "n_people": 100,
+    "n_projects": 20,
     "seed": 42,
     "pair_cap": 5000,
     "budget_violations": 0,
@@ -201,6 +276,7 @@
    {
     "algorithm": "greedy",
     "n_people": 200,
+    "n_projects": 40,
     "seed": 42,
     "budget_violations": 2,
     "reported_violations": 2,
@@ -209,6 +285,7 @@
    {
     "algorithm": "milp",
     "n_people": 200,
+    "n_projects": 40,
     "seed": 42,
     "pair_cap": 1000,
     "budget_violations": 0,
@@ -218,6 +295,7 @@
    {
     "algorithm": "milp",
     "n_people": 200,
+    "n_projects": 40,
     "seed": 42,
     "pair_cap": 5000,
     "budget_violations": 0,
@@ -230,7 +308,7 @@
     "n_people": 50,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 3447.1095842309296,
+    "total_ms": 3269.318792037666,
     "labels": [
      "A",
      "B",
@@ -254,7 +332,7 @@
     "n_people": 100,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 30552.357166074216,
+    "total_ms": 28476.440500002354,
     "labels": [
      "A",
      "B",
@@ -278,7 +356,7 @@
     "n_people": 200,
     "seed": 42,
     "plan_count": 4,
-    "total_ms": 184764.91637481377,
+    "total_ms": 184144.96516692452,
     "labels": [
      "A",
      "B",
@@ -321,6 +399,7 @@
     "status": "skipped",
     "reason": "extrapolated beyond practical session budget: milp cap=1000 solve_ms 766.7 -> 6933.5 -> 22628.7 at n=50/100/200 (9.04x, then 3.26x per doubling); n=300 was attempted twice and killed (CBC healthy, not hung, but not converging inside budget) before this skip list was added"
    }
-  ]
+  ],
+  "data_source": "이 스윕의 모든 행은 datasets.build_scale()이 규모마다 새로 생성한 데이터셋을 쓴다 (core.datagen.generator, seed=42 고정, rule-based 파싱의 템플릿 리뷰) — 커밋된 LLM 모드 데모 fixture(fixtures/*.json)를 로드하지 않는다. n=100 지점도 인원·프로젝트 수만 fixture와 같을 뿐 리뷰 텍스트가 달라 C 행렬과 optimization_ratio가 fixture와 다르다 — 프로젝트 개수/인원 수가 같다고 같은 데이터가 아니다."
  }
 }
