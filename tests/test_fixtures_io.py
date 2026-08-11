@@ -28,3 +28,25 @@ def test_meta_records_review_mode_llm_when_passed(tmp_path: Path):
     save_fixtures(ds, None, tmp_path, review_mode="llm")
     meta = json.loads((tmp_path / "meta.json").read_text("utf-8"))
     assert meta["review_mode"] == "llm"
+
+
+def test_meta_omits_seed_and_models_when_not_passed(tmp_path: Path):
+    """기존 호출부(review_mode만 넘기는 경우)는 계속 동작해야 한다 -- seed/모델명은
+    선택 인자다."""
+    ds = generate_dataset(30, 6, seed=3)
+    save_fixtures(ds, None, tmp_path, review_mode="template")
+    meta = json.loads((tmp_path / "meta.json").read_text("utf-8"))
+    assert "seed" not in meta and "gen_model" not in meta and "parse_model" not in meta
+
+
+def test_meta_records_seed_and_models_when_passed(tmp_path: Path):
+    """최종 리뷰 Important 13: seed·gen_model·parse_model이 meta.json에 기록돼야
+    report.py가 '세 실험 공통 시드'를 손타이핑하지 않고 이 커밋된 파일에서 확인할
+    수 있다."""
+    ds = generate_dataset(30, 6, seed=3)
+    save_fixtures(ds, None, tmp_path, review_mode="llm", seed=3,
+                  gen_model="gpt-5-mini", parse_model="gpt-5-nano")
+    meta = json.loads((tmp_path / "meta.json").read_text("utf-8"))
+    assert meta["seed"] == 3
+    assert meta["gen_model"] == "gpt-5-mini"
+    assert meta["parse_model"] == "gpt-5-nano"

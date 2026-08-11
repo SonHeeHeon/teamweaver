@@ -47,9 +47,11 @@ def main():
                   f"({checkpoint_path}).")
             return
         parsed = apply_checkpoint(ds, checkpoint)
+        save_fixtures(ds, parsed, FIXTURES_DIR, review_mode=args.review_mode, seed=args.seed,
+                      gen_model=pricing["gen_model"], parse_model=pricing["parse_model"])
     else:
         parsed = parse_reviews_rule_based(ds.reviews)
-    save_fixtures(ds, parsed, FIXTURES_DIR, review_mode=args.review_mode)
+        save_fixtures(ds, parsed, FIXTURES_DIR, review_mode=args.review_mode, seed=args.seed)
     print(f"frozen: {args.people} people / {args.projects} projects / seed {args.seed} "
           f"/ reviews={len(ds.reviews)} mode={args.review_mode}")
 

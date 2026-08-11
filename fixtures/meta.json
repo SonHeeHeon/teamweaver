@@ -3,5 +3,8 @@
  "n_projects": 20,
  "horizon_start": "2026-09",
  "frozen_at": "2026-08-07",
- "review_mode": "llm"
+ "review_mode": "llm",
+ "seed": 42,
+ "gen_model": "gpt-5-mini",
+ "parse_model": "gpt-5-nano"
 }
