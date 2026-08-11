@@ -1,24 +1,26 @@
+import pytest
+
 from experiments import report
 
 
-def _exp1_fake(parity_match=True, with_extras=True):
+def _exp1_fake(parity_match=True, with_extras=True, repeats=20):
     rows = [
         {"backend": "sqlite", "n_people": 100, "n_projects": 20, "hops": 1,
-         "median_ms": 1.0, "p95_ms": 1.2, "repeats": 20, "warmup": 3},
+         "median_ms": 1.0, "p95_ms": 1.2, "repeats": repeats, "warmup": 3},
         {"backend": "memory", "n_people": 100, "n_projects": 20, "hops": 1,
-         "median_ms": 0.5, "p95_ms": 0.6, "repeats": 20, "warmup": 3},
+         "median_ms": 0.5, "p95_ms": 0.6, "repeats": repeats, "warmup": 3},
         {"backend": "neo4j", "n_people": 100, "n_projects": 20, "hops": 1,
-         "median_ms": 2.0, "p95_ms": 2.4, "repeats": 20, "warmup": 50},
+         "median_ms": 2.0, "p95_ms": 2.4, "repeats": repeats, "warmup": 50},
         {"backend": "sqlite", "n_people": 100, "n_projects": 20, "hops": 3,
-         "median_ms": 1.5, "p95_ms": 2.0, "repeats": 20, "warmup": 3},
+         "median_ms": 1.5, "p95_ms": 2.0, "repeats": repeats, "warmup": 3},
         {"backend": "memory", "n_people": 100, "n_projects": 20, "hops": 3,
-         "median_ms": 0.2, "p95_ms": 0.3, "repeats": 20, "warmup": 3},
+         "median_ms": 0.2, "p95_ms": 0.3, "repeats": repeats, "warmup": 3},
         {"backend": "sqlite", "n_people": 100, "n_projects": 20, "hops": 4,
-         "median_ms": 4.0, "p95_ms": 4.5, "repeats": 20, "warmup": 3},
+         "median_ms": 4.0, "p95_ms": 4.5, "repeats": repeats, "warmup": 3},
         {"backend": "neo4j", "n_people": 100, "n_projects": 20, "hops": 4,
-         "median_ms": 20.0, "p95_ms": 21.0, "repeats": 20, "warmup": 50},
+         "median_ms": 20.0, "p95_ms": 21.0, "repeats": repeats, "warmup": 50},
         {"backend": "memory", "n_people": 100, "n_projects": 20, "hops": 4,
-         "median_ms": 1.0, "p95_ms": 1.1, "repeats": 20, "warmup": 3},
+         "median_ms": 1.0, "p95_ms": 1.1, "repeats": repeats, "warmup": 3},
     ]
     data = {
         "rows": rows,
@@ -27,7 +29,7 @@ def _exp1_fake(parity_match=True, with_extras=True):
         "seeds_per_run": 5,
     }
     if with_extras:
-        data["protocol_floor"] = {"median_ms": 1.6, "p95_ms": 1.9, "repeats": 20, "warmup": 50}
+        data["protocol_floor"] = {"median_ms": 1.6, "p95_ms": 1.9, "repeats": repeats, "warmup": 50}
     return {"environment": {"python": "3.12.0", "platform": "test", "cpu_count": 8}, "data": data}
 
 
@@ -126,3 +128,24 @@ def test_build_is_deterministic(monkeypatch):
             "exp3_algorithm": _exp3_fake()}
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     assert report.build() == report.build()
+
+
+def test_repeat_count_reflects_data_not_hardcoded_20(monkeypatch):
+    """반복 횟수 각주는 rows에서 읽어야 한다 — 20으로 타이핑해두면 다른 repeats로
+    재실행했을 때 이 각주만 조용히 낡는다(코디네이터 리뷰 지적, 회귀 방지)."""
+    fake = {"exp1_storage": _exp1_fake(repeats=5), "exp2_pipeline": _exp2_fake(),
+            "exp3_algorithm": _exp3_fake()}
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    md = report.build()
+    assert "반복 5회" in md
+    assert "반복 20회" not in md
+
+
+def test_build_propagates_missing_results_file(monkeypatch):
+    """results/*.json 하나가 없으면 build()는 예외를 그대로 전파해야 한다 —
+    조용히 리포트에 구멍을 내면 안 된다(브리프의 load-bearing 속성, 회귀 방지)."""
+    def _raise(name):
+        raise FileNotFoundError(f"missing {name}.json")
+    monkeypatch.setattr(report.harness, "load_result", _raise)
+    with pytest.raises(FileNotFoundError):
+        report.build()

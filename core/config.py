@@ -11,6 +11,13 @@ FIXTURES_DIR = REPO_ROOT / "fixtures"
 # silently score the same unweighted skill differently.
 DEFAULT_WEIGHT = 3.0
 
+# MILP optimization_ratio policy target from the PoC spec (Hybrid Optimization
+# requirement: "MILP로 최적화율 90%+"). This is a policy threshold, not a
+# measurement -- experiments/report.py compares measured optimization_ratio
+# against it to flag which scales fall short. Pinned here (a tracked file)
+# rather than left as a bare literal in the report generator.
+OPT_RATIO_TARGET = 0.90
+
 def load_review_items() -> list[str]:
     return json.loads((FIXTURES_DIR / "review_items.json").read_text("utf-8"))
 

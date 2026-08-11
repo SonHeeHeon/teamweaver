@@ -10,15 +10,10 @@ git으로 추적되는 JSON은 results/*.json과 마찬가지로 유효한 소�
 """
 import json
 
-from core.config import FIXTURES_DIR, REPO_ROOT
+from core.config import FIXTURES_DIR, OPT_RATIO_TARGET, REPO_ROOT
 from experiments.bench import harness
 
 OUT_PATH = REPO_ROOT / "experiments" / "optimization_report.md"
-
-# 알고리즘 목표치(실험 3): 100인 데모 fixture를 기준으로 정한 정책값이다.
-# 측정 결과가 아니라 "이 값과 비교했을 때 목표를 지키는지"를 판정하는 잣대이므로
-# 하드코딩된 실험 결과가 아니다.
-_OPT_RATIO_TARGET = 0.90
 
 
 def _median(rows: list[dict], backend: str, n: int, hops: int) -> float | None:
@@ -50,6 +45,23 @@ def _ipc_dominance(rows: list[dict], floor_median: float) -> tuple[float, float]
     return min(pcts), max(pcts)
 
 
+def _repeat_count_caption(rows: list[dict]) -> str:
+    """rows에 기록된 harness.measure repeats를 그대로 읽어 단위 각주를 만든다.
+
+    실측값을 20으로 타이핑해두면 실험을 다른 repeats로 재실행했을 때 이 각주만
+    조용히 낡아버린다(다른 곳은 이미 rows에서 동적으로 읽고 있었다) — 그래서 rows
+    자체에서 읽는다. 백엔드마다 repeats가 갈리는 경우(현재 데이터에는 없음, 전부
+    20)까지 대비해 값이 하나가 아니면 그 사실 자체를 각주에 남긴다.
+    """
+    counts = sorted({r["repeats"] for r in rows if "repeats" in r})
+    if not counts:
+        return "*단위: ms, 중앙값. 연결 수립·적재 시간 제외.*"
+    if len(counts) == 1:
+        return f"*단위: ms, 반복 {counts[0]}회 중앙값. 연결 수립·적재 시간 제외.*"
+    return (f"*단위: ms, 중앙값(반복 횟수는 백엔드마다 다름: {', '.join(str(c) for c in counts)}회). "
+            "연결 수립·적재 시간 제외.*")
+
+
 def _neo4j_sqlite_ratio_at_hops4(rows: list[dict]) -> tuple[float, float] | None:
     ratios = []
     for n in sorted({r["n_people"] for r in rows}):
@@ -62,12 +74,42 @@ def _neo4j_sqlite_ratio_at_hops4(rows: list[dict]) -> tuple[float, float] | None
     return min(ratios), max(ratios)
 
 
+def _exp1_headline(rows: list[dict]) -> str | None:
+    """원 가설("규모·hops가 커지면 Neo4j가 역전한다")이 성립하는지 실측으로 직접 판정해
+    24행 표 위에 한 줄 headline으로 얹는다 — 표를 끝까지 훑지 않아도 결론을 놓치지
+    않도록. neo4j가 sqlite보다 빠른 (인원, hops) 조합이 하나라도 있으면 가설이
+    성립하는 구간이 있다고, 하나도 없으면 가설이 기각됐다고 데이터로부터 판정한다.
+    """
+    keys = sorted({(r["n_people"], r["hops"]) for r in rows})
+    if not keys:
+        return None
+    crossovers = []
+    for n, h in keys:
+        neo = _median(rows, "neo4j", n, h)
+        sql = _median(rows, "sqlite", n, h)
+        if neo is not None and sql is not None and neo < sql:
+            crossovers.append((n, h))
+    n_lo, n_hi = keys[0][0], keys[-1][0]
+    h_lo, h_hi = min(h for _, h in keys), max(h for _, h in keys)
+    n_scope = f"{n_lo}~{n_hi}명" if n_lo != n_hi else f"{n_lo}명"
+    scope = f"{n_scope}, hops {h_lo}~{h_hi}" if h_lo != h_hi else f"{n_scope}, hops {h_lo}"
+    if not crossovers:
+        return (f"**측정 범위({scope}) 전 구간에서 memory < sqlite < neo4j 순서가 유지된다 — "
+                "\"규모·hops가 커지면 Neo4j가 역전한다\"는 이 실험의 원 가설은 기각된다.**")
+    pts = ", ".join(f"n={n}·hops={h}" for n, h in crossovers)
+    return (f"**측정 범위({scope})에서 neo4j가 sqlite보다 빠른 구간이 존재한다({pts}) — "
+            "아래 표에서 직접 확인할 것.**")
+
+
 def _exp1(d: dict) -> str:
     rows, parity, skipped = d["rows"], d["parity"], d["skipped"]
     floor = d.get("protocol_floor")
     lines = ["## 실험 1 — 저장·탐색 계층 3자 비교", "",
-             "**질문:** 인력 집합의 N-hop 협업 문맥을 수집·집계할 때 어느 저장 방식이 빠른가?", "",
-             "| 인원 | hops | " + " | ".join(("sqlite", "neo4j", "memory")) + " |",
+             "**질문:** 인력 집합의 N-hop 협업 문맥을 수집·집계할 때 어느 저장 방식이 빠른가?", ""]
+    headline = _exp1_headline(rows)
+    if headline:
+        lines += [headline, ""]
+    lines += ["| 인원 | hops | " + " | ".join(("sqlite", "neo4j", "memory")) + " |",
              "|---:|---:|---:|---:|---:|"]
     keys = sorted({(r["n_people"], r["hops"]) for r in rows})
     for n, h in keys:
@@ -76,7 +118,7 @@ def _exp1(d: dict) -> str:
             m = _median(rows, b, n, h)
             cells.append(f"{m:.3f}" if m is not None else "—")
         lines.append(f"| {n} | {h} | " + " | ".join(cells) + " |")
-    lines += ["", "*단위: ms, 반복 20회 중앙값. 연결 수립·적재 시간 제외.*", ""]
+    lines += ["", _repeat_count_caption(rows), ""]
 
     bad = [p for p in parity if not p["match"]]
     if bad:
@@ -134,7 +176,11 @@ def _exp2(d: dict) -> str:
              f"| Hybrid (자유서술만) | {t['hybrid']:,} | {c['hybrid']:.4f} |", "",
              f"**측정된 절감률: {d['savings_pct']:.1f}%**", "",
              "> 절감률은 목표치가 아니라 **측정 결과**다. 우리 fixture의 정형:비정형 비중이 "
-             "이 값을 결정하므로 아래 민감도 곡선을 함께 본다.", ""]
+             "이 값을 결정하므로 아래 민감도 곡선을 함께 본다.", "",
+             "> 프로젝트 초기 설계 문서는 이보다 **훨씬 높은** 절감률을 목표로 제시했다 — 위 측정치는 "
+             "그 목표에 크게 못 미친다. 최초 목표 수치 자체는 `experiments/results/*.json` 범위 밖의 "
+             "로컬 설계 문서에만 있어 이 리포트에는 싣지 않는다(원 목표는 "
+             "`.omc/plan/2026-08-02-teamweaver-poc-design.md` 참조).", ""]
     if d.get("output_token_assumption") is not None:
         lines += [f"*출력 토큰/입력 토큰 비율 가정: {d['output_token_assumption']:.3f} — "
                   f"근거: {d.get('output_token_assumption_basis', '-')}*", ""]
@@ -220,11 +266,11 @@ def _exp3(d: dict) -> str:
         base_rows = sorted((r for r in milp_rows if r["pair_cap"] == min_cap),
                             key=lambda r: r["n_people"])
         parts = ", ".join(f"n={r['n_people']}: {r['optimization_ratio']:.4f}" for r in base_rows)
-        below = [r for r in base_rows if r["optimization_ratio"] < _OPT_RATIO_TARGET]
+        below = [r for r in base_rows if r["optimization_ratio"] < OPT_RATIO_TARGET]
         lines.append(f"> MILP(pair_cap={min_cap})의 optimization_ratio는 {parts}이다.")
         if below:
             below_ns = ", ".join(f"n={r['n_people']}" for r in below)
-            lines.append(f"> **{below_ns}에서 {_OPT_RATIO_TARGET:.0%} 목표선 아래로 떨어진다** — "
+            lines.append(f"> **{below_ns}에서 {OPT_RATIO_TARGET:.0%} 목표선 아래로 떨어진다** — "
                           "\"목표 90%\"는 이 실험이 기준으로 삼은 규모(100인 데모 fixture)에서만 "
                           "성립하고, 규모가 커지면 유지된다는 보장이 없다.")
         lines.append("")
@@ -293,7 +339,9 @@ def build() -> str:
         methodology_warmup = (f"실험 1은 반복 {warmups[0][1]}회, 백엔드별 웜업은 {by_backend} "
                                "(neo4j는 드라이버/서버 예열을 위해 더 큰 웜업을 쓴다)")
     else:
-        methodology_warmup = "실험 1은 반복 20회, 웜업 3회 제외"
+        # 결과 JSON에 repeats/warmup이 없으면 횟수를 지어내지 않는다 —
+        # 손으로 적은 숫자는 재실행 시 조용히 낡는다(이 리포트의 재현성 원칙).
+        methodology_warmup = "실험 1의 반복·웜업 횟수는 결과 JSON에 기록되지 않았다"
 
     e3_rows = e3["data"].get("rows", [])
     seed = e3_rows[0]["seed"] if e3_rows and "seed" in e3_rows[0] else None
