@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from core.domain.models import Dataset, ParsedReview
+from core.domain.models import CoworkRecord, Dataset, ParsedReview, PeerReview
 
 _SCHEMA = """
 CREATE TABLE person(id TEXT PRIMARY KEY, name TEXT, grade TEXT, monthly_rate INT);
@@ -73,3 +73,25 @@ def synergy_context_sql(conn, person_ids: list[str], hops: int) -> list[tuple]:
     LEFT JOIN node_polarity np ON dr.node = np.reviewee_id
     WHERE dr.node != dr.src"""
     return conn.execute(q, [*person_ids, hops, hops]).fetchall()
+
+def append_review(conn, review: PeerReview, parsed: ParsedReview) -> None:
+    """증분 갱신: 새 피어리뷰 1건. 운영에서는 리뷰가 계속 들어온다.
+
+    review 테이블에는 PRIMARY KEY가 없으므로 이 INSERT는 같은 (리뷰어, 피리뷰어)로
+    다시 호출하면 행을 하나 더 쌓는다 — Neo4j 쪽 MERGE(멱등)와 하는 일이 다르다.
+    측정할 때는 반드시 양쪽 모두에 없는 새 레코드를 써야 한다.
+    """
+    conn.execute("INSERT INTO review VALUES(?,?,?)",
+                 (parsed.reviewer_id, parsed.reviewee_id, parsed.text_polarity))
+    conn.executemany("INSERT INTO review_item VALUES(?,?,?,?)",
+                     [(review.reviewer_id, review.reviewee_id, it, flag)
+                      for it, flag in ([(i, 1) for i in review.positive.items] +
+                                       [(i, 0) for i in review.negative.items])])
+    conn.commit()
+
+
+def append_cowork(conn, rec: CoworkRecord) -> None:
+    """증분 갱신: 새 협업 이력 1건."""
+    conn.execute("INSERT INTO collaboration VALUES(?,?,?,?)",
+                 (rec.a_id, rec.b_id, rec.co_months, rec.project_count))
+    conn.commit()

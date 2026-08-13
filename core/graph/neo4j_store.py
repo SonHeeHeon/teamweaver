@@ -1,6 +1,6 @@
 import os
 import neo4j
-from core.domain.models import Dataset, ParsedReview
+from core.domain.models import CoworkRecord, Dataset, ParsedReview, PeerReview
 
 def get_driver(uri: str | None = None) -> neo4j.Driver:
     uri = uri or os.environ.get("NEO4J_URI", "bolt://localhost:7687")
@@ -63,3 +63,30 @@ def synergy_context_cypher(driver, person_ids: list[str], hops: int) -> list[dic
          "RETURN p.id AS src, o.id AS other, avg(v.polarity) AS avg_polarity")
     with driver.session() as s:
         return [dict(r) for r in s.run(q, ids=person_ids)]
+
+def append_review(driver, review: PeerReview, parsed: ParsedReview) -> None:
+    """증분 갱신: 새 피어리뷰 1건.
+
+    MERGE는 멱등이라 같은 (리뷰어, 피리뷰어)로 다시 호출하면 새로 만들지 않고
+    기존 관계를 갱신한다 — SQLite의 INSERT(행을 계속 쌓음)와 하는 일이 다르다.
+    측정할 때는 반드시 양쪽 모두에 없는 새 레코드를 써야 한다.
+
+    s.run은 자동 커밋 트랜잭션이므로 with 블록을 빠져나오는 시점에 커밋된다 —
+    함수가 반환하면 다른 세션·다른 driver에서도 보인다.
+    """
+    with driver.session() as s:
+        s.run("MATCH (a:Person {id:$rv}), (b:Person {id:$re}) "
+              "MERGE (a)-[v:REVIEWED]->(b) "
+              "SET v += {pos_items:$pos, neg_items:$neg, polarity:$pol, evidence:$ev}",
+              rv=review.reviewer_id, re=review.reviewee_id,
+              pos=review.positive.items, neg=review.negative.items,
+              pol=parsed.text_polarity, ev=parsed.evidence)
+
+
+def append_cowork(driver, rec: CoworkRecord) -> None:
+    """증분 갱신: 새 협업 이력 1건."""
+    with driver.session() as s:
+        s.run("MATCH (a:Person {id:$a}), (b:Person {id:$b}) "
+              "MERGE (a)-[w:WORKED_WITH]->(b) "
+              "SET w.co_months = $m, w.project_count = $c",
+              a=rec.a_id, b=rec.b_id, m=rec.co_months, c=rec.project_count)
