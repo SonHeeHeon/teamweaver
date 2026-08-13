@@ -4,8 +4,10 @@
 검증되는 것(양쪽 결과 일치)은 tests/test_neo4j_rag.py의 parity 테스트와 실제
 스윕 실행(`python -m experiments.bench.exp4_rag`)이 맡는다.
 """
+import pytest
+
 from core.rag.queries import RAG_QUERIES
-from experiments.bench import exp4_rag
+from experiments.bench import exp4_rag, harness
 
 
 def test_run_small_scale_covers_all_queries():
@@ -35,6 +37,38 @@ def test_every_query_returns_rows():
     for r in out["rows"]:
         assert r["result_count"] > 0, \
             f"{r['query']}: n={r['n_people']}에서 0행 — 인자를 넓혀야 한다"
+
+
+def test_every_query_returns_rows_at_every_scale_in_committed_artifact():
+    """위 test_every_query_returns_rows는 (100, 20) 한 규모만 돈다 — 빠르지만,
+    docstring이 말하는 위험("규모에 따라 0행이었다 아니었다 하면 규모 추세
+    자체가 인공물이 된다")은 네 규모 전부를 봐야 잠긴다.
+
+    네 규모 전부에서 run()을 실제로 돌리는 대신, 커밋된
+    `experiments/results/exp4_rag.json`(의사결정 규칙 1이 실제로 소비하는
+    바로 그 아티팩트)에 대해 확인한다. 이쪽이 더 강한 잠금이다 — 실행
+    타이밍이 아니라 실제로 커밋된 데이터를 검사하고, 런타임 비용도 없다.
+    스윕을 돌리지 않은 새 체크아웃에서는 결과 파일이 없으므로 깨끗하게
+    skip한다.
+    """
+    try:
+        result = harness.load_result("exp4_rag")
+    except FileNotFoundError:
+        pytest.skip("experiments/results/exp4_rag.json 없음 -- 스윕(python -m "
+                    "experiments.bench.exp4_rag)을 먼저 돌려야 이 테스트를 돌릴 수 있다")
+
+    rows = result["data"]["rows"]
+    seen = {(r["backend"], r["query"], r["n_people"]) for r in rows}
+    for backend in ("sqlite", "neo4j"):
+        for query in RAG_QUERIES:
+            for n_people, _n_projects in exp4_rag.RAG_SCALES:
+                assert (backend, query, n_people) in seen, \
+                    f"{backend}/{query} @ n={n_people}: 아티팩트에 행 자체가 없다"
+
+    for r in rows:
+        assert r["result_count"] > 0, \
+            (f"{r['backend']}/{r['query']}: n={r['n_people']}에서 0행 -- "
+             "커밋된 아티팩트가 이미 규모 추세 인공물을 담고 있다")
 
 
 def test_calibration_is_recorded():

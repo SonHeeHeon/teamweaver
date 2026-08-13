@@ -194,35 +194,40 @@ def run(scales=None, neo4j: bool = True) -> dict:
 
     for n_people, n_projects in scales:
         ds, parsed, _ = datasets.build_scale(n_people, n_projects, 42)
-        tmpdir = Path(tempfile.mkdtemp())
-        db_path = tmpdir / f"exp4_{n_people}.db"
-        build_sqlite(ds, parsed, db_path)          # 적재는 측정 밖
-        conn = sqlite3.connect(db_path)
-        if calibration["sqlite_noop_ms"] is None:
-            calibration.update(_calibrate_sqlite(conn))
+        # tempfile.TemporaryDirectory는 컨텍스트 매니저라 예외가 나도(질의가
+        # 터져도) __exit__에서 디렉터리를 지운다. n=1000 DB가 가장 커서,
+        # 지우지 않으면 재실행마다 누적된다.
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / f"exp4_{n_people}.db"
+            build_sqlite(ds, parsed, db_path)      # 적재는 측정 밖
+            conn = sqlite3.connect(db_path)
+            try:
+                if calibration["sqlite_noop_ms"] is None:
+                    calibration.update(_calibrate_sqlite(conn))
 
-        if driver is not None:
-            load_neo4j(driver, ds, parsed)         # 적재는 측정 밖
+                if driver is not None:
+                    load_neo4j(driver, ds, parsed)     # 적재는 측정 밖
 
-        args = _args(ds)
-        for q in RAG_QUERIES:
-            a = args[q]
-            s_rows = sqlite_rag.ALL[q](conn, *a)
-            rows.append({"backend": "sqlite", "query": q, "n_people": n_people,
-                         "n_projects": n_projects, "result_count": len(s_rows),
-                         **harness.measure(lambda q=q, a=a: sqlite_rag.ALL[q](conn, *a))})
+                args = _args(ds)
+                for q in RAG_QUERIES:
+                    a = args[q]
+                    s_rows = sqlite_rag.ALL[q](conn, *a)
+                    rows.append({"backend": "sqlite", "query": q, "n_people": n_people,
+                                 "n_projects": n_projects, "result_count": len(s_rows),
+                                 **harness.measure(lambda q=q, a=a: sqlite_rag.ALL[q](conn, *a))})
 
-            if driver is not None:
-                n_rows = neo4j_rag.ALL[q](driver, *a)
-                parity.append({"query": q, "n_people": n_people,
-                               "sqlite_count": len(s_rows), "neo4j_count": len(n_rows),
-                               "match": _norm(s_rows, q) == _norm(n_rows, q)})
-                rows.append({"backend": "neo4j", "query": q, "n_people": n_people,
-                             "n_projects": n_projects, "result_count": len(n_rows),
-                             **harness.measure(
-                                 lambda q=q, a=a: neo4j_rag.ALL[q](driver, *a),
-                                 warmup=NEO4J_WARMUP)})
-        conn.close()
+                    if driver is not None:
+                        n_rows = neo4j_rag.ALL[q](driver, *a)
+                        parity.append({"query": q, "n_people": n_people,
+                                       "sqlite_count": len(s_rows), "neo4j_count": len(n_rows),
+                                       "match": _norm(s_rows, q) == _norm(n_rows, q)})
+                        rows.append({"backend": "neo4j", "query": q, "n_people": n_people,
+                                     "n_projects": n_projects, "result_count": len(n_rows),
+                                     **harness.measure(
+                                         lambda q=q, a=a: neo4j_rag.ALL[q](driver, *a),
+                                         warmup=NEO4J_WARMUP)})
+            finally:
+                conn.close()        # 디렉터리 삭제 전에 핸들부터 닫는다
 
     if driver is not None:
         driver.close()
