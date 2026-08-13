@@ -29,11 +29,14 @@ RETURN c.id AS person_id, h.level AS level, t.id AS team_peer_id,
 ORDER BY person_id, team_peer_id
 """
 
+# a, b는 이미 위 MATCH에서 바인딩됐다. 프로퍼티 비교로 다시 찾지 않고 바인딩된
+# 노드에서 바로 무방향 -[v:REVIEWED]- 로 순회한다 — 방향 무관 매치이므로
+# "(x=a,y=b) OR (x=b,y=a)"와 동일한 의미이면서 플래너가 라벨/전체 스캔으로
+# 빠질 여지가 없다.
 _TEAM_COHESION = """
 MATCH (a:Person)-[w:WORKED_WITH]-(b:Person)
 WHERE a.id IN $team AND b.id IN $team AND a.id < b.id
-OPTIONAL MATCH (x:Person)-[v:REVIEWED]->(y:Person)
-WHERE (x.id = a.id AND y.id = b.id) OR (x.id = b.id AND y.id = a.id)
+OPTIONAL MATCH (a)-[v:REVIEWED]-(b)
 RETURN a.id AS a_id, b.id AS b_id, w.co_months AS co_months,
        avg(v.polarity) AS polarity
 ORDER BY a_id, b_id
@@ -90,6 +93,11 @@ def skill_within_hops(driver, person_id: str, skill: str, hops: int) -> list[dic
 
 PROFILE_QUERIES = {
     "swap_diff": lambda a, b: (_SWAP_DIFF, {"a": a, "b": b}),
+    "replacement_candidates": lambda skill, min_level, team_ids: (
+        _REPLACEMENT, {"skill": skill, "min_level": min_level, "team": team_ids}),
+    "team_cohesion": lambda team_ids: (_TEAM_COHESION, {"team": team_ids}),
+    "overfamiliar_pairs": lambda threshold_months: (
+        _OVERFAMILIAR, {"threshold": threshold_months}),
     "skill_within_hops": lambda pid, skill, hops: (
         _SKILL_WITHIN_HOPS % hops, {"pid": pid, "skill": skill}),
 }
