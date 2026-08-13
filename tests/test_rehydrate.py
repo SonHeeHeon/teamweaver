@@ -100,8 +100,13 @@ def _assert_pair_is_new(ds) -> None:
     assert not any({c.a_id, c.b_id} == {a, b} for c in ds.coworks), (
         f"{NEW_PAIR}가 이미 협업 이력에 있다 — append가 새 레코드가 아니게 된다. "
         "NEW_PAIR를 데이터셋에 없는 쌍으로 바꿀 것.")
-    assert not any((r.reviewer_id, r.reviewee_id) == (a, b) for r in ds.reviews), (
-        f"{NEW_PAIR} 방향 리뷰가 이미 있다 — append가 새 레코드가 아니게 된다. "
+    # pair_review_score의 키는 tuple(sorted(...))로 방향 무관이다
+    # (core/graph/memory_graph.py:47) — 이 가드도 방향 무관으로 봐야 한다.
+    # (reviewer, reviewee)만 보면 반대 방향(b, a) 리뷰가 이미 있어도 통과해
+    # NEW_REVIEW_PAIR_SCORE가 mean-over-two로 계산돼 틀린 기대값과 비교하는
+    # 헷갈리는 실패를 만든다 — 이 가드가 막으려는 바로 그 상황이다.
+    assert not any({r.reviewer_id, r.reviewee_id} == {a, b} for r in ds.reviews), (
+        f"{NEW_PAIR} 쌍 리뷰가 이미 있다(방향 무관) — append가 새 레코드가 아니게 된다. "
         "NEW_PAIR를 데이터셋에 없는 쌍으로 바꿀 것.")
 
 
@@ -225,6 +230,44 @@ def test_rehydrate_from_neo4j_matches_sqlite(both_stores):
     assert a.pair_review_score, "pair_review_score가 비어 있다 — 비교가 공허하다"
     assert a.node_polarity, "node_polarity가 비어 있다 — 비교가 공허하다"
     assert a.cowork_months.nnz > 0, "cowork_months가 비어 있다 — 비교가 공허하다"
+
+
+@pytest.mark.neo4j
+def test_neo4j_pid_index_follows_order_by_not_insertion_order():
+    """from_neo4j의 사람 순서를 만드는 것은 ORDER BY p.id이지, Dataset 삽입
+    순서나 Neo4j가 우연히 돌려주는 라벨 스캔 순서가 아니어야 한다.
+
+    태스크 5 리포트 §7-1이 남긴 잔여 우려: 변이 테스트에서 ORDER BY p.id를
+    지워도 16개 테스트가 전부 통과했는데, 그건 이 Neo4j 버전이 이 규모에서
+    Person을 생성 순서로 돌려주고, 그 생성 순서가 우연히 Dataset 삽입 순서와
+    같고(load_neo4j가 ds.people 순서로 적재), Dataset 삽입 순서가 다시
+    tests/test_rehydrate.py의 정렬-id 가정과 같기 때문이다(세 우연의 합).
+    pid_index 순서는 MemoryGraph의 **모든 행렬 인덱스**를 정하므로 이 순서가
+    코드가 아니라 우연에 기대는 것은 위험하다.
+
+    이 테스트는 load_neo4j를 **id 역순**으로 적재해 그 우연을 깨뜨린다 —
+    삽입 순서가 sorted와 반대이므로, ORDER BY 없이 생성 순서로 돌아오면
+    pid_index도 반대가 되어 아래 단언이 실패한다. 직접 빌드와의 비교가
+    아니라 pid_index 자체의 정렬만 보는 이유: 역순으로 적재하면 직접 빌드는
+    Dataset 순서(=역순)를 그대로 pid_index로 쓰므로 두 그래프가 정당하게
+    달라진다 — 그 비교로는 이 속성을 잠글 수 없다.
+
+    ORDER BY p.id를 지우고 이 테스트만 돌리면 실패한다는 것을 수동으로
+    확인했다(리뷰 수정 리포트 참조, 지운 뒤 원복함).
+    """
+    ds = generate_dataset(*DATASET)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    reversed_ds = ds.model_copy(update={"people": list(reversed(ds.people))})
+
+    driver = get_driver()
+    try:
+        load_neo4j(driver, reversed_ds, parsed)
+        g = rehydrate.from_neo4j(driver)
+        assert list(g.pid_index) == sorted(p.id for p in ds.people), (
+            "pid_index가 id 오름차순이 아니다 — from_neo4j의 ORDER BY p.id가 "
+            "삽입 순서 대신 정렬 순서를 보장하지 못하고 있다")
+    finally:
+        driver.close()
 
 
 # --------------------------------------------------------------------------

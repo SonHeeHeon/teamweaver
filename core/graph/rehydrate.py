@@ -18,15 +18,20 @@ from core.domain.models import (CoworkRecord, Dataset, Grade, ParsedReview,
                                 PeerReview, Person, ReviewSection)
 from core.graph.memory_graph import MemoryGraph
 
-# 빈 섹션·빈 스킬 대체값. ReviewSection.items는 min_length=1이라 빈 리스트로는
-# 모델 생성 자체가 실패한다 — 크래시를 막으려고 두는 값이다. 하지만 실제로
-# 발동하면 _item_score = (n_pos - n_neg)/(n_pos + n_neg)의 분자·분모가 바뀌어
-# pair_review_score가, 스킬 쪽은 skill_index 어휘가 조용히 달라진다. 그래서
-# tests/test_rehydrate.py의 test_rehydration_assumptions_hold_at_experiment_scales
-# 와 test_*_store_has_no_empty_review_section이 실험이 쓰는 규모 전부에서
+# 빈 리뷰 섹션 대체값. ReviewSection.items는 min_length=1이라 빈 리스트로는
+# 모델 생성 자체가 실패한다 — 크래시를 막으려고 두는 값이다. 발동하면
+# _item_score = (n_pos - n_neg)/(n_pos + n_neg)의 분자·분모가 바뀌어
+# pair_review_score가 조용히 달라진다. 그래서 tests/test_rehydrate.py의
+# test_rehydration_assumptions_hold_at_experiment_scales와
+# test_*_store_has_no_empty_review_section이 실험이 쓰는 규모 전부에서
 # "이 값은 발동하지 않는다"를 잠근다. 검사를 함수 안에 넣지 않는 이유는
 # 재수화가 태스크 6의 피측정 대상이라 측정 경로에 추가 질의를 넣을 수 없기
 # 때문이다.
+#
+# 스킬 쪽에는 이 대체값을 쓰지 않는다. min_length=1은 ReviewSection에만 있는
+# 제약이고 Person.skills: dict[str, int]에는 길이 제약이 없어 {}가 합법이다
+# (core/domain/models.py:18, :21-26) — 스킬 없는 사람을 "미상 스킬 보유자"로
+# 위장시키지 않고 {}로 정직하게 복원한다. skills.get(pid, {}) / skills=sk를 쓴다.
 _UNKNOWN = "미상"
 
 
@@ -50,7 +55,7 @@ def from_sqlite(conn) -> MemoryGraph:
     for pid, name, grade, rate in conn.execute(
             "SELECT id, name, grade, monthly_rate FROM person ORDER BY id"):
         people.append(Person(id=pid, name=name, grade=Grade(grade), monthly_rate=rate,
-                             skills=skills.get(pid, {_UNKNOWN: 1}),
+                             skills=skills.get(pid, {}),
                              availability=[1.0] * 6))
     coworks = [CoworkRecord(a_id=a, b_id=b, co_months=m, project_count=c)
                for a, b, m, c in conn.execute(
@@ -82,7 +87,7 @@ def from_neo4j(driver) -> MemoryGraph:
         for r in rows:
             sk = {n: lv for n, lv in r["skills"] if n is not None}
             people.append(Person(id=r["id"], name=r["name"], grade=Grade(r["grade"]),
-                                 monthly_rate=r["rate"], skills=sk or {_UNKNOWN: 1},
+                                 monthly_rate=r["rate"], skills=sk,
                                  availability=[1.0] * 6))
         coworks = [CoworkRecord(a_id=r["a"], b_id=r["b"], co_months=r["m"],
                                 project_count=r["c"])
@@ -98,5 +103,5 @@ def from_neo4j(driver) -> MemoryGraph:
                 positive=ReviewSection(items=r["pos"] or [_UNKNOWN], text=""),
                 negative=ReviewSection(items=r["neg"] or [_UNKNOWN], text="")))
             parsed.append(ParsedReview(reviewer_id=r["rv"], reviewee_id=r["re"],
-                                       text_polarity=r["pol"] or 0.0, evidence=[]))
+                                       text_polarity=r["pol"], evidence=[]))
     return _assemble(people, coworks, reviews, parsed)
