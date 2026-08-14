@@ -1,5 +1,6 @@
 import pytest
 
+from core.rag.queries import RAG_QUERIES
 from experiments import report
 
 
@@ -90,12 +91,83 @@ def _exp3_fake(with_failures=True, with_n_projects=True, with_milp_params=True,
     return {"environment": {}, "data": data}
 
 
-def test_build_contains_all_three_experiments(monkeypatch):
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+_SCALES = (100, 300, 500, 1000)
+
+
+def _exp4_fake(parity_match=True, neo_wins=0):
+    """5질의 × 4규모 = 20셀. 규칙 1의 임계가 "20셀 중 11+"라는 절대 수치라
+    셀 수까지 실물과 같아야 의사결정 절이 렌더링된다."""
+    rows, parity = [], []
+    won = 0
+    for q in RAG_QUERIES:
+        for n in _SCALES:
+            neo_fast = won < neo_wins
+            won += int(neo_fast)
+            s, g = (2.0, 1.0) if neo_fast else (0.05, 1.0)
+            for backend, ms in (("sqlite", s), ("neo4j", g)):
+                rows.append({"backend": backend, "query": q, "n_people": n,
+                             "n_projects": n // 5, "result_count": 10 if q != "overfamiliar_pairs"
+                             else n, "median_ms": ms, "p95_ms": ms * 1.1,
+                             "min_ms": ms * 0.9, "max_ms": ms * 1.2,
+                             "repeats": 20, "warmup": 50 if backend == "neo4j" else 3})
+            parity.append({"query": q, "n_people": n, "sqlite_count": 10,
+                           "neo4j_count": 10, "match": parity_match})
+    return {"environment": {}, "data": {
+        "rows": rows, "parity": parity, "skipped": [],
+        "calibration": {"neo4j_session_open_ms": 0.004, "neo4j_session_open_p95_ms": 0.005,
+                        "neo4j_session_plus_trivial_query_ms": 0.3,
+                        "neo4j_session_plus_trivial_query_p95_ms": 0.34,
+                        "sqlite_noop_ms": 0.0005, "sqlite_noop_p95_ms": 0.0006},
+        "args": {}}}
+
+
+def _exp5_fake(neo_better=0):
+    """4지표(load/disk/append_*/rehydrate) × 4규모. append_*는 두 이름이 한 지표다."""
+    rows, disk_detail = [], []
+    metrics = ["load_ms", "disk_bytes_clean", "append_cowork_ms", "rehydrate_ms"]
+    better = {m for m in metrics[:neo_better]}
+    for n in _SCALES:
+        for m in ("load_ms", "disk_bytes", "disk_bytes_clean",
+                  "append_cowork_ms", "append_review_ms", "rehydrate_ms"):
+            key = "append_cowork_ms" if m == "append_review_ms" else m
+            neo, sql = (1.0, 2.0) if key in better else (2.0, 1.0)
+            for backend, v in (("sqlite", sql), ("neo4j", neo)):
+                rows.append({"backend": backend, "n_people": n, "metric": m, "value": v,
+                             "unit": "bytes" if m.startswith("disk") else "ms",
+                             "median_ms": v, "p95_ms": v, "min_ms": v * 0.9,
+                             "max_ms": v * 1.1,
+                             "repeats": 20 if m.startswith("append") else 3, "warmup": 20})
+        for backend, store in (("sqlite", 1000), ("neo4j", 5000)):
+            disk_detail.append({"backend": backend, "n_people": n, "reading": "clean",
+                                "total_bytes": store + 100, "store_bytes": store,
+                                "txlog_bytes": 0 if backend == "sqlite" else 50,
+                                "system_store_bytes": 0, "system_txlog_bytes": 0})
+    cal = {"per_scale": [{"n_people": n, "records": {}, "sqlite_unlink_ms": 0.02,
+                          "assemble_ms": 0.3, "sqlite_noop_ms": 0.0005,
+                          "neo4j_detach_delete_ms": 0.5, "neo4j_session_open_ms": 0.005,
+                          "neo4j_noop_match_ms": 0.4,
+                          "neo4j_two_endpoint_match_ms": 0.45} for n in _SCALES]}
+    return {"environment": {}, "data": {
+        "rows": rows, "skipped": [], "calibration": cal, "disk_detail": disk_detail,
+        "completed_scales": [[n, n // 5] for n in _SCALES], "note": "테스트 노트"}}
+
+
+def _fakes(**over):
+    """리포트가 로드하는 결과 파일 전체. 개별 테스트는 필요한 것만 덮어쓴다."""
+    base = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
+            "exp3_algorithm": _exp3_fake(), "exp4_rag": _exp4_fake(),
+            "exp5_persistence_primed": _exp5_fake(),
+            "exp5_persistence": _exp5_fake()}
+    base.update(over)
+    return base
+
+
+def test_build_contains_all_five_experiments(monkeypatch):
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
-    for heading in ("실험 1", "실험 2", "실험 3", "한계", "결론"):
+    for heading in ("실험 1", "실험 2", "실험 3", "실험 4", "실험 5",
+                    "저장 계층 의사결정", "한계", "결론"):
         assert heading in md
     assert "0.928" in md or "92.8" in md
     assert "재현" in md
@@ -103,8 +175,7 @@ def test_build_contains_all_three_experiments(monkeypatch):
 
 def test_build_renders_new_fields_not_in_original_brief(monkeypatch):
     """브리프 작성 시점엔 없던 필드(protocol_floor/latency/failures)가 실제로 렌더링되는지 확인."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     # exp1 protocol_floor: hops=1 IPC 지배 비율이 실제로 계산되어 나타난다 (1.6/2.0=80%)
@@ -121,15 +192,15 @@ def test_build_flags_parity_mismatch(monkeypatch):
     """백엔드 불일치는 리포트에 경고로 드러나야 한다 — 조용히 넘어가면 안 된다."""
     base = {"environment": {}, "data": {"rows": [], "parity": [
         {"n_people": 100, "hops": 2, "match": False}], "skipped": []}}
-    fake = {"exp1_storage": base,
-            "exp2_pipeline": {"environment": {}, "data": {
+    fake = _fakes(exp1_storage=base,
+            exp2_pipeline={"environment": {}, "data": {
                 "model": "m", "pricing_as_of": "x",
                 "token_counts": {"full_llm": 1, "hybrid": 1, "review_count": 1},
                 "cost_usd": {"full_llm": 1.0, "hybrid": 1.0}, "savings_pct": 0.0,
                 "accuracy": {"checked": 0, "item_match_rate": None, "note": ""},
                 "sensitivity": []}},
-            "exp3_algorithm": {"environment": {}, "data": {
-                "rows": [], "violations": [], "alternatives": []}}}
+            exp3_algorithm={"environment": {}, "data": {
+                "rows": [], "violations": [], "alternatives": []}})
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "⚠️" in md and "불일치" in md
@@ -137,8 +208,7 @@ def test_build_flags_parity_mismatch(monkeypatch):
 
 def test_build_is_deterministic(monkeypatch):
     """동일 입력이면 두 번 생성한 출력이 바이트 단위로 동일해야 한다(타임스탬프 없음)."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     assert report.build() == report.build()
 
@@ -146,12 +216,14 @@ def test_build_is_deterministic(monkeypatch):
 def test_repeat_count_reflects_data_not_hardcoded_20(monkeypatch):
     """반복 횟수 각주는 rows에서 읽어야 한다 — 20으로 타이핑해두면 다른 repeats로
     재실행했을 때 이 각주만 조용히 낡는다(코디네이터 리뷰 지적, 회귀 방지)."""
-    fake = {"exp1_storage": _exp1_fake(repeats=5), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes(exp1_storage=_exp1_fake(repeats=5))
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
-    assert "반복 5회" in md
-    assert "반복 20회" not in md
+    # 실험 4·5도 자기 rows에서 각주를 읽으므로(각각 반복 20/3회) 문서 전체에서
+    # "반복 20회"를 금지할 수는 없다 — 실험 1 절 안에서만 확인한다.
+    exp1_section = md.split("## 실험 1")[1].split("## 실험 2")[0]
+    assert "반복 5회" in exp1_section
+    assert "반복 20회" not in exp1_section
 
 
 def test_build_propagates_missing_results_file(monkeypatch):
@@ -198,8 +270,7 @@ def test_exp1_headline_claims_full_order_when_data_supports_it():
 def test_exp1_table_surfaces_result_count(monkeypatch):
     """Important 8: n=500 dip처럼 result_count가 인원 수의 단조 대리지표가 아님을
     보여주려면 표에 결과 수 자체가 있어야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "결과수" in md
@@ -231,8 +302,7 @@ def test_exp1_result_count_dip_note_absent_when_monotonic():
 def test_exp1_p95_summary_present(monkeypatch):
     """Important 5: 방법론이 p95를 보고한다고 명시하므로 어딘가에는 실제로 있어야
     한다(표를 두 배로 넓히지 않기 위해 hop별 요약 표로)."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "p95 요약" in md
@@ -242,8 +312,7 @@ def test_exp1_p95_summary_present(monkeypatch):
 def test_exp1_scope_note_covers_node_polarity_asymmetry(monkeypatch):
     """Important 7: 인메모리는 node_polarity를 빌드 시점에 미리 계산해 두고,
     SQLite/Neo4j는 매 호출마다 다시 계산한다는 비대칭이 스코프에 있어야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "node_polarity" in md and "비대칭" in md
@@ -252,8 +321,7 @@ def test_exp1_scope_note_covers_node_polarity_asymmetry(monkeypatch):
 def test_exp1_environment_line_includes_cpu_ram_neo4j(monkeypatch):
     """Important 9: 헤드라인이 'Neo4j가 5배 느리다'인 벤치마크이니 CPU/RAM/Neo4j
     서버 버전이 리포트 환경 줄에 나와야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     fake["exp1_storage"]["environment"].update(
         {"cpu_model": "Apple M4", "ram": "16.0 GiB", "neo4j_server": "Neo4j Kernel 5.26.28 (community)"})
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
@@ -270,7 +338,7 @@ def test_exp2_savings_invariance_and_output_model_sensitivity_rendered(monkeypat
         {"model": "output_proportional_to_input", "savings_pct": 31.4},
         {"model": "output_constant_across_arms", "savings_pct": 0.78},
     ]
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": e2, "exp3_algorithm": _exp3_fake()}
+    fake = _fakes(exp2_pipeline=e2)
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "test_savings_pct_is_independent_of_out_ratio" in md
@@ -281,8 +349,7 @@ def test_exp2_savings_invariance_and_output_model_sensitivity_rendered(monkeypat
 def test_exp2_design_doc_citation_notes_it_is_gitignored(monkeypatch):
     """Important 10: 클론한 사람이 .omc/plan/... 경로를 열어볼 수 없다는 사실 자체를
     밝혀야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert ".gitignore" in md
@@ -291,8 +358,7 @@ def test_exp2_design_doc_citation_notes_it_is_gitignored(monkeypatch):
 def test_exp3_greedy_budget_blindness_disclosed(monkeypatch):
     """Important 3: greedy.py는 구조적으로 예산 로직이 없다는 사실을 리포트가
     명시해야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "core/optimize/greedy.py" in md
@@ -310,7 +376,7 @@ def test_exp3_violation_rate_normalized_and_growth_framing_dropped(monkeypatch):
         {"algorithm": "milp", "n_people": 100, "n_projects": 20, "pair_cap": 1000,
          "budget_violations": 0},
     ]
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(), "exp3_algorithm": e3}
+    fake = _fakes(exp3_algorithm=e3)
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "0/10건(0%)" in md and "1/20건(5%)" in md and "2/40건(5%)" in md
@@ -320,8 +386,7 @@ def test_exp3_violation_rate_normalized_and_growth_framing_dropped(monkeypatch):
 def test_exp3_data_source_and_frozen_fixture_distinction(monkeypatch):
     """Critical 2: 스윕의 실제 데이터 출처가 명시되고, 커밋된 데모 fixture의 값
     (README에서 파싱)과 스윕의 n=100 값이 서로 다른 수치임이 드러나야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "테스트 데이터 출처 노트" in md
@@ -334,8 +399,7 @@ def test_exp3_data_source_and_frozen_fixture_distinction(monkeypatch):
 def test_exp3_milp_params_disclosed(monkeypatch):
     """Important 6: optimization_ratio가 스킬 항만 잰다는 사실과 실제 solve에 쓰인
     lam/mu 등 MilpParams가 리포트에 드러나야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "λ=0.3" in md and "μ=0.2" in md
@@ -345,8 +409,7 @@ def test_exp3_milp_params_disclosed(monkeypatch):
 def test_exp3_alternatives_table_discloses_gap_cap_mismatch(monkeypatch):
     """Minor: Plan A(gap=0.01)와 대안(gap=0.05)이 위쪽 표(gap=0.05, cap별)와
     다른 조건으로 solve된다는 사실이 드러나야 한다."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake()}
+    fake = _fakes()
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()
     assert "gap=0.01" in md and "gap=0.05" in md
@@ -355,9 +418,8 @@ def test_exp3_alternatives_table_discloses_gap_cap_mismatch(monkeypatch):
 def test_exp3_missing_optional_fields_do_not_crash(monkeypatch):
     """새 필드(n_projects/milp_params/data_source)가 없는 구형 결과 JSON에 대해서도
     build()가 죽지 않고 그 부분만 조용히 생략해야 한다(하위 호환)."""
-    fake = {"exp1_storage": _exp1_fake(), "exp2_pipeline": _exp2_fake(),
-            "exp3_algorithm": _exp3_fake(with_n_projects=False, with_milp_params=False,
-                                         with_data_source=False)}
+    fake = _fakes(exp3_algorithm=_exp3_fake(with_n_projects=False, with_milp_params=False,
+                                            with_data_source=False))
     monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
     md = report.build()  # must not raise
     assert "실험 3" in md
@@ -377,3 +439,132 @@ def test_ipc_dominance_wording_when_floor_exceeds_query_time(monkeypatch):
     assert "구별되지 않는다" in md, "오차 내 구별 불가로 서술해야 한다"
     assert "차지한다" not in md.split("스코프 명시")[1].split("2.")[0], \
         "100%를 넘는 비율에 '차지한다'를 쓰면 안 된다"
+
+
+# ---------------------------------------------------------------------------
+# Plan 3 — 실험 4·5 절과 의사결정 절
+# ---------------------------------------------------------------------------
+
+def test_exp4_flags_parity_mismatch(monkeypatch):
+    """실험 4의 백엔드 불일치도 ⚠️로 드러나야 한다 — 두 구현이 다른 답을 내면
+    그 셀의 지연 비교 자체가 무효다."""
+    fake = _fakes(exp4_rag=_exp4_fake(parity_match=False))
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    md = report.build()
+    exp4 = md.split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "⚠️" in exp4 and "불일치" in exp4
+
+
+def test_exp4_discloses_discarded_sweep_topology_and_extrapolation_limits(monkeypatch):
+    """A-1/A-3/A-4/A-5: 폐기된 첫 스윕, 배포 토폴로지 비대칭, 규모 외삽 금지,
+    p95 추정량의 약함이 실험 4 절에 모두 있어야 한다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp4 = report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "폐기된 첫 스윕" in exp4 and "복구할 수 없다" in exp4
+    assert "neo4j:5-community" in exp4 and "in-process" in exp4
+    assert "외삽하지 말 것" in exp4
+    assert "p95는 약한 추정량이다" in exp4
+
+
+def test_exp4_calibration_is_quoted_as_a_range_with_sensitivity(monkeypatch):
+    """A-2: 세션 획득만이 아니라 고정 바닥 전체까지 두 끝을 함께 제시하고,
+    차감 민감도(뒤집히는 셀 수)를 실제로 계산해 보여야 한다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp4 = report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "고정 바닥" in exp4
+    assert "낮은 쪽 끝만 인용하면" in exp4
+    assert "뒤집히는 셀" in exp4
+
+
+def test_exp5_reports_both_sweeps_and_forbids_cross_sweep_subtraction(monkeypatch):
+    """A-13b: 두 스윕의 집계를 모두 싣고, 절대값을 서로 빼지 말라는 경고를 남긴다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "exp5_persistence_primed.json" in exp5 and "exp5_persistence.json" in exp5
+    assert "절대값을 서로 빼서 비교하지 말 것" in exp5
+
+
+def test_exp5_states_which_disk_reading_decided_rule2(monkeypatch):
+    """A-11: 어느 disk 판독으로 규칙 2를 판정했는지와, 지표를 빼지 않은 이유."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "disk_bytes_clean" in exp5
+    assert "3 of 3" in exp5          # 지표를 빼면 분모가 몰래 바뀐다는 서술
+    assert "스토어 파일만" in exp5    # Neo4j에 가장 유리한 대안 판독
+
+
+def test_exp5_covers_the_required_limitations(monkeypatch):
+    """브리프가 명시적으로 요구한 세 가지: (a) 적재·재수화 repeats 축소,
+    (b) Neo4j 디스크 측정이 볼륨 전체를 재는 한계, (c) 재수화가
+    availability/projects를 복원하지 않는다는 점."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "축소 반복" in exp5
+    assert "누적 판독" in exp5
+    assert "availability" in exp5 and "projects" in exp5
+    assert "크래시 내구성은 시험하지 않았다" in exp5
+
+
+def test_exp5_calibration_does_not_claim_a_discount_that_fails_for_append(monkeypatch):
+    """A-12: append_*는 차감 기반 주장이 어느 방향으로도 성립하지 않는다는 사실과,
+    반사실(뒤집힘)을 함께 밝혀야 한다. 그리고 그 범위를 네 지표 전체에 대한
+    진술로 쓰면 안 된다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "판정 불가" in exp5
+    assert "반사실" in exp5
+    assert "네 지표 전체에 대한 진술로" in exp5
+
+
+def test_decision_section_states_rule_number_evidence_verdict_and_plan(monkeypatch):
+    """의사결정 절은 적용된 규칙 번호·근거 수치·판정·근거 문장을 모두 싣고,
+    drop이면 제거 계획까지 동반해야 한다(규칙 4의 문언)."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    sec = report.build().split("## 저장 계층 의사결정")[1]
+    assert "규칙 4 적용" in sec and "`drop`" in sec
+    assert "0 / 20" in sec and "0 / 4" in sec
+    assert "제거 대상" in sec and "docker-compose.yml" in sec
+    assert "무엇을 잃는가" in sec
+
+
+def test_decision_section_shows_both_rule3_readings(monkeypatch):
+    """A-6: enum 해석과 문언 해석을 둘 다 보이고, 판정에는 Neo4j에 유리한 쪽을
+    썼다는 사실까지 밝혀야 한다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    sec = report.build().split("## 저장 계층 의사결정")[1]
+    assert "2 / 5" in sec and "1 / 5" in sec
+    assert "유리한" in sec
+    assert "team_cohesion" in sec
+
+
+def test_decision_section_flips_to_keep_when_the_data_says_so(monkeypatch):
+    """판정이 데이터에서 나오는지 확인한다 — 규칙 1을 충족하는 데이터를 주면
+    같은 코드가 keep을 내야 한다. 문장이 drop으로 굳어 있으면 여기서 깨진다."""
+    fake = _fakes(exp4_rag=_exp4_fake(neo_wins=11))
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    sec = report.build().split("## 저장 계층 의사결정")[1]
+    assert "규칙 1 적용" in sec and "`keep`" in sec
+    assert "제거 대상" not in sec
+
+
+def test_report_numbers_come_from_the_committed_artifacts(monkeypatch):
+    """리포트가 실제 커밋된 JSON으로도 생성되며, 판정 수치가 decision.evaluate의
+    결과와 일치하는지 본다(픽스처에서만 도는 것을 막는다)."""
+    from experiments import decision
+    md = report.build()          # monkeypatch 없음 — 실제 파일을 읽는다
+    e4 = decision.payload(report.harness.load_result("exp4_rag"))
+    e5 = decision.payload(report.harness.load_result("exp5_persistence_primed"))
+    d = decision.evaluate(e4, e5)
+    ev = d["evidence"]
+    assert f"규칙 {d['rule']} 적용" in md
+    assert f"`{d['verdict']}`" in md
+    assert d["rationale"] in md
+    assert f"**{ev['neo4j_faster_cells']} / {ev['total_cells']}**" in md

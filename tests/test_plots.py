@@ -88,3 +88,66 @@ def test_log_axis_ticks_are_plain_decimals_not_mathtext(tmp_path, monkeypatch):
     assert labels, "y축 눈금 라벨이 생성되지 않았다"
     assert all("$" not in lbl and "^" not in lbl for lbl in labels), labels
     assert any(lbl.startswith("0.") for lbl in labels), labels  # 음의 지수 구간 포함
+
+
+def test_exp4_and_exp5_plots_write_png(tmp_path, monkeypatch):
+    """Plan 3의 두 그림. 실제 결과 JSON과 같은 형태(래퍼 포함)를 받아야 하고,
+    지표 이름이 부분적으로만 있는 결과에도 죽지 않아야 한다."""
+    monkeypatch.setattr(plots, "FIGURES_DIR", tmp_path)
+    exp4 = {"environment": {}, "data": {"rows": [
+        {"backend": "sqlite", "query": "swap_diff", "n_people": 100, "median_ms": 0.026},
+        {"backend": "neo4j", "query": "swap_diff", "n_people": 100, "median_ms": 0.653},
+        {"backend": "sqlite", "query": "swap_diff", "n_people": 1000, "median_ms": 0.024},
+        {"backend": "neo4j", "query": "swap_diff", "n_people": 1000, "median_ms": 0.604},
+        {"backend": "sqlite", "query": "overfamiliar_pairs", "n_people": 100, "median_ms": 0.095},
+        {"backend": "neo4j", "query": "overfamiliar_pairs", "n_people": 100, "median_ms": 1.810},
+        {"backend": "sqlite", "query": "overfamiliar_pairs", "n_people": 1000, "median_ms": 0.981},
+        {"backend": "neo4j", "query": "overfamiliar_pairs", "n_people": 1000, "median_ms": 15.946},
+    ]}}
+    p4 = plots.exp4_rag(exp4)
+    assert p4.exists() and p4.stat().st_size > 1000
+
+    rows = []
+    for m, s, g in (("load_ms", 4.4, 51.2), ("disk_bytes_clean", 147456, 541458599),
+                    ("append_cowork_ms", 0.23, 0.55), ("rehydrate_ms", 3.35, 15.16)):
+        for n in (100, 1000):
+            rows.append({"backend": "sqlite", "n_people": n, "metric": m, "value": s})
+            rows.append({"backend": "neo4j", "n_people": n, "metric": m, "value": g})
+    p5 = plots.exp5_persistence({"environment": {}, "data": {"rows": rows}})
+    assert p5.exists() and p5.stat().st_size > 1000
+
+
+def test_exp5_plot_uses_the_clean_disk_reading_not_the_contaminated_one(tmp_path, monkeypatch):
+    """누적 판독(disk_bytes)은 이전 규모의 잔여를 포함해 규모별 비교에 쓸 수
+    없고, 의사결정 규칙 2도 클린 판독으로 판정한다 — 그림도 같은 판독을 써야
+    리포트와 그림이 다른 이야기를 하지 않는다."""
+    captured = _capture_saved_figure(monkeypatch, tmp_path)
+    rows = []
+    for m in ("load_ms", "disk_bytes", "disk_bytes_clean"):
+        for n in (100, 1000):
+            rows.append({"backend": "sqlite", "n_people": n, "metric": m, "value": 1.0})
+            rows.append({"backend": "neo4j", "n_people": n, "metric": m, "value": 2.0})
+    plots.exp5_persistence({"data": {"rows": rows}})
+    titles = [ax.get_title() for ax in captured["exp5_persistence.png"].axes]
+    assert "disk_bytes_clean" in titles
+    assert "disk_bytes" not in titles
+
+
+def test_exp5_minor_log_ticks_are_also_plain_decimals(tmp_path, monkeypatch):
+    """지표 값이 한 자릿수 미만 구간(append_*는 0.2~0.9ms)이면 matplotlib이
+    **부눈금**에도 라벨을 단다. 주눈금만 포매터를 바꿔 두면 부눈금이 mathtext
+    지수 표기로 남아 한글 폰트에서 유니코드 마이너스가 깨진다(실측에서 경고 확인)."""
+    captured = _capture_saved_figure(monkeypatch, tmp_path)
+    rows = []
+    for n in (100, 1000):
+        for backend, v in (("sqlite", 0.23), ("neo4j", 0.86)):
+            rows.append({"backend": backend, "n_people": n,
+                         "metric": "append_cowork_ms", "value": v})
+    plots.exp5_persistence({"data": {"rows": rows}})
+    fig = captured["exp5_persistence.png"]
+    ax = fig.axes[0]
+    fig.canvas.draw()
+    labels = ([t.get_text() for t in ax.yaxis.get_majorticklabels()]
+              + [t.get_text() for t in ax.yaxis.get_minorticklabels()])
+    assert any(labels)
+    assert all("$" not in lbl and "^" not in lbl for lbl in labels), labels

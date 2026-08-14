@@ -235,7 +235,7 @@ def _complex_sql_queries() -> dict:
 # ---------------------------------------------------------------------------
 
 REMOVAL_PLAN = {
-    "trigger": "규칙 4(drop)의 문언: 'Neo4j·docker-compose·드라이버 의존 제거 계획 동반 제시'",
+    "trigger": "규칙 4의 문언이 \"Neo4j·docker-compose·드라이버 의존 제거 계획 동반 제시\"를 요구한다",
     "remove": [
         {"path": "core/graph/neo4j_store.py",
          "note": "적재·증분 갱신·드라이버 획득. SQLite 대응물이 이미 전부 있다."},
@@ -258,7 +258,7 @@ REMOVAL_PLAN = {
         {"path": "core/rag/sqlite_rag.py",
          "note": "RAG 질의 5종을 전부 커버한다(parity 20/20 일치). 대체 구현을 새로 쓸 필요가 없다."},
         {"path": "core/graph/rehydrate.py::from_sqlite",
-         "note": "콜드 스타트(저장소 -> MemoryGraph)를 이미 커버한다."},
+         "note": "콜드 스타트(저장소 → MemoryGraph)를 이미 커버한다."},
         {"path": "core/graph/sqlite_store.py",
          "note": "적재·증분 갱신(append_cowork/append_review)."},
         {"path": "core/graph/memory_graph.py",
