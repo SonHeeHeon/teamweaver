@@ -1052,7 +1052,20 @@ def _exp5_warmup_lines(primed: dict, first: dict) -> list[str]:
                 + ". 두 백엔드에 **같은 값**을 쓴다.",
                 "- 추가로 스케일 루프 **밖에서** 전역 예열을 한 번 돌린다 — 웜업 상태가 규모 "
                 "순서와 교락되면 \"규모가 커질수록 빨라지는\" 가짜 추세가 만들어진다"
-                "(Plan 2에서 웜업 부족이 Neo4j를 최대 8배 부풀린 전례가 있다).", ""]
+                "(Plan 2에서 웜업 부족이 Neo4j를 최대 8배 부풀린 전례가 있다)."]
+    spreads = [(r["metric"], r["n_people"], r["max_ms"] / r["min_ms"])
+               for r in primed["rows"]
+               if r["backend"] == "neo4j" and r.get("min_ms")
+               and r["metric"] in ("load_ms", "rehydrate_ms")]
+    if spreads:
+        worst = max(spreads, key=lambda x: x[2])
+        out += [f"- 예열이 실제로 됐는지는 타이밍 표본의 스프레드로 확인한다: Neo4j의 무거운 "
+                f"지표(`load_ms`·`rehydrate_ms`)에서 max/min은 "
+                f"{min(s[2] for s in spreads):.2f}~{max(s[2] for s in spreads):.2f} "
+                f"범위다(최대는 `{worst[0]}` n={worst[1]}). 타이밍 구간 안에서 계속 빨라지고 "
+                "있었다면 스프레드가 이보다 훨씬 컸을 것이다.", ""]
+    else:
+        out += [""]
 
     # light path 램프: 첫 스윕에서 neo4j append_* 계열이 규모에 따라 단조 감소했는가
     def _series(d, backend, metric):
