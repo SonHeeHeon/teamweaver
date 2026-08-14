@@ -20,15 +20,25 @@
      (플랜 2). 스케일 루프 **밖에서** _prime_neo4j로 한 번에 데우고(웜업
      상태가 규모 순서와 교락되지 않게), 무거운 지표의 warmup을 HEAVY_WARMUP
      으로 올린다. 실측 근거는 리포트의 웜업 곡선 참고.
+     **무거운 경로만 예열하면 부족하다** — 첫 스윕에서 append_*_ms /
+     neo4j_noop_match_ms / neo4j_session_open_ms 네 계열이 규모가 커질수록
+     단조 감소했다(n=100 append_cowork 1.044 → n=1000 0.705). 같은 구간에서
+     SQLite는 평탄하다. 이것이 이 플랜이 사전에 지목한 웜업 교락 signature다.
+     그래서 _prime_neo4j는 세션 획득·두 엔드포인트 MATCH·실제 append_* 까지
+     LIGHT_PRIMING_ROUNDS회 돌린다(콜드 JVM 실측 곡선으로 횟수를 정했다).
   3) 철거 비대칭 공개 — build_sqlite의 철거는 path.unlink()(O(1))인데
      load_neo4j의 철거는 MATCH (n) DETACH DELETE n(O(n))이고 둘 다 타이밍
      구간 안에 있다. 양쪽 철거 비용을 따로 재서 calibration으로 공개하되
      **원 수치에서 빼지 않는다** — 규칙은 원 수치를 센다.
-  4) append의 엔진 외 비용 공개 — Neo4j의 append_*는 호출마다 세션을 열고
-     두 Person을 MATCH한 뒤 MERGE한다. SQLite의 INSERT는 외래키가 없어 읽기가
-     0회이고 conn은 타이밍 밖에서 열린다. 맨 session 획득/반납, no-op MATCH,
-     두 엔드포인트 MATCH를 따로 재서 엔진 외 몫을 바운드한다
-     (태스크 5 리포트 §6(1b)).
+  4) append 고정비 공개 — Neo4j의 append_*는 호출마다 세션을 열고 두 Person을
+     MATCH한 뒤 MERGE한다. SQLite의 INSERT는 외래키가 없어 읽기가 0회이고
+     conn은 타이밍 밖에서 열린다. 맨 session 획득/반납, no-op MATCH, 두
+     엔드포인트 MATCH를 따로 재서 그 몫을 남긴다(태스크 5 리포트 §6(1b)).
+     **이 값들은 원 수치에서 빼지 않으며, 뺄 수 있다고 주장하지도 않는다.**
+     엔드포인트 MATCH는 "엔진 외 오버헤드"가 아니라 엔진·스키마의 진짜 비용
+     이다 — Neo4j는 두 Person 사이의 참조 무결성을 지키고, SQLite의
+     collaboration 테이블은 외래키가 없어 지키지 않는다. 같은 값을 두 배로
+     쓰지 않도록 리포트도 같은 입장을 쓴다(§3.5 반사실 항목 참조).
   5) 공유 파이썬 비용 공개 — rehydrate_ms에는 두 백엔드가 똑같이 내는
      MemoryGraph.build 비용이 들어 있다. rehydrate._assemble을 따로 재서
      그 몫을 밝힌다(태스크 5 리포트 §6(3)).
@@ -50,6 +60,32 @@
   - availability / projects / evidence 는 양쪽 다 복원하지 않는다. 따라서
     rehydrate_ms는 "완전한 상태 복원"이 아니라 "핵심 그래프 복원" 비용이다.
 
+append_*_ms를 "할인"할 수 있는가 — 결론: 뺄셈으로는 판정되지 않는다
+  (i)  원 수치: 두 스윕 모두 SQLite가 8셀 전부 우위다.
+       첫 스윕(exp5_persistence.json, n=100/300/500/1000):
+         cowork  sqlite 0.255/0.244/0.228/0.233  neo4j 1.044/0.796/0.791/0.705
+         review  sqlite 0.286/0.268/0.233/0.251  neo4j 2.256/0.942/0.780/0.778
+       재측정(exp5_persistence_primed.json, 가벼운 경로까지 예열):
+         cowork  sqlite 0.231/0.255/0.244/0.230  neo4j 0.550/0.489/0.702/0.545
+         review  sqlite 0.260/0.277/0.241/0.344  neo4j 0.735/0.455/0.538/0.860
+  (ii) 엔드포인트 MATCH는 빼지 않는다(위 4번). 엔진·스키마의 진짜 비용이다.
+  (iii)반사실: 그래도 빼면 append_*는 뒤집힌다.
+       첫 스윕: cowork 잔차 +0.087/+0.211/+0.066/+0.159로 4셀 전부 SQLite보다
+       작고 review는 n=500/1000이 작다 → 8셀 중 6셀.
+       재측정: cowork 잔차 +0.031/+0.086/+0.124/+0.047, review
+       +0.216/+0.053/**−0.040**/+0.361 → 8셀 중 7셀. 지표가 통째로 뒤집힌다.
+  (iv) 그래도 규칙 2는 어느 읽기로도 실패한다: 원 수치 0/4, 반사실 1/4
+       (keep은 3 이상). 두 스윕 모두 같다. 판정은 이 뺄셈에 의존하지 않는다.
+  (v)  뺄셈 자체가 못 미덥다. (a) 보정 질의 MATCH (a),(b) RETURN a, b는 노드
+       레코드 2개를 실제로 반환하는데 append의 MATCH는 아무것도 반환하지
+       않는다 — 빼는 값(그리고 "73~92%" 몫)이 과대다. (b) 보정이 자체 모순인
+       셀이 두 스윕 모두에 있다. 첫 스윕 n=100: noop_match 1.103 >
+       two_endpoint_match 0.956 > append_cowork 1.044 (MATCH 1회가 2회보다,
+       또 MATCH+MERGE보다 클 수 없다). 재측정 n=500: append_review 0.538 <
+       two_endpoint_match 0.578 이라 잔차가 **음수**다. 잔차(±0.04~0.36ms)가
+       보정 자신의 드리프트 안에 있다 — 즉 append_*에 대해 뺄셈에 기반한
+       주장은 **어느 방향으로도** 성립하지 않는다. 판정은 원 수치로 한다.
+
 적재·재수화는 반복 비용이 크므로 repeats를 줄인다 — 방법론 일관성보다 실행
 가능성을 택한 결정이며 리포트에 명시한다. repeats=3에서 p95_ms는 사실상
 최댓값이다(백분위수가 아니다).
@@ -59,6 +95,7 @@ import shutil
 import sqlite3
 import statistics as st
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -95,8 +132,32 @@ APPEND_PROJECT_COUNT = 1
 PRIMING_SCALE = (100, 20)
 PRIMING_ROUNDS = 30
 
+# 가벼운 경로(세션 획득 · 두 엔드포인트 MATCH · append_*) 예열 횟수.
+# 첫 스윕(exp5_persistence.json)에서 이 경로만 규모에 따라 단조 감소했다
+# (append_cowork 1.044 → 0.796 → 0.791 → 0.705, noop_match 1.103 → 0.499,
+# session_open 0.011 → 0.005). session_open이 절반이 되는 것은 JVM이 아니라
+# 파이썬/드라이버 쪽이라, 규모당 warmup 20으로는 이 경로의 평탄 구간에 닿지
+# 못했다는 뜻이다. 콜드 JVM(컨테이너 재시작 직후 + 무거운 예열 30라운드 뒤)에서
+# 라운드당 1회씩 1500라운드를 개별 계측한 곡선(100라운드 블록 중앙값, ms):
+#   two_endpoint_match 1.067 0.851 0.724 0.781 0.650 0.556 0.520 0.563 ... 0.551
+#   append_cowork      1.214 1.014 0.857 0.928 0.855 0.699 0.632 0.730 ... 0.684
+#   append_review      1.290 1.068 0.882 0.952 0.866 0.716 0.664 0.773 ... 0.746
+#   session_open       0.018 0.015 0.015 0.015 0.015 0.015 0.014 0.015 ... 0.016
+# 500라운드 부근에서 평탄해진다(그 전 200라운드까지도 꼬리값의 1.6~1.7배다).
+# 600을 쓴다 — 평탄 구간을 넘긴 값이고 비용은 약 2초다.
+LIGHT_PRIMING_ROUNDS = 600
+
 NEO4J_DATA_DIR = REPO_ROOT / ".neo4j" / "data"
-PARTIAL_PATH = harness.RESULTS_DIR / "exp5_persistence.partial.json"
+
+# 첫 스윕은 exp5_persistence.json에 있고 **덮어쓰지 않는다**(태스크 4에서 스윕
+# 재실행이 첫 실행을 통째로 파괴한 전례가 있다). 가벼운 경로까지 예열한 재측정은
+# 다른 이름으로 나간다. main()은 이미 있는 파일을 덮어쓰지 않는다(--force 필요).
+RESULT_NAME = "exp5_persistence_primed"
+
+# 규칙 2 판정에 쓰는 disk 읽기. 오염된 disk_bytes는 이전 규모의 잔여를 포함해
+# 규모별 비교에 쓸 수 없다(§disk_bytes 오염 분리). 두 읽기 모두로 집계해 JSON에
+# 남기되, 판정 기준은 이쪽이다.
+RULE2_DISK_METRIC = "disk_bytes_clean"
 
 NOTE = ("적재(load_ms)·재수화(rehydrate_ms)는 repeats=3으로 축소 측정했다 — "
         "다른 실험의 20/3과 다르며, 회당 비용이 커 전체 실행 시간을 감당할 수 "
@@ -104,7 +165,11 @@ NOTE = ("적재(load_ms)·재수화(rehydrate_ms)는 repeats=3으로 축소 측�
         "Neo4j를 최대 8배 부풀린 전례가 있다). repeats=3에서 p95_ms는 백분위수가 "
         "아니라 최댓값이다. 증분 갱신은 repeats=20, warmup=20(양쪽 동일)이다. "
         "neo4j의 disk_bytes는 컨테이너 볼륨 전체라 이전 규모가 섞인 오염된 값이고, "
-        "판정에는 볼륨을 지우고 규모 하나만 적재해 잰 disk_bytes_clean을 쓴다.")
+        "판정에는 볼륨을 지우고 규모 하나만 적재해 잰 disk_bytes_clean을 쓴다. "
+        "예열은 스케일 루프 밖에서 무거운 경로(적재·재수화 30라운드)와 가벼운 경로"
+        "(세션 획득·두 엔드포인트 MATCH·실제 append_* 600라운드)를 모두 돌린다 — "
+        "첫 스윕(exp5_persistence.json)은 무거운 경로만 예열해 가벼운 경로에 "
+        "규모 순서와 교락된 하강 램프가 남았다.")
 
 
 # --------------------------------------------------------------------------
@@ -216,13 +281,51 @@ def _feeder(items):
 # --------------------------------------------------------------------------
 
 def _prime_neo4j(driver, load_fn) -> None:
-    """스케일 루프 전에 JVM을 한 번에 예열한다 — 웜업 상태가 규모 순서와
-    교락되면 '규모가 커질수록 빨라지는' 가짜 추세가 만들어진다(플랜 2 전례).
-    재는 두 무거운 경로(적재·재수화)를 그대로 돌리고 결과는 버린다."""
+    """스케일 루프 전에 JVM·드라이버를 한 번에 예열한다 — 웜업 상태가 규모
+    순서와 교락되면 '규모가 커질수록 빨라지는' 가짜 추세가 만들어진다
+    (플랜 2 전례). 재는 경로를 그대로 돌리고 결과는 버린다.
+
+    **무거운 경로(적재·재수화)만으로는 부족하다.** 첫 스윕에서 가벼운 경로
+    (append_*, noop MATCH, 세션 획득)만 규모에 따라 단조 감소했다 — 규모당
+    warmup 20으로는 단문 왕복 경로의 평탄 구간에 닿지 못한다는 뜻이다.
+    그래서 여기서 세션 획득 · 두 엔드포인트 MATCH · **실제 append_* 호출**을
+    LIGHT_PRIMING_ROUNDS회 돌린다(횟수 근거는 상수 주석의 실측 곡선).
+
+    예열이 쓰는 쓰기는 안전하다: 각 규모는 load_neo4j로 시작하고 load_neo4j는
+    MATCH (n) DETACH DELETE n으로 그래프를 통째로 비운다. 예열이 만든 관계는
+    측정이 시작되기 전에 사라진다. 쌍도 데이터셋에 없는 새 쌍만 쓴다.
+
+    SQLite 쪽은 예열하지 않는다 — 첫 스윕에서 SQLite의 append 계열은 평탄했고
+    (0.255/0.244/0.228/0.233), 연결 객체는 규모마다 새로 만들어 스케일 간
+    예열이 넘어가지도 않는다(규모당 APPEND_WARMUP=20이 그 자리를 맡는다).
+    비대칭 예열이지만 방향은 **Neo4j에 유리**하다.
+    """
+    from core.graph.neo4j_store import append_cowork as n_append_cowork
+    from core.graph.neo4j_store import append_review as n_append_review
+
     ds, parsed, _ = datasets.build_scale(*PRIMING_SCALE, 42)
     for _ in range(PRIMING_ROUNDS):
         load_fn(driver, ds, parsed)
         rehydrate.from_neo4j(driver)
+
+    used: set = set()
+    recs = _cowork_records(_new_pairs(ds, LIGHT_PRIMING_ROUNDS, used))
+    payloads = _review_payloads(ds, parsed, _new_pairs(ds, LIGHT_PRIMING_ROUNDS, used))
+    a_id, b_id = ds.people[0].id, ds.people[-1].id
+    for rec, (review, pr) in zip(recs, payloads):
+        with driver.session():                      # 세션 획득/반납
+            pass
+        with driver.session() as s:                 # 두 엔드포인트 MATCH
+            s.run("MATCH (a:Person {id:$a}), (b:Person {id:$b}) RETURN a, b",
+                  a=a_id, b=b_id).consume()
+        n_append_cowork(driver, rec)                # 실제 append 경로
+        n_append_review(driver, review, pr)
+
+    # 보정 경로도 나중에 시간을 재는 경로다 — 예열하지 않으면 첫 규모의
+    # calibration만 부풀어 규모 순서와 교락된다(첫 스윕: session_open 0.011 →
+    # 0.005). 위 루프의 인라인 세션/MATCH와 코드 객체가 달라 따로 돌려야 한다.
+    # 결과는 버린다.
+    _calibrate_neo4j(driver, ds)
 
 
 def _measure_detach_delete(driver, load_fn, ds, parsed) -> dict:
@@ -255,6 +358,15 @@ def _calibrate_neo4j(driver, ds) -> dict:
     id로 MATCH한 뒤에야 (3) 관계를 MERGE한다. SQLite의 INSERT는 collaboration에
     외래키가 없어 읽기가 0회이고, conn은 호출자가 타이밍 밖에서 열어 넘긴다.
     (1)(2)를 각각 재서 Neo4j 표본에만 붙는 고정비의 상한을 남긴다.
+
+    **이 값은 공개용이고 원 수치에서 빼지 않는다.** 뺄셈이 못 미더운 이유가
+    코드에 그대로 보인다: _two_endpoint_match는 RETURN a, b로 **노드 레코드
+    2개를 실제로 반환**하는데 append_*의 MATCH는 아무것도 반환하지 않는다
+    (뒤에 MERGE가 이어진다). 즉 이 보정값은 append 안의 MATCH 비용보다
+    **과대**하고, 그것으로 계산한 "몫(%)"도 과대다. 실제로 n=100에서는
+    noop_match > two_endpoint_match > append_cowork가 나왔다 — MATCH 1회가
+    2회보다, 또 MATCH+MERGE보다 클 수는 없으므로 보정 자체의 드리프트가
+    잔차보다 크다는 뜻이다(모듈 docstring "append_*_ms를 할인할 수 있는가").
     """
     a_id, b_id = ds.people[0].id, ds.people[-1].id
 
@@ -330,6 +442,25 @@ def _wait_for_neo4j(timeout_s: float = 180.0):
     raise RuntimeError(f"Neo4j 기동 대기 시간 초과: {type(last).__name__}: {last}")
 
 
+def _check_wipe_target(path: Path) -> Path:
+    """rm -rf 대상이 정말 그 디렉터리인지 확인한다(아니면 raise).
+
+    `assert NEO4J_DATA_DIR == REPO_ROOT / ".neo4j" / "data"`는 상수를 정의한
+    바로 그 식을 다시 쓴 것이라 절대 실패하지 않고, python -O에서는 사라진다.
+    재귀 삭제의 전제를 실제로 검사한다: 심링크가 아니고, 이름이 data이고,
+    부모가 .neo4j이고, 그 부모가 리포 루트여야 한다. 위반이면 지우지 않는다.
+    """
+    root = REPO_ROOT.resolve()
+    if path.is_symlink() or path.parent.is_symlink():
+        raise RuntimeError(f"삭제 거부: 심링크다 — {path}")
+    resolved = path.resolve()
+    if resolved.name != "data" or resolved.parent.name != ".neo4j":
+        raise RuntimeError(f"삭제 거부: .neo4j/data 형태가 아니다 — {resolved}")
+    if resolved.parent.parent != root:
+        raise RuntimeError(f"삭제 거부: 리포 루트({root}) 밖이다 — {resolved}")
+    return resolved
+
+
 def _reset_neo4j_store():
     """볼륨을 비우고 새 인스턴스를 띄운다.
 
@@ -337,11 +468,22 @@ def _reset_neo4j_store():
     `down -v`만으로는 지워지지 않는다 — 컨테이너를 내린 뒤 디렉터리를 직접
     비운다. .neo4j/는 gitignore 대상이고 모든 실험이 실행 시점에 적재하므로
     잃는 것은 없다.
+
+    비우기가 부분 실패하면 그 뒤의 disk_bytes_clean은 조용히 오염된 값이 된다
+    — 규칙 2가 판정에 쓰는 바로 그 수치다. 그래서 실패를 삼키지 않고(과거
+    ignore_errors=True), 비운 **뒤에 실제로 비었는지** 확인해 아니면 raise한다.
     """
     _compose("down", "-v")
-    assert NEO4J_DATA_DIR == REPO_ROOT / ".neo4j" / "data", "안전장치: 경로가 예상과 다르다"
-    shutil.rmtree(NEO4J_DATA_DIR, ignore_errors=True)
-    NEO4J_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    target = _check_wipe_target(NEO4J_DATA_DIR)
+    if target.exists():
+        shutil.rmtree(target)                       # 실패는 삼키지 않는다
+    target.mkdir(parents=True, exist_ok=True)
+    leftover = sorted(p.name for p in target.iterdir())
+    if leftover:
+        raise RuntimeError(
+            f"클린 슬레이트 실패: {target}가 비워지지 않았다 — {leftover[:5]}"
+            f"{'...' if len(leftover) > 5 else ''}. 이대로 재면 disk_bytes_clean이 "
+            "조용히 오염된다.")
     _compose("up", "-d")
     return _wait_for_neo4j()
 
@@ -439,8 +581,14 @@ def run(scales=None, neo4j: bool = True, clean_disk: bool = False,
     neo4j_ok = driver is not None
 
     def payload() -> dict:
+        # 규칙 2 집계를 **JSON에 넣는다** — stdout에만 찍으면 태스크 7이
+        # 인용할 숫자에 아티팩트가 없다. 두 disk 읽기로 모두 세고 어느 쪽이
+        # 판정 기준인지도 같이 남긴다.
         return {"rows": rows, "skipped": skipped, "calibration": calibration,
                 "disk_detail": disk_detail, "completed_scales": completed,
+                "rule2_tally": {"adjudicated_on": RULE2_DISK_METRIC,
+                                "by_disk_reading": {m: _rule2_tally(rows, m)
+                                                    for m in _DISK_READINGS}},
                 "note": NOTE}
 
     def record(measured: dict, backend: str, n_people: int, metric: str) -> None:
@@ -586,6 +734,7 @@ _RULE2_GROUPS = (("load_ms", ["load_ms"]),
                  ("disk_bytes", None),               # 호출 시점에 어느 읽기인지 정한다
                  ("append_*_ms", ["append_cowork_ms", "append_review_ms"]),
                  ("rehydrate_ms", ["rehydrate_ms"]))
+_DISK_READINGS = ("disk_bytes", "disk_bytes_clean")
 
 
 def _fmt(v) -> str:
@@ -608,21 +757,24 @@ def _print_metric_table(rows) -> None:
             print(f"  {m:<18} n={n:<5} sqlite={_fmt(s):>14}  neo4j={_fmt(g):>14}  {ratio}")
 
 
-def _print_rule2_tally(rows, disk_metric: str = "disk_bytes_clean") -> int:
+def _rule2_tally(rows, disk_metric: str = RULE2_DISK_METRIC) -> dict:
     """의사결정 규칙 2가 소비하는 수치: 4지표 중 Neo4j가 우위인 것이 몇 개인가.
 
     지표당 규모별 셀을 세고 과반이면 그 지표를 Neo4j 우위로 본다(집계 방식은
     사전 고정 규칙에 없어 여기서 정하고 리포트에 명시한다). append_*_ms는
     두 연산 × 규모 셀을 합쳐 한 지표로 센다.
+
+    **결과를 dict로 돌려주고 JSON에 넣는다.** 예전에는 stdout에만 찍혀서
+    태스크 7이 인용할 숫자에 아티팩트가 없었다 — 어느 disk 읽기로 셌는지까지
+    같이 남긴다.
     """
     vals = {(r["backend"], r["metric"], r["n_people"]): r["value"] for r in rows}
     scales = sorted({r["n_people"] for r in rows})
-    won = 0
-    print(f"규칙 2 집계 (disk 지표 = {disk_metric}):")
+    per_metric, won = [], 0
     for label, metrics in _RULE2_GROUPS:
-        metrics = [disk_metric] if metrics is None else metrics
+        counted = [disk_metric] if metrics is None else metrics
         cells = wins = 0
-        for m in metrics:
+        for m in counted:
             for n in scales:
                 s, g = vals.get(("sqlite", m, n)), vals.get(("neo4j", m, n))
                 if s is None or g is None:
@@ -631,10 +783,23 @@ def _print_rule2_tally(rows, disk_metric: str = "disk_bytes_clean") -> int:
                 wins += int(g < s)
         ok = cells > 0 and wins * 2 > cells
         won += int(ok)
-        print(f"  {label:<14} neo4j {wins}/{cells} 셀 우위 → {'우위' if ok else '열세'}"
-              + ("" if cells else "  (측정 없음)"))
-    print(f"neo4j wins: {won}/4 지표 — 규칙 2는 3 이상이면 keep")
-    return won
+        per_metric.append({"metric": label, "counted_metrics": counted,
+                           "cells": cells, "neo4j_wins": wins, "neo4j_ahead": ok})
+    return {"disk_metric": disk_metric, "per_metric": per_metric,
+            "neo4j_metric_wins": won, "metrics": len(_RULE2_GROUPS),
+            "keep_threshold": 3, "keep": won >= 3}
+
+
+def _print_rule2_tally(tally: dict) -> int:
+    print(f"규칙 2 집계 (disk 지표 = {tally['disk_metric']}):")
+    for m in tally["per_metric"]:
+        print(f"  {m['metric']:<14} neo4j {m['neo4j_wins']}/{m['cells']} 셀 우위 → "
+              f"{'우위' if m['neo4j_ahead'] else '열세'}"
+              + ("" if m["cells"] else "  (측정 없음)"))
+    print(f"neo4j wins: {tally['neo4j_metric_wins']}/{tally['metrics']} 지표 — "
+          f"규칙 2는 {tally['keep_threshold']} 이상이면 keep "
+          f"→ {'keep' if tally['keep'] else '실패'}")
+    return tally["neo4j_metric_wins"]
 
 
 def _print_calibration(calibration) -> None:
@@ -646,18 +811,39 @@ def _print_calibration(calibration) -> None:
             if k not in ("n_people", "records")))
 
 
-def main():
-    out = run(clean_disk=True, partial_path=PARTIAL_PATH)
-    path = harness.save_result("exp5_persistence", out)
+def partial_path_for(name: str) -> Path:
+    return harness.RESULTS_DIR / f"{name}.partial.json"
+
+
+def main(name: str = RESULT_NAME, force: bool = False):
+    """스윕 1회를 돌려 experiments/results/<name>.json에 남긴다.
+
+    **이미 있는 결과 파일은 덮어쓰지 않는다**(--force로만 허용). 태스크 4에서
+    harness.save_result가 고정 경로에 쓰는 바람에 재실행이 첫 스윕을 통째로
+    파괴한 전례가 있고, 태스크 6 리뷰가 그 전례를 직접 지시로 다시 못박았다.
+    재측정은 새 이름으로 나가고 이전 스윕은 그대로 남는다.
+    """
+    out_path = harness.RESULTS_DIR / f"{name}.json"
+    if out_path.exists() and not force:
+        raise SystemExit(
+            f"거부: {out_path}가 이미 있다. 이전 스윕을 덮어쓰지 않는다 — "
+            f"다른 이름을 주거나(python -m experiments.bench.exp5_persistence <name>) "
+            f"정말 덮어쓰려면 --force를 붙여라.")
+    partial = partial_path_for(name)
+    out = run(clean_disk=True, partial_path=partial)
+    path = harness.save_result(name, out)
     print(f"saved: {path}  rows={len(out['rows'])}")
-    print(f"partial: {PARTIAL_PATH} (별도 파일 — 완성본을 덮어쓰지 않는다, 커밋 대상 아님)")
+    print(f"partial: {partial} (별도 파일 — 완성본을 덮어쓰지 않는다, 커밋 대상 아님)")
     _print_metric_table(out["rows"])
-    _print_rule2_tally(out["rows"], "disk_bytes")
-    _print_rule2_tally(out["rows"], "disk_bytes_clean")
+    for reading in _DISK_READINGS:
+        _print_rule2_tally(out["rule2_tally"]["by_disk_reading"][reading])
+    print(f"판정 기준 읽기: {out['rule2_tally']['adjudicated_on']} (JSON에 그대로 저장됨)")
     _print_calibration(out["calibration"])
     if out["skipped"]:
         print("skipped:", out["skipped"])
+    return out
 
 
 if __name__ == "__main__":
-    main()
+    _args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    main(_args[0] if _args else RESULT_NAME, force="--force" in sys.argv)

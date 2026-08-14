@@ -19,7 +19,7 @@ import pytest
 
 from core.graph import rehydrate
 from core.graph.sqlite_store import append_cowork, append_review, build_sqlite
-from experiments.bench import datasets
+from experiments.bench import datasets, harness
 from experiments.bench import exp5_persistence as e5
 
 SCALE = (100, 20)
@@ -178,6 +178,37 @@ def test_neo4j_append_sequence_actually_writes_every_generated_pair():
         driver.close()
 
 
+@pytest.mark.neo4j
+def test_priming_exercises_the_light_path_and_its_writes_are_wiped(monkeypatch):
+    """예열은 무거운 경로만으로는 부족하다 — 첫 스윕에서 append_* / noop MATCH /
+    세션 획득이 규모에 따라 단조 감소했다(규모 순서와 교락된 하강 램프).
+    _prime_neo4j가 **실제 append 경로**까지 도는지 확인하고, 동시에 그 쓰기가
+    측정 전에 사라진다는 안전 주장(load_neo4j의 DETACH DELETE)도 확인한다.
+    """
+    from core.graph.neo4j_store import get_driver, load_neo4j
+
+    monkeypatch.setattr(e5, "PRIMING_ROUNDS", 1)
+    monkeypatch.setattr(e5, "LIGHT_PRIMING_ROUNDS", 5)
+    ds, parsed, _ = datasets.build_scale(*e5.PRIMING_SCALE, 42)
+    pairs = e5._new_pairs(ds, 5, set())              # 예열이 쓰는 협업 쌍과 동일(결정적)
+
+    def written():
+        with driver.session() as s:
+            return sum(s.run("MATCH (:Person {id:$a})-[w:WORKED_WITH]->(:Person {id:$b}) "
+                             "RETURN count(w) AS c", a=a, b=b).single()["c"]
+                       for a, b in pairs)
+
+    driver = get_driver()
+    try:
+        e5._prime_neo4j(driver, load_neo4j)
+        assert written() == len(pairs), "예열이 가벼운 경로(append)를 돌지 않았다"
+
+        load_neo4j(driver, ds, parsed)               # 각 규모가 이것으로 시작한다
+        assert written() == 0, "예열이 만든 쓰기가 측정 전에 지워지지 않았다"
+    finally:
+        driver.close()
+
+
 def test_partial_results_are_written_after_each_completed_scale(tmp_path, monkeypatch):
     """스윕이 도중에 끊겨도 끝난 규모는 남아야 한다.
 
@@ -209,3 +240,89 @@ def test_run_accepts_a_subset_of_scales_so_an_interrupted_sweep_can_resume():
     out = e5.run(scales=[(300, 60)], neo4j=False)
     assert {r["n_people"] for r in out["rows"]} == {300}
     assert out["completed_scales"] == [[300, 60]]
+
+
+def test_rule2_tally_is_persisted_not_just_printed(sqlite_only):
+    """규칙 2 집계는 태스크 7이 인용할 숫자다 — stdout이 아니라 결과 payload에
+    있어야 뒷받침하는 아티팩트가 생긴다. 어느 disk 읽기로 셌는지도 함께."""
+    tally = sqlite_only["rule2_tally"]
+    assert tally["adjudicated_on"] == e5.RULE2_DISK_METRIC
+    for reading in ("disk_bytes", "disk_bytes_clean"):
+        t = tally["by_disk_reading"][reading]
+        assert t["disk_metric"] == reading
+        assert t["keep_threshold"] == 3
+        assert t["keep"] is (t["neo4j_metric_wins"] >= 3)
+        labels = [m["metric"] for m in t["per_metric"]]
+        assert labels == ["load_ms", "disk_bytes", "append_*_ms", "rehydrate_ms"]
+        # neo4j 없이 돌린 결과이므로 비교 가능한 셀이 0이고 우위 지표도 0이어야 한다.
+        assert all(m["cells"] == 0 and not m["neo4j_ahead"] for m in t["per_metric"])
+        assert t["neo4j_metric_wins"] == 0
+
+
+def test_rule2_tally_counts_cells_and_flips_with_the_disk_reading():
+    """집계 로직 자체를 합성 행으로 잠근다 — append_*는 두 연산을 한 지표로
+    합쳐 세고, disk 지표는 어느 읽기를 쓰느냐로 답이 달라질 수 있다."""
+    def row(backend, metric, n, value):
+        return {"backend": backend, "n_people": n, "metric": metric, "value": value}
+
+    rows = []
+    for n in (100, 300):
+        rows += [row("sqlite", "load_ms", n, 1.0), row("neo4j", "load_ms", n, 2.0),
+                 row("sqlite", "rehydrate_ms", n, 1.0), row("neo4j", "rehydrate_ms", n, 2.0),
+                 # append: neo4j가 4셀 중 3셀 우위 → 지표 우위
+                 row("sqlite", "append_cowork_ms", n, 1.0),
+                 row("neo4j", "append_cowork_ms", n, 0.5),
+                 row("sqlite", "append_review_ms", n, 1.0),
+                 row("neo4j", "append_review_ms", n, 0.5 if n == 100 else 2.0),
+                 # 오염된 읽기에서만 neo4j 우위, clean에서는 열세
+                 row("sqlite", "disk_bytes", n, 10.0), row("neo4j", "disk_bytes", n, 5.0),
+                 row("sqlite", "disk_bytes_clean", n, 10.0),
+                 row("neo4j", "disk_bytes_clean", n, 20.0)]
+
+    contaminated = e5._rule2_tally(rows, "disk_bytes")
+    clean = e5._rule2_tally(rows, "disk_bytes_clean")
+    by_label = {m["metric"]: m for m in clean["per_metric"]}
+    assert by_label["append_*_ms"]["cells"] == 4
+    assert by_label["append_*_ms"]["neo4j_wins"] == 3
+    assert by_label["append_*_ms"]["neo4j_ahead"] is True
+    assert by_label["load_ms"]["neo4j_ahead"] is False
+    assert clean["neo4j_metric_wins"] == 1 and clean["keep"] is False
+    assert contaminated["neo4j_metric_wins"] == 2 and contaminated["keep"] is False
+
+
+def test_generated_pair_pool_matches_harness_measure_call_count():
+    """n_appends = APPEND_WARMUP + APPEND_REPEATS는 harness.measure의 호출
+    횟수와 **우연히** 같다. measure의 루프가 바뀌면 피더가 StopIteration으로
+    죽거나(시끄럽고 괜찮음) 조용히 더 적은 쌍만 시간 재게 된다. 결합을 잠근다.
+    """
+    ds, _, _ = datasets.build_scale(*SCALE, 42)
+    n_appends = e5.APPEND_WARMUP + e5.APPEND_REPEATS
+    recs = e5._cowork_records(e5._new_pairs(ds, n_appends, set()))
+    nxt = e5._feeder(recs)
+    seen = []
+    harness.measure(lambda: seen.append(nxt()),
+                    repeats=e5.APPEND_REPEATS, warmup=e5.APPEND_WARMUP)
+    assert len(seen) == n_appends, (
+        f"harness.measure가 {len(seen)}회 호출했다 — 풀은 {n_appends}개다")
+    assert len({(r.a_id, r.b_id) for r in seen}) == n_appends, "재사용된 쌍이 있다"
+    with pytest.raises(StopIteration):
+        nxt()                                       # 풀이 정확히 소진됐다
+
+
+def test_wipe_target_guard_rejects_paths_that_are_not_the_repo_neo4j_data_dir(tmp_path):
+    """rm -rf 가드는 상수를 정의한 식을 되풀이하는 assert가 아니라 실제
+    전제 검사여야 한다(python -O에서 assert는 사라진다)."""
+    assert e5._check_wipe_target(e5.NEO4J_DATA_DIR).name == "data"
+
+    for bad in (tmp_path / "data",                      # 리포 밖
+                tmp_path / ".neo4j" / "nope"):          # 이름이 data가 아님
+        bad.mkdir(parents=True)
+        with pytest.raises(RuntimeError, match="삭제 거부"):
+            e5._check_wipe_target(bad)
+
+    link_parent = tmp_path / "link_root"
+    link_parent.mkdir()
+    link = link_parent / "data"
+    link.symlink_to(tmp_path / "data")
+    with pytest.raises(RuntimeError, match="심링크"):
+        e5._check_wipe_target(link)
