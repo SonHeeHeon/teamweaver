@@ -1,0 +1,1012 @@
+{
+ "environment": {
+  "python": "3.12.13",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "cpu_model": "Apple M4",
+  "ram": "16.0 GiB",
+  "cbc": "Version: 2.10.3",
+  "neo4j_server": "Neo4j Kernel 5.26.28 (community)",
+  "packages": {
+   "numpy": "2.5.1",
+   "scipy": "1.18.0",
+   "pulp": "3.3.2",
+   "neo4j": "6.2.0",
+   "tiktoken": "0.13.0",
+   "openai": "2.52.0",
+   "pandas": "3.0.5"
+  }
+ },
+ "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
+ "data": {
+  "rows": [
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "load_ms",
+    "value": 4.696832969784737,
+    "unit": "ms",
+    "median_ms": 4.696832969784737,
+    "p95_ms": 5.342625081539154,
+    "min_ms": 4.344874992966652,
+    "max_ms": 5.342625081539154,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "disk_bytes",
+    "value": 147456,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "append_cowork_ms",
+    "value": 0.25537493638694286,
+    "unit": "ms",
+    "median_ms": 0.25537493638694286,
+    "p95_ms": 0.2837078645825386,
+    "min_ms": 0.2446670550853014,
+    "max_ms": 0.28658402152359486,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "append_review_ms",
+    "value": 0.28589600697159767,
+    "unit": "ms",
+    "median_ms": 0.28589600697159767,
+    "p95_ms": 0.3273750189691782,
+    "min_ms": 0.25987508706748486,
+    "max_ms": 0.3975420258939266,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "rehydrate_ms",
+    "value": 3.1661249231547117,
+    "unit": "ms",
+    "median_ms": 3.1661249231547117,
+    "p95_ms": 3.2549158204346895,
+    "min_ms": 3.145667025819421,
+    "max_ms": 3.2549158204346895,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "load_ms",
+    "value": 52.372541977092624,
+    "unit": "ms",
+    "median_ms": 52.372541977092624,
+    "p95_ms": 67.49416701495647,
+    "min_ms": 49.10420812666416,
+    "max_ms": 67.49416701495647,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "disk_bytes",
+    "value": 542974836,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "append_cowork_ms",
+    "value": 1.0438745375722647,
+    "unit": "ms",
+    "median_ms": 1.0438745375722647,
+    "p95_ms": 1.7639999277889729,
+    "min_ms": 0.7384999189525843,
+    "max_ms": 2.8170410078018904,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "append_review_ms",
+    "value": 2.2559999488294125,
+    "unit": "ms",
+    "median_ms": 2.2559999488294125,
+    "p95_ms": 3.238749923184514,
+    "min_ms": 0.9881248697638512,
+    "max_ms": 3.3075830433517694,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "rehydrate_ms",
+    "value": 13.976375106722116,
+    "unit": "ms",
+    "median_ms": 13.976375106722116,
+    "p95_ms": 25.81091597676277,
+    "min_ms": 13.11337505467236,
+    "max_ms": 25.81091597676277,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "load_ms",
+    "value": 6.771166808903217,
+    "unit": "ms",
+    "median_ms": 6.771166808903217,
+    "p95_ms": 7.221166975796223,
+    "min_ms": 6.720332894474268,
+    "max_ms": 7.221166975796223,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "disk_bytes",
+    "value": 356352,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "append_cowork_ms",
+    "value": 0.24385389406234026,
+    "unit": "ms",
+    "median_ms": 0.24385389406234026,
+    "p95_ms": 0.3053750842809677,
+    "min_ms": 0.22716703824698925,
+    "max_ms": 0.5307910032570362,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "append_review_ms",
+    "value": 0.268229516223073,
+    "unit": "ms",
+    "median_ms": 0.268229516223073,
+    "p95_ms": 0.32170885242521763,
+    "min_ms": 0.23487512953579426,
+    "max_ms": 0.5547499749809504,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "rehydrate_ms",
+    "value": 8.769459091126919,
+    "unit": "ms",
+    "median_ms": 8.769459091126919,
+    "p95_ms": 17.605707980692387,
+    "min_ms": 8.655832847580314,
+    "max_ms": 17.605707980692387,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "load_ms",
+    "value": 98.93695800565183,
+    "unit": "ms",
+    "median_ms": 98.93695800565183,
+    "p95_ms": 99.33412494137883,
+    "min_ms": 88.84016703814268,
+    "max_ms": 99.33412494137883,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "disk_bytes",
+    "value": 545873792,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "append_cowork_ms",
+    "value": 0.7955204928293824,
+    "unit": "ms",
+    "median_ms": 0.7955204928293824,
+    "p95_ms": 0.9641249198466539,
+    "min_ms": 0.691374996677041,
+    "max_ms": 1.0141660459339619,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "append_review_ms",
+    "value": 0.9420000715181231,
+    "unit": "ms",
+    "median_ms": 0.9420000715181231,
+    "p95_ms": 1.3871248811483383,
+    "min_ms": 0.7198331877589226,
+    "max_ms": 1.7347079701721668,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "rehydrate_ms",
+    "value": 35.884875105693936,
+    "unit": "ms",
+    "median_ms": 35.884875105693936,
+    "p95_ms": 44.64604193344712,
+    "min_ms": 32.564374851062894,
+    "max_ms": 44.64604193344712,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "load_ms",
+    "value": 10.098125087097287,
+    "unit": "ms",
+    "median_ms": 10.098125087097287,
+    "p95_ms": 10.52504195831716,
+    "min_ms": 9.768541902303696,
+    "max_ms": 10.52504195831716,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "disk_bytes",
+    "value": 557056,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "append_cowork_ms",
+    "value": 0.22841698955744505,
+    "unit": "ms",
+    "median_ms": 0.22841698955744505,
+    "p95_ms": 0.27595902793109417,
+    "min_ms": 0.19483291544020176,
+    "max_ms": 0.30358415096998215,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "append_review_ms",
+    "value": 0.2334584714844823,
+    "unit": "ms",
+    "median_ms": 0.2334584714844823,
+    "p95_ms": 0.2520410344004631,
+    "min_ms": 0.20500016398727894,
+    "max_ms": 0.5752090364694595,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "rehydrate_ms",
+    "value": 15.149791026487947,
+    "unit": "ms",
+    "median_ms": 15.149791026487947,
+    "p95_ms": 29.167165979743004,
+    "min_ms": 15.060999896377325,
+    "max_ms": 29.167165979743004,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "load_ms",
+    "value": 152.44874986819923,
+    "unit": "ms",
+    "median_ms": 152.44874986819923,
+    "p95_ms": 315.05999993532896,
+    "min_ms": 152.01833308674395,
+    "max_ms": 315.05999993532896,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "disk_bytes",
+    "value": 551485692,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "append_cowork_ms",
+    "value": 0.7906873943284154,
+    "unit": "ms",
+    "median_ms": 0.7906873943284154,
+    "p95_ms": 1.0642081033438444,
+    "min_ms": 0.6917498540133238,
+    "max_ms": 1.070499885827303,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "append_review_ms",
+    "value": 0.7800415623933077,
+    "unit": "ms",
+    "median_ms": 0.7800415623933077,
+    "p95_ms": 1.2709160801023245,
+    "min_ms": 0.5675829015672207,
+    "max_ms": 1.4139169361442327,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "rehydrate_ms",
+    "value": 51.48495803587139,
+    "unit": "ms",
+    "median_ms": 51.48495803587139,
+    "p95_ms": 72.0528750680387,
+    "min_ms": 50.42141699232161,
+    "max_ms": 72.0528750680387,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "load_ms",
+    "value": 18.345708958804607,
+    "unit": "ms",
+    "median_ms": 18.345708958804607,
+    "p95_ms": 18.848916981369257,
+    "min_ms": 18.140000058338046,
+    "max_ms": 18.848916981369257,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "disk_bytes",
+    "value": 1048576,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "append_cowork_ms",
+    "value": 0.23266638163477182,
+    "unit": "ms",
+    "median_ms": 0.23266638163477182,
+    "p95_ms": 0.4385830834507942,
+    "min_ms": 0.21720817312598228,
+    "max_ms": 0.5275830626487732,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "append_review_ms",
+    "value": 0.25064602959901094,
+    "unit": "ms",
+    "median_ms": 0.25064602959901094,
+    "p95_ms": 0.2645410131663084,
+    "min_ms": 0.22208294831216335,
+    "max_ms": 0.272874953225255,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "rehydrate_ms",
+    "value": 49.91341684944928,
+    "unit": "ms",
+    "median_ms": 49.91341684944928,
+    "p95_ms": 61.37783289887011,
+    "min_ms": 29.794874833896756,
+    "max_ms": 61.37783289887011,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "load_ms",
+    "value": 255.9380407910794,
+    "unit": "ms",
+    "median_ms": 255.9380407910794,
+    "p95_ms": 272.68816716969013,
+    "min_ms": 252.96741700731218,
+    "max_ms": 272.68816716969013,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "disk_bytes",
+    "value": 831795542,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "append_cowork_ms",
+    "value": 0.7052290020510554,
+    "unit": "ms",
+    "median_ms": 0.7052290020510554,
+    "p95_ms": 0.9036660194396973,
+    "min_ms": 0.6362081039696932,
+    "max_ms": 0.9741659741848707,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "append_review_ms",
+    "value": 0.7776045240461826,
+    "unit": "ms",
+    "median_ms": 0.7776045240461826,
+    "p95_ms": 0.9961670730262995,
+    "min_ms": 0.6579998880624771,
+    "max_ms": 1.0035419836640358,
+    "repeats": 20,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "rehydrate_ms",
+    "value": 125.06741588003933,
+    "unit": "ms",
+    "median_ms": 125.06741588003933,
+    "p95_ms": 139.40612506121397,
+    "min_ms": 116.97583319619298,
+    "max_ms": 139.40612506121397,
+    "repeats": 3,
+    "warmup": 20
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "metric": "disk_bytes_clean",
+    "value": 541458599,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "metric": "disk_bytes_clean",
+    "value": 147456,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "metric": "disk_bytes_clean",
+    "value": 541925543,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "metric": "disk_bytes_clean",
+    "value": 356352,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "metric": "disk_bytes_clean",
+    "value": 542433447,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "metric": "disk_bytes_clean",
+    "value": 557056,
+    "unit": "bytes"
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "metric": "disk_bytes_clean",
+    "value": 543662247,
+    "unit": "bytes"
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "metric": "disk_bytes_clean",
+    "value": 1048576,
+    "unit": "bytes"
+   }
+  ],
+  "skipped": [],
+  "calibration": {
+   "per_scale": [
+    {
+     "n_people": 100,
+     "records": {
+      "sqlite_unlink": {
+       "median_ms": 0.022104009985923767,
+       "p95_ms": 0.026250025257468224,
+       "min_ms": 0.01937500201165676,
+       "max_ms": 0.026250025257468224,
+       "repeats": 10,
+       "warmup": 3
+      },
+      "assemble": {
+       "median_ms": 0.7404170464724302,
+       "p95_ms": 0.7467500399798155,
+       "min_ms": 0.7145418785512447,
+       "max_ms": 0.7467500399798155,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "sqlite_noop": {
+       "median_ms": 0.00045797787606716156,
+       "p95_ms": 0.0005420297384262085,
+       "min_ms": 0.00041583552956581116,
+       "max_ms": 0.0006249174475669861,
+       "repeats": 20,
+       "warmup": 3
+      },
+      "neo4j_detach_delete": {
+       "median_ms": 5.090875085443258,
+       "p95_ms": 5.222625099122524,
+       "min_ms": 4.903916968032718,
+       "max_ms": 5.222625099122524,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "neo4j_session_open": {
+       "median_ms": 0.010812538675963879,
+       "p95_ms": 0.012249918654561043,
+       "min_ms": 0.010417075827717781,
+       "max_ms": 0.10058307088911533,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_noop_match": {
+       "median_ms": 1.1025419225916266,
+       "p95_ms": 1.754875062033534,
+       "min_ms": 0.7702091243118048,
+       "max_ms": 1.975917024537921,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_two_endpoint_match": {
+       "median_ms": 0.9564165957272053,
+       "p95_ms": 1.3098330236971378,
+       "min_ms": 0.7728340569883585,
+       "max_ms": 1.5295417979359627,
+       "repeats": 20,
+       "warmup": 20
+      }
+     },
+     "sqlite_unlink_ms": 0.022104009985923767,
+     "assemble_ms": 0.7404170464724302,
+     "sqlite_noop_ms": 0.00045797787606716156,
+     "neo4j_detach_delete_ms": 5.090875085443258,
+     "neo4j_session_open_ms": 0.010812538675963879,
+     "neo4j_noop_match_ms": 1.1025419225916266,
+     "neo4j_two_endpoint_match_ms": 0.9564165957272053
+    },
+    {
+     "n_people": 300,
+     "records": {
+      "sqlite_unlink": {
+       "median_ms": 0.02097897231578827,
+       "p95_ms": 0.029208138585090637,
+       "min_ms": 0.019291182979941368,
+       "max_ms": 0.029208138585090637,
+       "repeats": 10,
+       "warmup": 3
+      },
+      "assemble": {
+       "median_ms": 2.2391658276319504,
+       "p95_ms": 2.2941669449210167,
+       "min_ms": 2.2272078786045313,
+       "max_ms": 2.2941669449210167,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "sqlite_noop": {
+       "median_ms": 0.00045797787606716156,
+       "p95_ms": 0.000500120222568512,
+       "min_ms": 0.00037509016692638397,
+       "max_ms": 0.0005420297384262085,
+       "repeats": 20,
+       "warmup": 3
+      },
+      "neo4j_detach_delete": {
+       "median_ms": 13.9720409642905,
+       "p95_ms": 16.801583813503385,
+       "min_ms": 13.128916034474969,
+       "max_ms": 16.801583813503385,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "neo4j_session_open": {
+       "median_ms": 0.004792003892362118,
+       "p95_ms": 0.005334150046110153,
+       "min_ms": 0.004665926098823547,
+       "max_ms": 0.02687494270503521,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_noop_match": {
+       "median_ms": 0.5270414985716343,
+       "p95_ms": 0.5462921690195799,
+       "min_ms": 0.48341695219278336,
+       "max_ms": 0.627333065494895,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_two_endpoint_match": {
+       "median_ms": 0.5843540420755744,
+       "p95_ms": 0.7946249097585678,
+       "min_ms": 0.43891696259379387,
+       "max_ms": 0.8297909516841173,
+       "repeats": 20,
+       "warmup": 20
+      }
+     },
+     "sqlite_unlink_ms": 0.02097897231578827,
+     "assemble_ms": 2.2391658276319504,
+     "sqlite_noop_ms": 0.00045797787606716156,
+     "neo4j_detach_delete_ms": 13.9720409642905,
+     "neo4j_session_open_ms": 0.004792003892362118,
+     "neo4j_noop_match_ms": 0.5270414985716343,
+     "neo4j_two_endpoint_match_ms": 0.5843540420755744
+    },
+    {
+     "n_people": 500,
+     "records": {
+      "sqlite_unlink": {
+       "median_ms": 0.024124630726873875,
+       "p95_ms": 0.03441702574491501,
+       "min_ms": 0.021042069420218468,
+       "max_ms": 0.03441702574491501,
+       "repeats": 10,
+       "warmup": 3
+      },
+      "assemble": {
+       "median_ms": 3.9014159701764584,
+       "p95_ms": 4.150334047153592,
+       "min_ms": 3.8915001787245274,
+       "max_ms": 4.150334047153592,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "sqlite_noop": {
+       "median_ms": 0.00043748877942562103,
+       "p95_ms": 0.0005830079317092896,
+       "min_ms": 0.000416068360209465,
+       "max_ms": 0.0005841720849275589,
+       "repeats": 20,
+       "warmup": 3
+      },
+      "neo4j_detach_delete": {
+       "median_ms": 24.952208157628775,
+       "p95_ms": 26.959667215123773,
+       "min_ms": 22.457124898210168,
+       "max_ms": 26.959667215123773,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "neo4j_session_open": {
+       "median_ms": 0.0046460190787911415,
+       "p95_ms": 0.004834029823541641,
+       "min_ms": 0.004458939656615257,
+       "max_ms": 0.004875008016824722,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_noop_match": {
+       "median_ms": 0.542874913662672,
+       "p95_ms": 0.5987919867038727,
+       "min_ms": 0.4961250815540552,
+       "max_ms": 0.6132079288363457,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_two_endpoint_match": {
+       "median_ms": 0.7244794396683574,
+       "p95_ms": 0.8111661300063133,
+       "min_ms": 0.5814579781144857,
+       "max_ms": 0.9692499879747629,
+       "repeats": 20,
+       "warmup": 20
+      }
+     },
+     "sqlite_unlink_ms": 0.024124630726873875,
+     "assemble_ms": 3.9014159701764584,
+     "sqlite_noop_ms": 0.00043748877942562103,
+     "neo4j_detach_delete_ms": 24.952208157628775,
+     "neo4j_session_open_ms": 0.0046460190787911415,
+     "neo4j_noop_match_ms": 0.542874913662672,
+     "neo4j_two_endpoint_match_ms": 0.7244794396683574
+    },
+    {
+     "n_people": 1000,
+     "records": {
+      "sqlite_unlink": {
+       "median_ms": 0.03977096639573574,
+       "p95_ms": 0.2558750566095114,
+       "min_ms": 0.032082898542284966,
+       "max_ms": 0.2558750566095114,
+       "repeats": 10,
+       "warmup": 3
+      },
+      "assemble": {
+       "median_ms": 7.867083884775639,
+       "p95_ms": 7.902457844465971,
+       "min_ms": 7.841582875698805,
+       "max_ms": 7.902457844465971,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "sqlite_noop": {
+       "median_ms": 0.00045797787606716156,
+       "p95_ms": 0.0005420297384262085,
+       "min_ms": 0.00041583552956581116,
+       "max_ms": 0.000666128471493721,
+       "repeats": 20,
+       "warmup": 3
+      },
+      "neo4j_detach_delete": {
+       "median_ms": 52.061582915484905,
+       "p95_ms": 52.99508408643305,
+       "min_ms": 51.433749962598085,
+       "max_ms": 52.99508408643305,
+       "repeats": 3,
+       "warmup": 20
+      },
+      "neo4j_session_open": {
+       "median_ms": 0.004708068445324898,
+       "p95_ms": 0.00600004568696022,
+       "min_ms": 0.004499917849898338,
+       "max_ms": 0.1685421448200941,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_noop_match": {
+       "median_ms": 0.4990834277123213,
+       "p95_ms": 0.7509579882025719,
+       "min_ms": 0.4269590135663748,
+       "max_ms": 0.7548748981207609,
+       "repeats": 20,
+       "warmup": 20
+      },
+      "neo4j_two_endpoint_match": {
+       "median_ms": 0.5462705157697201,
+       "p95_ms": 0.7413341663777828,
+       "min_ms": 0.47812494449317455,
+       "max_ms": 3.5431659780442715,
+       "repeats": 20,
+       "warmup": 20
+      }
+     },
+     "sqlite_unlink_ms": 0.03977096639573574,
+     "assemble_ms": 7.867083884775639,
+     "sqlite_noop_ms": 0.00045797787606716156,
+     "neo4j_detach_delete_ms": 52.061582915484905,
+     "neo4j_session_open_ms": 0.004708068445324898,
+     "neo4j_noop_match_ms": 0.4990834277123213,
+     "neo4j_two_endpoint_match_ms": 0.5462705157697201
+    }
+   ]
+  },
+  "disk_detail": [
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "reading": "contaminated(해당 없음 — build_sqlite는 매번 파일을 지우고 새로 만든다)",
+    "total_bytes": 147456,
+    "store_bytes": 147456,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "reading": "contaminated",
+    "total_bytes": 542974836,
+    "store_bytes": 2826957,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "reading": "contaminated(해당 없음 — build_sqlite는 매번 파일을 지우고 새로 만든다)",
+    "total_bytes": 356352,
+    "store_bytes": 356352,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "reading": "contaminated",
+    "total_bytes": 545873792,
+    "store_bytes": 5725913,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "reading": "contaminated(해당 없음 — build_sqlite는 매번 파일을 지우고 새로 만든다)",
+    "total_bytes": 557056,
+    "store_bytes": 557056,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "reading": "contaminated",
+    "total_bytes": 551485692,
+    "store_bytes": 11337813,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "reading": "contaminated(해당 없음 — build_sqlite는 매번 파일을 지우고 새로 만든다)",
+    "total_bytes": 1048576,
+    "store_bytes": 1048576,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "reading": "contaminated",
+    "total_bytes": 831795542,
+    "store_bytes": 21865148,
+    "txlog_bytes": 539266547,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 100,
+    "reading": "clean",
+    "total_bytes": 541458599,
+    "store_bytes": 1310720,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 100,
+    "reading": "clean",
+    "total_bytes": 147456,
+    "store_bytes": 147456,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 300,
+    "reading": "clean",
+    "total_bytes": 541925543,
+    "store_bytes": 1777664,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 300,
+    "reading": "clean",
+    "total_bytes": 356352,
+    "store_bytes": 356352,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 500,
+    "reading": "clean",
+    "total_bytes": 542433447,
+    "store_bytes": 2285568,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 500,
+    "reading": "clean",
+    "total_bytes": 557056,
+    "store_bytes": 557056,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   },
+   {
+    "backend": "neo4j",
+    "n_people": 1000,
+    "reading": "clean",
+    "total_bytes": 543662247,
+    "store_bytes": 3514368,
+    "txlog_bytes": 269484032,
+    "system_store_bytes": 1179648,
+    "system_txlog_bytes": 269484032
+   },
+   {
+    "backend": "sqlite",
+    "n_people": 1000,
+    "reading": "clean",
+    "total_bytes": 1048576,
+    "store_bytes": 1048576,
+    "txlog_bytes": 0,
+    "system_store_bytes": 0,
+    "system_txlog_bytes": 0
+   }
+  ],
+  "completed_scales": [
+   [
+    100,
+    20
+   ],
+   [
+    300,
+    60
+   ],
+   [
+    500,
+    100
+   ],
+   [
+    1000,
+    200
+   ]
+  ],
+  "note": "적재(load_ms)·재수화(rehydrate_ms)는 repeats=3으로 축소 측정했다 — 다른 실험의 20/3과 다르며, 회당 비용이 커 전체 실행 시간을 감당할 수 없기 때문이다. 대신 warmup은 브리프의 1이 아니라 20을 썼다(웜업 부족이 Neo4j를 최대 8배 부풀린 전례가 있다). repeats=3에서 p95_ms는 백분위수가 아니라 최댓값이다. 증분 갱신은 repeats=20, warmup=20(양쪽 동일)이다. neo4j의 disk_bytes는 컨테이너 볼륨 전체라 이전 규모가 섞인 오염된 값이고, 판정에는 볼륨을 지우고 규모 하나만 적재해 잰 disk_bytes_clean을 쓴다."
+ }
+}
