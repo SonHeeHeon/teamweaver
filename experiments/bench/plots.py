@@ -8,6 +8,7 @@ from matplotlib import font_manager
 from matplotlib.ticker import FuncFormatter, NullFormatter
 
 from core.config import OPT_RATIO_TARGET, REPO_ROOT
+from experiments import decision
 
 FIGURES_DIR = REPO_ROOT / "experiments" / "figures"
 _COLORS = {"sqlite": "#4C78A8", "neo4j": "#F58518", "memory": "#54A24B",
@@ -180,22 +181,13 @@ def exp3_tradeoff(result: dict) -> Path:
     return _save(fig, "exp3_tradeoff.png")
 
 
-def _payload(result: dict) -> dict:
-    """harness.save_result의 래퍼를 벗긴다. 노트북은 load_result가 준 문서를
-    그대로 넘기고 테스트는 안쪽 payload만 줄 수 있어야 한다."""
-    inner = result.get("data")
-    if isinstance(inner, dict) and isinstance(inner.get("rows"), list):
-        return inner
-    return result
-
-
 def exp4_rag(result: dict) -> Path:
     """질의 × 규모 지연을 백엔드별로 그린다.
 
     y축은 로그다 — 같은 그림 안에서 0.02ms(sqlite)와 16ms(neo4j)를 함께 봐야 하고,
     선형축이면 SQLite 계열이 전부 바닥에 붙어 규모 추세를 읽을 수 없다.
     """
-    d = _payload(result)
+    d = decision.payload(result)
     rows = d["rows"]
     queries = sorted({r["query"] for r in rows})
     fig, axes = plt.subplots(1, len(queries), figsize=(3.1 * len(queries), 3.4),
@@ -230,7 +222,7 @@ def exp5_persistence(result: dict) -> Path:
     이전 규모의 잔여를 포함해 규모별 비교에 쓸 수 없고, 의사결정 규칙 2도 클린
     판독으로 판정한다. y축은 로그다(147KB vs 541MB, 0.2ms vs 340ms).
     """
-    d = _payload(result)
+    d = decision.payload(result)
     rows = d["rows"]
     present = [m for m in _EXP5_METRICS if any(r["metric"] == m for r in rows)]
     scales = sorted({r["n_people"] for r in rows})
@@ -260,5 +252,10 @@ def exp5_persistence(result: dict) -> Path:
             ax.set_ylim(top=max(seen) * 2)
         ax.set_ylabel("bytes" if byte_axis else "ms")
     axes[-1].legend()
-    fig.suptitle("실험 5 — 영속성 4지표 (낮을수록 좋다, 로그 축)")
+    # 패널은 5개(load/disk/append_cowork/append_review/rehydrate)지만 규칙 2가
+    # 세는 지표는 4개다 — append_cowork_ms·append_review_ms는 "증분 갱신 비용"
+    # 한 지표로 합쳐 센다(decision._RULE2_GROUPS). 제목이 패널 수와 다른 숫자를
+    # 말하면 혼란스러우므로 둘 다 명시한다.
+    fig.suptitle("실험 5 — 영속성 5개 패널 · 규칙 2 판정 지표는 4개"
+                 "(append_cowork·append_review는 한 지표로 합산, 낮을수록 좋다, 로그 축)")
     return _save(fig, "exp5_persistence.png")

@@ -24,6 +24,7 @@ import json
 
 import pytest
 
+from core.config import REPO_ROOT
 from experiments import decision
 from experiments.bench import harness
 
@@ -334,3 +335,54 @@ def test_drop_verdict_carries_a_removal_plan():
 
 def test_keep_verdicts_do_not_carry_a_removal_plan():
     assert decision.evaluate(_exp4(11), _exp5(0)).get("removal_plan") is None
+
+
+# ---------------------------------------------------------------------------
+# 제거 계획의 경로는 실제로 존재해야 한다 — 예전에는 존재하지 않는 경로
+# (core/config.py의 "NEO4J_*") 하나가 실제 값을 담은 .env.example 대신
+# 실려 있었다. 그 결함을 사람 눈으로 다시 잡는 대신 테스트로 잠근다.
+# ---------------------------------------------------------------------------
+
+def _plan_entries() -> list[dict]:
+    return decision.REMOVAL_PLAN["remove"] + decision.REMOVAL_PLAN["keep"]
+
+
+def _plan_fs_path(raw: str) -> str:
+    """`path`에 붙은 `::symbol` 접미사(예: `core/graph/rehydrate.py::from_neo4j`)를
+    떼고 파일시스템 경로만 남긴다."""
+    return raw.split("::", 1)[0]
+
+
+@pytest.mark.parametrize("entry", _plan_entries(),
+                          ids=[e["path"] for e in _plan_entries()])
+def test_removal_plan_paths_exist(entry):
+    """규칙 4의 제거 계획은 판정과 함께 리포트에 **사실**로 렌더링되고, Plan 4가
+    그대로 실행할 문서다. 존재하지 않는 경로를 나열하면 Plan 4가 빈 파일을 열게
+    되고, 실제로 설정을 담은 파일은 계획에서 누락된 채로 남는다."""
+    p = REPO_ROOT / _plan_fs_path(entry["path"])
+    assert p.exists(), f"removal_plan 경로가 존재하지 않는다: {entry['path']!r}"
+
+
+_CONFIG_CLAIM_ENTRIES = [e for e in _plan_entries() if "환경변수" in e["note"]]
+
+
+@pytest.mark.parametrize("entry", _CONFIG_CLAIM_ENTRIES,
+                          ids=[e["path"] for e in _CONFIG_CLAIM_ENTRIES])
+def test_removal_plan_config_claims_actually_contain_neo4j(entry):
+    """note가 "환경변수"를 언급하며 Neo4j 설정을 담고 있다고 주장하는 파일은
+    실제로 `NEO4J` 문자열을 담고 있어야 한다. 예전 항목(`core/config.py`)은 이
+    주장을 했지만 `grep NEO4J core/config.py`가 아무것도 내지 않았다 — 실제
+    설정은 `.env.example`에 있었다."""
+    p = REPO_ROOT / _plan_fs_path(entry["path"])
+    text = p.read_text(encoding="utf-8")
+    assert "NEO4J" in text, (
+        f"{entry['path']!r}가 Neo4j 설정을 담고 있다고 주장하지만 파일에 "
+        "'NEO4J' 문자열이 없다")
+
+
+def test_config_claim_entries_are_not_accidentally_empty():
+    """위 테스트는 note에 "환경변수"가 있는 항목에만 적용된다 — 그 필터 자체가
+    빈 리스트라면 위 테스트는 통과했다는 착각만 주고 아무것도 검증하지 않는다."""
+    assert _CONFIG_CLAIM_ENTRIES, (
+        "'환경변수'를 언급하는 removal_plan 항목이 하나도 없다 — "
+        "test_removal_plan_config_claims_actually_contain_neo4j가 공허하게 통과하고 있다")

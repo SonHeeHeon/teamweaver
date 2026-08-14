@@ -564,7 +564,7 @@ def _cells(rows: list[dict]) -> dict:
     return {(r["backend"], r["query"], r["n_people"]): r for r in rows}
 
 
-def _exp4_tally(rows: list[dict]) -> tuple[int, int]:
+def exp4_tally(rows: list[dict]) -> tuple[int, int]:
     """규칙 1이 소비하는 수치. `decision._neo4j_faster_cells`와 같은 계산이지만
     이쪽은 부분 아티팩트에도 표를 그릴 수 있게 관대하다(판정은 decision이 한다)."""
     by = _cells(rows)
@@ -578,7 +578,7 @@ def _exp4_tally(rows: list[dict]) -> tuple[int, int]:
     return wins, total
 
 
-def _exp4_separation(rows: list[dict]) -> tuple[int, int, str, float] | None:
+def exp4_separation(rows: list[dict]) -> tuple[int, int, str, float] | None:
     """셀별 min/max 겹침 검사. 중앙값 비교가 표본 분산 안에서 흔들릴 여지가 있는지를
     본다 — Neo4j **최솟값**이 SQLite **최댓값**보다 크면 그 셀은 어떤 추정량으로도
     뒤집히지 않는다. 가장 근접한(비율이 가장 작은) 셀도 함께 돌려준다."""
@@ -606,7 +606,7 @@ def _exp4_calibration_share(rows: list[dict], value: float) -> tuple[float, floa
     return (min(pcts), max(pcts)) if pcts else None
 
 
-def _exp4_flip_count(rows: list[dict], subtract: float) -> tuple[int, int]:
+def exp4_flip_count(rows: list[dict], subtract: float) -> tuple[int, int]:
     """Neo4j 중앙값에서 subtract만큼 빼면 몇 개 셀이 뒤집히는가(민감도)."""
     by = _cells(rows)
     flips = total = 0
@@ -619,7 +619,7 @@ def _exp4_flip_count(rows: list[dict], subtract: float) -> tuple[int, int]:
     return flips, total
 
 
-def _exp4_output_growth(rows: list[dict]) -> tuple[dict[str, tuple], dict[str, tuple]]:
+def exp4_output_growth(rows: list[dict]) -> tuple[dict[str, tuple], dict[str, tuple]]:
     """규모에 따라 출력 행 수가 자라는 질의와 사실상 고정인 질의를 갈라 낸다.
     "규모가 커지면 격차가 좁혀진다"를 규모에 대한 추세 주장으로 옮기지 않기
     위한 근거다(A-4) — 대부분의 셀은 그래프 규모가 아니라 호출당 고정비를 잰다.
@@ -641,7 +641,7 @@ def _exp4_output_growth(rows: list[dict]) -> tuple[dict[str, tuple], dict[str, t
     return growing, flat
 
 
-def _fmt_growth(group: dict[str, tuple]) -> str:
+def fmt_growth(group: dict[str, tuple]) -> str:
     return ", ".join(f"`{q}`({lo}→{hi}행)" for q, (lo, hi) in group.items()) or "없다"
 
 
@@ -663,7 +663,7 @@ def _exp4(d: dict) -> str:
     by = _cells(rows)
     queries = sorted({r["query"] for r in rows})
     scales = sorted({r["n_people"] for r in rows})
-    wins, cells = _exp4_tally(rows)
+    wins, cells = exp4_tally(rows)
 
     lines = ["## 실험 4 — RAG 서브그래프 검색 워크로드 (SQLite vs Neo4j)", "",
              "**질문:** XAI 브리핑이 실제로 필요로 하는 5가지 형태의 문맥 검색에서 어느 "
@@ -704,7 +704,7 @@ def _exp4(d: dict) -> str:
         lines += ["> 제외된 측정: " + "; ".join(
             f"{s['backend']}@{s.get('n_people', '-')}({s['reason']})" for s in skipped), ""]
 
-    sep = _exp4_separation(rows)
+    sep = exp4_separation(rows)
     if sep:
         clean, total, name, ratio = sep
         if clean == total:
@@ -736,7 +736,7 @@ def _exp4(d: dict) -> str:
         if cal.get("sqlite_noop_ms") is not None:
             lines.append(f"| (대칭) SQLite `SELECT 1` | {cal['sqlite_noop_ms']:.4f} | "
                          f"{cal.get('sqlite_noop_p95_ms', float('nan')):.4f} | — |")
-        _, flat_q = _exp4_output_growth(rows)
+        _, flat_q = exp4_output_growth(rows)
         small = [r for r in rows if r["backend"] == "neo4j" and r["query"] in flat_q]
         small_share = _exp4_calibration_share(small, floor)
         lines.append("")
@@ -748,8 +748,8 @@ def _exp4(d: dict) -> str:
                       "성분(풀 체크아웃 상환분)은 분리 측정되지 않았다** — 낮은 쪽 끝만 인용하면 "
                       "고정비를 과소 보고하는 것이고, 높은 쪽 끝만 인용하면 실제로 뺄 수 있는 "
                       "양을 과대 보고하는 것이다. 두 끝을 함께 읽을 것.", ""]
-        f_sess, tot = _exp4_flip_count(rows, sess)
-        f_floor, _ = _exp4_flip_count(rows, floor)
+        f_sess, tot = exp4_flip_count(rows, sess)
+        f_floor, _ = exp4_flip_count(rows, floor)
         lines += ["**민감도(규칙 1이 이 고정비에 얼마나 민감한가):**", "",
                   f"- 세션 획득분을 Neo4j 수치에서 빼면 뒤집히는 셀 **{f_sess}/{tot}**",
                   f"- 고정 바닥 전체를 빼면(= 실제로 뺄 수 있는 양보다 과보정) 뒤집히는 셀 "
@@ -780,12 +780,12 @@ def _exp4(d: dict) -> str:
         f"{ratio_span} 격차를 이것만으로 뒤집을 수는 없지만, 이를 \"네트워크 왕복\" 한마디로 "
         "적으면 축소 서술이다.",
     ]
-    growing, flat = _exp4_output_growth(rows)
+    growing, flat = exp4_output_growth(rows)
     if growing or flat:
         flat_cells = len(flat) * len(scales)
         lines += [
             f"3. **n={scales[-1]}을 넘어 외삽하지 말 것.** 출력이 규모에 따라 실제로 커지는 "
-            f"질의는 {_fmt_growth(growing)} 뿐이고, 나머지({_fmt_growth(flat)})는 사실상 고정 "
+            f"질의는 {fmt_growth(growing)} 뿐이고, 나머지({fmt_growth(flat)})는 사실상 고정 "
             f"출력이다. 즉 {cells}개 셀 중 {flat_cells}개는 그래프 규모가 아니라 **호출당 "
             "고정비 + 앵커된 인덱스 조회**를 재고 있다. 일부 질의에서 관측되는 격차 축소를 "
             "규모에 대한 추세 주장으로 옮기지 말 것.",
@@ -844,7 +844,7 @@ def _exp5_metric_table(d: dict, metrics: list[str]) -> list[str]:
 def _exp5_tally_lines(label: str, exp5: dict) -> list[str]:
     """규칙 2 집계를 decision.evaluate가 실제로 쓴 계산으로 다시 낸다 — 리포트가
     판정과 다른 숫자를 말하는 일이 없도록 같은 함수를 통과시킨다."""
-    tally = decision._rule2_tally(exp5)
+    tally = decision.rule2_tally(exp5)
     out = [f"**{label}** (disk 판독: `{tally['disk_reading']}`)", "",
            "| 지표 | 센 항목 | 셀 | Neo4j 우위 셀 | 지표 판정 |",
            "|---|---|---:|---:|---|"]
@@ -897,7 +897,7 @@ def _exp5_disk_lines(d: dict) -> list[str]:
     return out
 
 
-def _calibration_contradictions(d: dict) -> list[str]:
+def calibration_contradictions(d: dict) -> list[str]:
     """캘리브레이션이 물리적으로 불가능한 순서를 낸 셀을 찾는다.
 
     `noop_match`(MATCH 1회)는 `two_endpoint_match`(2회)보다 클 수 없고, MATCH만
@@ -930,15 +930,30 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
     판정한다. 뺄셈이 무엇을 할 수 있고 무엇을 할 수 없는지를 데이터로 보인다."""
     vals = _mvals(d["rows"])
     scales = sorted({r["n_people"] for r in d["rows"]})
-    if not any(_cal(d, n, "neo4j_detach_delete_ms") is not None for n in scales):
+    # 표·1~3번 논증이 쓰는 네 캘리브레이션 값이 **스케일마다 전부** 있어야
+    # 아래 f"{...:.3f}"나 `nl - _cal(...)`가 TypeError 없이 돈다. 부분 아티팩트
+    # (예: experiments/results/exp5_persistence*.partial.json)는 일부 스케일만
+    # 캘리브레이션이 채워진 채로 남을 수 있다 — `:933`의 원래 가드는 "어느 한
+    # 스케일에 detach_delete_ms가 있는가"만 봐서, 그 스케일에 다른 세 값 중
+    # 하나가 비어 있으면 여전히 뚫고 들어가 죽는다. 스케일 단위로 네 값이 모두
+    # 있는지 확인해 그 스케일만 쓴다.
+    cal_scales = [n for n in scales if all(
+        _cal(d, n, k) is not None for k in
+        ("neo4j_detach_delete_ms", "sqlite_unlink_ms", "assemble_ms",
+         "neo4j_two_endpoint_match_ms"))]
+    if not cal_scales:
         return []
+    incomplete = [n for n in scales if n not in cal_scales]
 
-    out = ["### 캘리브레이션 — 공개용이며 헤드라인에서 차감하지 않는다", "",
-           "| 인원 | DETACH DELETE(ms) | = neo4j `load_ms`의 | SQLite `unlink`(ms) | "
-           "= sqlite `load_ms`의 | `_assemble`(ms) | = sqlite/neo4j `rehydrate_ms`의 | "
-           "두 엔드포인트 MATCH(ms) | = neo4j `append_cowork_ms`의 |",
-           "|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
-    for n in scales:
+    out = ["### 캘리브레이션 — 공개용이며 헤드라인에서 차감하지 않는다", ""]
+    if incomplete:
+        out += [f"> 규모 {', '.join(str(n) for n in incomplete)}는 캘리브레이션 값이 "
+                "일부만 기록돼 있어(부분 아티팩트) 이 절의 계산에서 제외했다.", ""]
+    out += ["| 인원 | DETACH DELETE(ms) | = neo4j `load_ms`의 | SQLite `unlink`(ms) | "
+            "= sqlite `load_ms`의 | `_assemble`(ms) | = sqlite/neo4j `rehydrate_ms`의 | "
+            "두 엔드포인트 MATCH(ms) | = neo4j `append_cowork_ms`의 |",
+            "|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    for n in cal_scales:
         dd = _cal(d, n, "neo4j_detach_delete_ms")
         ul = _cal(d, n, "sqlite_unlink_ms")
         asm = _cal(d, n, "assemble_ms")
@@ -959,7 +974,7 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
     disc = []
     out += ["", "| 인원 | 철거분 차감 후 sqlite(ms) | 차감 후 neo4j(ms) | 배율 |",
             "|---:|---:|---:|---:|"]
-    for n in scales:
+    for n in cal_scales:
         nl, sl = vals[("neo4j", "load_ms", n)], vals[("sqlite", "load_ms", n)]
         a = nl - _cal(d, n, "neo4j_detach_delete_ms")
         b = sl - _cal(d, n, "sqlite_unlink_ms")
@@ -969,7 +984,7 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
 
     # 2. _assemble — 빼면 Neo4j가 더 나빠진다
     ratios_raw, ratios_disc = [], []
-    for n in scales:
+    for n in cal_scales:
         nr, sr = vals[("neo4j", "rehydrate_ms", n)], vals[("sqlite", "rehydrate_ms", n)]
         a = _cal(d, n, "assemble_ms")
         ratios_raw.append(nr / sr)
@@ -983,7 +998,7 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
     # 3. append_* 반사실
     cw = rv = cells = 0
     resid = []
-    for n in scales:
+    for n in cal_scales:
         te = _cal(d, n, "neo4j_two_endpoint_match_ms")
         for metric, counter in (("append_cowork_ms", "cw"), ("append_review_ms", "rv")):
             g, s = vals[("neo4j", metric, n)], vals[("sqlite", metric, n)]
@@ -1004,8 +1019,8 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
             f"{decision.PERSISTENCE_THRESHOLD}에는 **여전히 미달이라 판정은 유지된다**.", ""]
 
     # 4. 캘리브레이션 자체의 모순 — 두 스윕 모두에서 찾는다
-    bad = _calibration_contradictions(d)
-    bad_first = _calibration_contradictions(first)
+    bad = calibration_contradictions(d)
+    bad_first = calibration_contradictions(first)
     lo_r, hi_r = min(resid), max(resid)
     out += ["4. **그 반사실 자체가 못 미덥다.** 캘리브레이션 질의 "
             "`MATCH (a),(b) RETURN a, b`는 노드 레코드 2개를 실제로 반환하는데 `append_*` "
@@ -1105,15 +1120,16 @@ def _exp5_warmup_lines(primed: dict, first: dict) -> list[str]:
                 head.append(f"`{metric}` {fv_n[0] / fv_s[0]:.1f}× → {pv_n[0] / pv_s[0]:.1f}×")
         if head:
             out += ["", "> 결과적으로 첫 스윕의 **최소 규모 헤드라인 배율은 부풀려져 있었다** "
-                    f"({", ".join(head)}). **정정 방향은 "
-                    "Neo4j에 불리하다**(Neo4j 수치를 부풀리는 것은 SQLite를 좋아 보이게 한다 — "
-                    "첫 리포트가 이 방향을 반대로 서술했다). 그래도 두 스윕 모두 SQLite가 전 셀 "
-                    "우세라 판정은 바뀌지 않는다.", ""]
+                    f"({", ".join(head)}). **편향의 방향은 Neo4j에 불리했다**(예열 안 된 "
+                    "단문 왕복이 Neo4j 수치에만 얹혀 SQLite 대비 격차를 실제보다 크게 보이게 "
+                    "했다 — 첫 리포트가 이 방향을 반대로 서술했다). **정정은 그 편향을 걷어내므로 "
+                    "배율이 Neo4j에 유리한 방향으로(더 작게) 움직인다.** 그래도 두 스윕 모두 "
+                    "SQLite가 전 셀 우세라 판정은 바뀌지 않는다.", ""]
     return out
 
 
 def _exp5(primed: dict, first: dict) -> str:
-    tally = decision._rule2_tally(primed)
+    tally = decision.rule2_tally(primed)
     rows = primed["rows"]
     vals = _mvals(rows)
     scales = sorted({r["n_people"] for r in rows})
@@ -1143,8 +1159,11 @@ def _exp5(primed: dict, first: dict) -> str:
 
     lines += _exp5_tally_lines("규칙 2 집계 — 지표별 규모 셀의 과반으로 판정", primed)
     lines += ["> 집계 방식(지표당 규모 셀의 과반)은 사전 고정 규칙에 명시돼 있지 않아 실험 "
-              "5에서 정하고 여기에 밝힌다. `experiments/decision.py`와 실험 5 러너가 이 집계를 "
-              "**독립적으로 두 번** 계산하며, `tests/test_decision.py::"
+              "5에서 정하고 여기에 밝힌다. `experiments/decision.py`와 실험 5 러너는 "
+              "**같은 집계를 두 번 구현해 재현을 고정한다**(독립적으로 고안한 별도 방법이 "
+              "아니라 같은 그룹핑 상수·같은 `wins * 2 > cells`·같은 셀 나열을 그대로 다시 "
+              "쓴 것이다 — 드리프트나 부호 반전 같은 구현 오류는 잡지만 두 구현이 공유하는 "
+              "개념적 오류까지 잡지는 못한다). `tests/test_decision.py::"
               "test_rule2_reproduces_the_tally_persisted_by_task6`이 커밋된 JSON에 저장된 "
               "집계와 지표별로 일치함을 고정한다.", ""]
 
@@ -1194,6 +1213,18 @@ def _exp5(primed: dict, first: dict) -> str:
               "- **`disk_bytes`의 누적 판독은 이전 규모의 잔여를 포함한다.** 어느 판독으로 "
               "규칙 2를 판정했는지는 위에 명시했다."]
 
+    # "이 방향은 {other}에 유리하며, 그럼에도 {other}가 진다"는 {other}가 실제로도
+    # 진다는 것을 전제한다. 커밋된 데이터에서는 sqlite만 이 조건을 트리거해서
+    # {other}가 늘 neo4j이고 neo4j가 rehydrate_ms를 잃는 쪽이라 우연히 맞았지만,
+    # "누가 지는가"를 backend/other 위치로 **가정**하면 틀릴 수 있다 — 언젠가
+    # neo4j 쪽 셀이 이 조건을 만족하면 {other}가 sqlite가 되는데, sqlite는 이
+    # 실험에서 rehydrate_ms를 잃지 않는다. 그러면 "sqlite가 진다"는 거짓 문장이
+    # 된다. 그래서 "누가 지는가"는 추측하지 않고 규칙 2 tally에서 그대로 읽는다.
+    rehydrate_neo4j_ahead = next(
+        (m["neo4j_ahead"] for m in tally["per_metric"] if m["metric"] == "rehydrate_ms"),
+        None)
+    metric_loser = None if rehydrate_neo4j_ahead is None else (
+        "sqlite" if rehydrate_neo4j_ahead else "neo4j")
     noisy = []
     for n in scales:
         for backend in ("sqlite", "neo4j"):
@@ -1204,7 +1235,7 @@ def _exp5(primed: dict, first: dict) -> str:
     for backend, other, n, mn, med in noisy:
         lines.append(f"- **{backend} n={n} `rehydrate_ms`는 축소 반복에서 노이즈가 크다"
                      f"(min {mn:.3f} / median {med:.3f}).** 이 방향은 **{other}에 유리**하며, "
-                     f"그럼에도 {other}가 진다.")
+                     f"그럼에도 {metric_loser}가 진다.")
     lines += [
         "- **재현성 한계 — 무엇이 삭제됐는지의 기록은 검증 불가능하다.** 컨테이너 볼륨이 "
         "바인드 마운트(`./.neo4j/data:/data`)라 `docker compose down -v`로 지워지지 않아, "

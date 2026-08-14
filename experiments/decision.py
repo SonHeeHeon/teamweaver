@@ -68,6 +68,24 @@ _RULE2_GROUPS = (("load_ms", ("load_ms",)),
 # 몰래 "3 of 3"이 되어 사전 고정 임계를 사후 변경하는 셈이 된다.
 _DISK_READINGS = ("disk_bytes_clean", "disk_bytes")
 
+# LOWER_IS_BETTER에는 있지만 어느 카운트에도 들어가지 않는 것으로 **고의로**
+# 선언한 지표. disk_bytes(오염된 누적 판독)는 disk_bytes_clean이 있으면
+# rule2_tally가 절대 세지 않는다(위 우선순위) — "잊혀서" 사라진 게 아니라
+# "빼기로 정해서" 사라진 것임을 여기 못박는다. 새 지표를 LOWER_IS_BETTER에
+# 추가하고 이 집합에도 _RULE2_GROUPS에도 넣지 않으면 아래 검사가 즉시 raise한다
+# (조용히 규칙 2에서 빠지는 대신 깨진다).
+_UNGROUPED = frozenset({"disk_bytes"})
+
+_GROUPED_METRICS = (frozenset(_DISK_READINGS) - _UNGROUPED) | frozenset(
+    m for _, metrics in _RULE2_GROUPS if metrics for m in metrics)
+_unaccounted_for_rule2 = LOWER_IS_BETTER - _GROUPED_METRICS - _UNGROUPED
+if _unaccounted_for_rule2:
+    raise ValueError(
+        f"LOWER_IS_BETTER에 있지만 _RULE2_GROUPS 어느 그룹에도, _UNGROUPED에도 "
+        f"속하지 않는 지표: {sorted(_unaccounted_for_rule2)!r}. 규칙 2 집계 루프가 "
+        "이 지표를 조용히 건너뛰고도 규칙 2가 정확히 4지표라는 검사를 통과할 "
+        "수 있다 — 그룹에 추가하거나, 고의로 뺀 것이라면 _UNGROUPED에 넣을 것.")
+
 
 # ---------------------------------------------------------------------------
 # 입력 경계 — 커밋된 아티팩트의 래퍼를 여기서 한 번만 벗긴다
@@ -132,11 +150,18 @@ def _disk_reading(rows: list[dict]) -> str:
     return _DISK_READINGS[-1]
 
 
-def _rule2_tally(exp5: dict) -> dict:
+def rule2_tally(exp5: dict) -> dict:
     """4지표 각각에 대해 규모 셀의 과반으로 Neo4j 우위 여부를 판정한다.
 
-    Task 6의 `exp5_persistence._rule2_tally`와 같은 방식이며, 두 계산이 커밋된
-    JSON에서 지표별로 일치하는지 tests/test_decision.py가 대조한다.
+    `report.py`와 두 노트북에서 모듈 밖에서 호출하므로 밑줄 없는 이름을 쓴다
+    (이 함수가 사실상 모듈 간 API다).
+
+    Task 6의 `exp5_persistence._rule2_tally`와 **같은 집계를 두 번 구현해
+    재현을 고정한다** — 같은 그룹핑 상수, 같은 `wins * 2 > cells`, 같은 셀
+    나열. 값이 갈리면(드리프트·잘못된 판독·잘못된 그룹핑·부호 반전) 대조
+    테스트가 잡지만, 두 구현이 같은 개념적 오류를 공유하면 대조로는 잡히지
+    않는다는 한계는 있다. tests/test_decision.py가 커밋된 JSON에서 지표별로
+    대조한다.
     """
     rows = exp5["rows"]
     disk_metric = _disk_reading(rows)
@@ -200,6 +225,22 @@ def sql_structure() -> dict[str, dict]:
     는 서브쿼리가 아니므로 뺀다. UNION ALL로 이어붙인 최상위 SELECT는 괄호가
     없으므로 애초에 세지 않는다. 형식이 바뀌면 tests/test_decision.py가
     깨진다(라벨과의 교차 검증 포함).
+
+    **정규식의 사각지대** (파서가 아니라 정규식이므로):
+    - `AS MATERIALIZED (SELECT` 는 `_CTE_BODY`(`AS\\s*\\(\\s*SELECT`)에 안 걸려
+      CTE로 빠지지 못하고 `_SELECT_IN_PARENS`에는 걸려 서브쿼리로 **과대**
+      집계된다.
+    - `AS ( -- comment\\n SELECT` 처럼 여는 괄호와 `SELECT` 사이에 줄바꿈·주석이
+      끼면 `_CTE_BODY`도 `_SELECT_IN_PARENS`도 매치하지 않아 **양쪽 다 못 센다**
+      (서브쿼리든 CTE든 사각지대에서는 보이지 않는다).
+
+    **안전한 방향**: `_complex_sql_queries`의 판정은 `max(enum, literal)`을 쓴다
+    (§decision 상단 (d)). literal이 실제보다 **과소**집계돼도 enum=2가 바닥을
+    받쳐 판정에 영향이 없다. 판정을 흔들 수 있는 것은 literal의 **과대**집계뿐
+    이다 — 위 첫 번째 사각지대처럼 literal이 3에 닿아야 `keep_expressiveness`를
+    만들어낼 수 있다. 실측 5종(core/rag/sqlite_rag.py)에는 두 사각지대 패턴이
+    모두 없음을 사람이 직접 대조해 확인했다 — 골든값(subqueries 카운트)은 이
+    수동 대조로 검증된 것이지 정규식 자체의 정확성이 증명된 것은 아니다.
     """
     out = {}
     for q in RAG_QUERIES:
@@ -247,12 +288,16 @@ REMOVAL_PLAN = {
          "note": "neo4j 서비스와 ./.neo4j/data 바인드 마운트. 이 저장소의 유일한 컨테이너 의존이다."},
         {"path": "pyproject.toml::dependencies[neo4j]",
          "note": "파이썬 드라이버. 제거하면 uv.lock도 재생성한다."},
-        {"path": "tests/test_neo4j_store.py, tests/test_neo4j_rag.py",
-         "note": "neo4j 마커가 붙은 테스트 전부. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리."},
-        {"path": "experiments/bench/exp4_rag.py, experiments/bench/exp5_persistence.py 의 neo4j 분기",
-         "note": "**러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다."},
-        {"path": "core/config.py 의 NEO4J_* 설정",
-         "note": "URI·인증 환경변수."},
+        {"path": "tests/test_neo4j_store.py",
+         "note": "neo4j 마커가 붙은 테스트. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리."},
+        {"path": "tests/test_neo4j_rag.py",
+         "note": "neo4j 마커가 붙은 테스트. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리."},
+        {"path": "experiments/bench/exp4_rag.py",
+         "note": "neo4j 분기 정리. **러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다."},
+        {"path": "experiments/bench/exp5_persistence.py",
+         "note": "neo4j 분기 정리. **러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다."},
+        {"path": ".env.example",
+         "note": "NEO4J_URI·NEO4J_AUTH 환경변수 예시 라인."},
     ],
     "keep": [
         {"path": "core/rag/sqlite_rag.py",
@@ -263,8 +308,12 @@ REMOVAL_PLAN = {
          "note": "적재·증분 갱신(append_cowork/append_review)."},
         {"path": "core/graph/memory_graph.py",
          "note": "연산 계층은 바뀌지 않는다 — 저장 계층만 SQLite 단일화된다."},
-        {"path": "experiments/results/exp4_rag.json, exp5_persistence*.json",
+        {"path": "experiments/results/exp4_rag.json",
          "note": "판정의 근거 아티팩트. 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다."},
+        {"path": "experiments/results/exp5_persistence.json",
+         "note": "판정의 근거 아티팩트(첫 스윕). 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다."},
+        {"path": "experiments/results/exp5_persistence_primed.json",
+         "note": "판정의 근거 아티팩트(재측정, 판정에 쓰는 스윕). 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다."},
     ],
     "lost": [
         "가변 길이 경로 탐색의 표현력 — `skill_within_hops`는 Cypher에서 `*1..N` 한 줄이지만 "
@@ -292,7 +341,7 @@ def evaluate(exp4: dict, exp5: dict) -> dict:
     exp4/exp5는 **안쪽 payload**를 받는다(래퍼는 `payload()`로 벗긴다).
     """
     wins, cells = _neo4j_faster_cells(exp4)
-    tally = _rule2_tally(exp5)
+    tally = rule2_tally(exp5)
     better, pmetrics = tally["neo4j_metric_wins"], tally["metrics"]
     complexity = _complex_sql_queries()
     complex_q = complexity["adjudicated"]

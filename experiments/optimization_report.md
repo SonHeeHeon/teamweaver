@@ -318,7 +318,7 @@ Neo4j 쪽에만 붙고 SQLite 쪽에는 없는 호출당 고정비다(`neo4j_rag
 
 → Neo4j 우위 지표 **0 / 4** (사전 고정 임계 3 이상이면 존치)
 
-> 집계 방식(지표당 규모 셀의 과반)은 사전 고정 규칙에 명시돼 있지 않아 실험 5에서 정하고 여기에 밝힌다. `experiments/decision.py`와 실험 5 러너가 이 집계를 **독립적으로 두 번** 계산하며, `tests/test_decision.py::test_rule2_reproduces_the_tally_persisted_by_task6`이 커밋된 JSON에 저장된 집계와 지표별로 일치함을 고정한다.
+> 집계 방식(지표당 규모 셀의 과반)은 사전 고정 규칙에 명시돼 있지 않아 실험 5에서 정하고 여기에 밝힌다. `experiments/decision.py`와 실험 5 러너는 **같은 집계를 두 번 구현해 재현을 고정한다**(독립적으로 고안한 별도 방법이 아니라 같은 그룹핑 상수·같은 `wins * 2 > cells`·같은 셀 나열을 그대로 다시 쓴 것이다 — 드리프트나 부호 반전 같은 구현 오류는 잡지만 두 구현이 공유하는 개념적 오류까지 잡지는 못한다). `tests/test_decision.py::test_rule2_reproduces_the_tally_persisted_by_task6`이 커밋된 JSON에 저장된 집계와 지표별로 일치함을 고정한다.
 
 **두 스윕의 집계 — 둘 다 같은 답을 낸다.**
 
@@ -404,7 +404,7 @@ Neo4j 쪽에만 붙고 SQLite 쪽에는 없는 호출당 고정비다(`neo4j_rag
 | neo4j | `append_review_ms` | 2.256 / 0.942 / 0.780 / 0.778 | **예** | 0.735 / 0.455 / 0.538 / 0.860 | 아니오 |
 | sqlite | `append_review_ms` | 0.286 / 0.268 / 0.233 / 0.251 | 아니오 | 0.260 / 0.277 / 0.241 / 0.344 | 아니오 |
 
-> 결과적으로 첫 스윕의 **최소 규모 헤드라인 배율은 부풀려져 있었다** (`append_cowork_ms` 4.1× → 2.4×, `append_review_ms` 7.9× → 2.8×). **정정 방향은 Neo4j에 불리하다**(Neo4j 수치를 부풀리는 것은 SQLite를 좋아 보이게 한다 — 첫 리포트가 이 방향을 반대로 서술했다). 그래도 두 스윕 모두 SQLite가 전 셀 우세라 판정은 바뀌지 않는다.
+> 결과적으로 첫 스윕의 **최소 규모 헤드라인 배율은 부풀려져 있었다** (`append_cowork_ms` 4.1× → 2.4×, `append_review_ms` 7.9× → 2.8×). **편향의 방향은 Neo4j에 불리했다**(예열 안 된 단문 왕복이 Neo4j 수치에만 얹혀 SQLite 대비 격차를 실제보다 크게 보이게 했다 — 첫 리포트가 이 방향을 반대로 서술했다). **정정은 그 편향을 걷어내므로 배율이 Neo4j에 유리한 방향으로(더 작게) 움직인다.** 그래도 두 스윕 모두 SQLite가 전 셀 우세라 판정은 바뀌지 않는다.
 
 ### 남아 있는 비대칭 — 고칠 수 없어 공개만 한다 (전부 SQLite에 유리한 방향)
 
@@ -480,9 +480,11 @@ Neo4j 쪽에만 붙고 SQLite 쪽에는 없는 호출당 고정비다(`neo4j_rag
 | `core/graph/rehydrate.py::from_neo4j` | 재수화의 Neo4j 경로. from_sqlite가 같은 MemoryGraph를 만든다. |
 | `docker-compose.yml` | neo4j 서비스와 ./.neo4j/data 바인드 마운트. 이 저장소의 유일한 컨테이너 의존이다. |
 | `pyproject.toml::dependencies[neo4j]` | 파이썬 드라이버. 제거하면 uv.lock도 재생성한다. |
-| `tests/test_neo4j_store.py, tests/test_neo4j_rag.py` | neo4j 마커가 붙은 테스트 전부. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리. |
-| `experiments/bench/exp4_rag.py, experiments/bench/exp5_persistence.py 의 neo4j 분기` | **러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다. |
-| `core/config.py 의 NEO4J_* 설정` | URI·인증 환경변수. |
+| `tests/test_neo4j_store.py` | neo4j 마커가 붙은 테스트. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리. |
+| `tests/test_neo4j_rag.py` | neo4j 마커가 붙은 테스트. pytest 마커 'neo4j'와 addopts의 제외 규칙도 함께 정리. |
+| `experiments/bench/exp4_rag.py` | neo4j 분기 정리. **러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다. |
+| `experiments/bench/exp5_persistence.py` | neo4j 분기 정리. **러너 코드만** 정리하고 커밋된 결과 JSON은 판정 근거이므로 보존한다. |
+| `.env.example` | NEO4J_URI·NEO4J_AUTH 환경변수 예시 라인. |
 
 #### 유지·대체 (이미 존재하므로 새로 만들 것이 없다)
 
@@ -492,7 +494,9 @@ Neo4j 쪽에만 붙고 SQLite 쪽에는 없는 호출당 고정비다(`neo4j_rag
 | `core/graph/rehydrate.py::from_sqlite` | 콜드 스타트(저장소 → MemoryGraph)를 이미 커버한다. |
 | `core/graph/sqlite_store.py` | 적재·증분 갱신(append_cowork/append_review). |
 | `core/graph/memory_graph.py` | 연산 계층은 바뀌지 않는다 — 저장 계층만 SQLite 단일화된다. |
-| `experiments/results/exp4_rag.json, exp5_persistence*.json` | 판정의 근거 아티팩트. 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다. |
+| `experiments/results/exp4_rag.json` | 판정의 근거 아티팩트. 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다. |
+| `experiments/results/exp5_persistence.json` | 판정의 근거 아티팩트(첫 스윕). 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다. |
+| `experiments/results/exp5_persistence_primed.json` | 판정의 근거 아티팩트(재측정, 판정에 쓰는 스윕). 코드가 사라져도 결론의 재검증 가능성은 남겨야 한다. |
 
 #### 무엇을 잃는가 — 이득만 적지 않는다
 
