@@ -151,7 +151,8 @@ NEO4J_DATA_DIR = REPO_ROOT / ".neo4j" / "data"
 
 # 첫 스윕은 exp5_persistence.json에 있고 **덮어쓰지 않는다**(태스크 4에서 스윕
 # 재실행이 첫 실행을 통째로 파괴한 전례가 있다). 가벼운 경로까지 예열한 재측정은
-# 다른 이름으로 나간다. main()은 이미 있는 파일을 덮어쓰지 않는다(--force 필요).
+# 다른 이름으로 나간다. 이름을 재사용하더라도 harness.save_result가 이전 실행의
+# 파일을 <name>.superseded-N.json으로 보존한다(최종 리뷰 T4-c).
 RESULT_NAME = "exp5_persistence_primed"
 
 # 규칙 2 판정에 쓰는 disk 읽기. 오염된 disk_bytes는 이전 규모의 잔여를 포함해
@@ -815,20 +816,16 @@ def partial_path_for(name: str) -> Path:
     return harness.RESULTS_DIR / f"{name}.partial.json"
 
 
-def main(name: str = RESULT_NAME, force: bool = False):
+def main(name: str = RESULT_NAME):
     """스윕 1회를 돌려 experiments/results/<name>.json에 남긴다.
 
-    **이미 있는 결과 파일은 덮어쓰지 않는다**(--force로만 허용). 태스크 4에서
-    harness.save_result가 고정 경로에 쓰는 바람에 재실행이 첫 스윕을 통째로
-    파괴한 전례가 있고, 태스크 6 리뷰가 그 전례를 직접 지시로 다시 못박았다.
-    재측정은 새 이름으로 나가고 이전 스윕은 그대로 남는다.
+    **이전 실행의 원자료는 파괴되지 않는다.** 태스크 4에서 harness.save_result가
+    고정 경로에 쓰는 바람에 재실행이 첫 스윕을 통째로 파괴한 전례가 있어 이 러너가
+    자기 main()에 로컬 가드(거부)를 달고 있었는데, 최종 리뷰 T4-c에서 그 보호를
+    `harness.save_result` 자체로 올렸다 — 이제 같은 이름으로 다시 돌리면 이전
+    파일이 `<name>.superseded-N.json`으로 보존된다. 여기서 같은 검사를 한 번 더
+    하지 않는다(두 겹이면 어느 쪽이 실제로 지키는지가 흐려진다).
     """
-    out_path = harness.RESULTS_DIR / f"{name}.json"
-    if out_path.exists() and not force:
-        raise SystemExit(
-            f"거부: {out_path}가 이미 있다. 이전 스윕을 덮어쓰지 않는다 — "
-            f"다른 이름을 주거나(python -m experiments.bench.exp5_persistence <name>) "
-            f"정말 덮어쓰려면 --force를 붙여라.")
     partial = partial_path_for(name)
     out = run(clean_disk=True, partial_path=partial)
     path = harness.save_result(name, out)
@@ -846,4 +843,4 @@ def main(name: str = RESULT_NAME, force: bool = False):
 
 if __name__ == "__main__":
     _args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    main(_args[0] if _args else RESULT_NAME, force="--force" in sys.argv)
+    main(_args[0] if _args else RESULT_NAME)

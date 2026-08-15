@@ -115,13 +115,49 @@ def environment() -> dict:
             "packages": pkgs}
 
 
+# 이번 프로세스가 이미 쓴 결과 경로. exp3처럼 스케일마다 체크포인트를 같은 이름으로
+# 덮어쓰는 러너는 "자기 자신"을 덮어쓰는 것이므로 보존 대상이 아니다 — 여기 없으면
+# 체크포인트 한 번에 백업 파일이 하나씩 쌓여 정작 지켜야 할 이전 실행의 원자료가
+# 노이즈에 묻힌다.
+_WRITTEN_THIS_RUN: set[Path] = set()
+
+
+def preserve_existing(path: Path) -> Path | None:
+    """덮어쓰기 전에 **이전 실행**의 결과 파일을 옆으로 치운다. 옮긴 경로를 돌려준다.
+
+    태스크 4에서 exp4 스윕을 재실행했다가 save_result가 고정 경로에 그대로 쓰는
+    바람에 첫 스윕의 원자료를 통째로, **복구 불가능하게** 잃었다. 그 뒤 exp5만
+    자기 main()에 로컬 가드를 달고 있었는데, 다음 실험이 같은 손실을 반복하지
+    못하도록 가드를 러너 하나가 아니라 이 공용 함수로 올린다.
+
+    **거부가 아니라 보존이다.** 러너를 못 돌게 만드는 가드는 --force로 우회되거나
+    러너를 안 고치게 만든다. 잃으면 안 되는 것은 실행 가능성이 아니라 이전 실행의
+    원자료이므로, 새 결과는 그대로 쓰되 이전 파일을 `<name>.superseded-N.json`으로
+    옮겨 남긴다(N은 비어 있는 가장 작은 번호 — 기존 백업도 덮어쓰지 않는다).
+    """
+    if path in _WRITTEN_THIS_RUN or not path.exists():
+        return None
+    n = 1
+    while True:
+        prev = path.with_name(f"{path.stem}.superseded-{n}{path.suffix}")
+        if not prev.exists():
+            path.rename(prev)
+            return prev
+        n += 1
+
+
 def save_result(name: str, payload: dict) -> Path:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     path = RESULTS_DIR / f"{name}.json"
+    preserved = preserve_existing(path)
+    if preserved is not None:
+        print(f"보존: 이전 실행의 {path.name} → {preserved.name} "
+              "(원자료를 덮어쓰지 않는다 — 커밋 전에 어느 쪽이 증거인지 확인할 것)")
     doc = {"environment": environment(),
            "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
            "data": payload}
     path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), "utf-8")
+    _WRITTEN_THIS_RUN.add(path)
     return path
 
 

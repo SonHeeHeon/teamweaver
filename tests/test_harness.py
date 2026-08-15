@@ -1,4 +1,6 @@
+import json
 import time
+
 from experiments.bench import harness, datasets
 
 
@@ -56,6 +58,60 @@ def test_save_and_load_roundtrip(tmp_path, monkeypatch):
     assert p.exists()
     loaded = harness.load_result("demo")
     assert loaded["data"] == {"a": 1} and "environment" in loaded
+
+
+def _fresh_run(tmp_path, monkeypatch):
+    """새 프로세스에서 러너를 돌리는 것과 같은 상태로 만든다."""
+    monkeypatch.setattr(harness, "RESULTS_DIR", tmp_path)
+    monkeypatch.setattr(harness, "_WRITTEN_THIS_RUN", set())
+
+
+def test_save_result_preserves_a_previous_runs_file(tmp_path, monkeypatch):
+    """최종 리뷰 T4-c: save_result가 고정 경로에 그대로 쓰는 바람에 exp4의 첫
+    스윕을 복구 불가능하게 잃은 전례가 있다. 다음 실험이 같은 손실을 반복하지
+    못하도록, 이전 **실행**의 파일은 덮어쓰기 전에 옆으로 옮겨 보존한다."""
+    _fresh_run(tmp_path, monkeypatch)
+    harness.save_result("sweep", {"run": 1})
+
+    _fresh_run(tmp_path, monkeypatch)                       # 두 번째 실행
+    harness.save_result("sweep", {"run": 2})
+
+    assert harness.load_result("sweep")["data"] == {"run": 2}
+    kept = tmp_path / "sweep.superseded-1.json"
+    assert kept.exists(), "이전 실행의 원자료가 사라졌다"
+    assert json.loads(kept.read_text("utf-8"))["data"] == {"run": 1}
+
+
+def test_save_result_preserves_every_previous_run_not_just_the_last(tmp_path, monkeypatch):
+    """보존 파일 자체도 덮어쓰지 않는다 — 세 번 돌리면 두 개가 남는다."""
+    for i in (1, 2, 3):
+        _fresh_run(tmp_path, monkeypatch)
+        harness.save_result("sweep", {"run": i})
+    assert harness.load_result("sweep")["data"] == {"run": 3}
+    assert json.loads((tmp_path / "sweep.superseded-1.json").read_text("utf-8"))["data"] == {"run": 1}
+    assert json.loads((tmp_path / "sweep.superseded-2.json").read_text("utf-8"))["data"] == {"run": 2}
+
+
+def test_save_result_does_not_back_up_its_own_run(tmp_path, monkeypatch):
+    """exp3는 스케일마다 같은 이름으로 체크포인트를 쓴다 — 자기 자신을 덮어쓰는
+    것이므로 백업하지 않는다. 안 그러면 체크포인트마다 파일이 쌓여 정작 지켜야 할
+    이전 실행의 원자료가 노이즈에 묻힌다."""
+    _fresh_run(tmp_path, monkeypatch)
+    for i in (1, 2, 3):
+        harness.save_result("checkpointed", {"scale": i})
+    assert harness.load_result("checkpointed")["data"] == {"scale": 3}
+    assert list(tmp_path.glob("*.superseded-*.json")) == []
+
+
+def test_save_result_never_refuses_so_existing_runners_keep_working(tmp_path, monkeypatch):
+    """보존이지 거부가 아니다. 러너를 못 돌게 만드는 가드는 우회되거나 러너를 안
+    고치게 만든다 — exp1~exp5 전부 재실행이 그대로 성공해야 한다."""
+    for name in ("exp1_storage", "exp2_pipeline", "exp3_algorithm",
+                 "exp4_rag", "exp5_persistence"):
+        for run in (1, 2):
+            _fresh_run(tmp_path, monkeypatch)
+            path = harness.save_result(name, {"rows": [], "run": run})   # raise하면 실패
+            assert path.exists()
 
 
 def test_build_scale_shapes():
