@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from core.rag.queries import RAG_QUERIES
@@ -476,6 +478,134 @@ def test_exp4_calibration_is_quoted_as_a_range_with_sensitivity(monkeypatch):
     assert "고정 바닥" in exp4
     assert "낮은 쪽 끝만 인용하면" in exp4
     assert "뒤집히는 셀" in exp4
+
+
+def test_exp4_discloses_the_undirected_cypher_handicap(monkeypatch):
+    """최종 리뷰 I-2: 출하된 Cypher가 `-[w:WORKED_WITH]-`를 무방향으로 확장한 뒤
+    절반을 버려, 정확히 등가인 방향형보다 더 많은 일을 한다. 방향은 Neo4j에
+    불리하고, 리포트는 이보다 한 자릿수 작은 세션 획득 비용은 이미 공개하고
+    있었다 — 메커니즘·크기·방향·판정 무관성이 모두 실험 4 한계에 있어야 한다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp4 = report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "무방향" in exp4 and "a.id < b.id" in exp4          # 메커니즘
+    assert "11~21% 많은 일을 한다" in exp4                      # 크기(dbHits에서 계산)
+    assert "방향은 Neo4j에 불리하다" in exp4                    # 방향
+    assert "판정은 움직이지 않는다" in exp4                     # 판정 무관성
+    assert "질의는 고치지 않았다" in exp4                       # 계측기 동결
+
+
+def test_exp4_cypher_handicap_magnitude_is_computed_from_the_dbhits(monkeypatch):
+    """크기를 손으로 타이핑하면 dbHits를 갱신했을 때 조용히 낡는다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    monkeypatch.setitem(report.CYPHER_DIRECTION_DBHITS, "team_cohesion",
+                        {"n_people": 1000, "shipped": 1000, "directed": 500})
+    exp4 = report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "11~100% 많은 일을 한다" in exp4
+
+
+def test_exp4_cross_references_the_priming_plateau_established_by_exp5(monkeypatch):
+    """최종 리뷰 M-2: exp4의 예열은 5개 질의 중 2개만 돌려서 실험 5가 나중에
+    실측한 평탄 구간 아래에 있다. 재측정하지 않는 대신 그 사실과, 남은 램프가
+    이미 공개된 민감도에 갇힌다는 것을 밝힌다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp4 = report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+    assert "_prime_neo4j" in exp4 and "평탄 구간" in exp4
+    assert "단조 감소하는 것은 **하나도 없다**" in exp4
+    assert "재측정하지 않았다" in exp4
+
+
+def test_exp4_limitation_items_are_numbered_without_gaps(monkeypatch):
+    """한계 항목 번호는 렌더된 항목에서 매긴다 — 데이터에 따라 중간 항목이 빠지면
+    손으로 적은 번호에 구멍이 생긴다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    limits = (report.build().split("## 실험 4")[1].split("## 실험 5")[0]
+              .split("### 한계 (반드시 함께 읽을 것)")[1])
+    nums = [int(m) for m in re.findall(r"^(\d+)\. \*\*", limits, re.MULTILINE)]
+    assert nums == list(range(1, len(nums) + 1)) and len(nums) >= 6
+
+
+def test_exp5_warmup_spread_claim_is_scoped_to_the_cells_that_earn_it(monkeypatch):
+    """최종 리뷰 I-1: `harness.measure`가 `samples.sort()`로 시간 순서를 파괴하므로
+    큰 스프레드는 램프와 단일 이상치를 구분하지 못한다 — 임계를 넘는 셀에 대해서는
+    "예열됐다"고 주장하지 않고, 잔여 방향(Neo4j 최솟값으로 읽어도 열세)을 밝힌다."""
+    ramped = _exp5_fake()
+    for r in ramped["data"]["rows"]:
+        if (r["backend"] == "neo4j" and r["metric"] == "rehydrate_ms"
+                and r["n_people"] == _SCALES[-1]):
+            r["max_ms"] = r["min_ms"] * (report.RAMP_SPREAD_LIMIT + 0.3)
+    fake = _fakes(exp5_persistence_primed=ramped)
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "samples.sort()" in exp5                       # 왜 배제하지 못하는지
+    assert "이 검사를 통과하지 못한다" in exp5
+    assert "램프 가능성을 배제하지 못한다" in exp5
+    assert "방향은 Neo4j에 불리하다" in exp5
+    assert "1.8배 열세" in exp5      # neo4j min 1.8 / sqlite 중앙값 1.0 — 계산값
+
+
+def test_exp5_warmup_spread_claim_holds_when_every_cell_is_tight(monkeypatch):
+    """스프레드가 전부 임계 이하면 램프 배제 주장은 그대로 서고, 통과 못한 셀에
+    대한 문단은 아예 나오지 않아야 한다(주장을 데이터에 맞춘다)."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "이 셀들에서는 램프가 배제된다" in exp5
+    assert "이 검사를 통과하지 못한다" not in exp5
+
+
+def test_exp5_warmup_repeats_line_is_scoped_to_exp5(monkeypatch):
+    """최종 리뷰 M-5: 이 문장은 exp5 rows에서만 유도되는데 "이 리포트가 쓰는"으로
+    적혀 있었다 — 실험 4는 일부러 다른 (반복, 웜업)을 쓴다."""
+    fake = _fakes()
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    md = report.build()
+    assert "이 리포트가 쓰는 (반복, 웜업)" not in md
+    assert "**실험 5가** 쓰는 (반복, 웜업) 조합" in md
+
+
+def _exp5_fake_with_append_flip(neo_better=0):
+    """엔드포인트 MATCH를 빼면 append_* 셀이 과반 뒤집히는 데이터."""
+    fake = _exp5_fake(neo_better)
+    for r in fake["data"]["rows"]:
+        if r["backend"] == "neo4j" and r["metric"].startswith("append"):
+            r["value"] = r["median_ms"] = 1.4      # 1.4 - 0.45 < sqlite 1.0
+    return fake
+
+
+def test_exp5_append_counterfactual_conclusion_follows_the_data(monkeypatch):
+    """최종 리뷰 M-1: cw/rv/cells는 계산하면서 결론("통째로 뒤집힌다")과 반사실
+    규칙 2 카운트("1 of 4")는 리터럴이었다 — 오늘 데이터에서만 맞다."""
+    fake = _fakes()                                  # 잔차를 빼도 안 뒤집히는 데이터
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "통째로 뒤집힌다" not in exp5
+    assert "뒤집히지 않는다" in exp5
+    assert "**0 of 4**" in exp5
+
+
+def test_exp5_append_counterfactual_rule2_count_is_computed(monkeypatch):
+    """반사실 카운트는 다른 지표의 승패와 함께 움직여야 한다 — 1로 타이핑돼 있으면
+    이미 Neo4j가 이긴 지표가 있는 데이터에서 조용히 틀린다."""
+    fake = _fakes(exp5_persistence_primed=_exp5_fake_with_append_flip(neo_better=1))
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "통째로 뒤집힌다" in exp5
+    assert "**2 of 4**" in exp5      # load_ms 1승 + append_* 반사실 1승
+    assert "여전히 미달이라 판정은 유지된다" in exp5
+
+
+def test_exp5_append_counterfactual_says_so_when_it_would_change_the_verdict(monkeypatch):
+    """반사실이 임계를 넘으면 "판정은 유지된다"고 적으면 안 된다."""
+    fake = _fakes(exp5_persistence_primed=_exp5_fake_with_append_flip(neo_better=2))
+    monkeypatch.setattr(report.harness, "load_result", lambda name: fake[name])
+    exp5 = report.build().split("## 실험 5")[1].split("## 저장 계층 의사결정")[0]
+    assert "**3 of 4**" in exp5
+    assert "판정이 달라진다" in exp5
+    assert "여전히 미달이라 판정은 유지된다" not in exp5
 
 
 def test_exp5_reports_both_sweeps_and_forbids_cross_sweep_subtraction(monkeypatch):

@@ -657,6 +657,113 @@ def _exp4_repeat_caption(rows: list[dict]) -> str:
     return f"*단위: ms, 중앙값 ({', '.join(bits)}). 적재는 양쪽 다 측정 밖.*"
 
 
+# 최종 리뷰 Important 2: 출하된 Cypher(`_OVERFAMILIAR`·`_TEAM_COHESION`)가 자기
+# **정확한 등가 질의**보다 더 많은 일을 한다는 것을 라이브 컨테이너에 PROFILE로 재
+# 확인한 dbHits다. 커밋된 스윕의 산출물이 **아니라**(results/*.json에는 dbHits가
+# 없다) 리뷰 중 따로 측정한 값이므로 출처를 밝혀 여기 적는다. 질의 자체는 고치지
+# 않는다 — 커밋된 수치를 만든 계측기는 동결한다(고치면 리포트가 자기 수치를 내지
+# 않은 질의를 서술하게 된다).
+CYPHER_DIRECTION_DBHITS = {
+    "overfamiliar_pairs": {"n_people": 300, "shipped": 7589, "directed": 6832},
+    "team_cohesion": {"n_people": 1000, "shipped": 680, "directed": 563},
+}
+# `_prime_neo4j`가 스케일 루프 전에 실제로 돌리는 질의(나머지는 예열되지 않는다).
+EXP4_PRIMED_QUERIES = ("overfamiliar_pairs", "swap_diff")
+
+
+def _exp4_ratio_span(by: dict, q: str, scales: list[int]) -> tuple[float, float] | None:
+    """질의 하나의 neo4j/sqlite 배율 범위. 손으로 적지 않기 위한 접근자."""
+    rs = [by[("neo4j", q, n)]["median_ms"] / by[("sqlite", q, n)]["median_ms"]
+          for n in scales
+          if ("neo4j", q, n) in by and ("sqlite", q, n) in by
+          and by[("sqlite", q, n)]["median_ms"]]
+    return (min(rs), max(rs)) if rs else None
+
+
+def _exp4_cypher_handicap_item(by: dict, queries: list[str],
+                               scales: list[int]) -> list[str]:
+    """무방향 확장 핸디캡 공개(최종 리뷰 Important 2).
+
+    리포트는 이보다 한 자릿수 작은 세션 획득 비용(~0.0045 ms)은 공개하면서 이
+    비대칭은 빼먹고 있었다. 방향은 **Neo4j에 불리**하다 — 즉 공개하면 리포트가
+    자기 증거에 대해 더 보수적이 된다."""
+    affected = [q for q in CYPHER_DIRECTION_DBHITS if q in queries]
+    if not affected:
+        return []
+    over = [CYPHER_DIRECTION_DBHITS[q]["shipped"] / CYPHER_DIRECTION_DBHITS[q]["directed"] - 1
+            for q in affected]
+    profile = "; ".join(
+        f"`{q}` n={CYPHER_DIRECTION_DBHITS[q]['n_people']} — dbHits "
+        f"{CYPHER_DIRECTION_DBHITS[q]['shipped']} 대 "
+        f"{CYPHER_DIRECTION_DBHITS[q]['directed']}" for q in affected)
+    spans = []
+    for q in affected:
+        span = _exp4_ratio_span(by, q, scales)
+        if span:
+            spans.append(f"`{q}` {span[0]:.1f}~{span[1]:.1f}배")
+    verdict = (f" **판정은 움직이지 않는다**: 이 질의들이 지는 폭은 {' · '.join(spans)}라 "
+               f"{min(over) * 100:.0f}~{max(over) * 100:.0f}%로 메울 수 있는 거리가 아니다."
+               if spans else "")
+    return [
+        "**Cypher 쪽에 공개되지 않은 핸디캡이 있다 — 방향은 Neo4j에 불리하다.** "
+        f"`core/rag/neo4j_rag.py`의 {' · '.join(f'`{q}`' for q in affected)} 질의는 "
+        "`-[w:WORKED_WITH]-`를 **무방향**으로 확장한 뒤 `a.id < b.id`로 절반을 버린다. "
+        "로더(`core/graph/neo4j_store.py`)가 `ds.coworks`를 그대로 `(a)-[:WORKED_WITH]->(b)`로 "
+        "쌓고 네 규모 전부에서 모든 cowork가 `a_id < b_id`이며 역방향·중복 쌍이 하나도 없으므로, "
+        "방향형(`-[w:WORKED_WITH]->`)은 **정확히 등가**다. 라이브 컨테이너에 PROFILE로 재면 "
+        f"같은 행을 돌려주면서 {profile} — 출하된 질의가 등가 질의보다 "
+        f"**{min(over) * 100:.0f}~{max(over) * 100:.0f}% 많은 일을 한다**. 이보다 한 자릿수 작은 "
+        "세션 획득 비용은 위 캘리브레이션에서 공개하면서 이것은 빠져 있었으므로 여기 적는다."
+        + verdict +
+        " **질의는 고치지 않았다** — 커밋된 수치는 출하된(무방향) 질의가 만든 것이고, 측정 뒤에 "
+        "질의를 바꾸면 리포트가 자기 수치를 내지 않은 질의를 서술하게 된다. 방향형으로 바꾸는 "
+        "것은 이 판정의 집행(Plan 4) 쪽 일이다. 위 dbHits는 커밋된 스윕이 아니라 이 리뷰에서 "
+        "따로 잰 PROFILE 값이다(`results/*.json`에는 dbHits가 없다).",
+    ]
+
+
+def _exp4_priming_item(by: dict, rows: list[dict], queries: list[str],
+                       scales: list[int], floor: float | None) -> list[str]:
+    """예열 라운드 cross-reference(최종 리뷰 M-2). 실험 4는 재측정하지 않는다 —
+    재실행은 커밋된 원자료를 대체한다. 대신 남은 램프의 크기가 이미 공개된
+    민감도에 갇혀 있음을 밝힌다."""
+    # 예열 라운드 수는 러너의 상수에서 읽는다(리포트에 타이핑하면 조용히 낡는다).
+    from experiments.bench.exp4_rag import PRIMING_CALLS
+
+    warm = sorted({r["warmup"] for r in rows if r["backend"] == "neo4j" and "warmup" in r})
+    if not warm:
+        return []
+    effective = PRIMING_CALLS * len(EXP4_PRIMED_QUERIES) + warm[0]
+    unprimed = [q for q in queries if q not in EXP4_PRIMED_QUERIES]
+    ramping = []
+    for q in unprimed:
+        series = [by[("neo4j", q, n)]["median_ms"] for n in scales if ("neo4j", q, n) in by]
+        if len(series) > 2 and all(a > b for a, b in zip(series, series[1:])):
+            ramping.append(q)
+    ramp_note = (f"예열되지 않은 나머지 {len(unprimed)}개 질의"
+                 f"({', '.join(f'`{q}`' for q in unprimed)}) 중 규모에 따라 단조 감소하는 것은 "
+                 + ("**하나도 없다**(워밍업 교락의 signature가 관측되지 않는다)" if not ramping
+                    else "**있다**(" + ", ".join(f"`{q}`" for q in ramping)
+                    + " — 워밍업 교락의 signature다)"))
+    sens = ""
+    if floor is not None:
+        f_floor, tot = exp4_flip_count(rows, floor)
+        sens = (f". 크기도 위 민감도에 갇힌다 — 호출당 고정 바닥 전체({floor:.4f} ms)를 통째로 "
+                f"빼도 뒤집히는 셀은 **{f_floor}/{tot}**개다")
+    return [
+        "**예열 라운드는 실험 5가 나중에 실측한 평탄 구간 아래에 있다.** "
+        f"`exp4_rag._prime_neo4j`는 스케일 루프 전에 {len(queries)}개 질의 중 "
+        f"{len(EXP4_PRIMED_QUERIES)}개"
+        f"({', '.join(f'`{q}`' for q in EXP4_PRIMED_QUERIES)})만 각 {PRIMING_CALLS}라운드 "
+        f"돌리고, 측정 셀마다 웜업 {'/'.join(map(str, warm))}회를 더 준다 — 유효 예열은 호출당 "
+        f"약 {effective}회다. 실험 5는 그 뒤에 콜드 JVM에서 라운드당 곡선을 실측해 이 경로의 "
+        "평탄 구간이 **그보다 위**에 있음을 확인했다(§실험 5 워밍업의 "
+        "`LIGHT_PRIMING_ROUNDS` 근거). 남은 램프가 있었다면 방향은 Neo4j 수치를 부풀리는 "
+        f"쪽이다. 다만 {ramp_note}{sens}. **실험 4는 이 이유로 재측정하지 않았다** — "
+        "재실행은 커밋된 원자료를 대체하고, 이 실험은 이미 그렇게 첫 스윕을 잃었다(위 1번).",
+    ]
+
+
 def _exp4(d: dict) -> str:
     rows, parity, skipped = d["rows"], d.get("parity", []), d.get("skipped", [])
     cal = d.get("calibration") or {}
@@ -765,16 +872,20 @@ def _exp4(d: dict) -> str:
     ratio_span = (f"{min(ratios):.0f}~{max(ratios):.0f}배" if ratios else "위 표의")
 
     lines += ["### 한계 (반드시 함께 읽을 것)", ""]
-    lines += [
-        "1. **폐기된 첫 스윕이 있다.** 커밋된 JSON은 두 번의 스윕 중 두 번째다. 첫 실행은 "
+    # 항목은 리스트로 모아 **마지막에 번호를 매긴다** — 데이터에 따라 중간 항목이
+    # 빠지면 손으로 적은 번호에 구멍이 생긴다.
+    items = [
+        "**폐기된 첫 스윕이 있다.** 커밋된 JSON은 두 번의 스윕 중 두 번째다. 첫 실행은 "
         "다섯 질의 전부가 n=300에서 봉우리를 만든 뒤 회복했고, 재현되지 않았다 — 중간 지점의 "
         "봉우리는 워밍업 교락의 형태(n=100부터 단조 감소)가 아니다. 첫 실행의 집계도 "
         "Neo4j 0/20이었다. **다만 첫 실행의 원자료는 보존되지 않았고 복구할 수 없다** "
-        "(`harness.save_result`가 고정 경로를 덮어쓴다). 그래서 \"첫 실행이 Neo4j에 더 "
+        "(당시 `harness.save_result`가 고정 경로를 그대로 덮어썼다 — 그 함수는 이후 이전 "
+        "실행의 파일을 `<name>.superseded-N.json`으로 옮겨 보존하도록 고쳤고, 잃은 스윕이 "
+        "돌아오지는 않는다). 그래서 \"첫 실행이 Neo4j에 더 "
         "불리했다\"처럼 확인할 수 없는 주장은 하지 않는다 — 셀 단위로는 성립하지도 않았다.",
     ]
-    lines += [
-        "2. **배포 토폴로지가 대칭이 아니다.** Neo4j는 컨테이너(`neo4j:5-community`, "
+    items += [
+        "**배포 토폴로지가 대칭이 아니다.** Neo4j는 컨테이너(`neo4j:5-community`, "
         "`bolt://localhost:7687`, 힙·페이지캐시 튜닝 없음)에서 돌고, Apple Silicon에서는 "
         "host↔Linux VM 경계까지 통과한다. SQLite는 in-process 네이티브 라이브러리다. 위 "
         f"{ratio_span} 격차를 이것만으로 뒤집을 수는 없지만, 이를 \"네트워크 왕복\" 한마디로 "
@@ -783,8 +894,8 @@ def _exp4(d: dict) -> str:
     growing, flat = exp4_output_growth(rows)
     if growing or flat:
         flat_cells = len(flat) * len(scales)
-        lines += [
-            f"3. **n={scales[-1]}을 넘어 외삽하지 말 것.** 출력이 규모에 따라 실제로 커지는 "
+        items += [
+            f"**n={scales[-1]}을 넘어 외삽하지 말 것.** 출력이 규모에 따라 실제로 커지는 "
             f"질의는 {fmt_growth(growing)} 뿐이고, 나머지({fmt_growth(flat)})는 사실상 고정 "
             f"출력이다. 즉 {cells}개 셀 중 {flat_cells}개는 그래프 규모가 아니라 **호출당 "
             "고정비 + 앵커된 인덱스 조회**를 재고 있다. 일부 질의에서 관측되는 격차 축소를 "
@@ -792,12 +903,15 @@ def _exp4(d: dict) -> str:
         ]
     reps = sorted({r["repeats"] for r in rows if "repeats" in r})
     if reps:
-        lines += [
-            f"4. **p95는 약한 추정량이다.** 반복 {'/'.join(map(str, reps))}회에서 p95는 정렬된 "
+        items += [
+            f"**p95는 약한 추정량이다.** 반복 {'/'.join(map(str, reps))}회에서 p95는 정렬된 "
             f"표본 중 위에서 두 번째 값에 해당한다. 양쪽에 동일하게 적용되고 이 정도 격차는 "
             "어떤 추정량에서도 유지되지만(위 표본 겹침 검사), 백분위수의 통상적 의미로 "
             "읽지 말 것.",
         ]
+    items += _exp4_cypher_handicap_item(by, queries, scales)
+    items += _exp4_priming_item(by, rows, queries, scales, floor)
+    lines += [f"{i}. {t}" for i, t in enumerate(items, 1)]
     lines += ["", "![실험4](figures/exp4_rag.png)", ""]
     return "\n".join(lines)
 
@@ -1009,14 +1123,36 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
                     cw += 1
                 else:
                     rv += 1
+    # 최종 리뷰 M-1: cw/rv/cells는 계산하면서 결론("통째로 뒤집힌다")과 반사실
+    # 규칙 2 카운트("1 of 4")는 리터럴이었다 — 오늘의 데이터에서만 맞고 다른
+    # 데이터에서는 조용히 거짓이 된다. 둘 다 데이터에서 유도한다.
+    flipped = cells > 0 and (cw + rv) * 2 > cells      # 지표 판정은 셀 과반
+    if flipped:
+        cf_line = (f"그래도 빼 보면 {cells}개 셀 중 **{cw + rv}개**에서 Neo4j 잔차가 "
+                   f"SQLite보다 작아져 `append_*` 지표가 통째로 뒤집힌다"
+                   f"(cowork {cw}, review {rv}). ")
+    else:
+        cf_line = (f"그래도 빼 보면 Neo4j 잔차가 SQLite보다 작아지는 셀은 {cells}개 중 "
+                   f"**{cw + rv}개**뿐이라 `append_*` 지표는 뒤집히지 않는다"
+                   f"(cowork {cw}, review {rv}; 지표 판정은 셀 과반). ")
+    tally_now = decision.rule2_tally(d)
+    # 그룹 라벨을 손으로 적지 않는다 — decision이 돌려준 counted_metrics로 찾는다.
+    append_ahead = any(m["neo4j_ahead"] for m in tally_now["per_metric"]
+                       if "append_cowork_ms" in m["counted_metrics"])
+    cf_wins = tally_now["neo4j_metric_wins"] - int(append_ahead) + int(flipped)
+    if cf_wins >= decision.PERSISTENCE_THRESHOLD:
+        cf_line += (f"그러면 규칙 2는 **{cf_wins} of {decision.PERSISTENCE_METRICS}**로 임계 "
+                    f"{decision.PERSISTENCE_THRESHOLD}을 넘어 **판정이 달라진다** — 즉 이 "
+                    "차감을 하지 않는 이유(아래 4번)가 판정에 load-bearing이다.")
+    else:
+        cf_line += (f"그러면 규칙 2는 **{cf_wins} of {decision.PERSISTENCE_METRICS}**가 되지만 "
+                    f"임계 {decision.PERSISTENCE_THRESHOLD}에는 **여전히 미달이라 판정은 "
+                    "유지된다**.")
     out += [f"3. **`append_*`의 엔드포인트 `MATCH`는 차감하지 않는다 — 그러나 반사실은 "
             f"명시한다.** Neo4j의 `append_*`는 두 `Person`을 id로 `MATCH`한 뒤 관계를 "
             "`MERGE`하고, SQLite의 `collaboration`에는 외래키가 없어 INSERT가 읽기를 0회 "
             "한다. 이것은 \"엔진 외 오버헤드\"가 아니라 **엔진·스키마의 진짜 비용**이므로 "
-            f"빼지 않는다. 그래도 빼 보면 {cells}개 셀 중 **{cw + rv}개**에서 Neo4j 잔차가 "
-            f"SQLite보다 작아져 `append_*` 지표가 통째로 뒤집힌다(cowork {cw}, review {rv}). "
-            f"그러면 규칙 2는 **1 of {decision.PERSISTENCE_METRICS}**가 되지만 임계 "
-            f"{decision.PERSISTENCE_THRESHOLD}에는 **여전히 미달이라 판정은 유지된다**.", ""]
+            f"빼지 않는다. {cf_line}", ""]
 
     # 4. 캘리브레이션 자체의 모순 — 두 스윕 모두에서 찾는다
     bad = calibration_contradictions(d)
@@ -1056,31 +1192,78 @@ def _exp5_calibration_lines(d: dict, first: dict) -> list[str]:
     return out
 
 
+# 최종 리뷰 Important 1: 타이밍 표본의 max/min으로 "예열이 됐다"를 주장하려면
+# 이 상수가 필요하다. `harness.measure`는 저장 전에 `samples.sort()`로 **시간
+# 순서를 파괴**하므로, max/min은 "표본이 실제로 어떤 순서였든 타이밍 구간 안에서
+# 일어날 수 있었던 드리프트의 **상한**"으로만 읽을 수 있다. 상한이 이 값 이하인
+# 셀은 설령 램프였더라도 그 폭이 워밍업 교락이라 부를 크기가 아니다(Plan 2의
+# 전례는 최대 8배 = 800%). 상한이 이 값을 넘는 셀에 대해서는 램프와 단일 이상치를
+# 구분할 방법이 없으므로 "예열됐다"고 주장하지 않는다.
+RAMP_SPREAD_LIMIT = 1.30
+
+
+def _exp5_spread_lines(primed: dict) -> list[str]:
+    """Neo4j 무거운 지표의 표본 스프레드로 램프를 배제할 수 있는 셀과 없는 셀을
+    가른다. 예전 문안은 전체 범위(1.02~1.51)를 한 문장으로 묶고 "계속 빨라지고
+    있었다면 스프레드가 훨씬 컸을 것"이라고 했는데, 최악 셀에서는 그 논증이
+    순환이다 — 표본 3개가 정렬돼 저장되므로 단조 램프 `max → median → min`이
+    정확히 같은 세 수치를 낳는다."""
+    rows = primed["rows"]
+    spreads = [(r["metric"], r["n_people"], r["max_ms"] / r["min_ms"], r)
+               for r in rows
+               if r["backend"] == "neo4j" and r.get("min_ms")
+               and r["metric"] in ("load_ms", "rehydrate_ms")]
+    if not spreads:
+        return [""]
+    spreads.sort(key=lambda x: x[2])
+    ok = [s for s in spreads if s[2] <= RAMP_SPREAD_LIMIT]
+    bad = [s for s in spreads if s[2] > RAMP_SPREAD_LIMIT]
+    out = []
+    if ok:
+        out += [f"- 예열 여부는 타이밍 표본의 스프레드로 확인한다. `harness.measure`는 표본을 "
+                f"**정렬해** 저장하므로(`samples.sort()`) 시간 순서는 남지 않는다 — max/min은 "
+                f"순서와 무관하게 타이밍 구간 안에서 일어날 수 있었던 드리프트의 **상한**으로만 "
+                f"읽는다. Neo4j의 무거운 지표(`load_ms`·`rehydrate_ms`) {len(spreads)}개 셀 중 "
+                f"**{len(ok)}개는 상한이 {ok[0][2]:.2f}~{ok[-1][2]:.2f}**라, 램프였더라도 "
+                f"워밍업 교락이라 부를 크기가 아니다(Plan 2의 전례는 8배). 이 셀들에서는 램프가 "
+                "배제된다."]
+    for metric, n, spread, r in reversed(bad):
+        ramp = ""
+        if r.get("repeats") == 3 and r.get("value") is not None:
+            ramp = (f" 실제로 단조 램프 {r['max_ms']:.1f} → {r['value']:.1f} → "
+                    f"{r['min_ms']:.1f}(ms)도 정확히 같은 세 수치를 낳는다.")
+        floor_note = ""
+        sq = _mvals(rows).get(("sqlite", metric, n))
+        if sq:
+            floor_note = (f" 다만 **방향은 Neo4j에 불리하다**: 램프였다면 참값은 관측 "
+                          f"최솟값 쪽인데, Neo4j **최솟값**({r['min_ms']:.3f} ms)으로 읽어도 "
+                          f"같은 셀 SQLite 중앙값({sq:.3f} ms) 대비 "
+                          f"{r['min_ms'] / sq:.1f}배 열세다 — 이 셀의 승패는 램프 여부와 "
+                          f"무관하다.")
+        out += [f"- **`{metric}` n={n}은 이 검사를 통과하지 못한다.** 상한이 {spread:.2f}로 "
+                f"임계({RAMP_SPREAD_LIMIT:.2f})를 넘는데, 표본 {r.get('repeats')}개가 정렬돼 "
+                f"저장돼 있어 램프와 단일 이상치를 구분할 수 없다.{ramp} 즉 이 셀에 대해서는 "
+                f"**램프 가능성을 배제하지 못한다**.{floor_note}"]
+    return out + [""]
+
+
 def _exp5_warmup_lines(primed: dict, first: dict) -> list[str]:
     """워밍업 정당화(A-13)와 첫 스윕에 남아 있던 light path 램프(A-13b)."""
     reps = sorted({(r.get("repeats"), r.get("warmup")) for r in primed["rows"]
                    if r.get("unit") == "ms" and "repeats" in r})
     out = ["### 워밍업 — 무엇을 했고 왜 했는가", ""]
     if reps:
-        out += ["- 이 리포트가 쓰는 (반복, 웜업) 조합: "
+        # 최종 리뷰 M-5: 이 문장은 primed["rows"]에서만 유도되고 `## 실험 5` 아래
+        # 있는데 "이 리포트가 쓰는"이라고 적혀 있었다 — 실험 4는 일부러 다른 조합
+        # ((20, 3)/(20, 50))을 쓰므로 리포트 전체 주장으로 읽히면 사실과 다르다.
+        out += ["- **실험 5가** 쓰는 (반복, 웜업) 조합: "
                 + ", ".join(f"({a}, {b})" for a, b in reps)
-                + ". 두 백엔드에 **같은 값**을 쓴다.",
+                + ". 두 백엔드에 **같은 값**을 쓴다(리포트 전체의 값이 아니다 — 실험 4는 "
+                "자기 절에 적힌 다른 조합을 쓴다).",
                 "- 추가로 스케일 루프 **밖에서** 전역 예열을 한 번 돌린다 — 웜업 상태가 규모 "
                 "순서와 교락되면 \"규모가 커질수록 빨라지는\" 가짜 추세가 만들어진다"
                 "(Plan 2에서 웜업 부족이 Neo4j를 최대 8배 부풀린 전례가 있다)."]
-    spreads = [(r["metric"], r["n_people"], r["max_ms"] / r["min_ms"])
-               for r in primed["rows"]
-               if r["backend"] == "neo4j" and r.get("min_ms")
-               and r["metric"] in ("load_ms", "rehydrate_ms")]
-    if spreads:
-        worst = max(spreads, key=lambda x: x[2])
-        out += [f"- 예열이 실제로 됐는지는 타이밍 표본의 스프레드로 확인한다: Neo4j의 무거운 "
-                f"지표(`load_ms`·`rehydrate_ms`)에서 max/min은 "
-                f"{min(s[2] for s in spreads):.2f}~{max(s[2] for s in spreads):.2f} "
-                f"범위다(최대는 `{worst[0]}` n={worst[1]}). 타이밍 구간 안에서 계속 빨라지고 "
-                "있었다면 스프레드가 이보다 훨씬 컸을 것이다.", ""]
-    else:
-        out += [""]
+    out += _exp5_spread_lines(primed)
 
     # light path 램프: 첫 스윕에서 neo4j append_* 계열이 규모에 따라 단조 감소했는가
     def _series(d, backend, metric):
@@ -1440,8 +1623,9 @@ def build() -> str:
         "생성한 데이터셋(템플릿 리뷰)을 쓴다 — n=100 지점도 fixture와 인원·프로젝트 수만 같을 뿐 "
         "리뷰 텍스트가 달라 optimization_ratio가 다르다(위 실험 3 절 참고).",
         "- **실험 4의 첫 스윕은 보존되지 않았다**: 커밋된 JSON은 두 번의 스윕 중 두 번째이고, "
-        "첫 실행의 원자료는 `harness.save_result`의 덮어쓰기로 복구할 수 없다 — 그래서 첫 "
-        "실행에 대해서는 확인 가능한 진술만 남겼다(위 실험 4 한계 1).",
+        "첫 실행의 원자료는 당시 `harness.save_result`의 덮어쓰기로 복구할 수 없다 — 그래서 첫 "
+        "실행에 대해서는 확인 가능한 진술만 남겼다(위 실험 4 한계 1). 같은 손실이 반복되지 "
+        "않도록 `save_result`는 이제 이전 실행의 파일을 보존한 뒤에 쓴다.",
         "- **실험 4·5의 Neo4j는 컨테이너, SQLite는 in-process다**: 배포 토폴로지가 대칭이 "
         "아니며, 이 비대칭은 호출당 고정비로 캘리브레이션해 공개했지만 제거하지는 않았다.",
         "- **실험 5의 크래시 내구성 미측정**: 여기서 \"영속성\"은 커밋되어 새 클라이언트에서 "
