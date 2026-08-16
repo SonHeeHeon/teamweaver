@@ -47,22 +47,46 @@ def test_whatif_uses_fallback_when_llm_unavailable(client, monkeypatch):
 
 def test_whatif_excludes_incoming_person_from_teammates_list(client, monkeypatch):
     """버그: teammates 리스트가 swap.out_person_id는 제외하지만,
-    swap.in_person_id는 제외하지 않으면 in_person_id의 자체 시너지
-    diagonal(=0)이 계산에 포함된다. 이 테스트는 in_person_id가 이미
-    같은 프로젝트에 entry를 가지고 있는 현실적인 시나리오를 재현해,
-    그것이 delta 결과에 영향을 주지 않음을 확인한다.
+    swap.in_person_id는 제외하지 않으면 in_person_id 자신이 teammates에
+    포함되어 spurious term C[in_i, in_i] - C[out_i, in_i] = 0 - C[out_i, in_i]
+    을 더한다. 대각선이 0이라 해도 두 번째 항이 nonzero이면 전체 항이 nonzero다.
 
-    고정된 동작: entries에 out_person과 in_person 모두 같은 프로젝트에
-    포함된 경우와 in_person의 entry를 제외한 경우 두 호출 모두 같은
-    objective_delta를 반환해야 한다."""
+    이 테스트는 nonzero synergy를 가진 실제 pair(p000, p052)를 사용해,
+    in_person_id가 이미 같은 프로젝트에 entry를 가지고 있는 현실적인
+    시나리오를 재현한다. 버그가 있으면 entries_with_both 호출이
+    spurious term C[in_i, in_i] - C[out_i, in_i]를 delta에 더하므로
+    두 호출의 결과가 달랐을 것이다.
+
+    고정된 동작: in_person이 teammates 리스트에서 제외되므로,
+    entries에 포함되든 안 되든 같은 delta를 반환한다."""
+    from core.config import FIXTURES_DIR
+    from core.datagen.fixtures_io import load_fixtures
+    from core.graph.memory_graph import MemoryGraph
+    from core.scoring.engine import ScoringEngine
+
     import api.routes.whatif as mod
     monkeypatch.setattr(mod, "get_openai_client_or_none", lambda: None)
     meta = client.get("/api/meta").json()
     project = meta["projects"][0]
-    out_person = meta["people"][0]["id"]
-    in_person = meta["people"][1]["id"]
 
-    # Case 1: entries에 out_person과 in_person 모두 포함
+    # 실제 fixture에서 nonzero synergy를 가진 pair를 선택 (p000, p052)
+    out_person = "p000"
+    in_person = "p052"
+
+    # Precondition check: 이 pair가 실제로 nonzero synergy를 가지는지 확인
+    # 만약 fixture가 변경되어 synergy가 0이 되면 테스트가 실패해 명시적으로 알려준다.
+    ds, parsed = load_fixtures(FIXTURES_DIR)
+    graph = MemoryGraph.build(ds, parsed)
+    eng = ScoringEngine(graph)
+    C = eng.synergy_matrix()
+    pdx = graph.pid_index
+    c_value = C[pdx[out_person], pdx[in_person]]
+    assert c_value != 0.0, \
+        f"Precondition failed: C[{out_person}, {in_person}] = {c_value} should be nonzero. " \
+        "Fixture may have changed; select a different pair with nonzero synergy."
+
+    # Case 1: entries에 out_person과 in_person 모두 같은 프로젝트에 포함
+    # (클라이언트가 프로젝트의 모든 사람을 entries에 포함시킬 때 발생하는 현실적 시나리오)
     entries_with_both = [
         {"person_id": out_person, "project_id": project["id"], "alloc": 1.0},
         {"person_id": in_person, "project_id": project["id"], "alloc": 0.5},
@@ -91,5 +115,12 @@ def test_whatif_excludes_incoming_person_from_teammates_list(client, monkeypatch
     assert res_without_in.status_code == 200
     delta_without_in = res_without_in.json()["objective_delta"]
 
-    # 두 delta가 같아야 한다 -- in_person의 자신의 entry 유무가 영향을 주지 않음을 증명
-    assert delta_with_both == delta_without_in
+    # 두 delta가 같아야 한다.
+    # 버그가 있었다면(in_person을 teammates에 포함), entries_with_both 호출이
+    # spurious term C[in_i, in_i] - C[out_i, in_i] = 0 - c_value = -c_value를
+    # delta에 더했을 것이다. 이 pair의 c_value는 nonzero(약 0.108)이므로
+    # 버그 버전은 delta_with_both != delta_without_in을 만들었을 것이다.
+    assert delta_with_both == delta_without_in, \
+        f"Delta should be invariant to in_person's own entry on the project. " \
+        f"with_both={delta_with_both}, without_in={delta_without_in}, " \
+        f"diff={delta_with_both - delta_without_in}"
