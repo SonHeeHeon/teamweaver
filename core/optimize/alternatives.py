@@ -1,4 +1,6 @@
 import math
+from typing import Iterator
+
 import pulp
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.milp import MilpParams, solve_milp
@@ -51,18 +53,24 @@ def _diversity_cut(prev_sets: list[set[tuple[str, str]]],
     return cut
 
 
-def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
-                   n_alternatives: int = 3) -> list[PlanAssignment]:
-    # Plan A anchors both the headline "95% of Plan A" quality floor (meets_quality_floor)
-    # and Task 14's E2E assertion. If Plan A is solved only to the caller's gap (default
-    # 0.05), it is itself merely guaranteed within 5% of the TRUE optimum -- so the
-    # end-to-end worst-case guarantee for an alternative vs. the true optimum compounds to
-    # roughly floor*(1-gap) = 0.95*0.95 ~= 90.25%, not the 95% the "quality floor" name
-    # implies. Plan A is solved exactly once (alternatives are solved n_alternatives times),
-    # so tightening just its gap is cheap -- solve it far closer to true-optimal and leave
-    # alternatives at the caller's (looser, faster) gap.
+def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
+                             n_alternatives: int = 3) -> Iterator[PlanAssignment]:
+    """generate_plans의 제너레이터판. API 레이어(Task 4)가 Plan A를 먼저
+    yield받아 즉시 클라이언트로 흘리고, 이후 대안이 나오는 대로 흘릴 수 있게
+    한다(A안: 점진 반환). 로직은 generate_plans와 동일 -- 반환 방식만 다르다.
+
+    Plan A anchors both the headline "95% of Plan A" quality floor (meets_quality_floor)
+    and Task 14's E2E assertion. If Plan A is solved only to the caller's gap (default
+    0.05), it is itself merely guaranteed within 5% of the TRUE optimum -- so the
+    end-to-end worst-case guarantee for an alternative vs. the true optimum compounds to
+    roughly floor*(1-gap) = 0.95*0.95 ~= 90.25%, not the 95% the "quality floor" name
+    implies. Plan A is solved exactly once (alternatives are solved n_alternatives times),
+    so tightening just its gap is cheap -- solve it far closer to true-optimal and leave
+    alternatives at the caller's (looser, faster) gap.
+    """
     plan_a_params = params.model_copy(update={"gap": min(params.gap, _PLAN_A_GAP)})
     plan_a = solve_milp(graph, S, C, plan_a_params)
+    yield plan_a
     plans = [plan_a]
     jdx = graph.project_index
     pdx = graph.pid_index
@@ -74,4 +82,9 @@ def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
             break
         alt.label = _LABELS[len(plans)]
         plans.append(alt)
-    return plans
+        yield alt
+
+
+def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
+                   n_alternatives: int = 3) -> list[PlanAssignment]:
+    return list(generate_plans_streaming(graph, S, C, params, n_alternatives))

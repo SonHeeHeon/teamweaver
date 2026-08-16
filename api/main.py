@@ -12,7 +12,7 @@ from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
 from core.graph.memory_graph import MemoryGraph
 from core.graph.sqlite_store import build_sqlite
-from api.routes import meta
+from api.routes import meta, optimize
 
 
 @asynccontextmanager
@@ -33,3 +33,4 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
 app.include_router(meta.router)
+app.include_router(optimize.router)

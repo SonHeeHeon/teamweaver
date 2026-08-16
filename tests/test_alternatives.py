@@ -292,3 +292,30 @@ def test_demo_scale_alternatives():
             f"{alt.label}: unfilled={alt.unfilled} (count={len(alt.unfilled)}) leaves MORE "
             f"required quota slots unfilled than Plan A(count={len(plan_a.unfilled)}) -- "
             f"genuine truncation of required headcount coverage")
+
+
+# --- Task 4 Step 1 (브리핑 verbatim): 스트리밍 제너레이터 -----------------------
+
+def test_generate_plans_streaming_yields_plan_a_first_then_alternatives():
+    ds = generate_dataset(25, 5, seed=3)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    eng = ScoringEngine(g)
+    from core.optimize.alternatives import generate_plans_streaming
+    gen = generate_plans_streaming(g, eng.skill_matrix({}), eng.synergy_matrix(),
+                                   MilpParams(time_limit=60), n_alternatives=2)
+    first = next(gen)
+    assert first.label == "A"
+    rest = list(gen)
+    assert len(rest) >= 1
+    assert [p.label for p in rest] == list("BCDEFG"[:len(rest)])
+
+
+def test_generate_plans_still_returns_a_list_backward_compatible():
+    """generate_plans는 generate_plans_streaming의 리스트화일 뿐이어야 한다 --
+    exp3_algorithm.py와 test_e2e_smoke.py가 이 함수를 list로 계속 쓴다."""
+    ds = generate_dataset(25, 5, seed=3)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    eng = ScoringEngine(g)
+    plans = generate_plans(g, eng.skill_matrix({}), eng.synergy_matrix(),
+                           MilpParams(time_limit=60), n_alternatives=2)
+    assert isinstance(plans, list) and plans[0].label == "A"
