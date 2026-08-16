@@ -11,7 +11,6 @@ def rule_based_briefing(ctx: dict, out_id: str, in_id: str) -> dict:
     in_skills = {s["key"]: s["value"] for s in ctx.get(in_id, {}).get("skills", [])}
     out_coworks = len(ctx.get(out_id, {}).get("coworks", []))
     in_coworks = len(ctx.get(in_id, {}).get("coworks", []))
-    out_evidence = len(ctx.get(out_id, {}).get("evidence", []))
     in_evidence = len(ctx.get(in_id, {}).get("evidence", []))
 
     shared = sorted(set(out_skills) & set(in_skills))

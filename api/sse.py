@@ -10,8 +10,6 @@ from typing import AsyncIterator, Callable, Iterator
 
 import anyio
 
-_DONE = object()
-
 
 async def stream_sync_generator(gen_fn: Callable[..., Iterator], *args, **kwargs) -> AsyncIterator:
     q: "queue.Queue" = queue.Queue()

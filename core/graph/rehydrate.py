@@ -6,9 +6,7 @@
 
 한계(의도된 것): availability와 projects는 저장소에서 복원하지 않고 상수로
 채운다. 이 모듈의 목적은 재수화 **비용** 비교이지 완전한 상태 복원이 아니다.
-중요한 것은 그 생략이 두 백엔드에서 대칭이라는 점이다 — 한쪽만 더 읽으면
-그쪽 재수화 시간이 부당하게 비싸진다. evidence도 같은 이유로 양쪽 다 버린다
-(SQLite review 테이블에는 evidence 컬럼 자체가 없다).
+evidence는 SQLite review 테이블에 컬럼 자체가 없어 복원 대상에서 제외한다.
 """
 from core.domain.models import (CoworkRecord, Dataset, Grade, ParsedReview,
                                 PeerReview, Person, ReviewSection)

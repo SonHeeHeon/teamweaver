@@ -7,7 +7,7 @@ AI-powered staffing optimization platform for intelligent team composition and r
 - **Setup environment**: `uv sync`
 - **Run tests**: `uv run pytest -v`
 - **Run E2E smoke** (slow, ~25s, needs the frozen fixture below): `uv run pytest -m slow -v`
-- **Start Neo4j backend** (optional): `docker compose up -d`
+- **Run the API server**: `uv run uvicorn api.main:app --reload` (first boot pre-computes the default demo scenario from the frozen fixture, ~30s; set `TEAMWEAVER_SKIP_WARM=1` to skip this during development)
 
 ## Demo fixture (`fixtures/*.json`)
 

@@ -4,7 +4,6 @@ decision.py의 REMOVAL_PLAN이 실행됐다는 것을 그레핑이 아니라 임
 확인한다 -- 파일이 삭제됐는데 어딘가 남은 import가 있으면 여기서 즉시 깨진다.
 """
 import subprocess
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent

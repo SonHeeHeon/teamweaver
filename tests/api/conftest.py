@@ -15,8 +15,6 @@ lifespan에 `os.environ.get("TEAMWEAVER_SKIP_WARM") != "1"` 가드를 넣을
 미만) 돌 수 있게 한다. FastAPI의 `app.dependency_overrides`는 앱 소스를
 건드리지 않는 표준 테스트 기법이다."""
 import sqlite3
-import tempfile
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
