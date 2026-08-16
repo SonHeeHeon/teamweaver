@@ -44,7 +44,9 @@ def _objective_delta(graph: MemoryGraph, S, C, entries: list[EntryIn], swap: Swa
     skill_delta = (S[in_i, j] - S[out_i, j]) * my_entry.alloc
 
     teammates = [pdx[e.person_id] for e in entries
-                if e.project_id == swap.project_id and e.person_id != swap.out_person_id]
+                if e.project_id == swap.project_id
+                and e.person_id != swap.out_person_id
+                and e.person_id != swap.in_person_id]
     synergy_delta = sum(C[in_i, t] - C[out_i, t] for t in teammates)
 
     return float(skill_delta + synergy_delta)

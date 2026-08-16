@@ -43,3 +43,53 @@ def test_whatif_uses_fallback_when_llm_unavailable(client, monkeypatch):
     }
     res = client.post("/api/whatif", json=body)
     assert res.json()["fallback_used"] is True
+
+
+def test_whatif_excludes_incoming_person_from_teammates_list(client, monkeypatch):
+    """버그: teammates 리스트가 swap.out_person_id는 제외하지만,
+    swap.in_person_id는 제외하지 않으면 in_person_id의 자체 시너지
+    diagonal(=0)이 계산에 포함된다. 이 테스트는 in_person_id가 이미
+    같은 프로젝트에 entry를 가지고 있는 현실적인 시나리오를 재현해,
+    그것이 delta 결과에 영향을 주지 않음을 확인한다.
+
+    고정된 동작: entries에 out_person과 in_person 모두 같은 프로젝트에
+    포함된 경우와 in_person의 entry를 제외한 경우 두 호출 모두 같은
+    objective_delta를 반환해야 한다."""
+    import api.routes.whatif as mod
+    monkeypatch.setattr(mod, "get_openai_client_or_none", lambda: None)
+    meta = client.get("/api/meta").json()
+    project = meta["projects"][0]
+    out_person = meta["people"][0]["id"]
+    in_person = meta["people"][1]["id"]
+
+    # Case 1: entries에 out_person과 in_person 모두 포함
+    entries_with_both = [
+        {"person_id": out_person, "project_id": project["id"], "alloc": 1.0},
+        {"person_id": in_person, "project_id": project["id"], "alloc": 0.5},
+    ]
+    body_with_both = {
+        "entries": entries_with_both,
+        "swap": {"out_person_id": out_person, "in_person_id": in_person,
+                "project_id": project["id"]},
+        "weights": {},
+    }
+    res_with_both = client.post("/api/whatif", json=body_with_both)
+    assert res_with_both.status_code == 200
+    delta_with_both = res_with_both.json()["objective_delta"]
+
+    # Case 2: entries에 out_person만 포함 (in_person의 entry 제외)
+    entries_without_in = [
+        {"person_id": out_person, "project_id": project["id"], "alloc": 1.0},
+    ]
+    body_without_in = {
+        "entries": entries_without_in,
+        "swap": {"out_person_id": out_person, "in_person_id": in_person,
+                "project_id": project["id"]},
+        "weights": {},
+    }
+    res_without_in = client.post("/api/whatif", json=body_without_in)
+    assert res_without_in.status_code == 200
+    delta_without_in = res_without_in.json()["objective_delta"]
+
+    # 두 delta가 같아야 한다 -- in_person의 자신의 entry 유무가 영향을 주지 않음을 증명
+    assert delta_with_both == delta_without_in
