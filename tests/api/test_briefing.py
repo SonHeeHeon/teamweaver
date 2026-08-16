@@ -41,3 +41,17 @@ def test_generate_briefing_raises_on_malformed_json():
         choices=[MagicMock(message=MagicMock(content="not json"))])
     with pytest.raises(ValueError):
         generate_briefing(fake_client, "gpt-5-mini", _CTX, "p000", "p001")
+
+
+def test_generate_briefing_raises_on_wrong_shape():
+    """JSON 자체는 파싱되지만 스키마와 다른 형태(risks가 list가 아니라 str)면
+    BriefingOut(pydantic) 검증이 ValidationError를 내고, generate_briefing이
+    이를 ValueError로 감싸 재발생시켜야 한다 -- 예전 코드는 이런 입력을 그대로
+    클라이언트에 흘려보냈다."""
+    fake_client = MagicMock()
+    fake_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content=json.dumps({
+            "rationale": "x", "risks": "not a list", "alternatives": [],
+        })))])
+    with pytest.raises(ValueError):
+        generate_briefing(fake_client, "gpt-5-mini", _CTX, "p000", "p001")
