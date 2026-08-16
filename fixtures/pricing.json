@@ -6,6 +6,7 @@
   "parse_model": "gpt-5-nano",
   "final_gen_model": "gpt-5",
   "final_parse_model": "gpt-5-mini",
+  "briefing_model": "gpt-5-mini",
   "models": {
     "gpt-5":      {"input_per_1m": 1.25, "output_per_1m": 10.0},
     "gpt-5-mini": {"input_per_1m": 0.25, "output_per_1m": 2.0},
