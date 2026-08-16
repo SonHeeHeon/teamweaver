@@ -2,6 +2,12 @@
 실제 CBC를 풀되 1초 미만으로 끝낸다 -- 동결 fixture(100명/20프로젝트) 규모의
 진짜 흐름 검증은 slow 마커가 붙은 Task 8의 E2E 테스트가 맡는다."""
 import json
+import os
+
+import pytest
+from fastapi.testclient import TestClient
+
+from api.main import app
 
 
 def test_optimize_streams_plan_a_then_alternatives(small_graph_client):
@@ -57,3 +63,21 @@ def test_optimize_streams_error_event_when_solver_raises(small_graph_client, mon
         "solver가 첫 순회에서 즉시 raise하므로 plan/done 없이 error 프레임 하나뿐이어야 함")
     assert len(payloads) == 1
     assert "boom" in payloads[0]["message"]
+
+
+@pytest.mark.slow
+def test_default_scenario_is_warmed_at_startup(monkeypatch):
+    """conftest.py의 client 픽스처는 TEAMWEAVER_SKIP_WARM=1을 강제하므로 워밍
+    경로 자체를 검증할 수 없다(의도적 -- 그래서 기본 스위트가 빠르다). 이
+    테스트는 그 가드를 명시적으로 해제한 별도 TestClient로 실제 부팅 워밍이
+    동작하는지 확인한다. 동결 fixture(100명/20프로젝트) 전체를 실제로 풀므로
+    slow(실측 28.5초 안팎)."""
+    monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
+    with TestClient(app) as warmed_client:
+        import time
+        start = time.monotonic()
+        with warmed_client.stream(
+                "POST", "/api/optimize", json={"weights": {}, "n_alternatives": 3}) as res:
+            list(res.iter_lines())
+        elapsed = time.monotonic() - start
+    assert elapsed < 2.0, f"캐시 히트인데 {elapsed:.1f}초 걸림 -- 워밍이 안 됐거나 캐시 미적중"
