@@ -44,6 +44,17 @@ def build_sqlite(ds: Dataset, parsed: list[ParsedReview], path: Path) -> None:
                                        [(i, 0) for i in r.negative.items])])
     conn.commit(); conn.close()
 
+def _assert_person_exists(conn, person_id: str) -> None:
+    """Neo4j 제거로 잃은 참조 무결성(관계의 두 끝점 노드 존재 보장)을
+    애플리케이션 계층에서 보완한다. FK 제약 대신인 이유: collaboration/review
+    테이블에 FK를 추가하려면 SQLite 특성상 테이블을 재생성해야 하고, 이는
+    build_sqlite의 스키마·기존 fixture와의 호환을 흔든다. 끝점 검증은 이
+    함수 하나로 같은 보장을 준다."""
+    row = conn.execute("SELECT 1 FROM person WHERE id = ?", (person_id,)).fetchone()
+    if row is None:
+        raise ValueError(f"unknown person_id: {person_id!r}")
+
+
 def synergy_context_sql(conn, person_ids: list[str], hops: int) -> list[tuple]:
     ph = ",".join("?" for _ in person_ids)
     q = f"""
@@ -81,6 +92,8 @@ def append_review(conn, review: PeerReview, parsed: ParsedReview) -> None:
     다시 호출하면 행을 하나 더 쌓는다 — Neo4j 쪽 MERGE(멱등)와 하는 일이 다르다.
     측정할 때는 반드시 양쪽 모두에 없는 새 레코드를 써야 한다.
     """
+    _assert_person_exists(conn, parsed.reviewer_id)
+    _assert_person_exists(conn, parsed.reviewee_id)
     conn.execute("INSERT INTO review VALUES(?,?,?)",
                  (parsed.reviewer_id, parsed.reviewee_id, parsed.text_polarity))
     conn.executemany("INSERT INTO review_item VALUES(?,?,?,?)",
@@ -92,6 +105,8 @@ def append_review(conn, review: PeerReview, parsed: ParsedReview) -> None:
 
 def append_cowork(conn, rec: CoworkRecord) -> None:
     """증분 갱신: 새 협업 이력 1건."""
+    _assert_person_exists(conn, rec.a_id)
+    _assert_person_exists(conn, rec.b_id)
     conn.execute("INSERT INTO collaboration VALUES(?,?,?,?)",
                  (rec.a_id, rec.b_id, rec.co_months, rec.project_count))
     conn.commit()

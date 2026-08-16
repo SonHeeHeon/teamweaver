@@ -1,8 +1,9 @@
 import sqlite3
+import pytest
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
-from core.graph.sqlite_store import build_sqlite, synergy_context_sql
-from core.domain.models import Dataset, Person, Grade, Project, Sector, ProjectPhase, CoworkRecord
+from core.graph.sqlite_store import build_sqlite, synergy_context_sql, append_cowork, append_review
+from core.domain.models import Dataset, Person, Grade, Project, Sector, ProjectPhase, CoworkRecord, ParsedReview, PeerReview, ReviewSection
 
 def _db(tmp_path):
     ds = generate_dataset(30, 6, seed=3)
@@ -10,6 +11,21 @@ def _db(tmp_path):
     p = tmp_path / "tw.db"
     build_sqlite(ds, parsed, p)
     return ds, sqlite3.connect(p)
+
+
+@pytest.fixture
+def built(tmp_path):
+    """SQLite에 적재된 데이터셋 하나.
+
+    append 테스트가 DB를 바꾸므로 함수 스코프다.
+    """
+    ds = generate_dataset(40, 8, seed=5)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    path = tmp_path / "r.db"
+    build_sqlite(ds, parsed, path)
+    conn = sqlite3.connect(path)
+    yield conn
+    conn.close()
 
 def test_counts_roundtrip(tmp_path):
     ds, conn = _db(tmp_path)
@@ -99,3 +115,24 @@ def test_synergy_context_multisource(tmp_path):
     assert by_src.get('C', set()) == {'B'}, f"From C, expected {{B}}, got {by_src.get('C')}"
 
     conn.close()
+
+
+# --------------------------------------------------------------------------
+# 참조 무결성 (Task 2)
+# --------------------------------------------------------------------------
+
+def test_append_cowork_rejects_unknown_person_id(built):
+    conn = built
+    rec = CoworkRecord(a_id="p000", b_id="ghost", co_months=1, project_count=1)
+    with pytest.raises(ValueError, match="ghost"):
+        append_cowork(conn, rec)
+
+
+def test_append_review_rejects_unknown_reviewer(built):
+    conn = built
+    review = PeerReview(reviewer_id="ghost", reviewee_id="p000",
+                        positive=ReviewSection(items=["미상"], text=""),
+                        negative=ReviewSection(items=["미상"], text=""))
+    parsed = ParsedReview(reviewer_id="ghost", reviewee_id="p000", text_polarity=0.0)
+    with pytest.raises(ValueError, match="ghost"):
+        append_review(conn, review, parsed)
