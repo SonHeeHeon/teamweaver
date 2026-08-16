@@ -41,6 +41,14 @@ def test_run_reports_all_metrics(sqlite_only):
         assert r["unit"] in ("ms", "bytes")
 
 
+def test_run_reports_a_non_empty_note(sqlite_only):
+    """run()의 반환 스키마는 `{"rows": [...], "note": str}`다(브리프 Step 7).
+    rows 쪽은 다른 테스트들이 촘촘히 잠그지만 note 키 자체는 어느 테스트도
+    참조하지 않았다(코드 리뷰 fix-round 1 지적) -- 이 키가 사라지거나
+    이름이 바뀌거나 빈 문자열이 되는 회귀를 여기서 잡는다."""
+    assert isinstance(sqlite_only["note"], str) and sqlite_only["note"]
+
+
 def test_timing_rows_keep_the_full_measure_record(sqlite_only):
     """median/p95만 남기지 말고 harness.measure의 기록을 통째로 보존해야 한다.
 
