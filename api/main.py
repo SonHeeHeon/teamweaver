@@ -17,7 +17,7 @@ from core.graph.sqlite_store import build_sqlite
 from core.optimize.alternatives import generate_plans
 from core.optimize.milp import MilpParams
 from core.scoring.engine import ScoringEngine
-from api.routes import meta, optimize
+from api.routes import meta, optimize, whatif
 
 
 @asynccontextmanager
@@ -54,3 +54,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
 app.include_router(meta.router)
 app.include_router(optimize.router)
+app.include_router(whatif.router)
