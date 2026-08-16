@@ -338,14 +338,20 @@ def test_keep_verdicts_do_not_carry_a_removal_plan():
 
 
 # ---------------------------------------------------------------------------
-# 제거 계획의 경로는 실제로 존재해야 한다 — 예전에는 존재하지 않는 경로
-# (core/config.py의 "NEO4J_*") 하나가 실제 값을 담은 .env.example 대신
-# 실려 있었다. 그 결함을 사람 눈으로 다시 잡는 대신 테스트로 잠근다.
+# 제거 계획의 경로는 실제로 존재해야 한다(keep 목록) / 실제로 사라졌어야
+# 한다(remove 목록) — 예전에는 존재하지 않는 경로(core/config.py의
+# "NEO4J_*") 하나가 실제 값을 담은 .env.example 대신 실려 있었다. 그 결함을
+# 사람 눈으로 다시 잡는 대신 테스트로 잠근다.
+#
+# Plan 4 태스크 1(2026-08-16)이 이 REMOVAL_PLAN을 실제로 실행했다.
+# decision.py는 판정 근거이므로 그대로 얼려 두고(REMOVAL_PLAN도 실행 전
+# 시점을 서술한 문서 그대로) 건드리지 않는다 — 그래서 remove 목록에 대해
+# "그 경로가 (아직) 존재한다"를 검증하던 예전 테스트는 이 실행 이후
+# 구조적으로 항상 실패한다. remove 목록의 검증 방향을 "존재한다"에서
+# "계획대로 사라졌다"로 뒤집었다 — 얼어붙은 문서 기준으로 실행이 실제로
+# 일어났음을 증명하는 셈이다. keep 목록은 원래 의미(대체물이 실제로
+# 있다) 그대로 존재를 확인한다.
 # ---------------------------------------------------------------------------
-
-def _plan_entries() -> list[dict]:
-    return decision.REMOVAL_PLAN["remove"] + decision.REMOVAL_PLAN["keep"]
-
 
 def _plan_fs_path(raw: str) -> str:
     """`path`에 붙은 `::symbol` 접미사(예: `core/graph/rehydrate.py::from_neo4j`)를
@@ -353,36 +359,62 @@ def _plan_fs_path(raw: str) -> str:
     return raw.split("::", 1)[0]
 
 
-@pytest.mark.parametrize("entry", _plan_entries(),
-                          ids=[e["path"] for e in _plan_entries()])
-def test_removal_plan_paths_exist(entry):
-    """규칙 4의 제거 계획은 판정과 함께 리포트에 **사실**로 렌더링되고, Plan 4가
-    그대로 실행할 문서다. 존재하지 않는 경로를 나열하면 Plan 4가 빈 파일을 열게
-    되고, 실제로 설정을 담은 파일은 계획에서 누락된 채로 남는다."""
+@pytest.mark.parametrize("entry", decision.REMOVAL_PLAN["keep"],
+                          ids=[e["path"] for e in decision.REMOVAL_PLAN["keep"]])
+def test_removal_plan_keep_paths_exist(entry):
+    """규칙 4의 제거 계획이 "그대로 둔다"고 말하는 경로는 실제로 존재해야
+    한다. 존재하지 않으면 계획이 있지도 않은 대체물을 근거로 든 것이다."""
     p = REPO_ROOT / _plan_fs_path(entry["path"])
-    assert p.exists(), f"removal_plan 경로가 존재하지 않는다: {entry['path']!r}"
+    assert p.exists(), f"removal_plan(keep) 경로가 존재하지 않는다: {entry['path']!r}"
 
 
-_CONFIG_CLAIM_ENTRIES = [e for e in _plan_entries() if "환경변수" in e["note"]]
+# remove 목록 10항목 중 파일 자체가 삭제된 5개만 "파일이 사라졌다"로 기계
+# 검증할 수 있다. 나머지 5개(rehydrate.py::from_neo4j, pyproject.toml::
+# dependencies[neo4j], exp4_rag.py, exp5_persistence.py, .env.example)는
+# 파일 자체는 남고 내용만 바뀌었으므로 같은 잣대로 잴 수 없다 — 그 5개의
+# 제거가 완전한지는 tests/test_neo4j_removed.py가 다른 방식(hasattr, grep,
+# import 실패)으로 이미 잠근다.
+_FULLY_DELETED_PATHS = {"core/graph/neo4j_store.py", "core/rag/neo4j_rag.py",
+                        "docker-compose.yml", "tests/test_neo4j_store.py",
+                        "tests/test_neo4j_rag.py"}
+_FULLY_DELETED_ENTRIES = [e for e in decision.REMOVAL_PLAN["remove"]
+                          if e["path"] in _FULLY_DELETED_PATHS]
+
+
+@pytest.mark.parametrize("entry", _FULLY_DELETED_ENTRIES,
+                          ids=[e["path"] for e in _FULLY_DELETED_ENTRIES])
+def test_removal_plan_remove_paths_are_gone(entry):
+    """규칙 4의 제거 계획이 파일 통째 삭제를 지시한 경로는 Plan 4 실행 뒤
+    실제로 사라져 있어야 한다 — 얼어붙은 decision.py가 말한 계획을 이
+    저장소가 정말로 실행했다는 증거다."""
+    p = REPO_ROOT / entry["path"]
+    assert not p.exists(), (
+        f"removal_plan(remove)이 삭제를 지시한 경로가 아직 있다: {entry['path']!r}")
+
+
+_CONFIG_CLAIM_ENTRIES = [e for e in decision.REMOVAL_PLAN["remove"] if "환경변수" in e["note"]]
 
 
 @pytest.mark.parametrize("entry", _CONFIG_CLAIM_ENTRIES,
                           ids=[e["path"] for e in _CONFIG_CLAIM_ENTRIES])
-def test_removal_plan_config_claims_actually_contain_neo4j(entry):
-    """note가 "환경변수"를 언급하며 Neo4j 설정을 담고 있다고 주장하는 파일은
-    실제로 `NEO4J` 문자열을 담고 있어야 한다. 예전 항목(`core/config.py`)은 이
-    주장을 했지만 `grep NEO4J core/config.py`가 아무것도 내지 않았다 — 실제
-    설정은 `.env.example`에 있었다."""
+def test_removal_plan_config_claims_no_longer_contain_neo4j(entry):
+    """note가 "환경변수"를 언급하며 Neo4j 설정을 담고 있다고 주장하는 remove
+    목록 파일은, Plan 4 실행 뒤에는 그 설정이 실제로 지워져 있어야 한다.
+
+    (Plan 4 이전에는 반대 방향 — "그 설정이 실제로 있다" — 을 검증했다. 예전
+    항목(core/config.py)이 존재하지 않는 경로를 잘못 가리켰던 결함을 잡기
+    위해서였다. decision.py는 얼려 뒀으므로 그 실행-전 검증은 git 이력에만
+    남는다.)"""
     p = REPO_ROOT / _plan_fs_path(entry["path"])
     text = p.read_text(encoding="utf-8")
-    assert "NEO4J" in text, (
-        f"{entry['path']!r}가 Neo4j 설정을 담고 있다고 주장하지만 파일에 "
-        "'NEO4J' 문자열이 없다")
+    assert "NEO4J" not in text, (
+        f"{entry['path']!r}가 Plan 4 실행 대상인데 여전히 'NEO4J' 문자열을 담고 있다")
 
 
 def test_config_claim_entries_are_not_accidentally_empty():
-    """위 테스트는 note에 "환경변수"가 있는 항목에만 적용된다 — 그 필터 자체가
-    빈 리스트라면 위 테스트는 통과했다는 착각만 주고 아무것도 검증하지 않는다."""
+    """위 테스트는 note에 "환경변수"가 있는 remove 목록 항목에만 적용된다 —
+    그 필터 자체가 빈 리스트라면 위 테스트는 통과했다는 착각만 주고 아무것도
+    검증하지 않는다."""
     assert _CONFIG_CLAIM_ENTRIES, (
-        "'환경변수'를 언급하는 removal_plan 항목이 하나도 없다 — "
-        "test_removal_plan_config_claims_actually_contain_neo4j가 공허하게 통과하고 있다")
+        "'환경변수'를 언급하는 removal_plan(remove) 항목이 하나도 없다 — "
+        "test_removal_plan_config_claims_no_longer_contain_neo4j가 공허하게 통과하고 있다")

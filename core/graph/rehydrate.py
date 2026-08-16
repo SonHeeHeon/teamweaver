@@ -4,10 +4,6 @@
 읽어야 한다. 그래서 이 함수의 소요 시간이 곧 API 서버의 콜드 스타트 비용이고,
 "저장소가 왜 필요한가"에 대한 가장 직접적인 답이다.
 
-두 구현은 반드시 같은 MemoryGraph를 내야 한다 — 다르면 저장소를 바꾸는 것이
-시스템의 답을 바꾼다는 뜻이므로 저장소 선택이 아키텍처 결정이 아니라 정확성
-문제가 된다.
-
 한계(의도된 것): availability와 projects는 저장소에서 복원하지 않고 상수로
 채운다. 이 모듈의 목적은 재수화 **비용** 비교이지 완전한 상태 복원이 아니다.
 중요한 것은 그 생략이 두 백엔드에서 대칭이라는 점이다 — 한쪽만 더 읽으면
@@ -74,34 +70,4 @@ def from_sqlite(conn) -> MemoryGraph:
             negative=ReviewSection(items=sel[False] or [_UNKNOWN], text="")))
         parsed.append(ParsedReview(reviewer_id=rv, reviewee_id=re_,
                                    text_polarity=pol, evidence=[]))
-    return _assemble(people, coworks, reviews, parsed)
-
-
-def from_neo4j(driver) -> MemoryGraph:
-    with driver.session() as s:
-        rows = s.run("MATCH (p:Person) OPTIONAL MATCH (p)-[h:HAS_SKILL]->(k:Skill) "
-                     "RETURN p.id AS id, p.name AS name, p.grade AS grade, "
-                     "p.rate AS rate, collect([k.name, h.level]) AS skills "
-                     "ORDER BY p.id")
-        people = []
-        for r in rows:
-            sk = {n: lv for n, lv in r["skills"] if n is not None}
-            people.append(Person(id=r["id"], name=r["name"], grade=Grade(r["grade"]),
-                                 monthly_rate=r["rate"], skills=sk,
-                                 availability=[1.0] * 6))
-        coworks = [CoworkRecord(a_id=r["a"], b_id=r["b"], co_months=r["m"],
-                                project_count=r["c"])
-                   for r in s.run("MATCH (a:Person)-[w:WORKED_WITH]->(b:Person) "
-                                  "RETURN a.id AS a, b.id AS b, w.co_months AS m, "
-                                  "w.project_count AS c")]
-        reviews, parsed = [], []
-        for r in s.run("MATCH (a:Person)-[v:REVIEWED]->(b:Person) "
-                       "RETURN a.id AS rv, b.id AS re, v.pos_items AS pos, "
-                       "v.neg_items AS neg, v.polarity AS pol"):
-            reviews.append(PeerReview(
-                reviewer_id=r["rv"], reviewee_id=r["re"],
-                positive=ReviewSection(items=r["pos"] or [_UNKNOWN], text=""),
-                negative=ReviewSection(items=r["neg"] or [_UNKNOWN], text="")))
-            parsed.append(ParsedReview(reviewer_id=r["rv"], reviewee_id=r["re"],
-                                       text_polarity=r["pol"], evidence=[]))
     return _assemble(people, coworks, reviews, parsed)

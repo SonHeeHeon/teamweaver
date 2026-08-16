@@ -41,13 +41,17 @@ def test_environment_records_neo4j_server_cpu_and_ram():
         assert isinstance(env[key], str) and env[key]
 
 
-def test_neo4j_server_version_never_raises_when_neo4j_down(monkeypatch):
-    """Neo4j가 죽어 있어도(또는 접속 정보가 잘못돼도) environment() 전체가 죽으면
-    안 된다 -- probe는 항상 방어적이어야 한다."""
-    def _boom(*a, **kw):
-        raise RuntimeError("connection refused")
-    import core.graph.neo4j_store as neo4j_store
-    monkeypatch.setattr(neo4j_store, "get_driver", _boom)
+def test_neo4j_server_version_never_raises_when_driver_module_is_absent():
+    """`_neo4j_server_version`은 아직 harness.py에 남아 있다(Plan 4 Task 1의
+    REMOVAL_PLAN 10항목에 experiments/bench/harness.py는 없다 -- 그 파일이
+    exp1_storage.py와 함께 이번 태스크의 범위 밖이라는 근거는
+    .omc/reports/2026-08-16-plan4-task1-neo4j-removal.md 참고). 이 probe는
+    `from core.graph.neo4j_store import get_driver`를 함수 안에서 지연
+    임포트하는데, 그 모듈이 이제 삭제됐으므로 매번 ModuleNotFoundError를
+    맞는다 -- 원래 테스트가 몽키패치로 흉내 내려던 "probe가 실패한다"는
+    상황을 코드 변경 없이 이미 항상 재현한다. probe는 항상 방어적이어야
+    하므로(environment() 전체가 죽으면 안 된다) 여기서도 예외 없이 문자열을
+    돌려줘야 한다."""
     result = harness._neo4j_server_version()
     assert isinstance(result, str) and "unavailable" in result
 
