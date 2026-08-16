@@ -2,7 +2,6 @@
 실제 CBC를 풀되 1초 미만으로 끝낸다 -- 동결 fixture(100명/20프로젝트) 규모의
 진짜 흐름 검증은 slow 마커가 붙은 Task 8의 E2E 테스트가 맡는다."""
 import json
-import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -81,3 +80,13 @@ def test_default_scenario_is_warmed_at_startup(monkeypatch):
             list(res.iter_lines())
         elapsed = time.monotonic() - start
     assert elapsed < 2.0, f"캐시 히트인데 {elapsed:.1f}초 걸림 -- 워밍이 안 됐거나 캐시 미적중"
+
+
+def test_optimize_rejects_out_of_range_weight(small_graph_client):
+    """weights 값은 PoC 설계의 1~5점 범위로 bound된다(Field(ge=1, le=5)).
+    0은 범위 밖이라 라우터 코드가 실행되기도 전에 Pydantic이 422로 막아야
+    한다 -- core/scoring/engine.py::skill_matrix의 den==0 -> NaN 크래시를
+    core/를 건드리지 않고 API 경계에서 막는 방식."""
+    res = small_graph_client.post(
+        "/api/optimize", json={"weights": {"Java": 0}, "n_alternatives": 0})
+    assert res.status_code == 422
