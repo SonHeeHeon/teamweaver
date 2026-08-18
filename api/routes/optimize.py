@@ -53,7 +53,10 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
         try:
             params = MilpParams(**req.milp_params)
             # UB는 (graph, S, params)에만 의존하고 플랜별로 달라지지 않는다 --
-            # 요청당 1회만 푼다(실측 1.05초). 플랜마다 풀면 4배 낭비다.
+            # 요청당 1회만 푼다. 플랜마다 풀면 그 배수만큼 낭비다.
+            # 실측(동결 fixture): 프로세스 첫 solve는 CBC 기동 비용이 섞여
+            # 0.36~1.05초로 튀지만, 정상 상태는 0.08~0.10초다. 캐시 히트
+            # 경로도 이 값을 다시 풀지만 그래서 체감이 0.09초 수준이다.
             ub = await anyio.to_thread.run_sync(
                 lambda: _skill_relaxation_upper_bound(graph, S, params))
             if cached is not None:
