@@ -19,11 +19,19 @@ class ProjectOut(BaseModel):
     monthly_budget: int
 
 
+class CoworkOut(BaseModel):
+    a_id: str
+    b_id: str
+    co_months: int
+    project_count: int
+
+
 class MetaResponse(BaseModel):
     people: list[PersonOut]
     projects: list[ProjectOut]
     skills: list[str]
     review_items: list[str]
+    coworks: list[CoworkOut]
 
 
 class BriefingOut(BaseModel):

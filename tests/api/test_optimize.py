@@ -90,3 +90,25 @@ def test_optimize_rejects_out_of_range_weight(small_graph_client):
     res = small_graph_client.post(
         "/api/optimize", json={"weights": {"Java": 0}, "n_alternatives": 0})
     assert res.status_code == 422
+
+
+def test_plan_events_carry_fulfillment_and_optimization_ratio(small_graph_client):
+    """PoC 설계 §6이 요구하는 '점수 상세 + 매칭 충족률'. 프론트가 core의 지표
+    로직을 복제하지 않으려면 서버가 실어 보내야 한다."""
+    with small_graph_client.stream(
+            "POST", "/api/optimize", json={"weights": {}, "n_alternatives": 0}) as res:
+        events = []
+        for line in res.iter_lines():
+            if line.startswith("data:"):
+                events.append(json.loads(line[len("data:"):].strip()))
+    plans = [e for e in events if "label" in e]
+    assert plans, "plan 이벤트가 없다"
+    for p in plans:
+        assert 0.0 <= p["fulfillment"] <= 1.0
+        assert 0.0 <= p["optimization_ratio"] <= 1.0 + 1e-6
+
+
+def test_cors_headers_allow_the_vite_dev_server(client):
+    """Vite dev 서버(:5173)가 API(:8000)를 부를 수 있어야 한다."""
+    res = client.get("/api/meta", headers={"Origin": "http://localhost:5173"})
+    assert res.headers.get("access-control-allow-origin") == "http://localhost:5173"

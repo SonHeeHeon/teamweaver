@@ -8,6 +8,7 @@ import sqlite3
 import tempfile
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.cache import ResultCache
 from core.config import FIXTURES_DIR, load_env
@@ -52,6 +53,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
+# Vite dev 서버(:5173)가 API(:8000)를 부를 수 있어야 한다. 프로덕션 빌드는
+# FastAPI가 직접 서빙하므로(Task 8) same-origin이라 CORS가 필요 없지만,
+# 개발 중에는 포트가 갈리므로 필요하다.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(meta.router)
 app.include_router(optimize.router)
 app.include_router(whatif.router)
