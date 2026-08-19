@@ -9,6 +9,8 @@ import tempfile
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.cache import ResultCache
 from core.config import FIXTURES_DIR, load_env
@@ -18,7 +20,7 @@ from core.graph.sqlite_store import build_sqlite
 from core.optimize.alternatives import generate_plans
 from core.optimize.milp import MilpParams
 from core.scoring.engine import ScoringEngine
-from api.routes import meta, optimize, whatif
+from api.routes import meta, optimize, report, whatif
 
 
 @asynccontextmanager
@@ -66,3 +68,24 @@ app.add_middleware(
 app.include_router(meta.router)
 app.include_router(optimize.router)
 app.include_router(whatif.router)
+app.include_router(report.router)
+
+# 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
+# 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.
+_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+if _DIST.is_dir():
+
+    @app.get("/report", include_in_schema=False)
+    async def _report_page() -> FileResponse:
+        """클라이언트 라우트 /report를 index.html로 되돌려준다.
+
+        StaticFiles(html=True)는 SPA 폴백을 하지 않는다 -- 소스를 보면
+        html=True는 (1) *디렉터리* URL에 index.html을 주고 (2) 그 외
+        못 찾은 경로에는 404.html을 status 404로 줄 뿐이다. 그래서 /report는
+        마운트만으로는 404가 된다. Playwright가 바로 이 경로로 들어오므로
+        (api/pdf.py) 명시적으로 라우트를 판다. 마운트보다 *먼저* 등록해야
+        "/" 마운트에 먹히지 않는다.
+        """
+        return FileResponse(_DIST / "index.html")
+
+    app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

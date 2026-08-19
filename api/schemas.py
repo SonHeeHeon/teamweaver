@@ -44,3 +44,15 @@ class WhatifResponse(BaseModel):
     objective_delta: float
     briefing: BriefingOut
     fallback_used: bool
+
+
+class ReportRequest(BaseModel):
+    """확정 배치 + 그때의 지표·브리핑. 서버는 이걸 저장하지 않는다 --
+    Playwright가 리포트 페이지에 주입할 뿐이다(stateless 유지)."""
+    plan_label: str
+    entries: list[dict]
+    objective: float
+    fulfillment: float
+    optimization_ratio: float
+    unfilled: list[str] = []
+    briefing: BriefingOut | None = None
