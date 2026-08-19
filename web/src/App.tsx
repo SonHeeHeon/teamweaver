@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchMeta, postWhatif, streamOptimize } from "./api/client";
+import { downloadReport, fetchMeta, postWhatif, streamOptimize } from "./api/client";
 import type { Meta, PlanEvent, Swap, WhatifResponse } from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
@@ -20,6 +20,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [whatif, setWhatif] = useState<WhatifResponse | null>(null);
   const [whatifBusy, setWhatifBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   // 그래프에서 강조할 인물. 교체 "투입" 대상은 아직 배치 전이라 그래프에
   // 노드가 없다 -- 강조해도 보이지 않는다. 그래서 빠지는 쪽(out)을 강조해
   // "이 사람을 빼면 협업망 어디에 구멍이 나는지"를 보여준다.
@@ -106,6 +107,22 @@ export default function App() {
         ) : (
           <div className="space-y-6">
             <PlanCards plans={plans} selected={selected} onSelect={setSelected} />
+            {current && (
+              <button
+                disabled={pdfBusy}
+                onClick={async () => {
+                  setPdfBusy(true);
+                  try { await downloadReport(current, whatif); }
+                  catch (e) { setError(String(e)); }
+                  finally { setPdfBusy(false); }
+                }}
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm
+                           font-medium text-slate-700 hover:bg-slate-50
+                           disabled:cursor-not-allowed disabled:text-slate-400"
+              >
+                {pdfBusy ? "PDF 생성 중…" : "PDF 내려받기"}
+              </button>
+            )}
             {running && (
               <p className="text-sm text-slate-500">
                 {plans.length === 0

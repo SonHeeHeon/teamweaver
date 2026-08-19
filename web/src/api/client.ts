@@ -1,4 +1,4 @@
-import type { Meta, AssignEntry, Swap, WhatifResponse } from "./types";
+import type { Meta, AssignEntry, PlanEvent, Swap, WhatifResponse } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 
 /** 개발 중에는 Vite dev 서버(:5173)에서 API(:8000)를 부르므로 절대 URL이 필요하다.
@@ -49,4 +49,36 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
     buf = rest;
     for (const ev of events) yield ev;
   }
+}
+
+/** 확정 배치를 서버로 보내 PDF를 받아 브라우저에 내려받게 한다. */
+export async function downloadReport(plan: PlanEvent, whatif: WhatifResponse | null) {
+  const res = await fetch(`${API_BASE}/api/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plan_label: plan.label,
+      entries: plan.entries,
+      objective: plan.objective,
+      fulfillment: plan.fulfillment,
+      optimization_ratio: plan.optimization_ratio,
+      unfilled: plan.unfilled,
+      briefing: whatif?.briefing ?? null,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`PDF 생성 실패(${res.status}): ${detail.detail ?? ""}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `teamweaver-plan-${plan.label}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // click() 직후 동기로 revoke하면 브라우저가 아직 blob을 읽기 전이라
+  // 내려받기가 취소될 수 있다. 한 틱 뒤로 미룬다.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

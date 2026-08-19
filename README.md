@@ -8,6 +8,17 @@ AI-powered staffing optimization platform for intelligent team composition and r
 - **Run tests**: `uv run pytest -v`
 - **Run E2E smoke** (slow, ~25s, needs the frozen fixture below): `uv run pytest -m slow -v`
 - **Run the API server**: `uv run uvicorn api.main:app --reload` (first boot pre-computes the default demo scenario from the frozen fixture, ~30s; set `TEAMWEAVER_SKIP_WARM=1` to skip this during development)
+- **Run the web UI (dev)**: `cd web && npm install && npm run dev` — Vite dev server on
+  `http://localhost:5173`, calling the API on `:8000`. During frontend work run the API with
+  `TEAMWEAVER_SKIP_WARM=1 uv run uvicorn api.main:app --reload` so each reload skips the ~30s
+  demo pre-computation.
+- **Build the web UI**: `cd web && npm run build` — emits `web/dist/`, which the API server then
+  serves at `/` (same origin, no CORS needed). Required before `POST /api/report` can produce a
+  PDF, since Playwright prints the built SPA's `/report` route.
+- **PDF prerequisites**: `uv run playwright install chromium` (one-time browser download).
+- **Run the web UI tests**: `cd web && npm test` (vitest). Type-check with `npx tsc -b` —
+  **not** `tsc --noEmit`, which is a no-op here (`web/tsconfig.json` uses `"files": []` plus
+  project references, so `--noEmit` compiles nothing and always exits 0).
 
 ## Demo fixture (`fixtures/*.json`)
 
