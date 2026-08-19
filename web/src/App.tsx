@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchMeta, streamOptimize } from "./api/client";
-import type { Meta, PlanEvent } from "./api/types";
+import { fetchMeta, postWhatif, streamOptimize } from "./api/client";
+import type { Meta, PlanEvent, Swap, WhatifResponse } from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { AssignmentTable } from "./components/AssignmentTable";
 import { NetworkGraph } from "./components/NetworkGraph";
+import { SwapControl } from "./components/SwapControl";
+import { BriefingPanel } from "./components/BriefingPanel";
 
 type Tab = "req" | "whatif";
 
@@ -16,6 +18,12 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [whatif, setWhatif] = useState<WhatifResponse | null>(null);
+  const [whatifBusy, setWhatifBusy] = useState(false);
+  // 그래프에서 강조할 인물. 교체 "투입" 대상은 아직 배치 전이라 그래프에
+  // 노드가 없다 -- 강조해도 보이지 않는다. 그래서 빠지는 쪽(out)을 강조해
+  // "이 사람을 빼면 협업망 어디에 구멍이 나는지"를 보여준다.
+  const [highlighted, setHighlighted] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
@@ -26,6 +34,8 @@ export default function App() {
     setError(null);
     setPlans([]);
     setSelected(null);
+    setWhatif(null);
+    setHighlighted(null);
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
@@ -42,6 +52,19 @@ export default function App() {
       setError(String(e));
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function runSwap(swap: Swap) {
+    if (!current) return;
+    setWhatifBusy(true);
+    setHighlighted(swap.out_person_id);
+    try {
+      setWhatif(await postWhatif(current.entries, swap, weights));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setWhatifBusy(false);
     }
   }
 
@@ -92,8 +115,13 @@ export default function App() {
             )}
             {current && (
               <div className="grid gap-6 lg:grid-cols-2">
-                <NetworkGraph people={meta.people} coworks={meta.coworks}
-                              entries={current.entries} highlight={null} />
+                <div className="space-y-6">
+                  <NetworkGraph people={meta.people} coworks={meta.coworks}
+                                entries={current.entries} highlight={highlighted} />
+                  <SwapControl people={meta.people} entries={current.entries}
+                               onSwap={runSwap} busy={whatifBusy} />
+                  <BriefingPanel result={whatif} loading={whatifBusy} />
+                </div>
                 <AssignmentTable entries={current.entries} people={meta.people}
                                  projects={meta.projects} />
               </div>
