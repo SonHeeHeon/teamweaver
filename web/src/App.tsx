@@ -4,6 +4,7 @@ import type { Meta, PlanEvent } from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { AssignmentTable } from "./components/AssignmentTable";
+import { NetworkGraph } from "./components/NetworkGraph";
 
 type Tab = "req" | "whatif";
 
@@ -90,8 +91,12 @@ export default function App() {
               </p>
             )}
             {current && (
-              <AssignmentTable entries={current.entries} people={meta.people}
-                               projects={meta.projects} />
+              <div className="grid gap-6 lg:grid-cols-2">
+                <NetworkGraph people={meta.people} coworks={meta.coworks}
+                              entries={current.entries} highlight={null} />
+                <AssignmentTable entries={current.entries} people={meta.people}
+                                 projects={meta.projects} />
+              </div>
             )}
           </div>
         )}
