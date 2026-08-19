@@ -56,6 +56,15 @@ export default function App() {
     }
   }
 
+  /** 플랜을 바꾸면 이전 What-if 결과는 무의미하다 -- 그 델타·브리핑은 이전
+   *  플랜의 entries를 기준으로 계산된 값이라, 그대로 두면 지금 보고 있는
+   *  플랜의 결과인 것처럼 읽힌다. */
+  function selectPlan(label: string) {
+    setSelected(label);
+    setWhatif(null);
+    setHighlighted(null);
+  }
+
   async function runSwap(swap: Swap) {
     if (!current) return;
     setWhatifBusy(true);
@@ -106,7 +115,7 @@ export default function App() {
                            onRun={run} running={running} />
         ) : (
           <div className="space-y-6">
-            <PlanCards plans={plans} selected={selected} onSelect={setSelected} />
+            <PlanCards plans={plans} selected={selected} onSelect={selectPlan} />
             {current && (
               <button
                 disabled={pdfBusy}
@@ -135,7 +144,10 @@ export default function App() {
                 <div className="space-y-6">
                   <NetworkGraph people={meta.people} coworks={meta.coworks}
                                 entries={current.entries} highlight={highlighted} />
-                  <SwapControl people={meta.people} entries={current.entries}
+                  {/* key로 remount -- 플랜이 바뀌면 이전 플랜에서 고른
+                      교체 대상/투입이 남아 있으면 안 된다. */}
+                  <SwapControl key={current.label} people={meta.people}
+                               entries={current.entries}
                                onSwap={runSwap} busy={whatifBusy} />
                   <BriefingPanel result={whatif} loading={whatifBusy} />
                 </div>
