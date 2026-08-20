@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { downloadReport, fetchMeta, postWhatif, streamOptimize } from "./api/client";
 import type { Meta, PlanEvent, Swap, WhatifResponse } from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
@@ -25,18 +25,26 @@ export default function App() {
   // 노드가 없다 -- 강조해도 보이지 않는다. 그래서 빠지는 쪽(out)을 강조해
   // "이 사람을 빼면 협업망 어디에 구멍이 나는지"를 보여준다.
   const [highlighted, setHighlighted] = useState<string | null>(null);
+  // 진행 중인 what-if 요청이 지금 보고 있는 플랜에 속하는지 판별하는 세대
+  // 카운터. selectPlan과 runSwap 시작 시 증가시키고, await 이후 세대가
+  // 바뀌었으면(다른 플랜으로 넘어갔거나 새 스왑이 시작됐으면) 응답을 버린다
+  // -- 그렇지 않으면 이전 플랜 entries로 계산된 브리핑이 새 플랜 아래
+  // 표시된다(35초 안팎 걸리는 LLM 브리핑 창에서 실제로 발생 가능).
+  const swapGen = useRef(0);
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
   }, []);
 
   async function run() {
+    swapGen.current += 1;          // 재실행 -- 진행 중이던 what-if 응답도 무효화
     setRunning(true);
     setError(null);
     setPlans([]);
     setSelected(null);
     setWhatif(null);
     setHighlighted(null);
+    setWhatifBusy(false);
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
@@ -60,21 +68,27 @@ export default function App() {
    *  플랜의 entries를 기준으로 계산된 값이라, 그대로 두면 지금 보고 있는
    *  플랜의 결과인 것처럼 읽힌다. */
   function selectPlan(label: string) {
+    swapGen.current += 1;          // 진행 중이던 what-if 응답을 무효화한다
     setSelected(label);
     setWhatif(null);
     setHighlighted(null);
+    setWhatifBusy(false);
   }
 
   async function runSwap(swap: Swap) {
     if (!current) return;
+    const gen = ++swapGen.current;
     setWhatifBusy(true);
     setHighlighted(swap.out_person_id);
     try {
-      setWhatif(await postWhatif(current.entries, swap, weights));
+      const res = await postWhatif(current.entries, swap, weights);
+      if (gen !== swapGen.current) return;   // 그 사이 플랜이 바뀌었다 -- 폐기
+      setWhatif(res);
     } catch (e) {
+      if (gen !== swapGen.current) return;
       setError(String(e));
     } finally {
-      setWhatifBusy(false);
+      if (gen === swapGen.current) setWhatifBusy(false);
     }
   }
 
