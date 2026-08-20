@@ -69,3 +69,19 @@ export interface Swap {
   in_person_id: string;
   project_id: string;
 }
+
+/** POST /api/report 의 요청 본문. fallback_used/swap/objective_delta는
+ *  화면의 What-if 결과를 PDF에도 그대로 실어 나르기 위한 필드다 -- 화면의
+ *  "규칙 기반(LLM 미사용)" 배지는 PDF에 자동으로 따라오지 않는다. */
+export interface ReportRequest {
+  plan_label: string;
+  entries: AssignEntry[];
+  objective: number;
+  fulfillment: number;
+  optimization_ratio: number;
+  unfilled: string[];
+  briefing: Briefing | null;
+  fallback_used: boolean;
+  swap: Swap | null;
+  objective_delta: number | null;
+}

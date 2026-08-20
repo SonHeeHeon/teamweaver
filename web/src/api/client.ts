@@ -1,4 +1,4 @@
-import type { Meta, AssignEntry, PlanEvent, Swap, WhatifResponse } from "./types";
+import type { Meta, AssignEntry, PlanEvent, ReportRequest, Swap, WhatifResponse } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 
 /** 개발 중에는 Vite dev 서버(:5173)에서 API(:8000)를 부르므로 절대 URL이 필요하다.
@@ -51,20 +51,31 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
   }
 }
 
-/** 확정 배치를 서버로 보내 PDF를 받아 브라우저에 내려받게 한다. */
-export async function downloadReport(plan: PlanEvent, whatif: WhatifResponse | null) {
+/** 확정 배치를 서버로 보내 PDF를 받아 브라우저에 내려받게 한다.
+ *
+ *  swap은 whatif가 어떤 교체에 대한 브리핑인지를 PDF에 함께 실어 보내기
+ *  위한 것이다 -- whatif만으로는 "무엇을 무엇으로 바꾼 검토인지" PDF가 알
+ *  방법이 없다. whatif가 없으면(교체를 시도한 적 없으면) swap도 보내지
+ *  않는다. */
+export async function downloadReport(
+  plan: PlanEvent, whatif: WhatifResponse | null, swap: Swap | null,
+) {
+  const body: ReportRequest = {
+    plan_label: plan.label,
+    entries: plan.entries,
+    objective: plan.objective,
+    fulfillment: plan.fulfillment,
+    optimization_ratio: plan.optimization_ratio,
+    unfilled: plan.unfilled,
+    briefing: whatif?.briefing ?? null,
+    fallback_used: whatif?.fallback_used ?? false,
+    swap: whatif ? swap : null,
+    objective_delta: whatif?.objective_delta ?? null,
+  };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      plan_label: plan.label,
-      entries: plan.entries,
-      objective: plan.objective,
-      fulfillment: plan.fulfillment,
-      optimization_ratio: plan.optimization_ratio,
-      unfilled: plan.unfilled,
-      briefing: whatif?.briefing ?? null,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));

@@ -11,24 +11,12 @@ from api.deps import get_graph, get_openai_client_or_none, get_sqlite_conn
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
-from api.schemas import WhatifResponse
+from api.schemas import EntryIn, SwapIn, WhatifResponse
 from core.config import load_pricing
 from core.graph.memory_graph import MemoryGraph
 from core.scoring.engine import ScoringEngine
 
 router = APIRouter()
-
-
-class EntryIn(BaseModel):
-    person_id: str
-    project_id: str
-    alloc: float = Field(ge=0.0, le=1.0)
-
-
-class SwapIn(BaseModel):
-    out_person_id: str
-    in_person_id: str
-    project_id: str
 
 
 class WhatifRequest(BaseModel):

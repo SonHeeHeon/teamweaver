@@ -35,20 +35,25 @@ export function ReportPage() {
   }, [meta, data]);
 
   useEffect(() => {
-    // meta가 도착하고 그래프 좌표까지 계산된 뒤에야 준비 완료다.
-    if (meta) window.__REPORT_READY__ = true;
-  }, [meta, graph]);
+    // meta와 data가 모두 있고 그래프 좌표까지 계산된 뒤에야 준비 완료다.
+    // data 없이 __REPORT_READY__를 세우면 "리포트 데이터가 없다"는 빈 페이지도
+    // 정상 완료로 신호하게 돼, Playwright가 그걸 그대로 PDF로 찍어낸다.
+    if (meta && data) window.__REPORT_READY__ = true;
+  }, [meta, data, graph]);
 
   if (!data) return <p className="p-8">리포트 데이터가 없다.</p>;
 
   const pct = (v: number) => `${((v ?? 0) * 100).toFixed(1)}%`;
   const byId = new Map((meta?.people ?? []).map((p) => [p.id, p]));
   const jName = new Map((meta?.projects ?? []).map((j) => [j.id, j.name]));
+  const nameOf = (id: string) => byId.get(id)?.name ?? id;
+  const generatedAt = new Date().toLocaleString("ko-KR");
 
   return (
     <div className="mx-auto max-w-[760px] bg-white p-8 text-slate-900">
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
       <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
+      <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
 
       <section className="mt-6 grid grid-cols-3 gap-4">
         {[["최적화율", pct(data.optimization_ratio)],
@@ -69,7 +74,21 @@ export function ReportPage() {
       {data.briefing && (
         <section className="mt-6">
           <h2 className="mb-2 text-base font-semibold">XAI 브리핑</h2>
-          <p className="text-sm">{data.briefing.rationale}</p>
+          {data.swap && (
+            <p className="text-xs text-slate-500">
+              검토한 교체: {nameOf(data.swap.out_person_id)} → {nameOf(data.swap.in_person_id)}
+              {typeof data.objective_delta === "number" &&
+                ` (Δ ${data.objective_delta >= 0 ? "+" : ""}${data.objective_delta.toFixed(4)})`}
+            </p>
+          )}
+          {data.fallback_used && (
+            <p className="mt-2 rounded border border-amber-400 bg-amber-50 px-3 py-2
+                          text-sm font-medium text-amber-800">
+              이 브리핑은 LLM이 아니라 규칙 기반(결정론적) 생성기로 만들어졌다 --
+              발표 시점에 LLM을 사용할 수 없었다.
+            </p>
+          )}
+          <p className="mt-2 text-sm">{data.briefing.rationale}</p>
           <h3 className="mt-3 text-xs font-medium text-slate-500">리스크</h3>
           <ul className="list-inside list-disc text-sm">
             {(data.briefing.risks ?? []).map((r: string) => <li key={r}>{r}</li>)}

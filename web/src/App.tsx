@@ -19,6 +19,9 @@ export default function App() {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [whatif, setWhatif] = useState<WhatifResponse | null>(null);
+  // whatif가 "어떤 교체"에 대한 결과인지. PDF가 스스로는 알 수 없으므로
+  // downloadReport에 함께 실어 보낸다.
+  const [lastSwap, setLastSwap] = useState<Swap | null>(null);
   const [whatifBusy, setWhatifBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   // 그래프에서 강조할 인물. 교체 "투입" 대상은 아직 배치 전이라 그래프에
@@ -43,6 +46,7 @@ export default function App() {
     setPlans([]);
     setSelected(null);
     setWhatif(null);
+    setLastSwap(null);
     setHighlighted(null);
     setWhatifBusy(false);
     try {
@@ -71,6 +75,7 @@ export default function App() {
     swapGen.current += 1;          // 진행 중이던 what-if 응답을 무효화한다
     setSelected(label);
     setWhatif(null);
+    setLastSwap(null);
     setHighlighted(null);
     setWhatifBusy(false);
   }
@@ -84,6 +89,7 @@ export default function App() {
       const res = await postWhatif(current.entries, swap, weights);
       if (gen !== swapGen.current) return;   // 그 사이 플랜이 바뀌었다 -- 폐기
       setWhatif(res);
+      setLastSwap(swap);
     } catch (e) {
       if (gen !== swapGen.current) return;
       setError(String(e));
@@ -135,7 +141,7 @@ export default function App() {
                 disabled={pdfBusy}
                 onClick={async () => {
                   setPdfBusy(true);
-                  try { await downloadReport(current, whatif); }
+                  try { await downloadReport(current, whatif, lastSwap); }
                   catch (e) { setError(String(e)); }
                   finally { setPdfBusy(false); }
                 }}
