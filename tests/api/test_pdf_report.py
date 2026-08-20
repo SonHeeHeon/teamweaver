@@ -8,8 +8,20 @@
 빌드 산출물(web/dist)이 없으면 인쇄할 페이지 자체가 없으므로 건너뛴다 --
 이 경우는 실패가 아니라 '아직 빌드 안 함'이며, 그 둘을 구분하지 않으면
 CI에서 잘못된 안심을 준다.
+
+**크기 임계값만으로는 부족하다.** 최종 리뷰에서 실측된 사실: /report에
+__REPORT_DATA__를 주입하지 않고 그냥 열어도(당시 코드는 __REPORT_READY__를
+meta만으로 세웠다) "리포트 데이터가 없다"는 빈 페이지가 18,448바이트짜리
+PDF로 나왔고, `len(body) > 10_000`은 이걸 통과시켰다. 그래서 여기서는
+pypdf로 실제 텍스트를 뽑아 payload에만 있는 마커(plan_label, 배치된 인력
+이름, 브리핑 rationale, fallback 배지 문구)가 PDF 안에 박혔는지 확인한다.
+크기만 재는 것과 실제로 다르다는 것은 fault injection으로 증명했다 --
+tests/api/test_pdf_report.py의 커밋 메시지 참고: __REPORT_DATA__를 일부러
+주입하지 않고 만든 PDF는 크기 임계값은 통과하지만 이 텍스트 단언들은 실패한다.
 """
+import io
 import os
+import re
 import socket
 import threading
 import time
@@ -17,6 +29,7 @@ import time
 import httpx
 import pytest
 import uvicorn
+from pypdf import PdfReader
 
 from api.main import app
 from core.config import REPO_ROOT
@@ -30,8 +43,25 @@ _PAYLOAD = {
     "fulfillment": 0.71,
     "optimization_ratio": 0.928,
     "unfilled": [],
-    "briefing": {"rationale": "테스트 근거", "risks": ["r1"], "alternatives": ["a1"]},
+    "briefing": {"rationale": "테스트 근거 마커 XYZZY-RATIONALE",
+                 "risks": ["r1"], "alternatives": ["a1"]},
+    "fallback_used": True,
+    "swap": {"out_person_id": "p000", "in_person_id": "p001", "project_id": "j00"},
+    "objective_delta": -0.25,
 }
+
+
+def _extract_text(pdf_bytes: bytes) -> str:
+    """pypdf가 뽑아내는 텍스트는 자간 때문에 단어 사이에 여러 칸 공백이
+    섞인다(예: "테스트  근거  마커") -- 연속 공백을 하나로 접어 비교를
+    안정시킨다."""
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    raw = "\n".join(page.extract_text() or "" for page in reader.pages)
+    return re.sub(r"[ \t]+", " ", raw)
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[ \t]+", " ", s)
 
 
 def _dist_missing() -> bool:
@@ -84,6 +114,17 @@ def test_report_returns_a_real_pdf(live_server):
     body = res.content
     assert body.startswith(b"%PDF-"), "PDF 매직 바이트가 아니다"
     assert len(body) > 10_000, f"PDF가 비정상적으로 작다({len(body)}바이트) -- 빈 페이지 의심"
+
+    # 크기만으로는 빈 페이지("리포트 데이터가 없다")도 통과한다(실측
+    # 18,448바이트). payload에만 있는 값들이 실제로 페이지에 렌더됐는지
+    # 텍스트로 직접 확인한다.
+    text = _extract_text(body)
+    assert "리포트 데이터가 없다" not in text
+    assert "Plan A" in text                                    # plan_label
+    assert "김나윤" in text                                     # 배치 인력(p000) 이름
+    assert _norm(_PAYLOAD["briefing"]["rationale"]) in text     # 브리핑 rationale
+    assert "규칙 기반" in text                                  # fallback_used=True 배지 문구
+    assert "서지훈" in text                                     # swap.in_person_id(p001) 이름
 
 
 @pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
