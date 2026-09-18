@@ -53,3 +53,25 @@ def test_report_escapes_failure_text_instead_of_injecting_markup(tmp_path):
     html = output.read_text("utf-8")
     assert "&lt;script&gt;" in html
     assert "<script>alert" not in html
+
+
+def test_report_uses_a_compact_visible_label_for_partial_pruning_case(tmp_path):
+    result = _sample_result()
+    result["cases"][0]["name"] = "generated_seed_11_partial_pruning"
+    output = tmp_path / "phase0.html"
+
+    render_report(result, output)
+
+    html = output.read_text("utf-8")
+    assert '>s11 partial<' in html
+    assert 'title="generated_seed_11_partial_pruning"' in html
+
+
+def test_report_preserves_significant_zeroes_in_integer_metrics(tmp_path):
+    output = tmp_path / "phase0.html"
+
+    render_report(_sample_result(), output)
+
+    html = output.read_text("utf-8")
+    assert ">190<" in html
+    assert ">50 × 10<" in html

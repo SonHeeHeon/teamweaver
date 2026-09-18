@@ -14,6 +14,8 @@ def _number(value: Any, digits: int = 4) -> str:
     if value is None:
         return "—"
     if isinstance(value, (int, float)):
+        if digits == 0:
+            return f"{value:.0f}"
         return f"{value:.{digits}f}".rstrip("0").rstrip(".")
     return _text(value)
 
@@ -26,12 +28,32 @@ def _status(value: Any) -> str:
     return f'<span class="status {css}">{text}</span>'
 
 
+def _compact_case_label(name: Any) -> str:
+    raw = str(name)
+    named = {
+        "one_slot": "slot",
+        "budget_shortfall": "budget",
+        "all_objective_terms": "all terms",
+    }
+    if raw in named:
+        return named[raw]
+    parts = raw.split("_")
+    if parts[:2] == ["generated", "seed"] and len(parts) >= 3:
+        return f"s{parts[2]} partial" if "partial" in parts else f"s{parts[2]}"
+    return raw
+
+
+def _case_label(name: Any) -> str:
+    raw = _text(name)
+    return f'<abbr title="{raw}">{_text(_compact_case_label(name))}</abbr>'
+
+
 def _case_rows(cases: list[dict]) -> str:
     rows = []
     for case in cases:
         rows.append(
             "<tr>"
-            f"<td>{_text(case.get('name', '—'))}</td>"
+            f"<td>{_case_label(case.get('name', '—'))}</td>"
             f"<td>{_status(case.get('passed', False))}</td>"
             f"<td>{_number(case.get('cbc_objective'))}</td>"
             f"<td>{_number(case.get('oracle_objective'))}</td>"
