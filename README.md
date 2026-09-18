@@ -31,9 +31,9 @@ uv run python -m experiments.phase0.report \
   outputs/phase0-model-validation.html
 ```
 
-The runner has a 240-second wall-clock limit: each CBC call receives only the
-remaining time, and a deadline stops later checks while recording the failure.
-It writes an atomic checkpoint after every case to
+The runner has a 240-second wall-clock limit: each CBC and tiny-oracle linear
+program receives only the remaining time (with a small shutdown margin), and a
+deadline stops later checks while recording the failure. It writes an atomic checkpoint after every case to
 `experiments/results/phase0_model_validation.json`; a failed replacement keeps
 the prior canonical checkpoint readable. It checks the current MILP formula
 against an independent tiny-problem oracle (including partial pair pruning),
