@@ -1,5 +1,7 @@
 import json
+import os
 import time
+from pathlib import Path
 
 from experiments.bench import harness, datasets
 
@@ -62,6 +64,25 @@ def test_save_and_load_roundtrip(tmp_path, monkeypatch):
     assert p.exists()
     loaded = harness.load_result("demo")
     assert loaded["data"] == {"a": 1} and "environment" in loaded
+
+
+def test_save_result_uses_same_directory_atomic_replace(tmp_path, monkeypatch):
+    _fresh_run(tmp_path, monkeypatch)
+    replace_calls = []
+    real_replace = os.replace
+
+    def recording_replace(source, destination):
+        replace_calls.append((Path(source), Path(destination)))
+        real_replace(source, destination)
+
+    monkeypatch.setattr(harness.os, "replace", recording_replace)
+
+    path = harness.save_result("phase0", {"case": 1})
+
+    assert path == tmp_path / "phase0.json"
+    assert replace_calls == [(replace_calls[0][0], path)]
+    assert replace_calls[0][0].parent == tmp_path
+    assert replace_calls[0][0] != path
 
 
 def _fresh_run(tmp_path, monkeypatch):

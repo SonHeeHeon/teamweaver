@@ -5,6 +5,7 @@ import platform
 import statistics as st
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from importlib.metadata import version, PackageNotFoundError
@@ -149,6 +150,23 @@ def preserve_existing(path: Path) -> Path | None:
 def save_result(name: str, payload: dict) -> Path:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     path = RESULTS_DIR / f"{name}.json"
+    doc = {"environment": environment(),
+           "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
+           "data": payload}
+    serialized = json.dumps(doc, ensure_ascii=False, indent=1)
+    temporary_path: Path | None = None
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=RESULTS_DIR,
+        prefix=f".{name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as temporary:
+        temporary.write(serialized)
+        temporary.flush()
+        os.fsync(temporary.fileno())
+        temporary_path = Path(temporary.name)
     # 면제가 발동한 경우를 조용히 넘기지 않는다. 가드가 일부러 건너뛰는 유일한
     # 경우이므로, REPL에서 스윕 셀을 두 번 돌리거나 한 프로세스에서 main()을 두 번
     # 부르는 작성자는 이 줄을 보고 자기가 무엇을 덮어썼는지 알아야 한다.
@@ -161,10 +179,11 @@ def save_result(name: str, payload: dict) -> Path:
         print(f"덮어씀: {path.name} 은(는) 이번 실행이 이미 쓴 파일이라 보존하지 않는다 "
               "(체크포인트는 정상. 스윕을 한 프로세스에서 두 번 돌렸다면 "
               "앞선 결과는 복구할 수 없다)")
-    doc = {"environment": environment(),
-           "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
-           "data": payload}
-    path.write_text(json.dumps(doc, ensure_ascii=False, indent=1), "utf-8")
+    try:
+        os.replace(temporary_path, path)
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
     _WRITTEN_THIS_RUN.add(path)
     return path
 
