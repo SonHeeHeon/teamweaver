@@ -4,6 +4,7 @@ import numpy as np
 import pulp
 from pydantic import BaseModel
 from core.graph.memory_graph import MemoryGraph
+from core.optimize.audit_types import RawMilpSolution
 from core.optimize.types import AssignEntry, PlanAssignment
 
 logger = logging.getLogger(__name__)
@@ -93,8 +94,8 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, in
     return result
 
 
-def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-               params: MilpParams, extra_constraints=None) -> PlanAssignment:
+def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
     people, projects = graph.people, graph.projects
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
@@ -173,5 +174,29 @@ def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
                                            alloc=round(alloc, 2)))
     unfilled = [f"{projects[j].id}:{g.value}:{int(round(v.value()))}명 미충원"
                 for (j, g), v in slack.items() if v.value() and v.value() > 0.5]
-    return PlanAssignment(entries=entries, objective=float(pulp.value(prob.objective)),
+    objective = float(pulp.value(prob.objective))
+    plan = PlanAssignment(entries=entries, objective=objective,
                           unfilled=unfilled, violations=[], label="A")
+    return RawMilpSolution(
+        plan=plan,
+        status=status,
+        objective=objective,
+        z={(i, j): float(z[i][j].value() or 0.0)
+           for i in range(nP) for j in range(nJ)},
+        a={(i, j): float(a[i][j].value() or 0.0)
+           for i in range(nP) for j in range(nJ)},
+        y={key: float(var.value() or 0.0) for key, var in y.items()},
+        slack={key: float(var.value() or 0.0) for key, var in slack.items()},
+        reward_pairs=tuple(pruned),
+        penalty_pairs=tuple(sorted(overfam)),
+        variable_count=len(prob.variables()),
+        constraint_count=len(prob.constraints),
+    )
+
+
+def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+               params: MilpParams, extra_constraints=None) -> PlanAssignment:
+    """Backward-compatible public solver returning the display plan only."""
+    return solve_milp_diagnostic(
+        graph, S, C, params, extra_constraints=extra_constraints
+    ).plan
