@@ -60,3 +60,14 @@ def test_oracle_matches_cbc_across_generated_tiny_cases(seed):
     cbc = solve_milp_diagnostic(graph, skill, synergy, params)
 
     assert cbc.objective == pytest.approx(oracle.objective, abs=1e-6)
+
+
+def test_oracle_matches_cbc_when_partial_pair_pruning_keeps_one_of_three_pairs():
+    graph, skill, synergy = generated_tiny_fixture(11)
+    params = MilpParams(pair_keep_ratio=1 / 3, time_limit=30)
+
+    oracle = solve_tiny_oracle(graph, skill, synergy, params)
+    cbc = solve_milp_diagnostic(graph, skill, synergy, params)
+
+    assert cbc.reward_pairs == ((1, 2),)
+    assert cbc.objective == pytest.approx(oracle.objective, abs=1e-6)

@@ -125,6 +125,11 @@ def _generated_tiny_case(seed: int) -> tuple[MemoryGraph, np.ndarray, np.ndarray
     )
 
 
+def _generated_tiny_partial_pruning_case() -> tuple[MemoryGraph, np.ndarray, np.ndarray, MilpParams]:
+    graph, skill, synergy, params = _generated_tiny_case(11)
+    return graph, skill, synergy, params.model_copy(update={"pair_keep_ratio": 1 / 3})
+
+
 def default_oracle_cases() -> tuple[OracleCase, ...]:
     return (
         OracleCase("one_slot", _one_slot_case),
@@ -132,6 +137,11 @@ def default_oracle_cases() -> tuple[OracleCase, ...]:
         OracleCase("all_objective_terms", _all_terms_case),
         *(OracleCase(f"generated_seed_{seed}", lambda seed=seed: _generated_tiny_case(seed),
                      "synthetic_seeded") for seed in (7, 11, 19)),
+        OracleCase(
+            "generated_seed_11_partial_pruning",
+            _generated_tiny_partial_pruning_case,
+            "synthetic_seeded",
+        ),
     )
 
 

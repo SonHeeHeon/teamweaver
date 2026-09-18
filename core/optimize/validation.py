@@ -17,6 +17,36 @@ def _display_alloc(value: float, min_alloc: float) -> float:
     return round(max(min_alloc, floored), 2)
 
 
+def _independent_reward_pairs(
+    synergy: np.ndarray, params: MilpParams
+) -> tuple[tuple[int, int], ...]:
+    """Derive the reward scope without reusing the production pruning helper."""
+    candidates = [
+        (abs(float(synergy[p, q])), p, q)
+        for p in range(synergy.shape[0])
+        for q in range(p + 1, synergy.shape[0])
+    ]
+    keep = min(
+        int(params.pair_keep_ratio * len(candidates)),
+        params.max_pairs,
+        len(candidates),
+    )
+    ranked = sorted(candidates, key=lambda candidate: (-candidate[0], candidate[1], candidate[2]))
+    return tuple((p, q) for _, p, q in ranked[:max(0, keep)])
+
+
+def _independent_penalty_pairs(
+    graph: MemoryGraph, params: MilpParams
+) -> tuple[tuple[int, int], ...]:
+    """Derive every over-familiar pair by scanning graph data directly."""
+    return tuple(
+        (p, q)
+        for p in range(len(graph.people))
+        for q in range(p + 1, len(graph.people))
+        if float(graph.cowork_months[p, q]) >= params.clique_threshold_months
+    )
+
+
 def validate_raw_solution(
     graph: MemoryGraph,
     skill: np.ndarray,
@@ -89,9 +119,32 @@ def validate_raw_solution(
         )
         upper("budget", f"project={project.id}", cost, float(project.monthly_budget))
 
+    expected_reward_pairs = _independent_reward_pairs(synergy, params)
+    expected_penalty_pairs = _independent_penalty_pairs(graph, params)
+
+    def check_pair_scope(
+        code: str,
+        actual_pairs: tuple[tuple[int, int], ...],
+        expected_pairs: tuple[tuple[int, int], ...],
+    ) -> None:
+        actual_set, expected_set = set(actual_pairs), set(expected_pairs)
+        if actual_set != expected_set or len(actual_pairs) != len(expected_pairs):
+            issues.append(
+                ValidationIssue(
+                    code,
+                    "raw_diagnostics",
+                    float(len(actual_pairs)),
+                    float(len(expected_pairs)),
+                    float(max(1, len(actual_set ^ expected_set))),
+                )
+            )
+
+    check_pair_scope("reward_pair_scope", solution.reward_pairs, expected_reward_pairs)
+    check_pair_scope("penalty_pair_scope", solution.penalty_pairs, expected_penalty_pairs)
+
     expected_y_keys = {
         (p, q, j)
-        for p, q in set(solution.reward_pairs) | set(solution.penalty_pairs)
+        for p, q in set(expected_reward_pairs) | set(expected_penalty_pairs)
         for j in range(n_projects)
     }
     equality("pair_key_count", "y", float(len(solution.y)), float(len(expected_y_keys)))
@@ -106,12 +159,12 @@ def validate_raw_solution(
     )
     synergy_term = params.lam * sum(
         float(synergy[p, q]) * solution.y.get((p, q, j), 0.0)
-        for p, q in solution.reward_pairs
+        for p, q in expected_reward_pairs
         for j in range(n_projects)
     )
     overfamiliarity_term = -params.mu * sum(
         solution.y.get((p, q, j), 0.0)
-        for p, q in solution.penalty_pairs
+        for p, q in expected_penalty_pairs
         for j in range(n_projects)
     )
     unfilled_term = -params.slack_penalty * sum(solution.slack.values())

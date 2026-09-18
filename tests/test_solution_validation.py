@@ -48,6 +48,16 @@ def test_validator_detects_budget_violation_from_domain_values():
     assert "budget" in {issue.code for issue in result.issues}
 
 
+def test_validator_rederives_reward_pair_scope_instead_of_trusting_diagnostics():
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    missing_reward_scope = replace(raw, reward_pairs=())
+
+    result = validate_raw_solution(graph, skill, synergy, params, missing_reward_scope)
+
+    assert not result.valid
+    assert "reward_pair_scope" in {issue.code for issue in result.issues}
+
+
 def test_real_cbc_shortfall_solution_passes_independent_validation():
     graph, skill, synergy = budget_shortfall_fixture()
     params = MilpParams(time_limit=30, pair_keep_ratio=0.0)

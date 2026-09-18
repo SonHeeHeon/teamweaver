@@ -71,6 +71,14 @@ def test_runner_records_budget_and_availability_monotonicity():
     assert all(row["raised_objective"] >= row["base_objective"] - 1e-6 for row in checks.values())
 
 
+def test_default_oracle_cases_include_a_partial_pair_pruning_case():
+    cases = {case.name: case for case in phase0_model.default_oracle_cases()}
+
+    _, _, _, params = cases["generated_seed_11_partial_pruning"].build()
+
+    assert params.pair_keep_ratio == 1 / 3
+
+
 def test_pair_cap_comparison_recomputes_missing_reward_products_from_z():
     _, skill, synergy, params, raw = all_terms_fixture()
 
