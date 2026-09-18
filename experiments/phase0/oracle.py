@@ -133,6 +133,8 @@ def solve_tiny_oracle(
             method="highs",
             options={"time_limit": remaining} if remaining is not None else None,
         )
+        if result.status == 1:
+            raise OracleDeadlineExceeded("oracle linprog time limit reached")
         if not result.success:
             continue
         feasible_count += 1

@@ -1,10 +1,11 @@
 import time
+from types import SimpleNamespace
 
 import pytest
 
 from core.optimize.milp import MilpParams, solve_milp_diagnostic
 from experiments.phase0 import oracle as oracle_module
-from experiments.phase0.oracle import solve_tiny_oracle
+from experiments.phase0.oracle import OracleDeadlineExceeded, solve_tiny_oracle
 from tests.phase0.factories import (
     all_terms_fixture,
     budget_shortfall_fixture,
@@ -109,3 +110,25 @@ def test_oracle_binds_each_linprog_call_to_its_remaining_deadline(monkeypatch):
 
     assert observed_options
     assert all(0 < options["time_limit"] < 5.0 for options in observed_options)
+
+
+def test_oracle_raises_immediately_when_highs_hits_its_time_limit(monkeypatch):
+    graph, skill, synergy = one_project_fixture()
+    calls = []
+
+    def timed_out_linprog(*_args, **_kwargs):
+        calls.append(1)
+        return SimpleNamespace(success=False, status=1, message="Time limit reached")
+
+    monkeypatch.setattr(oracle_module, "linprog", timed_out_linprog)
+
+    with pytest.raises(OracleDeadlineExceeded, match="time limit"):
+        solve_tiny_oracle(
+            graph,
+            skill,
+            synergy,
+            MilpParams(pair_keep_ratio=0.0),
+            deadline=time.perf_counter() + 5.0,
+        )
+
+    assert calls == [1]
