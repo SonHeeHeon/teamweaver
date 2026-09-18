@@ -35,7 +35,7 @@
 - Produces: `RawMilpSolution`, `solve_milp_diagnostic(...) -> RawMilpSolution`.
 - Preserves: `solve_milp(...) -> PlanAssignment` by returning `.plan` from the diagnostic result.
 
-- [ ] **Step 1: Write the failing diagnostic-contract test**
+- [x] **Step 1: Write the failing diagnostic-contract test**
 
 ```python
 from tests.phase0.factories import one_project_fixture
@@ -56,13 +56,13 @@ people (`monthly_rate=1000`, six months of `availability=1.0`), one month-0
 project requiring one `Grade.MID` person with budget 5000, `S=[[0.9], [0.4]]`,
 zero `C`, and a minimal graph whose `cowork_months` is a 2×2 zero matrix.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
 Run: `uv run pytest tests/test_milp_diagnostics.py::test_diagnostic_solution_preserves_raw_variables_and_public_plan -v`
 
 Expected: FAIL because `core.optimize.audit_types` or `solve_milp_diagnostic` does not exist.
 
-- [ ] **Step 3: Add the immutable raw result type**
+- [x] **Step 3: Add the immutable raw result type**
 
 ```python
 @dataclass(frozen=True)
@@ -80,7 +80,7 @@ class RawMilpSolution:
     constraint_count: int
 ```
 
-- [ ] **Step 4: Refactor the existing solve once, then snapshot values**
+- [x] **Step 4: Refactor the existing solve once, then snapshot values**
 
 Move the existing body to `solve_milp_diagnostic`, snapshot every PuLP variable after the incumbent check, build the unchanged `PlanAssignment`, and implement:
 
@@ -91,13 +91,13 @@ def solve_milp(graph, S, C, params, extra_constraints=None) -> PlanAssignment:
     ).plan
 ```
 
-- [ ] **Step 5: Run focused and existing MILP tests**
+- [x] **Step 5: Run focused and existing MILP tests**
 
 Run: `uv run pytest tests/test_milp_diagnostics.py tests/test_milp.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit the diagnostic contract**
+- [x] **Step 6: Commit the diagnostic contract**
 
 ```bash
 git add core/optimize/audit_types.py core/optimize/milp.py tests/phase0/factories.py tests/test_milp_diagnostics.py
@@ -115,7 +115,7 @@ git commit -m "feat(optimize): expose raw MILP diagnostics"
 - Consumes: `RawMilpSolution`, `MemoryGraph`, `S`, `C`, `MilpParams`.
 - Produces: `validate_raw_solution(...) -> ValidationReport` and `ObjectiveBreakdown`.
 
-- [ ] **Step 1: Write hand-derived failing objective tests**
+- [x] **Step 1: Write hand-derived failing objective tests**
 
 ```python
 from tests.phase0.factories import all_terms_fixture
@@ -137,13 +137,13 @@ single changed literal creates availability, budget, grade count, `a/z`, or
 `y` violations; assert each expected issue code rather than asserting on a
 mock.
 
-- [ ] **Step 2: Run validation tests and verify RED**
+- [x] **Step 2: Run validation tests and verify RED**
 
 Run: `uv run pytest tests/test_solution_validation.py -v`
 
 Expected: FAIL because `validate_raw_solution` does not exist.
 
-- [ ] **Step 3: Implement structured audit results**
+- [x] **Step 3: Implement structured audit results**
 
 ```python
 @dataclass(frozen=True)
@@ -170,17 +170,17 @@ class ValidationReport:
     solver_objective_error: float
 ```
 
-- [ ] **Step 4: Implement validation without reading the PuLP model**
+- [x] **Step 4: Implement validation without reading the PuLP model**
 
 Iterate domain objects and raw dictionaries to verify `a/z`, monthly availability, grade counts plus slack, budgets, pair linearization, objective components, and plan extraction. Mark the report invalid if any error exceeds `tol=1e-6`.
 
-- [ ] **Step 5: Run validation and MILP regression tests**
+- [x] **Step 5: Run validation and MILP regression tests**
 
 Run: `uv run pytest tests/test_solution_validation.py tests/test_milp_diagnostics.py tests/test_milp.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit the independent validator**
+- [x] **Step 6: Commit the independent validator**
 
 ```bash
 git add core/optimize/audit_types.py core/optimize/validation.py tests/test_solution_validation.py
@@ -198,7 +198,7 @@ git commit -m "feat(optimize): independently validate MILP solutions"
 - Consumes: base TeamWeaver model without `extra_constraints`.
 - Produces: `solve_tiny_oracle(graph, S, C, params) -> OracleResult`.
 
-- [ ] **Step 1: Write failing literal and CBC-parity tests**
+- [x] **Step 1: Write failing literal and CBC-parity tests**
 
 ```python
 from tests.phase0.factories import budget_shortfall_fixture, one_project_fixture
@@ -222,27 +222,27 @@ with budget 350, `S=[[0.9], [0.7]]`, zero `C`, and six months of full
 availability. These literals make two minimum allocations cost 400, so a
 correct solution must leave one slot unfilled.
 
-- [ ] **Step 2: Run oracle tests and verify RED**
+- [x] **Step 2: Run oracle tests and verify RED**
 
 Run: `uv run pytest tests/phase0/test_oracle.py -v`
 
 Expected: FAIL because `experiments.phase0.oracle` does not exist.
 
-- [ ] **Step 3: Implement independent pair selection and enumeration**
+- [x] **Step 3: Implement independent pair selection and enumeration**
 
 Reject `n_people * n_projects > 12`. Enumerate bitmasks, reject grade overfill, derive nonnegative slack and binary pair products, and use `scipy.optimize.linprog(method="highs")` only for `a`. Do not import `pruned_pairs`.
 
-- [ ] **Step 4: Add generated tiny-seed parity cases**
+- [x] **Step 4: Add generated tiny-seed parity cases**
 
 Use deterministic 3-person/1-project and 4-person/2-project fixtures with hand-bounded sizes. Assert objective parity and independent validation for seeds 7, 11, and 19.
 
-- [ ] **Step 5: Run oracle, validation, and MILP tests**
+- [x] **Step 5: Run oracle, validation, and MILP tests**
 
 Run: `uv run pytest tests/phase0/test_oracle.py tests/test_solution_validation.py tests/test_milp_diagnostics.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit the oracle**
+- [x] **Step 6: Commit the oracle**
 
 ```bash
 git add experiments/phase0 tests/phase0/test_oracle.py
@@ -261,7 +261,7 @@ git commit -m "feat(experiments): add exact tiny MILP oracle"
 - Produces: `phase0_model.run(...) -> dict` and `phase0_model.main()`.
 - Persists: `experiments/results/phase0_model_validation.json` after each completed case.
 
-- [ ] **Step 1: Write a failing atomic-replace test**
+- [x] **Step 1: Write a failing atomic-replace test**
 
 ```python
 def test_save_result_uses_same_directory_atomic_replace(tmp_path, monkeypatch):
@@ -275,17 +275,17 @@ def test_save_result_uses_same_directory_atomic_replace(tmp_path, monkeypatch):
     assert Path(replace_calls[0][1]) == tmp_path / "phase0.json"
 ```
 
-- [ ] **Step 2: Run the harness test and verify RED**
+- [x] **Step 2: Run the harness test and verify RED**
 
 Run: `uv run pytest tests/test_harness.py::test_save_result_uses_same_directory_atomic_replace -v`
 
 Expected: FAIL because `Path.write_text` is used directly and `os.replace` is never called.
 
-- [ ] **Step 3: Make `save_result` atomic while preserving prior-run backups**
+- [x] **Step 3: Make `save_result` atomic while preserving prior-run backups**
 
 Serialize first, write and `fsync` a named temporary file in `RESULTS_DIR`, then call `preserve_existing(path)` and `os.replace(temp_path, path)` in a `finally` block that removes a surviving temporary file.
 
-- [ ] **Step 4: Write failing runner-behavior tests**
+- [x] **Step 4: Write failing runner-behavior tests**
 
 ```python
 def test_runner_records_truth_boundaries_and_checkpoints():
@@ -303,23 +303,23 @@ def test_runner_records_truth_boundaries_and_checkpoints():
 
 Add tests for continuing after one failed case, monotonic budget/availability results, objective component fields, and explicit synthetic data-source labels.
 
-- [ ] **Step 5: Run runner tests and verify RED**
+- [x] **Step 5: Run runner tests and verify RED**
 
 Run: `uv run pytest tests/phase0/test_phase0_runner.py -v`
 
 Expected: FAIL because `phase0_model` does not exist.
 
-- [ ] **Step 6: Implement the bounded runner**
+- [x] **Step 6: Implement the bounded runner**
 
 Run oracle parity cases, monotonicity cases, a small pair-cap comparison, and optional 50×10 CBC smoke. Measure build/solve/validate/total times with `time.perf_counter`, enforce a 240-second outer deadline between cases, and collect failures without converting them to passes.
 
-- [ ] **Step 7: Run Phase 0 and harness tests**
+- [x] **Step 7: Run Phase 0 and harness tests**
 
 Run: `uv run pytest tests/test_harness.py tests/phase0/test_phase0_runner.py -v`
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit runner and checkpointing**
+- [x] **Step 8: Commit runner and checkpointing**
 
 ```bash
 git add experiments/bench/harness.py experiments/bench/phase0_model.py tests/test_harness.py tests/phase0/test_phase0_runner.py
@@ -337,7 +337,7 @@ git commit -m "feat(experiments): checkpoint Phase 0 model validation"
 - Consumes: the saved Phase 0 result document.
 - Produces: UTF-8 self-contained HTML with CSP and no external resources.
 
-- [ ] **Step 1: Write the failing report contract test**
+- [x] **Step 1: Write the failing report contract test**
 
 ```python
 def test_report_separates_calculation_pass_from_business_not_calibrated(tmp_path):
@@ -350,17 +350,17 @@ def test_report_separates_calculation_pass_from_business_not_calibrated(tmp_path
     assert "https://" not in html and "http://" not in html
 ```
 
-- [ ] **Step 2: Run the report test and verify RED**
+- [x] **Step 2: Run the report test and verify RED**
 
 Run: `uv run pytest tests/phase0/test_phase0_report.py -v`
 
 Expected: FAIL because `experiments.phase0.report` does not exist.
 
-- [ ] **Step 3: Implement literal data-flow visuals and tables**
+- [x] **Step 3: Implement literal data-flow visuals and tables**
 
 Render the path `작은 문제 → CBC/정답기 → 독립 검증 → 판정`, objective components, oracle differences, constraint findings, timings, pair-cap loss, environment, and the synthetic-data warning. Escape all dynamic text with `html.escape`.
 
-- [ ] **Step 4: Run report tests and the bundled HTML checker**
+- [x] **Step 4: Run report tests and the bundled HTML checker**
 
 Run: `uv run pytest tests/phase0/test_phase0_report.py -v`
 
@@ -368,7 +368,7 @@ Run: `python3 /Users/honey/.codex/plugins/cache/openai-curated-remote/codex-eli5
 
 Expected: both commands PASS after generating the report from a test fixture.
 
-- [ ] **Step 5: Commit the renderer**
+- [x] **Step 5: Commit the renderer**
 
 ```bash
 git add experiments/phase0/report.py tests/phase0/test_phase0_report.py
@@ -386,29 +386,29 @@ git commit -m "feat(experiments): render Phase 0 validation report"
 - Uses: `uv run python -m experiments.bench.phase0_model`.
 - Verifies: all Phase 0 gates from the spec against newly generated evidence.
 
-- [ ] **Step 1: Run all non-slow tests before the experiment**
+- [x] **Step 1: Run all non-slow tests before the experiment**
 
 Run: `uv run pytest -v`
 
 Expected: PASS with zero failures.
 
-- [ ] **Step 2: Execute the bounded Phase 0 suite**
+- [x] **Step 2: Execute the bounded Phase 0 suite**
 
 Run: `uv run python -m experiments.bench.phase0_model`
 
 Expected: exit 0 only when calculation status is `PASS`; JSON is checkpointed after every case and total wall time is no more than 240 seconds.
 
-- [ ] **Step 3: Render the recorded result**
+- [x] **Step 3: Render the recorded result**
 
 Run: `uv run python -m experiments.phase0.report experiments/results/phase0_model_validation.json outputs/phase0-model-validation.html`
 
 Expected: output file exists and contains both `PASS` calculation status and `NOT_CALIBRATED` business status when the run passes.
 
-- [ ] **Step 4: Document the reproducible commands**
+- [x] **Step 4: Document the reproducible commands**
 
 Add a README section that names the two commands, the 240-second bound, and the statement that Phase 0 does not validate real project outcomes.
 
-- [ ] **Step 5: Run final verification**
+- [x] **Step 5: Run final verification**
 
 Run: `uv run pytest -v`
 
@@ -418,7 +418,7 @@ Run: `git diff --check`
 
 Expected: all commands exit 0.
 
-- [ ] **Step 6: Commit the measured evidence**
+- [x] **Step 6: Commit the measured evidence**
 
 ```bash
 git add README.md experiments/results/phase0_model_validation.json outputs/phase0-model-validation.html

@@ -11,5 +11,6 @@ node_modules/
 .ipynb_checkpoints/
 .DS_Store
 experiments/results/*.partial.json
+experiments/results/*.superseded-*.json
 web/node_modules/
 web/dist/

@@ -20,6 +20,32 @@ AI-powered staffing optimization platform for intelligent team composition and r
   **not** `tsc --noEmit`, which is a no-op here (`web/tsconfig.json` uses `"files": []` plus
   project references, so `--noEmit` compiles nothing and always exits 0).
 
+## Phase 0 model validation
+
+Run the bounded mathematical validation before comparing additional solvers:
+
+```bash
+uv run python -m experiments.bench.phase0_model
+uv run python -m experiments.phase0.report \
+  experiments/results/phase0_model_validation.json \
+  outputs/phase0-model-validation.html
+```
+
+The runner has a 240-second wall-clock limit: each CBC call receives only the
+remaining time, and a deadline stops later checks while recording the failure.
+It writes an atomic checkpoint after every case to
+`experiments/results/phase0_model_validation.json`; a failed replacement keeps
+the prior canonical checkpoint readable. It checks the current MILP formula
+against an independent tiny-problem oracle (including partial pair pruning),
+rederives constraints and pair scopes outside the solver, records monotonicity
+and pair-pruning observations, and runs a 50-person × 10-project CBC smoke
+test.
+
+`PASS` means the current mathematical implementation passed these synthetic
+calculation checks. It does **not** mean TeamWeaver has demonstrated improved
+customer satisfaction or project outcomes; that remains `NOT_CALIBRATED`
+until independently recorded real outcomes are available.
+
 ## Demo fixture (`fixtures/*.json`)
 
 `fixtures/{people,projects,coworks,reviews_ko,parsed_reviews,meta}.json` are the
