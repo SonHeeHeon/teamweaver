@@ -1,6 +1,7 @@
 from dataclasses import replace
 
 from core.optimize.milp import MilpParams
+from core.optimize.validation import validate_raw_solution
 from experiments.bench import phase0_model
 from tests.phase0.factories import all_terms_fixture, one_project_fixture
 
@@ -83,6 +84,17 @@ def test_remaining_wall_clock_time_limits_each_cbc_invocation():
 
     assert bounded.time_limit == 2
     assert params.time_limit == 30
+
+
+def test_smoke_accepts_a_valid_time_limited_incumbent():
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    validation = validate_raw_solution(graph, skill, synergy, params, raw)
+
+    accepted = phase0_model._has_valid_incumbent(
+        replace(raw, status="Not Solved"), validation
+    )
+
+    assert accepted is True
 
 
 def test_runner_records_budget_and_availability_monotonicity():

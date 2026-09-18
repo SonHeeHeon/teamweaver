@@ -303,6 +303,10 @@ def _pair_cap_record(deadline: float) -> dict:
     }
 
 
+def _has_valid_incumbent(raw, validation) -> bool:
+    return raw.status in {"Optimal", "Not Solved"} and validation.valid
+
+
 def _smoke_record(deadline: float) -> dict:
     started = time.perf_counter()
     dataset, parsed, graph = datasets.build_scale(50, 10, seed=42)
@@ -325,7 +329,7 @@ def _smoke_record(deadline: float) -> dict:
         "validation_issues": [asdict(issue) for issue in validation.issues],
         "model_size": {"variables": raw.variable_count, "constraints": raw.constraint_count},
         "timings_seconds": {"solve": solve_seconds, "total": time.perf_counter() - started},
-        "passed": raw.status == "Optimal" and validation.valid,
+        "passed": _has_valid_incumbent(raw, validation),
     }
 
 
