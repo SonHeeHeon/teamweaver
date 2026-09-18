@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import time
 
 import numpy as np
 from scipy.optimize import linprog
@@ -6,6 +7,21 @@ from scipy.optimize import linprog
 from core.domain.models import Grade
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.milp import MilpParams
+
+ORACLE_GUARD_SECONDS = 0.25
+
+
+class OracleDeadlineExceeded(TimeoutError):
+    """Raised before the bounded oracle can cross the enclosing suite deadline."""
+
+
+def _remaining_oracle_time(deadline: float | None) -> float | None:
+    if deadline is None:
+        return None
+    remaining = deadline - time.perf_counter() - ORACLE_GUARD_SECONDS
+    if remaining <= 0:
+        raise OracleDeadlineExceeded("oracle deadline exceeded")
+    return remaining
 
 
 @dataclass(frozen=True)
@@ -45,6 +61,7 @@ def solve_tiny_oracle(
     skill: np.ndarray,
     synergy: np.ndarray,
     params: MilpParams,
+    deadline: float | None = None,
 ) -> OracleResult:
     """Solve a tiny base model independently by enumerating every binary z."""
     people, projects = graph.people, graph.projects
@@ -62,6 +79,7 @@ def solve_tiny_oracle(
     feasible_count = 0
 
     for mask in range(1 << decision_count):
+        _remaining_oracle_time(deadline)
         z = {
             (i, j): (mask >> (i * n_projects + j)) & 1
             for i in range(n_people)
@@ -106,12 +124,14 @@ def solve_tiny_oracle(
             for i in range(n_people)
             for j in range(n_projects)
         ]
+        remaining = _remaining_oracle_time(deadline)
         result = linprog(
             c=-np.asarray(skill, dtype=float).reshape(-1),
             A_ub=np.asarray(a_ub, dtype=float) if a_ub else None,
             b_ub=np.asarray(b_ub, dtype=float) if b_ub else None,
             bounds=bounds,
             method="highs",
+            options={"time_limit": remaining} if remaining is not None else None,
         )
         if not result.success:
             continue
@@ -140,6 +160,7 @@ def solve_tiny_oracle(
             best_a = allocations
             best_slack = slack
 
+    _remaining_oracle_time(deadline)
     if best_z is None or best_a is None or best_slack is None:
         raise RuntimeError("tiny oracle found no feasible assignment")
     return OracleResult(

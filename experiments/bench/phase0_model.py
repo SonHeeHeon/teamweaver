@@ -28,10 +28,11 @@ from core.optimize.milp import MilpParams, solve_milp_diagnostic
 from core.optimize.validation import validate_raw_solution
 from core.scoring.engine import ScoringEngine
 from experiments.bench import datasets, harness
-from experiments.phase0.oracle import solve_tiny_oracle
+from experiments.phase0.oracle import OracleDeadlineExceeded, solve_tiny_oracle
 
 TOLERANCE = 1e-6
 DEFAULT_MAX_WALL_SECONDS = 240.0
+DEADLINE_GUARD_SECONDS = 0.25
 
 
 class DeadlineExceeded(RuntimeError):
@@ -39,10 +40,11 @@ class DeadlineExceeded(RuntimeError):
 
 
 def _params_for_remaining_solver_time(params: MilpParams, remaining: float) -> MilpParams:
-    if remaining < 1.0:
+    remaining_after_guard = remaining - DEADLINE_GUARD_SECONDS
+    if remaining_after_guard < 1.0:
         raise DeadlineExceeded("deadline exceeded before solver start")
     return params.model_copy(
-        update={"time_limit": min(params.time_limit, math.floor(remaining))}
+        update={"time_limit": min(params.time_limit, math.floor(remaining_after_guard))}
     )
 
 
@@ -197,7 +199,10 @@ def _case_record(case: OracleCase, deadline: float) -> dict:
     solved = time.perf_counter()
     cbc = _solve_before_deadline(graph, skill, synergy, params, deadline)
     solve_seconds = time.perf_counter() - solved
-    oracle = solve_tiny_oracle(graph, skill, synergy, params)
+    try:
+        oracle = solve_tiny_oracle(graph, skill, synergy, params, deadline=deadline)
+    except OracleDeadlineExceeded as exc:
+        raise DeadlineExceeded(str(exc)) from exc
     if time.perf_counter() >= deadline:
         raise DeadlineExceeded("deadline exceeded during oracle evaluation")
     validated = time.perf_counter()

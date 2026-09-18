@@ -75,3 +75,16 @@ def test_report_preserves_significant_zeroes_in_integer_metrics(tmp_path):
     html = output.read_text("utf-8")
     assert ">190<" in html
     assert ">50 × 10<" in html
+
+
+def test_failed_calculation_report_does_not_claim_confirmation(tmp_path):
+    result = _sample_result()
+    result["calculation_status"] = "FAIL"
+    output = tmp_path / "phase0.html"
+
+    render_report(result, output)
+
+    html = output.read_text("utf-8")
+    assert "계산 검증에서<br>문제가 발견됐습니다" in html
+    assert "제대로 하는지 확인했습니다" not in html
+    assert 'class="big fail-text">FAIL' in html

@@ -1,6 +1,9 @@
+import time
+
 import pytest
 
 from core.optimize.milp import MilpParams, solve_milp_diagnostic
+from experiments.phase0 import oracle as oracle_module
 from experiments.phase0.oracle import solve_tiny_oracle
 from tests.phase0.factories import (
     all_terms_fixture,
@@ -71,3 +74,38 @@ def test_oracle_matches_cbc_when_partial_pair_pruning_keeps_one_of_three_pairs()
 
     assert cbc.reward_pairs == ((1, 2),)
     assert cbc.objective == pytest.approx(oracle.objective, abs=1e-6)
+
+
+def test_oracle_refuses_to_start_when_its_deadline_has_expired():
+    graph, skill, synergy = one_project_fixture()
+
+    with pytest.raises(TimeoutError, match="deadline"):
+        solve_tiny_oracle(
+            graph,
+            skill,
+            synergy,
+            MilpParams(pair_keep_ratio=0.0),
+            deadline=time.perf_counter(),
+        )
+
+
+def test_oracle_binds_each_linprog_call_to_its_remaining_deadline(monkeypatch):
+    graph, skill, synergy = one_project_fixture()
+    observed_options = []
+    real_linprog = oracle_module.linprog
+
+    def recording_linprog(*args, **kwargs):
+        observed_options.append(kwargs["options"])
+        return real_linprog(*args, **kwargs)
+
+    monkeypatch.setattr(oracle_module, "linprog", recording_linprog)
+    solve_tiny_oracle(
+        graph,
+        skill,
+        synergy,
+        MilpParams(pair_keep_ratio=0.0),
+        deadline=time.perf_counter() + 5.0,
+    )
+
+    assert observed_options
+    assert all(0 < options["time_limit"] < 5.0 for options in observed_options)

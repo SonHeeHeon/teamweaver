@@ -81,6 +81,16 @@ def render_report(result: dict, output: Path) -> Path:
     pair_cap = result.get("pair_cap") or {}
     smoke = result.get("smoke") or {}
     failures = result.get("failures", [])
+    calculation_status = result.get("calculation_status", "—")
+    calculation_passed = calculation_status == "PASS"
+    headline = (
+        "모델이 약속한 계산을<br>제대로 하는지 확인했습니다"
+        if calculation_passed
+        else "계산 검증에서<br>문제가 발견됐습니다"
+    )
+    calculation_class = (
+        "pass-text" if calculation_passed else "fail-text" if calculation_status == "FAIL" else "hold-text"
+    )
     invariant_rows = "".join(
         "<tr>"
         f"<td>{_text(row.get('name', '—'))}</td>"
@@ -107,7 +117,7 @@ def render_report(result: dict, output: Path) -> Path:
 main {{ max-width:980px; margin:auto; padding:48px 20px 72px; }} h1 {{ font-size:clamp(2rem,5vw,3.5rem); line-height:1.05; margin:0 0 12px; }} h2 {{ margin:0 0 14px; font-size:1.45rem; }}
 .eyebrow {{ color:var(--blue); font-weight:800; letter-spacing:.08em; font-size:.76rem; }} .lead {{ color:var(--muted); max-width:720px; font-size:1.08rem; }}
 .verdicts {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:28px 0; }} .verdict,.panel {{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:20px; }}
-.verdict h2 {{ font-size:1rem; color:var(--muted); }} .big {{ font-size:2rem; font-weight:850; margin:.15em 0; }} .pass-text {{ color:var(--green); }} .hold-text {{ color:var(--amber); }}
+.verdict h2 {{ font-size:1rem; color:var(--muted); }} .big {{ font-size:2rem; font-weight:850; margin:.15em 0; }} .pass-text {{ color:var(--green); }} .hold-text {{ color:var(--amber); }} .fail-text {{ color:var(--red); }}
 .flow {{ display:grid; grid-template-columns:repeat(4,1fr); align-items:center; gap:8px; margin:20px 0 30px; }} .step {{ min-height:112px; border:2px solid var(--blue); background:#fff; border-radius:14px; padding:14px; font-weight:750; position:relative; }} .step b {{ display:block; color:var(--blue); font-size:1.6rem; }} .arrow {{ height:2px; background:var(--blue); position:relative; }} .arrow:after {{ content:""; position:absolute; right:-1px; top:-4px; border-left:8px solid var(--blue); border-top:5px solid transparent; border-bottom:5px solid transparent; }}
 .grid {{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; }} table {{ width:100%; border-collapse:collapse; font-size:.9rem; }} th,td {{ padding:10px 8px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }} th {{ color:var(--muted); font-size:.76rem; text-transform:uppercase; }}
 .status {{ display:inline-block; padding:3px 8px; border-radius:999px; font-size:.75rem; font-weight:800; }} .pass {{ background:#dff6e9; color:var(--green); }} .hold {{ background:#fff0ce; color:var(--amber); }} .fail {{ background:#fde4e5; color:var(--red); }}
@@ -118,10 +128,10 @@ main {{ max-width:980px; margin:auto; padding:48px 20px 72px; }} h1 {{ font-size
 </head>
 <body><main>
 <p class="eyebrow">TEAMWEAVER · PHASE 0</p>
-<h1>모델이 약속한 계산을<br>제대로 하는지 확인했습니다</h1>
+<h1>{headline}</h1>
 <p class="lead">이 페이지는 계산 검증입니다. 실제 고객 만족이나 프로젝트 성과를 예측했다는 뜻은 아닙니다.</p>
 <section class="verdicts" aria-label="두 종류의 판정">
-<article class="verdict"><h2>계산 검증</h2><p class="big {'pass-text' if result.get('calculation_status') == 'PASS' else 'hold-text'}">{_text(result.get('calculation_status', '—'))}</p><p>수식 · 제약 · 작은 정답기 대조</p></article>
+<article class="verdict"><h2>계산 검증</h2><p class="big {calculation_class}">{_text(calculation_status)}</p><p>수식 · 제약 · 작은 정답기 대조</p></article>
 <article class="verdict"><h2>사업 성과 검증</h2><p class="big hold-text">{_text(result.get('business_validity', 'NOT_CALIBRATED'))}</p><p>실제 성과를 검증한 결과가 아닙니다</p></article>
 </section>
 <section class="panel"><h2>무엇을 거쳤나</h2><div class="flow" aria-label="작은 문제부터 독립 검증까지의 흐름"><div class="step"><b>1</b>작은 문제</div><div class="arrow" aria-hidden="true"></div><div class="step"><b>2</b>CBC와 정답기</div><div class="arrow" aria-hidden="true"></div><div class="step"><b>3</b>별도 검증기</div><div class="arrow" aria-hidden="true"></div><div class="step"><b>4</b>PASS 또는 FAIL</div></div></section>
