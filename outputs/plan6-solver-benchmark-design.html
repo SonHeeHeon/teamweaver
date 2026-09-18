@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>TeamWeaver Plan 6 — 솔버 확장성 실험 설계</title>
+  <style>
+    :root{--ink:#172235;--sub:#59667a;--paper:#f4f3ee;--card:#fff;--line:#d9e0e8;--blue:#1768df;--green:#16845c;--amber:#d27620;--violet:#7457bd}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.55}main{max-width:1080px;margin:auto;padding:44px 22px 72px}header{padding-bottom:32px;border-bottom:2px solid var(--ink)}.eyebrow{font-size:13px;font-weight:850;letter-spacing:.08em;color:var(--blue)}h1{font-size:clamp(38px,6vw,66px);line-height:1.05;letter-spacing:-.055em;margin:9px 0 16px}.lead{font-size:clamp(18px,2.2vw,23px);max-width:800px;color:#344257;margin:0}.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.chip{border:1px solid #bad5f5;border-radius:999px;padding:7px 12px;background:#eef6ff;color:#1757a6;font-weight:750;font-size:14px}.chip.green{border-color:#b8decf;background:#eef9f4;color:#126348}section{padding-top:50px}h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.035em;margin:0 0 8px}.sub{color:var(--sub);font-size:17px;margin:0 0 22px}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 28px rgba(24,36,55,.06)}.panel{padding:20px}.flow{display:grid;grid-template-columns:1fr 50px 1.15fr 50px 1fr;align-items:center;gap:8px}.box{border:2px solid var(--ink);border-radius:16px;padding:17px;min-height:170px}.box.blue{background:#eef6ff}.box.green{background:#effaf5}.box.amber{background:#fff6e9}.box h3{margin:4px 0 10px;font-size:21px}.box ul{margin:0;padding-left:18px;color:#47566a}.arrow{text-align:center;font-size:34px;color:var(--blue);font-weight:800}.label{font-size:12px;font-weight:900;letter-spacing:.08em;color:var(--blue)}.checkpoint{display:flex;align-items:center;gap:15px;border:1px dashed #74839a;background:#fff;border-radius:12px;padding:14px 16px;margin-top:17px}.dots{width:13px;height:13px;flex:0 0 auto;border-radius:50%;background:var(--green);box-shadow:22px 0 var(--green),44px 0 var(--green)}.checkpoint span{margin-left:44px;color:#3d4b5e}.grid{display:grid;gap:16px}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.card{padding:20px}.card h3{font-size:20px;margin:0 0 7px}.card p{margin:0;color:#4e5c6f}.phase{border-top:6px solid var(--blue)}.phase.alt{border-top-color:var(--amber)}.phase.future{border-top-color:var(--violet)}.metric{font-size:31px;font-weight:900;color:var(--green);letter-spacing:-.04em;line-height:1.1;margin-bottom:7px}.tablewrap{overflow:auto}.matrix{width:100%;border-collapse:collapse;background:#fff;font-size:15px}.matrix th,.matrix td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.matrix th{background:#eef4fb;color:#405069;font-size:13px}.ok{color:var(--green);font-weight:850}.defer{color:var(--amber);font-weight:850}.note{margin-top:14px;color:var(--sub);font-size:14px}.source{font-size:14px;color:var(--sub)}a{color:#075ac8;text-underline-offset:3px}a:focus-visible{outline:3px solid #e78b2d;outline-offset:3px;border-radius:4px}@media(max-width:760px){main{padding:28px 14px 55px}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}.two,.three{grid-template-columns:1fr}.panel{padding:11px}.box{min-height:auto}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">TEAMWEAVER · PLAN 6 ARCHITECTURE DRAFT</div>
+    <h1>300명 규모에서<br>가장 알맞은 솔버를<br>데이터로 고릅니다.</h1>
+    <p class="lead">먼저 기본 수학 모델이 의도대로 행동하는지 검증한 뒤, 같은 배치 문제를 CBC·HiGHS·SCIP이 풀게 합니다. 실데이터가 오기 전 결과는 합성 워크로드의 잠정 결론으로 제한합니다.</p>
+    <div class="chips"><span class="chip green">300명 · 60프로젝트</span><span class="chip">Plan A ≤ 240초</span><span class="chip">4 vCPU · 16GB</span><span class="chip">최대 24시간</span><span class="chip">오픈소스 우선</span></div>
+  </header>
+
+  <section>
+    <div class="eyebrow">ARCHITECTURE</div><h2>공통 모델, 세 개의 실행기</h2>
+    <p class="sub">모델과 솔버를 분리해야 속도 차이가 기술 차이인지 확인할 수 있습니다.</p>
+    <div class="panel">
+      <div class="flow">
+        <div class="box blue"><div class="label">입력</div><h3>합성 운영 규모</h3><ul><li>300명 × 60프로젝트</li><li>여러 고정 시드</li><li>4개 압박 시나리오</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box green"><div class="label">공통 모델</div><h3>PuLP MILP 한 벌</h3><ul><li>가용률 · 등급 · 예산</li><li>스킬 + 시너지 − clique</li><li>동일 S·C 행렬</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box amber"><div class="label">실행기</div><h3>CBC · HiGHS · SCIP</h3><ul><li>동일 시간 제한</li><li>동일 스레드·gap·seed</li><li>공통 결과 계약</li></ul></div>
+      </div>
+      <div class="checkpoint"><div class="dots" aria-hidden="true"></div><span>각 실행 직후 JSON 체크포인트 저장 → 재실행은 완료된 셀을 건너뜀</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">THREE PHASES</div><h2>모델 검증, 기술 비교, 개선을 분리합니다</h2>
+    <div class="grid three">
+      <article class="card phase future"><h3>Phase 0 · 기본 모델 검증</h3><p>작은 문제의 정답 대조, 행동 규칙, 목적함수 항의 규모, pair 절삭 손실을 먼저 검증합니다.</p></article>
+      <article class="card phase"><h3>Phase 1 · 솔버 비교</h3><p>검증된 동일 모델로 CBC·HiGHS·SCIP의 순수한 성능 차이를 측정합니다.</p></article>
+      <article class="card phase alt"><h3>Phase 2 · 모델 개선</h3><p>우승 솔버에서 warm start, pair 절삭, 분해와 CP-SAT 별도 모델을 평가합니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">PHASE 0</div><h2>기본 모델 자체를 먼저 시험합니다</h2>
+    <div class="grid two">
+      <article class="card"><h3>작은 문제의 정답</h3><p>직접 열거 가능한 규모에서 독립 계산한 최적해와 solver 결과가 같은지 확인합니다.</p></article>
+      <article class="card"><h3>행동 불변식</h3><p>사람 순서를 바꿔도 점수가 같고, 예산·가용률을 줄였을 때 가능한 해가 모순되게 좋아지지 않아야 합니다.</p></article>
+      <article class="card"><h3>점수 항 크기</h3><p>스킬·시너지·과숙련·미충원 항의 기여도를 규모별로 재서 한 항이 사람 수 때문에 압도하는지 확인합니다.</p></article>
+      <article class="card"><h3>근사 손실</h3><p>전체 pair와 1,000·5,000 pair 절삭 결과를 작은 규모에서 비교해 속도를 위해 잃은 품질을 수치화합니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">TRUST BOUNDARY</div><h2>지금 믿을 수 있는 것과 없는 것</h2>
+    <div class="tablewrap panel"><table class="matrix"><thead><tr><th>판단</th><th>현재 가능 여부</th><th>근거</th></tr></thead><tbody>
+      <tr><td><b>수식·코드가 같은 문제를 푸는가</b></td><td><span class="ok">검증 가능</span></td><td>작은 정답 문제, 독립 목적값·제약 검산</td></tr>
+      <tr><td><b>합성 300명 문제에서 어느 솔버가 빠른가</b></td><td><span class="ok">잠정 검증 가능</span></td><td>동일 모델·환경·입력의 반복 실험</td></tr>
+      <tr><td><b>실제 데이터에서도 같은 순위인가</b></td><td><span class="defer">아직 불가</span></td><td>실제 희소도·수요 압박·리뷰 구조가 없음</td></tr>
+      <tr><td><b>추천 팀이 실제 프로젝트 성과를 높이는가</b></td><td><span class="defer">현재 불가</span></td><td>과거 배치와 성과 결과 데이터가 전혀 없음</td></tr>
+      <tr><td><b>λ·μ·미충원 벌점이 현실에 맞는가</b></td><td><span class="defer">현재 불가</span></td><td>기본값은 설계 가정이며 실성과로 학습·검증되지 않음</td></tr>
+    </tbody></table></div>
+    <p class="note">합성 성과를 현재 수식으로 만든 뒤 같은 수식의 정확성을 검증하면 순환 논증이 됩니다. 합성 성과는 파이프라인 테스트에는 쓸 수 있지만 사업 효과의 증거로 사용하지 않습니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">REAL-DATA GATE</div><h2>24시간 최종 판정 전에 필요한 최소 실데이터</h2>
+    <div class="grid two">
+      <article class="card"><h3>인력 스냅샷</h3><p>익명 ID, 등급·단가, 기술·숙련도·근거일, 월별 가용률이 필요합니다.</p></article>
+      <article class="card"><h3>프로젝트 요구</h3><p>기간, 역할·등급 정원, 필수 기술·수준, 월 예산이 필요합니다.</p></article>
+      <article class="card"><h3>과거 배치</h3><p>프로젝트·인력·역할·기간·투입률과 실제 변경 이력이 필요합니다.</p></article>
+      <article class="card"><h3>독립 성과</h3><p>일정·예산 편차, 결함·재작업, 고객 평가, 수익성처럼 배치 점수에서 만들지 않은 결과가 필요합니다.</p></article>
+    </div>
+    <p class="note">성과 원자료를 당장 받을 수 없어도, 익명화한 분포 요약만 있으면 solver 성능 실험의 시나리오를 현실에 가깝게 조정할 수 있습니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">PASS GATES</div><h2>합격 기준</h2>
+    <div class="grid two">
+      <article class="card"><div class="metric">≤ 240초</div><h3>Plan A 도착</h3><p>300명·60프로젝트에서 운영자가 기다릴 수 있는 상한입니다.</p></article>
+      <article class="card"><div class="metric">≤ 5%</div><h3>전체 목적함수 solver gap</h3><p>스킬 항만 재는 기존 지표의 한계를 보완합니다.</p></article>
+      <article class="card"><div class="metric">0건</div><h3>제약 위반</h3><p>가동률, 등급 정원, 월 예산을 모두 검증합니다.</p></article>
+      <article class="card"><div class="metric">≥ 95%</div><h3>최고 발견 해 대비 품질</h3><p>후보 중 가장 좋은 해를 기준으로 품질 손실을 비교합니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">EXPERIMENT MATRIX</div><h2>24시간을 쓰는 방법</h2>
+    <p class="sub">빠른 예행연습에서 배관을 검증한 뒤, 처음 보게 되는 평가 시드로 최종 순위를 냅니다.</p>
+    <div class="tablewrap panel"><table class="matrix"><thead><tr><th>구간</th><th>데이터</th><th>실행 수</th><th>최악 시간</th><th>역할</th></tr></thead><tbody>
+      <tr><td><b>호환성</b></td><td>50명·10프로젝트 · seed 42</td><td>3 solver × 1</td><td>3분</td><td>설치·결과 계약 확인</td></tr>
+      <tr><td><b>예비 측정</b></td><td>100명·20프로젝트 · seed 42~44</td><td>3 solver × 3</td><td>18분</td><td>로그·bound·gap 수집 검증</td></tr>
+      <tr><td><b>300명 본 측정</b></td><td>4 scenario × 예비 seed 3개</td><td>3 solver × 12</td><td>2시간 24분</td><td>합성 워크로드 잠정 순위</td></tr>
+      <tr><td><b>블라인드 평가</b></td><td>실데이터 분포 반영 후 4 scenario × seed 100~107</td><td>3 solver × 32</td><td>6시간 24분</td><td>실운영 후보 최종 순위</td></tr>
+      <tr><td><b>남은 예산</b></td><td>우승 솔버의 2단계 개선·대안 생성</td><td>결과에 따라 배분</td><td>약 14시간</td><td>서비스 후보 확정</td></tr>
+    </tbody></table></div>
+    <p class="note">표의 시간은 모든 실행이 제한시간을 끝까지 쓴 최악값입니다. 실데이터 분포가 오기 전에는 호환성·Phase 0·잠정 본 측정까지만 실행하고, 블라인드 최종 판정은 보류합니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">SCENARIOS</div><h2>한 종류의 합성 데이터에 맞추지 않습니다</h2>
+    <div class="grid two">
+      <article class="card"><h3>기본형</h3><p>현재 생성기 그대로. 최대 수요/가용량 비율이 0.85 이하인 기존 PoC 분포입니다.</p></article>
+      <article class="card"><h3>가용량 압박형</h3><p>월별 수요/가용량을 0.95~1.05로 올려 미충원과 탐색 난도를 드러냅니다.</p></article>
+      <article class="card"><h3>예산 압박형</h3><p>프로젝트별 예산/명목 인건비 중앙값을 0.80~0.90으로 맞춰 예산 제약을 강하게 만듭니다.</p></article>
+      <article class="card"><h3>시너지 밀집형</h3><p>평균 협업 차수를 10~12로 높여 시너지·과숙련 보조변수가 많은 경우를 시험합니다.</p></article>
+    </div>
+    <p class="note">시나리오는 solver 결과를 보고 조정하지 않습니다. 입력 통계가 목표 구간에 드는지만 사전 검사하고, 실패하면 해당 데이터셋을 명시적으로 무효 처리합니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">CHECKPOINT CONTRACT</div><h2>한 실행이 끝날 때마다 봉인합니다</h2>
+    <div class="panel">
+      <div class="flow">
+        <div class="box blue"><div class="label">고유 키</div><h3>실행 신원</h3><ul><li>git SHA · schema version</li><li>solver·버전·설정</li><li>scenario·seed</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box green"><div class="label">원자적 저장</div><h3>임시 파일 → 교체</h3><ul><li>중간 JSON은 결과로 인정 안 함</li><li>동일 키 완료 시 건너뜀</li><li>설정 변경 시 새 키 생성</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box amber"><div class="label">증거</div><h3>결과 + 원시 로그</h3><ul><li>build·solve·extract 시간</li><li>objective·bound·gap</li><li>status·메모리·제약 검증</li></ul></div>
+      </div>
+    </div>
+    <p class="note">집계 파일은 체크포인트에서 매번 결정론적으로 재생성합니다. 이전 원자료를 덮어쓰지 않고, 보고서 수치는 집계 JSON에서만 읽습니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">MEASUREMENT</div><h2>실행마다 남길 증거</h2>
+    <div class="tablewrap panel"><table class="matrix"><thead><tr><th>묶음</th><th>기록값</th><th>이유</th></tr></thead><tbody>
+      <tr><td><b>환경</b></td><td>CPU·RAM·OS·Python·solver 버전·스레드</td><td>다른 장비 결과와 섞지 않기 위해</td></tr>
+      <tr><td><b>입력</b></td><td>시드·시나리오·인원·프로젝트·변수·제약 수</td><td>문제 난이도를 재현하기 위해</td></tr>
+      <tr><td><b>성능</b></td><td>모델 생성 시간·첫 해·총 시간·최대 RSS</td><td>Python 병목과 솔버 병목을 구분하기 위해</td></tr>
+      <tr><td><b>품질</b></td><td>상태·목적값·bound·gap·최적화율·미충원</td><td>빠르지만 나쁜 해를 걸러내기 위해</td></tr>
+      <tr><td><b>안전성</b></td><td>가동률·정원·예산 위반·오류·타임아웃</td><td>서비스에 넣을 수 있는 해인지 판정하기 위해</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">COMMON RESULT CONTRACT</div><h2>솔버의 서로 다른 말을 같은 계약으로 번역합니다</h2>
+    <div class="tablewrap panel"><table class="matrix"><thead><tr><th>공통 필드</th><th>의미</th><th>판정 방법</th></tr></thead><tbody>
+      <tr><td><b>status</b></td><td>optimal · feasible_limit · no_incumbent · infeasible · error</td><td>PuLP의 단순 상태값 대신 솔버 고유 상태와 incumbent 존재를 함께 확인</td></tr>
+      <tr><td><b>objective</b></td><td>발견한 해의 전체 목적값</td><td>추출된 변수로 독립 재계산해 솔버 값과 비교</td></tr>
+      <tr><td><b>best_bound</b></td><td>아직 가능할 수 있는 최선의 경계</td><td>HiGHS·SCIP API, CBC는 버전이 기록된 원시 로그에서 파싱</td></tr>
+      <tr><td><b>relative_gap</b></td><td>현재 해와 경계의 차이</td><td>같은 부호·같은 공식으로 다시 계산; 원값도 함께 보존</td></tr>
+      <tr><td><b>timings</b></td><td>build · solve · extract · validate · total</td><td>서비스 합격선은 전체 total ≤ 240초</td></tr>
+      <tr><td><b>model_size</b></td><td>변수·이진변수·제약·시너지 pair 수</td><td>모델을 만든 직후 기록</td></tr>
+    </tbody></table></div>
+    <p class="note">CBC 로그 파싱이 실패하면 gap을 추정하지 않고 null과 parse_error를 기록합니다. 값이 없는 셀을 0% gap으로 간주하지 않습니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">FAILURE CONTAINMENT</div><h2>한 솔버가 죽어도 실험 전체는 계속됩니다</h2>
+    <div class="grid two">
+      <article class="card"><h3>실행별 자식 프로세스</h3><p>Python 오류, native solver crash, 메모리 급증을 한 셀 안에 가둡니다. 부모 러너는 다음 셀을 계속 실행합니다.</p></article>
+      <article class="card"><h3>240초 전체 마감</h3><p>모델 생성 뒤 남은 시간만 솔버에 줍니다. 전체가 240초를 넘으면 서비스 기준 실패입니다.</p></article>
+      <article class="card"><h3>12GB 보호선</h3><p>프로세스 트리 RSS가 12GB를 넘으면 종료하고 memory_limit으로 기록해 OS와 러너가 살아남게 합니다.</p></article>
+      <article class="card"><h3>원시 로그 보존</h3><p>성공·실패 모두 stdout, stderr, solver 로그, 예외 종류를 남깁니다. 비밀값과 환경변수 값은 저장하지 않습니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">INDEPENDENT VALIDATION</div><h2>“솔버가 성공했다”만 믿지 않습니다</h2>
+    <div class="panel">
+      <div class="flow">
+        <div class="box blue"><div class="label">원시 해</div><h3>반올림 전 변수</h3><ul><li>z · a · slack</li><li>integrality tolerance</li><li>누락값 확인</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box green"><div class="label">독립 검산</div><h3>모든 제약 재계산</h3><ul><li>월별 가동률</li><li>등급 정원</li><li>월 예산 · a/z 결합</li></ul></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="box amber"><div class="label">판정</div><h3>검산 통과 해만 채택</h3><ul><li>목적값 재계산</li><li>차이 허용오차 기록</li><li>위반 시 invalid_solution</li></ul></div>
+      </div>
+    </div>
+    <p class="note">현재 `PlanAssignment.violations=[]`은 MILP가 제약을 지킨다고 전제합니다. Plan 6에서는 이 값을 증거로 쓰지 않고 별도 검증기가 실제 해를 다시 검사합니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">TECHNOLOGY STATUS</div><h2>후보와 비용 처리</h2>
+    <div class="tablewrap panel"><table class="matrix"><thead><tr><th>후보</th><th>단계</th><th>라이선스·비용</th></tr></thead><tbody>
+      <tr><td><b>CBC</b></td><td><span class="ok">기준선</span></td><td>현재 사용 중인 오픈소스 솔버</td></tr>
+      <tr><td><b>HiGHS</b></td><td><span class="ok">1단계</span></td><td>MIT · 라이선스 비용 0</td></tr>
+      <tr><td><b>SCIP</b></td><td><span class="ok">1단계</span></td><td>Apache 2.0 계열 · 배포 구성의 추가 의존 라이선스 확인</td></tr>
+      <tr><td><b>OR-Tools CP-SAT</b></td><td><span class="defer">2단계 별도 모델</span></td><td>Apache 2.0 · 라이선스 비용 0</td></tr>
+      <tr><td><b>Gurobi</b></td><td><span class="defer">오픈소스 완료 후</span></td><td>상용 견적제 · 평가 라이선스 확보 시 동일 데이터 실측</td></tr>
+    </tbody></table></div>
+    <p class="note">비용 보고서는 라이선스 비용과 CPU 시간·메모리·운영 복잡도를 분리합니다. 무료 솔버도 느리면 인프라 비용이 커질 수 있습니다.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">DECISION FLOW</div><h2>최종 판정 순서</h2>
+    <div class="grid two">
+      <article class="card"><h3>① 필수 게이트</h3><p>제약 위반 0건과 4분 내 Plan A를 먼저 확인합니다. 실패한 후보는 기본 선택에서 제외합니다.</p></article>
+      <article class="card"><h3>② 품질 게이트</h3><p>gap 5% 이하와 최고 발견 해 대비 95% 이상을 확인합니다.</p></article>
+      <article class="card"><h3>③ 운영 비용</h3><p>시간·메모리·설치 크기·플랫폼 지원·라이선스를 함께 점수화합니다.</p></article>
+      <article class="card"><h3>④ 권고</h3><p>승자 하나와 차선책 하나를 정하고, 결과가 비슷하면 더 단순한 기술을 선택합니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">SOURCES</div><h2>공식 기술 근거</h2>
+    <p class="source"><a href="https://coin-or.github.io/pulp/guides/how_to_configure_solvers.html">PuLP 솔버 연동</a> · <a href="https://highs.dev/">HiGHS</a> · <a href="https://www.scipopt.org/">SCIP</a> · <a href="https://developers.google.com/optimization/cp">OR-Tools</a> · <a href="https://www.gurobi.com/product/licensing/request-price-quote">Gurobi 가격 정책</a></p>
+    <p class="note">상태: 아키텍처 설계 초안. 구현은 전체 설계 문서 승인 후 시작합니다.</p>
+  </section>
+</main>
+</body>
+</html>
