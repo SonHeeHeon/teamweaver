@@ -5,6 +5,7 @@ does not claim that the synthetic score predicts real project outcomes.
 """
 from dataclasses import asdict, dataclass
 from typing import Callable
+import math
 import time
 
 import numpy as np
@@ -31,6 +32,33 @@ from experiments.phase0.oracle import solve_tiny_oracle
 
 TOLERANCE = 1e-6
 DEFAULT_MAX_WALL_SECONDS = 240.0
+
+
+class DeadlineExceeded(RuntimeError):
+    """Raised when no whole second remains for another CBC invocation."""
+
+
+def _params_for_remaining_solver_time(params: MilpParams, remaining: float) -> MilpParams:
+    if remaining < 1.0:
+        raise DeadlineExceeded("deadline exceeded before solver start")
+    return params.model_copy(
+        update={"time_limit": min(params.time_limit, math.floor(remaining))}
+    )
+
+
+def _solve_before_deadline(
+    graph: MemoryGraph,
+    skill: np.ndarray,
+    synergy: np.ndarray,
+    params: MilpParams,
+    deadline: float,
+):
+    remaining = deadline - time.perf_counter()
+    bounded_params = _params_for_remaining_solver_time(params, remaining)
+    raw = solve_milp_diagnostic(graph, skill, synergy, bounded_params)
+    if time.perf_counter() >= deadline:
+        raise DeadlineExceeded("deadline exceeded during solver execution")
+    return raw
 
 
 @dataclass(frozen=True)
@@ -161,15 +189,17 @@ def _objective_with_reward_pairs(raw, skill, synergy, params, reward_pairs) -> f
     return skill_term + reward_term + penalty_term - params.slack_penalty * sum(raw.slack.values())
 
 
-def _case_record(case: OracleCase) -> dict:
+def _case_record(case: OracleCase, deadline: float) -> dict:
     started = time.perf_counter()
     built = time.perf_counter()
     graph, skill, synergy, params = case.build()
     built = time.perf_counter() - built
     solved = time.perf_counter()
-    cbc = solve_milp_diagnostic(graph, skill, synergy, params)
+    cbc = _solve_before_deadline(graph, skill, synergy, params, deadline)
     solve_seconds = time.perf_counter() - solved
     oracle = solve_tiny_oracle(graph, skill, synergy, params)
+    if time.perf_counter() >= deadline:
+        raise DeadlineExceeded("deadline exceeded during oracle evaluation")
     validated = time.perf_counter()
     validation = validate_raw_solution(graph, skill, synergy, params, cbc)
     validate_seconds = time.perf_counter() - validated
@@ -197,11 +227,24 @@ def _case_record(case: OracleCase) -> dict:
     }
 
 
-def _monotonic_invariants() -> list[dict]:
+def _budget_monotonicity(deadline: float) -> dict:
     budget_graph, budget_skill, budget_synergy, budget_params = _budget_shortfall_case()
-    budget_base = solve_milp_diagnostic(budget_graph, budget_skill, budget_synergy, budget_params)
+    budget_base = _solve_before_deadline(
+        budget_graph, budget_skill, budget_synergy, budget_params, deadline
+    )
     budget_graph.projects[0].monthly_budget = 5_000
-    budget_raised = solve_milp_diagnostic(budget_graph, budget_skill, budget_synergy, budget_params)
+    budget_raised = _solve_before_deadline(
+        budget_graph, budget_skill, budget_synergy, budget_params, deadline
+    )
+    return {
+        "name": "budget_increase",
+        "base_objective": budget_base.objective,
+        "raised_objective": budget_raised.objective,
+        "passed": budget_raised.objective >= budget_base.objective - TOLERANCE,
+    }
+
+
+def _availability_monotonicity(deadline: float) -> dict:
 
     people = [_person("p0", Grade.MID, availability=0.25), _person("p1", Grade.MID)]
     project = Project(
@@ -215,39 +258,30 @@ def _monotonic_invariants() -> list[dict]:
     availability_skill = np.array([[0.9], [0.8]])
     availability_synergy = np.zeros((2, 2))
     availability_params = MilpParams(pair_keep_ratio=0.0, time_limit=30)
-    availability_base = solve_milp_diagnostic(
-        availability_graph, availability_skill, availability_synergy, availability_params
+    availability_base = _solve_before_deadline(
+        availability_graph, availability_skill, availability_synergy, availability_params, deadline
     )
     availability_graph.people[0].availability = [1.0] * 6
-    availability_raised = solve_milp_diagnostic(
-        availability_graph, availability_skill, availability_synergy, availability_params
+    availability_raised = _solve_before_deadline(
+        availability_graph, availability_skill, availability_synergy, availability_params, deadline
     )
-
-    return [
-        {
-            "name": "budget_increase",
-            "base_objective": budget_base.objective,
-            "raised_objective": budget_raised.objective,
-            "passed": budget_raised.objective >= budget_base.objective - TOLERANCE,
-        },
-        {
-            "name": "availability_increase",
-            "base_objective": availability_base.objective,
-            "raised_objective": availability_raised.objective,
-            "passed": availability_raised.objective >= availability_base.objective - TOLERANCE,
-        },
-    ]
+    return {
+        "name": "availability_increase",
+        "base_objective": availability_base.objective,
+        "raised_objective": availability_raised.objective,
+        "passed": availability_raised.objective >= availability_base.objective - TOLERANCE,
+    }
 
 
-def _pair_cap_record() -> dict:
+def _pair_cap_record(deadline: float) -> dict:
     dataset = generate_dataset(20, 4, seed=42)
     graph = MemoryGraph.build(dataset, parse_reviews_rule_based(dataset.reviews))
     engine = ScoringEngine(graph)
     skill, synergy = engine.skill_matrix({}), engine.synergy_matrix()
     full_params = MilpParams(pair_keep_ratio=1.0, max_pairs=10_000, time_limit=30)
     capped_params = full_params.model_copy(update={"max_pairs": 5})
-    full = solve_milp_diagnostic(graph, skill, synergy, full_params)
-    capped = solve_milp_diagnostic(graph, skill, synergy, capped_params)
+    full = _solve_before_deadline(graph, skill, synergy, full_params, deadline)
+    capped = _solve_before_deadline(graph, skill, synergy, capped_params, deadline)
     full_validation = validate_raw_solution(graph, skill, synergy, full_params, full)
     capped_validation = validate_raw_solution(graph, skill, synergy, capped_params, capped)
     capped_full_objective = _objective_with_reward_pairs(
@@ -269,14 +303,14 @@ def _pair_cap_record() -> dict:
     }
 
 
-def _smoke_record() -> dict:
+def _smoke_record(deadline: float) -> dict:
     started = time.perf_counter()
     dataset, parsed, graph = datasets.build_scale(50, 10, seed=42)
     engine = ScoringEngine(graph)
     skill, synergy = engine.skill_matrix({}), engine.synergy_matrix()
     params = MilpParams(time_limit=60)
     solved = time.perf_counter()
-    raw = solve_milp_diagnostic(graph, skill, synergy, params)
+    raw = _solve_before_deadline(graph, skill, synergy, params, deadline)
     solve_seconds = time.perf_counter() - solved
     validation = validate_raw_solution(graph, skill, synergy, params, raw)
     return {
@@ -317,6 +351,7 @@ def run(
 ) -> dict:
     """Run independent Phase 0 checks, retaining failures as evidence."""
     started = time.perf_counter()
+    deadline = started + max_wall_seconds
     result = {
         "phase": "phase0_model_validation",
         "data_boundary": "All current inputs are synthetic; no project outcome is inferred.",
@@ -336,43 +371,68 @@ def run(
         if on_case_done is not None:
             on_case_done(result.copy())
 
-    def run_unit(name: str, callback: Callable[[], None]) -> None:
-        if time.perf_counter() - started > max_wall_seconds:
+    deadline_exhausted = False
+
+    def run_unit(name: str, callback: Callable[[float], None]) -> bool:
+        nonlocal deadline_exhausted
+        if deadline_exhausted:
+            return False
+        if time.perf_counter() >= deadline:
             result["failures"].append({"name": name, "reason": "deadline exceeded before start"})
+            deadline_exhausted = True
+            checkpoint()
+            return False
+        try:
+            callback(deadline)
+        except DeadlineExceeded:
+            result["failures"].append({"name": name, "reason": "deadline exceeded during execution"})
+            deadline_exhausted = True
+        except Exception as exc:  # records evidence and continues to independent cases
+            result["failures"].append({"name": name, "reason": f"{type(exc).__name__}: {exc}"})
+            result["completed_cases"] += 1
         else:
-            try:
-                callback()
-            except Exception as exc:  # records evidence and continues to independent cases
-                result["failures"].append({"name": name, "reason": f"{type(exc).__name__}: {exc}"})
-        result["completed_cases"] += 1
+            result["completed_cases"] += 1
+            if time.perf_counter() >= deadline:
+                result["failures"].append({"name": name, "reason": "deadline exceeded during execution"})
+                deadline_exhausted = True
         checkpoint()
+        return not deadline_exhausted
 
     for case in oracle_cases if oracle_cases is not None else default_oracle_cases():
-        def record_oracle(case=case):
-            row = _case_record(case)
+        def record_oracle(unit_deadline: float, case=case):
+            row = _case_record(case, unit_deadline)
             result["cases"].append(row)
             if not row["passed"]:
                 result["failures"].append({"name": case.name, "reason": "oracle or validation check failed"})
-        run_unit(case.name, record_oracle)
+        if not run_unit(case.name, record_oracle):
+            break
 
-    if run_invariants:
-        def record_invariants():
-            result["invariants"] = _monotonic_invariants()
-            for row in result["invariants"]:
-                if not row["passed"]:
-                    result["failures"].append({"name": row["name"], "reason": "monotonicity failed"})
-        run_unit("monotonicity", record_invariants)
+    if run_invariants and not deadline_exhausted:
+        def record_budget_invariant(unit_deadline: float):
+            row = _budget_monotonicity(unit_deadline)
+            result["invariants"].append(row)
+            if not row["passed"]:
+                result["failures"].append({"name": row["name"], "reason": "monotonicity failed"})
+        run_unit("budget_increase", record_budget_invariant)
 
-    if run_pair_cap:
-        def record_pair_cap():
-            result["pair_cap"] = _pair_cap_record()
+    if run_invariants and not deadline_exhausted:
+        def record_availability_invariant(unit_deadline: float):
+            row = _availability_monotonicity(unit_deadline)
+            result["invariants"].append(row)
+            if not row["passed"]:
+                result["failures"].append({"name": row["name"], "reason": "monotonicity failed"})
+        run_unit("availability_increase", record_availability_invariant)
+
+    if run_pair_cap and not deadline_exhausted:
+        def record_pair_cap(unit_deadline: float):
+            result["pair_cap"] = _pair_cap_record(unit_deadline)
             if not result["pair_cap"]["passed"]:
                 result["failures"].append({"name": "pair_cap", "reason": "pair-cap validation failed"})
         run_unit("pair_cap", record_pair_cap)
 
-    if run_smoke:
-        def record_smoke():
-            result["smoke"] = _smoke_record()
+    if run_smoke and not deadline_exhausted:
+        def record_smoke(unit_deadline: float):
+            result["smoke"] = _smoke_record(unit_deadline)
             if not result["smoke"]["passed"]:
                 result["failures"].append({"name": "cbc_50x10_seed42", "reason": "compatibility smoke failed"})
         run_unit("cbc_50x10_seed42", record_smoke)

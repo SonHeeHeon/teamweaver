@@ -56,6 +56,35 @@ def test_runner_records_one_failed_case_and_continues_to_the_next_case():
     assert result["cases"][-1]["name"] == "one-slot"
 
 
+def test_runner_stops_before_starting_units_when_wall_clock_budget_is_exhausted():
+    graph, skill, synergy = one_project_fixture()
+    case = phase0_model.OracleCase(
+        "one-slot",
+        lambda: (graph, skill, synergy, MilpParams(pair_keep_ratio=0.0, time_limit=30)),
+    )
+
+    result = phase0_model.run(
+        oracle_cases=(case, case),
+        run_invariants=False,
+        run_pair_cap=False,
+        run_smoke=False,
+        max_wall_seconds=0.0,
+    )
+
+    assert result["completed_cases"] == 0
+    assert result["cases"] == []
+    assert result["failures"] == [{"name": "one-slot", "reason": "deadline exceeded before start"}]
+
+
+def test_remaining_wall_clock_time_limits_each_cbc_invocation():
+    params = MilpParams(time_limit=30)
+
+    bounded = phase0_model._params_for_remaining_solver_time(params, 2.9)
+
+    assert bounded.time_limit == 2
+    assert params.time_limit == 30
+
+
 def test_runner_records_budget_and_availability_monotonicity():
     result = phase0_model.run(
         oracle_cases=(),
