@@ -3,6 +3,8 @@ import os
 import time
 from pathlib import Path
 
+import pytest
+
 from experiments.bench import harness, datasets
 
 
@@ -105,6 +107,23 @@ def test_save_result_preserves_a_previous_runs_file(tmp_path, monkeypatch):
     kept = tmp_path / "sweep.superseded-1.json"
     assert kept.exists(), "이전 실행의 원자료가 사라졌다"
     assert json.loads(kept.read_text("utf-8"))["data"] == {"run": 1}
+
+
+def test_failed_replace_leaves_the_previous_canonical_checkpoint_readable(tmp_path, monkeypatch):
+    _fresh_run(tmp_path, monkeypatch)
+    harness.save_result("phase0", {"run": 1})
+
+    _fresh_run(tmp_path, monkeypatch)
+
+    def fail_replace(_source, _destination):
+        raise OSError("simulated interruption before replacement")
+
+    monkeypatch.setattr(harness.os, "replace", fail_replace)
+
+    with pytest.raises(OSError, match="simulated interruption"):
+        harness.save_result("phase0", {"run": 2})
+
+    assert harness.load_result("phase0")["data"] == {"run": 1}
 
 
 def test_save_result_preserves_every_previous_run_not_just_the_last(tmp_path, monkeypatch):

@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import shutil
 import statistics as st
 import subprocess
 import sys
@@ -124,7 +125,7 @@ _WRITTEN_THIS_RUN: set[Path] = set()
 
 
 def preserve_existing(path: Path) -> Path | None:
-    """덮어쓰기 전에 **이전 실행**의 결과 파일을 옆으로 치운다. 옮긴 경로를 돌려준다.
+    """덮어쓰기 전에 **이전 실행**의 결과 파일을 복사해 보존한다.
 
     태스크 4에서 exp4 스윕을 재실행했다가 save_result가 고정 경로에 그대로 쓰는
     바람에 첫 스윕의 원자료를 통째로, **복구 불가능하게** 잃었다. 그 뒤 exp5만
@@ -134,7 +135,7 @@ def preserve_existing(path: Path) -> Path | None:
     **거부가 아니라 보존이다.** 러너를 못 돌게 만드는 가드는 --force로 우회되거나
     러너를 안 고치게 만든다. 잃으면 안 되는 것은 실행 가능성이 아니라 이전 실행의
     원자료이므로, 새 결과는 그대로 쓰되 이전 파일을 `<name>.superseded-N.json`으로
-    옮겨 남긴다(N은 비어 있는 가장 작은 번호 — 기존 백업도 덮어쓰지 않는다).
+    복사해 남긴다(N은 비어 있는 가장 작은 번호 — 기존 백업도 덮어쓰지 않는다).
     """
     if path in _WRITTEN_THIS_RUN or not path.exists():
         return None
@@ -142,7 +143,9 @@ def preserve_existing(path: Path) -> Path | None:
     while True:
         prev = path.with_name(f"{path.stem}.superseded-{n}{path.suffix}")
         if not prev.exists():
-            path.rename(prev)
+            shutil.copy2(path, prev)
+            with prev.open("rb") as preserved:
+                os.fsync(preserved.fileno())
             return prev
         n += 1
 
