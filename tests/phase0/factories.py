@@ -126,3 +126,28 @@ def all_terms_fixture() -> tuple[
         constraint_count=9,
     )
     return graph, skill, synergy, params, raw
+
+
+def generated_tiny_fixture(seed: int) -> tuple[MemoryGraph, np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(seed)
+    people = [_person(f"p{i}", Grade.MID) for i in range(3)]
+    projects = [
+        Project(
+            id="j0",
+            name=f"소형 시드 {seed}",
+            sector=Sector.INTERNAL,
+            phase=ProjectPhase.EXECUTION,
+            start_month=0,
+            end_month=1,
+            grade_headcount={Grade.MID: 2},
+            requirements=[SkillRequirement(skill="Python", min_level=2, headcount=2)],
+            monthly_budget=4_000,
+        )
+    ]
+    skill = rng.uniform(0.2, 0.95, size=(3, 1))
+    upper = rng.uniform(-0.2, 0.8, size=3)
+    synergy = np.zeros((3, 3))
+    synergy[0, 1] = synergy[1, 0] = upper[0]
+    synergy[0, 2] = synergy[2, 0] = upper[1]
+    synergy[1, 2] = synergy[2, 1] = upper[2]
+    return _graph(people, projects), skill, synergy
