@@ -22,6 +22,14 @@ AI-powered staffing optimization platform for intelligent team composition and r
 
 ## Phase 0 model validation
 
+Phase 1 A continues on `feat/phase1-solver-benchmark` from the Phase 0 branch.
+The [24-hour open-source solver sweep design](docs/superpowers/specs/2026-09-21-phase1-long-sweep-design.md)
+and [visual overview](outputs/phase1-long-sweep-design.html) describe planned,
+**not yet executed**, work. See the [development checkpoint](docs/phase1-checkpoint.md)
+before resuming. The new design supersedes the earlier decision to defer all
+synthetic large-scale comparison until HR column definitions arrive; business
+validity remains `NOT_CALIBRATED`.
+
 Run the bounded mathematical validation before comparing additional solvers:
 
 ```bash
