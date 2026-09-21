@@ -99,16 +99,16 @@ def validate_raw_solution(
                 continue
             numeric_value = float(value)
             if domain == "binary" and (
-                numeric_value < -tol
-                or numeric_value > 1.0 + tol
+                numeric_value < 0.0
+                or numeric_value > 1.0
                 or min(abs(numeric_value), abs(numeric_value - 1.0)) > tol
             ):
                 raw_issue("binary_domain", location, numeric_value)
             elif domain == "unit" and (
-                numeric_value < -tol or numeric_value > 1.0 + tol
+                numeric_value < 0.0 or numeric_value > 1.0
             ):
                 raw_issue("unit_interval", location, numeric_value)
-            elif domain == "nonnegative" and numeric_value < -tol:
+            elif domain == "nonnegative" and numeric_value < 0.0:
                 raw_issue("slack_nonnegative", location, numeric_value)
 
     # Check the complete raw variable contract before feasibility, objective, or
