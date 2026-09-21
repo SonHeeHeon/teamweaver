@@ -11,7 +11,7 @@ from core.domain.models import (
     SkillRequirement,
 )
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.audit_types import RawMilpSolution
+from core.optimize.audit_types import RawMilpSolution, SolverEvidence
 from core.optimize.milp import MilpParams
 from core.optimize.types import AssignEntry, PlanAssignment
 
@@ -124,6 +124,14 @@ def all_terms_fixture() -> tuple[
         penalty_pairs=((0, 1),),
         variable_count=6,
         constraint_count=9,
+        evidence=SolverEvidence(
+            solver_name="CBC",
+            native_status="Optimal",
+            termination_reason="Optimal",
+            has_incumbent=True,
+            best_bound=None,
+            options={"time_limit": params.time_limit, "gap": params.gap},
+        ),
     )
     return graph, skill, synergy, params, raw
 

@@ -5,6 +5,18 @@ from core.optimize.types import PlanAssignment
 
 
 @dataclass(frozen=True)
+class SolverEvidence:
+    """JSON-safe diagnostics from the solver invocation."""
+
+    solver_name: str
+    native_status: str
+    termination_reason: str
+    has_incumbent: bool
+    best_bound: float | None
+    options: dict[str, int | float | str | bool | None]
+
+
+@dataclass(frozen=True)
 class RawMilpSolution:
     """Solver values retained before display-oriented allocation flooring."""
 
@@ -19,6 +31,7 @@ class RawMilpSolution:
     penalty_pairs: tuple[tuple[int, int], ...]
     variable_count: int
     constraint_count: int
+    evidence: SolverEvidence
 
 
 @dataclass(frozen=True)

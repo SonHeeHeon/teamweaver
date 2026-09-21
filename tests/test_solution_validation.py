@@ -24,8 +24,8 @@ def test_recomputed_objective_uses_all_four_terms():
 @pytest.mark.parametrize(
     ("field", "replacement", "expected_code"),
     [
-        ("a", {(0, 0): 1.1, (1, 0): 1.0}, "availability"),
-        ("slack", {}, "grade_headcount"),
+        ("a", {(0, 0): 1.1, (1, 0): 1.0}, "unit_interval"),
+        ("slack", {}, "missing_key"),
         ("y", {(0, 1, 0): 0.0}, "pair_product"),
     ],
 )

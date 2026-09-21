@@ -4,7 +4,7 @@ import numpy as np
 import pulp
 from pydantic import BaseModel
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.audit_types import RawMilpSolution
+from core.optimize.audit_types import RawMilpSolution, SolverEvidence
 from core.optimize.types import AssignEntry, PlanAssignment
 
 logger = logging.getLogger(__name__)
@@ -151,7 +151,23 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     status = pulp.LpStatus[prob.status]
     if status not in ("Optimal", "Not Solved"):
         raise RuntimeError(f"MILP failed: {status}")
-    if pulp.value(prob.objective) is None:
+    raw_z = {(i, j): z[i][j].value() for i in range(nP) for j in range(nJ)}
+    raw_a = {(i, j): a[i][j].value() for i in range(nP) for j in range(nJ)}
+    raw_y = {key: var.value() for key, var in y.items()}
+    raw_slack = {key: var.value() for key, var in slack.items()}
+    raw_values = (*raw_z.values(), *raw_a.values(), *raw_y.values(), *raw_slack.values())
+    has_incumbent = all(
+        isinstance(value, (int, float)) and math.isfinite(value) for value in raw_values
+    )
+    evidence = SolverEvidence(
+        solver_name="CBC",
+        native_status=status,
+        termination_reason=status,
+        has_incumbent=has_incumbent,
+        best_bound=None,
+        options={"time_limit": params.time_limit, "gap": params.gap},
+    )
+    if not has_incumbent or pulp.value(prob.objective) is None:
         # "Not Solved" can mean either "time limit hit with a valid incumbent"
         # (fine — a time-limited but real solution) or "time limit hit with NO
         # incumbent at all" (every variable's .value() is None). The latter
@@ -181,16 +197,15 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         plan=plan,
         status=status,
         objective=objective,
-        z={(i, j): float(z[i][j].value() or 0.0)
-           for i in range(nP) for j in range(nJ)},
-        a={(i, j): float(a[i][j].value() or 0.0)
-           for i in range(nP) for j in range(nJ)},
-        y={key: float(var.value() or 0.0) for key, var in y.items()},
-        slack={key: float(var.value() or 0.0) for key, var in slack.items()},
+        z={key: float(value) for key, value in raw_z.items()},
+        a={key: float(value) for key, value in raw_a.items()},
+        y={key: float(value) for key, value in raw_y.items()},
+        slack={key: float(value) for key, value in raw_slack.items()},
         reward_pairs=tuple(pruned),
         penalty_pairs=tuple(sorted(overfam)),
         variable_count=len(prob.variables()),
         constraint_count=len(prob.constraints),
+        evidence=evidence,
     )
 
 

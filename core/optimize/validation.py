@@ -60,6 +60,72 @@ def validate_raw_solution(
     n_people, n_projects = len(people), len(projects)
     issues: list[ValidationIssue] = []
 
+    expected_reward_pairs = _independent_reward_pairs(synergy, params)
+    expected_penalty_pairs = _independent_penalty_pairs(graph, params)
+    expected_z_keys = {(i, j) for i in range(n_people) for j in range(n_projects)}
+    expected_a_keys = expected_z_keys
+    expected_slack_keys = {
+        (j, grade)
+        for j, project in enumerate(projects)
+        for grade in project.grade_headcount
+    }
+    expected_y_keys = {
+        (p, q, j)
+        for p, q in set(expected_reward_pairs) | set(expected_penalty_pairs)
+        for j in range(n_projects)
+    }
+
+    def raw_issue(code: str, location: str, actual: float = 0.0) -> None:
+        issues.append(ValidationIssue(code, location, actual, 1.0, 1.0))
+
+    def check_raw_values(
+        field: str,
+        values: dict,
+        expected_keys: set,
+        domain: str,
+    ) -> None:
+        for key in expected_keys - set(values):
+            raw_issue("missing_key", f"{field}[{key}]")
+        for key in set(values) - expected_keys:
+            raw_issue("unexpected_key", f"{field}[{key}]")
+        for key in expected_keys & set(values):
+            value = values[key]
+            location = f"{field}[{key}]"
+            if value is None:
+                raw_issue("missing_value", location)
+                continue
+            if not isinstance(value, (int, float)) or not math.isfinite(value):
+                raw_issue("nonfinite_value", location)
+                continue
+            numeric_value = float(value)
+            if domain == "binary" and (
+                numeric_value < -tol
+                or numeric_value > 1.0 + tol
+                or min(abs(numeric_value), abs(numeric_value - 1.0)) > tol
+            ):
+                raw_issue("binary_domain", location, numeric_value)
+            elif domain == "unit" and (
+                numeric_value < -tol or numeric_value > 1.0 + tol
+            ):
+                raw_issue("unit_interval", location, numeric_value)
+            elif domain == "nonnegative" and numeric_value < -tol:
+                raw_issue("slack_nonnegative", location, numeric_value)
+
+    # Check the complete raw variable contract before feasibility, objective, or
+    # display validation. Missing values must never be interpreted as zero.
+    check_raw_values("z", solution.z, expected_z_keys, "binary")
+    check_raw_values("a", solution.a, expected_a_keys, "unit")
+    check_raw_values("slack", solution.slack, expected_slack_keys, "nonnegative")
+    check_raw_values("y", solution.y, expected_y_keys, "unit")
+    if issues:
+        empty_objective = ObjectiveBreakdown(0.0, 0.0, 0.0, 0.0, 0.0)
+        return ValidationReport(
+            valid=False,
+            issues=tuple(issues),
+            objective=empty_objective,
+            solver_objective_error=float("inf"),
+        )
+
     def equality(code: str, location: str, actual: float, expected: float) -> None:
         error = abs(actual - expected)
         if error > tol:
@@ -77,8 +143,8 @@ def validate_raw_solution(
 
     for i in range(n_people):
         for j in range(n_projects):
-            z_value = solution.z.get((i, j), 0.0)
-            a_value = solution.a.get((i, j), 0.0)
+            z_value = solution.z[(i, j)]
+            a_value = solution.a[(i, j)]
             equality("binary_assignment", f"z[{i},{j}]", z_value, round(z_value))
             upper("allocation_upper", f"a[{i},{j}]<=z", a_value, z_value)
             lower(
@@ -91,7 +157,7 @@ def validate_raw_solution(
     for i, person in enumerate(people):
         for month, availability in enumerate(person.availability):
             load = sum(
-                solution.a.get((i, j), 0.0)
+                solution.a[(i, j)]
                 for j, project in enumerate(projects)
                 if month in project.months
             )
@@ -100,11 +166,11 @@ def validate_raw_solution(
     for j, project in enumerate(projects):
         for grade, required in project.grade_headcount.items():
             assigned = sum(
-                solution.z.get((i, j), 0.0)
+                solution.z[(i, j)]
                 for i, person in enumerate(people)
                 if person.grade == grade
             )
-            slack = solution.slack.get((j, grade), 0.0)
+            slack = solution.slack[(j, grade)]
             lower("slack_nonnegative", f"project={project.id},grade={grade.value}", slack, 0.0)
             equality(
                 "grade_headcount",
@@ -114,13 +180,10 @@ def validate_raw_solution(
             )
 
         cost = sum(
-            person.monthly_rate * solution.a.get((i, j), 0.0)
+            person.monthly_rate * solution.a[(i, j)]
             for i, person in enumerate(people)
         )
         upper("budget", f"project={project.id}", cost, float(project.monthly_budget))
-
-    expected_reward_pairs = _independent_reward_pairs(synergy, params)
-    expected_penalty_pairs = _independent_penalty_pairs(graph, params)
 
     def check_pair_scope(
         code: str,
@@ -142,28 +205,23 @@ def validate_raw_solution(
     check_pair_scope("reward_pair_scope", solution.reward_pairs, expected_reward_pairs)
     check_pair_scope("penalty_pair_scope", solution.penalty_pairs, expected_penalty_pairs)
 
-    expected_y_keys = {
-        (p, q, j)
-        for p, q in set(expected_reward_pairs) | set(expected_penalty_pairs)
-        for j in range(n_projects)
-    }
     equality("pair_key_count", "y", float(len(solution.y)), float(len(expected_y_keys)))
     for p, q, j in expected_y_keys:
-        expected = solution.z.get((p, j), 0.0) * solution.z.get((q, j), 0.0)
-        equality("pair_product", f"y[{p},{q},{j}]", solution.y.get((p, q, j), 0.0), expected)
+        expected = solution.z[(p, j)] * solution.z[(q, j)]
+        equality("pair_product", f"y[{p},{q},{j}]", solution.y[(p, q, j)], expected)
 
     skill_term = sum(
-        float(skill[i, j]) * solution.a.get((i, j), 0.0)
+        float(skill[i, j]) * solution.a[(i, j)]
         for i in range(n_people)
         for j in range(n_projects)
     )
     synergy_term = params.lam * sum(
-        float(synergy[p, q]) * solution.y.get((p, q, j), 0.0)
+        float(synergy[p, q]) * solution.y[(p, q, j)]
         for p, q in expected_reward_pairs
         for j in range(n_projects)
     )
     overfamiliarity_term = -params.mu * sum(
-        solution.y.get((p, q, j), 0.0)
+        solution.y[(p, q, j)]
         for p, q in expected_penalty_pairs
         for j in range(n_projects)
     )
@@ -184,8 +242,8 @@ def validate_raw_solution(
         (people[i].id, projects[j].id): _display_alloc(solution.a[(i, j)], params.min_alloc)
         for i in range(n_people)
         for j in range(n_projects)
-        if solution.z.get((i, j), 0.0) > 0.5
-        and solution.a.get((i, j), 0.0) >= params.min_alloc - tol
+        if solution.z[(i, j)] > 0.5
+        and solution.a[(i, j)] >= params.min_alloc - tol
     }
     actual_entries = {
         (entry.person_id, entry.project_id): entry.alloc for entry in solution.plan.entries
