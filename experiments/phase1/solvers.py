@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from typing import Protocol
 
@@ -8,6 +8,7 @@ from core.domain.models import Grade
 from core.optimize.audit_types import RawMilpSolution, SolverEvidence
 from core.optimize.milp import _floor2, _overfamiliar_pairs, pruned_pairs
 from core.optimize.types import AssignEntry, PlanAssignment
+from core.optimize.validation import validate_raw_solution
 from experiments.phase1.types import (
     BenchmarkProblem,
     SolverAvailability,
@@ -266,12 +267,56 @@ def _finite_or_none(value) -> float | None:
     return number if math.isfinite(number) else None
 
 
+_HIGHS_EVIDENCE_STATUSES = {
+    "Optimal",
+    "Bound on objective reached",
+    "Target for objective reached",
+    "Time limit reached",
+    "Iteration limit reached",
+    "Solution limit reached",
+    "Interrupted by user",
+    "Memory limit reached",
+    "Interrupted by HiGHS",
+}
+_SCIP_EVIDENCE_STATUSES = {
+    "optimal",
+    "timelimit",
+    "userinterrupt",
+    "nodelimit",
+    "totalnodelimit",
+    "stallnodelimit",
+    "gaplimit",
+    "memlimit",
+    "sollimit",
+    "bestsollimit",
+    "restartlimit",
+}
+
+
+def _status_supports_solver_evidence(name: str, native_status: str) -> bool:
+    if name == "highs":
+        return native_status in _HIGHS_EVIDENCE_STATUSES
+    if name == "scip":
+        return native_status in _SCIP_EVIDENCE_STATUSES
+    return native_status in {"Optimal", "Not Solved"}
+
+
+def _bounded_native_value(value, infinity: float | None = None) -> float | None:
+    bound = _finite_or_none(value)
+    if bound is None:
+        return None
+    finite_infinity = _finite_or_none(infinity)
+    if finite_infinity is not None and abs(bound) >= abs(finite_infinity):
+        return None
+    return bound
+
+
 def _native_evidence(
     name: str,
     built: _BuiltModel,
     options: SolverOptions,
     raw_values: tuple[float | None, ...],
-) -> SolverEvidence:
+) -> tuple[SolverEvidence, bool]:
     model = built.problem.solverModel
     finite_values = all(_finite_or_none(value) is not None for value in raw_values)
     objective = _finite_or_none(pulp.value(built.problem.objective))
@@ -281,8 +326,15 @@ def _native_evidence(
         native_status_code = model.getModelStatus()
         native_status = model.modelStatusToString(native_status_code)
         solution = model.getSolution()
-        has_incumbent = bool(solution.value_valid and finite_values and objective is not None)
-        best_bound = _finite_or_none(model.getInfo().mip_dual_bound)
+        candidate_available = bool(
+            solution.value_valid
+            and finite_values
+            and objective is not None
+            and _status_supports_solver_evidence(name, native_status)
+        )
+        info = model.getInfo()
+        if info.valid and _status_supports_solver_evidence(name, native_status):
+            best_bound = _bounded_native_value(info.mip_dual_bound)
         # PuLP translates maximization to a negated minimization model for
         # highspy, so translate the native dual bound back to our public
         # maximization objective direction as well.
@@ -290,23 +342,38 @@ def _native_evidence(
             best_bound = -best_bound
     elif name == "scip":
         native_status = str(model.getStatus())
-        has_incumbent = bool(model.getNSols() > 0 and finite_values and objective is not None)
-        best_bound = _finite_or_none(model.getDualbound())
+        candidate_available = bool(
+            model.getNSols() > 0
+            and finite_values
+            and objective is not None
+            and _status_supports_solver_evidence(name, native_status)
+        )
+        if _status_supports_solver_evidence(name, native_status):
+            best_bound = _bounded_native_value(
+                model.getDualbound(), infinity=model.infinity()
+            )
     else:
         native_status = pulp.LpStatus[built.problem.status]
-        has_incumbent = bool(finite_values and objective is not None)
+        candidate_available = bool(
+            native_status in {"Optimal", "Not Solved"}
+            and finite_values
+            and objective is not None
+        )
 
-    return SolverEvidence(
-        solver_name={"cbc": "CBC", "highs": "HiGHS", "scip": "SCIP"}[name],
-        native_status=native_status,
-        termination_reason=native_status,
-        has_incumbent=has_incumbent,
-        best_bound=best_bound,
-        options={
-            "threads": options.threads,
-            "time_limit_seconds": options.time_limit_seconds,
-            "relative_gap": options.relative_gap,
-        },
+    return (
+        SolverEvidence(
+            solver_name={"cbc": "CBC", "highs": "HiGHS", "scip": "SCIP"}[name],
+            native_status=native_status,
+            termination_reason=native_status,
+            has_incumbent=False,
+            best_bound=best_bound,
+            options={
+                "threads": options.threads,
+                "time_limit_seconds": options.time_limit_seconds,
+                "relative_gap": options.relative_gap,
+            },
+        ),
+        candidate_available,
     )
 
 
@@ -323,9 +390,9 @@ def _extract_solution(
     all_values = tuple(
         [*raw_z.values(), *raw_a.values(), *raw_y.values(), *raw_slack.values()]
     )
-    evidence = _native_evidence(name, built, options, all_values)
+    evidence, candidate_available = _native_evidence(name, built, options, all_values)
     objective = _finite_or_none(pulp.value(built.problem.objective))
-    if not evidence.has_incumbent or objective is None:
+    if not candidate_available or objective is None:
         raise SolverSolveError(
             f"{evidence.solver_name} did not return an extractable incumbent "
             f"(native_status={evidence.native_status})",
@@ -369,7 +436,7 @@ def _extract_solution(
         violations=[],
         label="A",
     )
-    return RawMilpSolution(
+    candidate = RawMilpSolution(
         plan=plan,
         status=pulp.LpStatus[built.problem.status],
         objective=objective,
@@ -383,6 +450,37 @@ def _extract_solution(
         constraint_count=len(built.problem.constraints),
         evidence=evidence,
     )
+    validation = validate_raw_solution(
+        benchmark.graph,
+        benchmark.S,
+        benchmark.C,
+        benchmark.params,
+        candidate,
+    )
+    if not validation.valid:
+        issue_codes = ",".join(sorted({issue.code for issue in validation.issues}))
+        failed_evidence = replace(
+            evidence,
+            termination_reason=(
+                f"{evidence.native_status}; independent_validation_failed:{issue_codes}"
+            ),
+            has_incumbent=False,
+        )
+        raise SolverSolveError(
+            f"{evidence.solver_name} returned an invalid incumbent candidate "
+            f"({issue_codes})",
+            failed_evidence,
+        )
+
+    best_bound = evidence.best_bound
+    if best_bound is not None and best_bound < objective - 1e-6:
+        best_bound = None
+    validated_evidence = replace(
+        evidence,
+        has_incumbent=True,
+        best_bound=best_bound,
+    )
+    return replace(candidate, evidence=validated_evidence)
 
 
 def solve_case(
