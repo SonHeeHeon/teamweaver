@@ -17,8 +17,27 @@ from experiments.phase1.types import (
 )
 
 
+_SOLVER_SETUP_EXCEPTIONS = (
+    ImportError,
+    ModuleNotFoundError,
+    OSError,
+    pulp.PulpSolverError,
+)
+
+
+class SolverSetupError(RuntimeError):
+    """A known backend failed while its configured solver object was created."""
+
+    def __init__(self, solver_name: str, cause: Exception):
+        super().__init__(f"{solver_name} setup failed: {type(cause).__name__}: {cause}")
+        self.solver_name = solver_name
+        self.cause = cause
+
+
 class SolverUnavailableError(RuntimeError):
-    pass
+    def __init__(self, message: str, availability: SolverAvailability):
+        super().__init__(message)
+        self.availability = availability
 
 
 class SolverSolveError(RuntimeError):
@@ -185,7 +204,7 @@ def _available(
                 version=None,
                 error="solver backend reported unavailable",
             )
-    except (ImportError, ModuleNotFoundError, OSError, pulp.PulpSolverError) as exc:
+    except _SOLVER_SETUP_EXCEPTIONS as exc:
         return SolverAvailability(
             state=SolverAvailabilityState.UNAVAILABLE,
             import_name=import_name,
@@ -251,12 +270,17 @@ def _solver_for(name: str, options: SolverOptions) -> pulp.LpSolver:
         "threads": options.threads,
     }
     if name == "cbc":
-        return pulp.PULP_CBC_CMD(**common)
-    if name == "highs":
-        return pulp.HiGHS(**common)
-    if name == "scip":
-        return pulp.SCIP_PY(**common)
-    raise ValueError(f"unknown solver: {name}")
+        constructor = pulp.PULP_CBC_CMD
+    elif name == "highs":
+        constructor = pulp.HiGHS
+    elif name == "scip":
+        constructor = pulp.SCIP_PY
+    else:
+        raise ValueError(f"unknown solver: {name}")
+    try:
+        return constructor(**common)
+    except _SOLVER_SETUP_EXCEPTIONS as exc:
+        raise SolverSetupError(name, exc) from exc
 
 
 def _finite_or_none(value) -> float | None:
@@ -493,17 +517,31 @@ def solve_case(
     record = availability[normalized_name]
     if record.state is SolverAvailabilityState.UNAVAILABLE:
         raise SolverUnavailableError(
-            f"{solver_name} unavailable ({record.import_name}): {record.error}"
+            f"{solver_name} unavailable ({record.import_name}): {record.error}",
+            record,
         )
 
     built = _build_model(problem, _PulpFactory())
-    solver = _solver_for(normalized_name, options)
+    try:
+        solver = _solver_for(normalized_name, options)
+    except SolverSetupError as exc:
+        unavailable = SolverAvailability(
+            state=SolverAvailabilityState.UNAVAILABLE,
+            import_name=record.import_name,
+            version=None,
+            error=f"{type(exc.cause).__name__}: {exc.cause}",
+        )
+        raise SolverUnavailableError(
+            f"{solver_name} unavailable ({record.import_name}): "
+            f"{unavailable.error}",
+            unavailable,
+        ) from exc
     try:
         built.problem.solve(solver)
-    except (ImportError, ModuleNotFoundError, OSError, pulp.PulpSolverError) as exc:
+    except _SOLVER_SETUP_EXCEPTIONS as exc:
         evidence = SolverEvidence(
             solver_name=solver_name,
-            native_status="SOLVER_SETUP_ERROR",
+            native_status="SOLVER_EXECUTION_ERROR",
             termination_reason=f"{type(exc).__name__}: {exc}",
             has_incumbent=False,
             best_bound=None,

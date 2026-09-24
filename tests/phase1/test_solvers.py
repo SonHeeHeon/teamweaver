@@ -8,6 +8,7 @@ from core.optimize.validation import validate_raw_solution
 from experiments.phase1 import solvers as solver_module
 from experiments.phase1.solvers import (
     SolverSolveError,
+    SolverUnavailableError,
     available_solvers,
     solve_case,
 )
@@ -105,6 +106,51 @@ def test_optional_import_failure_is_typed_unavailable(monkeypatch):
     assert record.import_name == "highspy"
     assert record.version is None
     assert record.error == "ImportError: simulated missing highspy"
+
+
+def test_option_configured_constructor_failure_is_typed_unavailable(monkeypatch):
+    def injected_highs_constructor(**kwargs):
+        if set(kwargs) == {"msg"}:
+            return SimpleNamespace(available=lambda: True)
+        raise pulp.PulpSolverError("simulated HiGHS option setup failure")
+
+    monkeypatch.setattr(solver_module.pulp, "HiGHS", injected_highs_constructor)
+
+    with pytest.raises(SolverUnavailableError) as caught:
+        solve_case(
+            _all_terms_problem(),
+            "highs",
+            SolverOptions(threads=1, time_limit_seconds=30),
+        )
+
+    assert caught.value.availability.state is SolverAvailabilityState.UNAVAILABLE
+    assert caught.value.availability.import_name == "highspy"
+    assert caught.value.availability.version is None
+    assert caught.value.availability.error == (
+        "PulpSolverError: simulated HiGHS option setup failure"
+    )
+
+
+def test_optimization_time_failure_remains_a_failed_solve(monkeypatch):
+    class FailingOptimizationSolver:
+        def actualSolve(self, _problem):
+            raise pulp.PulpSolverError("simulated optimization failure")
+
+    monkeypatch.setattr(
+        solver_module,
+        "_solver_for",
+        lambda *_args: FailingOptimizationSolver(),
+    )
+
+    with pytest.raises(SolverSolveError) as caught:
+        solve_case(
+            _all_terms_problem(),
+            "cbc",
+            SolverOptions(threads=1, time_limit_seconds=30),
+        )
+
+    assert caught.value.evidence.native_status == "SOLVER_EXECUTION_ERROR"
+    assert caught.value.evidence.has_incumbent is False
 
 
 @pytest.mark.parametrize("solver_name", ["cbc", "highs", "scip"])
@@ -243,4 +289,33 @@ def test_highs_invalid_native_info_does_not_supply_a_bound(monkeypatch):
         SolverOptions(threads=1, time_limit_seconds=30),
     )
 
+    assert solution.evidence.best_bound is None
+
+
+def test_highs_bound_below_validated_maximization_incumbent_is_discarded(
+    monkeypatch,
+):
+    native_model = SimpleNamespace(
+        getModelStatus=lambda: "time-limit",
+        modelStatusToString=lambda _status: "Time limit reached",
+        getSolution=lambda: SimpleNamespace(value_valid=True),
+        # PuLP negates a maximization model for HiGHS, so this native +100
+        # would normalize to -100: below the independently valid -98.38.
+        getInfo=lambda: SimpleNamespace(valid=True, mip_dual_bound=100.0),
+    )
+    fake_solver = _FiniteCandidateSolver(
+        status=pulp.LpStatusOptimal,
+        values=_valid_all_terms_values(),
+        native_model=native_model,
+    )
+    monkeypatch.setattr(solver_module, "_solver_for", lambda *_args: fake_solver)
+
+    solution = solve_case(
+        _all_terms_problem(),
+        "highs",
+        SolverOptions(threads=1, time_limit_seconds=30),
+    )
+
+    assert solution.objective == pytest.approx(-98.38, abs=1e-6)
+    assert solution.evidence.has_incumbent is True
     assert solution.evidence.best_bound is None
