@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>모든 Codex 작업의 두 안전망 — ELI5</title>
+  <style>
+    :root { color-scheme: light dark; --ink:#132238; --paper:#f6f4ed; --card:#ffffff; --blue:#1769e0; --mint:#dff4ed; --line:#b9c4d1; --warn:#fff0c2; --muted:#506177; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:Arial,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55; }
+    main { max-width:940px; margin:0 auto; padding:42px 22px 64px; }
+    .eyebrow { color:var(--blue); font-size:14px; font-weight:800; letter-spacing:.08em; }
+    h1 { max-width:760px; margin:8px 0 12px; font-size:clamp(34px,7vw,62px); letter-spacing:-.06em; line-height:1.05; }
+    .lead { max-width:680px; margin:0 0 34px; color:var(--muted); font-size:clamp(17px,2.5vw,21px); }
+    .map { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; align-items:center; margin:28px 0 48px; }
+    .node { position:relative; min-height:142px; display:grid; place-items:center; padding:16px; border:2px solid var(--ink); border-radius:20px; background:var(--card); text-align:center; font-weight:800; font-size:18px; box-shadow:5px 5px 0 var(--ink); }
+    .node:nth-child(2) { background:var(--mint); color:#132238; }
+    .node:nth-child(3) { background:#e5efff; color:#132238; }
+    .node:nth-child(4) { background:var(--warn); color:#132238; }
+    .arrow { display:none; }
+    .steps { display:grid; gap:20px; }
+    .step { display:grid; grid-template-columns:84px 1fr; gap:18px; padding:23px; border:1px solid var(--line); border-radius:22px; background:var(--card); }
+    .num { width:62px; height:62px; display:grid; place-items:center; border-radius:50%; background:var(--blue); color:#fff; font-size:31px; font-weight:900; }
+    h2 { margin:0 0 6px; font-size:clamp(25px,4vw,35px); letter-spacing:-.045em; line-height:1.16; }
+    p { margin:0; font-size:17px; }
+    .mini-flow { display:flex; align-items:stretch; flex-wrap:wrap; gap:8px; margin-top:16px; }
+    .chip { flex:1 1 130px; min-height:76px; display:grid; place-items:center; padding:10px; border:2px solid var(--ink); border-radius:14px; background:#fff; color:#132238; text-align:center; font-weight:800; }
+    .chip.good { background:var(--mint); }
+    .chip.blue { background:#e5efff; }
+    .chip.warn { background:var(--warn); }
+    .notice { margin-top:32px; padding:20px 22px; border-left:7px solid var(--blue); border-radius:0 16px 16px 0; background:#e5efff; }
+    .notice strong { display:block; margin-bottom:4px; font-size:20px; }
+    .footer { margin-top:28px; color:var(--muted); font-size:14px; }
+    code { padding:2px 5px; border-radius:5px; background:#e9edf2; color:#17243a; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.88em; }
+    a { color:var(--blue); }
+    a:focus-visible { outline:4px solid #ffb800; outline-offset:3px; border-radius:4px; }
+    @media (min-width:700px) {
+      .map { gap:22px; }
+      .map .node:not(:last-child)::after { content:"→"; position:absolute; z-index:2; right:-28px; top:50%; transform:translateY(-54%); color:var(--blue); font-size:31px; font-weight:900; }
+    }
+    @media (max-width:699px) {
+      main { padding:30px 16px 46px; }
+      .map { grid-template-columns:1fr; gap:12px; }
+      .node { min-height:90px; box-shadow:4px 4px 0 var(--ink); }
+      .step { grid-template-columns:58px 1fr; padding:18px; gap:12px; }
+      .num { width:48px; height:48px; font-size:24px; }
+      p { font-size:16px; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink:#eaf1ff; --paper:#101723; --card:#182331; --muted:#b7c5d7; --line:#526377; --mint:#79d8c1; --warn:#f4cb53; }
+      code { background:#29394b; color:#fff; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">GLOBAL CODEX RULES · 2026-09-25</div>
+    <h1>모든 작업에<br>두 개의 안전망</h1>
+    <p class="lead">좋은 결과는 “만들기”만으로 끝나지 않습니다. 최고의 검토와 쉬운 설명이 함께 있어야, 다음 사람이 결과를 믿고 이어갈 수 있습니다.</p>
+
+    <section class="map" aria-label="작업 결과가 검토와 설명 문서를 거쳐 원격 다운로드 준비 상태가 되는 흐름">
+      <div class="node">① 작업<br>설계·코드·분석</div>
+      <div class="node">② 가장 강한<br>모델로 검토</div>
+      <div class="node">③ ELI5 HTML<br>쉽게 설명</div>
+      <div class="node">④ Git 기록<br>다운로드 준비</div>
+    </section>
+
+    <section class="steps" aria-label="새 전역 규칙 설명">
+      <article class="step">
+        <div class="num" aria-hidden="true">1</div>
+        <div>
+          <h2>왜 규칙이 필요한가?</h2>
+          <p>같은 결과라도 검토의 깊이가 들쭉날쭉하거나 설명이 너무 어렵다면, “정말 맞는가?”를 나중에 알기 어렵습니다. 그래서 품질 확인과 전달 방식을 작업 절차에 넣었습니다.</p>
+        </div>
+      </article>
+
+      <article class="step">
+        <div class="num" aria-hidden="true">2</div>
+        <div>
+          <h2>검토에는 가장 강한 모델</h2>
+          <p>설계, 코드, 테스트, 결과 해석, 최종 병합 전 점검까지 그때 사용할 수 있는 최고 성능 모델로 따로 검토합니다. 구현한 모델과 검토 모델을 가능하면 분리해, 자기 답을 자기만 믿는 일을 줄입니다.</p>
+          <div class="mini-flow" aria-label="검토 흐름">
+            <div class="chip">만든 결과</div><div class="chip good">독립 검토</div><div class="chip blue">근거 확인</div><div class="chip warn">통과 또는 수정</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="step">
+        <div class="num" aria-hidden="true">3</div>
+        <div>
+          <h2>최고 모델을 못 쓰면 숨기지 않기</h2>
+          <p>일시적으로 최고 모델을 사용할 수 없으면, 그다음으로 강한 모델을 쓰되 이유와 남는 위험을 검토 기록에 남깁니다. “검토했다”라는 말만 남기지 않고, 무엇을 확인했는지 근거도 적습니다.</p>
+        </div>
+      </article>
+
+      <article class="step">
+        <div class="num" aria-hidden="true">4</div>
+        <div>
+          <h2>작업 끝에는 누구나 읽는 HTML</h2>
+          <p>설계·구현·디버깅·검증처럼 의미 있는 작업 하나가 끝날 때마다 한국어 ELI5 문서를 만듭니다. 배경, 바뀐 점, 작동 방식, 확인한 증거, 한계와 다음 행동을 전문 용어부터 풀어 설명합니다. 금융 프로젝트도 투자·퀀트 전문가가 아니라는 기준으로 씁니다.</p>
+          <div class="mini-flow" aria-label="ELI5 문서 구성">
+            <div class="chip">왜 했나</div><div class="chip">무엇이 바뀌나</div><div class="chip">어떻게 확인했나</div><div class="chip warn">어디까지 믿나</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="step">
+        <div class="num" aria-hidden="true">5</div>
+        <div>
+          <h2>나중에도 찾을 수 있게</h2>
+          <p>문서는 기본적으로 프로젝트의 <code>outputs/</code> 안에 넣고 Git 기록에 함께 남깁니다. 원격 저장소가 연결돼 있고 이번 작업에서 올리기가 허용된 경우에는 원격에도 포함합니다. 아직 원격이 없거나 올릴 권한이 없으면, 없는데 있다고 말하지 않고 상태를 분명히 알립니다. 완료 채팅에는 항상 클릭 가능한 파일 링크를 제공합니다.</p>
+        </div>
+      </article>
+    </section>
+
+    <aside class="notice" aria-label="현재 적용 상태">
+      <strong>지금 적용된 상태</strong>
+      전역 규칙은 <code>~/.codex/AGENTS.md</code>에 저장했습니다. 이 대화에서도 즉시 따르며, 새 Codex 작업은 해당 전역 지침을 읽어 같은 기준으로 시작합니다.
+    </aside>
+
+    <p class="footer">한 줄 요약: <strong>작업은 가장 강한 검토로 확인하고, 결과는 누구나 이해할 문서로 남긴다.</strong></p>
+  </main>
+</body>
+</html>
