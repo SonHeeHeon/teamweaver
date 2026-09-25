@@ -10,7 +10,27 @@ import math
 from pathlib import Path
 import time
 
-from experiments.phase1.checkpoint import ManifestMismatch, atomic_write_json, safe_component
+from experiments.phase1.checkpoint import (
+    CheckpointCorrupt, ManifestMismatch, atomic_write_json, read_bound_checkpoint, safe_component,
+)
+
+
+def _verify_runtime(manifest):
+    import importlib.metadata
+    root = Path(__file__).resolve().parents[2]
+    for name, expected in manifest.get("source_sha256", {}).items():
+        if hashlib.sha256((root / name).read_bytes()).hexdigest() != expected:
+            raise ManifestMismatch(f"runtime source changed: {name}")
+    if "dependency_lock_sha256" in manifest:
+        if hashlib.sha256((root / "uv.lock").read_bytes()).hexdigest() != manifest["dependency_lock_sha256"]:
+            raise ManifestMismatch("runtime dependency lock changed")
+    for name, expected in manifest.get("dependency_versions", {}).items():
+        try:
+            actual = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            actual = None
+        if actual != expected:
+            raise ManifestMismatch(f"runtime dependency version changed: {name}")
 
 
 def problem_from_materialized(materialized):
@@ -33,6 +53,10 @@ def _json_solution(raw) -> dict:
 def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
     # Heavy imports, reading, graph/scoring reconstruction, validation and persistence
     # all happen under the absolute parent monotonic deadline.
+    run_dir = attempt_dir.parents[2]
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    read_bound_checkpoint(run_dir, manifest)
+    _verify_runtime(manifest)
     from core.optimize.validation import validate_raw_solution
     from experiments.phase1.scenarios import FrozenBenchmarkInput
     from experiments.phase1.solvers import solve_case
@@ -45,8 +69,6 @@ def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
         graph, skill, synergy, params = fixture.build()
         problem = BenchmarkProblem(graph, skill, synergy, params)
     else:
-        run_dir = attempt_dir.parents[2]
-        manifest = json.loads((run_dir / "manifest.json").read_text())
         expected = manifest["inputs"][case.input_id]
         serialized = (run_dir / "inputs" / f"{safe_component(case.input_id)}.json").read_bytes()
         if hashlib.sha256(serialized).hexdigest() != expected["file_sha256"]:
@@ -140,7 +162,7 @@ def main() -> None:
         payload = {"status": "UNAVAILABLE", "availability": asdict(exc.availability), "error": str(exc)}
     except SolverSolveError as exc:
         payload = {"status": "NO_VALID_INCUMBENT", "evidence": asdict(exc.evidence), "error": str(exc)}
-    except (ManifestMismatch, SnapshotIntegrityError, KeyError, FileNotFoundError) as exc:
+    except (CheckpointCorrupt, ManifestMismatch, SnapshotIntegrityError, KeyError, FileNotFoundError) as exc:
         payload = {"status": "INPUT_MISMATCH", "error": f"{type(exc).__name__}: {exc}"}
     except TimeoutError as exc:
         payload = {"status": "DEADLINE_EXCEEDED", "error": str(exc)}

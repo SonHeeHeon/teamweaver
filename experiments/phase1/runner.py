@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 from dataclasses import asdict
 import fcntl
 import hashlib
@@ -11,6 +12,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import select
 import subprocess
 import sys
 import time
@@ -162,20 +164,54 @@ def sample_owned_rss(pgid: int) -> int:
 
 def _signal_owned_group(process: subprocess.Popen, sig: int, sent: list[int]) -> None:
     # process is the Popen instance created in this invocation, never a restored PID.
+    if process.returncode is not None:
+        return  # Reaping releases the numeric PID/PGID; it is no longer authority.
     try:
         os.killpg(process.pid, sig)
         sent.append(int(sig))
     except ProcessLookupError:
         pass
+    except PermissionError:
+        # Darwin reports EPERM for a group containing only unreaped zombies.
+        # Confirm that exact state; a denied/failed inspection stays an error.
+        if sys.platform != "darwin" or not _owned_child_exited(process):
+            raise
+        inspected = subprocess.run(
+            ["ps", "-o", "pid=,pgid=,stat=", "-g", str(process.pid)],
+            capture_output=True, text=True, timeout=0.2, check=True)
+        members = [line.split() for line in inspected.stdout.splitlines()]
+        owned = [row for row in members if len(row) == 3 and int(row[1]) == process.pid]
+        if not owned or not all(row[2].startswith("Z") for row in owned):
+            raise
 
 
 def _stop_owned_group(process: subprocess.Popen, sent: list[int]) -> None:
     _signal_owned_group(process, signal.SIGTERM, sent)
     time.sleep(0.05)
-    process.poll()  # Reap an exited leader before probing its remaining descendants.
     # Always escalate for descendants, even if their session leader has exited.
     _signal_owned_group(process, signal.SIGKILL, sent)
     process.wait()
+
+
+def _owned_child_exited(process: subprocess.Popen) -> bool:
+    """Observe exit without reaping: reserve the leader's identity until cleanup."""
+    if hasattr(os, "waitid"):
+        return os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT) is not None
+    # macOS exposes kqueue but Python does not expose waitid there.
+    queue = select.kqueue()
+    try:
+        event = select.kevent(process.pid, filter=select.KQ_FILTER_PROC,
+                             flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
+                             fflags=select.KQ_NOTE_EXIT)
+        try:
+            return bool(queue.control([event], 1, 0))
+        except ProcessLookupError as exc:
+            if exc.errno != errno.ESRCH:
+                raise
+            # An already-exited direct child is still ours and remains unreaped.
+            return True
+    finally:
+        queue.close()
 
 
 def run_case_subprocess(case, run_dir, deadline_seconds, command_factory,
@@ -214,10 +250,10 @@ def run_case_subprocess(case, run_dir, deadline_seconds, command_factory,
                         _stop_owned_group(process, result.signals_sent)
                         result.cleanup_seconds = time.monotonic() - cleanup_started
                         break
-                    if process.poll() is not None:
-                        result.status = "DONE" if process.returncode == 0 else "FAILED"
+                    if _owned_child_exited(process):
                         # A successful leader cannot leave work running in its session.
                         _signal_owned_group(process, signal.SIGKILL, result.signals_sent)
+                        result.status = "DONE" if process.wait() == 0 else "FAILED"
                         break
                     if now >= next_rss_sample:
                         rss = None
@@ -265,16 +301,25 @@ def run_case_subprocess(case, run_dir, deadline_seconds, command_factory,
         result.error = f"{type(exc).__name__}: {exc}"
     result.finished_at = utc_now()
     result.elapsed_seconds = time.monotonic() - started
-    if result.elapsed_seconds >= deadline_seconds and result.status != "MEMORY_LIMIT_EXCEEDED":
+    if result.elapsed_seconds >= deadline_seconds and result.status == "DONE":
         result.status = "DEADLINE_EXCEEDED"
+    if result.status != "DONE":
         result.payload["quality_pass"] = False
     atomic_write_json(attempt_dir / "result.json", asdict(result))
     # Persistence belongs to the deadline as well as computation and child startup.
     result.elapsed_seconds = time.monotonic() - started
-    if result.elapsed_seconds >= deadline_seconds and result.status != "MEMORY_LIMIT_EXCEEDED":
+    if result.elapsed_seconds >= deadline_seconds and result.status == "DONE":
         result.status = "DEADLINE_EXCEEDED"
         result.payload["quality_pass"] = False
     atomic_write_json(attempt_dir / "result.json", asdict(result))
+    # The last successful write can itself cross the deadline. Once downgraded,
+    # the corrective write is terminal failure and cannot manufacture success.
+    elapsed = time.monotonic() - started
+    if elapsed >= deadline_seconds and result.status == "DONE":
+        result.elapsed_seconds = elapsed
+        result.status = "DEADLINE_EXCEEDED"
+        result.payload["quality_pass"] = False
+        atomic_write_json(attempt_dir / "result.json", asdict(result))
     return result
 
 
@@ -353,6 +398,9 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
                     heartbeat_seconds=heartbeat_seconds)
             measured = time.monotonic() - launch_started
             result.elapsed_seconds = max(result.elapsed_seconds, measured)
+            if result.elapsed_seconds >= case.slot_seconds and result.status == "DONE":
+                result.status = "DEADLINE_EXCEEDED"
+                result.payload["quality_pass"] = False
             marked = time.monotonic()
             record_terminal_case(state, result)
             count += 1

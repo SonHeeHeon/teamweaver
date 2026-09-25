@@ -21,6 +21,14 @@ class CheckpointCorrupt(RuntimeError):
     pass
 
 
+def _restore_required_pause(state) -> None:
+    statuses = {row["status"] for row in state.cases.values()}
+    if statuses & {"INPUT_MISMATCH", "VALIDATION_ERROR", "ORACLE_MISMATCH"}:
+        state.status = "PAUSED_INTEGRITY"
+    elif "MEMORY_LIMIT_EXCEEDED" in statuses:
+        state.status = "PAUSED_RESOURCE"
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -138,6 +146,20 @@ def _repair_event_tail(run_dir: Path) -> None:
             raise CheckpointCorrupt("event log contains an invalid complete line") from exc
 
 
+def read_bound_checkpoint(run_dir: Path, manifest: dict[str, Any]) -> dict:
+    """Read-only identity check usable by a worker without recovering reservations."""
+    try:
+        data = json.loads((Path(run_dir) / "checkpoint.json").read_text())
+        checksum = data.pop("checksum_sha256")
+        if data["schema_version"] != 1 or checksum != fingerprint(data):
+            raise CheckpointCorrupt("checkpoint checksum or schema mismatch")
+        if data["manifest_sha256"] != fingerprint(manifest):
+            raise ManifestMismatch("checkpoint manifest fingerprint mismatch")
+        return data
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise CheckpointCorrupt("checkpoint is missing or malformed") from exc
+
+
 def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
     run_dir = Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -174,12 +196,7 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
         append_event(state, "CREATED", manifest_sha256=digest)
         return state
     try:
-        data = json.loads(checkpoint_path.read_text())
-        checksum = data.pop("checksum_sha256")
-        if data["schema_version"] != 1 or checksum != fingerprint(data):
-            raise CheckpointCorrupt("checkpoint checksum or schema mismatch")
-        if data["manifest_sha256"] != digest:
-            raise ManifestMismatch("checkpoint manifest fingerprint mismatch")
+        data = read_bound_checkpoint(run_dir, manifest)
         active = data["active_seconds"]
         if not math.isfinite(active) or active < 0:
             raise CheckpointCorrupt("invalid active-time ledger")
@@ -206,6 +223,7 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
                                 error="unclosed reservation; full slot retained")
             record_terminal_case(state, result)
             state.recovered_orphans.append(case_id)
+    _restore_required_pause(state)
     return state
 
 
@@ -250,6 +268,7 @@ def record_terminal_case(state: RunState, result: CaseResult) -> RunState:
     state.cases[result.case_id] = {**row, "status": result.status,
         "elapsed_seconds": result.elapsed_seconds, "result_path": str(path.relative_to(state.run_dir)),
         "result_sha256": fingerprint(payload)}
+    _restore_required_pause(state)
     save_checkpoint(state)
     append_event(state, "TERMINAL", case_id=result.case_id, status=result.status,
                  attempt=result.attempt, elapsed_seconds=result.elapsed_seconds)

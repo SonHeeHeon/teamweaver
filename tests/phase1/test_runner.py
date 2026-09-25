@@ -21,6 +21,43 @@ def command(source):
     return lambda case, attempt_dir, deadline: [sys.executable, "-c", source]
 
 
+@pytest.mark.parametrize("status,pause", [
+    ("MEMORY_LIMIT_EXCEEDED", "PAUSED_RESOURCE"),
+    ("INPUT_MISMATCH", "PAUSED_INTEGRITY"),
+])
+@pytest.mark.parametrize("legacy_partial", [False, True])
+def test_terminal_pause_survives_crash_at_durable_record(tmp_path, monkeypatch, status, pause, legacy_partial):
+    import experiments.phase1.runner as runner
+    from experiments.phase1.checkpoint import fingerprint
+    original = runner.record_terminal_case
+    def crash_after_record(state, result):
+        original(state, result)
+        raise KeyboardInterrupt("crash immediately after durable terminal record")
+    def factory(item, attempt_dir, deadline):
+        return [sys.executable, "-c", "import pathlib,json; pathlib.Path(" +
+                repr(str(attempt_dir / "worker-result.json")) +
+                ").write_text(json.dumps({'status':" + repr(status) + "}))"]
+    monkeypatch.setattr(runner, "record_terminal_case", crash_after_record)
+    schedule = (case(), case("case-2"))
+    with pytest.raises(KeyboardInterrupt):
+        run_schedule(schedule, tmp_path, {}, 10, factory)
+    checkpoint = json.loads((tmp_path / "checkpoint.json").read_text())
+    if legacy_partial:
+        # Recovery must also repair checkpoints from the pre-fix crash window.
+        checkpoint["status"] = "PARTIAL"
+        checkpoint.pop("checksum_sha256")
+        checkpoint["checksum_sha256"] = fingerprint(checkpoint)
+        (tmp_path / "checkpoint.json").write_text(json.dumps(checkpoint))
+    else:
+        assert checkpoint["status"] == pause
+    monkeypatch.setattr(runner, "record_terminal_case", original)
+    def forbidden(*args):
+        pytest.fail("resume started a case after a mandatory terminal pause")
+    resumed = run_schedule(schedule, tmp_path, {}, 10, forbidden)
+    assert resumed.status == pause
+    assert list(resumed.cases) == ["case-1"]
+
+
 def test_timeout_kills_only_launched_group_and_reaps_child(tmp_path):
     unrelated = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], start_new_session=True)
     try:
@@ -60,6 +97,51 @@ def test_timeout_kills_descendant_even_when_it_ignores_term(tmp_path):
         time.sleep(.01)
     else:
         pytest.fail("test-launched descendant remains alive")
+
+
+@pytest.mark.parametrize("normal_exit", [True, False])
+def test_group_signals_precede_reaping_owned_child(tmp_path, monkeypatch, normal_exit):
+    import experiments.phase1.runner as runner
+    original_popen = subprocess.Popen
+    original_killpg = os.killpg
+    launched = []
+    unsafe_signals = []
+    def launch(*args, **kwargs):
+        process = original_popen(*args, **kwargs)
+        launched.append(process)
+        return process
+    def signal_if_reserved(pgid, sig):
+        owned = next(process for process in launched if process.pid == pgid)
+        if owned.returncode is not None:
+            # Observe the regression without signaling a reusable numeric PGID.
+            unsafe_signals.append(sig)
+            return
+        original_killpg(pgid, sig)
+    monkeypatch.setattr(runner.subprocess, "Popen", launch)
+    monkeypatch.setattr(runner.os, "killpg", signal_if_reserved)
+    source = "print('done')" if normal_exit else "import time; time.sleep(20)"
+    result = run_case_subprocess(case(), tmp_path, .2, command(source), rss_sampler=lambda pgid: 0)
+    assert not unsafe_signals, "group signal attempted after releasing child identity"
+    assert result.status == ("DONE" if normal_exit else "DEADLINE_EXCEEDED")
+    assert launched[0].returncode is not None
+
+
+def test_normal_exit_cleans_remaining_descendant(tmp_path):
+    result = run_case_subprocess(case(), tmp_path, 2, command(
+        "import subprocess,sys; "
+        "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(20)']); "
+        "print(child.pid,flush=True)"
+    ), rss_sampler=lambda pgid: 0)
+    assert result.status == "DONE"
+    descendant = int((tmp_path / "cases/case-1/attempt-001/stdout.log").read_text())
+    for _ in range(100):
+        try:
+            os.kill(descendant, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(.01)
+    else:
+        pytest.fail("normal worker exit left its test-launched descendant alive")
 
 
 def test_completed_case_ids_are_skipped_and_max_cases_keeps_manifest(tmp_path):
@@ -106,6 +188,7 @@ def test_short_heartbeat_persists_running_reservation(tmp_path):
 def test_real_oracle_worker_produces_validated_evidence(tmp_path):
     from experiments.phase1.runner import worker_command
     oracle = SweepCase(1, "tiny-cbc", "oracle", "oracle-one_slot", "cbc", 1, 30, oracle_name="one_slot")
+    create_or_load_run(tmp_path, {})
     result = run_case_subprocess(oracle, tmp_path, 30, worker_command)
     assert result.status == "DONE", result
     assert result.payload["validation"]["valid"] is True
@@ -248,6 +331,7 @@ def test_frozen_nonoracle_worker_uses_matching_input(tmp_path):
     from experiments.phase1.runner import prepare_new_run, worker_command
     item = SweepCase(1, "small-cbc", "primary", "small", "cbc", 1, 30, 6, 2, 42, "baseline")
     manifest = prepare_new_run((item,), tmp_path, {}, 10)
+    create_or_load_run(tmp_path, manifest)
     result = run_case_subprocess(item, tmp_path, 30, worker_command)
     assert result.status == "DONE", result
     assert result.payload["hashes"] == {key: value for key, value in manifest["inputs"]["small"].items() if key != "file_sha256"}
@@ -264,6 +348,50 @@ def test_persistence_time_is_inside_deadline(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "atomic_write_json", slow)
     result = run_case_subprocess(case(), tmp_path, .1, command("print('ok')"))
     assert result.status == "DEADLINE_EXCEEDED"
+
+
+@pytest.mark.parametrize("worker_status,expected", [
+    ("DONE", "DEADLINE_EXCEEDED"),
+    ("INPUT_MISMATCH", "INPUT_MISMATCH"),
+    ("MEMORY_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED"),
+])
+def test_only_final_result_write_crosses_deadline(tmp_path, monkeypatch, worker_status, expected):
+    import experiments.phase1.runner as runner
+    original = runner.atomic_write_json
+    writes = 0
+    def delayed_final_write(path, data):
+        nonlocal writes
+        if path.name == "result.json":
+            writes += 1
+            if writes == 2:
+                time.sleep(.25)
+        original(path, data)
+    monkeypatch.setattr(runner, "atomic_write_json", delayed_final_write)
+    def factory(item, attempt_dir, deadline):
+        return [sys.executable, "-c", "import pathlib,json; pathlib.Path(" +
+                repr(str(attempt_dir / "worker-result.json")) +
+                ").write_text(json.dumps({'status':" + repr(worker_status) + ", 'quality_pass':True}))"]
+    result = run_case_subprocess(case(slot=.2), tmp_path, .2, factory, rss_sampler=lambda pgid: 0)
+    persisted = json.loads((tmp_path / "cases/case-1/attempt-001/result.json").read_text())
+    assert result.status == expected
+    assert result.payload["quality_pass"] is False
+    assert persisted == asdict(result)
+
+
+def test_integrity_failure_priority_survives_late_persistence(tmp_path, monkeypatch):
+    import experiments.phase1.runner as runner
+    original = runner.atomic_write_json
+    def slow(path, data):
+        if path.name == "result.json":
+            time.sleep(.25)
+        original(path, data)
+    monkeypatch.setattr(runner, "atomic_write_json", slow)
+    def factory(item, attempt_dir, deadline):
+        return [sys.executable, "-c", "import pathlib,json; pathlib.Path(" +
+                repr(str(attempt_dir / "worker-result.json")) +
+                ").write_text(json.dumps({'status':'INPUT_MISMATCH'}))"]
+    result = run_case_subprocess(case(slot=.2), tmp_path, .2, factory, rss_sampler=lambda pgid: 0)
+    assert result.status == "INPUT_MISMATCH"
 
 
 def test_startup_time_is_charged_before_budget_decision(tmp_path):
@@ -354,7 +482,8 @@ def test_reservation_overhead_cannot_shorten_a_registered_slot(tmp_path, monkeyp
 def test_worker_rejects_changed_file_even_if_snapshot_content_is_unchanged(tmp_path):
     from experiments.phase1.runner import prepare_new_run, worker_command
     item = SweepCase(1, "small-cbc", "primary", "small", "cbc", 1, 30, 6, 2, 42, "baseline")
-    prepare_new_run((item,), tmp_path, {}, 10)
+    manifest = prepare_new_run((item,), tmp_path, {}, 10)
+    create_or_load_run(tmp_path, manifest)
     path = tmp_path / "inputs/small.json"
     path.write_bytes(path.read_bytes() + b"\n")
     result = run_case_subprocess(item, tmp_path, 30, worker_command)
@@ -370,6 +499,62 @@ def test_manifest_records_source_revision_and_dependency_versions():
         ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
     assert manifest["dependency_versions"]["numpy"] == importlib.metadata.version("numpy")
     assert manifest["dependency_versions"]["pulp"] == importlib.metadata.version("pulp")
+
+
+@pytest.mark.parametrize("drift", ["manifest", "checkpoint_checksum", "checkpoint_schema",
+                                    "source", "lock", "dependency"])
+def test_worker_binds_registered_manifest_and_runtime_before_build(tmp_path, monkeypatch, drift):
+    import hashlib
+    import experiments.phase1.scenarios as scenarios
+    import experiments.phase1.solvers as solvers
+    import experiments.phase1.worker as worker
+    from experiments.phase1.checkpoint import fingerprint, reserve_case
+    from experiments.phase1.runner import build_manifest, freeze_scheduled_inputs
+    item = SweepCase(1, "small-cbc", "primary", "small", "cbc", 1, 30, 6, 2, 42, "baseline")
+    manifest = build_manifest((item,))
+    # Register an identity that subsequently differs from the current runtime.
+    if drift == "source":
+        manifest["source_sha256"]["experiments/phase1/worker.py"] = "0" * 64
+    elif drift == "lock":
+        manifest["dependency_lock_sha256"] = "0" * 64
+    elif drift == "dependency":
+        manifest["dependency_versions"]["numpy"] = "0.0.changed"
+    manifest = freeze_scheduled_inputs((item,), tmp_path, manifest, time.monotonic() + 10)
+    state = create_or_load_run(tmp_path, manifest)
+    reserve_case(state, item)
+    if drift == "manifest":
+        path = tmp_path / "inputs/small.json"
+        content = json.loads(path.read_text())
+        content["params"]["lam"] = "0.777"
+        changed = scenarios.FrozenBenchmarkInput.from_json(json.dumps(content))
+        path.write_text(changed.to_json())
+        manifest["inputs"]["small"] = {**changed.hashes.as_dict(),
+            "file_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+    elif drift.startswith("checkpoint_"):
+        path = tmp_path / "checkpoint.json"
+        content = json.loads(path.read_text())
+        if drift == "checkpoint_schema":
+            content["schema_version"] = 999
+            content.pop("checksum_sha256")
+            content["checksum_sha256"] = fingerprint(content)
+        else:
+            content["checksum_sha256"] = "0" * 64
+        path.write_text(json.dumps(content))
+    attempt_dir = tmp_path / "cases/small-cbc/attempt-001"
+    attempt_dir.mkdir(parents=True)
+    case_path = attempt_dir / "case.json"
+    case_path.write_text(json.dumps(asdict(item)))
+    def forbidden(*args, **kwargs):
+        pytest.fail("untrusted input reached model build or solve")
+    monkeypatch.setattr(worker, "problem_from_materialized", forbidden)
+    monkeypatch.setattr(solvers, "solve_case", forbidden)
+    monkeypatch.setattr(sys, "argv", ["worker", "--case-file", str(case_path),
+                                    "--deadline", str(time.monotonic() + 30)])
+    worker.main()
+    payload = json.loads((attempt_dir / "worker-result.json").read_text())
+    assert payload["status"] == "INPUT_MISMATCH"
+    assert not (attempt_dir / "raw-solution.json").exists()
 
 
 def test_second_supervisor_cannot_orphan_active_reservation(tmp_path):
@@ -416,7 +601,8 @@ def test_worker_rejects_snapshot_for_different_case_identity(tmp_path):
     from dataclasses import replace
     from experiments.phase1.runner import prepare_new_run, worker_command
     item = SweepCase(1, "small-cbc", "primary", "small", "cbc", 1, 30, 6, 2, 42, "baseline")
-    prepare_new_run((item,), tmp_path, {}, 10)
+    manifest = prepare_new_run((item,), tmp_path, {}, 10)
+    create_or_load_run(tmp_path, manifest)
     result = run_case_subprocess(replace(item, seed=99), tmp_path, 30, worker_command)
     assert result.status == "INPUT_MISMATCH"
     assert not (tmp_path / "cases/small-cbc/attempt-001/raw-solution.json").exists()
