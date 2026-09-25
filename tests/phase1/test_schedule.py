@@ -1,5 +1,6 @@
 from collections import Counter
 from dataclasses import FrozenInstanceError
+import hashlib
 
 import pytest
 
@@ -88,3 +89,11 @@ def test_case_ids_and_schedule_are_deterministic_and_immutable():
     assert [case.ordinal for case in first] == list(range(1, 358))
     with pytest.raises(FrozenInstanceError):
         first[0].slot_seconds = 999
+
+
+def test_full_ordered_case_id_manifest_matches_pre_registered_digest():
+    manifest = "\n".join(case.case_id for case in build_schedule()).encode("utf-8")
+
+    assert hashlib.sha256(manifest).hexdigest() == (
+        "ef86746990bf919d36558d506bf18df16b90bb6b2429316862e32bae44b150fa"
+    )
