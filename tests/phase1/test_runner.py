@@ -1,6 +1,8 @@
+import errno
 import json
 import os
 import signal
+import select
 import subprocess
 import sys
 import time
@@ -30,8 +32,8 @@ def test_terminal_pause_survives_crash_at_durable_record(tmp_path, monkeypatch, 
     import experiments.phase1.runner as runner
     from experiments.phase1.checkpoint import fingerprint
     original = runner.record_terminal_case
-    def crash_after_record(state, result):
-        original(state, result)
+    def crash_after_record(state, result, **kwargs):
+        original(state, result, **kwargs)
         raise KeyboardInterrupt("crash immediately after durable terminal record")
     def factory(item, attempt_dir, deadline):
         return [sys.executable, "-c", "import pathlib,json; pathlib.Path(" +
@@ -124,6 +126,72 @@ def test_group_signals_precede_reaping_owned_child(tmp_path, monkeypatch, normal
     assert not unsafe_signals, "group signal attempted after releasing child identity"
     assert result.status == ("DONE" if normal_exit else "DEADLINE_EXCEEDED")
     assert launched[0].returncode is not None
+
+
+@pytest.fixture
+def inject_kqueue_event(monkeypatch):
+    if not hasattr(select, "kqueue") or hasattr(os, "waitid"):
+        pytest.skip("requires the Darwin kqueue exit-observation path")
+    original_queue = select.kqueue
+    def inject(make_event):
+        pending = True
+        class Queue:
+            def __init__(self):
+                self.queue = original_queue()
+            def control(self, changes, max_events, timeout):
+                nonlocal pending
+                if pending:
+                    pending = False
+                    event = make_event(changes[0].ident)
+                    if isinstance(event, Exception):
+                        raise event
+                    return [event]
+                return self.queue.control(changes, max_events, timeout)
+            def close(self):
+                self.queue.close()
+        monkeypatch.setattr(select, "kqueue", Queue)
+    return inject
+
+
+@pytest.mark.parametrize("error", [errno.EPERM, errno.EINVAL])
+def test_kqueue_error_event_is_not_normal_worker_exit(tmp_path, inject_kqueue_event, error):
+    inject_kqueue_event(lambda pid: select.kevent(pid, filter=select.KQ_FILTER_PROC,
+        flags=select.KQ_EV_ERROR, fflags=select.KQ_NOTE_EXIT, data=error))
+    result = run_case_subprocess(case(), tmp_path, 2,
+        command("import time; time.sleep(20)"), rss_sampler=lambda pgid: 0)
+    assert result.status == "FAILED"
+    assert result.error and f"[Errno {error}]" in result.error
+    # Error cleanup begins with TERM. Darwin may reject the later KILL when
+    # only unreaped zombies remain; the production guard verifies that state.
+    assert result.signals_sent[0] == signal.SIGTERM
+    assert result.returncode < 0
+    with pytest.raises(ProcessLookupError):
+        os.kill(result.pid, 0)
+
+
+@pytest.mark.parametrize("event_kind,exited", [
+    ("exit", True), ("esrch_event", True), ("esrch_exception", True),
+    ("ack", False), ("wrong_filter", False), ("wrong_note", False),
+])
+def test_kqueue_only_recognizes_exit_evidence(inject_kqueue_event, event_kind, exited):
+    from experiments.phase1.runner import _owned_child_exited
+    process = subprocess.Popen([sys.executable, "-c", "pass"], start_new_session=True)
+    try:
+        # Leave the direct child unreaped, as required by the exit observer.
+        time.sleep(.1)
+        def make_event(pid):
+            if event_kind == "esrch_exception":
+                return ProcessLookupError(errno.ESRCH, "no such process")
+            return select.kevent(pid,
+                filter=select.KQ_FILTER_READ if event_kind == "wrong_filter" else select.KQ_FILTER_PROC,
+                flags=select.KQ_EV_ERROR if event_kind in {"esrch_event", "ack"} else 0,
+                fflags=0 if event_kind == "wrong_note" else select.KQ_NOTE_EXIT,
+                data=errno.ESRCH if event_kind == "esrch_event" else 0)
+        inject_kqueue_event(make_event)
+        assert _owned_child_exited(process) is exited
+        assert process.returncode is None
+    finally:
+        process.wait(timeout=5)
 
 
 def test_normal_exit_cleans_remaining_descendant(tmp_path):
@@ -392,6 +460,68 @@ def test_integrity_failure_priority_survives_late_persistence(tmp_path, monkeypa
                 ").write_text(json.dumps({'status':'INPUT_MISMATCH'}))"]
     result = run_case_subprocess(case(slot=.2), tmp_path, .2, factory, rss_sampler=lambda pgid: 0)
     assert result.status == "INPUT_MISMATCH"
+
+
+@pytest.mark.parametrize("boundary", ["result.json", "checkpoint.json"])
+@pytest.mark.parametrize("delayed_write", [1, 2])
+@pytest.mark.parametrize("worker_status,expected,pause", [
+    ("DONE", "DEADLINE_EXCEEDED", None),
+    ("INPUT_MISMATCH", "INPUT_MISMATCH", "PAUSED_INTEGRITY"),
+    ("VALIDATION_ERROR", "VALIDATION_ERROR", "PAUSED_INTEGRITY"),
+    ("ORACLE_MISMATCH", "ORACLE_MISMATCH", "PAUSED_INTEGRITY"),
+    ("MEMORY_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "PAUSED_RESOURCE"),
+])
+def test_terminal_record_persistence_is_inside_deadline(
+        tmp_path, monkeypatch, boundary, delayed_write, worker_status, expected, pause):
+    import experiments.phase1.checkpoint as checkpoint
+    import experiments.phase1.runner as runner
+    original_write = checkpoint.atomic_write_json
+    original_record = runner.record_terminal_case
+    recording = False
+    writes = 0
+    recorded_results = []
+    def delayed_terminal_write(path, data):
+        nonlocal writes
+        if recording and path.name == boundary:
+            writes += 1
+            if writes == delayed_write:
+                time.sleep(.25)
+        original_write(path, data)
+    def observe_record(state, result, **kwargs):
+        nonlocal recording
+        recording = True
+        try:
+            return original_record(state, result, **kwargs)
+        finally:
+            recording = False
+            recorded_results.append(result)
+    monkeypatch.setattr(checkpoint, "atomic_write_json", delayed_terminal_write)
+    monkeypatch.setattr(runner, "record_terminal_case", observe_record)
+    def factory(item, attempt_dir, deadline):
+        return [sys.executable, "-c", "import pathlib,json; pathlib.Path(" +
+                repr(str(attempt_dir / "worker-result.json")) +
+                ").write_text(json.dumps({'status':" + repr(worker_status) + ", 'quality_pass':True}))"]
+    schedule = (case(slot=.2), case("case-2", slot=.2))
+    state = run_schedule(schedule, tmp_path, {}, 10, factory)
+    result = recorded_results[0]
+    stored = json.loads((tmp_path / "cases/case-1/attempt-001/result.json").read_text())
+    durable = json.loads((tmp_path / "checkpoint.json").read_text())
+    assert result.status == expected
+    assert result.elapsed_seconds >= .25
+    assert result.payload["quality_pass"] is False
+    assert stored == asdict(result)
+    assert state.cases["case-1"]["status"] == expected
+    assert state.cases["case-1"]["elapsed_seconds"] == result.elapsed_seconds
+    assert durable["cases"] == state.cases
+    assert checkpoint.create_or_load_run(tmp_path, {}).cases == state.cases
+    if pause:
+        assert state.status == durable["status"] == pause
+        assert list(state.cases) == ["case-1"]
+        resumed = run_schedule(schedule, tmp_path, {}, 10,
+                               lambda *args: pytest.fail("paused run started another case"))
+        assert resumed.status == pause
+    else:
+        assert list(state.cases) == ["case-1", "case-2"]
 
 
 def test_startup_time_is_charged_before_budget_decision(tmp_path):

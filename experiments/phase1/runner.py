@@ -204,12 +204,24 @@ def _owned_child_exited(process: subprocess.Popen) -> bool:
                              flags=select.KQ_EV_ADD | select.KQ_EV_ONESHOT,
                              fflags=select.KQ_NOTE_EXIT)
         try:
-            return bool(queue.control([event], 1, 0))
+            events = queue.control([event], 1, 0)
         except ProcessLookupError as exc:
             if exc.errno != errno.ESRCH:
                 raise
             # An already-exited direct child is still ours and remains unreaped.
             return True
+        exited = False
+        for observed in events:
+            owned = observed.ident == process.pid and observed.filter == select.KQ_FILTER_PROC
+            if observed.flags & select.KQ_EV_ERROR:
+                if observed.data == errno.ESRCH and owned:
+                    exited = True
+                elif observed.data:
+                    raise OSError(observed.data, os.strerror(observed.data))
+                # A zero-data EV_ERROR is an acknowledgement, not exit evidence.
+            elif owned and observed.fflags & select.KQ_NOTE_EXIT:
+                exited = True
+        return exited
     finally:
         queue.close()
 
@@ -401,8 +413,10 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
             if result.elapsed_seconds >= case.slot_seconds and result.status == "DONE":
                 result.status = "DEADLINE_EXCEEDED"
                 result.payload["quality_pass"] = False
-            marked = time.monotonic()
-            record_terminal_case(state, result)
+            record_terminal_case(state, result, started_monotonic=launch_started)
+            # Terminal persistence is now in the case ledger; only its final
+            # accounting-write tail remains supervisor overhead.
+            marked = launch_started + result.elapsed_seconds
             count += 1
             if result.status in {"INPUT_MISMATCH", "VALIDATION_ERROR", "ORACLE_MISMATCH"}:
                 state.status = "PAUSED_INTEGRITY"

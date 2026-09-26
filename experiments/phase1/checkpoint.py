@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import tempfile
+import time
 from typing import Any
 
 
@@ -253,7 +254,7 @@ def heartbeat(state: RunState, case_id: str, elapsed_seconds: float) -> None:
     append_event(state, "HEARTBEAT", case_id=case_id, elapsed_seconds=elapsed_seconds)
 
 
-def record_terminal_case(state: RunState, result: CaseResult) -> RunState:
+def record_terminal_case(state: RunState, result: CaseResult, *, started_monotonic=None) -> RunState:
     if result.status in {"PENDING", "RUNNING"}:
         raise ValueError("a terminal result is required")
     if not math.isfinite(result.elapsed_seconds) or result.elapsed_seconds < 0:
@@ -261,15 +262,39 @@ def record_terminal_case(state: RunState, result: CaseResult) -> RunState:
     row = state.cases[result.case_id]
     if row["status"] != "RUNNING" or row["attempt"] != result.attempt:
         raise ValueError("result must close its matching running reservation exactly once")
-    payload = asdict(result)
     path = attempt_directory(state.run_dir, result.case_id, result.attempt) / "result.json"
-    atomic_write_json(path, payload)
-    state.active_seconds += result.elapsed_seconds - row["reserved_seconds"]
-    state.cases[result.case_id] = {**row, "status": result.status,
-        "elapsed_seconds": result.elapsed_seconds, "result_path": str(path.relative_to(state.run_dir)),
-        "result_sha256": fingerprint(payload)}
-    _restore_required_pause(state)
-    save_checkpoint(state)
-    append_event(state, "TERMINAL", case_id=result.case_id, status=result.status,
-                 attempt=result.attempt, elapsed_seconds=result.elapsed_seconds)
+    accounted = row["reserved_seconds"]
+
+    def persist(event):
+        nonlocal accounted
+        payload = asdict(result)
+        atomic_write_json(path, payload)
+        state.active_seconds += result.elapsed_seconds - accounted
+        accounted = result.elapsed_seconds
+        state.cases[result.case_id] = {**row, "status": result.status,
+            "elapsed_seconds": result.elapsed_seconds, "result_path": str(path.relative_to(state.run_dir)),
+            "result_sha256": fingerprint(payload)}
+        _restore_required_pause(state)
+        save_checkpoint(state)
+        append_event(state, event, case_id=result.case_id, status=result.status,
+                     attempt=result.attempt, elapsed_seconds=result.elapsed_seconds)
+
+    def measure():
+        result.elapsed_seconds = max(result.elapsed_seconds, time.monotonic() - started_monotonic)
+        if result.elapsed_seconds >= row["reserved_seconds"] and result.status == "DONE":
+            result.status = "DEADLINE_EXCEEDED"
+        if result.status != "DONE":
+            result.payload["quality_pass"] = False
+        result.finished_at = utc_now()
+
+    persist("TERMINAL")
+    if started_monotonic is not None:
+        measure()
+        persist("TERMINAL_ACCOUNTED")
+        # Accounting persistence can itself consume the remaining slot. A final
+        # correction is always non-success, so it cannot reopen the deadline.
+        # Its own I/O tail is charged by the scheduler, not recursively rewritten.
+        if time.monotonic() - started_monotonic >= row["reserved_seconds"]:
+            measure()
+            persist("TERMINAL_ACCOUNTED")
     return state
