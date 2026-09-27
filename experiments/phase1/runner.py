@@ -362,7 +362,8 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
         _verify_input_files(run_dir, manifest)
         state = create_or_load_run(run_dir, manifest)
         state.active_seconds += startup_active_seconds
-        if state.recovered_orphans or any(row["status"] == "ORPHANED" for row in state.cases.values()):
+        if not state.status.startswith("PAUSED_") and (
+                state.recovered_orphans or any(row["status"] == "ORPHANED" for row in state.cases.values())):
             # A stale PID is insufficient authority to kill a former supervisor's
             # child. Pause rather than overlap it with another solver process.
             state.status = "PAUSED_ORPHANED"
@@ -370,6 +371,11 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
             state.active_seconds += time.monotonic() - marked
             save_checkpoint(state)
             return state
+        # Persist invocation ownership before scheduling. A clean prior stop is
+        # already acknowledged, so it must not become ambiguous on a later crash.
+        state.supervisor_active = True
+        state.last_reserved_case = None
+        save_checkpoint(state)
         count = 0
         for case in schedule:
             if case.case_id in state.cases:
@@ -391,6 +397,7 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
                 # continue charging all unknown reservations in full.
                 state.active_seconds -= case.slot_seconds
                 del state.cases[case.case_id]
+                state.last_reserved_case = None
                 save_checkpoint(state)
                 append_event(state, "RESERVATION_RELEASED", case_id=case.case_id,
                              reason="insufficient full-slot budget after reservation persistence")
@@ -427,6 +434,10 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
         state.active_seconds += time.monotonic() - marked
         if not state.status.startswith("PAUSED_"):
             state.status = "COMPLETE" if all(case.case_id in state.cases for case in schedule) else "PARTIAL"
+        # Clear ownership only after all terminal accounting has returned. A
+        # crash before this commit conservatively invalidates the final DONE.
+        state.supervisor_active = False
+        state.last_reserved_case = None
         save_checkpoint(state)
         append_event(state, "STOPPED", status=state.status, active_seconds=state.active_seconds)
         return state

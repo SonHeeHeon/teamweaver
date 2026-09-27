@@ -28,6 +28,8 @@ def _restore_required_pause(state) -> None:
         state.status = "PAUSED_INTEGRITY"
     elif "MEMORY_LIMIT_EXCEEDED" in statuses:
         state.status = "PAUSED_RESOURCE"
+    elif "ORPHANED" in statuses:
+        state.status = "PAUSED_ORPHANED"
 
 
 def utc_now() -> str:
@@ -105,6 +107,8 @@ class RunState:
     updated_at: str = field(default_factory=utc_now)
     status: str = "PARTIAL"
     recovered_orphans: list[str] = field(default_factory=list)
+    supervisor_active: bool = False
+    last_reserved_case: str | None = None
 
 
 def save_checkpoint(state: RunState) -> None:
@@ -112,7 +116,8 @@ def save_checkpoint(state: RunState) -> None:
     payload = {"schema_version": 1, "manifest_sha256": state.manifest_sha256,
                "active_seconds": state.active_seconds, "cases": state.cases,
                "created_at": state.created_at, "updated_at": state.updated_at,
-               "status": state.status}
+               "status": state.status, "supervisor_active": state.supervisor_active,
+               "last_reserved_case": state.last_reserved_case}
     payload["checksum_sha256"] = fingerprint(payload)
     atomic_write_json(state.run_dir / "checkpoint.json", payload)
 
@@ -203,6 +208,13 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
             raise CheckpointCorrupt("invalid active-time ledger")
         state = RunState(run_dir, manifest, digest, active, data["cases"],
                          data["created_at"], data["updated_at"], data["status"])
+        state.supervisor_active = data.get("supervisor_active", False)
+        state.last_reserved_case = data.get("last_reserved_case")
+        if type(state.supervisor_active) is not bool or (
+                state.last_reserved_case is not None and (
+                    not isinstance(state.last_reserved_case, str)
+                    or state.last_reserved_case not in state.cases)):
+            raise CheckpointCorrupt("invalid supervisor transaction marker")
     except (ValueError, KeyError, TypeError) as exc:
         raise CheckpointCorrupt("checkpoint is malformed") from exc
     _repair_event_tail(run_dir)
@@ -214,6 +226,18 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
                     raise ValueError("terminal result checksum mismatch")
             except (OSError, ValueError, KeyError) as exc:
                 raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}") from exc
+    if state.supervisor_active and state.last_reserved_case is not None:
+        case_id = state.last_reserved_case
+        row = state.cases[case_id]
+        if row["status"] == "DONE":
+            # This invocation never durably acknowledged its final success with
+            # a subsequent reservation or clean stop. Its persistence tail may
+            # have crossed the deadline. Restore the full charge before replacing
+            # the artifact; a crash during recovery then leaves a RUNNING row,
+            # which does not require a terminal hash and is safe to recover again.
+            state.active_seconds += max(row["reserved_seconds"], row["elapsed_seconds"]) - row["elapsed_seconds"]
+            state.cases[case_id] = {**row, "status": "RUNNING"}
+            save_checkpoint(state)
     for case_id, row in list(state.cases.items()):
         if row["status"] == "RUNNING":
             # No stored PID is ever signaled. The full slot was charged before spawn.
@@ -221,7 +245,8 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
                                 elapsed_seconds=row["reserved_seconds"],
                                 deadline_seconds=row["reserved_seconds"],
                                 started_at=row["started_at"], finished_at=utc_now(),
-                                error="unclosed reservation; full slot retained")
+                                payload={"quality_pass": False},
+                                error="unclosed or unacknowledged reservation; full slot retained")
             record_terminal_case(state, result)
             state.recovered_orphans.append(case_id)
     _restore_required_pause(state)
@@ -243,6 +268,9 @@ def reserve_case(state: RunState, case, *, slot_seconds: float | None = None) ->
     state.cases[case.case_id] = {"status": "RUNNING", "attempt": 1,
         "reserved_seconds": slot, "started_at": utc_now(), "elapsed_seconds": 0.0,
         "case": asdict(case)}
+    # The pointer and reservation share a checkpoint: earlier successes become
+    # acknowledged only once the next reservation is durable.
+    state.last_reserved_case = case.case_id
     save_checkpoint(state)
     append_event(state, "RESERVED", case_id=case.case_id, slot_seconds=slot, attempt=1)
     return 1

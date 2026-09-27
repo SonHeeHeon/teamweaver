@@ -23,6 +23,121 @@ def command(source):
     return lambda case, attempt_dir, deadline: [sys.executable, "-c", source]
 
 
+@pytest.mark.parametrize("recovery_crash", [False, True])
+def test_crash_after_first_terminal_checkpoint_cannot_accept_unaccounted_success(tmp_path, monkeypatch, recovery_crash):
+    import experiments.phase1.checkpoint as checkpoint
+    import experiments.phase1.runner as runner
+    original_write = checkpoint.atomic_write_json
+    def crash_after_slow_terminal_write(path, data):
+        if path.name == "checkpoint.json" and data["cases"].get("case-1", {}).get("status") == "DONE":
+            time.sleep(.09)
+            original_write(path, data)
+            raise KeyboardInterrupt("crash before post-write measurement")
+        original_write(path, data)
+    def successful_worker(item, *args, **kwargs):
+        return checkpoint.CaseResult(item.case_id, "DONE", elapsed_seconds=.001,
+                                     payload={"quality_pass": True})
+    monkeypatch.setattr(checkpoint, "atomic_write_json", crash_after_slow_terminal_write)
+    monkeypatch.setattr(runner, "run_case_subprocess", successful_worker)
+    schedule = (case(slot=.05), case("case-2", slot=.05))
+    started = time.monotonic()
+    with pytest.raises(KeyboardInterrupt, match="post-write measurement"):
+        run_schedule(schedule, tmp_path, {}, 10)
+    assert time.monotonic() - started >= .09
+    before = json.loads((tmp_path / "checkpoint.json").read_text())
+    assert before["cases"]["case-1"]["status"] == "DONE"
+    assert before["cases"]["case-1"]["elapsed_seconds"] < .05
+    monkeypatch.setattr(checkpoint, "atomic_write_json", original_write)
+    if recovery_crash:
+        def interrupt_recovery(path, data):
+            original_write(path, data)
+            if path.name == "result.json" and data["status"] == "ORPHANED":
+                raise KeyboardInterrupt("crash during orphan recovery")
+        monkeypatch.setattr(checkpoint, "atomic_write_json", interrupt_recovery)
+        with pytest.raises(KeyboardInterrupt, match="orphan recovery"):
+            create_or_load_run(tmp_path, {})
+        monkeypatch.setattr(checkpoint, "atomic_write_json", original_write)
+    recovered = create_or_load_run(tmp_path, {})
+    assert recovered.cases["case-1"]["status"] == "ORPHANED"
+    assert recovered.active_seconds >= .05
+    def forbidden(*args, **kwargs):
+        pytest.fail("unclean success allowed the next case to start")
+    monkeypatch.setattr(runner, "run_case_subprocess", forbidden)
+    resumed = run_schedule(schedule, tmp_path, {}, 10)
+    assert resumed.status == "PAUSED_ORPHANED"
+    assert list(resumed.cases) == ["case-1"]
+    stored = json.loads((tmp_path / "cases/case-1/attempt-001/result.json").read_text())
+    durable = checkpoint.read_bound_checkpoint(tmp_path, {})
+    assert stored["status"] == "ORPHANED"
+    assert stored["payload"]["quality_pass"] is False
+    assert stored["elapsed_seconds"] == .05
+    assert durable["cases"] == resumed.cases
+    assert durable["cases"]["case-1"]["result_sha256"] == checkpoint.fingerprint(stored)
+    assert create_or_load_run(tmp_path, {}).active_seconds == resumed.active_seconds
+
+
+def test_clean_stop_acknowledges_success_and_resume_skips_it(tmp_path, monkeypatch):
+    import experiments.phase1.checkpoint as checkpoint
+    import experiments.phase1.runner as runner
+    launched = []
+    def successful_worker(item, *args, **kwargs):
+        launched.append(item.case_id)
+        return checkpoint.CaseResult(item.case_id, "DONE", payload={"quality_pass": True})
+    monkeypatch.setattr(runner, "run_case_subprocess", successful_worker)
+    schedule = (case(), case("case-2"))
+    partial = run_schedule(schedule, tmp_path, {}, 10, max_cases=1)
+    assert partial.status == "PARTIAL"
+    resumed = run_schedule(schedule, tmp_path, {}, 10)
+    assert resumed.status == "COMPLETE"
+    assert launched == ["case-1", "case-2"]
+    loaded = create_or_load_run(tmp_path, {})
+    assert all(row["status"] == "DONE" for row in loaded.cases.values())
+    assert run_schedule(schedule, tmp_path, {}, 10).status == "COMPLETE"
+    assert launched == ["case-1", "case-2"]
+
+
+def test_crash_starting_new_invocation_does_not_reopen_clean_success(tmp_path, monkeypatch):
+    import experiments.phase1.checkpoint as checkpoint
+    import experiments.phase1.runner as runner
+    def worker(item, *args, **kwargs):
+        return checkpoint.CaseResult(item.case_id, "DONE", payload={"quality_pass": True})
+    monkeypatch.setattr(runner, "run_case_subprocess", worker)
+    schedule = (case(), case("case-2"))
+    run_schedule(schedule, tmp_path, {}, 10, max_cases=1)
+    original_write = checkpoint.atomic_write_json
+    def interrupt_start(path, data):
+        original_write(path, data)
+        if path.name == "checkpoint.json":
+            raise KeyboardInterrupt("crash before new reservation")
+    monkeypatch.setattr(checkpoint, "atomic_write_json", interrupt_start)
+    with pytest.raises(KeyboardInterrupt):
+        run_schedule(schedule, tmp_path, {}, 10)
+    monkeypatch.setattr(checkpoint, "atomic_write_json", original_write)
+    recovered = create_or_load_run(tmp_path, {})
+    assert recovered.cases["case-1"]["status"] == "DONE"
+    assert run_schedule(schedule, tmp_path, {}, 10).status == "COMPLETE"
+
+
+def test_next_durable_reservation_acknowledges_only_previous_success(tmp_path, monkeypatch):
+    import experiments.phase1.checkpoint as checkpoint
+    import experiments.phase1.runner as runner
+    def worker(item, *args, **kwargs):
+        if item.case_id == "case-2":
+            raise KeyboardInterrupt("crash after second reservation")
+        return checkpoint.CaseResult(item.case_id, "DONE", payload={"quality_pass": True})
+    monkeypatch.setattr(runner, "run_case_subprocess", worker)
+    schedule = (case(), case("case-2"), case("case-3"))
+    with pytest.raises(KeyboardInterrupt):
+        run_schedule(schedule, tmp_path, {}, 10)
+    resumed = run_schedule(schedule, tmp_path, {}, 10)
+    assert resumed.status == "PAUSED_ORPHANED"
+    assert resumed.cases["case-1"]["status"] == "DONE"
+    assert resumed.cases["case-2"]["status"] == "ORPHANED"
+    assert "case-3" not in resumed.cases
+    stored = json.loads((tmp_path / "cases/case-1/attempt-001/result.json").read_text())
+    assert stored["payload"]["quality_pass"] is True
+
+
 @pytest.mark.parametrize("status,pause", [
     ("MEMORY_LIMIT_EXCEEDED", "PAUSED_RESOURCE"),
     ("INPUT_MISMATCH", "PAUSED_INTEGRITY"),
