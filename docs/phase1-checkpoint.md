@@ -8,7 +8,7 @@
 - Task 1~4: 엄격한 원시 해 계약, CBC/HiGHS/SCIP 어댑터, 고정 입력·357칸 일정,
   원자 체크포인트·시간/메모리 감독 구현 완료
 - Task 5: 자기완결형 결과 보고서 구현 및 확장 시작 게이트 24개 실행 완료
-- 전체 24시간 장기 스윕: **아직 시작하지 않음**
+- 전체 장기 스윕: v1은 29번째 파일럿 종료 정리 경합으로 중단·보존, v2 시작 준비 완료
 - 사업 성과 검증: **`NOT_CALIBRATED` 유지**
 - 원격 주소/PR: 사용자 요청대로 보류 중이며 현재 Git remote가 없다.
 
@@ -69,13 +69,25 @@ CBC의 `BOUND_UNKNOWN`은 해가 틀렸다는 뜻이 아니다. 독립 제약 �
 
 ## 다음 실행
 
-최종 기본 테스트와 보고서 화면 검사를 마친 뒤 아래 명령으로 새 장기 실행을 시작한다.
-같은 명령은 중단 후에도 체크포인트를 이어서 사용한다.
+첫 장기 실행 `phase1-long-sweep`은 29번째 `n200-p40` SCIP 파일럿 워커가 유효한
+`QUALITY_PASS` 결과를 저장한 직후, macOS가 종료된 그룹의 `ps` 목록을 비우거나 전이
+상태로 보여 주는 구간에서 정리 안전 검사가 `EPERM`을 올려 중단됐다. 워커·pytest 잔존
+프로세스는 0이었고, 체크포인트는 열린 예약을 그대로 보존했다. 당시 상태는
+`outputs/phase1-long-sweep-v1-interrupted.html`에 기록했다.
+
+수정은 이미 관찰된 리더 종료에 한해 그룹 목록이 비었거나 전부 좀비면 안전 종료로
+인정하고, 살아 있는 멤버가 보이면 최대 0.5초 동안 전이 종료를 기다리는 방식이다.
+0.5초 뒤에도 살아 있으면 계속 실패한다. 빈 목록을 안전하게 볼 수 있는 이유는 직접 자식을
+아직 `wait()`로 수거하지 않아 PID/PGID가 다른 프로세스에 재사용될 수 없기 때문이다.
+전체 기본 테스트는 **497 passed, 10 deselected**였고 테스트 뒤 잔존 워커는 없었다.
+
+v1 매니페스트는 수정 전 소스 해시에 묶여 있으므로 억지로 재개하지 않는다. 아래 명령으로
+새 `phase1-long-sweep-v2`를 시작하며, 이후 중단에는 같은 명령을 재사용한다.
 
 ```bash
 TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
   python -m experiments.phase1.runner \
-  --run-id phase1-long-sweep --max-active-seconds 86400 --resume
+  --run-id phase1-long-sweep-v2 --max-active-seconds 86400 --resume
 ```
 
 장기 실행을 시작해도 현실의 인력 배치 효과가 증명되는 것은 아니다. 이 단계가 답하는 것은

@@ -180,13 +180,26 @@ def _signal_owned_group(process: subprocess.Popen, sig: int, sent: list[int],
         if sys.platform != "darwin" or (
                 not leader_exit_observed and not _owned_child_exited(process)):
             raise
+        if not _darwin_group_quiescent(process.pid):
+            raise
+
+
+def _darwin_group_quiescent(pgid: int, settle_seconds: float = 0.5) -> bool:
+    """Wait briefly for an observed-exit group to disappear or become zombies."""
+    deadline = time.monotonic() + settle_seconds
+    while True:
         inspected = subprocess.run(
-            ["ps", "-o", "pid=,pgid=,stat=", "-g", str(process.pid)],
+            ["ps", "-o", "pid=,pgid=,stat=", "-g", str(pgid)],
             capture_output=True, text=True, timeout=0.2, check=True)
         members = [line.split() for line in inspected.stdout.splitlines()]
-        owned = [row for row in members if len(row) == 3 and int(row[1]) == process.pid]
-        if not owned or not all(row[2].startswith("Z") for row in owned):
-            raise
+        owned = [row for row in members if len(row) == 3 and int(row[1]) == pgid]
+        # The unreaped leader keeps its numeric identity reserved. If BSD ps
+        # omits that zombie, an empty owned set cannot refer to a reused group.
+        if not owned or all(row[2].startswith("Z") for row in owned):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.01)
 
 
 def _stop_owned_group(process: subprocess.Popen, sent: list[int]) -> None:

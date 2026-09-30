@@ -268,6 +268,60 @@ def test_known_exit_evidence_is_not_reobserved_during_darwin_eperm_cleanup(monke
     )
 
 
+def test_known_exited_leader_accepts_an_empty_darwin_group_listing(monkeypatch):
+    import experiments.phase1.runner as runner
+    process = SimpleNamespace(pid=12345, returncode=None)
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(
+        runner.os, "killpg",
+        lambda *_args: (_ for _ in ()).throw(
+            PermissionError(errno.EPERM, "zombie omitted by ps")
+        ),
+    )
+    monkeypatch.setattr(
+        runner.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout=""),
+    )
+
+    runner._signal_owned_group(
+        process, signal.SIGKILL, [], leader_exit_observed=True
+    )
+
+
+def test_known_exited_leader_waits_for_transitional_darwin_member(monkeypatch):
+    import experiments.phase1.runner as runner
+    process = SimpleNamespace(pid=12345, returncode=None)
+    listings = iter(("12345 12345 R\n", "12345 12345 Z\n"))
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(
+        runner.os, "killpg",
+        lambda *_args: (_ for _ in ()).throw(
+            PermissionError(errno.EPERM, "member still transitioning")
+        ),
+    )
+    monkeypatch.setattr(
+        runner.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout=next(listings)),
+    )
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    runner._signal_owned_group(
+        process, signal.SIGKILL, [], leader_exit_observed=True
+    )
+
+
+def test_darwin_group_quiescence_rejects_a_persistently_live_member(monkeypatch):
+    import experiments.phase1.runner as runner
+    clock = iter((0.0, 1.0))
+    monkeypatch.setattr(
+        runner.subprocess, "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout="12345 12345 S\n"),
+    )
+    monkeypatch.setattr(runner.time, "monotonic", lambda: next(clock))
+
+    assert runner._darwin_group_quiescent(12345, settle_seconds=0.5) is False
+
+
 @pytest.fixture
 def inject_kqueue_event(monkeypatch):
     if not hasattr(select, "kqueue") or hasattr(os, "waitid"):
