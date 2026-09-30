@@ -218,14 +218,6 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
     except (ValueError, KeyError, TypeError) as exc:
         raise CheckpointCorrupt("checkpoint is malformed") from exc
     _repair_event_tail(run_dir)
-    for case_id, row in state.cases.items():
-        if row["status"] != "RUNNING":
-            try:
-                terminal = json.loads(attempt_directory(run_dir, case_id, row["attempt"]).joinpath("result.json").read_text())
-                if fingerprint(terminal) != row["result_sha256"]:
-                    raise ValueError("terminal result checksum mismatch")
-            except (OSError, ValueError, KeyError) as exc:
-                raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}") from exc
     if state.supervisor_active and state.last_reserved_case is not None:
         case_id = state.last_reserved_case
         row = state.cases[case_id]
@@ -235,9 +227,19 @@ def create_or_load_run(run_dir: Path, manifest: dict[str, Any]) -> RunState:
             # have crossed the deadline. Restore the full charge before replacing
             # the artifact; a crash during recovery then leaves a RUNNING row,
             # which does not require a terminal hash and is safe to recover again.
+            # Do this before terminal validation: an accounting result replace
+            # may have committed while its matching checkpoint write did not.
             state.active_seconds += max(row["reserved_seconds"], row["elapsed_seconds"]) - row["elapsed_seconds"]
             state.cases[case_id] = {**row, "status": "RUNNING"}
             save_checkpoint(state)
+    for case_id, row in state.cases.items():
+        if row["status"] != "RUNNING":
+            try:
+                terminal = json.loads(attempt_directory(run_dir, case_id, row["attempt"]).joinpath("result.json").read_text())
+                if fingerprint(terminal) != row["result_sha256"]:
+                    raise ValueError("terminal result checksum mismatch")
+            except (OSError, ValueError, KeyError) as exc:
+                raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}") from exc
     for case_id, row in list(state.cases.items()):
         if row["status"] == "RUNNING":
             # No stored PID is ever signaled. The full slot was charged before spawn.
