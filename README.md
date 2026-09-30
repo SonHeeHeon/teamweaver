@@ -74,6 +74,16 @@ TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchma
   outputs/phase1-solver-benchmark.html
 ```
 
+The first three cases compare all solvers on one tiny oracle. Before a long
+run, continue the same gate through the remaining tiny oracles and one frozen
+50-person/10-project compatibility case per solver (24 recorded cases total):
+
+```bash
+TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
+  python -m experiments.phase1.runner \
+  --run-id phase1-start-gate --max-active-seconds 720 --max-cases 21 --resume
+```
+
 Do not start the long run if the gate records an unavailable solver, failed
 oracle parity, invalid solution, missing evidence, or a paused checkpoint. Only
 after the generated report confirms the gate may the pre-registered long sweep
@@ -85,10 +95,9 @@ TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchma
   --run-id phase1-long-sweep --max-active-seconds 86400 --resume
 ```
 
-The runner will reject `--resume` for a run that does not already exist. The
-first long-sweep invocation therefore uses the same command without `--resume`;
-subsequent invocations add it. This distinction prevents an existing run from
-being overwritten accidentally.
+The same `--resume` command is safe for the first invocation and later
+continuations. A stored manifest or source/dependency mismatch fails closed;
+it is never silently replaced.
 
 ## Demo fixture (`fixtures/*.json`)
 

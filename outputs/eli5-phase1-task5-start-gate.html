@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Phase 1 Task 5 — 24시간 실험 전 작은 문 통과하기</title>
+  <style>
+    :root{color-scheme:light;--paper:#f4f1e9;--ink:#182033;--muted:#61697a;--blue:#2563eb;--green:#18734c;--red:#b23636;--amber:#9b5a00;--white:#fff;--line:#182033;--pale:#e8efff}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.58}main{width:min(980px,calc(100% - 30px));margin:auto;padding:58px 0 80px}header{max-width:800px;margin:0 auto 52px}.eyebrow{color:var(--blue);font-weight:900;letter-spacing:.08em}h1{font-size:clamp(38px,7vw,70px);line-height:1.04;letter-spacing:-.045em;margin:12px 0 18px}.lead{font-size:clamp(19px,2.5vw,25px);color:var(--muted);margin:0}.memory{margin-top:26px;background:var(--ink);color:#fff;padding:18px 22px;border-radius:18px;font-size:19px;font-weight:800}
+    section{margin:52px 0}.stephead{display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start;margin-bottom:18px}.num{font-size:54px;line-height:1;color:var(--blue);font-weight:900}h2{font-size:clamp(28px,4vw,40px);line-height:1.12;margin:2px 0 8px;letter-spacing:-.025em}.caption{color:var(--muted);font-size:18px;margin:0}.panel{background:var(--white);border:2px solid var(--line);border-radius:26px;padding:clamp(16px,3vw,30px);box-shadow:0 8px 0 #d8d4ca;overflow:hidden}svg{display:block;width:100%;height:auto}
+    .triptych,.stats,.terms,.risks{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px}.card strong{display:block;font-size:24px;margin-bottom:6px}.card p{margin:0;color:var(--muted)}.bad{border-color:var(--red)}.bad strong{color:var(--red)}.good{border-color:var(--green)}.good strong{color:var(--green)}.warn{border-color:var(--amber)}.warn strong{color:var(--amber)}.big{font-size:clamp(38px,6vw,58px)!important;letter-spacing:-.04em}
+    .boundary{border-left:8px solid var(--red);background:#fff1ef;padding:20px 24px;border-radius:14px}.boundary h3{margin:0 0 8px;font-size:24px}.boundary p{margin:0}.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center}.box{min-height:120px;display:grid;place-items:center;text-align:center;border:2px solid var(--line);border-radius:18px;background:#fff;padding:14px;font-weight:850}.arrow{font-size:34px;color:var(--blue);font-weight:900}
+    a{color:var(--blue);font-weight:800}a:focus-visible{outline:4px solid #f0a500;outline-offset:4px}code{background:#edf0f5;padding:.12em .35em;border-radius:6px;overflow-wrap:anywhere}footer{margin-top:58px;border-top:2px solid var(--line);padding-top:24px;color:var(--muted)}
+    @media(max-width:700px){main{width:min(100% - 20px,980px);padding-top:34px}.stephead{grid-template-columns:48px 1fr}.num{font-size:42px}.triptych,.stats,.terms,.risks{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);text-align:center}.panel{border-radius:20px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body><main>
+  <header>
+    <div class="eyebrow">PHASE 1 · TASK 5 · ELI5</div>
+    <h1>24시간 달리기 전<br>작은 문부터 통과했습니다</h1>
+    <p class="lead">세 오픈소스 솔버가 같은 문제를 제대로 읽고, 유효한 답을 남기며, 결과를 정직하게 보고하는지 작은 실행으로 먼저 확인했습니다.</p>
+    <div class="memory">한 줄 기억: 실패를 지우지 않았기 때문에, 세 번째 실행을 더 믿을 수 있습니다.</div>
+  </header>
+
+  <section>
+    <div class="stephead"><div class="num">1</div><div><h2>게이트는 출발 전 점검입니다</h2><p class="caption">긴 실험 전에 작은 정답 문제 21개와 50명/10프로젝트 문제 3개를 실행했습니다.</p></div></div>
+    <div class="panel">
+      <svg viewBox="0 0 900 320" role="img" aria-label="세 솔버가 24개 체크 지점을 지나 24시간 실험 문 앞에 도착하는 그림"><title>시작 게이트 흐름</title>
+        <circle cx="100" cy="160" r="50" fill="#2563eb" stroke="#182033" stroke-width="5"/><text x="100" y="168" text-anchor="middle" font-size="20" font-weight="900" fill="#fff">CBC</text>
+        <circle cx="100" cy="65" r="42" fill="#2563eb" stroke="#182033" stroke-width="5"/><text x="100" y="72" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">HiGHS</text>
+        <circle cx="100" cy="255" r="42" fill="#2563eb" stroke="#182033" stroke-width="5"/><text x="100" y="262" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">SCIP</text>
+        <path d="M165 65h110M165 160h110M165 255h110" stroke="#2563eb" stroke-width="8"/><path d="M275 65l-24-15v30zM275 160l-24-15v30zM275 255l-24-15v30z" fill="#2563eb" stroke="#2563eb"/>
+        <rect x="300" y="35" width="280" height="250" rx="24" fill="#e8efff" stroke="#182033" stroke-width="5"/><text x="440" y="115" text-anchor="middle" font-size="27" font-weight="900" fill="#182033">24개 작은 점검</text><text x="440" y="162" text-anchor="middle" font-size="20" fill="#61697a">정답 대조 · 독립 검증</text><text x="440" y="202" text-anchor="middle" font-size="20" fill="#61697a">버전 · 해시 · 시간 기록</text>
+        <path d="M610 160h90" stroke="#2563eb" stroke-width="9"/><path d="M700 160l-26-17v34z" fill="#2563eb" stroke="#2563eb"/>
+        <rect x="730" y="55" width="130" height="210" rx="18" fill="#fff" stroke="#182033" stroke-width="5"/><path d="M760 90v140M830 90v140" stroke="#182033" stroke-width="8"/><text x="795" y="152" text-anchor="middle" font-size="22" font-weight="900" fill="#18734c">24h</text><text x="795" y="188" text-anchor="middle" font-size="18" fill="#61697a">다음 문</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="stephead"><div class="num">2</div><div><h2>실패를 덮지 않고 새 기록으로 고쳤습니다</h2><p class="caption">같은 결과를 고쳐 쓰지 않고 v1, v2, v3를 각각 남겼습니다.</p></div></div>
+    <div class="triptych">
+      <div class="card bad"><strong>v1 · 수치 경계</strong><p>HiGHS·SCIP 값이 1보다 약 10⁻¹⁵ 커 엄격 검증에서 멈췄습니다.</p></div>
+      <div class="card bad"><strong>v2 · 종료 경합</strong><p>입력은 완성됐지만 macOS의 종료 확인 경합이 준비를 실패로 바꿨습니다.</p></div>
+      <div class="card good"><strong>v3 · 24/24 DONE</strong><p>검증기를 느슨하게 하지 않고 두 원인을 고친 새 실행입니다.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stephead"><div class="num">3</div><div><h2>어디를 고쳤나요?</h2><p class="caption">솔버 밖의 검증 규칙은 그대로 두고, 입력 경계와 종료 증거 전달만 고쳤습니다.</p></div></div>
+    <div class="panel">
+      <div class="flow">
+        <div class="box">솔버 원시 값<br><code>1.000000000000004</code></div><div class="arrow">→</div>
+        <div class="box">1e-6 이내<br>경계 잡음만 1로</div><div class="arrow">→</div>
+        <div class="box">엄격한 독립 검증<br>그대로 통과</div>
+      </div>
+      <div class="flow" style="margin-top:18px">
+        <div class="box">자식 종료를<br>한 번 확인</div><div class="arrow">→</div>
+        <div class="box">확인 증거를<br>정리 단계에 전달</div><div class="arrow">→</div>
+        <div class="box">살아 있는 멤버면<br>여전히 실패</div>
+      </div>
+    </div>
+    <div class="terms" style="margin-top:16px">
+      <div class="card"><strong>작은 잡음</strong><p>컴퓨터 소수 계산에서 생긴 0에 가까운 찌꺼기입니다.</p></div>
+      <div class="card"><strong>방어선</strong><p>2×10⁻⁶ 위반은 정규화하지 않고 계속 거부합니다.</p></div>
+      <div class="card"><strong>기록 보존</strong><p>실패 run ID는 재사용하거나 결과를 교체하지 않았습니다.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stephead"><div class="num">4</div><div><h2>v3에서 실제로 나온 결과</h2><p class="caption">아래 숫자는 장기 성능 순위가 아니라 시작 가능 여부를 확인한 작은 표본입니다.</p></div></div>
+    <div class="stats">
+      <div class="card good"><strong class="big">24/24</strong><p>모든 게이트 케이스 DONE</p></div>
+      <div class="card good"><strong class="big">0</strong><p>검증 실패 · 오라클 불일치 · 사용 불가</p></div>
+      <div class="card warn"><strong class="big">8</strong><p>CBC의 BOUND_UNKNOWN</p></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <svg viewBox="0 0 900 300" role="img" aria-label="50명 10프로젝트에서 CBC HiGHS SCIP의 L과 U 상태 비교"><title>호환성 케이스 L과 U</title>
+        <text x="80" y="70" font-size="25" font-weight="900" fill="#182033">CBC</text><rect x="190" y="38" width="490" height="46" rx="12" fill="#2563eb" stroke="#182033" stroke-width="3"/><text x="435" y="69" text-anchor="middle" font-size="19" font-weight="900" fill="#fff">L = 16.822188 · U 미제공</text><text x="715" y="69" font-size="19" font-weight="900" fill="#9b5a00">UNKNOWN</text>
+        <text x="80" y="155" font-size="25" font-weight="900" fill="#182033">HiGHS</text><rect x="190" y="123" width="490" height="46" rx="12" fill="#18734c" stroke="#182033" stroke-width="3"/><text x="435" y="154" text-anchor="middle" font-size="19" font-weight="900" fill="#fff">L = U = 16.822188</text><text x="715" y="154" font-size="19" font-weight="900" fill="#18734c">PASS</text>
+        <text x="80" y="240" font-size="25" font-weight="900" fill="#182033">SCIP</text><rect x="190" y="208" width="490" height="46" rx="12" fill="#18734c" stroke="#182033" stroke-width="3"/><text x="435" y="239" text-anchor="middle" font-size="19" font-weight="900" fill="#fff">L ≈ U = 16.822188</text><text x="715" y="239" font-size="19" font-weight="900" fill="#18734c">PASS</text>
+      </svg>
+    </div>
+    <div class="terms" style="margin-top:16px">
+      <div class="card"><strong>L</strong><p>솔버가 실제로 찾은 배치의 점수입니다.</p></div>
+      <div class="card"><strong>U</strong><p>아무리 잘해도 넘기 어렵다는 최고 가능 상한입니다.</p></div>
+      <div class="card"><strong>Gap</strong><p>L과 U의 거리입니다. 작을수록 품질 증거가 강합니다.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stephead"><div class="num">5</div><div><h2>보고서는 무엇을 지켜 주나요?</h2><p class="caption">체크포인트와 결과 해시가 맞을 때만 한 장의 HTML을 만듭니다.</p></div></div>
+    <div class="flow">
+      <div class="box">저장된 매니페스트<br>버전 · 옵션 · 해시</div><div class="arrow">→</div>
+      <div class="box">24개 결과<br>L · U · Gap · 검증</div><div class="arrow">→</div>
+      <div class="box">자기완결 HTML<br>추정값 없음</div>
+    </div>
+    <p style="margin-top:18px"><a href="phase1-solver-benchmark.html">통과한 v3 실제 보고서 열기</a> · <a href="phase1-start-gate-v1-failed.html">v1 실패 보고서 열기</a></p>
+  </section>
+
+  <section>
+    <div class="stephead"><div class="num">6</div><div><h2>검증과 다음 단계</h2><p class="caption">코드 검증은 끝났지만, 현실의 팀 성과 검증은 아직 시작 전입니다.</p></div></div>
+    <div class="stats">
+      <div class="card good"><strong class="big">494</strong><p>전체 기본 테스트 통과</p></div>
+      <div class="card good"><strong class="big">0</strong><p>남은 워커·pytest 프로세스</p></div>
+      <div class="card warn"><strong>기존 경고</strong><p>PuLP·Starlette 폐기 예정 API 경고는 남아 있습니다.</p></div>
+    </div>
+    <div class="boundary" style="margin-top:18px"><h3>NOT_CALIBRATED</h3><p>게이트 통과는 “가상 문제를 기술적으로 실행할 준비가 됐다”는 뜻입니다. 실제 고객 만족, 인력 교체 감소, 후속 과제 수주가 좋아진다는 증거는 아닙니다.</p></div>
+    <div class="flow" style="margin-top:18px">
+      <div class="box">v3 게이트 통과</div><div class="arrow">→</div><div class="box">24시간 장기 스윕<br>체크포인트로 재개</div><div class="arrow">→</div><div class="box">솔버별 속도·품질·실패율 비교</div>
+    </div>
+  </section>
+
+  <section><h2>아직 남은 한계</h2><div class="risks">
+    <div class="card"><strong>CBC의 U 없음</strong><p>유효한 해는 비교할 수 있지만 5% 품질 통과로 세지 않습니다.</p></div>
+    <div class="card"><strong>작은 표본</strong><p>24개 게이트 결과만으로 장기 성능 순위를 말할 수 없습니다.</p></div>
+    <div class="card"><strong>실데이터 없음</strong><p>인사 컬럼 구조가 확정된 뒤에도 가상 데이터 설계와 현실 보정이 필요합니다.</p></div>
+  </div></section>
+
+  <footer>2026-09-30 · 브랜치 <code>feat/phase1-solver-benchmark</code><br>이 문서는 저장소에 추적됩니다. 현재 Git remote가 없어 원격 다운로드는 아직 불가능합니다.</footer>
+</main></body></html>
