@@ -291,6 +291,26 @@ def _finite_or_none(value) -> float | None:
     return number if math.isfinite(number) else None
 
 
+def _canonicalize_boundary(value: float, domain: str, tol: float = 1e-6) -> float:
+    """Snap only solver round-off immediately outside a declared domain."""
+    if domain == "binary":
+        if abs(value) <= tol:
+            return 0.0
+        if abs(value - 1.0) <= tol:
+            return 1.0
+    elif domain == "unit":
+        if -tol <= value < 0.0:
+            return 0.0
+        if 1.0 < value <= 1.0 + tol:
+            return 1.0
+    elif domain == "nonnegative":
+        if -tol <= value < 0.0:
+            return 0.0
+    else:
+        raise ValueError(f"unknown variable domain: {domain}")
+    return value
+
+
 _HIGHS_EVIDENCE_STATUSES = {
     "Optimal",
     "Bound on objective reached",
@@ -424,10 +444,14 @@ def _extract_solution(
         )
 
     try:
-        z = {key: float(value) for key, value in raw_z.items()}
-        a = {key: float(value) for key, value in raw_a.items()}
-        y = {key: float(value) for key, value in raw_y.items()}
-        slack = {key: float(value) for key, value in raw_slack.items()}
+        z = {key: _canonicalize_boundary(float(value), "binary")
+             for key, value in raw_z.items()}
+        a = {key: _canonicalize_boundary(float(value), "unit")
+             for key, value in raw_a.items()}
+        y = {key: _canonicalize_boundary(float(value), "unit")
+             for key, value in raw_y.items()}
+        slack = {key: _canonicalize_boundary(float(value), "nonnegative")
+                 for key, value in raw_slack.items()}
     except (TypeError, ValueError) as exc:
         raise SolverSolveError(
             f"{evidence.solver_name} incumbent extraction failed: {exc}", evidence

@@ -12,6 +12,7 @@ from experiments.phase1.solvers import (
     available_solvers,
     solve_case,
 )
+from experiments.phase1.scenarios import build_snapshot
 from experiments.phase1.types import (
     BenchmarkProblem,
     SolverAvailabilityState,
@@ -23,6 +24,16 @@ from tests.phase0.factories import all_terms_fixture
 def _all_terms_problem() -> BenchmarkProblem:
     graph, skill, synergy, params, _ = all_terms_fixture()
     return BenchmarkProblem(graph=graph, S=skill, C=synergy, params=params)
+
+
+def _compatibility_problem() -> BenchmarkProblem:
+    materialized = build_snapshot(50, 10, 42, "baseline").materialize()
+    return BenchmarkProblem(
+        graph=materialized.graph,
+        S=materialized.S,
+        C=materialized.C,
+        params=materialized.params,
+    )
 
 
 class _FiniteCandidateSolver:
@@ -188,6 +199,46 @@ def test_available_solver_matches_literal_small_oracle_objective(solver_name):
 
     assert solution.evidence.has_incumbent
     assert solution.objective == pytest.approx(-98.38, abs=1e-6)
+
+
+@pytest.mark.parametrize("solver_name", ["highs", "scip"])
+def test_native_boundary_noise_is_canonicalized_before_strict_validation(solver_name):
+    if available_solvers()[solver_name].state is SolverAvailabilityState.UNAVAILABLE:
+        pytest.skip(f"{solver_name} is unavailable on this host")
+    problem = _compatibility_problem()
+
+    solution = solve_case(
+        problem,
+        solver_name,
+        SolverOptions(threads=1, time_limit_seconds=30),
+    )
+
+    report = validate_raw_solution(
+        problem.graph,
+        problem.S,
+        problem.C,
+        problem.params,
+        solution,
+    )
+    assert report.valid, report.issues
+    assert set(solution.z.values()) <= {0.0, 1.0}
+    assert all(0.0 <= value <= 1.0 for value in solution.a.values())
+    assert all(0.0 <= value <= 1.0 for value in solution.y.values())
+    assert all(value >= 0.0 for value in solution.slack.values())
+
+
+def test_adapter_does_not_hide_a_domain_violation_beyond_numeric_tolerance(monkeypatch):
+    values = _valid_all_terms_values()
+    values["z_0_0"] = 1.0 + 2e-6
+    fake_solver = _FiniteCandidateSolver(status=pulp.LpStatusOptimal, values=values)
+    monkeypatch.setattr(solver_module, "_solver_for", lambda *_args: fake_solver)
+
+    with pytest.raises(SolverSolveError, match="binary_domain"):
+        solve_case(
+            _all_terms_problem(),
+            "cbc",
+            SolverOptions(threads=1, time_limit_seconds=30),
+        )
 
 
 @pytest.mark.parametrize("solver_name", ["cbc", "highs", "scip"])
