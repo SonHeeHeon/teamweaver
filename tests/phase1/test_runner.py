@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict
+from types import SimpleNamespace
 
 import pytest
 
@@ -241,6 +242,30 @@ def test_group_signals_precede_reaping_owned_child(tmp_path, monkeypatch, normal
     assert not unsafe_signals, "group signal attempted after releasing child identity"
     assert result.status == ("DONE" if normal_exit else "DEADLINE_EXCEEDED")
     assert launched[0].returncode is not None
+
+
+def test_known_exit_evidence_is_not_reobserved_during_darwin_eperm_cleanup(monkeypatch):
+    import experiments.phase1.runner as runner
+    process = SimpleNamespace(pid=12345, returncode=None)
+
+    def denied_group_signal(*_args):
+        raise PermissionError(errno.EPERM, "zombie-only process group")
+
+    def forbidden_reobservation(*_args):
+        pytest.fail("durable exit evidence was re-observed through a racy API")
+
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(runner.os, "killpg", denied_group_signal)
+    monkeypatch.setattr(runner, "_owned_child_exited", forbidden_reobservation)
+    monkeypatch.setattr(
+        runner.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout="12345 12345 Z\n"),
+    )
+
+    runner._signal_owned_group(
+        process, signal.SIGKILL, [], leader_exit_observed=True
+    )
 
 
 @pytest.fixture

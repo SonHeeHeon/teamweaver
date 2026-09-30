@@ -162,7 +162,8 @@ def sample_owned_rss(pgid: int) -> int:
     return sum(values)
 
 
-def _signal_owned_group(process: subprocess.Popen, sig: int, sent: list[int]) -> None:
+def _signal_owned_group(process: subprocess.Popen, sig: int, sent: list[int],
+                        *, leader_exit_observed: bool = False) -> None:
     # process is the Popen instance created in this invocation, never a restored PID.
     if process.returncode is not None:
         return  # Reaping releases the numeric PID/PGID; it is no longer authority.
@@ -173,8 +174,11 @@ def _signal_owned_group(process: subprocess.Popen, sig: int, sent: list[int]) ->
         pass
     except PermissionError:
         # Darwin reports EPERM for a group containing only unreaped zombies.
-        # Confirm that exact state; a denied/failed inspection stays an error.
-        if sys.platform != "darwin" or not _owned_child_exited(process):
+        # Reuse exit evidence already observed by the caller instead of racing a
+        # second one-shot kqueue registration. A denied/failed inspection stays
+        # an error, and every group member must still be a zombie.
+        if sys.platform != "darwin" or (
+                not leader_exit_observed and not _owned_child_exited(process)):
             raise
         inspected = subprocess.run(
             ["ps", "-o", "pid=,pgid=,stat=", "-g", str(process.pid)],
@@ -264,7 +268,8 @@ def run_case_subprocess(case, run_dir, deadline_seconds, command_factory,
                         break
                     if _owned_child_exited(process):
                         # A successful leader cannot leave work running in its session.
-                        _signal_owned_group(process, signal.SIGKILL, result.signals_sent)
+                        _signal_owned_group(process, signal.SIGKILL, result.signals_sent,
+                                            leader_exit_observed=True)
                         result.status = "DONE" if process.wait() == 0 else "FAILED"
                         break
                     if now >= next_rss_sample:
