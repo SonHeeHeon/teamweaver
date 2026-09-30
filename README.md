@@ -54,6 +54,42 @@ calculation checks. It does **not** mean TeamWeaver has demonstrated improved
 customer satisfaction or project outcomes; that remains `NOT_CALIBRATED`
 until independently recorded real outcomes are available.
 
+## Phase 1 open-source solver benchmark
+
+Phase 1 compares CBC, HiGHS, and SCIP on one frozen MILP schedule. Every solver
+runs single-threaded, serially, in a fresh process. Results, time use, versions,
+options, input hashes, validation evidence, and unavailable backends are stored
+under `experiments/results/phase1/<run-id>/`. This is still a synthetic technical
+comparison, so business validity remains `NOT_CALIBRATED`.
+
+Run the three-case start gate first (maximum active budget: 720 seconds):
+
+```bash
+TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
+  python -m experiments.phase1.runner \
+  --run-id phase1-start-gate --max-active-seconds 720 --max-cases 3
+TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
+  python -m experiments.phase1.report \
+  experiments/results/phase1/phase1-start-gate \
+  outputs/phase1-solver-benchmark.html
+```
+
+Do not start the long run if the gate records an unavailable solver, failed
+oracle parity, invalid solution, missing evidence, or a paused checkpoint. Only
+after the generated report confirms the gate may the pre-registered long sweep
+be started or resumed with the same run ID:
+
+```bash
+TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
+  python -m experiments.phase1.runner \
+  --run-id phase1-long-sweep --max-active-seconds 86400 --resume
+```
+
+The runner will reject `--resume` for a run that does not already exist. The
+first long-sweep invocation therefore uses the same command without `--resume`;
+subsequent invocations add it. This distinction prevents an existing run from
+being overwritten accidentally.
+
 ## Demo fixture (`fixtures/*.json`)
 
 `fixtures/{people,projects,coworks,reviews_ko,parsed_reviews,meta}.json` are the
