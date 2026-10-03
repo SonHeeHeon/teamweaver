@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>TeamWeaver Phase 1 장기 실험 — 쉬운 최종 인계</title>
+  <style>
+    :root{--paper:#f6f1e7;--ink:#172033;--muted:#637083;--line:#d3cabb;--card:#fffdf8;--navy:#173b57;--blue:#2f69d9;--sky:#dcecff;--green:#157555;--mint:#dff5e9;--amber:#9b5d00;--sand:#fff0ca;--red:#a93939;--rose:#ffe4df;--purple:#7152ad}
+    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.68 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;word-break:keep-all}
+    main{width:min(1120px,calc(100% - 28px));margin:auto;padding:34px 0 76px}.hero{background:var(--navy);color:#fff;border-radius:30px;padding:clamp(28px,6vw,68px);box-shadow:0 24px 70px #173b5726;position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:330px;height:330px;border-radius:50%;right:-130px;top:-150px;background:#6fb6ff33}.eyebrow{font-size:13px;letter-spacing:.15em;text-transform:uppercase;font-weight:900;color:#9dd1ff}.hero h1{font-size:clamp(35px,6vw,70px);line-height:1.04;letter-spacing:-.045em;margin:12px 0 16px;max-width:850px}.hero .lead{font-size:clamp(18px,2.3vw,24px);color:#d6e8f5;max-width:820px}.pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}.pill{padding:8px 12px;border-radius:999px;background:#ffffff18;border:1px solid #ffffff35;font-weight:800}.pill.good{background:#c9f3df;color:#11533e;border:0}.pill.warn{background:#ffdda0;color:#704200;border:0}
+    section{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:clamp(22px,4vw,42px)}h2{font-size:clamp(25px,3.5vw,39px);line-height:1.15;letter-spacing:-.025em;margin:0 0 12px}h3{font-size:20px;margin:0 0 7px}.caption{color:var(--muted);margin:0 0 22px}.memory{font-size:clamp(20px,3vw,29px);font-weight:900;line-height:1.35;padding:21px 24px;border-radius:18px;background:var(--mint);border-left:7px solid var(--green)}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.grid.four{grid-template-columns:repeat(4,1fr)}.card{border:1px solid var(--line);border-radius:18px;padding:19px;background:#fff}.card strong.big{display:block;font-size:31px;line-height:1.08;margin:4px 0}.card p{margin:5px 0;color:var(--muted)}.ok{border-top:6px solid var(--green)}.info{border-top:6px solid var(--blue)}.warn{border-top:6px solid var(--amber)}.danger{border-top:6px solid var(--red)}.solver{position:relative;padding-top:25px}.solver .rank{position:absolute;right:15px;top:14px;font-weight:900;color:var(--muted)}
+    .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:10px;margin-top:22px}.flow .box{text-align:center;padding:20px 12px;border-radius:17px;background:var(--sky);font-weight:850}.flow .arrow{font-size:27px;color:var(--blue);font-weight:900}.flow .box:last-child{background:var(--mint)}
+    .formula{background:#101827;color:#e9f2ff;padding:20px;border-radius:17px;font:15px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto}.formula b{color:#8ed0ff}.formula .minus{color:#ffb4a8}.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:14px;margin-top:9px}
+    table{width:100%;border-collapse:collapse;min-width:720px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:16px}th,td{padding:12px 13px;border-bottom:1px solid #e5dfd4;text-align:left;vertical-align:top}th{background:#edf3fb;color:#26384c;white-space:nowrap}tr:last-child td{border-bottom:0}.tag{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900}.tag.green{background:var(--mint);color:var(--green)}.tag.amber{background:var(--sand);color:var(--amber)}.tag.red{background:var(--rose);color:var(--red)}
+    .barrow{display:grid;grid-template-columns:90px 1fr 64px;gap:12px;align-items:center;margin:12px 0}.bar{height:18px;background:#e7e1d7;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;border-radius:inherit;background:var(--blue)}.bar.scip i{background:var(--purple)}.bar.cbc i{background:var(--amber)}.barrow b:last-child{text-align:right;font-variant-numeric:tabular-nums}.note{padding:17px 19px;border-radius:15px;background:#f1eee7;color:#4f5c6c}.boundary{background:var(--rose);border-color:#e9aaa1}.boundary h2{color:#7c2929}.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.callout{padding:20px;border-radius:17px;background:var(--sand);border-left:7px solid var(--amber)}
+    .timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.tick{padding:15px 10px;text-align:center;border-radius:14px;background:#f0ece3}.tick strong{display:block;font-size:21px}.checks{list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}.checks li{padding:13px 15px;border-radius:13px;background:var(--mint);font-weight:750}.checks li:before{content:"✓";color:var(--green);font-weight:1000;margin-right:8px}
+    .steps{counter-reset:s}.step{counter-increment:s;display:grid;grid-template-columns:48px 1fr;gap:15px;margin:17px 0}.step:before{content:counter(s);width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:950}.step p{margin:3px 0;color:var(--muted)}a{color:var(--blue);text-underline-offset:3px}footer{padding:25px 8px 0;color:var(--muted);font-size:14px;text-align:center}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef0f3;padding:2px 5px;border-radius:5px;overflow-wrap:anywhere}
+    @media(max-width:800px){.grid,.grid.four,.split{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.flow .arrow{transform:rotate(90deg);text-align:center}.timeline{grid-template-columns:1fr}.checks{grid-template-columns:1fr}}
+    @media(max-width:520px){main{width:min(100% - 18px,1120px);padding-top:9px}.hero,section{border-radius:19px}.grid,.grid.four,.split{grid-template-columns:1fr}.barrow{grid-template-columns:72px 1fr 54px}.hero{padding:27px 22px}.hero h1{font-size:39px}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">TeamWeaver · Phase 1 · Open-source solver sweep</div>
+    <h1>어떤 계산 엔진이<br>팀 짜기 퍼즐을 잘 풀까?</h1>
+    <p class="lead">CBC, HiGHS, SCIP에게 같은 기준의 가상 인력 배치 묶음을 나눠 총 357회 실행하고, 답을 찾았는지와 그 답을 믿을 근거가 있는지를 끝까지 확인했습니다.</p>
+    <div class="pills">
+      <span class="pill good">357 / 357 완료</span>
+      <span class="pill">약 10시간 15분 활성 실행</span>
+      <span class="pill">독립 검증 실패 0</span>
+      <span class="pill warn">현실 성과는 NOT_CALIBRATED</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="eyebrow" style="color:var(--blue)">ONE-LINE ANSWER</div>
+    <h2>한 줄 결론</h2>
+    <div class="memory">현재 수학 모델의 잠정 기본 엔진은 <b>HiGHS</b>가 가장 합리적입니다. 다만 300명·60프로젝트에서는 세 엔진 모두 대부분 실패했으므로, 이 크기를 서비스에 넣기 전에 모델 구조를 먼저 개선해야 합니다.</div>
+    <p class="caption" style="margin-top:14px">이 결론은 가상 데이터의 계산 실험에만 해당합니다. “실제로 더 좋은 팀을 만든다”는 결론은 아직 낼 수 없습니다.</p>
+  </section>
+
+  <section>
+    <h2>먼저, 무슨 실험이었나요?</h2>
+    <p class="caption">아주 큰 자리 배치 퍼즐을 푸는 선수 세 명에게 같은 문제와 같은 제한 시간을 준 셈입니다.</p>
+    <div class="grid">
+      <article class="card solver warn"><span class="rank">CBC</span><h3>빠른 날은 아주 빠름</h3><p>하지만 많은 중간·대형 문제에서 검증 가능한 답을 못 냈고, “최적에 얼마나 가까운지”를 보여 주는 상한도 안정적으로 제공하지 못했습니다.</p></article>
+      <article class="card solver ok"><span class="rank">HiGHS</span><h3>가장 균형 잡힘</h3><p>전체 성공률이 가장 높고, 200명 규모에서는 SCIP보다 훨씬 빨랐으며, 300명 규모에서도 유일하게 품질 근거가 있는 성공을 남겼습니다.</p></article>
+      <article class="card solver info"><span class="rank">SCIP</span><h3>200명까지 끈질김</h3><p>200명 규모까지는 가장 안정적으로 성공했지만, 그 구간 중앙 시간이 약 234.6초로 240초 제한 바로 앞이었습니다.</p></article>
+    </div>
+  </section>
+
+  <section>
+    <h2>“모델”은 AI가 아니라 규칙과 점수표입니다</h2>
+    <p class="caption">사람 A를 프로젝트 X에 넣을지 말지를 0 또는 1로 표현하고, 좋은 점수는 더하고 위험과 비용은 뺍니다.</p>
+    <div class="formula"><b>최대로 만들기:</b> 기술 적합도 + 역할 충족 + 협업 시너지 <span class="minus">− 비용 − 과부하 − 미충족 벌점</span><br><br><b>반드시 지킬 것:</b> 한 사람의 가용 시간, 프로젝트별 필수 역할, 예산, 중복 배치 금지, 최소·최대 인원</div>
+    <div class="legend"><span>0 = 배치하지 않음</span><span>1 = 배치함</span><span>솔버 = 이 0/1 조합을 찾는 계산 엔진</span></div>
+    <div class="flow">
+      <div class="box">① 같은 가상 인력·프로젝트</div><div class="arrow">→</div>
+      <div class="box">② 솔버가 팀 구성 제안</div><div class="arrow">→</div>
+      <div class="box">③ 별도 검증기가 규칙 재검사</div>
+    </div>
+    <p class="note">솔버가 스스로 “성공”이라고 말하는 것만 믿지 않았습니다. 별도 검증기가 원래 인력·프로젝트 정보로 제약을 다시 계산해 통과한 결과만 <b>DONE</b>으로 셌습니다.</p>
+  </section>
+
+  <section>
+    <h2>전체 결과를 쉬운 숫자로 보면</h2>
+    <p class="caption">정답을 이미 아는 작은 오라클 21건을 빼고, 각 솔버가 받은 일반 비교 112건을 같은 분모로 봤습니다.</p>
+    <div class="barrow"><b>HiGHS</b><div class="bar"><i style="width:70.5%"></i></div><b>79/112</b></div>
+    <div class="barrow"><b>SCIP</b><div class="bar scip"><i style="width:67%"></i></div><b>75/112</b></div>
+    <div class="barrow"><b>CBC</b><div class="bar cbc"><i style="width:19.6%"></i></div><b>22/112</b></div>
+    <div class="grid four" style="margin-top:24px">
+      <article class="card ok"><span>완료</span><strong class="big">197</strong><p>독립 검증을 통과한 결과</p></article>
+      <article class="card warn"><span>유효 해 미확보</span><strong class="big">87</strong><p>해가 없다는 수학적 증명은 아님</p></article>
+      <article class="card danger"><span>4분 시간 초과</span><strong class="big">68</strong><p>제한 시간 안에 완료 못 함</p></article>
+      <article class="card info"><span>중단 후 폐기</span><strong class="big">5</strong><p>좋은 결과로 재사용하지 않음</p></article>
+    </div>
+    <p class="note">CBC의 완료 중앙 시간이 약 1초로 짧아 보여도 “완료한 쉬운 문제만 남은” 생존 편향이 큽니다. 그래서 이 숫자만으로 CBC가 가장 빠르다고 결론 내리지 않았습니다.</p>
+  </section>
+
+  <section>
+    <h2>문제가 커지면 결과가 완전히 달라졌습니다</h2>
+    <p class="caption">아래는 오라클을 제외한 규모별 완료 건수입니다. 각 셀의 분모는 솔버마다 같습니다.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>규모</th><th>CBC</th><th>HiGHS</th><th>SCIP</th><th>쉽게 해석하면</th></tr></thead>
+        <tbody>
+          <tr><td><b>50명 / 10프로젝트</b></td><td>19 / 25</td><td><b>25 / 25</b></td><td><b>25 / 25</b></td><td><span class="tag green">안정 구간</span></td></tr>
+          <tr><td><b>100명 / 20프로젝트</b></td><td>0 / 25</td><td><b>25 / 25</b></td><td><b>25 / 25</b></td><td>HiGHS·SCIP 모두 안정적</td></tr>
+          <tr><td><b>200명 / 40프로젝트</b></td><td>0 / 25</td><td><b>23 / 25</b></td><td><b>25 / 25</b></td><td>SCIP 성공률 우세, 하지만 거의 4분</td></tr>
+          <tr><td><b>300명 / 60프로젝트</b></td><td>3 / 37</td><td><b>6 / 37</b></td><td>0 / 37</td><td><span class="tag red">서비스 준비 안 됨</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:18px"><b>중요한 성능 절벽:</b> 300명 규모의 baseline, budget pressure, dense collaboration에서는 세 솔버 모두 완료 0건이었습니다. 성공 9건은 모두 availability pressure 조건에만 몰렸습니다.</div>
+  </section>
+
+  <section class="boundary">
+    <h2>이 실험이 증명하지 못한 것</h2>
+    <div class="split">
+      <article class="card"><h3>증명한 것</h3><p>현재 수학식과 가상 입력에서 어떤 계산 엔진이 제한 시간 안에 규칙을 지킨 답과 품질 근거를 더 자주 남겼는지.</p></article>
+      <article class="card"><h3>아직 모르는 것</h3><p>그 팀이 실제 고객에게 좋은 평가를 받는지, 인력 교체가 줄어드는지, 후속 고도화 과제로 이어지는지.</p></article>
+    </div>
+    <p><b>NOT_CALIBRATED</b>는 실패 표시가 아닙니다. 현실의 정답표가 아직 없어서, 계산이 잘 되는 것과 사업적으로 좋은 팀을 만드는 것을 정직하게 분리한 표시입니다.</p>
+  </section>
+
+  <section>
+    <h2>긴 실행 중 생긴 다섯 번의 중단도 숨기지 않았습니다</h2>
+    <p class="caption">실행 채널이 끝난 경우, worker 파일에 좋아 보이는 결과가 있어도 감독자가 끝까지 확인하지 못했다면 성공으로 세지 않았습니다.</p>
+    <div class="timeline">
+      <div class="tick"><strong>#178</strong>CBC</div><div class="tick"><strong>#179</strong>HiGHS</div><div class="tick"><strong>#237</strong>CBC</div><div class="tick"><strong>#273</strong>CBC</div><div class="tick"><strong>#331</strong>CBC</div>
+    </div>
+    <p class="note">각 케이스는 240초 전액을 사용한 것으로 남기고 <code>ORPHANED_ACKNOWLEDGED</code>로 표시했습니다. 복구 전 파일과 버린 결과의 SHA-256도 보존했습니다.</p>
+  </section>
+
+  <section>
+    <h2>비용은 어떻게 봐야 하나요?</h2>
+    <div class="grid">
+      <article class="card ok"><h3>이번 오픈소스 실험</h3><strong class="big">라이선스 0원</strong><p>로컬 macOS에서 실행했습니다. 전력과 사람 작업 시간은 따로 계측하지 않아 금액으로 만들지 않았습니다.</p></article>
+      <article class="card info"><h3>다음 상용 후보: Gurobi</h3><strong class="big">평가판 0원</strong><p>공식 안내상 상용 사용자는 30일 전체 기능 평가판을 신청할 수 있습니다. 동일 동결 입력 비교에 적합합니다.</p></article>
+      <article class="card warn"><h3>실서비스 구매 비용</h3><strong class="big">견적 필요</strong><p>공개 정가가 없고 사용자 수, 서버·클라우드, 동시 실행 수, 배포 방식에 따라 달라집니다.</p></article>
+    </div>
+    <p class="caption" style="margin-top:14px">공식 근거: <a href="https://www.gurobi.com/product/pricing-and-licensing">Gurobi Pricing &amp; Licensing</a> · <a href="https://www.gurobi.com/utility/free-trial">Gurobi Free Trial</a> · <a href="https://www.gurobi.com/product/licensing/request-price-quote">Request a Price Quote</a></p>
+  </section>
+
+  <section>
+    <h2>무엇을 확인했나요?</h2>
+    <ul class="checks">
+      <li>체크포인트 COMPLETE, 357/357</li>
+      <li>열린 예약 0, 실행 중 0</li>
+      <li>잔존 runner/worker 프로세스 0</li>
+      <li>결과 파일 357개와 해시 재검증</li>
+      <li>Phase 1 테스트 168개 통과</li>
+      <li>전체 테스트 497개 통과, 10개 제외</li>
+      <li>독립 제약 검증 실패 0</li>
+      <li>사용 불가 솔버·메모리 중단 0</li>
+    </ul>
+    <p class="note">리뷰는 현재 활성 환경의 주 모델로 수행했습니다. 더 약한 모델을 쓰지 않았지만, 상위 실행 규칙 때문에 독립 하위 리뷰어를 배정할 수 없어 자체 리뷰라는 잔여 위험이 있습니다.</p>
+  </section>
+
+  <section>
+    <h2>그래서 다음에는 무엇을 하나요?</h2>
+    <div class="step"><div><h3>HiGHS를 잠정 기본값으로 둡니다</h3><p>현재 모델·가상 입력 범위에서 가장 균형 잡힌 선택입니다. “영구 우승”이 아니라 다음 실험의 기준점입니다.</p></div></div>
+    <div class="step"><div><h3>300명 문제를 더 작게 풀 수 있게 모델을 개선합니다</h3><p>warm start, 후보 쌍 축소, 문제 분해, 운영 시간 예산을 각각 분리 실험합니다. 한꺼번에 바꾸면 무엇이 효과였는지 알 수 없습니다.</p></div></div>
+    <div class="step"><div><h3>Gurobi 30일 평가판으로 같은 357칸을 비교합니다</h3><p>새 데이터를 만들지 말고 이번 동결 입력·같은 제한·같은 검증기를 그대로 사용해야 공정합니다.</p></div></div>
+    <div class="step"><div><h3>사용자가 공유할 “컬럼 구조”로 가상 데이터를 다시 보정합니다</h3><p>실제 개인정보가 아니라 기술 이력·피드백에 들어갈 수 있는 필드와 값의 범위를 받아 합성 분포를 현실에 더 가깝게 만듭니다.</p></div></div>
+    <div class="step"><div><h3>나중에 HR팀과 성과 정의만 합의합니다</h3><p>고객 평가, 인력 교체, 후속 과제 같은 결과를 익명·집계 형태로 연결할 수 있어야 비로소 모델 자체의 현실 효과를 검증할 수 있습니다.</p></div></div>
+  </section>
+
+  <footer>
+    2026-10-03 · source commit <code>cf82e197206e6926b2ef516f6ca8038ee723b5c3</code><br>
+    상세 원시 증거: <a href="phase1-solver-benchmark.html">phase1-solver-benchmark.html</a> · 사업 타당성: <b>NOT_CALIBRATED</b><br>
+    이 파일은 저장소 추적 대상으로 작성됐습니다. 현재 Git remote가 없어 원격 다운로드는 아직 불가능합니다.
+  </footer>
+</main>
+</body>
+</html>

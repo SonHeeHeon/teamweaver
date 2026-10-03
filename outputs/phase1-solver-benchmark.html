@@ -13,18 +13,18 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
 .meta{display:grid;grid-template-columns:190px 1fr;gap:8px 16px} .meta dt{font-weight:800} .meta dd{margin:0;overflow-wrap:anywhere} .note{color:var(--muted)}
 @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.meta{grid-template-columns:1fr}.meta dd{margin-bottom:8px}} @media(max-width:440px){.grid{grid-template-columns:1fr}main{width:min(100% - 18px,1200px)}}
 </style></head><body><main>
-<div class="badge warn">PARTIAL</div>
+<div class="badge ok">COMPLETE</div>
 <h1>Phase 1 솔버 비교 증거 보고서</h1>
 <p class="lead">이 페이지는 저장된 체크포인트와 해시가 일치하는 결과만 보여줍니다. 기록되지 않은 성공이나 성능을 추정하지 않습니다.</p>
 <div class="grid">
-  <div class="card"><span>기록된 케이스</span><strong>24</strong></div>
-  <div class="card"><span>활성 실행 시간</span><strong>33.393초</strong></div>
+  <div class="card"><span>기록된 케이스</span><strong>357</strong></div>
+  <div class="card"><span>활성 실행 시간</span><strong>36917.175초</strong></div>
   <div class="card"><span>검증 실패</span><strong>0</strong></div>
   <div class="card"><span>사용 불가 솔버</span><strong>0</strong><small>없음</small></div>
 </div>
 <section class="boundary"><strong>NOT_CALIBRATED</strong>
 <p>이 결과는 가상 입력에서 구현 정확도와 솔버 실행 특성을 비교하는 기술 실험입니다. 실제 인력 배치가 고객 만족, 프로젝트 성과, 인력 교체 감소로 이어진다는 현실 성과 검증은 아닙니다.</p></section>
-<section><h2>실행 상태 요약</h2><p><b>터미널 상태:</b> {&quot;DONE&quot;: 24}</p><p><b>품질 상태:</b> {&quot;BOUND_UNKNOWN&quot;: 8, &quot;QUALITY_PASS&quot;: 16}</p><p><b>체크포인트 상태:</b> PARTIAL</p><p class="note">완료 표시는 사전 등록 일정 전체가 기록되고 체크포인트도 COMPLETE일 때만 나옵니다.</p></section>
+<section><h2>실행 상태 요약</h2><p><b>터미널 상태:</b> {&quot;DEADLINE_EXCEEDED&quot;: 68, &quot;DONE&quot;: 197, &quot;NO_VALID_INCUMBENT&quot;: 87, &quot;ORPHANED_ACKNOWLEDGED&quot;: 5}</p><p><b>품질 상태:</b> {&quot;BOUND_UNKNOWN&quot;: 29, &quot;NOT_RECORDED&quot;: 160, &quot;QUALITY_PASS&quot;: 168}</p><p><b>체크포인트 상태:</b> COMPLETE</p><p class="note">완료 표시는 사전 등록 일정 전체가 기록되고 체크포인트도 COMPLETE일 때만 나옵니다.</p></section>
 <section><h2>솔버·버전·가용성</h2><div class="tablewrap"><table><thead><tr><th>솔버</th><th>사전 상태</th><th>버전</th><th>연결 방식</th><th>실행 관찰</th><th>오류</th></tr></thead><tbody>
         <tr><td><strong>cbc</strong></td><td>AVAILABLE</td>
         <td>PuLP 3.3.2 bundled CBC</td><td><code>pulp.PULP_CBC_CMD</code></td>
@@ -36,13 +36,13 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
         <td>6.2.1</td><td><code>pyscipopt</code></td>
         <td>—</td><td>—</td></tr></tbody></table></div></section>
 <section><h2>고정 실행 조건과 신원</h2><dl class="meta">
-<dt>매니페스트 SHA-256</dt><dd><code>d99698547d6c0b8888026ea6acb8e3fc16887858c24f9d3999782b71de32c4b1</code></dd>
-<dt>체크포인트의 SHA-256</dt><dd><code>d99698547d6c0b8888026ea6acb8e3fc16887858c24f9d3999782b71de32c4b1</code></dd>
-<dt>소스 커밋</dt><dd><code>a4af4278d6aee7f4b9ebcb1ad6e5c2d6ff9f31de</code></dd>
+<dt>매니페스트 SHA-256</dt><dd><code>812d2c4ec223b8551fee137297ead908133d1019b5a30d487b885d6e07fdb90e</code></dd>
+<dt>체크포인트의 SHA-256</dt><dd><code>812d2c4ec223b8551fee137297ead908133d1019b5a30d487b885d6e07fdb90e</code></dd>
+<dt>소스 커밋</dt><dd><code>cf82e197206e6926b2ef516f6ca8038ee723b5c3</code></dd>
 <dt>의존성 잠금 해시</dt><dd><code>ad22bc1b5dd723faa8c1d897150c70062bd056a72162b1b4df0eeb756c3ce65c</code></dd>
 <dt>옵션</dt><dd><code>{&quot;relative_gap&quot;: 0.0, &quot;solver_guard_seconds&quot;: 10, &quot;threads&quot;: 1}</code></dd>
 <dt>의존성 버전</dt><dd><code>{&quot;highspy&quot;: &quot;1.15.1&quot;, &quot;numpy&quot;: &quot;2.5.1&quot;, &quot;pulp&quot;: &quot;3.3.2&quot;, &quot;pydantic&quot;: &quot;2.13.4&quot;, &quot;pyscipopt&quot;: &quot;6.2.1&quot;, &quot;scipy&quot;: &quot;1.18.0&quot;, &quot;tiktoken&quot;: &quot;0.13.0&quot;}</code></dd>
-<dt>생성 / 갱신</dt><dd>2026-09-30T14:47:32.817282+00:00 / 2026-09-30T14:48:01.603043+00:00</dd>
+<dt>생성 / 갱신</dt><dd>2026-09-30T15:21:40.351507+00:00 / 2026-10-03T06:06:18.746210+00:00</dd>
 </dl></section>
 <section><h2>케이스별 L / U / Gap / 검증</h2><p class="note">L은 찾은 배치의 점수, U는 솔버가 제공한 최고 가능 상한입니다. U가 없으면 Gap도 계산하지 않고 BOUND_UNKNOWN으로 남깁니다.</p>
 <div class="tablewrap"><table><thead><tr><th>케이스</th><th>단계</th><th>솔버</th><th>실행 상태</th><th>품질 상태</th><th>L</th><th>U</th><th>Gap</th><th>독립 검증</th><th>원본 상태</th><th>초</th><th>오류·검증 이슈</th></tr></thead><tbody>
@@ -57,7 +57,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.309</td>
+          <td class="num">0.275</td>
           <td>—</td>
         </tr>
         <tr>
@@ -71,7 +71,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.275</td>
+          <td class="num">0.273</td>
           <td>—</td>
         </tr>
         <tr>
@@ -85,7 +85,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.279</td>
+          <td class="num">0.263</td>
           <td>—</td>
         </tr>
         <tr>
@@ -99,7 +99,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.264</td>
+          <td class="num">0.275</td>
           <td>—</td>
         </tr>
         <tr>
@@ -113,7 +113,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.279</td>
+          <td class="num">0.275</td>
           <td>—</td>
         </tr>
         <tr>
@@ -127,7 +127,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.281</td>
+          <td class="num">0.299</td>
           <td>—</td>
         </tr>
         <tr>
@@ -141,7 +141,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.271</td>
+          <td class="num">0.273</td>
           <td>—</td>
         </tr>
         <tr>
@@ -155,7 +155,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.279</td>
+          <td class="num">0.300</td>
           <td>—</td>
         </tr>
         <tr>
@@ -169,7 +169,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.263</td>
+          <td class="num">0.272</td>
           <td>—</td>
         </tr>
         <tr>
@@ -183,7 +183,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.278</td>
+          <td class="num">0.289</td>
           <td>—</td>
         </tr>
         <tr>
@@ -197,7 +197,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.274</td>
+          <td class="num">0.279</td>
           <td>—</td>
         </tr>
         <tr>
@@ -211,7 +211,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.265</td>
+          <td class="num">0.276</td>
           <td>—</td>
         </tr>
         <tr>
@@ -225,7 +225,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.279</td>
+          <td class="num">0.275</td>
           <td>—</td>
         </tr>
         <tr>
@@ -253,7 +253,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.295</td>
+          <td class="num">0.274</td>
           <td>—</td>
         </tr>
         <tr>
@@ -267,7 +267,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.279</td>
+          <td class="num">0.275</td>
           <td>—</td>
         </tr>
         <tr>
@@ -281,7 +281,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.270</td>
+          <td class="num">0.277</td>
           <td>—</td>
         </tr>
         <tr>
@@ -295,7 +295,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.275</td>
+          <td class="num">0.270</td>
           <td>—</td>
         </tr>
         <tr>
@@ -309,7 +309,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.276</td>
+          <td class="num">0.279</td>
           <td>—</td>
         </tr>
         <tr>
@@ -323,7 +323,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.274</td>
+          <td class="num">0.285</td>
           <td>—</td>
         </tr>
         <tr>
@@ -337,7 +337,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.275</td>
+          <td class="num">0.279</td>
           <td>—</td>
         </tr>
         <tr>
@@ -351,7 +351,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">—</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">1.045</td>
+          <td class="num">1.043</td>
           <td>—</td>
         </tr>
         <tr>
@@ -365,7 +365,7 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>Optimal</td>
-          <td class="num">0.542</td>
+          <td class="num">0.548</td>
           <td>—</td>
         </tr>
         <tr>
@@ -379,7 +379,4669 @@ main{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px} h1{fon
           <td class="num">0.0000%</td>
           <td>True</td>
           <td>optimal</td>
-          <td class="num">0.478</td>
+          <td class="num">0.480</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>025-pilot-n100-p20-seed42-baseline-r1-cbc</code></td>
+          <td>pilot</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">10.354</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>026-pilot-n100-p20-seed42-baseline-r1-highs</code></td>
+          <td>pilot</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">41.057537</td>
+          <td class="num">41.057537</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">5.832</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>027-pilot-n100-p20-seed42-baseline-r1-scip</code></td>
+          <td>pilot</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">41.057537</td>
+          <td class="num">41.057537</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">11.750</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>028-pilot-n200-p40-seed42-baseline-r1-highs</code></td>
+          <td>pilot</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">92.179563</td>
+          <td class="num">92.179563</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">52.469</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>029-pilot-n200-p40-seed42-baseline-r1-scip</code></td>
+          <td>pilot</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">92.143238</td>
+          <td class="num">92.254211</td>
+          <td class="num">0.1203%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">114.559</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>030-pilot-n200-p40-seed42-baseline-r1-cbc</code></td>
+          <td>pilot</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">96.705</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>031-pilot-n300-p60-seed42-baseline-r1-scip</code></td>
+          <td>pilot</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">120.089</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>032-pilot-n300-p60-seed42-baseline-r1-cbc</code></td>
+          <td>pilot</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Not Solved</td>
+          <td class="num">71.384</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>033-pilot-n300-p60-seed42-baseline-r1-highs</code></td>
+          <td>pilot</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">120.077</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>034-primary-n50-p10-seed100-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">16.283452</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.096</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>035-primary-n50-p10-seed100-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">16.283452</td>
+          <td class="num">16.283452</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.050</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>036-primary-n50-p10-seed100-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">16.283452</td>
+          <td class="num">16.283452</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">1.400</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>037-primary-n50-p10-seed100-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">16.283452</td>
+          <td class="num">16.283452</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.049</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>038-primary-n50-p10-seed100-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">16.283452</td>
+          <td class="num">16.283452</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">1.414</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>039-primary-n50-p10-seed100-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">16.283452</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.962</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>040-primary-n50-p10-seed100-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.268301</td>
+          <td class="num">17.268301</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.788</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>041-primary-n50-p10-seed100-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">1.443</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>042-primary-n50-p10-seed100-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.268301</td>
+          <td class="num">17.268301</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.841</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>043-primary-n50-p10-seed100-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">1.445</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>044-primary-n50-p10-seed100-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.268301</td>
+          <td class="num">17.268301</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.848</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>045-primary-n50-p10-seed100-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.268301</td>
+          <td class="num">17.268301</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.777</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>046-primary-n50-p10-seed102-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.458403</td>
+          <td class="num">13.458403</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.629</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>047-primary-n50-p10-seed102-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.458403</td>
+          <td class="num">13.458403</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.468</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>048-primary-n50-p10-seed102-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">0.934</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>049-primary-n50-p10-seed102-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.458403</td>
+          <td class="num">13.458403</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.472</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>050-primary-n50-p10-seed102-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">0.943</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>051-primary-n50-p10-seed102-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.458403</td>
+          <td class="num">13.458403</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.625</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>052-primary-n50-p10-seed101-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.938118</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.881</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>053-primary-n50-p10-seed101-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.938118</td>
+          <td class="num">14.938118</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.602</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>054-primary-n50-p10-seed101-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.938118</td>
+          <td class="num">14.938118</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.445</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>055-primary-n50-p10-seed101-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.938118</td>
+          <td class="num">14.938118</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.592</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>056-primary-n50-p10-seed101-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.938118</td>
+          <td class="num">14.938118</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.455</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>057-primary-n50-p10-seed101-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.938118</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.872</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>058-primary-n50-p10-seed101-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.308588</td>
+          <td class="num">14.308588</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.597</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>059-primary-n50-p10-seed101-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.308588</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.932</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>060-primary-n50-p10-seed101-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.308588</td>
+          <td class="num">14.308588</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.628</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>061-primary-n50-p10-seed101-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.308588</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.956</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>062-primary-n50-p10-seed101-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.308588</td>
+          <td class="num">14.308588</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.645</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>063-primary-n50-p10-seed101-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.308588</td>
+          <td class="num">14.308588</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.582</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>064-primary-n50-p10-seed102-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.466674</td>
+          <td class="num">15.466674</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.760</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>065-primary-n50-p10-seed102-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.466674</td>
+          <td class="num">15.466674</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.544</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>066-primary-n50-p10-seed102-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.466674</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.201</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>067-primary-n50-p10-seed102-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.466674</td>
+          <td class="num">15.466674</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.536</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>068-primary-n50-p10-seed102-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.466674</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.210</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>069-primary-n50-p10-seed102-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.466674</td>
+          <td class="num">15.466674</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.772</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>070-primary-n50-p10-seed102-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.870625</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.887</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>071-primary-n50-p10-seed102-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.870625</td>
+          <td class="num">15.870625</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.913</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>072-primary-n50-p10-seed102-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.870625</td>
+          <td class="num">15.870625</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">1.504</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>073-primary-n50-p10-seed102-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.870625</td>
+          <td class="num">15.870625</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.910</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>074-primary-n50-p10-seed102-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.870625</td>
+          <td class="num">15.870625</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">1.519</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>075-primary-n50-p10-seed102-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.870625</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.897</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>076-primary-n50-p10-seed102-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.682990</td>
+          <td class="num">15.682990</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">3.641</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>077-primary-n50-p10-seed102-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.682990</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.868</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>078-primary-n50-p10-seed102-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.682990</td>
+          <td class="num">15.682990</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.518</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>079-primary-n50-p10-seed102-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.682990</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.851</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>080-primary-n50-p10-seed102-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.682990</td>
+          <td class="num">15.682990</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.497</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>081-primary-n50-p10-seed102-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.682990</td>
+          <td class="num">15.682990</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">3.632</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>082-primary-n50-p10-seed101-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.006383</td>
+          <td class="num">13.006383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.453</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>083-primary-n50-p10-seed101-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.006383</td>
+          <td class="num">13.006383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.411</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>084-primary-n50-p10-seed101-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">13.006383</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.808</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>085-primary-n50-p10-seed101-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.006383</td>
+          <td class="num">13.006383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.423</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>086-primary-n50-p10-seed101-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">13.006383</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.783</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>087-primary-n50-p10-seed101-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">13.006383</td>
+          <td class="num">13.006383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.460</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>088-primary-n50-p10-seed101-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.614975</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.179</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>089-primary-n50-p10-seed101-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.614975</td>
+          <td class="num">14.614975</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.113</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>090-primary-n50-p10-seed101-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.614975</td>
+          <td class="num">14.614975</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.565</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>091-primary-n50-p10-seed101-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.614975</td>
+          <td class="num">14.614975</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.080</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>092-primary-n50-p10-seed101-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">14.614975</td>
+          <td class="num">14.614975</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.570</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>093-primary-n50-p10-seed101-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">14.614975</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">1.166</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>094-primary-n50-p10-seed100-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.353076</td>
+          <td class="num">15.353076</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.548</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>095-primary-n50-p10-seed100-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.353076</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.849</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>096-primary-n50-p10-seed100-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.353076</td>
+          <td class="num">15.353076</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.503</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>097-primary-n50-p10-seed100-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">15.353076</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.860</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>098-primary-n50-p10-seed100-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.353076</td>
+          <td class="num">15.353076</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.520</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>099-primary-n50-p10-seed100-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">15.353076</td>
+          <td class="num">15.353076</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.554</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>100-primary-n50-p10-seed100-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.219945</td>
+          <td class="num">17.219945</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.546</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>101-primary-n50-p10-seed100-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.219945</td>
+          <td class="num">17.219945</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.449</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>102-primary-n50-p10-seed100-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">0.832</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>103-primary-n50-p10-seed100-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.219945</td>
+          <td class="num">17.219945</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">0.446</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>104-primary-n50-p10-seed100-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">0.835</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>105-primary-n50-p10-seed100-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">17.219945</td>
+          <td class="num">17.219945</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">0.516</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>106-primary-n100-p20-seed100-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">227.952</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>107-primary-n100-p20-seed100-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.280535</td>
+          <td class="num">39.280535</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">17.694</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>108-primary-n100-p20-seed100-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.280535</td>
+          <td class="num">39.280535</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">15.604</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>109-primary-n100-p20-seed100-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.280535</td>
+          <td class="num">39.280535</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">17.645</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>110-primary-n100-p20-seed100-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.280535</td>
+          <td class="num">39.280535</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">15.596</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>111-primary-n100-p20-seed100-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">228.289</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>112-primary-n100-p20-seed100-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">35.091279</td>
+          <td class="num">35.091279</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">7.609</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>113-primary-n100-p20-seed100-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">32.553</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>114-primary-n100-p20-seed100-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">35.091279</td>
+          <td class="num">35.091279</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">7.594</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>115-primary-n100-p20-seed100-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">32.510</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>116-primary-n100-p20-seed100-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">35.091279</td>
+          <td class="num">35.091279</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">7.589</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>117-primary-n100-p20-seed100-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">35.091279</td>
+          <td class="num">35.091279</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">7.521</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>118-primary-n100-p20-seed101-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.246839</td>
+          <td class="num">31.246839</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">9.630</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>119-primary-n100-p20-seed101-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.246839</td>
+          <td class="num">31.246839</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">16.427</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>120-primary-n100-p20-seed101-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">48.603</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>121-primary-n100-p20-seed101-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.246839</td>
+          <td class="num">31.246839</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">16.500</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>122-primary-n100-p20-seed101-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">48.507</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>123-primary-n100-p20-seed101-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.246839</td>
+          <td class="num">31.246839</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">9.630</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>124-primary-n100-p20-seed100-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">25.554</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>125-primary-n100-p20-seed100-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.377752</td>
+          <td class="num">39.377752</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">5.353</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>126-primary-n100-p20-seed100-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.377752</td>
+          <td class="num">39.377752</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">5.594</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>127-primary-n100-p20-seed100-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.377752</td>
+          <td class="num">39.377752</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">5.349</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>128-primary-n100-p20-seed100-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">39.377752</td>
+          <td class="num">39.377752</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">5.597</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>129-primary-n100-p20-seed100-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">25.508</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>130-primary-n100-p20-seed100-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">37.395898</td>
+          <td class="num">37.395898</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">6.459</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>131-primary-n100-p20-seed100-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">12.037</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>132-primary-n100-p20-seed100-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">37.395898</td>
+          <td class="num">37.395898</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.928</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>133-primary-n100-p20-seed100-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">12.052</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>134-primary-n100-p20-seed100-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">37.395898</td>
+          <td class="num">37.395898</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.917</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>135-primary-n100-p20-seed100-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">37.395898</td>
+          <td class="num">37.395898</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">6.499</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>136-primary-n100-p20-seed102-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.388754</td>
+          <td class="num">38.388754</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">8.106</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>137-primary-n100-p20-seed102-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.388754</td>
+          <td class="num">38.388754</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">8.485</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>138-primary-n100-p20-seed102-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">14.580</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>139-primary-n100-p20-seed102-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.388754</td>
+          <td class="num">38.388754</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">8.348</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>140-primary-n100-p20-seed102-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">14.564</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>141-primary-n100-p20-seed102-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.388754</td>
+          <td class="num">38.388754</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">8.106</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>142-primary-n100-p20-seed101-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">15.842</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>143-primary-n100-p20-seed101-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">27.220978</td>
+          <td class="num">27.220978</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">4.286</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>144-primary-n100-p20-seed101-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">27.220978</td>
+          <td class="num">27.220978</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">4.394</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>145-primary-n100-p20-seed101-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">27.220978</td>
+          <td class="num">27.220978</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">4.300</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>146-primary-n100-p20-seed101-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">27.220978</td>
+          <td class="num">27.220978</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">4.414</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>147-primary-n100-p20-seed101-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">15.747</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>148-primary-n100-p20-seed101-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">30.317985</td>
+          <td class="num">30.317985</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">8.233</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>149-primary-n100-p20-seed101-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">68.457</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>150-primary-n100-p20-seed101-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">30.317985</td>
+          <td class="num">30.317985</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.062</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>151-primary-n100-p20-seed101-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">68.617</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>152-primary-n100-p20-seed101-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">30.317985</td>
+          <td class="num">30.317985</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.072</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>153-primary-n100-p20-seed101-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">30.317985</td>
+          <td class="num">30.317985</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">8.240</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>154-primary-n100-p20-seed102-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">36.963203</td>
+          <td class="num">36.963203</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">2.483</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>155-primary-n100-p20-seed102-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">36.963203</td>
+          <td class="num">36.963203</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">2.587</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>156-primary-n100-p20-seed102-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">8.200</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>157-primary-n100-p20-seed102-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">36.963203</td>
+          <td class="num">36.963203</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">2.570</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>158-primary-n100-p20-seed102-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">8.270</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>159-primary-n100-p20-seed102-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">36.963203</td>
+          <td class="num">36.963203</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">2.495</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>160-primary-n100-p20-seed102-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">10.875</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>161-primary-n100-p20-seed102-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">34.347383</td>
+          <td class="num">34.347383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.700</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>162-primary-n100-p20-seed102-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">34.347383</td>
+          <td class="num">34.347383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">3.404</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>163-primary-n100-p20-seed102-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">34.347383</td>
+          <td class="num">34.347383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.681</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>164-primary-n100-p20-seed102-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">34.347383</td>
+          <td class="num">34.347383</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">3.442</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>165-primary-n100-p20-seed102-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">10.900</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>166-primary-n100-p20-seed101-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.361432</td>
+          <td class="num">31.361432</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">9.867</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>167-primary-n100-p20-seed101-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">24.658</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>168-primary-n100-p20-seed101-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.361432</td>
+          <td class="num">31.361432</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.561</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>169-primary-n100-p20-seed101-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">24.674</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>170-primary-n100-p20-seed101-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.361432</td>
+          <td class="num">31.361432</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">6.609</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>171-primary-n100-p20-seed101-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">31.361432</td>
+          <td class="num">31.361432</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">9.896</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>172-primary-n100-p20-seed102-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.794738</td>
+          <td class="num">38.794738</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.236</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>173-primary-n100-p20-seed102-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.794738</td>
+          <td class="num">38.794738</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">2.733</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>174-primary-n100-p20-seed102-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">7.012</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>175-primary-n100-p20-seed102-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.794738</td>
+          <td class="num">38.794738</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">2.768</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>176-primary-n100-p20-seed102-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">6.977</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>177-primary-n100-p20-seed102-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">38.794738</td>
+          <td class="num">38.794738</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">3.242</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>178-primary-n200-p40-seed101-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>ORPHANED_ACKNOWLEDGED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.000</td>
+          <td>operator acknowledged the interrupted supervisor; unverified worker output was discarded and the full slot remains charged</td>
+        </tr>
+        <tr>
+          <td><code>179-primary-n200-p40-seed101-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>ORPHANED_ACKNOWLEDGED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.000</td>
+          <td>operator acknowledged sandbox-blocked supervisor cleanup; unverified worker output was discarded and the full slot remains charged</td>
+        </tr>
+        <tr>
+          <td><code>180-primary-n200-p40-seed101-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.960057</td>
+          <td class="num">83.167330</td>
+          <td class="num">0.2492%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.827</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>181-primary-n200-p40-seed101-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">102.575</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>182-primary-n200-p40-seed101-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.960057</td>
+          <td class="num">83.167330</td>
+          <td class="num">0.2492%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.892</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>183-primary-n200-p40-seed101-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.942</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>184-primary-n200-p40-seed101-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">77.762953</td>
+          <td class="num">77.762953</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">67.483</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>185-primary-n200-p40-seed101-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">118.648</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>186-primary-n200-p40-seed101-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">77.762953</td>
+          <td class="num">77.762953</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">32.610</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>187-primary-n200-p40-seed101-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">118.495</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>188-primary-n200-p40-seed101-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">77.762953</td>
+          <td class="num">77.762953</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">32.570</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>189-primary-n200-p40-seed101-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">77.762953</td>
+          <td class="num">77.762953</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">67.227</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>190-primary-n200-p40-seed101-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.849101</td>
+          <td class="num">73.849101</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">43.649</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>191-primary-n200-p40-seed101-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.849101</td>
+          <td class="num">73.849101</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">72.917</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>192-primary-n200-p40-seed101-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">218.304</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>193-primary-n200-p40-seed101-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.849101</td>
+          <td class="num">73.849101</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">72.968</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>194-primary-n200-p40-seed101-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">218.269</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>195-primary-n200-p40-seed101-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.849101</td>
+          <td class="num">73.849101</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">43.763</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>196-primary-n200-p40-seed100-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">222.233</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>197-primary-n200-p40-seed100-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">81.103035</td>
+          <td class="num">81.103035</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">57.986</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>198-primary-n200-p40-seed100-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">81.099821</td>
+          <td class="num">81.189257</td>
+          <td class="num">0.1102%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.609</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>199-primary-n200-p40-seed100-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">81.103035</td>
+          <td class="num">81.103035</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">57.911</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>200-primary-n200-p40-seed100-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">81.099821</td>
+          <td class="num">81.189257</td>
+          <td class="num">0.1102%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.611</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>201-primary-n200-p40-seed100-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.017</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>202-primary-n200-p40-seed100-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.546436</td>
+          <td class="num">91.803085</td>
+          <td class="num">0.2796%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">232.705</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>203-primary-n200-p40-seed100-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.634</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>204-primary-n200-p40-seed100-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.633548</td>
+          <td class="num">91.633548</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">48.540</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>205-primary-n200-p40-seed100-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.414</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>206-primary-n200-p40-seed100-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.633548</td>
+          <td class="num">91.633548</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">48.525</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>207-primary-n200-p40-seed100-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.546436</td>
+          <td class="num">91.803085</td>
+          <td class="num">0.2796%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.598</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>208-primary-n200-p40-seed102-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">78.278359</td>
+          <td class="num">78.278359</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">43.957</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>209-primary-n200-p40-seed102-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">78.278359</td>
+          <td class="num">78.278359</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">56.006</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>210-primary-n200-p40-seed102-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.713</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>211-primary-n200-p40-seed102-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">78.278359</td>
+          <td class="num">78.278359</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">56.128</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>212-primary-n200-p40-seed102-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.769</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>213-primary-n200-p40-seed102-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">78.278359</td>
+          <td class="num">78.278359</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">44.112</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>214-primary-n200-p40-seed102-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">217.354</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>215-primary-n200-p40-seed102-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.809791</td>
+          <td class="num">82.809791</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">131.818</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>216-primary-n200-p40-seed102-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.787499</td>
+          <td class="num">82.975835</td>
+          <td class="num">0.2270%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.638</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>217-primary-n200-p40-seed102-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.809791</td>
+          <td class="num">82.809791</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">131.722</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>218-primary-n200-p40-seed102-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.787499</td>
+          <td class="num">82.975835</td>
+          <td class="num">0.2270%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.679</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>219-primary-n200-p40-seed102-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">217.590</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>220-primary-n200-p40-seed102-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.816727</td>
+          <td class="num">73.865372</td>
+          <td class="num">0.0659%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.504</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>221-primary-n200-p40-seed102-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.349</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>222-primary-n200-p40-seed102-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.819480</td>
+          <td class="num">73.819480</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">77.554</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>223-primary-n200-p40-seed102-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.792</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>224-primary-n200-p40-seed102-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.819480</td>
+          <td class="num">73.819480</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">78.445</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>225-primary-n200-p40-seed102-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">73.816727</td>
+          <td class="num">73.865372</td>
+          <td class="num">0.0659%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.499</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>226-primary-n200-p40-seed100-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">87.527737</td>
+          <td class="num">87.527737</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">51.963</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>227-primary-n200-p40-seed100-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">87.512141</td>
+          <td class="num">87.638745</td>
+          <td class="num">0.1445%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.754</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>228-primary-n200-p40-seed100-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.415</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>229-primary-n200-p40-seed100-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">87.512141</td>
+          <td class="num">87.640074</td>
+          <td class="num">0.1460%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.656</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>230-primary-n200-p40-seed100-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.584</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>231-primary-n200-p40-seed100-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">87.527737</td>
+          <td class="num">87.527737</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">51.932</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>232-primary-n200-p40-seed100-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">220.594</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>233-primary-n200-p40-seed100-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.585740</td>
+          <td class="num">91.883492</td>
+          <td class="num">0.3241%</td>
+          <td>True</td>
+          <td>Time limit reached</td>
+          <td class="num">234.542</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>234-primary-n200-p40-seed100-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.330716</td>
+          <td class="num">92.020405</td>
+          <td class="num">0.7495%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.646</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>235-primary-n200-p40-seed100-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.585740</td>
+          <td class="num">91.883492</td>
+          <td class="num">0.3241%</td>
+          <td>True</td>
+          <td>Time limit reached</td>
+          <td class="num">234.550</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>236-primary-n200-p40-seed100-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">91.330716</td>
+          <td class="num">92.020405</td>
+          <td class="num">0.7495%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.717</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>237-primary-n200-p40-seed100-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>ORPHANED_ACKNOWLEDGED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.000</td>
+          <td>operator acknowledged expired execution channel; unverified worker output was discarded and the full slot remains charged</td>
+        </tr>
+        <tr>
+          <td><code>238-primary-n200-p40-seed101-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.368200</td>
+          <td class="num">82.368200</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">47.719</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>239-primary-n200-p40-seed101-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">117.623</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>240-primary-n200-p40-seed101-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.368200</td>
+          <td class="num">82.368200</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">30.704</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>241-primary-n200-p40-seed101-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">118.657</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>242-primary-n200-p40-seed101-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.368200</td>
+          <td class="num">82.368200</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">30.757</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>243-primary-n200-p40-seed101-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.368200</td>
+          <td class="num">82.368200</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>optimal</td>
+          <td class="num">48.895</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>244-primary-n200-p40-seed102-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.692704</td>
+          <td class="num">82.692704</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">50.428</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>245-primary-n200-p40-seed102-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.638685</td>
+          <td class="num">82.760855</td>
+          <td class="num">0.1476%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.723</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>246-primary-n200-p40-seed102-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.440</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>247-primary-n200-p40-seed102-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.638275</td>
+          <td class="num">82.761518</td>
+          <td class="num">0.1489%</td>
+          <td>True</td>
+          <td>timelimit</td>
+          <td class="num">234.655</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>248-primary-n200-p40-seed102-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">219.185</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>249-primary-n200-p40-seed102-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">82.692704</td>
+          <td class="num">82.692704</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">50.975</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>250-primary-n300-p60-seed102-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">192.813</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>251-primary-n300-p60-seed102-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.078</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>252-primary-n300-p60-seed102-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.096</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>253-primary-n300-p60-seed102-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.083</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>254-primary-n300-p60-seed102-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.100</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>255-primary-n300-p60-seed102-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.695</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>256-primary-n300-p60-seed100-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.092</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>257-primary-n300-p60-seed100-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">189.083</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>258-primary-n300-p60-seed100-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.076</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>259-primary-n300-p60-seed100-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.702</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>260-primary-n300-p60-seed100-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.079</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>261-primary-n300-p60-seed100-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.095</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>262-primary-n300-p60-seed100-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>263-primary-n300-p60-seed100-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.093</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>264-primary-n300-p60-seed100-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">203.569</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>265-primary-n300-p60-seed100-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.076</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>266-primary-n300-p60-seed100-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">203.435</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>267-primary-n300-p60-seed100-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.083</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>268-primary-n300-p60-seed101-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">188.131</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>269-primary-n300-p60-seed101-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">122.799751</td>
+          <td class="num">122.799751</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">170.685</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>270-primary-n300-p60-seed101-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.086</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>271-primary-n300-p60-seed101-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">122.799751</td>
+          <td class="num">122.799751</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">170.718</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>272-primary-n300-p60-seed101-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.097</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>273-primary-n300-p60-seed101-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>ORPHANED_ACKNOWLEDGED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.000</td>
+          <td>operator acknowledged expired execution channel; unverified worker output was discarded and the full slot remains charged</td>
+        </tr>
+        <tr>
+          <td><code>274-primary-n300-p60-seed102-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>275-primary-n300-p60-seed102-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">203.996</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>276-primary-n300-p60-seed102-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">130.030527</td>
+          <td class="num">130.030527</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">131.031</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>277-primary-n300-p60-seed102-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.813</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>278-primary-n300-p60-seed102-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">130.030527</td>
+          <td class="num">130.030527</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">131.172</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>279-primary-n300-p60-seed102-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.093</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>280-primary-n300-p60-seed100-availability_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.082</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>281-primary-n300-p60-seed100-availability_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.077</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>282-primary-n300-p60-seed100-availability_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">128.909190</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">191.475</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>283-primary-n300-p60-seed100-availability_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.102</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>284-primary-n300-p60-seed100-availability_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">128.998329</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">197.960</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>285-primary-n300-p60-seed100-availability_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.086</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>286-primary-n300-p60-seed102-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.209</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>287-primary-n300-p60-seed102-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.076</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>288-primary-n300-p60-seed102-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.076</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>289-primary-n300-p60-seed102-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.085</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>290-primary-n300-p60-seed102-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.096</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>291-primary-n300-p60-seed102-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.550</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>292-primary-n300-p60-seed100-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.093</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>293-primary-n300-p60-seed100-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">188.900</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>294-primary-n300-p60-seed100-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.080</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>295-primary-n300-p60-seed100-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">189.583</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>296-primary-n300-p60-seed100-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>297-primary-n300-p60-seed100-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.100</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>298-primary-n300-p60-seed101-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.082</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>299-primary-n300-p60-seed101-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.099</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>300-primary-n300-p60-seed101-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">196.561</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>301-primary-n300-p60-seed101-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.100</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>302-primary-n300-p60-seed101-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">196.883</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>303-primary-n300-p60-seed101-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.082</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>304-primary-n300-p60-seed101-dense_collaboration-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">183.850</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>305-primary-n300-p60-seed101-dense_collaboration-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.085</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>306-primary-n300-p60-seed101-dense_collaboration-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.097</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>307-primary-n300-p60-seed101-dense_collaboration-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.076</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>308-primary-n300-p60-seed101-dense_collaboration-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.094</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>309-primary-n300-p60-seed101-dense_collaboration-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">183.640</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>310-primary-n300-p60-seed102-baseline-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.078</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>311-primary-n300-p60-seed102-baseline-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.374</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>312-primary-n300-p60-seed102-baseline-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.085</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>313-primary-n300-p60-seed102-baseline-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.179</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>314-primary-n300-p60-seed102-baseline-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.079</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>315-primary-n300-p60-seed102-baseline-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>316-primary-n300-p60-seed101-budget_pressure-r1-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.078</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>317-primary-n300-p60-seed101-budget_pressure-r1-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.098</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>318-primary-n300-p60-seed101-budget_pressure-r1-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">195.048</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>319-primary-n300-p60-seed101-budget_pressure-r2-scip</code></td>
+          <td>primary</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.093</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>320-primary-n300-p60-seed101-budget_pressure-r2-cbc</code></td>
+          <td>primary</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">194.488</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>321-primary-n300-p60-seed101-budget_pressure-r2-highs</code></td>
+          <td>primary</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>322-confirmation-n300-p60-seed102-budget_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.835</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>323-confirmation-n300-p60-seed102-budget_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.084</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>324-confirmation-n300-p60-seed102-budget_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.083</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>325-confirmation-n300-p60-seed100-dense_collaboration-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.079</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>326-confirmation-n300-p60-seed100-dense_collaboration-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.102</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>327-confirmation-n300-p60-seed100-dense_collaboration-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">190.650</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>328-confirmation-n300-p60-seed100-baseline-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.080</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>329-confirmation-n300-p60-seed100-baseline-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">203.373</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>330-confirmation-n300-p60-seed100-baseline-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.085</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>331-confirmation-n300-p60-seed101-availability_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>ORPHANED_ACKNOWLEDGED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.000</td>
+          <td>operator acknowledged expired execution channel; unverified worker output was discarded and the full slot remains charged</td>
+        </tr>
+        <tr>
+          <td><code>332-confirmation-n300-p60-seed101-availability_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">122.799751</td>
+          <td class="num">122.799751</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">175.749</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>333-confirmation-n300-p60-seed101-availability_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.099</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>334-confirmation-n300-p60-seed102-availability_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DONE</td>
+          <td>QUALITY_PASS</td>
+          <td class="num">130.030527</td>
+          <td class="num">130.030527</td>
+          <td class="num">0.0000%</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">137.005</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>335-confirmation-n300-p60-seed102-availability_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.097</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>336-confirmation-n300-p60-seed102-availability_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">196.688</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>337-confirmation-n300-p60-seed100-availability_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.104</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>338-confirmation-n300-p60-seed100-availability_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>DONE</td>
+          <td>BOUND_UNKNOWN</td>
+          <td class="num">128.909190</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>True</td>
+          <td>Optimal</td>
+          <td class="num">195.023</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>339-confirmation-n300-p60-seed100-availability_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.071</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>340-confirmation-n300-p60-seed102-dense_collaboration-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">185.902</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>341-confirmation-n300-p60-seed102-dense_collaboration-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.074</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>342-confirmation-n300-p60-seed102-dense_collaboration-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.112</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>343-confirmation-n300-p60-seed100-budget_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.075</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>344-confirmation-n300-p60-seed100-budget_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.111</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>345-confirmation-n300-p60-seed100-budget_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">184.276</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>346-confirmation-n300-p60-seed101-baseline-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.117</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>347-confirmation-n300-p60-seed101-baseline-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">182.510</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>348-confirmation-n300-p60-seed101-baseline-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.087</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>349-confirmation-n300-p60-seed101-dense_collaboration-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">180.528</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>350-confirmation-n300-p60-seed101-dense_collaboration-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.070</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>351-confirmation-n300-p60-seed101-dense_collaboration-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.121</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>352-confirmation-n300-p60-seed102-baseline-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.078</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>353-confirmation-n300-p60-seed102-baseline-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.133</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>354-confirmation-n300-p60-seed102-baseline-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">193.533</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>355-confirmation-n300-p60-seed101-budget_pressure-r3-scip</code></td>
+          <td>confirmation</td>
+          <td>scip</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.134</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>356-confirmation-n300-p60-seed101-budget_pressure-r3-cbc</code></td>
+          <td>confirmation</td>
+          <td>cbc</td>
+          <td>NO_VALID_INCUMBENT</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>Optimal</td>
+          <td class="num">184.636</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>357-confirmation-n300-p60-seed101-budget_pressure-r3-highs</code></td>
+          <td>confirmation</td>
+          <td>highs</td>
+          <td>DEADLINE_EXCEEDED</td>
+          <td>—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td class="num">—</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="num">240.077</td>
           <td>—</td>
         </tr></tbody></table></div></section>
 <section><h2>해석 제한</h2><p>이 보고서는 실행 기록의 투명성을 높이지만, 가상 데이터가 실제 조직을 대표한다고 보장하지 않습니다. 솔버 간 속도 비교도 같은 장비·같은 입력·같은 제한에서 기록된 케이스 범위 안에서만 해석해야 합니다.</p></section>

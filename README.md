@@ -24,9 +24,12 @@ AI-powered staffing optimization platform for intelligent team composition and r
 
 Phase 1 A continues on `feat/phase1-solver-benchmark` from the Phase 0 branch.
 The [24-hour open-source solver sweep design](docs/superpowers/specs/2026-09-21-phase1-long-sweep-design.md)
-and [visual overview](outputs/phase1-long-sweep-design.html) describe planned,
-**not yet executed**, work. See the [development checkpoint](docs/phase1-checkpoint.md)
-before resuming. The new design supersedes the earlier decision to defer all
+and [visual overview](outputs/phase1-long-sweep-design.html) define the frozen
+experiment. The `phase1-long-sweep-v2` schedule is now **COMPLETE (357/357)**;
+see the [evidence report](outputs/phase1-solver-benchmark.html),
+[Korean ELI5 handoff](outputs/eli5-phase1-long-sweep-v2.html), and
+[development checkpoint](docs/phase1-checkpoint.md). The design supersedes the
+earlier decision to defer all
 synthetic large-scale comparison until HR column definitions arrive; business
 validity remains `NOT_CALIBRATED`.
 
@@ -62,6 +65,12 @@ options, input hashes, validation evidence, and unavailable backends are stored
 under `experiments/results/phase1/<run-id>/`. This is still a synthetic technical
 comparison, so business validity remains `NOT_CALIBRATED`.
 
+The completed v2 run recorded `DONE 197`, `NO_VALID_INCUMBENT 87`,
+`DEADLINE_EXCEEDED 68`, and five conservatively discarded interrupted cases.
+The provisional default for the current formulation is HiGHS. The 300-person /
+60-project cases are not production-ready: only 6/37 HiGHS, 3/37 CBC, and 0/37
+SCIP cases completed within the recorded limits.
+
 Run the three-case start gate first (maximum active budget: 720 seconds):
 
 ```bash
@@ -92,7 +101,7 @@ be started or resumed with the same run ID:
 ```bash
 TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchmark \
   python -m experiments.phase1.runner \
-  --run-id phase1-long-sweep --max-active-seconds 86400 --resume
+  --run-id phase1-long-sweep-v2 --max-active-seconds 86400 --resume
 ```
 
 The same `--resume` command is safe for the first invocation and later
