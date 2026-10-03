@@ -2,6 +2,13 @@
 
 AI-powered staffing optimization platform for intelligent team composition and resource allocation.
 
+## 프로젝트 전체 해설
+
+[한국어 ELI5 종합 보고서](outputs/eli5-project-history-roadmap.html)는 배경과 현재 구조,
+Plan 1~5 및 Phase 0~1 작업 이력, 기술 선택과 실험 결과, 신뢰 범위, 현재 입력 계약,
+다음 CSV 명세·예시, 남은 개발과 의존관계별 진행 순서를 설명합니다.
+2026-10-03 기준 문서이며, 제안한 새 데이터 컬럼과 후속 기능은 현행 구현과 구분합니다.
+
 ## Quick Start
 
 - **Setup environment**: `uv sync`
