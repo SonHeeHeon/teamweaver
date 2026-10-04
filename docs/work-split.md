@@ -67,8 +67,7 @@
   테스트는 원문에 포함된 인용인지 검사하게 한다(`api/rag/**`. 공유 계약 `core/rag/sqlite_rag.py`·`core/datagen` 변경은 "요청"에 기록한다).
 - **K6** (claude-a) [A-P2] `MemoryGraph.synergy_context_memory`의 int8 누적 넘침(128경로 이상에서 도달 노드 누락)을 수정한다(공유 계약 `core/graph/`. "요청"에 기록한다).
 - **K7** ✅ 실데이터 스키마 입력 양식(`docs/data-schema/`) 제공 (2026-10-04). 사용자가 `private/schema-intake.json`을 채우는 중.
-- **K2** (claude-a) CSV 입력 계약 v0(`core/ingest/`): 파일 묶음 → `Dataset`, 검증 리포트, 컬럼 매핑 계층, 가상 CSV, manifest.
-  `private/schema-intake.json`이 오면 실제 항목에 맞춰 매핑을 정한다.
+- **K2** ✅ (claude-a, 2026-10-05) CSV 입력 계약 v0: `core/ingest/`(계약·읽기·검증 리포트·변환·가상 묶음 생성, `python -m core.ingest generate|check`). 숙련도는 경력 개월 → 대리 레벨, 리뷰는 최신 회차만(아래 "요청" 참고).
 - **K8** (claude-b) 관리자 배치 설정 화면: 최소 투입률(실데이터 답변상 30%, 관리자가 바꿀 수 있어야 함) 등 MILP 파라미터를
   웹 설정 화면에서 바꿔 `/api/optimize`의 `milp_params`로 보낸다. 기본값 변경과 동시 프로젝트 수 제한 같은 새 제약은
   모델 변경이라 Codex(C6) 소관이다. 화면은 그 결과를 따라간다.
@@ -80,8 +79,11 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] feat/claude-a-csv-ingest · core/ingest/**, tests/ingest/** · 2026-10-05 02:10 · 없음 (K2 CSV 입력 계약 v0)
+- (없음)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-a→codex·공유] 경력 개월을 직접 쓰는 기술 점수: 사용자 결정(숙련도 레벨 없음, 기술별 경력 연수만)에 맞춰 S를 `min(보유 경력개월/요구 경력개월, 1)`로 바꾸고 `Person.skills`·`SkillRequirement`를 개월 단위로 확장하자. 모델(`core/domain`)·점수(`core/scoring`)·datagen·두 MILP 입력·Phase 0 재검증이 함께 움직이므로 Codex C6와 묶어 합의 필요. 그 전까지 `core/ingest`는 개월→1~5 대리 레벨(경계 12/36/60/96)을 쓴다 · 상태: 대기
+- 2026-10-05 [claude-a→공유] 리뷰 회차: `PeerReview`에 review_id·회차·프로젝트·날짜를 담고 같은 쌍의 여러 회차를 집계하자(현재 `MemoryGraph`가 쌍당 1건만 쓴다). 그 전까지 `core/ingest`는 최신 회차만 쓴다. K5(근거 출처)와 연결 · 상태: 대기
+- 2026-10-05 [claude-a→codex] 참고: `python -m core.ingest generate --people 40 --projects 8 --seed 7`로 만든 가상 묶음에서 CBC 원시 해가 예산을 ~1.5e-6 넘어 `validate_raw_solution`이 거절했다(컨설팅 단가처럼 끝자리가 둥글지 않을 때). C1 허용오차 분석의 재현 사례로 쓸 수 있다 · 상태: 정보
 - 2026-10-05 [claude(채팅 세션)→모두] 3인 체제 문서화: 이 문서에 "에이전트와 작업 위치"를 추가하고 Claude 영역을 claude-a·claude-b로 나눴다. `CLAUDE.md`·`AGENTS.md`의 "두 에이전트" 문구도 고쳤다. 코드 변경 없음 · 상태: 처리됨(2026-10-05 사용자 확정, claude-a가 커밋)

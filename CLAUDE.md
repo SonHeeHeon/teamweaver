@@ -39,6 +39,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
 - `core/optimize/milp.py` 제품 MILP(PuLP+CBC) · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
   · `validation.py` 원시 해 독립 검증 · `greedy.py` 기준선.
+- `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`).
+  숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
 - `web/` Vite+React+TS+Tailwind. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
 
@@ -61,7 +63,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: main 2026-10-05 **546 passed, 10 deselected**, `--group benchmark` 포함)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-05 K2 이후 **648 passed, 10 deselected**, `--group benchmark` 포함)
 - HiGHS/SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

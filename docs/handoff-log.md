@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-05 · claude-a · K2 CSV 입력 계약 v0
+- 브랜치/커밋: `feat/claude-a-csv-ingest` (`5bce379` 읽기·검증, `0cad783` 변환, 생성기·진입점 커밋) — main 병합은 사용자 승인 후.
+- 한 일: 실제 인사 자료 모양의 CSV 묶음(사람·단가표·기술 경력 개월·업무이력·월별 가용 M/M·프로젝트·등급/기술 요구·리뷰·리뷰 항목 + manifest, 선택 mapping.json)을
+  읽어 검증 리포트를 만들고 현행 `Dataset`으로 변환한다. 같은 모양의 가상 묶음 생성기와 `python -m core.ingest generate|check`를 추가했다.
+- 상대 영향:
+  - **Codex**: 경력 개월 기반 점수와 리뷰 회차 확장을 work-split "요청"에 올렸다(공유 계약). 그 전까지 변환은 개월→1~5 대리 레벨, 최신 리뷰 회차만 쓴다.
+    가상 묶음(`--people 40 --projects 8 --seed 7`)에서 CBC 원시 해의 예산 ~1.5e-6 초과가 재현된다(C1 참고).
+  - **claude-b**: K8(설정 화면)이나 업로드 화면이 필요하면 `core.ingest.load_bundle`/`to_dataset`을 import해 쓴다(파일 수정 불필요).
+  - 테스트 기준선이 늘었다(아래).
+- 검증: tests/ingest 102개, 전체 648 passed·10 deselected. 결함 주입으로 검출력 확인(빠진 달 채우기, 중복 키 누락, 협업 이중 계산, 오래된 회차 선택).
+  가상 50/100/300명 생성→변환 0.2초 이내, 오류 0.
+- 근거: `.omc/plan/2026-10-05-k2-csv-ingest.md`, `.omc/reports/2026-10-05-k2-csv-ingest.md`
+
 ## 2026-10-05 · claude(채팅 세션) · 3인 체제 문서 초안: claude-a·claude-b·codex 영역 분리
 - 브랜치/커밋: 커밋하지 않았다. 루트 작업 트리의 미커밋 변경이며, 사용자가 검토하고 승인한 뒤 main에 커밋한다.
 - 한 일: `docs/work-split.md`에 "에이전트와 작업 위치" 절을 추가하고 Claude 영역을 claude-a(입력·평가·근거)와 claude-b(API·웹·스크립트)로 나눴다. `CLAUDE.md`·`AGENTS.md`의 "두 에이전트" 문구를 세 에이전트로 고쳤다.

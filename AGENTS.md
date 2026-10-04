@@ -24,4 +24,4 @@ require the user's approval.
 Business validity stays `NOT_CALIBRATED`: all data is synthetic. Never present a computational
 result as evidence of real staffing outcomes.
 
-Baseline check: `uv run --group benchmark pytest -q` → 546 passed, 10 deselected (2026-10-05).
+Baseline check: `uv run --group benchmark pytest -q` → 648 passed, 10 deselected (2026-10-05, after K2).

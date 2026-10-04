@@ -270,6 +270,29 @@ def _check_rules(tables: dict[str, list[dict]], horizon: list[dt.date], report: 
                              + " (missing months are never assumed available)")
 
 
+def _check_hashes(root: Path, manifest: dict, report: IngestReport) -> None:
+    """Optional manifest "files": {name: sha256}. When present, every listed file must match."""
+    files = manifest.get("files")
+    if files is None:
+        return
+    if not isinstance(files, dict):
+        report.error("manifest.json", 'files must be {"name.csv": "sha256"}', column="files")
+        return
+    import hashlib
+    for name, digest in files.items():
+        path = root / str(name)
+        if (name not in FILE_SPECS and name != "mapping.json") or not path.is_file():
+            report.error("manifest.json", f"files lists '{name}', which is not a bundle file", column="files")
+            continue
+        try:
+            actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError as exc:
+            report.error(str(name), f"cannot read file to check its sha256: {exc}")
+            continue
+        if actual != digest:
+            report.error(str(name), "content differs from the sha256 in manifest.json (edited after export?)")
+
+
 def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     root = Path(root)
     report = IngestReport()
@@ -280,6 +303,7 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
         rows = _read_table(root, spec, mapping.get(spec.name, {}), report)
         if rows is not None:
             tables[spec.name] = rows
+    _check_hashes(root, manifest, report)
     _check_keys_and_refs(tables, report)
     _check_rules(tables, horizon, report)
     return Bundle(manifest=manifest, horizon=horizon, tables=tables), report
