@@ -22,8 +22,13 @@
 
 ---
 
+## 2026-10-04 · Claude · K7 main 병합
+- 브랜치/커밋: `feat/claude-schema-intake`(`30c08ae` `2dacab6` `edf5bbf` + 이 기록)를 사용자 승인으로 **main에 fast-forward 병합**.
+- 한 일: 스키마 입력 양식의 불러오기를 엄격하게 바꿨다(Stop 훅 지적 2건 반영). 답 하나라도 형식이 틀리면 파일 전체를 거부하고 초안과 자동저장을 보존한다.
+- 상대 영향: 없음. 양식과 문서만 바뀌었다. 답변 `private/schema-intake.json`은 사용자가 작성 중이다.
+
 ## 2026-10-04 · Claude · K7 실데이터 스키마 입력 양식
-- 브랜치/커밋: `feat/claude-schema-intake` (main 병합은 사용자 승인 후)
+- 브랜치/커밋: `feat/claude-schema-intake` (아래 병합 항목 참고)
 - 한 일: 사용자가 기술 이력 시스템·피어 리뷰의 실제 항목·형식·의미·선택지·대략적 분포와 배치 규칙을 채우는
   로컬 HTML 양식(`docs/data-schema/schema-intake.html`, 6개 영역 45문항)을 만들었다. 공용 안내(`docs/data-schema/README.md`)도 작성했다.
   답변은 `private/schema-intake.json`(gitignore)에 둔다.
