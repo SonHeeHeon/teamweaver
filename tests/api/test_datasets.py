@@ -391,9 +391,15 @@ def test_report_payload_carries_meta_of_the_acquired_dataset(client, monkeypatch
 
     monkeypatch.setattr(report_route, "render_report_pdf", fake_render)
     version = client.get("/api/meta").json()["dataset_version"]
-    res = client.post("/api/report", json={"plan_label": "A", "entries": [], "objective": 1.0,
-                                          "fulfillment": 1.0, "optimization_ratio": 1.0,
-                                          "dataset_version": version})
+    res = client.post("/api/report", json={
+        "plan_label": "A", "objective": 1.0, "fulfillment": 1.0, "optimization_ratio": 1.0,
+        "entries": [{"person_id": "p000", "project_id": "j00", "alloc": 1.0},
+                    {"person_id": "p001", "project_id": "j00", "alloc": 0.5}],
+        "dataset_version": version})
     assert res.status_code == 200, res.text
     meta = seen[0]["meta"]
-    assert meta["dataset_version"] == version and len(meta["people"]) == 100
+    # 리포트에 필요한 범위만 담는다(전체 데이터셋 meta는 크기 상한 밖으로 커질 수 있다).
+    assert meta["dataset_version"] == version
+    assert {p["id"] for p in meta["people"]} == {"p000", "p001"}
+    assert {j["id"] for j in meta["projects"]} == {"j00"}
+    assert all({c["a_id"], c["b_id"]} <= {"p000", "p001"} for c in meta["coworks"])
