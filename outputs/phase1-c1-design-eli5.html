@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>TeamWeaver C1 — 실패 기록을 바로잡고 숫자 오차를 안전하게 다루기</title>
+<style>
+:root{color-scheme:light;--ink:#173042;--muted:#536472;--line:#ced9df;--blue:#176c91;--paper:#f6f8fa;--amber:#fff4da}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.8}main{max-width:1020px;margin:auto;padding:32px 24px 70px}h1{font-size:clamp(27px,4vw,43px);line-height:1.3;letter-spacing:-1px}h2{font-size:25px;margin-top:0}h3{font-size:19px}p{margin:12px 0}header{padding:22px 0 30px}.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.08em}.badge{display:inline-block;background:#dceef5;padding:3px 12px;border-radius:20px;font-size:14px}.lead{font-size:20px}.muted,small{color:var(--muted)}section{background:#fff;border:1px solid var(--line);border-radius:15px;padding:28px;margin:20px 0}.notice{background:var(--amber);border-left:5px solid #c48b13;padding:16px 20px;border-radius:8px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{background:#eef5f8;padding:18px;border-radius:12px}.number{font-size:32px;font-weight:750;color:var(--blue)}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left}th{background:#eef5f8}code{font-size:.9em;background:#eef3f6;padding:2px 5px;overflow-wrap:anywhere}.diagram{display:block;width:100%;height:auto;margin:20px 0}.caption{color:var(--muted);font-size:14px}.steps{counter-reset:step}.step{padding:14px 0;border-bottom:1px solid var(--line)}.step:last-child{border:0}.step h3{margin:0}.step h3:before{counter-increment:step;content:counter(step) " · ";color:var(--blue)}a{color:#155d82}footer{font-size:14px;color:var(--muted);padding:18px 0}details{border-top:1px solid var(--line);padding-top:14px;margin-top:18px}summary{cursor:pointer;font-weight:700}@media(max-width:640px){main{padding:20px 14px 40px}section{padding:20px 17px}.grid{grid-template-columns:1fr}table{font-size:14px}h2{font-size:22px}}@media print{body{background:#fff}section{break-inside:avoid;box-shadow:none}main{max-width:none}}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">TEAMWEAVER · C1 · 2026-10-04</div>
+<h1>실패 기록을 바로잡고,<br>아주 작은 숫자 오차도 안전하게 다루기</h1>
+<span class="badge">설계·구현 계획 작성 / 제품 구현 전</span>
+<p class="lead">다음은 C1이 맞습니다. 다만 “실패를 통과로 바꾸기”가 아니라, <strong>왜 실패했는지 정확히 보여주고 실제 조건을 만족하는 결과만 반환하기</strong>가 목표입니다.</p>
+<p class="muted">이 문서는 기술자가 아닌 프로젝트 의사결정자를 위한 설명입니다. 모든 인력·실험 데이터는 가상이며 실제 조직의 성과를 입증하지 않습니다.</p>
+</header>
+
+<section><h2>1. C0 다음에 C1이 필요한 이유</h2>
+<p>솔버는 “누구를 어느 프로젝트에 몇 % 투입하면 계산 점수가 가장 좋아지는가?”를 푸는 계산 엔진입니다. C0는 계산 엔진의 답을 그대로 믿지 않고, 다른 코드가 예산·시간·인원 규칙을 다시 검사하는 안전 관문을 달았습니다.</p>
+<svg class="diagram" viewBox="0 0 870 145" role="img" aria-labelledby="flow-title flow-desc">
+<title id="flow-title">솔버의 제안과 독립 검사의 관계</title><desc id="flow-desc">같은 입력으로 솔버가 후보를 만들고 별도 검사가 조건을 확인한 뒤 통과한 답만 서비스로 전달한다.</desc>
+<rect x="5" y="20" width="175" height="86" rx="12" fill="#e8f1f6" stroke="#8caabb"/><text x="92" y="54" text-anchor="middle" fill="#173042" font-size="18">같은 입력·규칙</text><text x="92" y="82" text-anchor="middle" fill="#536472" font-size="15">가용률·예산·점수</text>
+<path d="M188 63H226l-9-6m9 6-9 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="233" y="20" width="175" height="86" rx="12" fill="#e8f1f6" stroke="#8caabb"/><text x="320" y="54" text-anchor="middle" fill="#173042" font-size="18">솔버가 후보 계산</text><text x="320" y="82" text-anchor="middle" fill="#536472" font-size="15">아직 확정 답은 아님</text>
+<path d="M416 63H454l-9-6m9 6-9 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="461" y="20" width="175" height="86" rx="12" fill="#fff4da" stroke="#c48b13"/><text x="548" y="54" text-anchor="middle" fill="#173042" font-size="18">독립 검사</text><text x="548" y="82" text-anchor="middle" fill="#536472" font-size="15">답을 다시 계산</text>
+<path d="M644 63H682l-9-6m9 6-9 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="689" y="20" width="175" height="86" rx="12" fill="#e8f4ec" stroke="#88aa92"/><text x="776" y="54" text-anchor="middle" fill="#173042" font-size="18">통과한 답만 전달</text><text x="776" y="82" text-anchor="middle" fill="#536472" font-size="15">실패면 거절</text>
+</svg>
+<p>그 관문이 예산을 아주 조금 넘은 답을 발견했습니다. 예산이 <strong>2046</strong>인데 재계산 비용이 <strong>2046.0000025</strong>인 사례입니다. 차이는 작지만 현재 검사 기준 <code>0.000001</code>보다 큽니다. 실제 비용 단위를 아직 모르므로 이를 “몇 원”이라고 부르면 안 됩니다.</p>
+<div class="notice">C0 체크포인트의 전체 테스트: <strong>539 통과 / 6 실패 / 10 제외</strong>. 기본 시연 데이터의 사전 계산도 거절됩니다. 이 문제가 해결되기 전에는 C0를 main에 합치면 안 됩니다. 이번 문서 작업에서 새로 전체 테스트를 실행한 수치는 아닙니다.</div>
+</section>
+
+<section><h2>2. 과거 실험에서 무엇이 빠졌나?</h2>
+<p>일부 실패 이유가 결과의 안쪽 칸인 <code>payload.error</code>에 있었습니다. 보고서는 바깥 칸과 일부 검사 기록만 읽어서, 검증 때문에 거절된 <strong>87건</strong>을 놓쳤습니다. 종이 두 장 중 첫 장만 보고 뒷장의 경고를 빠뜨린 것과 비슷합니다.</p>
+<div class="grid"><div class="card"><div class="number">86건</div><div>예산 검사 거절<br>CBC 85 · HiGHS 1</div></div><div class="card"><div class="number">1건</div><div>CBC의 0/1 조건 거절<br>인력 선택값이 규칙에 맞지 않음</div></div><div class="card"><div class="number">87건</div><div>거절 당시 원시 해 파일 없음<br>오차 크기·원인은 복원 불가</div></div></div>
+<p>원시 해는 화면용으로 줄이기 전의 자세한 숫자표입니다. 이 표가 없으므로 예산 거절 86건이 모두 작은 반올림 오차였다고 말할 수 없습니다. 새로 풀어보는 것은 재현 실험이지, 당시 숫자표를 되찾는 일이 아닙니다.</p>
+<p>이번에는 원본 357건을 기존 해시 검사로 읽었습니다. 해시는 파일이 바뀌었는지 확인하는 지문 같은 값입니다. 원본 상태는 완료 197, 유효 후보 없음 87, 시간 초과 68, 감독자가 완료를 확인하지 못한 중단 5건이며 파일은 바꾸지 않았습니다.</p>
+</section>
+
+<section><h2>3. 비교의 분모도 나눠야 합니다</h2>
+<p>실전 비교용 본평가·재확인은 솔버마다 <strong>108건</strong>입니다. 여기에 예비 실험 3건과 설치 호환성 1건을 섞으면 112건이 됩니다. 목적이 다른 시험은 별도 표로 보여주겠습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>핵심 비교</th><th>CBC</th><th>HiGHS</th><th>SCIP</th></tr></thead><tbody>
+<tr><td>예정</td><td>108</td><td>108</td><td>108</td></tr>
+<tr><td>완료 DONE</td><td>21</td><td>76</td><td>72</td></tr>
+<tr><td>유효 후보 없음</td><td>83</td><td>1</td><td>0</td></tr>
+<tr><td>시간 초과</td><td>0</td><td>30</td><td>36</td></tr>
+<tr><td>완료 확인 불가 중단</td><td>4</td><td>1</td><td>0</td></tr>
+</tbody></table></div>
+<p class="caption">원본 v2 기록의 단계별 재집계입니다. 같은 입력의 반복 측정도 포함돼 108개의 독립 고객 사례를 뜻하지 않습니다. 완료는 5% 품질 증명과 다르며 CBC는 신뢰할 상한이 없어 품질 증명 상태를 따로 표시해야 합니다.</p>
+<p>끝난 사례의 평균·중앙 속도만 보면 어려워서 실패한 사례가 빠집니다. 이를 “생존 편향”이라고 합니다. 새 보고서는 실패와 중단도 분모에 남기고, 완료·검증 통과·품질 통과를 따로 보여줍니다.</p>
+</section>
+
+<section><h2>4. 해결 기술은 세 후보를 비교합니다</h2>
+<div class="table-wrap"><table><thead><tr><th>방법</th><th>쉬운 설명</th><th>선택 판단</th></tr></thead><tbody>
+<tr><td>A · 검사 기준 완화</td><td>“조금 넘어도 괜찮다”고 바꾸기</td><td>실제 초과를 숨길 위험. 기본안으로 택하지 않음</td></tr>
+<tr><td>B · 출력 정밀도 개선</td><td>계산기가 숫자를 더 자세히 전달하게 하기</td><td>설치 CBC에서 가능한지, 어디서 값이 줄었는지 먼저 확인</td></tr>
+<tr><td>C · 투입률 미세 재계산</td><td>사람은 그대로 두고 소수점만 아주 조금 조정</td><td>잠정 권고. 실제 재검증·시간 기준 통과 후 연결</td></tr>
+</tbody></table></div>
+<p>C에는 프로젝트가 이미 쓰는 무료 오픈소스 SciPy의 HiGHS 선형계획 기능을 활용합니다. 선형계획은 여기서 “누구를 선택했는지는 바꾸지 않고 투입률 숫자만 계산하기”입니다. 새 상용 라이선스나 패키지 추가는 필요하지 않지만 추가 계산 시간과 유지보수 비용은 생깁니다.</p>
+<p>이 기능은 연속 변수의 경계와 부등식, 시간 제한을 지원합니다. 실제 설치 버전에서 지원 여부를 확인하겠습니다. <a href="https://docs.scipy.org/doc/scipy/reference/optimize.linprog-highs.html">SciPy 공식 문서</a></p>
+<p class="notice">C는 확정 구현이 아니라 <strong>파일럿으로 검증할 설계 제안</strong>입니다. 통과하지 못하면 보고서 정정만 완료하고 서비스 연결은 보류합니다. 통과시키려고 기준을 넓히지 않습니다.</p>
+</section>
+
+<section><h2>5. 미세 복구는 만능 수정기가 아닙니다</h2>
+<svg class="diagram" viewBox="0 0 870 210" role="img" aria-labelledby="gate-title gate-desc">
+<title id="gate-title">예산만 아주 조금 어긴 후보의 제한적 복구</title><desc id="gate-desc">원본 보존 후 예산만 미세하게 어겼는지 확인하고 인력 구성은 고정한 채 투입률을 재계산한다. 기존 검사 재통과 시에만 반환하고 다른 위반은 거절한다.</desc>
+<rect x="10" y="20" width="195" height="86" rx="12" fill="#e8f1f6" stroke="#8caabb"/><text x="108" y="53" text-anchor="middle" fill="#173042" font-size="18">원본 숫자표 보존</text><text x="108" y="82" text-anchor="middle" fill="#536472" font-size="15">수정 전·후 구분</text>
+<path d="M213 63H246l-8-6m8 6-8 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="254" y="20" width="195" height="86" rx="12" fill="#fff4da" stroke="#c48b13"/><text x="352" y="53" text-anchor="middle" fill="#173042" font-size="18">예산만 미세 위반?</text><text x="352" y="82" text-anchor="middle" fill="#536472" font-size="15">큰 위반·분수해는 제외</text>
+<path d="M457 63H490l-8-6m8 6-8 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="498" y="20" width="165" height="86" rx="12" fill="#e8f1f6" stroke="#8caabb"/><text x="580" y="53" text-anchor="middle" fill="#173042" font-size="18">사람 고정</text><text x="580" y="82" text-anchor="middle" fill="#536472" font-size="15">투입률만 재계산</text>
+<path d="M671 63H704l-8-6m8 6-8 6" fill="none" stroke="#176c91" stroke-width="3"/>
+<rect x="712" y="20" width="148" height="86" rx="12" fill="#e8f4ec" stroke="#88aa92"/><text x="786" y="53" text-anchor="middle" fill="#173042" font-size="18">기존 검사</text><text x="786" y="82" text-anchor="middle" fill="#536472" font-size="15">재통과만 반환</text>
+<path d="M352 114V144" fill="none" stroke="#b75d51" stroke-width="3"/><rect x="246" y="150" width="210" height="43" rx="9" fill="#fae9e6" stroke="#b75d51"/><text x="351" y="178" text-anchor="middle" fill="#81392f" font-size="17">다른 위반이면 그대로 거절</text>
+</svg>
+<p>제안 가드레일은 예산 대비 오차 비율 최대 <code>1e-7</code>, 투입률 변화 최대 <code>1e-7</code>, 추가 복구 시간 최대 2초의 목표입니다. 50% 투입을 60%로 바꾸는 개선이 아니라 0.50000000 근처의 아주 작은 차이만 다룹니다. 이 수치는 실제 인사팀이 승인한 허용치가 아닙니다.</p>
+<p>기존 최종 검사 기준 <code>1e-6</code>은 그대로 둡니다. 예산뿐 아니라 가용률·추가 제약도 원래대로 만족해야 합니다. 선택값이 0.75이거나 숫자가 없거나 무한대인 답을 0/1로 억지로 바꿔 살리지 않습니다. 복구가 실패하면 거절합니다.</p>
+<p>수정 전 원본, 검사에 넣은 후보, 최종 답을 따로 저장하고 점수·오차·시간도 전후로 기록합니다. 과거 87건의 실패 파일을 새로 만든 것처럼 채우지 않습니다.</p>
+</section>
+
+<section><h2>6. 개발은 다섯 체크포인트로 진행합니다</h2>
+<div class="steps">
+<div class="step"><h3>보고서부터 정정</h3><p>누락된 오류와 핵심 108건의 분모를 고칩니다. 과거 실패는 실패로 남기며 원본 파일과 과거 보고서는 보존합니다.</p></div>
+<div class="step"><h3>원인과 A/B/C 후보를 계측</h3><p>실패 입력을 제한 재현해 숫자가 어디서 달라지는지, 정밀 출력이 가능한지, 변경 비용과 시간을 비교합니다.</p></div>
+<div class="step"><h3>서비스에 연결하지 않은 복구기 검증</h3><p>미세 재계산 기능을 만들고 일부러 잘못된 답·시간 초과·추가 제약을 넣어 검사가 잡는지 확인합니다. 파일럿 판정에 통과해야 다음 단계로 갑니다.</p></div>
+<div class="step"><h3>세 솔버와 증거 저장 연결</h3><p>CBC·HiGHS·SCIP 모두 같은 규칙을 적용합니다. 성공뿐 아니라 실패 원본과 파일 지문도 저장합니다.</p></div>
+<div class="step"><h3>서비스 회귀와 제한 재비교</h3><p>기존 실패 6건, 전체 테스트, 작은 정답 대조, 기본 사전 계산을 확인합니다. 새 기록으로 제한된 3솔버 비교를 하고 독립 리뷰를 받습니다.</p></div>
+</div>
+<p>각 체크포인트에 커밋·리뷰·지표·쉬운 HTML 설명을 남깁니다. 이번에는 이 설계와 계획을 작성했으며 위 구현 단계는 아직 시작하지 않았습니다. 24시간 전체 재실험도 자동으로 시작하지 않습니다.</p>
+</section>
+
+<section><h2>7. “최적”과 “공정한 비교”의 한계</h2>
+<p>복구 LP가 자기 문제의 최적 답을 찾았다고 전체 인력 배치가 최적이라는 뜻은 아닙니다. 사람 선택은 이미 고정했기 때문입니다. 신뢰할 상한은 “이 점수 이상은 불가능”이라는 증거입니다. 상한이 없는 CBC에 임의로 만들어 붙이지 않습니다.</p>
+<p>C를 쓰면 CBC에도 보조 HiGHS 계산이 들어갑니다. 그래서 <strong>원래 솔버 자체 성능</strong>과 <strong>솔버+복구의 최종 성능</strong>을 따로 보고해야 합니다. 과거 v2와 새 정책의 결과를 한 덩어리로 섞지 않습니다.</p>
+<p>실험의 최대 240초 기한은 늘리지 않습니다. 복구는 기존 검사·저장용 여유 안에서 진행합니다. 서비스의 2초 추가 목표는 프로세스를 강제로 끊는 보장이 아니며 실제 총 응답시간을 절대 보장하지 않습니다.</p>
+<p>C1이 통과해도 대안 중복·빈 결과(C2), 표시 투입률의 반올림 문제(C3), 데이터 보관 경로(C4), 상용 비교(C5), 실제 배치 규칙(C6)은 남습니다. 실제 성과 검증은 인사/프로젝트 성과 데이터가 별도로 확보돼야 가능합니다.</p>
+</section>
+
+<section><h2>8. 이번 산출물과 다음 행동</h2>
+<p><strong>이번 작업:</strong> C1 설계 문서, 단계별 구현 계획, 독립 설계 리뷰, 이 HTML입니다. 제품 코드는 바꾸지 않았고 기존 C0 회귀가 해결됐다고 주장하지 않습니다.</p>
+<p id="review-status">독립 설계 리뷰: <strong>PASS</strong>. 최고 역량 모델 <code>gpt-6-astra</code>가 별도 세션에서 검토했습니다. 정규화 전·후 후보 구분과 추가 제약 보존 등 지적 4건을 반영했습니다. 구현 성공·main 통합 승인은 아직 아닙니다.</p>
+<p><strong>다음 행동:</strong> 설계를 확인한 뒤 계획을 승인하면 1번 보고서 정정부터 구현합니다. 복구 연결은 파일럿 통과 후입니다. main 병합과 원격 push는 별도 승인이 필요합니다.</p>
+<details><summary>전문가가 이어받을 파일과 근거</summary>
+<p>설계: <code>docs/superpowers/specs/2026-10-04-c1-numerical-evidence-design.md</code></p>
+<p>계획: <code>docs/superpowers/plans/2026-10-04-c1-numerical-evidence.md</code></p>
+<p>리뷰: <code>docs/superpowers/reviews/2026-10-04-c1-design-review.md</code></p>
+<p>기준 커밋: <code>703bf4a</code> · C0 구현 <code>2edd3f7</code> · 반영한 main <code>f87309c</code>. 검증 근거: C0 인계, 현재 소스 읽기, v2 357건 해시 결속 검사·단계/원인 재집계. HTML은 정적 검사 대상이며 브라우저 파일 접근 정책 때문에 시각 렌더링 검증은 수행하지 않았습니다.</p>
+</details>
+</section>
+<footer>저장 위치: <code>outputs/phase1-c1-design-eli5.html</code><br>Git 추적·로컬 커밋 대상으로 작성. origin은 설정돼 있지만 push는 승인되지 않았으므로 원격에서 내려받을 수 있다고 주장하지 않습니다. 외부 스크립트·폰트·이미지 없이 작성한 한국어 문서입니다.</footer>
+</main></body></html>

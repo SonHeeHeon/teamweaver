@@ -29,7 +29,9 @@
   서비스 솔버 반환에 독립 검증을 강제하고 분수·무incumbent·NaN·중복 결과를 차단한다.
   관련 테스트 64 passed. 전체 539 passed / 6 failed / 10 deselected; 기본 동결 데모 warm-up도 budget 잔차로 거절된다.
   허용오차 정책과 기본 부팅을 해결하기 전 main 병합하지 않는다. 근거: `outputs/phase0-c0-eli5.html`.
-- **C1** [A-P0] Phase 1 보고서가 `payload.error`의 거절 87건(CBC 예산 85, CBC 이진 1, HiGHS 예산 1)을 집계하고 분류하게 한다.
+- **C1** 🟡 [A-P0] 설계·구현 계획 작성 및 최고 역량 독립 설계 리뷰 PASS(2026-10-04), **구현 전 / 사용자 계획 승인 대기**.
+  근거: `docs/superpowers/specs/2026-10-04-c1-numerical-evidence-design.md`, `docs/superpowers/plans/2026-10-04-c1-numerical-evidence.md`, `outputs/phase1-c1-design-eli5.html`.
+  Phase 1 보고서가 `payload.error`의 거절 87건(CBC 예산 85, CBC 이진 1, HiGHS 예산 1)을 집계하고 분류하게 한다.
   예산 허용오차·단위·반올림을 분석한다. 분모를 핵심 108·파일럿 3·호환성 1로 분리한다([A-P2]).
   C0 체크포인트의 6개 회귀와 기본 API 부팅 거절도 이 수치 정책 분석의 우선 확인 대상이다.
 - **C2** [A-P1] 대안 생성: 구성 서명으로 중복을 제거하고, 빈 계획을 제외하고, 최소 품질·미충원 한도를 두고, 부족하면 "대안 없음"을 반환한다(`core/optimize/alternatives.py`).
@@ -56,8 +58,9 @@
 - [A-P1] 미기재 등급을 0명으로 볼지 자유 인원으로 볼지: 배치 규칙 결정 사항이며 C6의 입력이다.
 
 ## 진행 중
-- (없음 — C0 체크포인트 인계, 통합 검증은 C1 해결 대기)
+- (없음 — C1 설계·계획 인계, 구현은 계획 승인 후 진행)
 
 ## 요청 (상대 영역·공유 계약 변경)
+- 2026-10-04 Codex · C1 문서 작업: 이 문서의 착수/완료 상태와 `docs/handoff-log.md`를 갱신한다. 구현 계획에는 관련 `tests/` 회귀 테스트를 포함한다. 현재는 설계 문서만 작성하며 공유 타입·목적식·쌍 함수·API를 변경하지 않는다. 향후 공유 타입 변경이 필요하면 구현 전에 별도 요청한다.
 - 2026-10-04 Codex · C0 기록: 이 문서의 착수/완료 상태와 `docs/handoff-log.md` 완료 항목을 갱신한다. 코드 공유 계약·MILP 목적식·쌍 범위 함수의 시그니처/의미 변경은 없다. 승인된 설계에 따라 관련 `tests/` 회귀 테스트와 Codex 영역 `outputs/phase0-c0-eli5.html`을 작성한다.
 - 2026-10-04 Codex → Claude · C0 통합 영향: 기본 동결 fixture의 CBC Plan A가 예산 잔차 2~2.5e-6로 독립 검증(tol=1e-6)에 거절되어 `api/main.py` warm-up이 실패한다. C1에서 수치 정책을 해결하기 전 C0를 main에 통합하면 정상 부팅이 막힌다. API warm-up 오류 처리 정책은 Claude 영역이므로 수정하지 않았으며 상대 확인을 요청한다.
