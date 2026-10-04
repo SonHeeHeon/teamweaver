@@ -14,3 +14,6 @@ experiments/results/*.partial.json
 experiments/results/*.superseded-*.json
 web/node_modules/
 web/dist/
+
+# 사용자가 채운 실데이터 스키마 답변 등 사내 정보 -- 커밋 금지
+private/
