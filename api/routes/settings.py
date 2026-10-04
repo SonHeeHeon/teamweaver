@@ -1,9 +1,10 @@
 """GET/PUT /api/settings -- 관리자 배치 설정(K8). 설계: api/settings.py docstring.
 
-인증이 없다: 현 시스템 전체에 인증·권한이 없고(로드맵 6단계), 이 엔드포인트만
-막아도 의미가 없다. 접근 통제는 배포 단계에서 함께 정한다(사용자 결정 사항)."""
+시스템 전체 인증은 없다(로드맵 6단계). PUT은 TEAMWEAVER_ADMIN_TOKEN이 설정돼 있으면
+관리자 토큰을 요구한다(api/admin.py). 본격적인 권한 체계는 사용자 결정 사항이다."""
 from fastapi import APIRouter, Depends, HTTPException
 
+from api.admin import require_admin
 from api.deps import get_settings_store
 from api.schemas import SettingsBody, SettingsUpdate
 from api.settings import PlacementSettings, SettingsConflict, SettingsState, SettingsStore
@@ -24,7 +25,7 @@ def get_settings(store: SettingsStore = Depends(get_settings_store)) -> dict:
     return _body(store.current())
 
 
-@router.put("/api/settings", response_model=SettingsBody)
+@router.put("/api/settings", response_model=SettingsBody, dependencies=[Depends(require_admin)])
 def put_settings(body: SettingsUpdate,
                  store: SettingsStore = Depends(get_settings_store)) -> dict:
     # 필드 전체를 요구한다: 일부만 보내면 나머지가 조용히 기본값으로 되돌아간다.

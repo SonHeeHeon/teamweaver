@@ -15,9 +15,12 @@ declare global {
  *  "이제 인쇄해도 된다"를 알린다. */
 export function ReportPage() {
   const data = window.__REPORT_DATA__;
-  const [meta, setMeta] = useState<Meta | null>(null);
+  // 서버가 PDF 요청 시점의 데이터셋으로 만든 meta를 함께 넣어 준다(K9) -- 있으면 그것만
+  // 쓴다. 따로 /api/meta를 부르면 렌더 중 전환된 새 데이터의 이름이 옛 명단에 붙는다.
+  const [meta, setMeta] = useState<Meta | null>(() => (data?.meta as Meta | undefined) ?? null);
 
   useEffect(() => {
+    if (window.__REPORT_DATA__?.meta) return;
     fetchMeta().then(setMeta).catch(() => setMeta(null));
   }, []);
 
@@ -54,6 +57,11 @@ export function ReportPage() {
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
       <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
+      {meta && data.dataset_version && meta.dataset_version !== data.dataset_version && (
+        <p className="mt-1 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800">
+          경고: 이 명단을 계산한 데이터셋과 지금 서버의 데이터셋이 다르다. 이름·등급 표시가 틀릴 수 있다.
+        </p>
+      )}
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params
           ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `

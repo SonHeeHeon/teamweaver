@@ -6,7 +6,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from api.cache import ResultCache
-from api.deps import get_cache, get_graph
+from api.datasets import ActiveDataset
+from api.deps import check_dataset_version, get_cache, get_dataset, get_graph
 from api.schemas import MilpParamsIn
 from api.sse import sse_event, stream_sync_generator
 from core.graph.memory_graph import MemoryGraph
@@ -21,18 +22,22 @@ class OptimizeRequest(BaseModel):
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn = MilpParamsIn()
     n_alternatives: int = Field(default=3, ge=0, le=6)
+    # 화면이 본 데이터셋(meta.dataset_version). 다르면 409 -- api/deps.check_dataset_version
+    dataset_version: str | None = None
 
 
 @router.post("/api/optimize")
 async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph),
+                   dataset: ActiveDataset = Depends(get_dataset),
                    cache: ResultCache = Depends(get_cache)):
     eng = ScoringEngine(graph)
     S = eng.skill_matrix(req.weights)
     C = eng.synergy_matrix()
     # 요청 본문 검증(422)은 스트림 시작 전에 끝난다 -- 잘못된 milp_params가
     # SSE error 프레임(HTTP 200)으로 숨지 않는다.
+    check_dataset_version(req.dataset_version, dataset)
     params = req.milp_params.to_milp_params()
-    key = ResultCache.key(req.weights, params, req.n_alternatives)
+    key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version)
 
     def _plan_payload(plan, index: int, cached: bool, ub: float) -> dict:
         """캐시 히트/미스 두 경로가 같은 모양을 내도록 조립을 한 곳에 모은다."""
@@ -48,6 +53,7 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             "optimization_ratio": (skill_term / ub) if ub > 0 else 0.0,
             "index": index,
             "cached": cached,
+            "dataset_version": dataset.info.version,
         }
 
     async def event_stream():

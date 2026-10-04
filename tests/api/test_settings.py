@@ -141,8 +141,8 @@ def test_whatif_rejects_unknown_milp_param(client):
 def test_cache_key_uses_effective_params_not_raw_request():
     """{}과 기본값을 명시한 요청은 같은 계산이다 -- 같은 키여야 한다."""
     explicit = MilpParams().model_dump()
-    assert ResultCache.key({}, MilpParams(), 3) == ResultCache.key({}, MilpParams(**explicit), 3)
-    assert ResultCache.key({}, MilpParams(), 3) != ResultCache.key({}, MilpParams(min_alloc=0.3), 3)
+    assert ResultCache.key({}, MilpParams(), 3, "v") == ResultCache.key({}, MilpParams(**explicit), 3, "v")
+    assert ResultCache.key({}, MilpParams(), 3, "v") != ResultCache.key({}, MilpParams(min_alloc=0.3), 3, "v")
 
 
 def test_optimize_uses_sent_min_alloc(small_graph_client, monkeypatch):
@@ -175,7 +175,8 @@ def test_warmup_uses_stored_settings(monkeypatch, settings_path):
                         lambda graph, S, C, params, n_alternatives: seen.append(params) or [])
     with TestClient(main.app) as c:
         cache = c.app.state.cache
-        key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(), 3)
+        key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(), 3,
+                              c.app.state.dataset.info.version)
         assert cache.get(key) == []
     assert seen and seen[0].min_alloc == pytest.approx(0.45)
 

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  downloadReport, fetchMeta, fetchSettings, postWhatif, saveSettings, SettingsConflictError,
+  DatasetChangedError, downloadReport, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
 import type {
-  Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap, WhatifResponse,
+  DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap, WhatifResponse,
 } from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
@@ -13,11 +14,26 @@ import { NetworkGraph } from "./components/NetworkGraph";
 import { SwapControl } from "./components/SwapControl";
 import { BriefingPanel } from "./components/BriefingPanel";
 import { SettingsTab } from "./components/SettingsTab";
+import { DatasetTab } from "./components/DatasetTab";
 import { describeChanges } from "./components/settingsFields";
 
-type Tab = "req" | "whatif" | "settings";
+type Tab = "req" | "whatif" | "settings" | "data";
 
 
+
+function AdminTokenField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block max-w-sm text-sm text-slate-700">
+      관리자 토큰
+      <input type="password" value={value} onChange={(e) => onChange(e.target.value)}
+             autoComplete="off" aria-describedby="admin-token-help"
+             className="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1 text-sm" />
+      <span id="admin-token-help" className="mt-1 block text-xs text-slate-500">
+        이 서버는 설정 저장·데이터 전환에 관리자 토큰을 요구한다. 토큰은 이 화면 메모리에만 둔다.
+      </span>
+    </label>
+  );
+}
 
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -51,14 +67,65 @@ export default function App() {
   // 교체 점수가 서로 다른 기준이 되기 때문이다. null = 설정을 못 불러와 모델
   // 기본값으로 계산했다.
   const [planBasis, setPlanBasis] =
-    useState<{ params: PlacementSettings | null; weights: Record<string, number> } | null>(null);
+    useState<{ params: PlacementSettings | null; weights: Record<string, number>;
+               datasetVersion: string } | null>(null);
+  // 관리자 토큰(K9): 서버가 TEAMWEAVER_ADMIN_TOKEN을 요구할 때만 입력받는다. 메모리에만 둔다.
+  const [adminRequired, setAdminRequired] = useState(false);
+  const [adminToken, setAdminToken] = useState("");
+
+  // 지금 서버가 계산에 쓰는 데이터셋(K9). 업로드로 바뀌면 진행 중이던 최적화
+  // 스트림의 남은 플랜도 버린다 -- runGen이 바뀌면 이전 데이터셋의 결과다.
+  const [dataset, setDataset] = useState<DatasetInfo | null>(null);
+  const runGen = useRef(0);
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
     fetchSettings().then(setSettings).catch((e) => setSettingsError(String(e)));
+    fetchActiveDataset().then(setDataset).catch(() => setDataset(null));
+    fetchAdminStatus().then((s) => setAdminRequired(s.token_required)).catch(() => {});
   }, []);
 
+  /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
+   *  있다)를 모두 비우고 meta를 새로 읽는다. 옛 플랜으로 교체를 검토하면 없는 ID라 실패한다. */
+  async function datasetSwitched(info: DatasetInfo) {
+    runGen.current += 1;
+    swapGen.current += 1;
+    setDataset(info);
+    setPlans([]);
+    setSelected(null);
+    setWhatif(null);
+    setLastSwap(null);
+    setHighlighted(null);
+    setWhatifBusy(false);
+    setPlanBasis(null);
+    setWeights({});
+    setRunning(false);
+    try {
+      const fresh = await fetchMeta();
+      setMeta(fresh);
+      if (fresh.dataset_version !== info.version) {
+        setError("데이터셋이 그사이 다시 바뀌었다. 데이터 탭에서 지금 쓰는 데이터를 확인할 것.");
+      }
+    } catch (e) {
+      // 옛 meta를 남기면 새 데이터셋 결과에 옛 이름이 붙는다 -- 비우고 실패를 보여 준다.
+      setMeta(null);
+      setError(`데이터셋 전환 후 메타 정보를 불러오지 못했다: ${String(e)}`);
+    }
+  }
+
+  /** 다른 사용자가 서버의 데이터셋을 바꿔 요청이 409로 거부됐다: 새 데이터로 다시 불러온다. */
+  async function externalSwitch() {
+    try {
+      const info = await fetchActiveDataset();
+      await datasetSwitched(info);
+      setError("다른 사용자가 데이터셋을 바꿨다. 화면을 새 데이터로 다시 불러왔으니 다시 실행할 것.");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
   async function run() {
+    const gen = ++runGen.current;
     swapGen.current += 1;          // 재실행 -- 진행 중이던 what-if 응답도 무효화
     setRunning(true);
     setError(null);
@@ -80,12 +147,16 @@ export default function App() {
     } catch (e) {
       setSettingsError(String(e));
     }
-    setPlanBasis({ params, weights });
+    if (gen !== runGen.current || !meta) return;   // 설정을 읽는 사이 데이터셋이 바뀌었다
+    const datasetVersion = meta.dataset_version;
+    setPlanBasis({ params, weights, datasetVersion });
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
       for await (const ev of streamOptimize(
-          { weights, ...(params ? { milp_params: { ...params } } : {}) })) {
+          { weights, dataset_version: datasetVersion,
+            ...(params ? { milp_params: { ...params } } : {}) })) {
+        if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
         if (ev.event === "plan") {
           setPlans((prev) => [...prev, ev.data]);
           setSelected((cur) => cur ?? ev.data.label);
@@ -95,9 +166,10 @@ export default function App() {
         }
       }
     } catch (e) {
-      setError(String(e));
+      if (e instanceof DatasetChangedError) await externalSwitch();
+      else if (gen === runGen.current) setError(String(e));
     } finally {
-      setRunning(false);
+      if (gen === runGen.current) setRunning(false);
     }
   }
 
@@ -120,11 +192,12 @@ export default function App() {
     setHighlighted(swap.out_person_id);
     try {
       const res = await postWhatif(current.entries, swap, planBasis?.weights ?? weights,
-                                   planBasis?.params ?? null);
+                                   planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
       if (gen !== swapGen.current) return;   // 그 사이 플랜이 바뀌었다 -- 폐기
       setWhatif(res);
       setLastSwap(swap);
     } catch (e) {
+      if (e instanceof DatasetChangedError) { await externalSwitch(); return; }
       if (gen !== swapGen.current) return;
       setError(String(e));
     } finally {
@@ -145,7 +218,8 @@ export default function App() {
       </header>
 
       <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
-        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["settings", "배치 설정"]] as const)
+        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["settings", "배치 설정"],
+           ["data", "데이터"]] as const)
           .map(([id, label]) => (
           <button
             key={id}
@@ -172,12 +246,21 @@ export default function App() {
                       : "지금 계산하면 서버 모델 기본값으로 계산된다(배치 설정 미적용)."}
           </p>
         )}
-        {tab === "settings" ? (
+        {tab === "data" ? (
+          <div className="space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
+            <DatasetTab active={dataset} onSwitched={datasetSwitched}
+                        adminToken={adminToken || null} />
+          </div>
+        ) : tab === "settings" ? (
           settings ? (
+            <div className="space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <SettingsTab data={settings}
                          onSave={async (s) => {
                            try {
-                             setSettings(await saveSettings(s, settings.updated_at));
+                             setSettings(await saveSettings(s, settings.updated_at,
+                                                            adminToken || null));
                              setSettingsError(null);
                            } catch (e) {
                              if (e instanceof SettingsConflictError) {
@@ -187,6 +270,7 @@ export default function App() {
                              throw e;
                            }
                          }} />
+            </div>
           ) : (
             <p className="text-sm text-slate-500">
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
@@ -217,9 +301,13 @@ export default function App() {
                 onClick={async () => {
                   setPdfBusy(true);
                   try {
-                    await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null);
+                    await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null,
+                                         planBasis?.datasetVersion ?? null);
                   }
-                  catch (e) { setError(String(e)); }
+                  catch (e) {
+                    if (e instanceof DatasetChangedError) await externalSwitch();
+                    else setError(String(e));
+                  }
                   finally { setPdfBusy(false); }
                 }}
                 className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm

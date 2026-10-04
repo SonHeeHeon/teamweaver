@@ -9,7 +9,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from api.deps import get_graph, get_openai_client_or_none, get_sqlite_conn
+from api.datasets import ActiveDataset
+from api.deps import (check_dataset_version, get_dataset, get_graph,
+                      get_openai_client_or_none, get_sqlite_conn)
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
@@ -28,6 +30,7 @@ class WhatifRequest(BaseModel):
     swap: SwapIn
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn = MilpParamsIn()
+    dataset_version: str | None = None      # 화면이 본 데이터셋. 다르면 409(K9)
 
 
 def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
@@ -67,8 +70,9 @@ def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
 
 @router.post("/api/whatif", response_model=WhatifResponse)
 def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
-          conn=Depends(get_sqlite_conn),
+          conn=Depends(get_sqlite_conn), dataset: ActiveDataset = Depends(get_dataset),
           client=Depends(get_openai_client_or_none)):
+    check_dataset_version(req.dataset_version, dataset)
     params = req.milp_params.to_milp_params()
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()

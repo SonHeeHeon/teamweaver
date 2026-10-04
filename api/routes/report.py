@@ -4,9 +4,12 @@ async def 인 것이 중요하다: Playwright가 이 서버 자신에게 /report
 에셋을 요청하므로, 핸들러가 이벤트 루프를 막으면 자기 요청을 받지 못해
 교착한다.
 """
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
+from api.datasets import ActiveDataset
+from api.deps import check_dataset_version, get_dataset
+from api.routes.meta import build_meta
 from api.pdf import BrowserLaunchError, render_report_pdf
 from api.schemas import ReportRequest
 from core.config import REPO_ROOT
@@ -17,7 +20,9 @@ _DIST_INDEX = REPO_ROOT / "web" / "dist" / "index.html"
 
 
 @router.post("/api/report")
-async def report(req: ReportRequest, request: Request) -> Response:
+async def report(req: ReportRequest, request: Request,
+                 dataset: ActiveDataset = Depends(get_dataset)) -> Response:
+    check_dataset_version(req.dataset_version, dataset)
     try:
         import playwright                           # noqa: F401
     except ImportError:
@@ -37,7 +42,12 @@ async def report(req: ReportRequest, request: Request) -> Response:
 
     base_url = str(request.base_url).rstrip("/")
     try:
-        pdf = await render_report_pdf(req.model_dump(), base_url)
+        # 이름·등급·협업선을 붙일 meta를 이 요청이 잡은 데이터셋에서 만들어 함께 넣는다.
+        # 페이지가 /api/meta를 따로 부르면, 렌더 중 다른 사용자의 전환으로 옛 명단에
+        # 새 데이터의 이름이 붙을 수 있다(Codex 2라운드 지적, K9).
+        payload = req.model_dump()
+        payload["meta"] = build_meta(dataset.graph, dataset.info.version).model_dump()
+        pdf = await render_report_pdf(payload, base_url)
     except BrowserLaunchError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:                        # noqa: BLE001

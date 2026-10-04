@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError } from "./client";
+import { downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, uploadDataset } from "./client";
 import type { PlanEvent, WhatifResponse } from "./types";
 
 describe("downloadReport", () => {
@@ -102,5 +102,24 @@ describe("saveSettings", () => {
     const sent = JSON.parse(((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1]
       .body) as string);
     expect(sent).toEqual({ settings: params, based_on: "2026-10-05T00:00:00+00:00" });
+  });
+});
+
+
+describe("uploadDataset", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("zip을 원본 본문으로 보내고, 200·422는 리포트로 돌려주며 그 밖은 throw한다", async () => {
+    const body = { activated: false, report: null, detail: "zip 파일이 아니다" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ status: 422, json: async () => body })
+      .mockResolvedValueOnce({ status: 413, json: async () => ({ detail: "20MiB" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const file = new Blob(["PK"]);
+    await expect(uploadDataset(file)).resolves.toEqual(body);
+    const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(init.body).toBe(file);
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/zip");
+    await expect(uploadDataset(file)).rejects.toThrow("413");
   });
 });

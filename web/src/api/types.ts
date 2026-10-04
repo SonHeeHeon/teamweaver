@@ -32,6 +32,8 @@ export interface Meta {
   skills: string[];
   review_items: string[];
   coworks: Cowork[];
+  /** 이 meta가 나온 활성 데이터셋(K9). 계산 요청에 실어 보내 서버가 불일치를 409로 막는다. */
+  dataset_version: string;
 }
 
 export interface AssignEntry {
@@ -50,6 +52,7 @@ export interface PlanEvent {
   optimization_ratio: number;
   index: number;
   cached: boolean;
+  dataset_version?: string;
 }
 
 export interface Briefing {
@@ -116,6 +119,8 @@ export interface ReportRequest {
   swap_violations: string[];
   /** 이 플랜을 계산한 배치 설정(K8). PDF에 "계산 기준"으로 표시한다. */
   milp_params: PlacementSettings | null;
+  /** 명단을 계산한 데이터셋. 서버 활성 데이터셋과 다르면 PDF를 거부한다(K9). */
+  dataset_version: string | null;
 }
 
 /** 관리자 배치 설정(K8) -- api/settings.py PlacementSettings 미러. */
@@ -136,4 +141,39 @@ export interface SettingsResponse {
   bounds: Record<keyof PlacementSettings, { min: number; max: number }>;
   updated_at: string | null;
   load_error: string | null;
+}
+
+/** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */
+export interface DatasetInfo {
+  dataset_id: string;
+  version: string;
+  source: "fixture" | "upload";
+  synthetic: boolean | null;
+  people: number;
+  projects: number;
+  activated_at: string;
+}
+
+/** core.ingest IngestReport의 Issue 그대로. row는 헤더를 뺀 1부터, 파일 단위 문제면 null. */
+export interface IngestIssue {
+  level: "error" | "warning";
+  file: string;
+  row: number | null;
+  column: string | null;
+  message: string;
+}
+
+export interface IngestReportOut {
+  errors: IngestIssue[];
+  warnings: IngestIssue[];
+  notes: string[];
+  row_counts: Record<string, number>;
+}
+
+/** POST /api/datasets 응답(200 전환됨 / 422 전환 안 됨). report가 null이면 zip 자체가 문제다. */
+export interface UploadResult {
+  activated: boolean;
+  dataset?: DatasetInfo;
+  report: IngestReportOut | null;
+  detail?: string;
 }

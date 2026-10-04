@@ -11,6 +11,7 @@ const META: Meta = {
   skills: ["React", "Java"],
   review_items: [],
   coworks: [],
+  dataset_version: "a".repeat(64),
 };
 
 describe("RequirementsTab", () => {

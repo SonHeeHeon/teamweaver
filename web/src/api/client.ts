@@ -1,6 +1,6 @@
 import type {
-  Meta, AssignEntry, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse, Swap,
-  WhatifResponse,
+  Meta, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse,
+  Swap, UploadResult, WhatifResponse,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
@@ -8,6 +8,28 @@ import { swapWarnings } from "./whatifWarnings";
 /** 개발 중에는 Vite dev 서버(:5173)에서 API(:8000)를 부르므로 절대 URL이 필요하다.
  *  프로덕션 빌드는 FastAPI가 같은 오리진에서 서빙하므로(Task 8) 빈 문자열이면 된다. */
 export const API_BASE = import.meta.env.DEV ? "http://localhost:8000" : "";
+
+/** 409 dataset_changed: 화면이 본 뒤 다른 사용자가 서버의 데이터셋을 바꿨다(K9).
+ *  App이 받아 새 데이터로 화면을 다시 불러온다. */
+export class DatasetChangedError extends Error {}
+
+async function throwIfDatasetChanged(res: Response): Promise<void> {
+  if (res.status !== 409) return;
+  const body = await res.clone().json().catch(() => ({}));
+  if (body?.detail?.code === "dataset_changed") {
+    throw new DatasetChangedError(body.detail.message ?? "서버의 데이터셋이 바뀌었다");
+  }
+}
+
+function adminHeaders(token: string | null): Record<string, string> {
+  return token ? { "X-Admin-Token": token } : {};
+}
+
+export async function fetchAdminStatus(): Promise<{ token_required: boolean }> {
+  const res = await fetch(`${API_BASE}/api/admin`);
+  if (!res.ok) throw new Error(`GET /api/admin 실패: ${res.status}`);
+  return (await res.json()) as { token_required: boolean };
+}
 
 export async function fetchMeta(): Promise<Meta> {
   const res = await fetch(`${API_BASE}/api/meta`);
@@ -26,11 +48,11 @@ export class SettingsConflictError extends Error {}
 
 /** basedOn은 화면이 읽은 설정의 updated_at이다 -- 그사이 다른 저장이 있으면 서버가 409로 거부한다. */
 export async function saveSettings(
-  settings: PlacementSettings, basedOn: string | null,
+  settings: PlacementSettings, basedOn: string | null, adminToken: string | null = null,
 ): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/api/settings`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
     body: JSON.stringify({ settings, based_on: basedOn }),
   });
   if (res.status === 409) {
@@ -49,13 +71,16 @@ export async function saveSettings(
  *  보내지 않아 서버 모델 기본값으로 계산된다(설정을 못 불러온 상태에서 계산한 플랜). */
 export async function postWhatif(
   entries: AssignEntry[], swap: Swap, weights: Record<string, number>,
-  milpParams: PlacementSettings | null,
+  milpParams: PlacementSettings | null, datasetVersion: string | null = null,
 ): Promise<WhatifResponse> {
   const res = await fetch(`${API_BASE}/api/whatif`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries, swap, weights, ...(milpParams ? { milp_params: milpParams } : {}) }),
+    body: JSON.stringify({ entries, swap, weights,
+                           ...(milpParams ? { milp_params: milpParams } : {}),
+                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}) }),
   });
+  await throwIfDatasetChanged(res);
   if (!res.ok) throw new Error(`POST /api/whatif 실패: ${res.status}`);
   return (await res.json()) as WhatifResponse;
 }
@@ -64,6 +89,7 @@ export interface OptimizeRequest {
   weights: Record<string, number>;
   milp_params?: Record<string, unknown>;
   n_alternatives?: number;
+  dataset_version?: string;
 }
 
 /** 브라우저 EventSource는 GET 전용인데 /api/optimize는 POST다 -- 그래서
@@ -74,17 +100,23 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ n_alternatives: 3, milp_params: {}, ...req }),
   });
+  await throwIfDatasetChanged(res);
   if (!res.ok || !res.body) throw new Error(`POST /api/optimize 실패: ${res.status}`);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const { events, rest } = parseFrames(buf);
-    buf = rest;
-    for (const ev of events) yield ev;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const { events, rest } = parseFrames(buf);
+      buf = rest;
+      for (const ev of events) yield ev;
+    }
+  } finally {
+    // 호출자가 중간에 빠져나가면(데이터셋 전환 등) 연결을 닫아 남은 스트림을 받지 않는다.
+    reader.cancel().catch(() => {});
   }
 }
 
@@ -97,6 +129,7 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
 export async function downloadReport(
   plan: PlanEvent, whatif: WhatifResponse | null, swap: Swap | null,
   milpParams: PlacementSettings | null = null,
+  datasetVersion: string | null = null,
 ) {
   const body: ReportRequest = {
     plan_label: plan.label,
@@ -111,12 +144,14 @@ export async function downloadReport(
     objective_delta: whatif?.objective_delta ?? null,
     swap_violations: whatif ? swapWarnings(whatif) : [],
     milp_params: milpParams,
+    dataset_version: datasetVersion,
   };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  await throwIfDatasetChanged(res);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(`PDF 생성 실패(${res.status}): ${detail.detail ?? ""}`);
@@ -132,4 +167,35 @@ export async function downloadReport(
   // click() 직후 동기로 revoke하면 브라우저가 아직 blob을 읽기 전이라
   // 내려받기가 취소될 수 있다. 한 틱 뒤로 미룬다.
   setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export async function fetchActiveDataset(): Promise<DatasetInfo> {
+  const res = await fetch(`${API_BASE}/api/datasets/active`);
+  if (!res.ok) throw new Error(`GET /api/datasets/active 실패: ${res.status}`);
+  return (await res.json()) as DatasetInfo;
+}
+
+/** zip 파일을 원본 본문으로 보낸다(multipart 아님 -- api/routes/datasets.py 참고).
+ *  200(전환됨)과 422(검증 오류로 전환 안 됨)는 둘 다 리포트를 담은 정상 결과로 돌려준다.
+ *  그 밖(413 크기 초과, 409 처리 중 등)은 이유를 담아 throw한다. */
+export async function uploadDataset(file: Blob, adminToken: string | null = null,
+): Promise<UploadResult> {
+  const res = await fetch(`${API_BASE}/api/datasets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/zip", ...adminHeaders(adminToken) },
+    body: file,
+  });
+  if (res.status === 200 || res.status === 422) return (await res.json()) as UploadResult;
+  const detail = await res.json().catch(() => ({}));
+  throw new Error(`업로드 실패(${res.status}): ${detail.detail ?? ""}`);
+}
+
+export async function resetDataset(adminToken: string | null = null): Promise<DatasetInfo> {
+  const res = await fetch(`${API_BASE}/api/datasets/reset`,
+                          { method: "POST", headers: adminHeaders(adminToken) });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`되돌리기 실패(${res.status}): ${detail.detail ?? ""}`);
+  }
+  return (await res.json()) as DatasetInfo;
 }

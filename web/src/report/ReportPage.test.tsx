@@ -18,6 +18,7 @@ const META: Meta = {
   skills: [],
   review_items: [],
   coworks: [],
+  dataset_version: "a".repeat(64),
 };
 
 describe("ReportPage", () => {
@@ -121,5 +122,24 @@ describe("ReportPage — 계산 기준 표기(K8)", () => {
     window.__REPORT_DATA__ = { ...base, milp_params: null };
     render(<ReportPage />);
     expect(await screen.findByText(/서버 모델 기본값/)).toBeInTheDocument();
+  });
+});
+
+describe("ReportPage — 서버가 넣어 준 meta(K9)", () => {
+  afterEach(() => {
+    delete (window as any).__REPORT_DATA__;
+    delete (window as any).__REPORT_READY__;
+  });
+
+  it("PDF 데이터에 meta가 있으면 /api/meta를 부르지 않고 그것으로 이름을 붙인다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = {
+      plan_label: "A", entries: [{ person_id: "p1", project_id: "j1", alloc: 1 }],
+      objective: 1, fulfillment: 1, optimization_ratio: 1, unfilled: [], briefing: null,
+      fallback_used: false, swap: null, objective_delta: null, swap_violations: [],
+      milp_params: null, dataset_version: META.dataset_version, meta: META };
+    render(<ReportPage />);
+    expect((await screen.findAllByText("김일번")).length).toBeGreaterThan(0);
+    expect(fetchMeta).not.toHaveBeenCalled();
   });
 });

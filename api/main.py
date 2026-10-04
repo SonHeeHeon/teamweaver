@@ -3,10 +3,9 @@
 n=100에서 수 ms, n=1000에서도 수십 ms이므로 부팅 지연으로 문제되지 않는다."""
 from contextlib import asynccontextmanager
 from pathlib import Path
+import asyncio
 import logging
 import os
-import sqlite3
-import tempfile
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,17 +13,19 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.cache import ResultCache
+from api.datasets import ActiveDataset, build_active, dir_version
 from api.settings import SettingsStore, default_settings_path
 from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
-from core.graph.memory_graph import MemoryGraph
-from core.graph.sqlite_store import build_sqlite
 from core.optimize.alternatives import generate_plans
 from core.scoring.engine import ScoringEngine
-from api.routes import meta, optimize, report, settings, whatif
+from api.routes import admin, datasets, meta, optimize, report, settings, whatif
 
 
 log = logging.getLogger(__name__)
+# fixture 데이터셋 버전에 들어가는 파일(계산에 쓰이는 것만). pricing·meta는 계산 입력이 아니다.
+FIXTURE_DATA_FILES = ("people.json", "projects.json", "coworks.json", "reviews_ko.json",
+                      "parsed_reviews.json")
 WARM_TIME_LIMIT_MAX = 120
 WARM_GAP_MIN = 0.05
 
@@ -32,14 +33,17 @@ WARM_GAP_MIN = 0.05
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_env()
-    ds, parsed = load_fixtures(FIXTURES_DIR)
-    graph = MemoryGraph.build(ds, parsed)
-    app.state.graph = graph
+    # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
+    def build_fixture_dataset() -> ActiveDataset:
+        ds, parsed = load_fixtures(FIXTURES_DIR)
+        return build_active(ds, parsed, dataset_id="fixture-demo-100x20",
+                            version=dir_version(FIXTURES_DIR, list(FIXTURE_DATA_FILES)),
+                            source="fixture", synthetic=True)
 
-    tmpdir = tempfile.mkdtemp(prefix="teamweaver-api-")
-    db_path = Path(tmpdir) / "meta.db"
-    build_sqlite(ds, parsed, db_path)
-    app.state.sqlite_conn = sqlite3.connect(db_path, check_same_thread=False)
+    app.state.build_fixture_dataset = build_fixture_dataset
+    app.state.dataset = build_fixture_dataset()
+    app.state.dataset_lock = asyncio.Lock()
+    graph = app.state.dataset.graph
 
     cache = ResultCache()
     app.state.cache = cache
@@ -67,11 +71,12 @@ async def lifespan(app: FastAPI):
         eng = ScoringEngine(graph)
         default_plans = generate_plans(graph, eng.skill_matrix({}), eng.synergy_matrix(),
                                        warm_params, n_alternatives=3)
-        cache.put(ResultCache.key({}, warm_params, 3), default_plans)
+        cache.put(ResultCache.key({}, warm_params, 3, app.state.dataset.info.version),
+                  default_plans)
 
     yield
 
-    app.state.sqlite_conn.close()
+    app.state.dataset.retire()
 
 
 app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
@@ -90,6 +95,8 @@ app.include_router(optimize.router)
 app.include_router(whatif.router)
 app.include_router(report.router)
 app.include_router(settings.router)
+app.include_router(datasets.router)
+app.include_router(admin.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

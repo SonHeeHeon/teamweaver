@@ -9,6 +9,11 @@ import type { Meta, PlanEvent, WhatifResponse } from "./api/types";
 vi.mock("./api/client", () => ({
   fetchMeta: vi.fn(),
   fetchSettings: vi.fn(),
+  fetchActiveDataset: vi.fn(),
+  fetchAdminStatus: vi.fn(async () => ({ token_required: false })),
+  DatasetChangedError: class extends Error {},
+  uploadDataset: vi.fn(),
+  resetDataset: vi.fn(),
   saveSettings: vi.fn(),
   SettingsConflictError: class extends Error {},
   streamOptimize: vi.fn(),
@@ -23,7 +28,8 @@ vi.mock("react-force-graph-2d", () => ({
 }));
 
 import {
-  fetchMeta, fetchSettings, saveSettings, streamOptimize, postWhatif, downloadReport,
+  fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
+  postWhatif, downloadReport, uploadDataset, DatasetChangedError,
 } from "./api/client";
 import type { SettingsResponse } from "./api/types";
 
@@ -39,8 +45,13 @@ const SETTINGS: SettingsResponse = {
   load_error: null,
 };
 
+const FIXTURE_INFO = { dataset_id: "fixture-demo-100x20", version: "a".repeat(64),
+                       source: "fixture" as const, synthetic: true, people: 3, projects: 1,
+                       activated_at: "2026-10-05T00:00:00+00:00" };
+
 beforeEach(() => {
   vi.mocked(fetchSettings).mockResolvedValue(SETTINGS);
+  vi.mocked(fetchActiveDataset).mockResolvedValue(FIXTURE_INFO);
 });
 
 const META: Meta = {
@@ -56,6 +67,7 @@ const META: Meta = {
   skills: [],
   review_items: [],
   coworks: [],
+  dataset_version: "a".repeat(64),
 };
 
 const PLAN_A: PlanEvent = {
@@ -163,7 +175,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
     fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
-    await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null));
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null, null));
 
     // 결과 화면에는 "이전 설정으로 계산됨" 안내가 뜬다.
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
@@ -238,5 +250,115 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(vi.mocked(streamOptimize).mock.calls[0][0]).not.toHaveProperty("milp_params");
+  });
+});
+
+
+describe("App — 데이터셋 전환(K9)", () => {
+  it("업로드로 전환되면 이전 플랜·가중치를 비우고 meta를 새로 읽는다", async () => {
+    const NEW_META = { ...META, people: [{ id: "q1", name: "새사람", grade: "중급", skills: {} }] };
+    vi.mocked(fetchMeta).mockReset().mockResolvedValueOnce(META).mockResolvedValueOnce(NEW_META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    const uploaded = { ...FIXTURE_INFO, dataset_id: "synthetic-n1", version: "b".repeat(64),
+                       source: "upload" as const, people: 1 };
+    vi.mocked(uploadDataset).mockResolvedValue({
+      activated: true, dataset: uploaded,
+      report: { errors: [], warnings: [], notes: [], row_counts: {} } });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+
+    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
+    const input = await screen.findByLabelText("묶음 zip 파일");
+    fireEvent.change(input, { target: { files: [new File(["PK"], "b.zip")] } });
+    fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
+    expect(await screen.findByText(/이 데이터로 전환했다/)).toBeInTheDocument();
+    await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(/synthetic-n1/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    expect(screen.queryByText("Plan A")).not.toBeInTheDocument();
+  });
+
+  it("최적화가 진행 중일 때 전환되면 이전 데이터셋의 남은 플랜을 버린다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    const gate = deferred<void>();
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+      await gate.promise;
+      yield { event: "plan" as const, data: PLAN_B };
+    })());
+    vi.mocked(uploadDataset).mockResolvedValue({
+      activated: true, dataset: { ...FIXTURE_INFO, version: "c".repeat(64), source: "upload" },
+      report: { errors: [], warnings: [], notes: [], row_counts: {} } });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
+    fireEvent.change(await screen.findByLabelText("묶음 zip 파일"),
+                     { target: { files: [new File(["PK"], "b.zip")] } });
+    fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
+    await screen.findByText(/이 데이터로 전환했다/);
+    await act(async () => { gate.resolve(); await Promise.resolve(); });
+    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Plan B")).not.toBeInTheDocument();
+  });
+});
+
+
+describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 반영)", () => {
+  it("계산 요청에 화면이 본 dataset_version을 싣는다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(vi.mocked(streamOptimize).mock.calls[0][0].dataset_version).toBe(META.dataset_version);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await waitFor(() => expect(postWhatif).toHaveBeenCalled());
+    expect(vi.mocked(postWhatif).mock.calls[0][4]).toBe(META.dataset_version);
+  });
+
+  it("409(dataset_changed)를 받으면 새 데이터로 다시 불러오고 알린다", async () => {
+    const NEW_META = { ...META, dataset_version: "b".repeat(64),
+                       people: [{ id: "q1", name: "새사람", grade: "중급", skills: {} }] };
+    vi.mocked(fetchMeta).mockReset().mockResolvedValueOnce(META).mockResolvedValueOnce(NEW_META);
+    vi.mocked(fetchActiveDataset).mockReset()
+      .mockResolvedValueOnce(FIXTURE_INFO)
+      .mockResolvedValueOnce({ ...FIXTURE_INFO, version: "b".repeat(64), source: "upload" });
+    const rejected = (async function* () {
+      yield* [] as never[];                 // 스트림 시작 전에 서버가 409를 준 상황
+      throw new DatasetChangedError("바뀌었다");
+    });
+    vi.mocked(streamOptimize).mockReset().mockImplementation(() => rejected());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    expect(await screen.findByText(/다른 사용자가 데이터셋을 바꿨다/)).toBeInTheDocument();
+    await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
+  });
+
+  it("서버가 관리자 토큰을 요구하면 입력칸을 보여 주고 업로드에 싣는다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(fetchAdminStatus).mockResolvedValueOnce({ token_required: true });
+    vi.mocked(uploadDataset).mockReset().mockResolvedValue({
+      activated: false, detail: "x", report: null });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "데이터" }));
+    fireEvent.change(await screen.findByLabelText(/관리자 토큰/), { target: { value: "s3cret" } });
+    fireEvent.change(screen.getByLabelText("묶음 zip 파일"),
+                     { target: { files: [new File(["PK"], "b.zip")] } });
+    fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
+    await waitFor(() => expect(uploadDataset).toHaveBeenCalled());
+    expect(vi.mocked(uploadDataset).mock.calls[0][1]).toBe("s3cret");
   });
 });

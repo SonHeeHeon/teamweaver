@@ -35,6 +35,9 @@ class MetaResponse(BaseModel):
     skills: list[str]
     review_items: list[str]
     coworks: list[CoworkOut]
+    # 이 meta가 나온 활성 데이터셋(K9). 화면은 계산 요청에 이 값을 실어 보내고, 서버는
+    # 그사이 데이터셋이 바뀌었으면 409로 거부한다(옛 이름·명단과 새 결과가 섞이지 않게).
+    dataset_version: str
 
 
 class BriefingOut(BaseModel):
@@ -158,6 +161,8 @@ class ReportRequest(BaseModel):
     # 이 플랜을 계산한 배치 설정(K8). PDF에 "계산 기준"으로 표시한다. 없으면
     # (설정을 못 불러와 모델 기본값으로 계산했거나 구버전 클라이언트) 표시하지 않는다.
     milp_params: PlacementSettings | None = None
+    # 명단을 계산한 데이터셋(K9). PDF 페이지는 서버 meta로 이름을 붙이므로, 다르면 거부한다.
+    dataset_version: str | None = None
 
     @model_validator(mode="after")
     def _basis_must_be_complete(self) -> "ReportRequest":
