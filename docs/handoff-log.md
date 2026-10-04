@@ -22,6 +22,24 @@
 
 ---
 
+## 2026-10-05 · claude-b · K4를 K8→K9→K10 줄기에 통합(병합 후보 한 줄)
+- 브랜치/커밋: `feat/claude-b-integration` `095e290`(K10 `2783206` + K4 `1217f38` 병합) + 이 기록. main 병합은 사용자 승인 후.
+  - **main에 넣을 때는 이 브랜치 하나만 병합하면 된다**(K4·K8·K9·K10이 모두 들어 있다). 개별 브랜치는 기록용이다.
+- 한 일:
+  - K4(PDF Host 신뢰 제거)와 K9·K10이 함께 고친 `api/routes/report.py`의 충돌을 풀었다. 순서는 다음과 같다.
+    - 값싼 검사(데이터셋 버전, 원 플랜 서명)를 먼저 한다.
+    - 그다음 동시성 슬롯을 잡는다.
+    - [교체 재계산 + 리포트 meta 생성(전용 스레드 풀) → 내부 origin 렌더]를 하나의 시간 상한 안에서 돌린다.
+  - 시간 초과로 응답이 끝나도 준비 스레드가 끝날 때까지 슬롯을 유지한다(파이썬 스레드는 강제로 멈출 수 없다).
+  - PDF meta는 리포트에 필요한 사람·프로젝트·협업선만 담는다. 최종 렌더 데이터는 4MiB까지다(413).
+- 상대 영향: 없음(claude-b 영역). 테스트 기준선 **795 passed, 14 deselected**.
+- 검증:
+  - `uv run --group benchmark pytest -q` → 795 passed. `uv run pytest -m slow -q` → 14 passed.
+  - 웹: vitest 97 passed, `tsc -b`·lint·build 통과.
+  - 결함 주입 7종이 모두 테스트에 걸렸다.
+- 리뷰: Codex 적대적 리뷰 2라운드. 1라운드 high 2(시간 초과 후 슬롯 조기 반납, meta가 크기·시간 상한 밖)를 반영했다. 2라운드는 approve.
+- 근거: `.omc/reports/2026-10-05-k4-integration.md`
+
 ## 2026-10-05 · claude-b · K10 교체 "검토 → 적용" 흐름
 - 브랜치/커밋: `feat/claude-b-swap-apply` `dc0ed9e`(코드) + 이 기록. **K9 브랜치 위**(K8 → K9 → K10 순서로 병합). main 병합은 사용자 승인 후.
 - 한 일:
