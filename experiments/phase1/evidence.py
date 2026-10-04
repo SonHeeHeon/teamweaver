@@ -68,7 +68,9 @@ def summarize_stages(manifest: dict, rows: list[dict]) -> dict:
         stage = "core" if stage in {"primary", "confirmation"} else stage
         return summary.setdefault(solver, {}).setdefault(stage, {
             "planned": 0, "recorded": 0, "done": 0, "validated": 0, "quality_pass": 0,
-            "validation_failures": 0, "failure_categories": Counter(), "issue_codes": Counter()})
+            "validation_failures": 0, "failure_categories": Counter(), "issue_codes": Counter(),
+            "native_strict_pass":0,"normalization_pass":0,"refined_pass":0,"pipeline_pass":0})
+        # Legacy runs have no native-vs-normalized evidence: unknown, not pass.
 
     for case in manifest.get("schedule", []):
         bucket(case)["planned"] += 1
@@ -76,6 +78,14 @@ def summarize_stages(manifest: dict, rows: list[dict]) -> dict:
         case = item["checkpoint"].get("case", {})
         assessment = assess_record(item)
         values = bucket(case)
+        payload = (item.get("result") or {}).get("payload",{})
+        native = (payload.get("native_validation") or {}).get("valid")
+        initial = (payload.get("initial_validation") or {}).get("valid")
+        accepted = assessment.status == "DONE" and assessment.validation_state == "PASS"
+        values["native_strict_pass"] += int(native is True)
+        values["normalization_pass"] += int(native is False and initial is True)
+        values["refined_pass"] += int(accepted and payload.get("refinement",{}).get("attempted") is True)
+        values["pipeline_pass"] += int(accepted)
         values["recorded"] += 1
         values["done"] += int(assessment.status == "DONE")
         values["validated"] += int(assessment.validation_state == "PASS")

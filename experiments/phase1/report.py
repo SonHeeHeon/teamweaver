@@ -76,10 +76,19 @@ def _load_run(run_dir: Path) -> tuple[dict[str, Any], dict[str, Any], list[dict[
                     raise ValueError("terminal result checksum mismatch")
                 if result.get("case_id", case_id) != case_id:
                     raise ValueError("terminal result belongs to another case")
+                for name,record in (result.get("payload",{}).get("artifacts") or {}).items():
+                    try:
+                        sidecar = expected_path.parent/record["path"]
+                        if sidecar.resolve().parent != expected_path.parent.resolve() or sidecar.name != name:
+                            raise ValueError("sidecar path outside attempt")
+                        if fingerprint(json.loads(sidecar.read_text())) != record["sha256"]:
+                            raise ValueError("sidecar checksum mismatch")
+                    except (OSError,ValueError,TypeError,KeyError) as exc:
+                        raise ValueError(f"sidecar evidence changed: {name}") from exc
             rows.append({"case_id": case_id, "checkpoint": case_row, "result": result,
                          "raw_candidate_available": (expected_path.parent / "raw-solution.json").is_file()})
         except (OSError, ValueError, KeyError, TypeError) as exc:
-            raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}") from exc
+            raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}; {exc}") from exc
     return manifest, checkpoint, rows
 
 
@@ -202,12 +211,14 @@ main{{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px}} h1{{
 <dt>소스 커밋</dt><dd><code>{_text(manifest.get('source_commit'))}</code></dd>
 <dt>의존성 잠금 해시</dt><dd><code>{_text(manifest.get('dependency_lock_sha256'))}</code></dd>
 <dt>옵션</dt><dd><code>{_json(manifest.get('options', {}))}</code></dd>
+<dt>수치 정책</dt><dd><code>{_json(manifest.get('numerical_policy', 'LEGACY_POLICY_UNKNOWN'))}</code></dd>
 <dt>의존성 버전</dt><dd><code>{_json(manifest.get('dependency_versions', {}))}</code></dd>
 <dt>생성 / 갱신</dt><dd>{_text(checkpoint['created_at'])} / {_text(checkpoint['updated_at'])}</dd>
 </dl></section>
 <section><h2>케이스별 L / U / Gap / 검증</h2><p class="note">L은 찾은 배치의 점수, U는 솔버가 제공한 최고 가능 상한입니다. U가 없으면 Gap도 계산하지 않고 BOUND_UNKNOWN으로 남깁니다.</p>
 <div class="tablewrap"><table><thead><tr><th>케이스</th><th>단계</th><th>솔버</th><th>실행 상태</th><th>품질 상태</th><th>L</th><th>U</th><th>Gap</th><th>독립 검증</th><th>원본 상태</th><th>초</th><th>오류·검증 이슈</th></tr></thead><tbody>{_case_table(rows)}</tbody></table></div></section>
 <section><h2>해석 제한</h2><p>이 보고서는 실행 기록의 투명성을 높이지만, 가상 데이터가 실제 조직을 대표한다고 보장하지 않습니다. 솔버 간 속도 비교도 같은 장비·같은 입력·같은 제한에서 기록된 케이스 범위 안에서만 해석해야 합니다.</p></section>
+<section><h2>Native와 최종 파이프라인 분리</h2><p>native_strict_pass는 정규화 전 원본 검증, normalization_pass는 원본 실패·경계 정규화 후 통과, refined_pass는 미세 LP 후 최종 통과입니다. pipeline_pass는 전체 완료·검증 통과입니다. 과거 기록의 native 수치는 미측정이며 0이 실패율을 뜻하지 않습니다. 보조 엔진은 SciPy/HiGHS입니다.</p><pre>{_json(stages)}</pre></section>
 </main></body></html>"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")

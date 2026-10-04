@@ -9,6 +9,8 @@ from core.optimize.audit_types import RawMilpSolution, SolverEvidence
 from core.optimize.milp import _floor2, _overfamiliar_pairs, pruned_pairs
 from core.optimize.types import AssignEntry, PlanAssignment
 from core.optimize.validation import validate_raw_solution
+from core.optimize.candidate import rebuild_plan
+from core.optimize.numerics import NumericalPolicy, assess_candidate
 from experiments.phase1.types import (
     BenchmarkProblem,
     SolverAvailability,
@@ -43,9 +45,11 @@ class SolverUnavailableError(RuntimeError):
 class SolverSolveError(RuntimeError):
     """A solver ran but did not yield an extractable integer incumbent."""
 
-    def __init__(self, message: str, evidence: SolverEvidence):
+    def __init__(self, message: str, evidence: SolverEvidence, *, assessment=None, native_fragment=None):
         super().__init__(message)
         self.evidence = evidence
+        self.assessment = assessment
+        self.native_fragment = native_fragment
 
 
 class _VariableModelFactory(Protocol):
@@ -426,7 +430,8 @@ def _extract_solution(
     name: str,
     built: _BuiltModel,
     options: SolverOptions,
-) -> RawMilpSolution:
+    *, numerical_policy=None, deadline=None,
+):
     raw_z = {key: variable.value() for key, variable in built.z.items()}
     raw_a = {key: variable.value() for key, variable in built.a.items()}
     raw_y = {key: variable.value() for key, variable in built.y.items()}
@@ -441,6 +446,7 @@ def _extract_solution(
             f"{evidence.solver_name} did not return an extractable incumbent "
             f"(native_status={evidence.native_status})",
             evidence,
+            native_fragment={"z":raw_z,"a":raw_a,"y":raw_y,"slack":raw_slack,"objective":objective},
         )
 
     try:
@@ -498,42 +504,21 @@ def _extract_solution(
         constraint_count=len(built.problem.constraints),
         evidence=evidence,
     )
-    validation = validate_raw_solution(
-        benchmark.graph,
-        benchmark.S,
-        benchmark.C,
-        benchmark.params,
-        candidate,
-    )
-    if not validation.valid:
-        issue_codes = ",".join(sorted({issue.code for issue in validation.issues}))
-        failed_evidence = replace(
-            evidence,
-            termination_reason=(
-                f"{evidence.native_status}; independent_validation_failed:{issue_codes}"
-            ),
-            has_incumbent=False,
-        )
-        raise SolverSolveError(
-            f"{evidence.solver_name} returned an invalid incumbent candidate "
-            f"({issue_codes})",
-            failed_evidence,
-        )
-
-    best_bound = evidence.best_bound
-    if best_bound is not None and best_bound < objective - 1e-6:
-        best_bound = None
-    validated_evidence = replace(
-        evidence,
-        has_incumbent=True,
-        best_bound=best_bound,
-    )
-    return replace(candidate, evidence=validated_evidence)
+    native = rebuild_plan(benchmark.graph,benchmark.params,replace(candidate,
+        z={k:float(v) for k,v in raw_z.items()},a={k:float(v) for k,v in raw_a.items()},
+        y={k:float(v) for k,v in raw_y.items()},slack={k:float(v) for k,v in raw_slack.items()}))
+    assessment = assess_candidate(benchmark.graph,benchmark.S,benchmark.C,benchmark.params,candidate,
+        native_capture=native,policy=numerical_policy or NumericalPolicy(enabled=True),deadline=deadline)
+    if assessment.accepted is not None:
+        assessment = replace(assessment,accepted=replace(assessment.accepted,
+            evidence=replace(evidence,has_incumbent=True)))
+    return assessment
 
 
-def solve_case(
-    problem: BenchmarkProblem, solver_name: str, options: SolverOptions
-) -> RawMilpSolution:
+def solve_case_diagnostic(
+    problem: BenchmarkProblem, solver_name: str, options: SolverOptions,
+    *, numerical_policy, deadline=None,
+):
     normalized_name = solver_name.lower()
     availability = available_solvers()
     if normalized_name not in availability:
@@ -576,4 +561,15 @@ def solve_case(
             },
         )
         raise SolverSolveError(str(exc), evidence) from exc
-    return _extract_solution(problem, normalized_name, built, options)
+    return _extract_solution(problem, normalized_name, built, options,
+                             numerical_policy=numerical_policy,deadline=deadline)
+
+
+def solve_case(problem: BenchmarkProblem, solver_name: str, options: SolverOptions) -> RawMilpSolution:
+    assessment = solve_case_diagnostic(problem,solver_name,options,numerical_policy=NumericalPolicy(enabled=True))
+    if assessment.accepted is not None:
+        return assessment.accepted
+    codes = ",".join(sorted({i.code for i in assessment.initial_validation.issues}))
+    evidence = replace(assessment.validation_candidate.evidence,has_incumbent=False,
+        termination_reason=f"{assessment.validation_candidate.evidence.native_status}; independent_validation_failed:{codes}")
+    raise SolverSolveError(f"{solver_name} returned an invalid incumbent candidate ({codes})",evidence,assessment=assessment)

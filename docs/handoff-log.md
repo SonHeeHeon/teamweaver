@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-04 · Codex · C1 G1 진단·비활성 복구 체크포인트
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `98ba47f` (main 미병합 / push 없음).
+- 한 일: 기존 CBC 출력·원시값을 보존해 A(문턱 완화)/B(outputFormat6)/C(고정팀 미세LP)를 비교. 제품 service는 연결하지 않은 상태에서 복구 정책·callback 변형 거절·최종 재검증을 구현했다.
+- 상대 영향: 목적식/쌍 함수/공유 도메인/API 변경 없음. B는 옵션 적용을 실제 로그로 확인했지만 예산 잔차가 그대로였다. C는 두 재현 입력 strictPASS, tol1e-6 유지.
+- 검증: probe5/refinement25 총30 passed. 독립gpt-6-astra G1 REVISE→시간초과 후success2회귀 RED/GREEN 및B증거보완→PASS. C delta≤1e-7, 추가시간약0.00413/0.05233초. 서비스미변경 상태 전체581 pass/6 기존회귀 fail/10 deselected(마지막2회귀 추가 전).
+- 근거: `outputs/phase1-c1-g1-eli5.html`, `outputs/phase1-c1-numerical-probe.json`, `docs/superpowers/reviews/2026-10-04-c1-g1-review.md`. G1 PASS는 main통합/사업효과 승인이 아님.
+
 ## 2026-10-04 · Codex · C1 G0 보고서 정정 체크포인트
 - 브랜치/커밋: `feat/phase1-solver-benchmark` `8a3f7d7` (main 미병합 / push 없음).
 - 한 일: payload.error·exact legacy token·structured 충돌을 분류하고 core/pilot/compatibility/oracle 분모를 분리했다. 원본을 수정하지 않고 새 정정 HTML·전후 지표·ELI5를 작성했다.
@@ -126,3 +133,8 @@
 - 브랜치/커밋: main (`5d91490` ~ `c799f75`)
 - 한 일: 코어(도메인·datagen·점수·Greedy/MILP·대안), 실험 1~5와 Neo4j 제거 결정, FastAPI(SSE·What-if·XAI·PDF), React 웹을 만들었다.
 - 근거: 루트 `.omc/plan/`, `.omc/reports/` (로컬), 요약은 `docs/project-context.md` 4~5절
+# 2026-10-04 Codex · C1 G2 benchmark evidence checkpoint
+
+- G2 highest independent gpt-6-astra review PASS after3Important+1Minor RED→GREEN. Phase1 222passed; related61passed. Service remains unchanged; 6C0 regressions are next Task5.
+- Native/validation/final files persisted and hash/path-bound; policy full fields frozen; rejected timings preserved; final worker validator authoritative. Invalid bound retained as BOUND_INVALID, never quality PASS. Payload2/checkpoint1 compatibility preserved.
+- ELI5 `outputs/phase1-c1-g2-eli5.html`; review `docs/superpowers/reviews/2026-10-04-c1-g2-review.md`. No API/objective/pair-function change. No main merge/push. NOT_CALIBRATED.
