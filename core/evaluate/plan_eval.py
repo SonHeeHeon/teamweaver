@@ -99,7 +99,8 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
             if load > available + TOL:
                 violations.append(PlanViolation(
                     "availability", f"{person.id}:month{month}", load, available,
-                    f"{person.id}의 {month}월 투입 합 {load:.2f}가 가용률 {available:.2f}를 초과"))
+                    f"{person.id}의 계획 {month + 1}번째 달 투입 합 {load:.2f}가 "
+                    f"가용률 {available:.2f}를 초과"))
 
     for (i, j), a in alloc.items():
         if a < params.min_alloc - TOL or a > 1.0 + TOL:

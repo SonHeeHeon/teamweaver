@@ -58,8 +58,37 @@ export interface Briefing {
   alternatives: string[];
 }
 
+export interface ObjectiveBreakdown {
+  skill: number;
+  synergy: number;
+  overfamiliarity: number;
+  unfilled: number;
+  total: number;
+}
+
+export interface Violation {
+  code: string;
+  location: string;
+  actual: number;
+  limit: number;
+  message: string;
+}
+
+export interface Shortfall {
+  project_id: string;
+  grade: string;
+  missing: number;
+}
+
+/** objective_delta는 교체 전후를 현행 MILP 전체 목적으로 재평가한 차이(참고값, 재최적화 아님).
+ *  new_*는 교체로 새로 생긴 것만, feasible은 교체 후 배치에 제약 위반이 없는지. */
 export interface WhatifResponse {
   objective_delta: number;
+  before: ObjectiveBreakdown;
+  after: ObjectiveBreakdown;
+  new_violations: Violation[];
+  new_shortfalls: Shortfall[];
+  feasible: boolean;
   briefing: Briefing;
   fallback_used: boolean;
 }
@@ -84,4 +113,5 @@ export interface ReportRequest {
   fallback_used: boolean;
   swap: Swap | null;
   objective_delta: number | null;
+  swap_violations: string[];
 }

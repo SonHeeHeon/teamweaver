@@ -1,5 +1,32 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { fetchMeta } from "./client";
+import { downloadReport, fetchMeta } from "./client";
+import type { PlanEvent, WhatifResponse } from "./types";
+
+describe("downloadReport", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("What-if 경고를 PDF 요청에 함께 싣는다", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, blob: async () => new Blob() }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("URL", { ...URL, createObjectURL: () => "blob:x", revokeObjectURL: () => {} });
+    const plan: PlanEvent = { label: "A", entries: [], objective: 1, unfilled: [],
+                              fulfillment: 1, optimization_ratio: 1, index: 0, cached: false };
+    const zero = { skill: 0, synergy: 0, overfamiliarity: 0, unfilled: 0, total: 0 };
+    const whatif: WhatifResponse = {
+      objective_delta: -100, before: zero, after: zero, feasible: true, new_violations: [],
+      new_shortfalls: [{ project_id: "j1", grade: "중급", missing: 1 }],
+      briefing: { rationale: "", risks: [], alternatives: [] }, fallback_used: false,
+    };
+
+    await downloadReport(plan, whatif,
+                         { out_person_id: "p1", in_person_id: "p2", project_id: "j1" });
+
+    const sent = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1]
+      .body as string);
+    expect(sent.swap_violations).toEqual(["j1의 중급 1명 미충원"]);
+    expect(sent.objective_delta).toBe(-100);
+  });
+});
 
 const META = {
   people: [{ id: "p000", name: "김나윤", grade: "중급", skills: { React: 2 } }],

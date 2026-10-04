@@ -59,7 +59,28 @@ describe("ReportPage", () => {
     await waitFor(() => expect(window.__REPORT_READY__).toBe(true));
     expect(screen.getByText(/규칙 기반\(결정론적\) 생성기/)).toBeInTheDocument();
     expect(screen.getByText(/검토한 교체: 김일번 → 이이번/)).toBeInTheDocument();
-    expect(screen.getByText(/Δ -0.2500/)).toBeInTheDocument();
+    expect(screen.getByText(/현행 점수 기준 Δ -0.2500/)).toBeInTheDocument();
+    expect(screen.queryByText(/교체 검토 경고/)).not.toBeInTheDocument();
+  });
+
+  it("교체 검토 경고를 PDF에도 보인다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    window.__REPORT_DATA__ = {
+      plan_label: "A", entries: [], objective: 1, fulfillment: 1,
+      optimization_ratio: 1, unfilled: [],
+      briefing: { rationale: "근거", risks: [], alternatives: [] },
+      fallback_used: false,
+      swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" },
+      objective_delta: -100.5,
+      swap_violations: ["j1 월 비용 6,000이 예산 5,000을 초과", "j1의 중급 1명 미충원"],
+    };
+
+    render(<ReportPage />);
+
+    await waitFor(() => expect(window.__REPORT_READY__).toBe(true));
+    expect(screen.getByText(/교체 검토 경고/)).toBeInTheDocument();
+    expect(screen.getByText("j1 월 비용 6,000이 예산 5,000을 초과")).toBeInTheDocument();
+    expect(screen.getByText("j1의 중급 1명 미충원")).toBeInTheDocument();
   });
 
   it("LLM이 쓰였으면 provenance 문구가 없다", async () => {
