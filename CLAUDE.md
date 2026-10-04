@@ -5,21 +5,26 @@ SI 조직의 인력→프로젝트 배치 최적화 시제품. 기술 적합도(
 **모든 데이터는 가상(seed 고정)이며 사업 효과는 `NOT_CALIBRATED`** — 계산이 맞다는 것과
 현실 성과가 좋다는 것은 별개 주장이다. 문서·보고에서 둘을 섞지 않는다.
 
-**Codex와 병행 개발 중이다. 작업 전에 `docs/work-split.md`(파일 소유 영역·작업 목록·요청 기록)를 읽고,
-Claude 영역(`api/`, `web/`, `core/ingest/`, `core/evaluate/`, `scripts/`) 밖의 파일은 고치지 않는다.**
+**Codex와 병행 개발 중이다.** 작업 전에 다음 순서로 확인한다.
+1. `git worktree list`와 `git log --all`로 Codex의 새 브랜치나 커밋이 있는지 본다.
+2. `docs/handoff-log.md`(서로 한 일)와 `docs/work-split.md`(파일 소유 영역·작업 목록·요청 기록)를 읽는다.
+3. Claude 영역(`api/`, `web/`, `core/ingest/`, `core/evaluate/`, `scripts/`) 밖의 파일은 고치지 않는다.
+
+task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 상세 맥락(모델 수식·실험 결과·입력 계약·로드맵)은 `docs/project-context.md`를 먼저 읽는다.
 `outputs/eli5-project-history-roadmap.html`(원본 전체 해설, ~35k 토큰)은 그 요약으로 부족할 때만.
 
-## 브랜치·작업 위치 (2026-10-03 기준, Git remote 없음)
+## 브랜치·작업 위치 (2026-10-04 기준)
 
 | 브랜치 | 위치 | 내용 |
 |---|---|---|
-| `main` | 저장소 루트 | Plan 1~5 제품(코어·API·웹·PDF). Phase 0/1 미병합 |
-| `feat/phase0-model-validation` | `.worktrees/phase0-model-validation` | 독립 검증기·소형 정답기 |
-| `feat/phase1-solver-benchmark` | `.worktrees/phase1-solver-benchmark` | **최신**. Phase 0 포함 + CBC/HiGHS/SCIP 비교 |
+| `main` | 저장소 루트 | Plan 1~5 + Phase 0/1(10-03 병합) + K1 What-if 정정(10-04 병합) |
+| `feat/phase1-solver-benchmark` | `.worktrees/phase1-solver-benchmark` | Codex 작업 브랜치. 이후 커밋은 `docs/handoff-log.md`에 기록된다 |
+| `feat/phase0-model-validation` | `.worktrees/phase0-model-validation` | 과거 브랜치(main에 포함됨) |
 
-- 개발은 Claude(Plan 1~5)와 Codex(Phase 0~1)가 나눠 했다. `main`만 보면 최신 구현이 안 보인다.
+- 원격 `origin`(GitHub)이 있다. **push·PR은 사용자가 요청할 때만 한다.**
+- 개발 이력: Claude는 Plan 1~5와 K*, Codex는 Phase 0~1과 C*를 맡았다. 브랜치별 최신 상태는 `docs/handoff-log.md`에서 확인한다.
 - 기록 위치가 다르다: Plan 1~5는 루트 `.omc/plan`·`.omc/reports`(gitignore, 루트에만 존재).
   Phase 0~1은 Git 추적 `docs/superpowers/{specs,plans}/`, `docs/reviews/`, `docs/phase1-checkpoint.md`,
   `outputs/*.html`.
@@ -54,7 +59,7 @@ Claude 영역(`api/`, `web/`, `core/ingest/`, `core/evaluate/`, `scripts/`) 밖�
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: phase1 브랜치 **497 passed, 10 deselected**)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: main 2026-10-04 **521 passed, 10 deselected**, `--group benchmark` 포함)
 - HiGHS/SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
