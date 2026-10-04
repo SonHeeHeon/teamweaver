@@ -5,6 +5,9 @@ SI 조직의 인력→프로젝트 배치 최적화 시제품. 기술 적합도(
 **모든 데이터는 가상(seed 고정)이며 사업 효과는 `NOT_CALIBRATED`** — 계산이 맞다는 것과
 현실 성과가 좋다는 것은 별개 주장이다. 문서·보고에서 둘을 섞지 않는다.
 
+**Codex와 병행 개발 중이다. 작업 전에 `docs/work-split.md`(파일 소유 영역·작업 목록·요청 기록)를 읽고,
+Claude 영역(`api/`, `web/`, `core/ingest/`, `core/evaluate/`, `scripts/`) 밖의 파일은 고치지 않는다.**
+
 상세 맥락(모델 수식·실험 결과·입력 계약·로드맵)은 `docs/project-context.md`를 먼저 읽는다.
 `outputs/eli5-project-history-roadmap.html`(원본 전체 해설, ~35k 토큰)은 그 요약으로 부족할 때만.
 
