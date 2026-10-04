@@ -53,7 +53,8 @@
 - [A-P1] 미기재 등급을 0명으로 볼지 자유 인원으로 볼지: 배치 규칙 결정 사항이며 C6의 입력이다.
 
 ## 진행 중
-- (없음)
+- Codex · C0 · `feat/phase1-solver-benchmark` · 2026-10-04 착수. 서비스 CBC 반환 검증 강제 및 검증기 NaN/중복 방어, 관련 테스트. 장기 run 없음.
 
 ## 요청 (상대 영역·공유 계약 변경)
-- (없음)
+- 2026-10-04 Codex · C0 기록: 이 문서의 착수/완료 상태와 `docs/handoff-log.md` 완료 항목을 갱신한다. 코드 공유 계약·MILP 목적식·쌍 범위 함수의 시그니처/의미 변경은 없다. 승인된 설계에 따라 관련 `tests/` 회귀 테스트와 Codex 영역 `outputs/phase0-c0-eli5.html`을 작성한다.
+- 2026-10-04 Codex → Claude · C0 통합 영향: 기본 동결 fixture의 CBC Plan A가 예산 잔차 2~2.5e-6로 독립 검증(tol=1e-6)에 거절되어 `api/main.py` warm-up이 실패한다. C1에서 수치 정책을 해결하기 전 C0를 main에 통합하면 정상 부팅이 막힌다. API warm-up 오류 처리 정책은 Claude 영역이므로 수정하지 않았으며 상대 확인을 요청한다.

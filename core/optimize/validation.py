@@ -117,6 +117,20 @@ def validate_raw_solution(
     check_raw_values("a", solution.a, expected_a_keys, "unit")
     check_raw_values("slack", solution.slack, expected_slack_keys, "nonnegative")
     check_raw_values("y", solution.y, expected_y_keys, "unit")
+    for location, value in (
+        ("objective", solution.objective),
+        ("plan.objective", solution.plan.objective),
+    ):
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            raw_issue("nonfinite_value", location)
+    seen_entries = set()
+    for index, entry in enumerate(solution.plan.entries):
+        if not isinstance(entry.alloc, (int, float)) or not math.isfinite(entry.alloc):
+            raw_issue("nonfinite_value", f"plan.entries[{index}].alloc")
+        key = (entry.person_id, entry.project_id)
+        if key in seen_entries:
+            raw_issue("duplicate_plan_entry", f"plan.entries[{index}]")
+        seen_entries.add(key)
     if issues:
         empty_objective = ObjectiveBreakdown(0.0, 0.0, 0.0, 0.0, 0.0)
         return ValidationReport(
@@ -128,17 +142,17 @@ def validate_raw_solution(
 
     def equality(code: str, location: str, actual: float, expected: float) -> None:
         error = abs(actual - expected)
-        if error > tol:
+        if not math.isfinite(error) or error > tol:
             issues.append(ValidationIssue(code, location, actual, expected, error))
 
     def upper(code: str, location: str, actual: float, limit: float) -> None:
         error = actual - limit
-        if error > tol:
+        if not math.isfinite(error) or error > tol:
             issues.append(ValidationIssue(code, location, actual, limit, error))
 
     def lower(code: str, location: str, actual: float, limit: float) -> None:
         error = limit - actual
-        if error > tol:
+        if not math.isfinite(error) or error > tol:
             issues.append(ValidationIssue(code, location, actual, limit, error))
 
     for i in range(n_people):

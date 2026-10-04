@@ -96,6 +96,7 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, in
 
 def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
                           params: MilpParams, extra_constraints=None) -> RawMilpSolution:
+    """Return an independently validated candidate or raise, including on timeout."""
     people, projects = graph.people, graph.projects
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
@@ -168,11 +169,9 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         options={"time_limit": params.time_limit, "gap": params.gap},
     )
     if not has_incumbent or pulp.value(prob.objective) is None:
-        # "Not Solved" can mean either "time limit hit with a valid incumbent"
-        # (fine — a time-limited but real solution) or "time limit hit with NO
-        # incumbent at all" (every variable's .value() is None). The latter
-        # must not silently fall through to an empty/partial PlanAssignment
-        # that looks like a legitimate answer.
+        # Finite values alone are only an extractable candidate: CBC may expose
+        # a fractional relaxation on timeout. Independent validation below must
+        # establish integer feasibility before anything can leave this function.
         raise RuntimeError(
             f"MILP found no incumbent solution within time_limit={params.time_limit}s "
             f"(status={status}) — cannot extract a plan")
@@ -193,7 +192,7 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     objective = float(pulp.value(prob.objective))
     plan = PlanAssignment(entries=entries, objective=objective,
                           unfilled=unfilled, violations=[], label="A")
-    return RawMilpSolution(
+    candidate = RawMilpSolution(
         plan=plan,
         status=status,
         objective=objective,
@@ -207,6 +206,17 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         constraint_count=len(prob.constraints),
         evidence=evidence,
     )
+    # Local import avoids the cycle: validation imports MilpParams from here.
+    from core.optimize.validation import validate_raw_solution
+
+    validation = validate_raw_solution(graph, S, C, params, candidate)
+    if not validation.valid:
+        codes = ",".join(sorted({issue.code for issue in validation.issues}))
+        raise RuntimeError(
+            f"MILP returned an invalid incumbent candidate (status={status}; "
+            f"independent_validation_failed:{codes})"
+        )
+    return candidate
 
 
 def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
