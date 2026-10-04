@@ -11,6 +11,9 @@ Before starting any task:
 3. Read `docs/project-context.md` for condensed project context (model formula, experiment results,
    input contract, roadmap). Read `outputs/eli5-project-history-roadmap.html` only if that is not enough.
 4. Check `CLAUDE.md`, section "코드만 봐서는 모르는 함정" (gotchas). It applies to every agent.
+5. If `/Users/honey/Dev/teamweaver/private/schema-intake.json` exists, it is the user's description of
+   the real HR skill-history and peer-review schema. Read `docs/data-schema/README.md` first.
+   Never commit, push, or publish anything under `private/`.
 
 Before you start and before you merge, bring `main` into your branch (merge or rebase).
 When you finish a task, add an entry at the top of `docs/handoff-log.md`. Merges into `main`

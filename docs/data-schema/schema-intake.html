@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TeamWeaver 실제 데이터 스키마 입력 양식</title>
+<style>
+  :root {
+    --ink:#1f2328; --muted:#59636e; --line:#d1d9e0; --bg:#f6f8fa; --card:#fff;
+    --accent:#0969da; --accent-soft:#ddf4ff; --warn:#9a6700; --warn-soft:#fff8c5; --ok:#1a7f37;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#e6edf3; --muted:#9198a1; --line:#3d444d; --bg:#0d1117; --card:#151b23;
+            --accent:#4493f8; --accent-soft:#0c2d6b; --warn:#d29922; --warn-soft:#272115; --ok:#3fb950;
+            color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.65 -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:32px 16px 120px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .notice { background:var(--warn-soft); border:1px solid var(--warn); border-radius:10px;
+            padding:12px 16px; margin:0 0 20px; }
+  .notice b { color:var(--warn); }
+  section.part { background:var(--card); border:1px solid var(--line); border-radius:12px;
+                 padding:20px 22px; margin:0 0 18px; }
+  section.part > h2 { font-size:1.15rem; margin:0 0 4px; }
+  section.part > p.why { color:var(--muted); margin:0 0 14px; font-size:.93rem; }
+  .q { padding:12px 0; border-top:1px solid var(--line); }
+  .q:first-of-type { border-top:none; }
+  .q label.qt { display:block; font-weight:600; margin-bottom:2px; }
+  .q .help { color:var(--muted); font-size:.88rem; margin:0 0 6px; }
+  input[type=text], input[type=number], textarea, select {
+    width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:6px;
+    background:var(--bg); color:var(--ink); font:inherit; }
+  textarea { min-height:70px; resize:vertical; }
+  .opts { display:flex; flex-wrap:wrap; gap:6px 16px; }
+  .opts label { display:flex; align-items:center; gap:6px; font-weight:400; }
+  .range { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  .range span { display:block; font-size:.8rem; color:var(--muted); }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; min-width:760px; font-size:.9rem; }
+  th, td { border:1px solid var(--line); padding:4px; vertical-align:top; }
+  th { background:var(--bg); text-align:left; font-weight:600; padding:6px; }
+  td input[type=text], td select, td textarea { border:none; background:transparent; padding:4px; }
+  td button { white-space:nowrap; }
+  td textarea { min-height:38px; }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); color:var(--ink);
+           border-radius:6px; padding:6px 12px; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.small { padding:2px 8px; font-size:.85rem; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:var(--card);
+         border-top:1px solid var(--line);
+         padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .bar .in { max-width:900px; margin:0 auto; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .bar .status { color:var(--muted); font-size:.85rem; margin-left:auto; }
+  .toc { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 18px; }
+  .toc a { background:var(--accent-soft); color:var(--ink); text-decoration:none;
+           border-radius:999px; padding:3px 12px; font-size:.88rem; }
+  pre#out { white-space:pre-wrap; background:var(--bg); border:1px solid var(--line);
+            border-radius:8px; padding:10px; font-size:.8rem; max-height:300px; overflow:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>TeamWeaver 실제 데이터 스키마 입력 양식</h1>
+  <p class="sub">기술 이력 시스템과 피어 리뷰가 실제로 어떤 항목을 어떤 형태로 갖고 있는지 알려 주시는 양식입니다.
+    채운 결과(JSON)는 Claude와 Codex가 함께 읽고 입력 기능·가상 데이터·실험을 실제 형태에 맞춥니다.</p>
+
+  <div class="notice">
+    <b>입력 전 주의</b><br>
+    · 실명, 사번, 고객사명, 실제 동료의 리뷰 원문은 넣지 마세요. 예시값은 가리거나 비슷한 가짜 값으로 바꿔 주세요.<br>
+    · 항목 정의·선택지 목록도 사내 공유 기준상 외부 AI에 제공해도 되는지 먼저 확인해 주세요.<br>
+    · 모르는 칸은 비워 두거나 "모름"이라고 적으면 됩니다. 숫자는 대략적인 감으로 충분합니다.<br>
+    · 작성 중인 값은 이 브라우저에 자동 저장됩니다. 다 쓰면 아래 <b>"JSON 저장"</b>을 눌러
+      <code>teamweaver/private/schema-intake.json</code>으로 두세요(Git에 올라가지 않는 폴더).
+  </div>
+
+  <nav class="toc" id="toc"></nav>
+  <form id="form" autocomplete="off"></form>
+
+  <section class="part">
+    <h2>내보낼 JSON 미리보기</h2>
+    <p class="why">"미리보기" 버튼을 누르면 Claude·Codex가 읽게 될 내용이 여기에 표시됩니다.</p>
+    <pre id="out">(아직 생성하지 않음)</pre>
+  </section>
+</main>
+
+<div class="bar"><div class="in">
+  <button type="button" class="primary" id="btn-save">JSON 저장</button>
+  <button type="button" id="btn-copy">JSON 복사</button>
+  <button type="button" id="btn-preview">미리보기</button>
+  <label><button type="button" id="btn-load">JSON 불러오기</button>
+    <input type="file" id="file" accept="application/json" hidden></label>
+  <button type="button" id="btn-reset">전체 비우기</button>
+  <span class="status" id="status">자동 저장 대기</span>
+</div></div>
+
+<script>
+const FORMAT_OPTS = ["자유 텍스트", "선택지(하나)", "선택지(여러 개)", "숫자", "날짜", "기간(시작~종료)", "예/아니오", "파일 첨부", "기타"];
+const ITEM_COLUMNS = [
+  { key: "name", label: "항목명(화면 표기)", type: "text" },
+  { key: "format", label: "형식", type: "select", options: FORMAT_OPTS },
+  { key: "required", label: "필수", type: "select", options: ["필수", "선택", "모름"] },
+  { key: "repeat", label: "여러 개 입력", type: "select", options: ["1개만", "여러 개", "모름"] },
+  { key: "meaning", label: "의미·입력 기준", type: "textarea" },
+  { key: "choices", label: "선택지 목록(있으면 전부)", type: "textarea" },
+  { key: "example", label: "예시값(가린 값)", type: "textarea" },
+];
+
+const PARTS = [
+  {
+    id: "skill", title: "A. 기술 이력 시스템",
+    why: "현재 계산은 '보유 숙련도 ÷ 요구 숙련도'를 핵심으로 씁니다. 숙련도가 실제로 어떻게 기록되는지가 가장 중요합니다.",
+    qs: [
+      { key: "overview", label: "시스템 개요", type: "textarea",
+        help: "어떤 시스템인지, 무엇을 기록하는 곳인지 한두 문장. 시스템 이름은 가명이어도 됩니다." },
+      { key: "who_enters", label: "누가 입력하나요?", type: "checks",
+        options: ["본인", "팀장·관리자", "인사팀", "다른 시스템에서 자동 연동", "모름"], other: true },
+      { key: "update_cycle", label: "얼마나 자주 갱신되나요?", type: "radio",
+        options: ["수시(본인이 원할 때)", "프로젝트 종료 시", "연 1~2회 정기", "거의 갱신 안 됨", "모름"], other: true },
+      { key: "history_kept", label: "과거 값이 남나요?", type: "radio",
+        options: ["변경 이력이 모두 남음", "최신 값으로 덮어씀", "모름"] },
+      { key: "items", label: "입력 항목 전체 목록", type: "table", columns: ITEM_COLUMNS, rows: 6,
+        help: "화면에 보이는 입력 칸을 한 줄에 하나씩 적어 주세요. 입력 화면을 보면서 위에서부터 옮기면 됩니다." },
+      { key: "level_form", label: "숙련도는 어떤 형태로 기록되나요?", type: "radio",
+        options: ["단계형(예: 1~5, 초급~고급)", "경력 개월/연수만", "프로젝트 수행 기간만", "숙련도 기록 없음", "모름"], other: true },
+      { key: "level_scale", label: "단계형이라면 각 단계의 이름과 기준", type: "textarea",
+        help: "예: 1=교육 이수, 2=보조 수행, 3=단독 수행, 4=리딩, 5=전문가. 화면에 설명이 있으면 그대로 옮겨 주세요." },
+      { key: "level_source", label: "숙련도는 누가·무엇으로 정하나요?", type: "checks",
+        options: ["자기평가", "관리자 평가", "자격증·시험", "실제 프로젝트 이력에서 계산", "모름"], other: true },
+      { key: "skill_taxonomy", label: "기술 이름은 어떻게 입력하나요?", type: "radio",
+        options: ["정해진 목록에서 선택", "자유 입력", "목록 선택 + 자유 입력 혼합", "모름"] },
+      { key: "skill_list", label: "기술 목록(정해진 목록이 있으면 붙여넣기)", type: "textarea",
+        help: "분류(언어/DB/프레임워크/업무 도메인 등)가 있으면 함께. 길어도 괜찮습니다." },
+      { key: "grade_basis", label: "특급·고급·중급·초급 같은 등급이 있나요? 기준은?", type: "textarea",
+        help: "예: SW기술자 경력 등급, 사내 직급, 없음 등." },
+      { key: "skills_per_person", label: "1인당 등록된 기술 수(대략)", type: "range" },
+      { key: "level_distribution", label: "숙련도 분포에 대한 감", type: "textarea",
+        help: "예: 대부분 2~3, 4 이상은 드묾 / 자기평가라 높게 적는 경향 등." },
+      { key: "often_blank", label: "자주 비어 있는 항목", type: "textarea" },
+    ],
+  },
+  {
+    id: "review", title: "B. 피어 리뷰",
+    why: "현재 계산은 리뷰의 긍정·부정 체크 개수와 자유서술의 어조를 협업 점수에 씁니다. 실제 양식이 이 가정과 얼마나 다른지 알아야 합니다.",
+    qs: [
+      { key: "overview", label: "리뷰 제도 개요", type: "textarea" },
+      { key: "timing", label: "언제 평가하나요?", type: "checks",
+        options: ["프로젝트 종료 시", "정기(분기·반기·연)", "수시", "모름"], other: true },
+      { key: "relation", label: "누가 누구를 평가하나요?", type: "checks",
+        options: ["같은 프로젝트 팀원끼리", "상급자→하급자", "하급자→상급자", "프로젝트와 무관한 동료", "모름"], other: true },
+      { key: "linked_to", label: "리뷰에 함께 기록되는 정보", type: "checks",
+        options: ["프로젝트", "평가 날짜", "평가자", "피평가자", "평가 회차·ID", "모름"],
+        help: "현재 가상 데이터에는 프로젝트·날짜·리뷰 ID가 없어 같은 사람 사이의 여러 리뷰를 구분하지 못합니다." },
+      { key: "anonymity", label: "평가자 익명성", type: "radio",
+        options: ["실명", "피평가자에게는 익명, 관리자는 확인 가능", "완전 익명", "모름"] },
+      { key: "visibility", label: "리뷰 내용을 볼 수 있는 사람", type: "textarea",
+        help: "배치 설명 화면에 리뷰 문장을 인용해도 되는지 판단하는 데 씁니다." },
+      { key: "items", label: "입력 항목 전체 목록", type: "table", columns: ITEM_COLUMNS, rows: 6 },
+      { key: "check_items", label: "체크 항목(선택형 평가 항목) 목록", type: "textarea",
+        help: "긍정/부정이 나뉘어 있으면 나눠서 적어 주세요. 현재는 임의로 만든 20개 항목을 쓰고 있습니다." },
+      { key: "check_rule", label: "체크 항목 선택 규칙", type: "textarea",
+        help: "예: 긍정 최소 1개·최대 5개 선택, 부정은 선택 사항 등." },
+      { key: "score_scale", label: "점수(척도) 평가가 있나요?", type: "textarea",
+        help: "예: 종합 5점 척도 1개 / 항목별 1~5점 / 없음." },
+      { key: "free_text", label: "자유서술 칸과 대략적 길이", type: "textarea",
+        help: "칸이 몇 개인지(예: 잘한 점·아쉬운 점), 보통 몇 문장 쓰는지." },
+      { key: "reviews_per_person", label: "1인당 1년에 받는 리뷰 수(대략)", type: "range" },
+      { key: "my_example", label: "본인이 작성한 리뷰 예시(가린 값)", type: "textarea",
+        help: "동료가 식별되지 않게 바꿔 주세요. 형태(문장 길이, 말투)만 보이면 충분합니다." },
+    ],
+  },
+  {
+    id: "outside", title: "C. 두 시스템 밖에 있는 정보 (출처만)",
+    why: "배치 계산에는 가용 시간·비용·프로젝트 요구사항이 필요합니다. 값이 아니라 어디서 오는지만 알려 주세요.",
+    qs: [
+      { key: "availability_source", label: "사람별 월별 가용 시간(남는 시간)은 어디서 알 수 있나요?", type: "textarea",
+        help: "예: 투입 계획 시스템, 엑셀, 팀장이 수기로 관리, 없음." },
+      { key: "availability_unit", label: "가용 시간 단위", type: "radio",
+        options: ["비율(%)", "M/M(맨먼스)", "시간", "모름"], other: true },
+      { key: "cost_source", label: "인력 비용(단가)은 어떻게 정하나요?", type: "radio",
+        options: ["개인별 단가", "등급별 표준 단가", "프로젝트마다 다름", "모름"], other: true },
+      { key: "project_req_source", label: "프로젝트 요구사항은 어디에 정리되나요? 어떤 항목이 있나요?", type: "textarea",
+        help: "예: 제안서·수행계획서의 필요 기술, 등급별 인원, 기간, 예산 항목." },
+      { key: "planning_horizon", label: "보통 몇 개월 앞까지 배치를 계획하나요?", type: "text" },
+      { key: "scale", label: "한 번에 배치를 검토하는 규모(대략)", type: "textarea",
+        help: "예: 인력 300명, 프로젝트 40개. 현재 실험은 50~300명 × 10~60개입니다." },
+    ],
+  },
+  {
+    id: "rules", title: "D. 배치 규칙 (정책 결정)",
+    why: "Codex 감사에서 사용자 결정이 필요하다고 남긴 항목들입니다. 답에 따라 계산 모델(수식)이 바뀝니다.",
+    qs: [
+      { key: "must_skill", label: "프로젝트의 '필요 기술'은 반드시 충족해야 하나요?", type: "radio",
+        options: ["반드시(못 채우면 배치 불가)", "선호(점수로만 반영)", "항목마다 필수/선호가 나뉨", "모름"] },
+      { key: "unlisted_grade", label: "요청에 없는 등급의 사람을 넣어도 되나요?", type: "radio",
+        options: ["안 됨(요청한 등급만)", "됨(예산 안에서 자유)", "경우에 따라 다름", "모름"], other: true },
+      { key: "min_alloc", label: "한 사람의 최소 투입률이 있나요?", type: "text",
+        help: "예: 20% 미만 투입은 하지 않음. 현재 모델은 20%." },
+      { key: "max_projects", label: "한 사람이 동시에 맡을 수 있는 프로젝트 수 한도", type: "text" },
+      { key: "monthly_change", label: "프로젝트 기간 중 월별로 투입률이 바뀌어도 되나요?", type: "radio",
+        options: ["바뀌어도 됨", "기간 내내 같아야 함", "모름"] },
+      { key: "other_rules", label: "그 밖에 꼭 지키는 배치 규칙", type: "textarea",
+        help: "예: 같은 고객사 연속 투입 선호, 신입은 고급과 짝지음, 특정 인력 조합 금지 등." },
+    ],
+  },
+  {
+    id: "outcome", title: "E. 성과 기록이 있는지 (있다/없다만)",
+    why: "추천이 실제로 더 좋은 팀을 만드는지 검증하려면 성과 기록이 필요합니다. 지금은 존재 여부만 알려 주세요.",
+    qs: [
+      { key: "customer_eval", label: "고객 평가 기록", type: "radio", options: ["있음", "없음", "모름"], other: true },
+      { key: "replacement", label: "고객 요청 인력 교체와 그 사유 기록", type: "radio", options: ["있음", "없음", "모름"], other: true },
+      { key: "follow_on", label: "같은 고객의 후속·고도화 과제 기록", type: "radio", options: ["있음", "없음", "모름"], other: true },
+      { key: "other_outcome", label: "그 밖에 성과로 쓸 만한 기록", type: "textarea" },
+    ],
+  },
+  {
+    id: "confirm", title: "F. 공유 전 확인",
+    why: "체크하지 않아도 저장은 되지만, Claude와 Codex는 체크되지 않은 항목이 있으면 사용 전에 다시 확인합니다.",
+    qs: [
+      { key: "checks", label: "확인 사항", type: "checks",
+        options: ["실명·사번·고객사명을 넣지 않았다", "실제 동료 리뷰 원문을 넣지 않았다",
+                  "항목 정의를 외부 AI에 제공해도 되는지 확인했다"] },
+      { key: "memo", label: "Claude·Codex에게 남길 말", type: "textarea" },
+    ],
+  },
+];
+
+const STORE_KEY = "teamweaver-schema-intake-v1";
+const form = document.getElementById("form");
+const statusEl = document.getElementById("status");
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  kids.forEach((c) => c && n.append(c));
+  return n;
+};
+const fid = (part, q, suffix = "") => `${part}.${q}${suffix}`;
+
+function cellInput(col, name) {
+  if (col.type === "select") {
+    const s = el("select", { name, "aria-label": col.label });
+    s.append(el("option", { value: "", text: "" }));
+    col.options.forEach((o) => s.append(el("option", { value: o, text: o })));
+    return s;
+  }
+  if (col.type === "textarea") return el("textarea", { name, "aria-label": col.label, rows: "2" });
+  return el("input", { type: "text", name, "aria-label": col.label });
+}
+
+function addRow(tbody, partId, q) {
+  const tr = el("tr");
+  q.columns.forEach((c) => tr.append(el("td", {}, cellInput(c, `${fid(partId, q.key)}.row.${c.key}`))));
+  const del = el("button", { type: "button", class: "small", text: "삭제" });
+  del.addEventListener("click", () => { tr.remove(); save(); });
+  tr.append(el("td", {}, del));
+  tbody.append(tr);
+  return tr;
+}
+
+function renderQuestion(partId, q) {
+  const box = el("div", { class: "q" });
+  const name = fid(partId, q.key);
+  box.append(el("label", { class: "qt", for: name, text: q.label }));
+  if (q.help) box.append(el("p", { class: "help", text: q.help }));
+  if (q.type === "text") box.append(el("input", { type: "text", id: name, name }));
+  if (q.type === "textarea") box.append(el("textarea", { id: name, name }));
+  if (q.type === "radio" || q.type === "checks") {
+    const wrap = el("div", { class: "opts", id: name });
+    q.options.forEach((o) => {
+      const inp = el("input", { type: q.type === "radio" ? "radio" : "checkbox", name, value: o });
+      wrap.append(el("label", {}, inp, document.createTextNode(o)));
+    });
+    box.append(wrap);
+    if (q.other) box.append(el("input", { type: "text", name: `${name}.other`,
+                                          placeholder: "기타·보충 설명", style: "margin-top:6px" }));
+  }
+  if (q.type === "range") {
+    const r = el("div", { class: "range", id: name });
+    [["min", "최소"], ["typical", "보통"], ["max", "최대"]].forEach(([k, l]) => {
+      r.append(el("label", {}, el("span", { text: l }), el("input", { type: "text", name: `${name}.${k}` })));
+    });
+    box.append(r);
+  }
+  if (q.type === "table") {
+    const table = el("table", { id: name });
+    const head = el("tr");
+    q.columns.forEach((c) => head.append(el("th", { text: c.label })));
+    head.append(el("th", { text: "" }));
+    table.append(el("thead", {}, head));
+    const tbody = el("tbody");
+    table.append(tbody);
+    for (let i = 0; i < q.rows; i++) addRow(tbody, partId, q);
+    const add = el("button", { type: "button", class: "small", text: "+ 행 추가" });
+    add.addEventListener("click", () => { addRow(tbody, partId, q); save(); });
+    box.append(el("div", { class: "tablewrap" }, table), add);
+  }
+  return box;
+}
+
+function render() {
+  const toc = document.getElementById("toc");
+  PARTS.forEach((p) => {
+    const sec = el("section", { class: "part", id: `part-${p.id}` },
+                   el("h2", { text: p.title }), el("p", { class: "why", text: p.why }));
+    p.qs.forEach((q) => sec.append(renderQuestion(p.id, q)));
+    form.append(sec);
+    toc.append(el("a", { href: `#part-${p.id}`, text: p.title }));
+  });
+}
+
+function readValue(partId, q) {
+  const name = fid(partId, q.key);
+  const val = (n) => form.querySelector(`[name="${n}"]`)?.value.trim() ?? "";
+  if (q.type === "text" || q.type === "textarea") return val(name);
+  if (q.type === "radio") {
+    const picked = form.querySelector(`[name="${name}"]:checked`);
+    return { choice: picked ? picked.value : "", other: q.other ? val(`${name}.other`) : undefined };
+  }
+  if (q.type === "checks") {
+    const picked = [...form.querySelectorAll(`[name="${name}"]:checked`)].map((i) => i.value);
+    return { choices: picked, other: q.other ? val(`${name}.other`) : undefined };
+  }
+  if (q.type === "range") return { min: val(`${name}.min`), typical: val(`${name}.typical`), max: val(`${name}.max`) };
+  if (q.type === "table") {
+    const rows = [...form.querySelectorAll(`#${CSS.escape(name)} tbody tr`)].map((tr) => {
+      const row = {};
+      q.columns.forEach((c) => {
+        row[c.key] = tr.querySelector(`[name="${name}.row.${c.key}"]`).value.trim();
+      });
+      return row;
+    });
+    return rows.filter((r) => Object.values(r).some((v) => v));
+  }
+}
+
+function collect() {
+  const out = {
+    schema: "teamweaver-schema-intake",
+    version: 1,
+    saved_at: new Date().toISOString(),
+    note: "각 답은 {question, answer} 형태다. 빈 문자열·빈 목록은 '모름/미입력'이다. 실데이터 값이 아니라 스키마 설명이다.",
+    table_columns: Object.fromEntries(ITEM_COLUMNS.map((c) => [c.key, c.label])),
+    parts: {},
+  };
+  PARTS.forEach((p) => {
+    const part = { title: p.title, answers: {} };
+    p.qs.forEach((q) => { part.answers[q.key] = { question: q.label, answer: readValue(p.id, q) }; });
+    out.parts[p.id] = part;
+  });
+  return out;
+}
+
+function clearAll() {
+  form.querySelectorAll("input[type=text], textarea, select").forEach((f) => { f.value = ""; });
+  form.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((f) => { f.checked = false; });
+  PARTS.forEach((p) => p.qs.filter((q) => q.type === "table").forEach((q) => {
+    const tbody = form.querySelector(`#${CSS.escape(fid(p.id, q.key))} tbody`);
+    tbody.innerHTML = "";
+    for (let i = 0; i < q.rows; i++) addRow(tbody, p.id, q);
+  }));
+}
+
+function isIntake(data) {
+  return data && data.schema === "teamweaver-schema-intake" && data.version === 1
+    && typeof data.parts === "object" && data.parts !== null;
+}
+
+// Replaces every answer: fields absent from `data` (e.g. an older version) end up empty,
+// never keeping a stale value from what this browser had autosaved.
+function apply(data) {
+  clearAll();
+  PARTS.forEach((p) => p.qs.forEach((q) => {
+    const a = data?.parts?.[p.id]?.answers?.[q.key]?.answer;
+    if (a === undefined) return;
+    const name = fid(p.id, q.key);
+    const set = (n, v) => { const f = form.querySelector(`[name="${n}"]`); if (f) f.value = v ?? ""; };
+    if (q.type === "text" || q.type === "textarea") set(name, a);
+    if (q.type === "radio") {
+      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = i.value === a.choice; });
+      if (q.other) set(`${name}.other`, a.other);
+    }
+    if (q.type === "checks") {
+      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = (a.choices || []).includes(i.value); });
+      if (q.other) set(`${name}.other`, a.other);
+    }
+    if (q.type === "range") ["min", "typical", "max"].forEach((k) => set(`${name}.${k}`, a[k]));
+    if (q.type === "table") {
+      const tbody = form.querySelector(`#${CSS.escape(name)} tbody`);
+      tbody.innerHTML = "";
+      const rows = a.length ? a : [];
+      for (let i = 0; i < Math.max(rows.length, q.rows); i++) {
+        const tr = addRow(tbody, p.id, q);
+        const row = rows[i];
+        if (row) q.columns.forEach((c) => { tr.querySelector(`[name="${name}.row.${c.key}"]`).value = row[c.key] ?? ""; });
+      }
+    }
+  }));
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(collect()));
+    statusEl.textContent = `자동 저장됨 ${new Date().toLocaleTimeString("ko-KR")}`;
+  } catch {
+    statusEl.textContent = "자동 저장 불가(브라우저 설정). JSON 저장을 이용하세요.";
+  }
+}
+
+function json() { return JSON.stringify(collect(), null, 2); }
+
+render();
+try {
+  const s = localStorage.getItem(STORE_KEY);
+  if (s && isIntake(JSON.parse(s))) { apply(JSON.parse(s)); statusEl.textContent = "이전 작성 내용을 불러왔습니다"; }
+} catch {}
+form.addEventListener("input", save);
+form.addEventListener("change", save);
+
+document.getElementById("btn-preview").addEventListener("click", () => {
+  document.getElementById("out").textContent = json();
+});
+document.getElementById("btn-save").addEventListener("click", () => {
+  const blob = new Blob([json()], { type: "application/json" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: "schema-intake.json" });
+  document.body.append(a); a.click(); a.remove();
+  statusEl.textContent = "schema-intake.json 저장 → teamweaver/private/ 로 옮겨 주세요";
+});
+document.getElementById("btn-copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(json()); statusEl.textContent = "JSON을 클립보드에 복사했습니다"; }
+  catch { document.getElementById("out").textContent = json(); statusEl.textContent = "복사 불가 — 미리보기에서 직접 복사하세요"; }
+});
+document.getElementById("btn-load").addEventListener("click", () => document.getElementById("file").click());
+document.getElementById("file").addEventListener("change", async (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  ev.target.value = "";
+  let data;
+  try { data = JSON.parse(await f.text()); }
+  catch { statusEl.textContent = "JSON을 읽지 못했습니다 — 작성 중인 내용은 그대로입니다"; return; }
+  if (!isIntake(data)) {
+    statusEl.textContent = "이 양식(version 1)의 JSON이 아닙니다 — 작성 중인 내용은 그대로입니다";
+    return;
+  }
+  apply(data); save(); statusEl.textContent = `${f.name}을 불러왔습니다`;
+});
+let resetArmed = false;
+document.getElementById("btn-reset").addEventListener("click", (ev) => {
+  if (!resetArmed) {
+    resetArmed = true; ev.target.textContent = "정말 비울까요? 한 번 더 누르기";
+    setTimeout(() => { resetArmed = false; ev.target.textContent = "전체 비우기"; }, 4000);
+    return;
+  }
+  try { localStorage.removeItem(STORE_KEY); } catch {}
+  location.reload();
+});
+</script>
+</body>
+</html>
