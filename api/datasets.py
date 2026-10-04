@@ -9,6 +9,8 @@ app.state.dataset 하나를 통째로 바꿔 끼운다 -- graph만 새것이고 
 """
 import hashlib
 import io
+import json
+import re
 import sqlite3
 import stat
 import struct
@@ -218,3 +220,56 @@ def extract_bundle_zip(data: bytes, dest: Path) -> Path:
                     f"풀면 {MAX_UNCOMPRESSED_BYTES // (1024 * 1024)}MiB를 넘는다(압축 폭탄 의심)")
             (dest / rel.name).write_bytes(body)
     return dest
+
+
+class DatasetStore:
+    """업로드한 묶음의 영속(K13, 사용자 지시로 K9의 '디스크에 두지 않음'을 바꿈).
+
+    검증을 통과한 zip 원본을 `<data>/datasets/<version>.zip`(0600)에, 활성 포인터를
+    `active.json`에 원자적으로 쓴다. 새로 저장하면 이전 zip은 지운다 -- 실제 인사 자료 사본을
+    하나만 둔다. 부팅 때 api.main이 포인터를 읽어 같은 검증·변환을 다시 거쳐 복원한다."""
+
+    def __init__(self, root: Path):
+        self.dir = root / "datasets"
+
+    @property
+    def pointer(self) -> Path:
+        return self.dir / "active.json"
+
+    def save(self, data: bytes, info: DatasetInfo) -> None:
+        from api.storage import atomic_write, ensure_private_dir
+        ensure_private_dir(self.dir)
+        zip_path = self.dir / f"{info.version}.zip"
+        atomic_write(zip_path, data)
+        try:
+            atomic_write(self.pointer, json.dumps({
+                "version": info.version, "dataset_id": info.dataset_id,
+                "activated_at": info.activated_at}, ensure_ascii=False).encode("utf-8"))
+        except OSError:
+            # 포인터를 못 바꿨으면 새 사본은 고아다 -- 지우고 이전 상태를 그대로 둔다.
+            zip_path.unlink(missing_ok=True)
+            raise
+        for old in self.dir.glob("*.zip"):
+            if old != zip_path:
+                old.unlink(missing_ok=True)
+
+    def clear(self) -> None:
+        self.pointer.unlink(missing_ok=True)
+        for old in self.dir.glob("*.zip") if self.dir.exists() else []:
+            old.unlink(missing_ok=True)
+
+    def load(self) -> tuple[dict, bytes] | None:
+        """(포인터, zip 바이트). 저장한 적 없으면 None. 깨졌으면 ValueError."""
+        try:
+            pointer = json.loads(self.pointer.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return None
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"활성 데이터셋 포인터를 읽지 못했다: {exc}") from exc
+        version = str(pointer.get("version", ""))
+        if not re.fullmatch(r"[0-9a-f]{64}", version):
+            raise ValueError("활성 데이터셋 포인터의 버전 형식이 올바르지 않다")
+        try:
+            return pointer, (self.dir / f"{version}.zip").read_bytes()
+        except OSError as exc:
+            raise ValueError(f"저장된 묶음 파일을 읽지 못했다: {exc}") from exc

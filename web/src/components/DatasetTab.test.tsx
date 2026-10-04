@@ -72,3 +72,21 @@ describe("DatasetTab", () => {
     await waitFor(() => expect(onSwitched).toHaveBeenCalledWith(FIXTURE));
   });
 });
+
+
+describe("DatasetTab — 저장(K13)", () => {
+  it("부팅 때 복원에 실패했으면 이유를 보여 준다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, restore_error: "해시가 다르다" }} onSwitched={vi.fn()} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("해시가 다르다");
+  });
+
+  it("전환은 됐지만 서버 저장에 실패했으면 알린다", async () => {
+    vi.mocked(uploadDataset).mockResolvedValue({
+      activated: true, dataset: { ...FIXTURE, source: "upload" }, persisted: false,
+      persist_error: "서버에 저장하지 못했다(재기동하면 기본 데이터로 돌아간다)",
+      report: { errors: [], warnings: [], notes: [], row_counts: {} } });
+    render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} />);
+    pick();
+    expect(await screen.findByText(/재기동하면 기본 데이터로 돌아간다/)).toBeInTheDocument();
+  });
+});

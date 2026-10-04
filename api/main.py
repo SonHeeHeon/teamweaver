@@ -13,7 +13,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.cache import ResultCache
-from api.datasets import ActiveDataset, build_active, dir_version
+from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
+from api.routes.datasets import validate_and_build
+from api.plan_edits import PlanEditStore
+from api.storage import data_dir
 from api.settings import SettingsStore, default_settings_path
 from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
@@ -41,7 +44,30 @@ async def lifespan(app: FastAPI):
                             source="fixture", synthetic=True)
 
     app.state.build_fixture_dataset = build_fixture_dataset
-    app.state.dataset = build_fixture_dataset()
+    # 업로드해 둔 데이터가 있으면 그것으로 뜬다(K13). 같은 검증·변환을 다시 거치고, 내용
+    # 해시가 저장 당시 버전과 다르면 거부한다. 실패하면 기본 데이터로 뜨고 이유를 화면에 알린다.
+    store = DatasetStore(data_dir())
+    app.state.dataset_store = store
+    app.state.plan_edit_store = PlanEditStore(data_dir())
+    app.state.dataset_restore_error = None
+    restored = None
+    try:
+        saved = store.load()
+        if saved is not None:
+            pointer, blob = saved
+            active, report, archive_error = validate_and_build(blob)
+            if active is None:
+                raise ValueError(archive_error or "저장된 묶음이 지금 검증을 통과하지 못한다: "
+                                 + "; ".join(e["message"] for e in (report or {}).get("errors", [])[:3]))
+            if active.info.version != pointer["version"]:
+                raise ValueError("저장된 묶음의 내용 해시가 저장 당시와 다르다")
+            restored = active
+    except Exception as exc:                        # noqa: BLE001
+        # 어떤 이유로 실패해도(로더 계약 변경으로 옛 묶음이 새 코드에서 터지는 경우 포함) 서버는
+        # 기본 데이터로 뜬다 -- 저장본이 남아 있어 재기동마다 죽는 일을 막는다(Opus 리뷰 S4).
+        log.error("업로드 데이터 복원 실패, 기본 데이터로 시작한다: %s", exc)
+        app.state.dataset_restore_error = str(exc)
+    app.state.dataset = restored or build_fixture_dataset()
     app.state.dataset_lock = asyncio.Lock()
     graph = app.state.dataset.graph
 

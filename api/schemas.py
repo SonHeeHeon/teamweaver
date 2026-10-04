@@ -6,6 +6,12 @@ from api.settings import PlacementSettings
 from core.optimize.milp import MilpParams
 
 
+
+# PDF 재계산 상한(Codex 2라운드): 교체마다 명단 전체를 두 번 평가하므로 무제한이면 요청 하나가
+# 서버를 오래 붙잡는다. 화면의 정상 사용(교체 수십 건)보다 넉넉하다.
+MAX_APPLIED_SWAPS = 50
+MAX_PLAN_ENTRIES = 5000
+
 class PersonOut(BaseModel):
     id: str
     name: str
@@ -147,6 +153,19 @@ class ApplySwapResponse(BaseModel):
     warnings: list[str]           # 이 교체로 새로 생긴 위반·미충원 문장
 
 
+class PlanEditIn(BaseModel):
+    """PUT /api/plans/edits/{plan_token} 본문(K13). 원 플랜(서명 검증용)과 적용한 교체 순서."""
+    model_config = ConfigDict(extra="forbid")
+    plan_label: str
+    base_entries: list["EntryIn"] = Field(max_length=MAX_PLAN_ENTRIES)
+    weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
+    milp_params: MilpParamsIn | None = None
+    dataset_version: str
+    swaps: list["SwapIn"] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
+    # 화면이 보낸 단조 증가 번호. 늦게 도착한 옛 요청이 나중 상태를 덮지 못하게 한다.
+    revision: int = Field(ge=0)
+
+
 class EntryIn(BaseModel):
     """api.routes.whatif과 api.routes.report이 공유하는 배치 항목 모델.
     여기 두는 이유: schemas.py -> routes 방향으로만 import가 흐르게 해서
@@ -163,10 +182,6 @@ class SwapIn(BaseModel):
     project_id: str
 
 
-# PDF 재계산 상한(Codex 2라운드): 교체마다 명단 전체를 두 번 평가하므로 무제한이면 요청 하나가
-# 서버를 오래 붙잡는다. 화면의 정상 사용(교체 수십 건)보다 넉넉하다.
-MAX_APPLIED_SWAPS = 50
-MAX_PLAN_ENTRIES = 5000
 
 
 class ReportRequest(BaseModel):

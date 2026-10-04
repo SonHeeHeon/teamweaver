@@ -73,12 +73,17 @@ export function DatasetTab({ active, onSwitched, adminToken = null }: Props) {
         <h2 className="mb-1 text-lg font-semibold text-slate-900">데이터</h2>
         <p className="text-sm text-slate-500">
           인력·프로젝트 CSV 묶음(manifest.json 포함)을 zip 하나로 올린다. 검증에 오류가 하나라도
-          있으면 전환하지 않는다. 전환은 이 서버를 쓰는 모든 사용자에게 적용된다. 올린 데이터는
-          서버 메모리에만 있고(검사용 임시 파일은 바로 지운다), 서버를 다시 켜면 기본 데이터로
-          돌아간다.
+          있으면 전환하지 않는다. 전환은 이 서버를 쓰는 모든 사용자에게 적용된다. 올린 묶음은
+          서버의 보호된 폴더에 하나만 보관되어 서버를 다시 켜도 유지되고, "기본 데이터로
+          되돌리기"를 하면 보관본도 지운다.
         </p>
       </div>
 
+      {active?.restore_error && (
+        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          저장된 업로드 데이터를 복원하지 못해 기본 데이터로 시작했다: {active.restore_error}
+        </p>
+      )}
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
         <p className="text-xs font-medium text-slate-500">지금 계산에 쓰는 데이터</p>
         {active ? (
@@ -125,6 +130,9 @@ export function DatasetTab({ active, onSwitched, adminToken = null }: Props) {
               ? "검증을 통과해 이 데이터로 전환했다. 이전 계산 결과는 지웠다."
               : `전환하지 않았다 — ${result.detail ?? "검증 오류가 있다."}`}
           </p>
+          {result.activated && result.persisted === false && (
+            <p role="alert" className="text-sm text-amber-800">{result.persist_error}</p>
+          )}
           {report && (
             <>
               <IssueList title="오류" items={report.errors} tone="error" />

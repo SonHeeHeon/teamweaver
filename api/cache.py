@@ -6,14 +6,19 @@ n_alternatives 전체를 보내는 stateless 계약은 그대로다. 이 캐시�
 서버가 클라이언트별 상태를 기억하는 것이 아니다."""
 import hashlib
 import json
+from collections import OrderedDict
 
 from core.optimize.milp import MilpParams
 from core.optimize.types import PlanAssignment
 
 
 class ResultCache:
+    """최근 MAX_ENTRIES개만 기억하는 LRU. 데이터셋을 바꿀 때마다 옛 버전 키가 쌓여 메모리가
+    계속 늘던 것을 막는다(claude-a 교차 리뷰 L2). 부팅 사전계산 결과도 다른 키처럼 밀려날 수 있다."""
+    MAX_ENTRIES = 32
+
     def __init__(self):
-        self._store: dict[str, list[PlanAssignment]] = {}
+        self._store: OrderedDict[str, list[PlanAssignment]] = OrderedDict()
 
     @staticmethod
     def key(weights: dict, milp_params: MilpParams | dict, n_alternatives: int,
@@ -33,7 +38,13 @@ class ResultCache:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> list | None:
-        return self._store.get(key)
+        plans = self._store.get(key)
+        if plans is not None:
+            self._store.move_to_end(key)
+        return plans
 
     def put(self, key: str, plans: list) -> None:
         self._store[key] = plans
+        self._store.move_to_end(key)
+        while len(self._store) > self.MAX_ENTRIES:
+            self._store.popitem(last=False)

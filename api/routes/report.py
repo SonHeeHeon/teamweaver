@@ -23,7 +23,7 @@ from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_dataset, get_graph
 from api.plan_token import verify_plan
 from api.routes.meta import build_meta
-from api.routes.plans import apply_one
+from api.routes.plans import apply_one, roster_metrics
 from api.schemas import EntryIn, ReportRequest
 from core.config import REPO_ROOT
 from core.graph.memory_graph import MemoryGraph
@@ -110,9 +110,10 @@ async def _send_413(send: Send, limit: int) -> None:
     await send({"type": "http.response.body", "body": body})
 
 
-# 교체 재계산·meta 생성을 돌리는 전용 스레드 풀. 슬롯 수(동시 PDF)와 같은 크기라, 시간 초과로
-# 버려진 스레드가 아직 돌고 있으면 새 계산이 그 뒤에 줄 선다 -- 그리고 슬롯은 스레드가 실제로
-# 끝날 때 반납한다(아래 report()). 파이썬 스레드는 강제로 멈출 수 없어서다(Codex 통합 리뷰).
+# 교체 재계산·meta 생성을 돌리는 전용 스레드 풀(4개). 동시 계산 수는 풀 크기가 아니라 PDF 슬롯
+# (기본 2, TEAMWEAVER_PDF_MAX_CONCURRENCY)이 정한다 -- 슬롯은 스레드가 실제로 끝날 때 반납한다
+# (아래 report()). 파이썬 스레드는 강제로 멈출 수 없어서다(Codex 통합 리뷰). 풀은 슬롯 상한을
+# 환경변수로 4까지 올려도 줄 서지 않게 넉넉히 둔다.
 _PREP_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=4, thread_name_prefix="pdf-prep")
 # 서버가 브라우저에 넣는 최종 PDF 데이터(클라이언트 본문 + 재계산 + meta) 상한. 본문 상한(2MiB)은
 # 클라이언트 입력만 재므로, 서버가 덧붙인 것까지 포함해 한 번 더 잰다.
@@ -171,11 +172,16 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
     """적용한 교체를 원 플랜 명단(base_entries)에서 서버가 다시 적용한다(K10).
     PDF에 찍히는 명단·지표·교체별 Δ·경고·최종 위반은 모두 여기서 나온다. 교체가 없으면
     아무것도 덮어쓰지 않는다(기존 PDF 계약 그대로). 잘못된 교체는 404/422로 끝난다."""
-    if not req.applied_swaps:
-        return {"applied_swaps": [], "applied_violations": []}
     params = req.milp_params.to_milp_params() if req.milp_params else MilpParams()
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
+    if not req.applied_swaps:
+        # 교체가 없어도 지표는 서버가 명단으로 다시 계산한다 -- 화면이 보낸 숫자를 그대로 찍고
+        # 옆에 "서명 확인"을 붙이면 숫자까지 검증된 것으로 읽힌다(claude-a 교차 리뷰 S1).
+        m = roster_metrics(graph, S, C, params, req.weights, req.entries)
+        return {"objective": m["objective"], "fulfillment": m["fulfillment"],
+                "optimization_ratio": m["optimization_ratio"], "unfilled": m["unfilled"],
+                "applied_swaps": [], "applied_violations": m["violations"]}
     ub = _skill_relaxation_upper_bound(graph, S, params)       # 요청당 한 번
     entries, records, last = req.base_entries, [], None
     for swap in req.applied_swaps:
@@ -193,6 +199,9 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
 async def report(req: ReportRequest, request: Request,
                  dataset: ActiveDataset = Depends(get_dataset),
                  graph: MemoryGraph = Depends(get_graph)) -> Response:
+    # 데이터셋 버전은 가장 먼저 본다 -- 원인이 더 정확하고(빌드가 없어도 409), 값싸다
+    # (claude-a 교차 리뷰 S3).
+    check_dataset_version(req.dataset_version, dataset)
     try:
         import playwright                           # noqa: F401
     except ImportError:
@@ -217,8 +226,7 @@ async def report(req: ReportRequest, request: Request,
     except OriginUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    # 값싼 검사(데이터셋 버전·원 플랜 서명)는 슬롯을 잡기 전에 끝낸다(K9·K10).
-    check_dataset_version(req.dataset_version, dataset)
+    # 값싼 검사(원 플랜 서명)는 슬롯을 잡기 전에 끝낸다(K10).
     provenance = _plan_provenance(req, dataset.info.version)
 
     # 동시성 상한은 무거운 계산(교체 재생 + 브라우저) *전에* 건다(K4 + Codex K10 리뷰).

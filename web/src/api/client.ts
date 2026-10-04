@@ -1,6 +1,6 @@
 import type {
-  Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse,
-  Swap, UploadResult, WhatifResponse,
+  Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
+  SavedPlanEdits, SettingsResponse, Swap, UploadResult, WhatifResponse,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
@@ -104,6 +104,37 @@ export async function applySwap(
     throw new Error(`교체 적용 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
   }
   return (await res.json()) as ApplySwapResponse;
+}
+
+/** 플랜에 적용한 교체를 서버에 저장한다(K13). swaps가 비면 저장분을 지운다.
+ *  서버는 원 플랜 서명(plan_token)을 검증하고 교체를 다시 적용해 본 뒤 저장한다. */
+export async function savePlanEdits(
+  planToken: string,
+  body: { plan_label: string; base_entries: AssignEntry[]; weights: Record<string, number>;
+          milp_params: PlacementSettings | null; dataset_version: string; swaps: Swap[];
+          revision: number },
+): Promise<{ applied: boolean }> {
+  const res = await fetch(`${API_BASE}/api/plans/edits/${encodeURIComponent(planToken)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`적용 교체 저장 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
+  }
+  // applied=false: 서버에 더 최근 저장(다른 탭·사용자)이 있어 이 요청은 무시됐다.
+  const result = await res.json().catch(() => ({}));
+  return { applied: result.applied !== false };
+}
+
+/** 저장된 적용 교체를 불러온다. 없으면 null(서버는 빈 목록을 준다). */
+export async function loadPlanEdits(planToken: string): Promise<SavedPlanEdits | null> {
+  const res = await fetch(`${API_BASE}/api/plans/edits/${encodeURIComponent(planToken)}`);
+  if (!res.ok) throw new Error(`적용 교체 불러오기 실패(${res.status})`);
+  const body = (await res.json()) as SavedPlanEdits;
+  return body.steps.length ? body : null;
 }
 
 export interface OptimizeRequest {
@@ -220,8 +251,12 @@ export async function uploadDataset(file: Blob, adminToken: string | null = null
 }
 
 export async function resetDataset(adminToken: string | null = null): Promise<DatasetInfo> {
-  const res = await fetch(`${API_BASE}/api/datasets/reset`,
-                          { method: "POST", headers: adminHeaders(adminToken) });
+  // JSON으로 보낸다: 서버는 교차 사이트 단순 POST를 막으려고 JSON 요청만 받는다.
+  const res = await fetch(`${API_BASE}/api/datasets/reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
+    body: "{}",
+  });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(`되돌리기 실패(${res.status}): ${detail.detail ?? ""}`);

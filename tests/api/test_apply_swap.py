@@ -175,10 +175,17 @@ def test_report_rejects_applied_swaps_without_base_or_invalid_swap(tiny, monkeyp
     assert bad.status_code == 422                             # 원 명단에 없는 교체 대상
 
 
-def test_report_without_applied_swaps_keeps_client_plan(tiny, monkeypatch, tmp_path):
+def test_report_without_applied_swaps_recomputes_metrics(tiny, monkeypatch, tmp_path):
+    """교체가 없어도 PDF 지표는 서버가 명단으로 다시 계산한다(claude-a 교차 리뷰 S1)."""
     seen = _report_ready(tiny, monkeypatch, tmp_path)
-    assert tiny.post("/api/report", json=_REPORT).status_code == 200
-    assert seen[0]["objective"] == 999.0 and seen[0]["applied_swaps"] == []
+    body = {**_REPORT, "entries": [{"person_id": "p0", "project_id": "j0", "alloc": 0.5}]}
+    assert tiny.post("/api/report", json=body).status_code == 200
+    p = seen[0]
+    assert p["objective"] != 999.0 and p["applied_swaps"] == []
+    direct = _apply(tiny, [("p0", "j0", 0.5)], "p0", "p1").json()
+    assert p["objective"] == pytest.approx(direct["objective"] - direct["objective_delta"])
+    # 명단에 없는 사람·프로젝트는 지표를 낼 수 없다 -> 422
+    assert tiny.post("/api/report", json=_REPORT).status_code == 422
 
 
 # --- Codex 리뷰 2라운드 반영 ----------------------------------------------

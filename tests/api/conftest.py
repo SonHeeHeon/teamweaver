@@ -27,6 +27,25 @@ from core.graph.memory_graph import MemoryGraph
 from core.graph.sqlite_store import build_sqlite
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _session_private_dirs(tmp_path_factory):
+    """모듈 단위 실서버 픽스처(live_server 등)는 함수 단위 격리보다 *먼저* 뜬다. 그때도 사용자 홈의
+    ~/.teamweaver(설정·업로드 데이터·적용 교체·서명키)를 읽거나 쓰지 않게 세션 시작에 임시 폴더로
+    돌린다. 함수 단위 픽스처(settings_path·data_dir)가 테스트마다 다시 덮는다."""
+    import os
+    base = tmp_path_factory.mktemp("teamweaver-session")
+    keys = ("TEAMWEAVER_DATA_DIR", "TEAMWEAVER_SETTINGS_PATH")
+    saved = {k: os.environ.get(k) for k in keys}
+    os.environ["TEAMWEAVER_DATA_DIR"] = str(base / "data")
+    os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(base / "settings.json")
+    yield
+    for k, v in saved.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+
+
 @pytest.fixture(autouse=True)
 def _skip_warm(monkeypatch):
     monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "1")
@@ -38,6 +57,15 @@ def settings_path(monkeypatch, tmp_path):
     ~/.teamweaver/settings.json을 읽거나 덮어쓰지 않게 한다."""
     path = tmp_path / "teamweaver-settings" / "settings.json"
     monkeypatch.setenv("TEAMWEAVER_SETTINGS_PATH", str(path))
+    return path
+
+
+@pytest.fixture(autouse=True)
+def data_dir(monkeypatch, tmp_path):
+    """영속 저장 폴더(K13: 업로드 데이터·적용 교체·서명키)를 테스트마다 빈 임시 폴더로 돌린다."""
+    path = tmp_path / "teamweaver-data"
+    monkeypatch.setenv("TEAMWEAVER_DATA_DIR", str(path))
+    monkeypatch.delenv("TEAMWEAVER_PLAN_SECRET", raising=False)
     return path
 
 

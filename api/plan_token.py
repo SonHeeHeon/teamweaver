@@ -4,19 +4,52 @@
 붙이고, PDF 요청은 원 플랜과 함께 그 토큰을 돌려보낸다. 토큰은 (데이터셋 버전, 라벨,
 명단, 가중치, 적용 MILP 파라미터)에 묶인다 -- 하나라도 바꾸면 검증에 실패한다.
 
-비밀키는 TEAMWEAVER_PLAN_SECRET이 있으면 그것, 없으면 프로세스 시작 때 무작위로 만든다
-(재기동하면 이전 토큰은 무효 -- 그때의 PDF는 '미검증'으로 표시된다).
+비밀키(K13에서 고정): TEAMWEAVER_PLAN_SECRET이 있으면 그것. 없으면 데이터 폴더의
+plan_secret 파일(처음 한 번 무작위 32바이트로 만들고 0600)을 계속 쓴다 -- 재기동해도 같은
+키라 이전 화면의 서명과 저장된 적용 교체(키가 plan_token)가 그대로 유효하다. 파일을 쓸 수
+없으면 경고하고 프로세스 임시 키로 동작한다(그때는 재기동하면 서명이 무효가 된다).
 """
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 
+from api.storage import data_dir, ensure_private_dir
 from core.optimize.milp import MilpParams
 
-_SECRET = (os.environ.get("TEAMWEAVER_PLAN_SECRET", "").encode()
-           or secrets.token_bytes(32))
+log = logging.getLogger(__name__)
+_cache: dict[str, bytes] = {}
+
+
+def _secret() -> bytes:
+    env = os.environ.get("TEAMWEAVER_PLAN_SECRET", "").strip()
+    if env:
+        return env.encode()
+    path = data_dir() / "plan_secret"
+    key = str(path)
+    if key in _cache:
+        return _cache[key]
+    try:
+        if not path.exists():
+            # 처음 만들 때 여러 워커가 동시에 만들어 서로 다른 키를 쓰지 않게 O_EXCL로 만든다 --
+            # 이미 있으면(다른 워커가 먼저 만듦) 그 파일을 읽는다.
+            ensure_private_dir(path.parent)
+            try:
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, "w", encoding="ascii") as f:
+                    f.write(secrets.token_bytes(32).hex())
+            except FileExistsError:
+                pass
+        value = bytes.fromhex(path.read_text(encoding="ascii").strip())
+        if len(value) < 32:
+            raise ValueError("plan_secret 파일이 너무 짧다")
+    except (OSError, ValueError) as exc:
+        log.warning("플랜 서명키를 %s에 고정하지 못해 임시 키를 쓴다(재기동하면 서명 무효): %s", path, exc)
+        value = secrets.token_bytes(32)
+    _cache[key] = value
+    return value
 
 
 def _canonical(dataset_version: str, label: str, entries: list[dict], weights: dict,
@@ -29,7 +62,7 @@ def _canonical(dataset_version: str, label: str, entries: list[dict], weights: d
 
 def sign_plan(dataset_version: str, label: str, entries: list[dict], weights: dict,
               params: MilpParams) -> str:
-    return hmac.new(_SECRET, _canonical(dataset_version, label, entries, weights, params),
+    return hmac.new(_secret(), _canonical(dataset_version, label, entries, weights, params),
                     hashlib.sha256).hexdigest()
 
 

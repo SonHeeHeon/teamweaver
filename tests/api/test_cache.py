@@ -23,3 +23,13 @@ def test_put_then_get_round_trips():
     k = ResultCache.key({}, {}, 1, "v")
     c.put(k, ["fake-plan-list"])
     assert c.get(k) == ["fake-plan-list"]
+
+
+def test_cache_evicts_least_recently_used_beyond_cap(monkeypatch):
+    """데이터셋 전환마다 옛 키가 쌓이지 않게 상한을 둔다(claude-a 교차 리뷰 L2)."""
+    monkeypatch.setattr(ResultCache, "MAX_ENTRIES", 2)
+    c = ResultCache()
+    c.put("a", [1]); c.put("b", [2])
+    assert c.get("a") == [1]                 # a를 최근 사용으로
+    c.put("c", [3])
+    assert c.get("b") is None and c.get("a") == [1] and c.get("c") == [3]

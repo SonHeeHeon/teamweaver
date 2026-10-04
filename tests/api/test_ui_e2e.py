@@ -4,6 +4,7 @@
 계약 불일치(dataset_version 전파, optimize가 준 plan_token의 PDF 검증, % 변환)를 여기서 본다.
 LLM은 부르지 않는다(get_openai_client_or_none → None, 규칙 기반 브리핑).
 """
+import contextlib
 import csv
 import io
 import os
@@ -30,14 +31,17 @@ def _dist_missing() -> bool:
     return not (REPO_ROOT / "web" / "dist" / "index.html").exists()
 
 
-@pytest.fixture(scope="module")
-def server(tmp_path_factory):
-    tmp = tmp_path_factory.mktemp("ui-e2e")
+@contextlib.contextmanager
+def _run_server(data: Path):
+    """data 폴더(설정·업로드 데이터·적용 교체·서명키)를 쓰는 실서버 하나를 띄운다."""
     saved = {k: os.environ.get(k) for k in
-             ("TEAMWEAVER_SKIP_WARM", "TEAMWEAVER_SETTINGS_PATH", "TEAMWEAVER_ADMIN_TOKEN")}
+             ("TEAMWEAVER_SKIP_WARM", "TEAMWEAVER_SETTINGS_PATH", "TEAMWEAVER_ADMIN_TOKEN",
+              "TEAMWEAVER_DATA_DIR", "TEAMWEAVER_PLAN_SECRET")}
     os.environ["TEAMWEAVER_SKIP_WARM"] = "1"
-    os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(tmp / "settings.json")
+    os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(data / "settings.json")
+    os.environ["TEAMWEAVER_DATA_DIR"] = str(data)
     os.environ.pop("TEAMWEAVER_ADMIN_TOKEN", None)
+    os.environ.pop("TEAMWEAVER_PLAN_SECRET", None)
     prev_override = app.dependency_overrides.get(get_openai_client_or_none)
     app.dependency_overrides[get_openai_client_or_none] = lambda: None
     with socket.socket() as s:
@@ -53,7 +57,7 @@ def server(tmp_path_factory):
             time.sleep(0.1)
         else:
             raise RuntimeError("uvicorn이 기동하지 않았다")
-        yield f"http://127.0.0.1:{port}", tmp
+        yield f"http://127.0.0.1:{port}"
     finally:
         srv.should_exit = True
         t.join(timeout=10)
@@ -66,6 +70,13 @@ def server(tmp_path_factory):
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+@pytest.fixture(scope="module")
+def server(tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("ui-e2e")
+    with _run_server(tmp / "data") as base:
+        yield base, tmp
 
 
 def _bundle_zip(dest) -> tuple:
@@ -160,3 +171,66 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
     compact = re.sub(r"\s+", "", swap_line)
     assert any(n in compact for n in uploaded_names), f"교체 행에 업로드 인력이 없다: {swap_line!r}"
     assert errors == [], f"브라우저 콘솔 오류: {errors}"
+
+
+
+def _optimize(page, expect):
+    page.get_by_role("button", name="요건 설정").click()
+    page.get_by_role("button", name="최적화 실행").click()
+    expect(page.get_by_text("Plan A", exact=True)).to_be_visible(timeout=120_000)
+    expect(page.get_by_text(re.compile("대안 계산 중"))).to_have_count(0, timeout=180_000)
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
+    """K13: 업로드 데이터·적용 교체·서명키가 재기동 후에도 유지된다(실제로 서버를 껐다 켠다)."""
+    from playwright.sync_api import expect, sync_playwright
+
+    data = tmp_path / "data"
+    zip_path, uploaded_names = _bundle_zip(tmp_path)
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        try:
+            # 1) 첫 서버: 업로드 → 최적화 → 교체 적용
+            with _run_server(data) as base:
+                page = browser.new_page()
+                page.set_default_timeout(60_000)
+                page.goto(base + "/")
+                page.get_by_role("button", name="데이터", exact=True).click()
+                page.get_by_label("묶음 zip 파일").set_input_files(str(zip_path))
+                with page.expect_response(lambda r: r.url.endswith("/api/meta")):
+                    page.get_by_role("button", name="검증 후 전환").click()
+                expect(page.get_by_text("이 데이터로 전환했다")).to_be_visible()
+                _optimize(page, expect)
+                out_sel = page.get_by_label("교체 대상")
+                out_sel.select_option(out_sel.locator("option").nth(1).get_attribute("value"))
+                in_sel = page.get_by_label("교체 투입")
+                in_sel.select_option(in_sel.locator("option").nth(1).get_attribute("value"))
+                page.get_by_role("button", name=re.compile("브리핑 생성")).click()
+                with page.expect_response(lambda r: "/api/plans/edits/" in r.url
+                                          and r.request.method == "PUT") as saved:
+                    page.get_by_role("button", name="이 교체 적용").click()
+                assert saved.value.ok
+                expect(page.get_by_text(re.compile("교체 1건 적용"))).to_be_visible()
+                page.close()
+
+            # 2) 재기동: 같은 데이터 폴더로 새 서버
+            with _run_server(data) as base:
+                page = browser.new_page(accept_downloads=True)
+                page.set_default_timeout(60_000)
+                page.goto(base + "/")
+                page.get_by_role("button", name="데이터", exact=True).click()
+                expect(page.get_by_text("synthetic-n20-p4-s11")).to_be_visible()
+                _optimize(page, expect)
+                expect(page.get_by_text(re.compile("저장해 둔 적용 교체 1건을 불러왔다"))).to_be_visible()
+                expect(page.get_by_text(re.compile("교체 1건 적용"))).to_be_visible()
+                with page.expect_download(timeout=120_000) as dl:
+                    page.get_by_role("button", name="PDF 내려받기").click()
+                pdf_bytes = Path(dl.value.path()).read_bytes()
+        finally:
+            browser.close()
+    text = _pdf_text(pdf_bytes)
+    assert "적용된 교체 1건" in text
+    assert "서명 확인" in text, "재기동 후 서명키가 바뀌었다"
+    swap_line = next((ln for ln in text.splitlines() if "→" in ln and "빠진 인력" not in ln), "")
+    assert any(n in re.sub(r"\s+", "", swap_line) for n in uploaded_names)

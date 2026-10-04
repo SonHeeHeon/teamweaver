@@ -19,6 +19,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from api.storage import data_dir
 from core.optimize.milp import MilpParams
 
 log = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ class SettingsState:
 
 def default_settings_path() -> Path:
     raw = os.environ.get(SETTINGS_PATH_ENV, "").strip()
-    return Path(raw).expanduser() if raw else Path.home() / ".teamweaver" / "settings.json"
+    return Path(raw).expanduser() if raw else data_dir() / "settings.json"
 
 
 class SettingsStore:

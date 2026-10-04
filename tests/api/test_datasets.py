@@ -171,7 +171,7 @@ def test_upload_over_size_limit_is_413(client, monkeypatch, bundle_zip):
 def test_reset_returns_to_fixture(client, bundle_zip):
     fixture = client.get("/api/datasets/active").json()
     client.post("/api/datasets", content=bundle_zip, headers=ZIP)
-    res = client.post("/api/datasets/reset")
+    res = client.post("/api/datasets/reset", json={})
     assert res.status_code == 200
     assert res.json()["version"] == fixture["version"]
     assert len(client.get("/api/meta").json()["people"]) == 100
@@ -207,7 +207,7 @@ def test_upload_while_another_is_running_is_409(client, bundle_zip, monkeypatch)
 
     monkeypatch.setattr(client.app.state, "dataset_lock", Busy())
     assert client.post("/api/datasets", content=bundle_zip, headers=ZIP).status_code == 409
-    assert client.post("/api/datasets/reset").status_code == 409
+    assert client.post("/api/datasets/reset", json={}).status_code == 409
 
 
 # --- 캐시 분리 -----------------------------------------------------------
@@ -313,7 +313,7 @@ def test_admin_token_guards_switch_reset_and_settings(client, bundle_zip, monkey
     monkeypatch.setenv("TEAMWEAVER_ADMIN_TOKEN", "s3cret")
     assert client.get("/api/admin").json() == {"token_required": True}
     assert client.post("/api/datasets", content=bundle_zip, headers=ZIP).status_code == 401
-    assert client.post("/api/datasets/reset").status_code == 401
+    assert client.post("/api/datasets/reset", json={}).status_code == 401
     settings = client.get("/api/settings").json()["settings"]
     put = {"settings": settings, "based_on": None}
     assert client.put("/api/settings", json=put).status_code == 401
@@ -403,3 +403,106 @@ def test_report_payload_carries_meta_of_the_acquired_dataset(client, monkeypatch
     assert {p["id"] for p in meta["people"]} == {"p000", "p001"}
     assert {j["id"] for j in meta["projects"]} == {"j00"}
     assert all({c["a_id"], c["b_id"]} <= {"p000", "p001"} for c in meta["coworks"])
+
+
+# --- K13: 업로드 데이터 영속 ------------------------------------------------
+
+def test_uploaded_dataset_survives_restart(client, bundle_zip, data_dir):
+    import stat as st
+
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    res = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()
+    assert res["activated"] and res["persisted"] is True
+    version = res["dataset"]["version"]
+    saved = data_dir / "datasets" / f"{version}.zip"
+    assert saved.read_bytes() == bundle_zip
+    assert st.S_IMODE(saved.stat().st_mode) == 0o600                  # 실데이터 사본은 소유자만
+    assert st.S_IMODE((data_dir / "datasets").stat().st_mode) == 0o700
+    with TestClient(app) as again:                                     # 재기동
+        info = again.get("/api/datasets/active").json()
+        assert info["version"] == version and info["source"] == "upload"
+        assert info["restore_error"] is None
+        assert len(again.get("/api/meta").json()["people"]) == 12
+
+
+def test_new_upload_replaces_previous_copy(client, bundle, data_dir, tmp_path):
+    first = _zip_dir(bundle)
+    client.post("/api/datasets", content=first, headers=ZIP)
+    other = generate_bundle(tmp_path / "other", 10, 2, 9)
+    second = client.post("/api/datasets", content=_zip_dir(other), headers=ZIP).json()
+    zips = sorted(p.name for p in (data_dir / "datasets").glob("*.zip"))
+    assert zips == [f"{second['dataset']['version']}.zip"]              # 사본은 하나만
+
+
+def test_reset_deletes_saved_copy_and_restart_uses_fixture(client, bundle_zip, data_dir):
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    client.post("/api/datasets", content=bundle_zip, headers=ZIP)
+    assert client.post("/api/datasets/reset", json={}).status_code == 200
+    assert not list((data_dir / "datasets").glob("*"))
+    with TestClient(app) as again:
+        assert again.get("/api/datasets/active").json()["source"] == "fixture"
+
+
+def test_tampered_saved_copy_falls_back_to_fixture_with_reason(client, bundle_zip, data_dir):
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["version"]
+    (data_dir / "datasets" / f"{version}.zip").write_bytes(b"PK broken")
+    with TestClient(app) as again:
+        info = again.get("/api/datasets/active").json()
+        assert info["source"] == "fixture"
+        assert info["restore_error"]
+
+
+def test_reset_rejects_non_json_request(client):
+    """본문 없는 단순 POST(교차 사이트 폼으로 보낼 수 있다)는 받지 않는다."""
+    assert client.post("/api/datasets/reset").status_code == 415
+    assert client.post("/api/datasets/reset", data={"x": "1"}).status_code == 415
+
+
+def test_conversion_exception_without_report_error_is_shown(client, bundle_zip, monkeypatch):
+    """변환 예외가 리포트에 오류를 남기지 않아도 사용자에게 이유가 보인다(S2)."""
+    import api.routes.datasets as route
+
+    def boom(bundle, report):
+        raise ValueError("모델 검증 실패 XYZZY")
+
+    monkeypatch.setattr(route, "to_dataset", boom)
+    res = client.post("/api/datasets", content=bundle_zip, headers=ZIP)
+    assert res.status_code == 422
+    assert any("XYZZY" in e["message"] for e in res.json()["report"]["errors"])
+
+
+def test_swapped_saved_copy_with_other_valid_bundle_is_rejected(client, bundle_zip, data_dir, tmp_path):
+    """저장 파일을 다른 *유효한* 묶음으로 바꿔치기해도 내용 해시가 달라 복원하지 않는다."""
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["version"]
+    other = generate_bundle(tmp_path / "other", 10, 2, 9)
+    (data_dir / "datasets" / f"{version}.zip").write_bytes(_zip_dir(other))
+    with TestClient(app) as again:
+        info = again.get("/api/datasets/active").json()
+        assert info["source"] == "fixture" and "해시" in info["restore_error"]
+
+
+
+def test_unexpected_restore_error_still_boots_with_fixture(client, bundle_zip, monkeypatch):
+    """복원 중 예상 밖 예외(로더 계약 변경 등)도 서버를 죽이지 않는다(Opus 리뷰 S4)."""
+    from fastapi.testclient import TestClient
+
+    import api.main as main
+    client.post("/api/datasets", content=bundle_zip, headers=ZIP)
+
+    def boom(data):
+        raise KeyError("새 로더가 옛 묶음에서 터짐")
+
+    monkeypatch.setattr(main, "validate_and_build", boom)
+    with TestClient(main.app) as again:
+        info = again.get("/api/datasets/active").json()
+        assert info["source"] == "fixture" and info["restore_error"]

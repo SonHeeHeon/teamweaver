@@ -185,6 +185,8 @@ export interface DatasetInfo {
   people: number;
   projects: number;
   activated_at: string;
+  /** 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유(K13). */
+  restore_error?: string | null;
 }
 
 /** core.ingest IngestReport의 Issue 그대로. row는 헤더를 뺀 1부터, 파일 단위 문제면 null. */
@@ -209,4 +211,14 @@ export interface UploadResult {
   dataset?: DatasetInfo;
   report: IngestReportOut | null;
   detail?: string;
+  /** 전환은 됐지만 서버 저장에 실패했으면 false -- 재기동하면 기본 데이터로 돌아간다(K13). */
+  persisted?: boolean;
+  persist_error?: string | null;
+}
+
+/** GET /api/plans/edits/{token} -- 저장된 적용 교체를 서버가 원 플랜에서 다시 적용한 단계(K13). */
+export interface SavedPlanEdits {
+  swaps: Swap[];
+  steps: (ApplySwapResponse & { swap: Swap })[];
+  updated_at: string | null;
 }

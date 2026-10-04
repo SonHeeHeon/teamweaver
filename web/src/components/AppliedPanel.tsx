@@ -36,6 +36,9 @@ export function AppliedPanel({ label, history, violations, people, onUndo, onRes
           지금 명단의 제약 위반: {violations.join(" / ")}
         </p>
       )}
+      <p className="mt-2 text-xs text-indigo-800">
+        적용 내역은 서버에 저장되어 같은 데이터·설정·가중치로 계산한 이 플랜을 여는 모든 사용자에게 공유된다.
+      </p>
       <div className="mt-3 flex gap-2">
         <button onClick={onUndo}
                 className="rounded-md border border-indigo-300 bg-white px-3 py-1.5 font-medium text-indigo-900">

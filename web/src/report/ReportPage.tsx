@@ -65,8 +65,10 @@ export function ReportPage() {
       )}
       <p className="text-xs text-slate-500">
         원 플랜: {data.plan_provenance === "verified"
-          ? "서버가 계산한 플랜과 일치(서명 확인)"
+          ? "명단이 서버가 계산한 플랜과 일치(서명 확인)"
           : "화면이 보낸 명단 — 서버 계산 여부 미검증"}
+        {" · "}지표는 서버가 이 명단으로 다시 계산한 값
+        {data.swap ? " · 교체 검토 미리보기(Δ·브리핑)는 화면에서 보낸 값" : ""}
       </p>
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params

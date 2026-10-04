@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  applySwap, DatasetChangedError, downloadReport, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  applySwap, DatasetChangedError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
@@ -89,7 +89,20 @@ export default function App() {
   const runGen = useRef(0);
   // 플랜별 적용 상태(K10). 재실행·데이터셋 전환이면 비운다. 다른 플랜을 봐도 유지한다.
   const [edits, setEdits] = useState<Record<string, PlanEdit>>({});
+  // 적용 상태의 최신값(K13). 저장 본문은 렌더 클로저가 아니라 여기서 만든다 -- 빠른 적용·취소나
+  // 복원과 겹칠 때 옛 상태로 저장하지 않게.
+  const editsRef = useRef<Record<string, PlanEdit>>({});
+  function commitEdits(next: Record<string, PlanEdit>) {
+    editsRef.current = next;
+    setEdits(next);
+  }
+  // 플랜별 저장 요청 줄(앞 요청이 끝난 뒤 다음을 보낸다)과 단조 증가 revision. 서버도 revision이
+  // 작거나 같은 요청을 무시한다 -- 다른 탭과 섞여도 마지막 상태가 이긴다(Opus 리뷰 M1).
+  const saveChain = useRef<Record<string, Promise<void>>>({});
+  const revision = useRef(Date.now() * 1000);
   const [applyBusy, setApplyBusy] = useState(false);
+  // 저장된 적용 교체를 불러왔다는 안내(K13). 재실행·전환이면 지운다.
+  const [notice, setNotice] = useState<string | null>(null);
   // 적용 요청의 세대. 플랜 전환·재실행·되돌리기·선택 변경이면 올려, 늦게 온 응답(성공·409
   // 모두)을 버리고 버튼 잠금도 바로 푼다 -- 늦은 409가 더 최신 실행의 플랜을 지우지 않게.
   const applyGen = useRef(0);
@@ -123,7 +136,8 @@ export default function App() {
     cancelApply();
     setDataset(info);
     setPlans([]);
-    setEdits({});
+    commitEdits({});
+    setNotice(null);
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
@@ -163,7 +177,8 @@ export default function App() {
     setRunning(true);
     setError(null);
     setPlans([]);
-    setEdits({});
+    commitEdits({});
+    setNotice(null);
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
@@ -193,6 +208,7 @@ export default function App() {
         if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
         if (ev.event === "plan") {
           setPlans((prev) => [...prev, ev.data]);
+          void restoreEdits(ev.data, gen);
           setSelected((cur) => cur ?? ev.data.label);
           setTab("whatif");
         } else if (ev.event === "error") {
@@ -240,6 +256,58 @@ export default function App() {
     }
   }
 
+  /** 이 플랜에 저장해 둔 적용 교체가 있으면 서버가 원 플랜에서 다시 적용한 단계로 스택을
+   *  복원한다(K13). 저장 키는 원 플랜 서명이라, 같은 데이터·규칙·가중치로 다시 계산한 플랜에만 붙는다. */
+  async function restoreEdits(plan: PlanEvent, gen: number) {
+    if (!plan.plan_token) return;
+    try {
+      const saved = await loadPlanEdits(plan.plan_token);
+      // 그사이 사용자가 이 플랜에 직접 적용했으면 그 상태가 우선이다(복원으로 덮지 않는다).
+      if (!saved || saved.steps.length === 0 || gen !== runGen.current
+          || editsRef.current[plan.label]) return;
+      const edit: PlanEdit = {
+        stack: saved.steps.map((st) => ({
+          plan: { ...plan, entries: st.entries, objective: st.objective, fulfillment: st.fulfillment,
+                  optimization_ratio: st.optimization_ratio, unfilled: st.unfilled },
+          violations: st.evaluation.violations.map((v) => v.message) })),
+        history: saved.steps.map((st) => ({ ...st.swap, objective_delta: st.objective_delta,
+                                             feasible: st.feasible, warnings: st.warnings })),
+      };
+      commitEdits({ ...editsRef.current, [plan.label]: edit });
+      setNotice(`Plan ${plan.label}: 저장해 둔 적용 교체 ${edit.history.length}건을 불러왔다.`);
+    } catch (e) {
+      // 복원 실패는 작업을 막지 않는다 -- 전역 오류가 아니라 안내로 알린다.
+      if (gen === runGen.current) setNotice(`Plan ${plan.label}: 저장해 둔 적용 교체를 불러오지 못했다(${String(e)}).`);
+    }
+  }
+
+  /** 플랜의 적용 교체 목록을 서버에 저장한다(빈 목록이면 지운다). 화면 상태는 이미 바뀐 뒤라,
+   *  실패하면 "저장 안 됨"을 알린다 -- 조용히 넘어가면 새로고침 때 사라진다. */
+  function persistEdits(label: string, history: AppliedSwap[]) {
+    const base = plans.find((p) => p.label === label);
+    if (!base?.plan_token || !planBasis) return;
+    const token = base.plan_token;
+    const body = {
+      plan_label: label, base_entries: base.entries, weights: planBasis.weights,
+      milp_params: planBasis.params, dataset_version: planBasis.datasetVersion,
+      swaps: history.map((h) => ({ out_person_id: h.out_person_id, in_person_id: h.in_person_id,
+                                   project_id: h.project_id })),
+      // 시각 기반 revision: 늦게 연 다른 탭이 한 번 저장했다고 먼저 연 탭의 이후 저장이 전부
+      // 버려지지 않게, 매 저장마다 지금 시각과 직전 값+1 중 큰 값을 쓴다(Opus 2라운드 M1').
+      revision: (revision.current = Math.max(Date.now() * 1000, revision.current + 1)),
+    };
+    const prev = saveChain.current[label] ?? Promise.resolve();
+    saveChain.current[label] = prev.then(() => savePlanEdits(token, body)).then((r) => {
+      if (r && !r.applied) {
+        setNotice(`Plan ${label}: 다른 화면에서 더 최근에 저장한 적용 교체가 있어 이 변경은 저장되지 않았다. `
+                  + "다시 계산하면 최신 저장분을 불러온다.");
+      }
+    }).catch((e) => {
+      if (e instanceof DatasetChangedError) void externalSwitch();
+      else setError(`적용 교체를 서버에 저장하지 못했다(새로고침하면 사라질 수 있다): ${String(e)}`);
+    });
+  }
+
   /** 검토한 교체를 명단에 적용한다. 검토와 같은 기준(계산 당시 설정·가중치·데이터셋)으로
    *  서버가 명단 전체를 다시 평가하고, 화면은 그 결과를 스택에 쌓는다. */
   async function applyReviewedSwap() {
@@ -247,11 +315,20 @@ export default function App() {
     const label = selected;
     const swap = lastSwap;
     const gen = ++applyGen.current;
+    const baseEntries = current.entries;      // 이 적용이 기준으로 삼은 명단
     setApplyBusy(true);
     try {
       const res = await applySwap(current.entries, swap, planBasis?.weights ?? weights,
                                   planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
       if (gen !== applyGen.current) return;
+      // 그사이 저장분 복원 등으로 이 플랜의 명단이 바뀌었으면, 옛 명단 기준 결과를 쌓지 않는다
+      // (스택과 이력이 어긋난다, Opus 2라운드 S-a).
+      const nowTop = editsRef.current[label]?.stack.at(-1)?.plan.entries
+        ?? plans.find((p) => p.label === label)?.entries;
+      if (nowTop !== baseEntries) {
+        setNotice(`Plan ${label}: 적용하는 사이 명단이 바뀌어(저장분 복원 등) 이 적용은 취소했다. 다시 검토할 것.`);
+        return;
+      }
       swapGen.current += 1;
       const plan: PlanEvent = { ...current, entries: res.entries, objective: res.objective,
                                 fulfillment: res.fulfillment,
@@ -259,12 +336,12 @@ export default function App() {
       // 경고 문장은 서버가 교체 전후를 비교해 만든 것을 쓴다(PDF 재계산과 같은 함수).
       const record: AppliedSwap = { ...swap, objective_delta: res.objective_delta,
                                     feasible: res.feasible, warnings: res.warnings };
-      setEdits((prev) => {
-        const e = prev[label] ?? { stack: [], history: [] };
-        return { ...prev, [label]: {
-          stack: [...e.stack, { plan, violations: res.evaluation.violations.map((v) => v.message) }],
-          history: [...e.history, record] } };
-      });
+      const e = editsRef.current[label] ?? { stack: [], history: [] };
+      const nextEdit = {
+        stack: [...e.stack, { plan, violations: res.evaluation.violations.map((v) => v.message) }],
+        history: [...e.history, record] };
+      commitEdits({ ...editsRef.current, [label]: nextEdit });
+      persistEdits(label, nextEdit.history);
       setWhatif(null);            // 검토 결과는 적용으로 소비됐다 -- 새 명단에서 다시 검토한다
       setLastSwap(null);
       setHighlighted(null);
@@ -283,14 +360,13 @@ export default function App() {
     cancelApply();
     setWhatif(null);
     setLastSwap(null);
-    setEdits((prev) => {
-      const e = prev[selected];
-      if (!e) return prev;
-      const next = { stack: e.stack.slice(0, -1), history: e.history.slice(0, -1) };
-      const out = { ...prev };
-      if (next.history.length === 0) delete out[selected]; else out[selected] = next;
-      return out;
-    });
+    const e = editsRef.current[selected];
+    if (!e) return;
+    const next = { stack: e.stack.slice(0, -1), history: e.history.slice(0, -1) };
+    const out = { ...editsRef.current };
+    if (next.history.length === 0) delete out[selected]; else out[selected] = next;
+    commitEdits(out);
+    persistEdits(selected, next.history);
   }
 
   function resetApply() {
@@ -299,7 +375,11 @@ export default function App() {
     cancelApply();
     setWhatif(null);
     setLastSwap(null);
-    setEdits((prev) => { const out = { ...prev }; delete out[selected]; return out; });
+    if (!editsRef.current[selected]) return;
+    const out = { ...editsRef.current };
+    delete out[selected];
+    commitEdits(out);
+    persistEdits(selected, []);
   }
 
   if (error && !meta) return <p className="p-8 text-red-600">불러오기 실패: {error}</p>;
@@ -433,6 +513,9 @@ export default function App() {
                   ? "Plan A 계산 중… (최초 실행은 약 8초)"
                   : `대안 계산 중… (${plans.length}개 도착)`}
               </p>
+            )}
+            {notice && (
+              <p role="status" className="rounded-md bg-indigo-50 px-4 py-2 text-sm text-indigo-900">{notice}</p>
             )}
             {current && edit && (
               <AppliedPanel label={current.label} history={edit.history}
