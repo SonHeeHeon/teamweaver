@@ -22,6 +22,31 @@
 
 ---
 
+## 2026-10-05 · claude-b · K8 관리자 배치 설정 화면
+- 브랜치/커밋: `feat/claude-b-milp-settings`(main `f10e710`=K2 병합 후에서 갈라 만듦). main 병합은 사용자 승인 후.
+  - K4(`feat/claude-b-pdf-origin`, main `80db4da` 기준)와 `api/main.py`·`api/schemas.py`를 함께 고친다. 병합할 때 충돌을 확인할 것.
+- 한 일:
+  - `GET/PUT /api/settings`를 추가했다. 서버 JSON 파일(`TEAMWEAVER_SETTINGS_PATH`, 기본 `~/.teamweaver/settings.json`)에 관리자 배치 설정을 저장한다.
+    - 항목: 최소 투입률 **기본 30%**, 반복 협업 기준, 협업 가중, 반복 협업 감점, 시간 한도, gap.
+    - PUT에는 `based_on`(읽은 시점)을 함께 보낸다. 그사이 다른 사람이 저장했으면 409로 거부한다.
+  - 웹 "배치 설정" 탭을 추가했다. 실행할 때마다 설정을 다시 읽어 `/api/optimize`의 `milp_params`로 보낸다.
+    - 그때의 설정과 가중치를 스냅숏으로 남긴다. `/api/whatif`와 PDF는 그 스냅숏을 쓰므로, 플랜과 교체 점수가 같은 기준이 된다.
+    - 설정을 바꾼 뒤에는 "이전 설정으로 계산됨(바뀐 항목)" 안내를 띄운다. PDF에는 계산 기준을 한 줄로 적는다.
+  - `milp_params` 요청 계약을 `MilpParamsIn`으로 정했다(범위 검사, `extra=forbid`). 오타 키와 범위 밖 값은 422다.
+  - 캐시 키는 적용된 파라미터 전체로 만든다. 부팅 사전계산은 저장된 설정으로 하되, `time_limit ≤ 120`이고 `gap ≥ 5%`일 때만 한다.
+- 상대 영향:
+  - **Codex(C6)**: `MilpParams` 기본값(0.2)은 그대로 뒀다. 30%는 설정 계층의 기본값이다.
+    - `MilpParams`에 필드를 추가하면 `api/schemas.py::MilpParamsIn`도 같이 늘려야 한다. 테스트 `test_milp_params_in_mirrors_every_model_field`가 이를 알려 준다.
+    - 관리자 화면에 노출할지는 `api/settings.py::PlacementSettings`에서 정한다.
+  - **API 계약**: `/api/optimize`·`/api/whatif`에 알 수 없는 `milp_params` 키를 보내면 이제 422다(예전에는 조용히 무시).
+  - **테스트 기준선**: 691 passed, 10 deselected(648 + 43). `tests/api/conftest.py`가 설정 파일 경로를 테스트마다 임시 폴더로 돌린다.
+- 검증:
+  - `uv run --group benchmark pytest -q` → 691 passed, 10 deselected. `uv run pytest -m slow -q` → 10 passed.
+  - 웹: `npx vitest run` 71 passed, `npx tsc -b`·`npm run lint`·`npm run build` 통과.
+  - 결함 주입 13종 중 12종이 테스트에 걸렸다. 나머지 1종은 결과가 원래 코드와 같은 변형이다.
+- 리뷰: Codex는 사용 한도 소진(04:02까지)이라 Claude Opus 적대적 리뷰를 2라운드 받았다. MUST는 없었다. SHOULD 8건과 NIT 다수를 반영했다.
+- 근거: `.omc/plan/2026-10-05-k8-milp-settings.md`, `.omc/reports/2026-10-05-k8-milp-settings.md`(루트, gitignore)
+
 ## 2026-10-05 · claude-a · K2 CSV 입력 계약 v0
 - 브랜치/커밋: `feat/claude-a-csv-ingest` (`5bce379` 읽기·검증, `0cad783` 변환, 생성기·진입점 커밋) — main 병합은 사용자 승인 후.
 - 한 일: 실제 인사 자료 모양의 CSV 묶음(사람·단가표·기술 경력 개월·업무이력·월별 가용 M/M·프로젝트·등급/기술 요구·리뷰·리뷰 항목 + manifest, 선택 mapping.json)을
