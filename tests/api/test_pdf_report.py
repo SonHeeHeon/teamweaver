@@ -137,3 +137,194 @@ def test_report_page_is_served_at_the_client_route(live_server):
     res = httpx.get(f"{live_server}/report", timeout=30.0)
     assert res.status_code == 200
     assert "<div id=\"root\"" in res.text
+
+
+# --- K4: Host를 믿지 않고 외부로 나가지 않는다 -------------------------------
+
+class _Decoy:
+    """'공격자 서버' 역할의 미끼. 받은 요청 경로를 모두 기록한다."""
+
+    def __init__(self) -> None:
+        import http.server
+
+        hits = self.hits = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):                     # noqa: N802
+                hits.append(self.path)
+                body = b"<html><body>decoy</body></html>"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            do_POST = do_GET                      # noqa: N815
+
+            def log_message(self, *args):         # 테스트 출력 오염 방지
+                pass
+
+        self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.port = self.server.server_address[1]
+        self.origin = f"http://127.0.0.1:{self.port}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+
+
+@pytest.fixture
+def decoy():
+    d = _Decoy()
+    yield d
+    d.close()
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_forged_host_never_sends_browser_to_that_host(live_server, decoy):
+    """Host를 미끼 서버로 위조해도 PDF 브라우저는 서버 자신에게만 간다.
+    예전 코드(request.base_url 사용)에서는 브라우저가 미끼의 /report를 열고
+    거기서 __REPORT_READY__를 기다리다 실패했다(결함 주입으로 확인 -- 리포트 참고)."""
+    res = httpx.post(f"{live_server}/api/report", json=_PAYLOAD, timeout=120.0,
+                     headers={"Host": f"127.0.0.1:{decoy.port}"})
+    assert res.status_code == 200, res.text
+    assert decoy.hits == [], f"브라우저가 위조 Host로 나갔다: {decoy.hits}"
+    text = _extract_text(res.content)
+    assert "XYZZY-VIOLATION" in text            # 정상 리포트가 내부 origin에서 렌더됐다
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_browser_blocks_every_request_outside_internal_origin(live_server, decoy):
+    """route 가드가 fetch·이미지·페이지 이동·웹소켓을 내부 origin 밖으로 못 내보낸다.
+    가드 없는 컨텍스트에서는 같은 fetch가 미끼에 닿는다(대조군) -- 미끼에 원래
+    닿을 수 없어서 0건인 것이 아님을 보인다."""
+    import asyncio
+
+    from playwright.async_api import async_playwright
+
+    from api.pdf import _restrict_to_origin, canonical_origin, report_data_script
+
+    origin = canonical_origin(live_server)
+
+    async def run() -> tuple[list[str], dict, tuple]:
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch()
+            try:
+                # 대조군: 가드 없음 -> 미끼에 닿는다.
+                open_ctx = await browser.new_context()
+                open_page = await open_ctx.new_page()
+                # 데이터 주입 스크립트도 함께 건다: 내부 origin에서만 값이 생겨야 한다.
+                await open_page.add_init_script(report_data_script({"k": "SECRET"}, origin))
+                await open_page.goto(f"{live_server}/report")
+                data_inside = await open_page.evaluate("window.__REPORT_DATA__?.k ?? null")
+                await open_page.evaluate(
+                    "u => fetch(u, {mode: 'no-cors'}).then(() => true)",
+                    f"{decoy.origin}/control")
+                await open_page.goto(f"{decoy.origin}/page")   # 가드 없으니 이동된다
+                data_outside = await open_page.evaluate("window.__REPORT_DATA__ ?? null")
+                await open_ctx.close()
+
+                blocked: list[str] = []
+                ctx = await browser.new_context(service_workers="block")
+                await _restrict_to_origin(ctx, origin, blocked)
+                page = await ctx.new_page()
+                await page.goto(f"{live_server}/report")
+                out = await page.evaluate("""async (d) => {
+                    const r = {};
+                    try { await fetch(d + '/fetch', {mode: 'no-cors'}); r.fetch = 'ok'; }
+                    catch (e) { r.fetch = 'blocked'; }
+                    r.img = await new Promise(res => {
+                        const i = new Image();
+                        i.onload = () => res('ok'); i.onerror = () => res('blocked');
+                        i.src = d + '/img.png';
+                    });
+                    r.ws = await new Promise(res => {
+                        const ws = new WebSocket(d.replace('http', 'ws') + '/ws');
+                        ws.onopen = () => res('open');
+                        ws.onclose = () => res('closed'); ws.onerror = () => res('closed');
+                    });
+                    // 같은 origin 요청은 통과해야 한다(가드가 전부 막는 게 아님).
+                    r.same = (await fetch('/api/meta')).status;
+                    return r;
+                }""", decoy.origin)
+                try:
+                    await page.goto(f"{decoy.origin}/nav")
+                    out["nav"] = "ok"
+                except Exception:                  # noqa: BLE001
+                    out["nav"] = "blocked"
+                return blocked, out, (data_inside, data_outside)
+            finally:
+                await browser.close()
+
+    blocked, out, (data_inside, data_outside) = asyncio.run(run())
+    assert decoy.hits == ["/control", "/page"], f"가드 아래에서 미끼에 닿았다: {decoy.hits}"
+    # 심층 방어: 가드가 없어 다른 origin 문서가 열려도 리포트 데이터는 주입되지 않는다.
+    assert data_inside == "SECRET"
+    assert data_outside is None
+    assert out == {"fetch": "blocked", "img": "blocked", "ws": "closed",
+                   "same": 200, "nav": "blocked"}, out
+    assert any(u.endswith("/fetch") for u in blocked)
+    assert any(u.endswith("/nav") for u in blocked)
+
+
+@pytest.mark.skipif(_dist_missing(), reason="playwright chromium 필요")
+def test_redirect_out_of_origin_is_detected_and_gets_no_data(decoy):
+    """알려진 한계를 고정한다: route()는 리다이렉트 첫 요청만 보므로 내부 origin이
+    302로 외부를 가리키면 그 요청은 나간다. 대신 (1) escaped에 기록돼
+    render_report_pdf가 실패하고 (2) 그 문서에는 리포트 데이터가 없다."""
+    import asyncio
+    import http.server
+
+    from playwright.async_api import async_playwright
+
+    from api.pdf import _restrict_to_origin, canonical_origin, report_data_script
+
+    target = decoy.origin
+
+    class Origin(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):                         # noqa: N802
+            if self.path.startswith("/redir"):
+                self.send_response(302)
+                self.send_header("Location", f"{target}/landed")
+                self.end_headers()
+                return
+            body = b"<html><body>origin</body></html>"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Origin)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    origin = canonical_origin(f"http://127.0.0.1:{srv.server_address[1]}")
+
+    async def run():
+        async with async_playwright() as pw:
+            browser = await pw.chromium.launch()
+            try:
+                blocked, escaped = [], []
+                ctx = await browser.new_context(service_workers="block")
+                await _restrict_to_origin(ctx, origin, blocked, escaped)
+                page = await ctx.new_page()
+                await page.add_init_script(report_data_script({"k": "SECRET"}, origin))
+                await page.goto(f"{origin}/page")
+                await page.goto(f"{origin}/redir")         # 302 -> decoy
+                leaked = await page.evaluate("window.__REPORT_DATA__ ?? null")
+                return escaped, leaked, page.url
+            finally:
+                await browser.close()
+
+    try:
+        escaped, leaked, final_url = asyncio.run(run())
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    assert final_url.startswith(target)                  # 한계: 실제로 나갔다
+    assert decoy.hits == ["/landed"]
+    assert escaped == [f"{target}/landed"]               # 탐지된다 -> 렌더 실패 처리
+    assert leaked is None                                # 데이터는 주입되지 않았다

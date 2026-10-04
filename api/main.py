@@ -55,6 +55,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
+# /api/report 본문 크기 상한(K4). JSON 파싱 전에 끊어야 의미가 있으므로 미들웨어다.
+# CORS보다 *먼저* 등록해 안쪽에 둔다(add_middleware는 나중 것이 바깥) -- 그래야
+# 상한 초과 413에도 CORS 헤더가 붙어 dev(:5173)에서 안내 문구를 읽을 수 있다.
+app.add_middleware(report.ReportBodyLimit)
 # Vite dev 서버(:5173)가 API(:8000)를 부를 수 있어야 한다. 프로덕션 빌드는
 # FastAPI가 직접 서빙하므로(Task 8) same-origin이라 CORS가 필요 없지만,
 # 개발 중에는 포트가 갈리므로 필요하다.
