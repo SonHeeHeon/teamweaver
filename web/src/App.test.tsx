@@ -48,8 +48,15 @@ const PLAN_B: PlanEvent = {
   index: 1, cached: false,
 };
 
+const ZERO_TERMS = { skill: 0, synergy: 0, overfamiliarity: 0, unfilled: 0, total: 0 };
+
 const STALE_RESULT: WhatifResponse = {
   objective_delta: 0.5,
+  before: ZERO_TERMS,
+  after: { ...ZERO_TERMS, skill: 0.5, total: 0.5 },
+  new_violations: [],
+  new_shortfalls: [],
+  feasible: true,
   briefing: {
     rationale: "이 문장은 Plan A 기준으로 계산된 것이라 Plan B 아래 보이면 안 된다",
     risks: ["stale risk"],

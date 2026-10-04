@@ -1,5 +1,6 @@
 import type { Meta, AssignEntry, PlanEvent, ReportRequest, Swap, WhatifResponse } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
+import { swapWarnings } from "./whatifWarnings";
 
 /** 개발 중에는 Vite dev 서버(:5173)에서 API(:8000)를 부르므로 절대 URL이 필요하다.
  *  프로덕션 빌드는 FastAPI가 같은 오리진에서 서빙하므로(Task 8) 빈 문자열이면 된다. */
@@ -71,6 +72,7 @@ export async function downloadReport(
     fallback_used: whatif?.fallback_used ?? false,
     swap: whatif ? swap : null,
     objective_delta: whatif?.objective_delta ?? null,
+    swap_violations: whatif ? swapWarnings(whatif) : [],
   };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",

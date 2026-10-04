@@ -78,8 +78,18 @@ export function ReportPage() {
             <p className="text-xs text-slate-500">
               검토한 교체: {nameOf(data.swap.out_person_id)} → {nameOf(data.swap.in_person_id)}
               {typeof data.objective_delta === "number" &&
-                ` (Δ ${data.objective_delta >= 0 ? "+" : ""}${data.objective_delta.toFixed(4)})`}
+                ` (현행 점수 기준 Δ ${data.objective_delta >= 0 ? "+" : ""}`
+                + `${data.objective_delta.toFixed(4)}, 참고값·재최적화 아님)`}
             </p>
+          )}
+          {(data.swap_violations ?? []).length > 0 && (
+            <div className="mt-2 rounded border border-red-300 bg-red-50 px-3 py-2
+                            text-sm text-red-800">
+              <p className="font-medium">교체 검토 경고</p>
+              <ul className="list-inside list-disc">
+                {data.swap_violations.map((w: string) => <li key={w}>{w}</li>)}
+              </ul>
+            </div>
           )}
           {data.fallback_used && (
             <p className="mt-2 rounded border border-amber-400 bg-amber-50 px-3 py-2

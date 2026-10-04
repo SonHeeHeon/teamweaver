@@ -48,6 +48,7 @@ _PAYLOAD = {
     "fallback_used": True,
     "swap": {"out_person_id": "p000", "in_person_id": "p001", "project_id": "j00"},
     "objective_delta": -0.25,
+    "swap_violations": ["경고 마커 XYZZY-VIOLATION"],
 }
 
 
@@ -125,6 +126,8 @@ def test_report_returns_a_real_pdf(live_server):
     assert _norm(_PAYLOAD["briefing"]["rationale"]) in text     # 브리핑 rationale
     assert "규칙 기반" in text                                  # fallback_used=True 배지 문구
     assert "서지훈" in text                                     # swap.in_person_id(p001) 이름
+    assert "XYZZY-VIOLATION" in text                            # What-if 교체 경고
+    assert "현행 점수 기준" in text                              # delta가 참고값임을 표기
 
 
 @pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")

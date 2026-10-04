@@ -40,8 +40,38 @@ class BriefingOut(BaseModel):
     alternatives: list[str]
 
 
+class ObjectiveBreakdownOut(BaseModel):
+    skill: float
+    synergy: float
+    overfamiliarity: float
+    unfilled: float
+    total: float
+
+
+class ViolationOut(BaseModel):
+    code: str
+    location: str
+    actual: float
+    limit: float
+    message: str
+
+
+class ShortfallOut(BaseModel):
+    project_id: str
+    grade: str
+    missing: int
+
+
 class WhatifResponse(BaseModel):
+    """objective_delta는 교체 전후 배치를 현행 MILP 전체 목적(4항)으로 재평가한 차이다.
+    재최적화 결과가 아니라 검토용 참고값이다. new_violations/new_shortfalls는 교체로
+    새로 생긴 것만 담고, feasible은 교체 후 배치에 제약 위반이 하나도 없는지를 뜻한다."""
     objective_delta: float
+    before: ObjectiveBreakdownOut
+    after: ObjectiveBreakdownOut
+    new_violations: list[ViolationOut]
+    new_shortfalls: list[ShortfallOut]
+    feasible: bool
     briefing: BriefingOut
     fallback_used: bool
 
@@ -80,3 +110,4 @@ class ReportRequest(BaseModel):
     fallback_used: bool = False
     swap: SwapIn | None = None
     objective_delta: float | None = None
+    swap_violations: list[str] = []
