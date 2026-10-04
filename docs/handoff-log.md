@@ -22,6 +22,40 @@
 
 ---
 
+## 2026-10-05 · claude-b · K9 CSV 묶음 업로드 → 활성 데이터셋 전환
+- 브랜치/커밋: `feat/claude-b-dataset-upload` `ebcb140`(코드) + 이 기록. **K8 브랜치(`feat/claude-b-milp-settings` `d936415`) 위에서 갈라 만들었다**. K8을 먼저 병합해야 한다. main 병합은 사용자 승인 후.
+- 한 일:
+  - `POST /api/datasets`: zip 원본 본문을 받아 `core.ingest.load_bundle`·`to_dataset`으로 검증한다.
+    - 오류가 있으면 422와 리포트(오류·경고·노트·행 수)를 돌려주고 전환하지 않는다. 통과하면 활성 데이터셋을 통째로 교체한다.
+    - 관련 엔드포인트: `GET /api/datasets/active`, `POST /api/datasets/reset`, `GET /api/admin`.
+  - zip 안전 검사: 경로 탈출, 링크, 이상 파일, 중앙 디렉터리 레코드 수, 해제 크기. 업로드는 20MiB까지(413)이고 처리 중이면 409다.
+  - 실데이터를 디스크에 남기지 않는다.
+    - 해제 폴더는 요청이 끝나면 삭제한다.
+    - SQLite는 메모리 DB로 복사하고 임시 파일은 바로 지운다.
+    - 물러난 데이터셋은 마지막 요청이 끝날 때 닫는다.
+  - 캐시 키에 데이터셋 내용 해시를 넣었다.
+  - `meta`·plan 이벤트에 `dataset_version`을 싣는다. optimize·whatif·report는 버전이 다르면 409를 낸다. PDF 데이터에는 요청이 잡은 데이터셋의 meta를 넣는다.
+  - `TEAMWEAVER_ADMIN_TOKEN`이 있으면 업로드·되돌리기·설정 저장에 `X-Admin-Token`을 요구한다.
+  - 웹 "데이터" 탭을 추가했다. 전환하면 플랜과 가중치를 초기화하고, 409를 받으면 화면을 다시 불러온다.
+- 상대 영향:
+  - **claude-a**: `core.ingest`를 수정하지 않고 그대로 import했다. 고칠 점은 발견하지 못했다(요청 없음).
+    - `api/deps.get_graph`·`get_sqlite_conn`은 이제 `get_dataset`(async, 요청당 1회)에서 나온다. `api/rag/**`는 같은 의존성을 쓰면 된다.
+    - `/api/meta.review_items`는 여전히 fixture 목록이다.
+  - **API 계약**:
+    - `ResultCache.key`에 `dataset_version` 인자가 추가됐다.
+    - `MetaResponse`에 `dataset_version`이 추가됐다.
+    - optimize·whatif·report 요청에 선택 필드 `dataset_version`이 생겼다. 보내지 않으면 검사하지 않는다.
+  - **테스트 기준선**: 727 passed, 10 deselected.
+- 검증:
+  - `uv run --group benchmark pytest -q` → 727 passed. `uv run pytest -m slow -q` → 10 passed.
+  - 웹: vitest 83 passed, `tsc -b`·lint·build 통과.
+  - 실제 CBC 확인: 가상 50명/10프로젝트와 40명/8프로젝트를 업로드해 Plan A·B가 나왔다.
+  - 결함 주입 25종 가운데 24종이 테스트에 걸렸다. 나머지 1종은 이중 방어라 단독으로 제거하면 검출되지 않는다.
+- 리뷰: Codex 적대적 리뷰 2라운드(04:03 쿼터 회복 후). 1라운드 high 3·medium 1, 2라운드 high 1·medium 2를 모두 반영했다.
+  - 시스템 전체 인증은 사용자 결정 사항으로 남겼다.
+  - 2라운드 반영분은 3라운드 리뷰를 받지 않았고 결함 주입으로 확인했다.
+- 근거: `.omc/plan/2026-10-05-k9-dataset-upload.md`, `.omc/reports/2026-10-05-k9-dataset-upload.md`
+
 ## 2026-10-05 · claude-b · K8 관리자 배치 설정 화면
 - 브랜치/커밋: `feat/claude-b-milp-settings`(main `f10e710`=K2 병합 후에서 갈라 만듦). main 병합은 사용자 승인 후.
   - K4(`feat/claude-b-pdf-origin`, main `80db4da` 기준)와 `api/main.py`·`api/schemas.py`를 함께 고친다. 병합할 때 충돌을 확인할 것.
