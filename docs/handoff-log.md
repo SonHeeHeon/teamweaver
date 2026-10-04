@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-05 · claude-a · K6 협업 탐색 int8 넘침 수정
+- 브랜치/커밋: `feat/claude-a-k6-int8` (main 미병합, 사용자 승인 대기)
+- 한 일: `MemoryGraph.synergy_context_memory`가 한 홉 확장에서 frontier 이웃 수를 int8로 세어, 128개 이상(정확히 256개면 0)일 때 그 노드를 도달 집합에서 빠뜨렸다. int32로 바꾸고 127/128/150/256 병렬 경로 시험을 추가했다(고치기 전 128·150·256 실패 확인).
+- 상대 영향:
+  - **Codex (공유 `core/graph/`)**: 결과는 SQL·Cypher 질의와 같아지는 방향으로만 바뀐다. 실험 1의 예전 결과는 "K6 이전 측정"으로 볼 것(시간 차이 미미).
+  - 테스트 기준선: main 648 → 652 passed(이 브랜치 단독).
+- 검증: `uv run --group benchmark pytest -q` → 652 passed, 10 deselected. 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 1라운드, MUST·SHOULD 0, nit 2(주석 표현 반영, 실험 메모 위 기록).
+- 근거: `.omc/reports/2026-10-05-k6-int8.md`
+
 ## 2026-10-05 · claude-a · K2 CSV 입력 계약 v0
 - 브랜치/커밋: `feat/claude-a-csv-ingest` (`5bce379` 읽기·검증, `0cad783` 변환, 생성기·진입점 커밋) — main 병합은 사용자 승인 후.
 - 한 일: 실제 인사 자료 모양의 CSV 묶음(사람·단가표·기술 경력 개월·업무이력·월별 가용 M/M·프로젝트·등급/기술 요구·리뷰·리뷰 항목 + manifest, 선택 mapping.json)을

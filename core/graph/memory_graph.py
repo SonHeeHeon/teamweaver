@@ -76,7 +76,10 @@ class MemoryGraph:
             frontier[src] = True
             reached = frontier.copy()
             for _ in range(hops):
-                nxt = (adj @ frontier.astype(np.int8)) > 0     # 한 홉 확장 (cowork_months는 대칭이므로 .T 불필요)
+                # 한 홉 확장 (cowork_months는 대칭이므로 .T 불필요). 곱은 "frontier에 있는 이웃 수"를
+                # 세므로 int8이면 그 수가 128 이상일 때 넘쳐 도달 노드가 빠졌다(K6). 이웃 수는 인원 수를
+                # 넘지 않으므로 int32로 충분하다.
+                nxt = (adj @ frontier.astype(np.int32)) > 0
                 frontier = nxt & ~reached
                 if not frontier.any():
                     break

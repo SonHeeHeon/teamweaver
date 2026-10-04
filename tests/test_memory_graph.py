@@ -268,3 +268,19 @@ def test_memory_matches_sqlite_at_larger_scale_and_full_hop_range(tmp_path):
             print(f"hops={hops}: reached={len(mem)}")
     finally:
         conn.close()
+
+
+@pytest.mark.parametrize("n_middle", [127, 128, 150, 256])
+def test_reach_survives_many_parallel_paths(n_middle):
+    """K6: the frontier product used to be int8, so 128+ (and exactly 256) parallel paths into one node
+    wrapped to a non-positive sum and that node silently fell out of the reached set."""
+    from core.domain.models import CoworkRecord, Dataset
+    ds0 = generate_dataset(n_middle + 2, 1, seed=1)
+    ids = [p.id for p in ds0.people]
+    src, dst, middle = ids[0], ids[-1], ids[1:-1]
+    coworks = [CoworkRecord(a_id=src, b_id=m, co_months=3, project_count=1) for m in middle]
+    coworks += [CoworkRecord(a_id=m, b_id=dst, co_months=3, project_count=1) for m in middle]
+    ds = Dataset(people=ds0.people, projects=ds0.projects, coworks=coworks, reviews=[])
+    g = MemoryGraph.build(ds, [])
+    reached = {r[1] for r in g.synergy_context_memory([src], hops=2)}
+    assert reached == set(middle) | {dst}
