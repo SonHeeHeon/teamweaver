@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-05 · claude-a · 리뷰 회차 확장(예전 회차도 사용) + K2 main 병합
+- 브랜치/커밋: K2는 main에 fast-forward 병합(`f10e710`, 사용자 승인). 회차 확장은 `feat/claude-a-review-rounds`(main 미병합, 사용자 승인 대기).
+- 한 일: 사용자 요청("최신 회차만이 아니라 예전 회차도")으로 같은 평가자→피평가자의 모든 리뷰 회차를 협업 점수에 쓴다.
+  방향 안의 회차를 먼저 평균하고 두 방향을 평균한다. `core.ingest` 변환은 모든 회차를 넘기고, 같은 날 두 회차 오류는 없앴다.
+  K2 항목의 "최신 리뷰 회차만 쓴다"는 이 항목으로 정정한다. 점수 구간 12/36/60/96개월은 사용자 확정.
+- 상대 영향:
+  - **Codex·claude-b (공유 `core/graph/memory_graph.py`)**: 방향당 리뷰 1건인 데이터(fixture·datagen·Phase 1 시나리오·bench)는 쌍 점수가 비트 단위로 같다(테스트 고정).
+    리뷰 목록과 parsed의 순서·길이가 다르면 경고 로그 후 기존 방식(방향당 마지막 1건).
+  - **Codex (`core/graph/rehydrate.py`, `core/datagen/llm_checkpoint.py`)**: SQLite review 표에 회차 칸이 없어, 같은 방향 리뷰가 여러 건이면 `from_sqlite`와 LLM checkpoint가 `ValueError`로 거부한다.
+    중복 검사는 기존 review 스캔 안에서 하므로 exp5 `rehydrate_ms` 측정 경로에 질의가 늘지 않는다. 회차 칸이 필요하면 "요청"에서 합의.
+  - **claude-b**: K9 업로드 데이터에 여러 회차가 있으면 이제 모두 점수에 반영된다. `build_sqlite`·RAG 근거는 회차 수만큼 리뷰 행이 늘 뿐 오류는 없다.
+  - 테스트 기준선: 648 → **656 passed, 10 deselected**(`--group benchmark`), slow 10 passed.
+- 검증: `uv run --group benchmark pytest -q` → 656 passed · `pytest -m slow` → 10 passed · 방향 균형 제거 변이 → 시험 실패 확인. 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 2라운드, MUST 0.
+- 교차 리뷰 요청: claude-b에게 `feat/claude-a-review-rounds` 병합 전 리뷰를 부탁한다(`.omc/agents/claude-a-status.md`).
+- 근거: `.omc/reports/2026-10-05-review-rounds.md`
+
 ## 2026-10-05 · claude-a · K2 CSV 입력 계약 v0
 - 브랜치/커밋: `feat/claude-a-csv-ingest` (`5bce379` 읽기·검증, `0cad783` 변환, 생성기·진입점 커밋) — main 병합은 사용자 승인 후.
 - 한 일: 실제 인사 자료 모양의 CSV 묶음(사람·단가표·기술 경력 개월·업무이력·월별 가용 M/M·프로젝트·등급/기술 요구·리뷰·리뷰 항목 + manifest, 선택 mapping.json)을

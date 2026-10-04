@@ -21,6 +21,17 @@ from core.datagen.parse_reviews import _SYSTEM as _PARSE_SYSTEM
 from core.domain.models import Dataset, ParsedReview
 
 
+def _require_one_review_per_direction(ds: Dataset) -> None:
+    """Checkpoint entries are keyed by reviewer:reviewee, so a second round of the same direction would be
+    skipped as done and then overwritten with the first round's text and polarity. Refuse instead."""
+    seen = set()
+    for r in ds.reviews:
+        key = (r.reviewer_id, r.reviewee_id)
+        if key in seen:
+            raise ValueError(f"LLM checkpointing supports one review per direction; {key[0]}→{key[1]} has several")
+        seen.add(key)
+
+
 def _key(reviewer_id: str, reviewee_id: str) -> str:
     return f"{reviewer_id}:{reviewee_id}"
 
@@ -58,6 +69,7 @@ def generate_and_parse_checkpointed(
 ) -> tuple[dict, bool, int]:
     """Process reviews missing from the checkpoint (up to `batch_size` of them),
     persisting each result immediately. Returns (checkpoint, done, n_processed)."""
+    _require_one_review_per_direction(ds)
     checkpoint = load_checkpoint(checkpoint_path)
     pending = [(idx, r) for idx, r in enumerate(ds.reviews) if _key(r.reviewer_id, r.reviewee_id) not in checkpoint]
     todo = pending if batch_size is None else pending[:batch_size]
@@ -119,6 +131,7 @@ def apply_checkpoint(ds: Dataset, checkpoint: dict) -> list[ParsedReview]:
     since generate_dataset() is called anew every invocation) and build the
     parsed-review list. Raises KeyError if a review is missing -- callers
     should only call this once `done` is True."""
+    _require_one_review_per_direction(ds)
     parsed = []
     for r in ds.reviews:
         c = checkpoint[_key(r.reviewer_id, r.reviewee_id)]

@@ -59,8 +59,16 @@ def from_sqlite(conn) -> MemoryGraph:
             "SELECT reviewer_id, reviewee_id, item, is_positive FROM review_item"):
         items.setdefault((rv, re_), {True: [], False: []})[bool(pos)].append(it)
     reviews, parsed = [], []
+    seen: set[tuple[str, str]] = set()
     for rv, re_, pol in conn.execute(
             "SELECT reviewer_id, reviewee_id, text_polarity FROM review"):
+        # The v1 schema stores review items per (reviewer, reviewee) without a round id, so several rounds
+        # of one direction cannot be told apart again; refuse instead of silently merging their items.
+        # Checked inside the existing scan so the measured rehydration path gets no extra query.
+        if (rv, re_) in seen:
+            raise ValueError(f"review store holds several rounds for {rv}→{re_}; "
+                             "rehydration supports one review per direction (no round column in the schema)")
+        seen.add((rv, re_))
         sel = items.get((rv, re_), {True: [_UNKNOWN], False: [_UNKNOWN]})
         reviews.append(PeerReview(
             reviewer_id=rv, reviewee_id=re_,

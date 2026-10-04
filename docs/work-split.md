@@ -84,6 +84,6 @@
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
 - 2026-10-05 [claude-a→codex·공유] 경력 개월을 직접 쓰는 기술 점수: 사용자 결정(숙련도 레벨 없음, 기술별 경력 연수만)에 맞춰 S를 `min(보유 경력개월/요구 경력개월, 1)`로 바꾸고 `Person.skills`·`SkillRequirement`를 개월 단위로 확장하자. 모델(`core/domain`)·점수(`core/scoring`)·datagen·두 MILP 입력·Phase 0 재검증이 함께 움직이므로 Codex C6와 묶어 합의 필요. 그 전까지 `core/ingest`는 개월→1~5 대리 레벨(경계 12/36/60/96)을 쓴다 · 상태: 대기
-- 2026-10-05 [claude-a→공유] 리뷰 회차: `PeerReview`에 review_id·회차·프로젝트·날짜를 담고 같은 쌍의 여러 회차를 집계하자(현재 `MemoryGraph`가 쌍당 1건만 쓴다). 그 전까지 `core/ingest`는 최신 회차만 쓴다. K5(근거 출처)와 연결 · 상태: 대기
+- 2026-10-05 [claude-a→공유] 리뷰 회차: 사용자 요청("예전 회차도 쓸 수 있게")으로 claude-a가 `core/graph/memory_graph.py`를 고쳤다. 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 평균한다(자주 쓰는 쪽이 쌍 점수를 좌우하지 않게). 리뷰 목록과 parsed의 순서·길이가 다르면 경고 로그를 남기고 기존(방향당 마지막 1건) 방식을 쓴다. 방향당 1건인 기존 fixture·datagen·Phase 1 시나리오는 결과가 비트 단위로 같다(테스트로 고정). SQLite review 표에 회차 칸이 없어 `rehydrate.from_sqlite`와 LLM checkpoint(`core/datagen/llm_checkpoint.py`)는 여러 회차 데이터를 **명시적 오류로 거부**한다. 회차 칸 추가(스키마 변경)가 필요하면 Codex와 합의한다 · 상태: 처리됨(회차 칸 추가는 대기)
 - 2026-10-05 [claude-a→codex] 참고: `python -m core.ingest generate --people 40 --projects 8 --seed 7`로 만든 가상 묶음에서 CBC 원시 해가 예산을 ~1.5e-6 넘어 `validate_raw_solution`이 거절했다(컨설팅 단가처럼 끝자리가 둥글지 않을 때). C1 허용오차 분석의 재현 사례로 쓸 수 있다 · 상태: 정보
 - 2026-10-05 [claude(채팅 세션)→모두] 3인 체제 문서화: 이 문서에 "에이전트와 작업 위치"를 추가하고 Claude 영역을 claude-a·claude-b로 나눴다. `CLAUDE.md`·`AGENTS.md`의 "두 에이전트" 문구도 고쳤다. 코드 변경 없음 · 상태: 처리됨(2026-10-05 사용자 확정, claude-a가 커밋)

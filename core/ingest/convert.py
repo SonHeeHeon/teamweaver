@@ -3,6 +3,7 @@
 The current model needs 1-5 skill levels, one review per reviewer→reviewee and cowork months per
 pair; the real data has experience months, repeated review rounds and work history. The bridges
 used here are stated in IngestReport.notes so nobody mistakes them for source facts.
+(One review per reviewer→reviewee was the old model limit; all rounds are now passed on.)
 """
 import datetime as dt
 from collections import defaultdict
@@ -55,35 +56,23 @@ def _coworks(work: list[dict], cutoff: dt.date) -> list[CoworkRecord]:
             for (a, b), ms in sorted(shared_months.items())]
 
 
-def _latest_reviews(reviews: list[dict], items: list[dict], report: IngestReport) -> list[PeerReview]:
-    by_pair: dict[tuple[str, str], list[dict]] = defaultdict(list)
-    for r in reviews:
-        by_pair[(r["reviewer_id"], r["reviewee_id"])].append(r)
-    chosen: dict[tuple[str, str], dict] = {}
-    dropped = 0
-    for key, rows in by_pair.items():
-        latest = max(r["reviewed_at"] for r in rows)
-        top = [r for r in rows if r["reviewed_at"] == latest]
-        if len(top) > 1:          # only an ambiguous *latest* round blocks; older same-day pairs are just dropped
-            report.error("reviews.csv", f"{key[0]}→{key[1]}의 최신 리뷰가 같은 날짜에 {len(top)}건"
-                         f"({', '.join(r['review_id'] for r in top)})이라 하나를 고를 수 없다",
-                         row=top[1]["__row__"], column="reviewed_at")
-            continue
-        chosen[key] = top[0]
-        dropped += len(rows) - 1
+def _all_reviews(reviews: list[dict], items: list[dict], report: IngestReport) -> list[PeerReview]:
+    """Every review round is kept (oldest first). The scoring graph averages all rounds of a pair with
+    equal weight because the rule-based parser returns one ParsedReview per review in the same order."""
     picked = defaultdict(lambda: {"positive": [], "negative": []})
     for it in items:
         picked[it["review_id"]][it["polarity"]].append(it["item"])
-    if dropped:
-        report.notes.append(f"리뷰: 같은 평가자→피평가자의 이전 회차 {dropped}건은 쓰지 않았다"
-                            "(현행 모델은 한 쌍에 1건만 담는다. 가장 최근 회차만 사용).")
-    out = []
-    for (rv, re_), r in sorted(chosen.items()):
-        it = picked[r["review_id"]]
-        out.append(PeerReview(reviewer_id=rv, reviewee_id=re_,
-                              positive=ReviewSection(items=it["positive"], text=r["positive_text"]),
-                              negative=ReviewSection(items=it["negative"], text=r["negative_text"])))
-    return out
+    rows = sorted(reviews, key=lambda r: (r["reviewed_at"], r["review_id"]))
+    pairs = defaultdict(int)
+    for r in rows:
+        pairs[(r["reviewer_id"], r["reviewee_id"])] += 1
+    repeated = sum(1 for n in pairs.values() if n > 1)
+    report.notes.append(f"리뷰: 모든 회차 {len(rows)}건을 썼다(평가자→피평가자 {len(pairs)}쌍, 그중 {repeated}쌍은 여러 회차). "
+                        "협업 점수는 한 쌍의 모든 리뷰를 같은 비중으로 평균한다.")
+    return [PeerReview(reviewer_id=r["reviewer_id"], reviewee_id=r["reviewee_id"],
+                       positive=ReviewSection(items=picked[r["review_id"]]["positive"], text=r["positive_text"]),
+                       negative=ReviewSection(items=picked[r["review_id"]]["negative"], text=r["negative_text"]))
+            for r in rows]
 
 
 def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[ParsedReview]]:
@@ -162,7 +151,7 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
             if r.skill not in held:
                 report.warn("project_skill_requirements.csv", f"{pid}가 요구하는 {r.skill}을 가진 사람이 없다")
 
-    reviews = _latest_reviews(t["reviews.csv"], t["review_items.csv"], report)
+    reviews = _all_reviews(t["reviews.csv"], t["review_items.csv"], report)
     if not report.ok:
         raise ValueError("bundle cannot be converted:\n" + report.summary())
 
