@@ -73,6 +73,7 @@
   모델 변경이라 Codex(C6) 소관이다. 화면은 그 결과를 따라간다.
 - **K9** ✅ (claude-b, 2026-10-05 `feat/claude-b-dataset-upload`, K8 브랜치 위, main 병합은 사용자 승인 대기) CSV 묶음(zip) 업로드 → `core.ingest` 검증 → 활성 데이터셋 전환, 캐시 키에 데이터셋 버전, 화면 "데이터" 탭.
 - **K10** ✅ (claude-b, 2026-10-05 `feat/claude-b-swap-apply`, K9 위, main 병합은 사용자 승인 대기) 교체 "검토 → 적용" 흐름: 적용한 교체로 명단을 바꾸고 이력·위반을 남기며, PDF가 적용 명단과 교체 목록을 보여 준다.
+- **K13** ✅ (claude-b, 2026-10-05 `feat/claude-b-persistence`, main 위, main 병합은 3차 리뷰 후) 업로드 데이터·적용 교체·플랜 서명키 영속 + claude-a 교차 리뷰 반영.
 - **K3** (claude-a·claude-b·codex 합의, C0·C5·C6 이후) 검증된 솔버를 서비스에 연결한다. 인터페이스는 Codex와 합의한다.
 
 ### 미배정 (사용자 결정 필요 — 스키마 양식 D절에서 일부 답을 받음)

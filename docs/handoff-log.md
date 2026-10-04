@@ -22,6 +22,35 @@
 
 ---
 
+## 2026-10-05 · claude-b · main 병합(K4·K8·K9·K10 통합) + K13 영속화
+- **main 병합**: 사용자 지시("완료되고 문제 없으면 main 병합")로 `feat/claude-b-integration`(`6a36137`)을 main에 **fast-forward**했다(`f10e710` → `6a36137`).
+  - 근거: Codex 리뷰 2라운드(통합 2라운드 approve), claude-a 교차 리뷰 MUST 없음.
+  - main 기준선: `uv run --group benchmark pytest -q` → 795 passed, 15 deselected. slow 15 passed.
+- **K13** `feat/claude-b-persistence` `5e5c2a3`(main `6a36137` 위). **main 병합 보류**: 2라운드 리뷰의 MUST를 고친 분량이 3차 리뷰를 받지 않았다.
+  - 한 일:
+    - 업로드 묶음을 영속하고 부팅 때 재검증·해시 확인 후 복원한다(실패하면 fixture로 뜨고 `restore_error`를 보여 준다).
+    - 적용 교체를 plan_token 키로 저장·복원한다(`PUT/GET /api/plans/edits/{token}`, 서명 검증·재생 검증, revision 순서 보장, 플랜별 파일, 다른 데이터셋 기록 정리).
+    - 플랜 서명키를 고정한다(`TEAMWEAVER_PLAN_SECRET` 또는 `plan_secret` 파일).
+  - claude-a 교차 리뷰 반영:
+    - S1: 교체 없는 PDF도 지표를 서버가 다시 계산한다.
+    - S2: 변환 예외를 리포트에 싣는다.
+    - S3: 버전 검사를 dist 검사보다 먼저 한다.
+    - L1: reset은 JSON 요청만 받는다.
+    - L2: 결과 캐시는 LRU 32개다.
+  - 상대 영향:
+    - **claude-a**: `/api/datasets/reset`은 이제 JSON 요청만 받는다. `api/main.py` lifespan이 데이터 폴더(`TEAMWEAVER_DATA_DIR`, 기본 `~/.teamweaver`)를 읽는다.
+    - tests/api는 세션·테스트마다 데이터 폴더를 임시로 돌린다.
+    - `ResultCache`는 32개 LRU다.
+  - 검증:
+    - `uv run --group benchmark pytest -q` → 818 passed, 16 deselected. slow 16 passed(재기동 E2E 포함).
+    - 웹 vitest 107, tsc·lint·build 통과. `~/.teamweaver`는 생성되지 않았다.
+    - 결함 주입 23종이 모두 검출됐다(일부는 테스트를 보강한 뒤 검출).
+  - 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 2라운드를 받았다.
+    - 1라운드 MUST 1(PUT 순서), SHOULD 5를 반영했다.
+    - 2라운드 MUST 1(revision 시각 기준), SHOULD 1을 반영했다. **이 반영분은 3차 리뷰 전이다.**
+- 교차 리뷰(claude-b → claude-a): `feat/claude-a-review-rounds` MUST 없음(노트 문구 SHOULD 1 → claude-a가 `3c24bc6`에서 반영). `feat/claude-a-k6-int8` MUST·SHOULD 없음.
+- 근거: `.omc/reports/2026-10-05-k13-persistence.md`, `.omc/reports/2026-10-05-xreview-claude-a-review-rounds.md`
+
 ## 2026-10-05 · claude-b · 통합 브랜치 실브라우저 E2E
 - 브랜치/커밋: `feat/claude-b-integration`의 테스트 커밋(아래 기록 직전). main 병합은 사용자 승인 후.
 - 한 일: slow 테스트 `tests/api/test_ui_e2e.py`를 추가했다.
