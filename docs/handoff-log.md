@@ -22,6 +22,38 @@
 
 ---
 
+## 2026-10-05 · claude-b · K10 교체 "검토 → 적용" 흐름
+- 브랜치/커밋: `feat/claude-b-swap-apply` `dc0ed9e`(코드) + 이 기록. **K9 브랜치 위**(K8 → K9 → K10 순서로 병합). main 병합은 사용자 승인 후.
+- 한 일:
+  - `POST /api/plans/apply-swap`: 교체 후 명단 전체를 `core.evaluate.plan_eval`로 다시 평가하고, 충족률·최적화율·미충원을 다시 계산한다(stateless).
+    - 교체 규칙은 `/api/whatif`와 같은 함수를 쓴다.
+    - 위반이 있는 명단은 최적화율을 `None`(산정 불가)으로 둔다.
+  - 웹:
+    - 검토 결과 아래에 "이 교체 적용"을 둔다. 새 위반·미충원이 있으면 페이지 안에서 "위반을 알고 적용"을 한 번 더 누르게 한다.
+    - 플랜별 적용 스택을 둔다(마지막 적용 취소, 원래 플랜으로). 적용 후 다음 검토는 적용된 명단을 기준으로 한다.
+    - 교체 선택을 바꾸면 이전 검토를 버린다. 적용 요청은 별도 세대로 관리한다(늦은 응답·409 무시).
+  - PDF:
+    - 원 플랜 명단과 교체 순서(id)만 받는다. 서버가 다시 적용해 명단·지표·교체별 Δ·경고·최종 위반을 계산한다.
+    - 교체는 최대 50건, 명단은 최대 5,000건이다. LP 상한은 요청당 1회이고, 재계산은 워커 스레드에서 돈다.
+  - 원 플랜 서명: `/api/optimize`의 plan 이벤트에 `plan_token`(HMAC; 데이터셋·라벨·명단·가중치·파라미터)을 싣는다.
+    - PDF는 서명을 검증한다. 일치하면 "서버 계산 확인", 없으면 "미검증"으로 표시하고, 틀리면 422다.
+    - 비밀키는 `TEAMWEAVER_PLAN_SECRET`이고, 없으면 프로세스마다 무작위로 만든다.
+- 상대 영향:
+  - **claude-a**: `core.evaluate.plan_eval.evaluate_plan`을 import만 했다(수정 없음).
+    - 평가 결과의 위반·미충원 문장이 화면·PDF 경고로 나간다. 문장이 바뀌면 `api/routes/plans.swap_warnings`·`web/src/api/whatifWarnings.ts`를 확인해야 한다.
+  - **API 계약**:
+    - `ReportRequest`: `applied_swaps`(id 목록), `base_entries`, `weights`, `plan_token`이 추가됐다. `optimization_ratio`는 null을 허용한다.
+    - plan 이벤트에 `plan_token`이 추가됐다.
+  - **테스트 기준선**: 743 passed, 11 deselected(slow PDF 테스트 1개 추가).
+- 검증:
+  - `uv run --group benchmark pytest -q` → 743 passed. `uv run pytest -m slow -q` → 11 passed.
+  - 웹: vitest 97 passed, `tsc -b`·lint·build 통과.
+  - 결함 주입 21종이 모두 테스트에 걸렸다. 처음 공허했던 테스트 3개(되돌리기 스택, 설정 변경, 교체 상한)는 보강했다.
+- 리뷰: Codex 적대적 리뷰 2라운드.
+  - 1라운드 high 2·medium 2, 2라운드 high 2를 모두 반영했다.
+  - 2라운드 반영분은 3라운드 리뷰를 받지 않았고 결함 주입으로 확인했다.
+- 근거: `.omc/plan/2026-10-05-k10-swap-apply.md`, `.omc/reports/2026-10-05-k10-swap-apply.md`
+
 ## 2026-10-05 · claude-b · K9 CSV 묶음 업로드 → 활성 데이터셋 전환
 - 브랜치/커밋: `feat/claude-b-dataset-upload` `ebcb140`(코드) + 이 기록. **K8 브랜치(`feat/claude-b-milp-settings` `d936415`) 위에서 갈라 만들었다**. K8을 먼저 병합해야 한다. main 병합은 사용자 승인 후.
 - 한 일:
