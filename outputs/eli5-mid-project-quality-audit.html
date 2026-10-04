@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TeamWeaver 중간 품질 검수 — 쉬운 설명과 상세 결과</title>
+  <style>
+    :root{color-scheme:light;--ink:#182338;--muted:#58667c;--line:#d6dce6;--paper:#f5f4ef;--card:#fff;--blue:#2459c4;--red:#a52f2f;--amber:#8a5200;--green:#246343}
+    *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif}
+    main{width:min(1040px,calc(100% - 32px));margin:auto;padding:42px 0 80px} h1{font-size:clamp(34px,6vw,58px);line-height:1.12;letter-spacing:-.045em;margin:.4em 0} h2{font-size:clamp(24px,4vw,32px);line-height:1.25;margin:0 0 14px} h3{font-size:20px;margin:24px 0 8px} p{margin:8px 0 14px} a{color:var(--blue);text-underline-offset:3px} a:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+    .lead{font-size:19px;color:var(--muted);max-width:820px}.badge{display:inline-block;padding:5px 11px;border-radius:99px;background:#fff0d8;color:var(--amber);font-weight:800}.meta{font-size:14px;color:var(--muted)}section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin:18px 0}.diagram{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:stretch}.step{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fbfcff;text-align:center}.step b{display:block;font-size:24px;color:var(--blue)}.arrow{align-self:center;color:var(--blue);font-size:24px;text-align:center}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{border:1px solid var(--line);border-radius:12px;padding:14px}.metric strong{display:block;font-size:25px}.sev{font-weight:850}.high{color:var(--red)}.med{color:var(--amber)}.low{color:var(--green)}.finding{border-left:5px solid var(--amber);padding:2px 0 2px 16px;margin:20px 0}.finding.highline{border-color:var(--red)}.finding h3{margin:0 0 5px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:800}.proof{background:#f1f4f9;border-radius:9px;padding:12px 14px;overflow-wrap:anywhere}code{font: .9em ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef1f5;padding:2px 5px;border-radius:4px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#edf2fc}.note{color:var(--muted);font-size:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.okbox{border-left:5px solid var(--green);padding-left:14px}.stopbox{border-left:5px solid var(--red);padding-left:14px}details{border-top:1px solid var(--line);padding:12px 0}summary{cursor:pointer;font-weight:750}.check{display:inline-block;border-radius:99px;background:#e3f2e8;color:var(--green);padding:4px 10px;font-weight:800}.footer{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:14px}
+    @media(max-width:760px){main{width:calc(100% - 20px);padding-top:24px}.diagram{grid-template-columns:1fr}.arrow{transform:rotate(90deg);height:15px}.grid,.two{grid-template-columns:1fr}section{padding:17px}.lead{font-size:17px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body><main>
+  <header>
+    <span class="badge">중간 품질 검수 · 2026-10-04</span>
+    <h1>TeamWeaver는 어디까지 믿어도 될까요?</h1>
+    <p class="lead">한 줄 결론: 데모와 작은 검증 문제는 잘 갖춰졌지만, 사람 추천 결과를 실제 의사결정에 맡기기 전 반드시 고쳐야 할 모델·검증·설명 문제가 발견됐습니다.</p>
+    <p class="meta">대상 브랜치 <code>feat/phase1-solver-benchmark</code> · 소스 커밋 <code>f2c62526019676b726fc6141a8526a3556c97dc6</code> · 읽기 전용 코드·실험 검수 (제품 코드는 변경하지 않음)</p>
+  </header>
+
+  <section aria-labelledby="map">
+    <h2 id="map">먼저, 서비스가 하려는 일</h2>
+    <div class="diagram" role="img" aria-label="가상 인력과 프로젝트 정보를 넣고, 모델이 팀을 고르고, 제약을 확인하고, 설명을 만들고, 사람이 검토하는 흐름">
+      <div class="step"><b>1 · 입력</b>가상 인력·기술·협업 정보</div><div class="arrow" aria-hidden="true">→</div>
+      <div class="step"><b>2 · 선택</b>수학 모델이 팀 조합 계산</div><div class="arrow" aria-hidden="true">→</div>
+      <div class="step"><b>3 · 검사</b>예산·정원·점수를 다시 확인</div>
+      <div class="step"><b>4 · 설명</b>화면·교체 비교·근거 제공</div><div class="arrow" aria-hidden="true">→</div>
+      <div class="step"><b>5 · 판단</b>사람이 추천을 검토</div>
+    </div>
+    <p class="note">현재 실험은 주로 2~3단계의 기술 동작을 합성 데이터로 확인합니다. 실제 고객 만족, 프로젝트 성과, 인력 교체 감소를 예측하거나 입증한 것은 아닙니다.</p>
+  </section>
+
+  <section aria-labelledby="verdict">
+    <h2 id="verdict">검수 판정</h2>
+    <div class="grid">
+      <div class="metric"><span class="sev high">P0/P1 · 우선 수정</span><strong>6개</strong>유효성·설명·배포 보안·대안/정원 계약</div>
+      <div class="metric"><span class="sev med">P2 · 다음 수정 묶음</span><strong>6개</strong>what-if·표기·실험 해석·검색·패키징·근거 출처</div>
+      <div class="metric"><span class="sev low">양호한 기반</span><strong>3개</strong>테스트·오라클·기술 실험 기반은 탄탄함</div>
+    </div>
+    <p><b>권고:</b> Phase 1은 “계산 엔진 실험 단계”로 유지하고, 외부 사용자에게 최적 인력 추천을 신뢰성 있는 결과처럼 보여주는 것은 보류하세요. 아래 P0/P1 수정 및 검증 이후 제한된 내부 데모가 적절합니다.</p>
+    <p class="note">심각도는 사용자가 이 결과를 실제 인사·프로젝트 배치 결정에 쓸 때의 위험을 기준으로 매겼습니다. 같은 결함이라도 현재 합성 데이터 데모에서의 위험은 더 낮습니다.</p>
+  </section>
+
+  <section aria-labelledby="findings">
+    <h2 id="findings">먼저 고칠 발견 사항</h2>
+    <article class="finding highline">
+      <p class="label">P0 · 해의 유효성 / 최우선</p><h3>검증되지 않은 CBC 해를 유효한 배치처럼 반환할 수 있음</h3>
+      <p>현재 CBC 코드는 변수에 숫자가 들어 있기만 하면 “해가 있다”고 판단합니다. 시간 제한 0초를 준 재현에서 솔버는 <code>Not Solved</code>였지만 변수에 분수 값(<code>z=0.75</code>)이 남았습니다. 이 값은 사람을 0.75명 뽑는다는 뜻이 아니라, 정수 조건을 풀기 전의 중간 계산입니다. 그럼에도 현재 솔버 함수는 한 명을 뽑은 듯한 계획을 만들고 미충원과 위반을 비워 반환했습니다. 별도의 독립 검증기는 같은 결과를 이진 조건 위반으로 거절했습니다.</p>
+      <div class="proof"><b>재현:</b> <code>time_limit=0</code>, 중급 2명 필요, 예산 제약. 상태 <code>Not Solved</code>, <code>z=[1.0, 0.75]</code>, 계획에는 1명, 독립검증은 <code>binary_domain</code> 실패. 함수가 반환 전에 독립 검증을 강제하지 않는 것이 핵심.</div>
+      <p><b>조치:</b> 모든 솔버가 반환하기 전 공통 검증기를 반드시 통과하게 하고, incumbent(제한 시간 안에 발견한 정수 해)가 없으면 추천을 반환하지 마세요. 0초·초단기·중단·분수 변수 테스트를 추가하세요.</p>
+    </article>
+    <article class="finding highline">
+      <p class="label">P0 · 수치 검증 / 실험 비교에 직접 영향</p><h3>CBC 결과 85건이 수치 허용오차 때문에 탈락했는데, 원인이 보고서에서 사라짐</h3>
+      <p>원본 Phase 1 체크포인트 357건을 확인했습니다. 87건은 “쓸 수 있는 해 없음” 상태입니다. 그중 CBC 85건과 HiGHS 1건은 예산 제약의 검증 허용오차 위반, CBC 1건은 이진 변수 위반으로 거절됐습니다. 대부분은 솔버가 불가능 판정을 내린 게 아니라 결과가 현재의 엄격한 검증 기준을 통과하지 못한 것입니다. 그런데 결과 HTML은 검증 실패 0건을 표시하고, 실패 사유도 빈칸으로 보일 수 있습니다. 이 때문에 사용자는 실패가 없었다거나 솔버가 단순히 느렸다고 오해할 수 있습니다.</p>
+      <div class="proof"><b>원본 대조:</b> `phase1-long-sweep-v2/checkpoint.json`의 357 상태와 각 `result.json`의 <code>payload.error</code>. 합계: CBC budget 85 + CBC binary_domain 1 + HiGHS budget 1. HTML 생성기 `experiments/phase1/report.py`는 검증 실패를 <code>payload.validation</code> 또는 특정 checkpoint status에서만 세며, 표 오류 칸은 바깥쪽 <code>result.error</code>만 확인합니다. 이 87건은 안쪽 <code>payload.error</code>에 있습니다.</div>
+      <p><b>조치:</b> 생성기에서 실패 상태와 <code>payload.error</code>를 집계·표시하고, “솔버 실패”, “해는 있으나 검증 실패”, “시간 초과”, “품질 한도 미달”을 따로 나누세요. 그 다음 상대·절대 허용오차, 입력 단위(원/천원 등), 반올림 순서를 모델 정의와 맞춰 재실험하세요. 검증을 느슨하게 풀어 통과율을 올리기 전에 실제 위반 규모부터 계측해야 합니다.</p>
+    </article>
+    <article class="finding highline">
+      <p class="label">P1 · 설명의 사실성 / 사람에 대한 정보</p><h3>“리뷰 근거 문장” 자리에 실제 리뷰가 아닌 숫자를 넣음</h3>
+      <p>교체 설명에 전달되는 <code>evidence</code>는 리뷰 문장 대신 감정 점수 숫자입니다. SQLite 조회가 <code>reviewer_id</code>와 <code>text_polarity</code>만 반환하고, 원문 리뷰 텍스트는 저장하지 않습니다. 반면 테스트 이름은 “실제 리뷰 문장”을 주장하지만 단지 evidence 목록이 비어 있지 않은지만 확인합니다. 사용자가 자연어 근거를 믿으면 숫자를 인용문으로 착각하거나, 모델이 원문에 없는 문장을 만든 것으로 오해할 수 있습니다.</p>
+      <div class="proof"><b>확인:</b> <code>core/rag/sqlite_rag.py:27–28</code>가 key=리뷰어 ID, value=polarity 숫자를 선택. <code>tests/api/test_rag_context.py:29–39</code>는 값 존재만 검사. 리뷰 원문과 추출 문장 간 일치 여부는 평가하지 않음.</div>
+      <p><b>조치:</b> 원문 문장 또는 검증 가능한 문장 ID·출처를 보존하고 인용 범위를 제한하세요. 테스트가 “원문에 포함된 정확한 인용인지” 검사하도록 바꾸세요. 원문이 없다면 수치를 의견 근거처럼 포장하지 말고 “수치 요약”으로 표시하세요.</p>
+    </article>
+    <article class="finding">
+      <p class="label">P1 · 보안 / 배포 전 차단</p><h3>PDF 생성기가 요청의 Host를 믿고 그 주소로 브라우저를 보냄</h3>
+      <p>PDF API는 들어온 요청의 <code>Host</code> 값을 바탕으로 서버 내부 브라우저가 접속할 주소를 정합니다. 외부에서 API에 접근할 수 있고 Host를 제어할 수 있다면, 악성 Host로 서버의 브라우저를 다른 주소로 유도할 가능성이 있습니다. PDF 데이터가 브라우저 페이지에 들어가므로 데이터 유출 위험도 생깁니다. 이번 검수에서는 네트워크 접속이나 공격 실행은 하지 않고 코드 흐름만 확인했습니다.</p>
+      <p><b>조치:</b> 고정된 내부 origin/허용목록을 사용하고 임의 Host를 거절하세요. 브라우저의 로컬 접근도 제한하고, 인증·요청 크기·동시 실행 한도를 더하세요. 외부 서비스로 공개하기 전에 보안 검토가 필요합니다.</p>
+    </article>
+    <article class="finding">
+      <p class="label">P1 · 추천 신뢰도</p><h3>“대안 팀” 생성이 중복 또는 지나치게 나쁜 후보를 반환할 수 있음</h3>
+      <p>한 사람만 가능한 팀에 22명 정원을 요구하는 예제에서는 대안 B·C·D가 모두 빈 팀으로 반복됐고, 각각 같은 점수와 22명 미충원을 가졌습니다. 대안 생성은 이전 팀과 달라졌는지만 찾고, 실질적으로 다른 후보인지·품질이 기준에 맞는지 확인하지 않습니다. 화면에 A/B/C/D가 있다고 네 가지 유의미한 선택지가 있는 것은 아닙니다.</p>
+      <p><b>조치:</b> 팀 구성을 정규화한 서명으로 중복 제거, 빈 계획 제외/표시, 최소 품질·미충원 한도를 적용하고, 후보가 부족하면 “대안 없음”을 명시하세요.</p>
+    </article>
+    <article class="finding">
+      <p class="label">P1 · 일정 정확성</p><h3>요구에 적히지 않은 직급의 사람도 정원 밖에서 뽑힐 수 있음</h3>
+      <p>모델은 입력에 지정된 직급별 정원만 채우게 하고, 정원에 언급되지 않은 다른 직급은 0명으로 묶지 않습니다. 중급 1명만 요청한 작은 예제에서 중급 1명과 주니어 1명이 모두 선택됐습니다. 비즈니스 의도가 “허용된 직급만 정확히 선발”이라면 실제 조합이 잘못됩니다.</p>
+      <p><b>조치:</b> 직급이 생략되면 0명으로 볼지, 자유 인원으로 볼지 계약을 정하고, 사람 수 정합성 테스트를 추가하세요.</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="other">
+    <h2 id="other">중요하지만 바로 다음 순서로 보완할 점</h2>
+    <div class="finding"><p class="label">P2 · what-if</p><h3>교체 후 점수가 전체 최적화 점수와 같지 않음</h3><p>교체 계산은 기술 차이와 협업 점수를 단순 합산합니다. MILP의 시너지 가중치(람다), 과친숙 페널티, 정원·예산·가용성 제약과 일부 가지치기 규칙을 모두 반영하지 않습니다. 또 교체로 정원·예산·가용성이 깨지는지 검증하지 않습니다. 이를 “모델 점수 변화”나 전체 목적함수 차이로 표시하면 잘못된 비교입니다.</p><p><b>조치:</b> 전체 모델을 고정한 재최적화를 하거나, 가벼운 근사치라면 화면과 API에서 “부분 점수 추정”이라 이름 붙이고 제약 통과 여부를 별도 계산하세요.</p></div>
+    <div class="finding"><p class="label">P2 · 숫자 표기와 검증 일치</p><h3>0.206 배정을 화면에서 0.21로 올려 표시할 수 있음</h3><p>모델은 0.206을 허용했지만 화면 변환에서 최소 배정량을 소수 둘째 자리로 반올림해 0.21로 표시하는 재현이 통과했습니다. 가용 시간이 0.206이면 화면에는 더 많은 일을 배정한 것처럼 나타납니다. Greedy 기준안도 동일한 반올림 문제가 재현됐습니다.</p><p><b>조치:</b> 화면용 배정을 항상 내림하고, 표시된 최종 계획 자체를 예산·가용성으로 다시 검증하세요. API 입력에서 소수 자릿수 제한 또는 단위 계약을 명확히 하세요.</p></div>
+    <div class="finding"><p class="label">P2 · 실험 해석</p><h3>112건의 비교 표에는 서로 다른 제한 시간이 섞여 있음</h3><p>각 솔버당 오라클을 뺀 112건은 240초 조건만 모은 집합이 아닙니다. 체크포인트에 있는 112건은 240초 장기 실행 108건(기본 실험+확인 실험)에 호환성 1건(60초)과 사전 파일럿 3건(각 120초)을 더한 것입니다. 설명 일부가 112건 전체를 같은 240초 조건으로 묶어 읽히게 합니다. 기준 표본은 계획상 사전 파일럿 제외가 원칙입니다.</p><p><b>조치:</b> 핵심 비교(108건/솔버), 파일럿(3건), 호환성(1건)을 별도 표·분모로 나누세요. 성공률과 중앙시간은 단계·크기·시나리오를 함께 공개하세요.</p></div>
+    <div class="finding"><p class="label">P2 · 그래프 검색</p><h3>특정 큰 그래프에서 협업 경로를 놓칠 수 있음</h3><p>메모리 그래프의 N-hop 탐색은 도달 노드 수를 8비트 정수로 누적합니다. 128개 연결 경로를 한꺼번에 세는 작은 재현에서 중간 메모리 탐색은 목적지 1개를 놓쳤고 SQLite 결과에는 있었습니다. 고밀도 그래프에서 추천 근거/맥락 조회가 달라질 수 있습니다.</p><p><b>조치:</b> 더 넓은 정수형 또는 논리 OR 탐색을 쓰고, 밀도·노드 수 경계 테스트를 추가하세요.</p></div>
+    <div class="finding"><p class="label">P2 · 패키징</p><h3>빌드된 Python wheel에는 데모에 필요한 입력 파일·화면이 없음</h3><p>wheel 빌드 자체는 됐지만, wheel을 임시 위치에 풀어 fixture를 읽어보니 <code>fixtures/people.json</code>이 없어 실패했습니다. 패키지 설정은 <code>core</code>와 <code>api</code>만 담고, 프론트엔드 산출물은 담지 않습니다. 소스 체크아웃 개발은 되지만 설치 패키지로 데모 배포하려면 추가 작업이 필요합니다.</p><p><b>조치:</b> 배포 단위(소스 checkout, 컨테이너, wheel)를 먼저 정하고 패키지 설치 후 API 시작·정적 화면·fixture 로드까지 하는 격리 smoke test를 넣으세요.</p></div>
+    <div class="finding"><p class="label">P2 · 데이터 출처</p><h3>가상 리뷰에서도 인용 근거가 원문과 정확히 같지 않은 사례가 있음</h3><p>현재 동결 fixture 266건의 리뷰-추출 결과를 비교하자 6건의 evidence 문자열은 원문 긍정·부정 문장에 그대로 포함되지 않았습니다. 일부는 요약이나 가공일 수 있으므로 곧바로 “허위”라고 단정하지 않습니다. 다만 문장 인용으로 표시하려면 원문과의 출처 관계가 명시돼야 합니다.</p><p><b>조치:</b> “직접 인용”과 “모델 요약”을 다른 데이터 형태로 저장하고, 원문 span 또는 문장 ID를 보존하세요. 생성 결과에 대한 출처 검증을 추가하세요.</p></div>
+  </section>
+
+  <section aria-labelledby="good">
+    <h2 id="good">잘 만든 토대도 분명히 있습니다</h2>
+    <div class="two">
+      <div class="okbox"><h3>검증·실험 구조</h3><ul><li>Phase 0에 작은 정답을 사람이 아는 “오라클” 문제와 독립 제약 검증기가 있습니다.</li><li>모든 Python 테스트 <b>497 passed, 10 deselected</b>.</li><li>실험 체크포인트·결과 해시·솔버 상태를 기록해 중단 후 이어갈 수 있습니다.</li><li>합성 입력은 고정 seed와 매니페스트로 재현하려는 설계입니다.</li><li>HiGHS·SCIP·CBC를 동일 장비·한 스레드 조건에서 비교했고, 상용 솔버를 아직 쓰지 않았음을 숨기지 않습니다.</li></ul></div>
+      <div class="okbox"><h3>웹·실행 검증</h3><ul><li>웹 테스트 <b>38 passed</b>; 프로덕션 빌드 성공; lint 오류 없음.</li><li>기술 실험과 현실 성과 검증을 “NOT_CALIBRATED”로 구분합니다.</li><li>솔버 bound가 없을 때 임의로 최적성 격차를 지어내지 않도록 설계했습니다.</li><li>비싼 전면 재최적화를 피하려는 what-if 단축 경로는 데모 응답성 의도를 코드에 남겼습니다. 단, 그 값이 전체 점수와 다름을 더 명확히 해야 합니다.</li></ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="experiment">
+    <h2 id="experiment">실험은 실제로 무엇을 말해주나요?</h2>
+    <p>완료 기록은 357건입니다. 여기에는 작은 오라클 21건과 비오라클 비교 336건(각 솔버 112건)이 들어갑니다. 비오라클에서 본문에 보고된 성공은 HiGHS 79/112, SCIP 75/112, CBC 22/112입니다. 하지만 CBC의 추가 86건·HiGHS 1건은 예산 제약 검증에 실패했으므로, 표의 성공률은 “솔버가 해를 찾은 비율”만이 아니라 “현재 검증 기준까지 통과한 비율”입니다. 검증 오차 원인을 바로잡기 전에는 솔버 엔진 성능 차이라고 단정하지 마세요.</p>
+    <div class="tablewrap"><table><thead><tr><th>검수 숫자</th><th>읽는 법</th><th>제한</th></tr></thead><tbody>
+      <tr><td>357건 터미널 상태</td><td>사전 일정이 완료 상태까지 기록됨</td><td>실험 내용이 모두 성공했다는 뜻은 아님</td></tr>
+      <tr><td>197 DONE</td><td>실행 결과를 완료로 수집</td><td>품질 판정과 같은 개념 아님</td></tr>
+      <tr><td>87 NO_VALID_INCUMBENT</td><td>사용 가능한 검증 통과 해가 없음</td><td>대부분 수치 허용오차 거절; 87건이 모두 “해 없음” 증명은 아님</td></tr>
+      <tr><td>68 DEADLINE_EXCEEDED</td><td>외부 실행 시간 한도 초과</td><td>현재 벤치마크 실행 관리 기준</td></tr>
+      <tr><td>NOT_CALIBRATED</td><td>실제 조직·성과와 맞춰보지 않음</td><td>업무 효과·공정성·고객 성과 결론 불가</td></tr>
+    </tbody></table></div>
+    <p>따라서 지금 말할 수 있는 결론은 “합성 입력에서 이 구현과 이 설정의 실행 특성을 측정했다”입니다. “이 모델이 현실에서 최고의 팀을 찾아준다”는 결론은 아직 전혀 입증되지 않았습니다.</p>
+  </section>
+
+  <section aria-labelledby="scope">
+    <h2 id="scope">검수 범위와 재현 증거</h2>
+    <ul>
+      <li><b>모델·데이터:</b> MILP 변수/제약, 정원·예산·가용성, 목적함수, 대안, 입력·검증, 그래프·리뷰 처리.</li>
+      <li><b>앱·보안:</b> API·what-if·RAG·PDF 흐름, 테스트 주장과 실제 assertions, wheel 배포물 구성.</li>
+      <li><b>실험·산출물:</b> Phase 0/1 설계, 357건 원시 체크포인트와 결과 JSON, 보고서 집계 로직과 설명 페이지.</li>
+      <li><b>통과 근거:</b> Python 497 passed / 10 deselected; 웹 38 passed; TypeScript 빌드; oxlint; wheel 생성 및 wheel 내용 격리 확인.</li>
+      <li><b>핵심 재현:</b> 합성 작은 fixture로 CBC 0초 분수 해, 표기 배정 올림, 중복 빈 대안, 미등록 직급 선발, 128-hop 누적 넘침, 리뷰 숫자 evidence를 재현했습니다. 프로젝트 코드는 수정하지 않았습니다.</li>
+    </ul>
+    <p class="note">실험 원본은 이번 작업 시작 당시 추적되지 않은 파일로 존재했습니다. 원본 결과 디렉터리는 사용자 산출물로 보존했으며, 보고서 커밋에 포함하지 않습니다. 네트워크 기반 침투 테스트는 하지 않았습니다.</p>
+  </section>
+
+  <section aria-labelledby="plan">
+    <h2 id="plan">수정·개발 순서</h2>
+    <div class="tablewrap"><table><thead><tr><th>순서</th><th>해야 할 일</th><th>완료 기준</th><th>이유</th></tr></thead><tbody>
+      <tr><td>0</td><td>모든 solver 결과를 검증기에 강제 통과; fractional/no incumbent 차단</td><td>공통 solver contract + 실패 주입 테스트</td><td>틀린 추천이 노출될 수 있음</td></tr>
+      <tr><td>1</td><td>예산 제약 오차의 단위·허용오차·rounding 규칙 분석; 보고기 87건 원인 집계 수정</td><td>솔버별 모든 거절의 재현 로그·새 비교표</td><td>성능 결론을 공정하게 읽을 수 있어야 함</td></tr>
+      <tr><td>2</td><td>배정 표시 일관성, 직급 계약, 빈/중복 대안, what-if 정확성 수정</td><td>최종 화면 계획을 독립 재검증하는 테스트</td><td>사용자가 보는 계획과 모델 의미 일치</td></tr>
+      <tr><td>3</td><td>리뷰 원문 인용·요약 출처 분리, prompt 입력 검증</td><td>화면의 모든 근거를 출처까지 추적</td><td>사람에 대한 설명의 신뢰·공정성</td></tr>
+      <tr><td>4</td><td>고정 origin과 PDF 브라우저 격리, 인증·동시성·입력 한도</td><td>위협 모델 및 안전한 API 배포 smoke test</td><td>외부 공개 전 보안 최소선</td></tr>
+      <tr><td>5</td><td>수정된 모델·집계로 고정 입력 솔버 벤치마크 재실행</td><td>코드·입력·의존성·옵션 hash와 원본 결과 보존</td><td>현재 성능 주장이 달라질 수 있음</td></tr>
+      <tr><td>6</td><td>인사팀 컬럼 스키마만 받아 합성 데이터 가정 갱신; 실제 데이터 접근 없이 위험 점검</td><td>열 정의·결측/기간/식별자 규칙 문서화</td><td>현실 입력과의 형태 차이를 줄임</td></tr>
+      <tr><td>7</td><td>실제 결과 레이블 후보를 인사·프로젝트 책임자와 정의</td><td>고객 평가·추가 개선 과제·교체 시점 등의 정의/수집 한계 합의</td><td>예측/추천 효과 검증의 목표 자체가 아직 미정</td></tr>
+    </tbody></table></div>
+    <p><b>주의:</b> 실제 개인 데이터나 실제 성과 숫자가 없더라도 입력 계약·합성 테스트·수학 검증·배포 보안 작업은 진행할 수 있습니다. 다만 그 결과를 현실 팀 성과의 증거로 바꾸어 말할 수는 없습니다.</p>
+  </section>
+
+  <section aria-labelledby="review">
+    <h2 id="review">독립 리뷰와 남은 한계</h2>
+    <p><span class="check">리뷰 절차 준수: 부분 충족·명시</span></p>
+    <p>전역 규칙에 따라 가장 높은 역량으로 지정된 <code>gpt-6-astra</code> 모델로 서로 다른 범위를 독립 검토하도록 세 명의 리뷰어를 요청했습니다. 각 리뷰어는 핵심 예비 발견을 전달했지만, 최종 답변을 완료하기 전에 사용량 제한으로 작업이 종료됐습니다. 그래서 최고 모델 리뷰를 완전히 완료했다고 주장하지 않습니다. 받은 발견은 제가 원본 코드·fixture·결과 JSON·테스트 실행으로 직접 다시 확인했습니다. 이 최종 종합은 활성 환경의 기본 Codex 모델로 수행했으며, 높은 모델 리뷰가 끝나지 않은 잔여 위험이 있습니다.</p>
+    <p>확인된 예비 독립 리뷰 주제는 계산/데이터/최적화, 앱/API/보안/운영, 실험/보고 방법론이었습니다. 본 보고서에서 재현한 결과를 우선 채택했고, 아직 코드 흐름만 본 보안 항목은 가능성으로 표현했습니다. 리뷰어의 사용량 제한 때문에 모든 발견을 독립적으로 끝까지 교차검증하지 못했습니다.</p>
+    <p class="note">검수는 설계·구현·기록을 다각도로 읽은 중간 점검이지, 개인정보 영향평가, 법률 검토, 침투 테스트, 인사 공정성 인증은 아닙니다. 실제 인력·리뷰 데이터가 없으므로 모델의 편향/현실 타당도는 이번 자료로 판정할 수 없습니다.</p>
+  </section>
+
+  <section aria-labelledby="handoff">
+    <h2 id="handoff">지금 기억하면 좋은 세 문장</h2>
+    <div class="stopbox"><p><b>1.</b> 현재 추천은 실제 조직에서 잘 작동한다고 검증된 추천이 아닙니다.</p><p><b>2.</b> 실험의 87개 거절을 모두 “솔버가 못 품”이라고 읽으면 안 됩니다. 검증 허용오차 문제가 대부분입니다.</p><p><b>3.</b> 가장 먼저 해의 검증을 모든 반환 경로에 강제하고, 실패를 정직하게 보고하도록 고친 뒤 다시 비교해야 합니다.</p></div>
+  </section>
+  <footer class="footer">
+    <p><b>리뷰어 준수 판정:</b> highest-capability independent review를 시도했으나 gpt-6-astra 리뷰어 3개 작업 모두 usage limit에서 중단됨. 대체로 현재 기본 Codex 모델의 종합을 수행하고 재현 가능한 항목은 직접 검증. 잔여 위험: 완료된 독립 고역량 리뷰 없음.</p>
+    <p><b>커밋/원격:</b> 이 보고서는 저장소 추적 대상이며 보고서와 함께 커밋 예정입니다. 설정된 git remote가 없으므로 원격 다운로드/푸시는 제공할 수 없습니다. HTML은 단일 파일이며 네트워크 리소스 없이 열립니다.</p>
+    <p>근거 코드: <code>core/optimize/milp.py</code>, <code>core/optimize/validation.py</code>, <code>core/optimize/alternatives.py</code>, <code>api/routes/whatif.py</code>, <code>api/routes/report.py</code>, <code>core/rag/sqlite_rag.py</code>, <code>experiments/phase1/report.py</code>; 기록: <code>docs/phase1-checkpoint.md</code> 및 `phase1-long-sweep-v2` 실행 산출물.</p>
+  </footer>
+</main></body></html>
