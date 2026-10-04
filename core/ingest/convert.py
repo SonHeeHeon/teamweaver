@@ -57,8 +57,9 @@ def _coworks(work: list[dict], cutoff: dt.date) -> list[CoworkRecord]:
 
 
 def _all_reviews(reviews: list[dict], items: list[dict], report: IngestReport) -> list[PeerReview]:
-    """Every review round is kept (oldest first). The scoring graph averages all rounds of a pair with
-    equal weight because the rule-based parser returns one ParsedReview per review in the same order."""
+    """Every review round is kept (oldest first). The scoring graph averages the rounds within each
+    direction, then the two directions, because the rule-based parser returns one ParsedReview per review
+    in the same order."""
     picked = defaultdict(lambda: {"positive": [], "negative": []})
     for it in items:
         picked[it["review_id"]][it["polarity"]].append(it["item"])
@@ -68,7 +69,7 @@ def _all_reviews(reviews: list[dict], items: list[dict], report: IngestReport) -
         pairs[(r["reviewer_id"], r["reviewee_id"])] += 1
     repeated = sum(1 for n in pairs.values() if n > 1)
     report.notes.append(f"리뷰: 모든 회차 {len(rows)}건을 썼다(평가자→피평가자 {len(pairs)}쌍, 그중 {repeated}쌍은 여러 회차). "
-                        "협업 점수는 한 쌍의 모든 리뷰를 같은 비중으로 평균한다.")
+                        "협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.")
     return [PeerReview(reviewer_id=r["reviewer_id"], reviewee_id=r["reviewee_id"],
                        positive=ReviewSection(items=picked[r["review_id"]]["positive"], text=r["positive_text"]),
                        negative=ReviewSection(items=picked[r["review_id"]]["negative"], text=r["negative_text"]))

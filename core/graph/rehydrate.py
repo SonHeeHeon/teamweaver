@@ -7,6 +7,8 @@
 한계(의도된 것): availability와 projects는 저장소에서 복원하지 않고 상수로
 채운다. 이 모듈의 목적은 재수화 **비용** 비교이지 완전한 상태 복원이 아니다.
 evidence는 SQLite review 테이블에 컬럼 자체가 없어 복원 대상에서 제외한다.
+같은 평가자→피평가자 리뷰가 여러 회차면 거부한다(ValueError) -- 표에 회차 칸이 없어
+항목을 회차별로 되돌릴 수 없기 때문이다(2026-10-05).
 """
 from core.domain.models import (CoworkRecord, Dataset, Grade, ParsedReview,
                                 PeerReview, Person, ReviewSection)

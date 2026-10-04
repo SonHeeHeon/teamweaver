@@ -67,7 +67,7 @@ def test_every_review_round_is_kept_oldest_first(tmp_path):
     assert [r.positive.text for r in ds.reviews] == ["설계가 꼼꼼했다", "최근 평가"]
     assert ds.reviews[1].positive.items == ["리더십", "소통"]
     assert [p.text_polarity for p in parsed] == pytest.approx([0.0, (2 - 1) / 3])
-    assert any("2건" in n and "1쌍은 여러 회차" in n for n in report.notes)
+    assert any("2건" in n and "1쌍은 여러 회차" in n and "두 방향을 반반" in n for n in report.notes)
     graph = MemoryGraph.build(ds, parsed)
     key = tuple(sorted((graph.pid_index["P1"], graph.pid_index["P2"])))
     assert graph.pair_review_score[key] == pytest.approx((0.5 * 0 + 0.5 * 0 + 0.5 * (1 / 3) + 0.5 * (1 / 3)) / 2)
