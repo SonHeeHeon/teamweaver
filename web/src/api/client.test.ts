@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, uploadDataset } from "./client";
+import { applySwap, downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, uploadDataset } from "./client";
 import type { PlanEvent, WhatifResponse } from "./types";
 
 describe("downloadReport", () => {
@@ -121,5 +121,24 @@ describe("uploadDataset", () => {
     expect(init.body).toBe(file);
     expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/zip");
     await expect(uploadDataset(file)).rejects.toThrow("413");
+  });
+});
+
+
+describe("applySwap", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("검토와 같은 기준(설정·데이터셋 버전)을 실어 보낸다", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+    const params = { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
+                     time_limit: 120, gap: 0.05 };
+    await applySwap([], { out_person_id: "a", in_person_id: "b", project_id: "j" }, { Java: 4 },
+                    params, "v".repeat(64));
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toMatch(/\/api\/plans\/apply-swap$/);
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({ weights: { Java: 4 }, milp_params: params,
+                                 dataset_version: "v".repeat(64) });
   });
 });

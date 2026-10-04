@@ -49,10 +49,13 @@ export interface PlanEvent {
   objective: number;
   unfilled: string[];
   fulfillment: number;
-  optimization_ratio: number;
+  /** 교체를 적용한 명단에 제약 위반이 있으면 null(산정 불가 -- 상한은 제약을 지킨 배치에만 의미). */
+  optimization_ratio: number | null;
   index: number;
   cached: boolean;
   dataset_version?: string;
+  /** 서버가 이 플랜을 계산했다는 서명(K10). PDF가 원 플랜을 검증하는 데 쓴다. */
+  plan_token?: string;
 }
 
 export interface Briefing {
@@ -110,7 +113,7 @@ export interface ReportRequest {
   entries: AssignEntry[];
   objective: number;
   fulfillment: number;
-  optimization_ratio: number;
+  optimization_ratio: number | null;
   unfilled: string[];
   briefing: Briefing | null;
   fallback_used: boolean;
@@ -121,6 +124,36 @@ export interface ReportRequest {
   milp_params: PlacementSettings | null;
   /** 명단을 계산한 데이터셋. 서버 활성 데이터셋과 다르면 PDF를 거부한다(K9). */
   dataset_version: string | null;
+  /** 원 플랜에 적용한 교체(K10, 적용 순서)와 원 플랜 명단. 서버가 base_entries에서 다시
+   *  적용해 명단·지표·Δ·경고·위반을 계산한다 -- 화면이 계산한 수치는 보내지 않는다. */
+  applied_swaps: Swap[];
+  base_entries: AssignEntry[] | null;
+  weights: Record<string, number>;
+  /** 원 플랜의 서버 서명. 없으면 PDF에 "미검증"으로 표시된다. */
+  plan_token: string | null;
+}
+
+/** 적용한 교체 한 건. warnings는 그 교체로 새로 생긴 위반·미충원 문장(swapWarnings). */
+export interface AppliedSwap {
+  out_person_id: string;
+  in_person_id: string;
+  project_id: string;
+  objective_delta: number;
+  feasible: boolean;
+  warnings: string[];
+}
+
+/** POST /api/plans/apply-swap 응답 -- 교체 후 명단과 그 명단 전체의 재평가(K10). */
+export interface ApplySwapResponse {
+  entries: AssignEntry[];
+  evaluation: { objective: ObjectiveBreakdown; violations: Violation[]; shortfalls: Shortfall[] };
+  objective_delta: number;
+  feasible: boolean;
+  objective: number;
+  fulfillment: number;
+  optimization_ratio: number | null;
+  unfilled: string[];
+  warnings: string[];
 }
 
 /** 관리자 배치 설정(K8) -- api/settings.py PlacementSettings 미러. */

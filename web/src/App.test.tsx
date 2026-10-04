@@ -19,6 +19,7 @@ vi.mock("./api/client", () => ({
   streamOptimize: vi.fn(),
   postWhatif: vi.fn(),
   downloadReport: vi.fn(),
+  applySwap: vi.fn(),
 }));
 
 // NetworkGraph는 react-force-graph-2d를 통해 <canvas>를 그리는데 jsdom에는
@@ -29,7 +30,7 @@ vi.mock("react-force-graph-2d", () => ({
 
 import {
   fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
-  postWhatif, downloadReport, uploadDataset, DatasetChangedError,
+  postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap,
 } from "./api/client";
 import type { SettingsResponse } from "./api/types";
 
@@ -73,7 +74,7 @@ const META: Meta = {
 const PLAN_A: PlanEvent = {
   label: "A", entries: [{ person_id: "p1", project_id: "j1", alloc: 1 }],
   objective: 1, unfilled: [], fulfillment: 1, optimization_ratio: 1,
-  index: 0, cached: false,
+  index: 0, cached: false, plan_token: "tok-A",
 };
 
 const PLAN_B: PlanEvent = {
@@ -360,5 +361,160 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
     fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
     await waitFor(() => expect(uploadDataset).toHaveBeenCalled());
     expect(vi.mocked(uploadDataset).mock.calls[0][1]).toBe("s3cret");
+  });
+});
+
+describe("App — 교체 적용(K10)", () => {
+  const APPLIED = {
+    entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
+    evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
+    objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
+    optimization_ratio: 0.7, unfilled: [], warnings: [],
+  };
+  const CLEAN_REVIEW = { ...STALE_RESULT, briefing: { rationale: "검토 브리핑", risks: [],
+                                                      alternatives: [] } };
+
+  async function reviewSwap() {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(CLEAN_REVIEW);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await screen.findByText("검토 브리핑");
+  }
+
+  it("적용하면 같은 기준으로 서버에 보내고, 명단·이력이 바뀌며 PDF에 실린다", async () => {
+    vi.mocked(applySwap).mockReset().mockResolvedValue(APPLIED);
+    await reviewSwap();
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    expect(await screen.findByText(/교체 1건 적용/)).toBeInTheDocument();
+    const args = vi.mocked(applySwap).mock.calls[0];
+    expect(args[0]).toEqual(PLAN_A.entries);
+    expect(args[1]).toEqual({ out_person_id: "p1", in_person_id: "p3", project_id: "j1" });
+    expect(args[3]).toEqual(SETTINGS.settings);
+    expect(args[4]).toBe(META.dataset_version);
+    expect(screen.queryByText("검토 브리핑")).not.toBeInTheDocument();   // 검토 결과는 소비됨
+
+    fireEvent.click(screen.getByRole("button", { name: "PDF 내려받기" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    const call = vi.mocked(downloadReport).mock.calls.at(-1)!;
+    expect(call[0].entries).toEqual(APPLIED.entries);
+    expect(call[0].objective).toBe(1.5);
+    // PDF에는 원 명단과 교체 순서만 보낸다 -- 수치는 서버가 다시 계산한다.
+    expect(call[5]?.base).toEqual(PLAN_A.entries);
+    expect(call[5]?.swaps).toEqual([{ out_person_id: "p1", in_person_id: "p3", project_id: "j1" }]);
+    expect(call[6]).toEqual({ weights: {}, planToken: "tok-A" });
+  });
+
+  it("마지막 적용 취소로 원래 명단으로 돌아간다", async () => {
+    vi.mocked(applySwap).mockReset().mockResolvedValue(APPLIED);
+    vi.mocked(downloadReport).mockReset();
+    await reviewSwap();
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.click(screen.getByRole("button", { name: "마지막 적용 취소" }));
+    expect(screen.queryByText(/교체 1건 적용/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "PDF 내려받기" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    const call = vi.mocked(downloadReport).mock.calls.at(-1)!;
+    expect(call[0].entries).toEqual(PLAN_A.entries);
+    expect(call[5]).toBeNull();
+  });
+
+  it("두 번 적용 후 한 번 취소하면 첫 적용 뒤 명단으로 돌아간다", async () => {
+    const SECOND = { ...APPLIED, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
+                     objective: 2.0, warnings: [] };
+    vi.mocked(applySwap).mockReset().mockResolvedValueOnce(APPLIED).mockResolvedValueOnce(SECOND);
+    vi.mocked(downloadReport).mockReset();
+    await reviewSwap();
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p2" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await screen.findByText("검토 브리핑");
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 2건 적용/);
+    fireEvent.click(screen.getByRole("button", { name: "마지막 적용 취소" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.click(screen.getByRole("button", { name: "PDF 내려받기" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    const call = vi.mocked(downloadReport).mock.calls.at(-1)!;
+    expect(call[0].entries).toEqual(APPLIED.entries);
+    expect(call[0].objective).toBe(1.5);
+    expect(call[5]?.swaps).toHaveLength(1);
+    expect(call[5]?.base).toEqual(PLAN_A.entries);
+  });
+
+  it("계산 뒤 설정을 바꿔도 적용은 계산 당시 설정으로 한다", async () => {
+    vi.mocked(applySwap).mockReset().mockResolvedValue(APPLIED);
+    const changed = { ...SETTINGS.settings, min_alloc: 0.5 };
+    vi.mocked(saveSettings).mockReset().mockResolvedValue(
+      { ...SETTINGS, settings: changed, updated_at: "2026-10-05T01:00:00+00:00" });
+    await reviewSwap();
+    fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
+    fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    expect(vi.mocked(applySwap).mock.calls[0][3]).toEqual(SETTINGS.settings);
+  });
+
+  it("검토한 뒤 교체 선택을 바꾸면 이전 검토 결과는 적용할 수 없다", async () => {
+    vi.mocked(applySwap).mockReset().mockResolvedValue(APPLIED);
+    await reviewSwap();
+    expect(screen.getByText("검토한 교체: 김일번 → 박삼번 (j1)")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p2" } });
+    expect(screen.queryByRole("button", { name: "이 교체 적용" })).not.toBeInTheDocument();
+    expect(screen.queryByText("검토 브리핑")).not.toBeInTheDocument();
+    expect(applySwap).not.toHaveBeenCalled();
+  });
+
+  it("적용 중 다른 플랜으로 가면 늦은 응답을 버리고 버튼 잠금도 풀린다", async () => {
+    const pending = deferred<typeof APPLIED>();
+    vi.mocked(applySwap).mockReset().mockReturnValue(pending.promise);
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+      yield { event: "plan" as const, data: PLAN_B };
+    })());
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(CLEAN_REVIEW);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan B");
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await screen.findByText("검토 브리핑");
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    await screen.findByRole("button", { name: "적용 중…" });
+    fireEvent.click(screen.getByText("Plan B"));
+    await act(async () => { pending.resolve(APPLIED); await Promise.resolve(); });
+    fireEvent.click(screen.getByText("Plan A"));
+    expect(screen.queryByText(/교체 1건 적용/)).not.toBeInTheDocument();   // 늦은 응답은 버려짐
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    expect(await screen.findByRole("button", { name: "이 교체 적용" })).toBeEnabled();
+  });
+
+  it("다음 검토는 적용된 명단을 기준으로 한다", async () => {
+    vi.mocked(applySwap).mockReset().mockResolvedValue(APPLIED);
+    await reviewSwap();
+    fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p2" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(postWhatif).mock.calls[1][0]).toEqual(APPLIED.entries);
   });
 });

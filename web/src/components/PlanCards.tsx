@@ -6,7 +6,7 @@ interface Props {
   onSelect: (label: string) => void;
 }
 
-const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+const pct = (v: number | null) => (v === null ? "산정 불가" : `${(v * 100).toFixed(1)}%`);
 
 export function PlanCards({ plans, selected, onSelect }: Props) {
   return (

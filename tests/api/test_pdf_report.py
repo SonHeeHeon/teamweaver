@@ -137,3 +137,23 @@ def test_report_page_is_served_at_the_client_route(live_server):
     res = httpx.get(f"{live_server}/report", timeout=30.0)
     assert res.status_code == 200
     assert "<div id=\"root\"" in res.text
+
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_report_shows_applied_swaps_recomputed_by_server(live_server):
+    """K10: 서버가 다시 계산한 적용 교체 목록이 실제 PDF에 찍힌다."""
+    version = httpx.get(f"{live_server}/api/meta", timeout=30.0).json()["dataset_version"]
+    # 서버가 원 명단(base_entries)에서 교체를 다시 적용한다 -- 클라이언트가 보낸 경고 문구나
+    # 수치는 PDF에 쓰이지 않는다. 투입률 1.0인 p000을 p001로 바꾸면 p001의 가용률·예산에
+    # 따라 경고가 생길 수 있다; 여기서는 이력·이름이 서버 계산으로 찍히는지만 본다.
+    payload = {**_PAYLOAD, "dataset_version": version,
+               "base_entries": [{"person_id": "p000", "project_id": "j00", "alloc": 1.0}],
+               "applied_swaps": [{"out_person_id": "p000", "in_person_id": "p001",
+                                  "project_id": "j00"}]}
+    res = httpx.post(f"{live_server}/api/report", json=payload, timeout=120.0)
+    assert res.status_code == 200, res.text
+    text = _extract_text(res.content)
+    assert "적용된 교체 1건" in text
+    assert "김나윤 → 서지훈" in text
+    assert "최적화가 고른 명단이" in text

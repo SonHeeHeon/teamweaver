@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  DatasetChangedError, downloadReport, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  applySwap, DatasetChangedError, downloadReport, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
 import type {
-  DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap, WhatifResponse,
+  AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
+  WhatifResponse,
 } from "./api/types";
+
+/** 플랜 하나에 적용한 교체(K10). stack[k]는 k+1번째 교체를 적용한 뒤의 명단·지표와 그 명단
+ *  전체의 위반 문장이다 -- 되돌리기는 맨 위를 빼면 된다. 서버는 저장하지 않는다. */
+interface PlanEdit {
+  stack: { plan: PlanEvent; violations: string[] }[];
+  history: AppliedSwap[];
+}
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { AssignmentTable } from "./components/AssignmentTable";
@@ -15,6 +23,8 @@ import { SwapControl } from "./components/SwapControl";
 import { BriefingPanel } from "./components/BriefingPanel";
 import { SettingsTab } from "./components/SettingsTab";
 import { DatasetTab } from "./components/DatasetTab";
+import { ApplyControl } from "./components/ApplyControl";
+import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
 
 type Tab = "req" | "whatif" | "settings" | "data";
@@ -77,6 +87,26 @@ export default function App() {
   // 스트림의 남은 플랜도 버린다 -- runGen이 바뀌면 이전 데이터셋의 결과다.
   const [dataset, setDataset] = useState<DatasetInfo | null>(null);
   const runGen = useRef(0);
+  // 플랜별 적용 상태(K10). 재실행·데이터셋 전환이면 비운다. 다른 플랜을 봐도 유지한다.
+  const [edits, setEdits] = useState<Record<string, PlanEdit>>({});
+  const [applyBusy, setApplyBusy] = useState(false);
+  // 적용 요청의 세대. 플랜 전환·재실행·되돌리기·선택 변경이면 올려, 늦게 온 응답(성공·409
+  // 모두)을 버리고 버튼 잠금도 바로 푼다 -- 늦은 409가 더 최신 실행의 플랜을 지우지 않게.
+  const applyGen = useRef(0);
+  function cancelApply() {
+    applyGen.current += 1;
+    setApplyBusy(false);
+  }
+
+  /** 교체 선택이 바뀌었다: 이전 선택으로 검토한 결과는 화면의 선택과 맞지 않으므로 버린다. */
+  function selectionChanged() {
+    if (!whatif && !lastSwap && !whatifBusy) return;
+    swapGen.current += 1;
+    cancelApply();
+    setWhatif(null);
+    setLastSwap(null);
+    setWhatifBusy(false);
+  }
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
@@ -90,8 +120,10 @@ export default function App() {
   async function datasetSwitched(info: DatasetInfo) {
     runGen.current += 1;
     swapGen.current += 1;
+    cancelApply();
     setDataset(info);
     setPlans([]);
+    setEdits({});
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
@@ -127,9 +159,11 @@ export default function App() {
   async function run() {
     const gen = ++runGen.current;
     swapGen.current += 1;          // 재실행 -- 진행 중이던 what-if 응답도 무효화
+    cancelApply();
     setRunning(true);
     setError(null);
     setPlans([]);
+    setEdits({});
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
@@ -178,6 +212,7 @@ export default function App() {
    *  플랜의 결과인 것처럼 읽힌다. */
   function selectPlan(label: string) {
     swapGen.current += 1;          // 진행 중이던 what-if 응답을 무효화한다
+    cancelApply();
     setSelected(label);
     setWhatif(null);
     setLastSwap(null);
@@ -197,18 +232,84 @@ export default function App() {
       setWhatif(res);
       setLastSwap(swap);
     } catch (e) {
+      if (gen !== swapGen.current) return;          // 취소된 검토의 오류(늦은 409 포함)는 무시
       if (e instanceof DatasetChangedError) { await externalSwitch(); return; }
-      if (gen !== swapGen.current) return;
       setError(String(e));
     } finally {
       if (gen === swapGen.current) setWhatifBusy(false);
     }
   }
 
+  /** 검토한 교체를 명단에 적용한다. 검토와 같은 기준(계산 당시 설정·가중치·데이터셋)으로
+   *  서버가 명단 전체를 다시 평가하고, 화면은 그 결과를 스택에 쌓는다. */
+  async function applyReviewedSwap() {
+    if (!current || !whatif || !lastSwap || !selected) return;
+    const label = selected;
+    const swap = lastSwap;
+    const gen = ++applyGen.current;
+    setApplyBusy(true);
+    try {
+      const res = await applySwap(current.entries, swap, planBasis?.weights ?? weights,
+                                  planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
+      if (gen !== applyGen.current) return;
+      swapGen.current += 1;
+      const plan: PlanEvent = { ...current, entries: res.entries, objective: res.objective,
+                                fulfillment: res.fulfillment,
+                                optimization_ratio: res.optimization_ratio, unfilled: res.unfilled };
+      // 경고 문장은 서버가 교체 전후를 비교해 만든 것을 쓴다(PDF 재계산과 같은 함수).
+      const record: AppliedSwap = { ...swap, objective_delta: res.objective_delta,
+                                    feasible: res.feasible, warnings: res.warnings };
+      setEdits((prev) => {
+        const e = prev[label] ?? { stack: [], history: [] };
+        return { ...prev, [label]: {
+          stack: [...e.stack, { plan, violations: res.evaluation.violations.map((v) => v.message) }],
+          history: [...e.history, record] } };
+      });
+      setWhatif(null);            // 검토 결과는 적용으로 소비됐다 -- 새 명단에서 다시 검토한다
+      setLastSwap(null);
+      setHighlighted(null);
+    } catch (e) {
+      if (gen !== applyGen.current) return;          // 취소된 요청의 오류(늦은 409 포함)는 무시
+      if (e instanceof DatasetChangedError) { await externalSwitch(); return; }
+      setError(String(e));
+    } finally {
+      if (gen === applyGen.current) setApplyBusy(false);
+    }
+  }
+
+  function undoApply() {
+    if (!selected) return;
+    swapGen.current += 1;
+    cancelApply();
+    setWhatif(null);
+    setLastSwap(null);
+    setEdits((prev) => {
+      const e = prev[selected];
+      if (!e) return prev;
+      const next = { stack: e.stack.slice(0, -1), history: e.history.slice(0, -1) };
+      const out = { ...prev };
+      if (next.history.length === 0) delete out[selected]; else out[selected] = next;
+      return out;
+    });
+  }
+
+  function resetApply() {
+    if (!selected) return;
+    swapGen.current += 1;
+    cancelApply();
+    setWhatif(null);
+    setLastSwap(null);
+    setEdits((prev) => { const out = { ...prev }; delete out[selected]; return out; });
+  }
+
   if (error && !meta) return <p className="p-8 text-red-600">불러오기 실패: {error}</p>;
   if (!meta) return <p className="p-8 text-slate-500">불러오는 중…</p>;
 
-  const current = plans.find((p) => p.label === selected) ?? null;
+  // 화면·교체 검토·PDF가 쓰는 명단은 적용한 교체가 있으면 그 결과다(K10).
+  const shown = (p: PlanEvent) => edits[p.label]?.stack.at(-1)?.plan ?? p;
+  const original = plans.find((p) => p.label === selected) ?? null;
+  const current = original ? shown(original) : null;
+  const edit = selected ? edits[selected] : undefined;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -294,7 +395,7 @@ export default function App() {
                 교체 검토와 PDF는 계산 당시 기준을 그대로 쓴다.
               </p>
             )}
-            <PlanCards plans={plans} selected={selected} onSelect={selectPlan} />
+            <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan} />
             {current && (
               <button
                 disabled={pdfBusy}
@@ -302,7 +403,16 @@ export default function App() {
                   setPdfBusy(true);
                   try {
                     await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null,
-                                         planBasis?.datasetVersion ?? null);
+                                         planBasis?.datasetVersion ?? null,
+                                         edit && original
+                                           ? { base: original.entries,
+                                               swaps: edit.history.map((h) => ({
+                                                 out_person_id: h.out_person_id,
+                                                 in_person_id: h.in_person_id,
+                                                 project_id: h.project_id })) }
+                                           : null,
+                                         { weights: planBasis?.weights ?? weights,
+                                           planToken: original?.plan_token ?? null });
                   }
                   catch (e) {
                     if (e instanceof DatasetChangedError) await externalSwitch();
@@ -324,6 +434,11 @@ export default function App() {
                   : `대안 계산 중… (${plans.length}개 도착)`}
               </p>
             )}
+            {current && edit && (
+              <AppliedPanel label={current.label} history={edit.history}
+                            violations={edit.stack.at(-1)?.violations ?? []}
+                            people={meta.people} onUndo={undoApply} onReset={resetApply} />
+            )}
             {current && (
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="space-y-6">
@@ -331,10 +446,16 @@ export default function App() {
                                 entries={current.entries} highlight={highlighted} />
                   {/* key로 remount -- 플랜이 바뀌면 이전 플랜에서 고른
                       교체 대상/투입이 남아 있으면 안 된다. */}
-                  <SwapControl key={current.label} people={meta.people}
+                  <SwapControl key={`${current.label}-${edit?.history.length ?? 0}`}
+                               people={meta.people} onSelectionChange={selectionChanged}
                                entries={current.entries}
                                onSwap={runSwap} busy={whatifBusy} />
                   <BriefingPanel result={whatif} loading={whatifBusy} />
+                  <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap
+                                  ? `${lastSwap.out_person_id}-${lastSwap.in_person_id}` : ""}`}
+                                result={whatifBusy ? null : whatif} swap={lastSwap}
+                                nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id}
+                                busy={applyBusy} onApply={applyReviewedSwap} />
                 </div>
                 <AssignmentTable entries={current.entries} people={meta.people}
                                  projects={meta.projects} />

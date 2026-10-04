@@ -1,5 +1,5 @@
 import type {
-  Meta, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse,
+  Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse,
   Swap, UploadResult, WhatifResponse,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
@@ -85,6 +85,27 @@ export async function postWhatif(
   return (await res.json()) as WhatifResponse;
 }
 
+/** 검토한 교체를 명단에 적용한 결과를 받는다(K10). 서버는 저장하지 않는다 -- 화면이 들고 있다.
+ *  인자는 postWhatif와 같다(같은 기준으로 계산되어야 검토값과 적용값이 일치한다). */
+export async function applySwap(
+  entries: AssignEntry[], swap: Swap, weights: Record<string, number>,
+  milpParams: PlacementSettings | null, datasetVersion: string | null,
+): Promise<ApplySwapResponse> {
+  const res = await fetch(`${API_BASE}/api/plans/apply-swap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entries, swap, weights,
+                           ...(milpParams ? { milp_params: milpParams } : {}),
+                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}) }),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`교체 적용 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
+  }
+  return (await res.json()) as ApplySwapResponse;
+}
+
 export interface OptimizeRequest {
   weights: Record<string, number>;
   milp_params?: Record<string, unknown>;
@@ -130,6 +151,9 @@ export async function downloadReport(
   plan: PlanEvent, whatif: WhatifResponse | null, swap: Swap | null,
   milpParams: PlacementSettings | null = null,
   datasetVersion: string | null = null,
+  applied: { base: AssignEntry[]; swaps: Swap[] } | null = null,
+  basis: { weights: Record<string, number>; planToken: string | null } =
+    { weights: {}, planToken: null },
 ) {
   const body: ReportRequest = {
     plan_label: plan.label,
@@ -145,6 +169,11 @@ export async function downloadReport(
     swap_violations: whatif ? swapWarnings(whatif) : [],
     milp_params: milpParams,
     dataset_version: datasetVersion,
+    applied_swaps: applied?.swaps ?? [],
+    base_entries: applied ? applied.base : null,
+    // 원 플랜 서명 검증과 교체 재계산의 기준 -- 플랜을 계산한 그때의 가중치다.
+    weights: basis.weights,
+    plan_token: basis.planToken,
   };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",

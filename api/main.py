@@ -19,7 +19,7 @@ from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
 from core.optimize.alternatives import generate_plans
 from core.scoring.engine import ScoringEngine
-from api.routes import admin, datasets, meta, optimize, report, settings, whatif
+from api.routes import admin, datasets, meta, optimize, plans, report, settings, whatif
 
 
 log = logging.getLogger(__name__)
@@ -97,6 +97,7 @@ app.include_router(report.router)
 app.include_router(settings.router)
 app.include_router(datasets.router)
 app.include_router(admin.router)
+app.include_router(plans.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

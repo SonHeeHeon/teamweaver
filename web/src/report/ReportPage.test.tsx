@@ -143,3 +143,47 @@ describe("ReportPage — 서버가 넣어 준 meta(K9)", () => {
     expect(fetchMeta).not.toHaveBeenCalled();
   });
 });
+
+
+describe("ReportPage — 적용된 교체(K10)", () => {
+  afterEach(() => {
+    delete (window as any).__REPORT_DATA__;
+    delete (window as any).__REPORT_READY__;
+  });
+
+  it("적용한 교체 목록·경고와 적용 후 위반을 보여 준다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = {
+      plan_label: "A", entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
+      objective: 1, fulfillment: 1, optimization_ratio: null, unfilled: [], briefing: null,
+      fallback_used: false, swap: null, objective_delta: null, swap_violations: [],
+      milp_params: null, dataset_version: META.dataset_version, meta: META,
+      applied_swaps: [{ out_person_id: "p1", in_person_id: "p2", project_id: "j1",
+                        objective_delta: -0.25, feasible: false,
+                        warnings: ["j1 0월 예산 초과"] }],
+      applied_violations: ["j1 0월 예산 초과(최종)"], plan_provenance: "unverified" };
+    render(<ReportPage />);
+    expect(await screen.findByText("적용된 교체 1건")).toBeInTheDocument();
+    expect(screen.getByText(/최적화가 고른 명단이/)).toBeInTheDocument();
+    expect(screen.getByText("김일번 → 이이번")).toBeInTheDocument();
+    expect(screen.getByText("-0.2500")).toBeInTheDocument();
+    expect(screen.getByText("j1 0월 예산 초과(최종)")).toBeInTheDocument();
+    expect(screen.getByText("산정 불가(제약 위반)")).toBeInTheDocument();
+    expect(screen.getByText(/서버 계산 여부 미검증/)).toBeInTheDocument();
+  });
+});
+
+
+describe("ReportPage — 원 플랜 서명", () => {
+  afterEach(() => { delete (window as any).__REPORT_DATA__; delete (window as any).__REPORT_READY__; });
+  it("서버가 서명을 확인한 플랜이면 그렇게 밝힌다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = { plan_label: "A", entries: [], objective: 1, fulfillment: 1,
+      optimization_ratio: 1, unfilled: [], briefing: null, fallback_used: false, swap: null,
+      objective_delta: null, swap_violations: [], milp_params: null, meta: META,
+      dataset_version: META.dataset_version, applied_swaps: [], applied_violations: [],
+      plan_provenance: "verified" };
+    render(<ReportPage />);
+    expect(await screen.findByText(/서명 확인/)).toBeInTheDocument();
+  });
+});

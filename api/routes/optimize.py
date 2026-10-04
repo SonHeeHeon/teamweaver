@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from api.cache import ResultCache
 from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_cache, get_dataset, get_graph
+from api.plan_token import sign_plan
 from api.schemas import MilpParamsIn
 from api.sse import sse_event, stream_sync_generator
 from core.graph.memory_graph import MemoryGraph
@@ -54,6 +55,9 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             "index": index,
             "cached": cached,
             "dataset_version": dataset.info.version,
+            # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
+            "plan_token": sign_plan(dataset.info.version, plan.label,
+                                    [e.model_dump() for e in plan.entries], req.weights, params),
         }
 
     async def event_stream():
