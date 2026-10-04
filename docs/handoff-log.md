@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-04 · Codex · C1 G0 보고서 정정 체크포인트
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `8a3f7d7` (main 미병합 / push 없음).
+- 한 일: payload.error·exact legacy token·structured 충돌을 분류하고 core/pilot/compatibility/oracle 분모를 분리했다. 원본을 수정하지 않고 새 정정 HTML·전후 지표·ELI5를 작성했다.
+- 상대 영향: 제품 코드·공유 모델 계약 변경 없음. C0 6개 budget 회귀와 기본 warm-up 거절은 아직 미해결.
+- 검증: 새 테스트11 RED→13 GREEN, 리뷰 회귀3 RED→관련16 GREEN. 최고 역량 독립gpt-6-astra G0 PASS. 357건 terminal 해시 일치, core108각각/DONE21·76·72, 검증 거절0→87. 거절87 raw 부재. 기준 전체539 passed/6 failed/10 deselected 재확인. 시각QA 미수행.
+- 근거: `outputs/phase1-c1-g0-eli5.html`, `outputs/phase1-c1-evidence-correction.html`, `outputs/phase1-c1-evidence-metrics.json`, `docs/superpowers/reviews/2026-10-04-c1-g0-review.md`.
+
 ## 2026-10-04 · Codex · C1 설계·구현 계획 — 독립 리뷰 PASS, 구현 전
 - 브랜치/커밋: `feat/phase1-solver-benchmark` `d814c7d` (**main 미병합**, push 미실행). main `f87309c`를 반영한 `703bf4a`에서 문서 작업했다.
 - 한 일: 과거 실패 증거·핵심 분모 정정과 미래 수치 복구를 분리했다. 5-task TDD 계획: 보고서 정정 → 원인/기술 후보 비교 → 비활성 미세 LP 검증 → 3솔버 증거 연결 → 서비스 회귀·제한 재비교.
