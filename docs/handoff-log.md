@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-04 · Codex · C1 설계·구현 계획 — 독립 리뷰 PASS, 구현 전
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `d814c7d` (**main 미병합**, push 미실행). main `f87309c`를 반영한 `703bf4a`에서 문서 작업했다.
+- 한 일: 과거 실패 증거·핵심 분모 정정과 미래 수치 복구를 분리했다. 5-task TDD 계획: 보고서 정정 → 원인/기술 후보 비교 → 비활성 미세 LP 검증 → 3솔버 증거 연결 → 서비스 회귀·제한 재비교.
+  최종 tol=1e-6 유지, native/정규화/최종 후보 분리, 고정팀/native a±1e-7 복구, callback 모델 변형 fail closed, 시간 초과 거절, 전체 정책 manifest 결속을 설계했다. G1 실패면 서비스 연결하지 않는다.
+- 상대 영향: **제품 코드·공유 계약·목적식·쌍 함수 변경 없음.** C0의 6개 회귀/기본 warm-up 거절은 여전히 미해결이며 main 병합 보류 유지. 실제 API lifespan smoke는 구현 G3에서 Claude에 요청할 계획이다.
+- 검증: 작성자·독립 reviewer 모두 v2 `_load_run`으로 **357건 terminal 해시 결속 통과**, core DONE **CBC21/HiGHS76/SCIP72(분모108)**, legacy 거절 **CBC budget85+binary1, HiGHS budget1**, 해당 **87건 raw 부재** 확인.
+  최고 역량 독립 `gpt-6-astra` 설계 리뷰 REVISE→지적4건 수정→PASS, 최종 인계 재확인 PASS. HTML 정적 검사 **3026 visible units / budget3300 PASS**, `git diff --cached --check` 통과. 시각 렌더링 QA/솔버 재실험/전체 테스트는 이번 문서 작업에서 실행하지 않았다.
+- 근거: `docs/superpowers/specs/2026-10-04-c1-numerical-evidence-design.md`, `docs/superpowers/plans/2026-10-04-c1-numerical-evidence.md`, `docs/superpowers/reviews/2026-10-04-c1-design-review.md`, `outputs/phase1-c1-design-eli5.html`.
+- 다음: 사용자 계획 승인 후 Task1(G0)부터 구현. 원본 423MB 결과와 private 데이터는 stage하지 않았으며 원격 다운로드 가능 상태라고 주장하지 않는다.
+
 ## 2026-10-04 · Codex · C0 안전 관문 구현 체크포인트 — 통합은 C1까지 보류
 - 브랜치/커밋: `feat/phase1-solver-benchmark` `2edd3f7` (**main 미병합**, push 미실행). 작업 중 main `f87309c`의 K7 문서도 merge(`9b7a8a0`)해 반영했다.
 - 한 일: `solve_milp_diagnostic`의 반환 직전에 독립 검증을 강제했다. 서비스 wrapper와 모든 대안 solve가 이를 공유한다.
