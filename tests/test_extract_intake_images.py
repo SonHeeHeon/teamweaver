@@ -145,3 +145,13 @@ def test_refuses_to_replace_a_directory_it_did_not_create(tmp_path, contents):
         extract(_write(tmp_path, [_shot()]), other)
     assert all((other / name).exists() for name in contents)
     assert mod.MARKER not in {p.name for p in other.iterdir()}
+
+
+def test_refuses_an_input_file_inside_the_output_directory(tmp_path):
+    out = tmp_path / "out"
+    extract(_write(tmp_path, [_shot()]), out)
+    inside = out / "in.json"
+    inside.write_text((tmp_path / "in.json").read_text(encoding="utf-8"), encoding="utf-8")
+    with pytest.raises(ValueError):
+        extract(inside, out)
+    assert inside.exists()

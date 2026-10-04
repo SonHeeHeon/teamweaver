@@ -29,6 +29,16 @@
 - 검증: 문서만 바뀌었다. 영역 경로를 실제 디렉터리와 대조했다(`core/ingest/`는 K2에서 만들 예정이라 아직 없다).
 - 미결: 영역 배분은 초안이다. 사용자가 확인하면 확정한다.
 
+## 2026-10-05 · claude-a · 3인 체제 확정 + 스키마 양식 v2 main 병합
+- 브랜치/커밋: `feat/claude-intake-screens`(`fae6230` 양식 v2, `d9f7c87` 3인 체제 확정, 리뷰 반영 커밋)를 사용자 승인으로 **main에 fast-forward 병합**.
+- 한 일:
+  - 다른 Claude 세션이 남긴 3인 체제 분담 초안(`docs/work-split.md`·`AGENTS.md`·`CLAUDE.md`)을 사용자 확정으로 커밋했다. claude-b 작업 K8(관리자 배치 설정 화면)을 추가했다.
+  - Codex 쿼터 소진으로 양식 v2를 Claude Opus 적대적 리뷰 2라운드로 검토했다. 지적 12건을 반영했다.
+    - 1라운드 8건: 저장소 읽기 실패 중 불러오기·내보내기 차단, 손상 초안 보호, 여러 탭 덮어쓰기, 비우기 경합, 용량 상한 일치, 글자 저장 실패 안내, 추출 입력 보호
+    - 2라운드 4건: Web Lock 탭 잠금, file:// 안전성, 복원 오류 안내, 중지 상태 상시 표시·닫기 경고
+- 상대 영향: `scripts/**`는 이제 claude-b 영역이다(`scripts/extract_intake_images.py` 포함). 테스트 기준선 **546 passed, 10 deselected**.
+- 검증: pytest 546, 추출 테스트 25. Playwright 10묶음을 Chromium의 file://로 돌렸고 모두 통과했다. Safari는 미검증이다.
+
 ## 2026-10-05 · Claude(claude-a) · 실데이터 스키마 답변 수령 + 숙련도 결정
 - 브랜치/커밋: `feat/claude-intake-screens` (main 병합은 사용자 승인 후)
 - 한 일: 사용자 답변을 `private/schema-intake.json`(글자 답만, 개인 식별 정보 없음)에 정리했다. 기술 이력 시스템 구성은 `parts.skill.answers.fields`에 있다.

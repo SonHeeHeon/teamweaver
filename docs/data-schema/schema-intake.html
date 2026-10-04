@@ -323,7 +323,8 @@ function imageProblem(dataUrl) {
   if (!m || m[2].length % 4 !== 0) return "이미지 데이터 형식이 잘못됐습니다";
   const sigs = IMAGE_SIGNATURES[m[1]];
   if (!sigs) return `지원하지 않는 이미지 형식(${m[1]}) — PNG·JPEG·GIF·WEBP·BMP만 됩니다`;
-  if ((m[2].length / 4) * 3 > MAX_IMAGE_BYTES + 3) return "이미지가 15MB를 넘습니다";
+  const padding = m[2].endsWith("==") ? 2 : m[2].endsWith("=") ? 1 : 0;
+  if ((m[2].length / 4) * 3 - padding > MAX_IMAGE_BYTES) return "이미지가 15MB를 넘습니다";
   let head = "";
   try { head = [...atob(m[2].slice(0, 24))].map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""); }
   catch { return "이미지 데이터 형식이 잘못됐습니다"; }
@@ -636,16 +637,26 @@ const draftDelete = () => dbOp("readwrite", (s) => s.delete("current"));
 
 // Warnings (e.g. a rejected import) stay visible for a while instead of being replaced by autosave status.
 let noticeUntil = 0;
-function notice(text) { statusEl.textContent = text; noticeUntil = Date.now() + 8000; }
+function notice(text) {
+  statusEl.textContent = text;
+  // While autosave is held back the warning must stay on screen, not be replaced by routine status.
+  noticeUntil = blockReason ? Infinity : Date.now() + 8000;
+}
+window.addEventListener("beforeunload", (ev) => {
+  if (blockReason === "invalid" || blockReason === "unreadable") { ev.preventDefault(); ev.returnValue = ""; }
+});
 
 let saveTimer = null;
 let saving = Promise.resolve();
-// Set when the stored full draft could not be read; writing then would replace screenshots we never saw.
-let persistBlocked = false;
+// Why autosave is held back, if it is:
+//  "unreadable" — the stored full draft could not be read; writing would replace images we never saw.
+//  "invalid"    — the stored draft failed validation; keep it untouched until the user loads a file or resets.
+let blockReason = null;
+let resetting = false;
 function persistNow() {
   clearTimeout(saveTimer);
   saveTimer = null;
-  if (persistBlocked) return;
+  if (blockReason || resetting) return;
   const snapshot = JSON.stringify(collect());
   saving = saving.then(() => draftPut(snapshot)).then(
     () => { if (Date.now() > noticeUntil) statusEl.textContent = `자동 저장됨 ${new Date().toLocaleTimeString("ko-KR")}`; },
@@ -658,16 +669,25 @@ function textSnapshot() {
   const d = collect();
   // While the stored draft is unreadable, the screenshots on screen are not the real ones: say so,
   // so a later restore keeps the stored screenshots instead of trusting this (empty) list.
-  if (persistBlocked) d.images_unknown = true;
+  const unknown = blockReason === "unreadable";
+  if (unknown) d.images_unknown = true;
   for (const [pid, q] of imageQuestions()) {
     const entry = d.parts[pid].answers[q.key];
-    entry.answer = persistBlocked ? null : entry.answer.map(({ id, name, caption }) => ({ id, name, caption }));
+    entry.answer = unknown ? null : entry.answer.map(({ id, name, caption }) => ({ id, name, caption }));
   }
   return d;
 }
 // Debounced because each save serializes every screenshot; flushed when the tab is hidden or closed.
+let textCopyWarned = false;
 function save() {
-  try { localStorage.setItem(TEXT_LS_KEY, JSON.stringify(textSnapshot())); } catch {}
+  if (blockReason === "invalid" || resetting) return;
+  try { localStorage.setItem(TEXT_LS_KEY, JSON.stringify(textSnapshot())); }
+  catch {
+    if (!textCopyWarned) {
+      textCopyWarned = true;
+      notice("글자 즉시 저장이 안 됩니다(브라우저 저장 공간) — 창을 닫기 전에 'JSON 저장'으로 파일을 남겨 주세요");
+    }
+  }
   clearTimeout(saveTimer);
   saveTimer = setTimeout(persistNow, 300);
 }
@@ -682,7 +702,7 @@ const parseOrNull = (raw) => { try { return raw ? JSON.parse(raw) : null; } catc
 async function restoreDraft() {
   let full = null, fromLegacy = false, readFailed = false;
   try { full = parseOrNull(await draftGet()); } catch { readFailed = true; }
-  if (readFailed) persistBlocked = true;
+  if (readFailed) blockReason = "unreadable";
   if (!full && !readFailed) {
     try { full = parseOrNull(localStorage.getItem(LEGACY_LS_KEY)); fromLegacy = !!full; } catch {}
   }
@@ -718,7 +738,14 @@ async function restoreDraft() {
     return;
   }
   if (intakeProblem(draft) || !apply(draft)) {
-    const invalid = "자동 저장된 초안을 읽지 못했습니다 — 저장된 JSON 파일이 있으면 불러오세요";
+    // A broken newer text copy must not hide a good full draft.
+    if (draft !== full && full && !intakeProblem(full) && apply(full)) {
+      if (readFailed) notice(readFailNotice);
+      else { notice("최근 글자 사본을 읽지 못해 마지막 전체 저장본을 불러왔습니다"); persistNow(); }
+      return;
+    }
+    const invalid = "자동 저장된 초안을 읽지 못해 자동 저장을 멈췄습니다 — 백업 JSON을 불러오거나 '전체 비우기' 후 새로 시작하세요";
+    if (!readFailed) blockReason = "invalid";
     notice(readFailed ? `${invalid}. ${readFailNotice}` : invalid);
     return;
   }
@@ -735,15 +762,42 @@ async function restoreDraft() {
 // Nothing is editable until the autosaved draft is restored, so a late restore cannot wipe fresh input.
 let restored = false;
 const lockables = () => [form, ...document.querySelectorAll(".bar button")];
+// Two tabs autosaving the same draft would overwrite each other: the first tab holds a Web Lock for its
+// whole lifetime (released by the browser when the tab closes, kept while it is hidden or frozen).
+// Without Web Locks (or if requesting one throws) the form still works, just without the tab guard.
+function acquireTabLock() {
+  return new Promise((resolve) => {
+    try {
+      if (!navigator.locks) { resolve(true); return; }
+      navigator.locks.request(DB_NAME, { ifAvailable: true }, (lock) => {
+        resolve(Boolean(lock));
+        return lock ? new Promise(() => {}) : undefined;
+      }).catch(() => resolve(true));
+    } catch { resolve(true); }
+  });
+}
+class OtherTab extends Error {}
+
 render();
 lockables().forEach((n) => { n.inert = true; });
 statusEl.textContent = "이전 작성 내용 확인 중…";
-restoreDraft().finally(() => {
+acquireTabLock().then(async (mine) => {
+  if (!mine) throw new OtherTab();
+  try { await restoreDraft(); }
+  catch {
+    // Unknown restore failure: keep whatever is stored untouched and say so, instead of a silent locked form.
+    blockReason = "invalid";
+    notice("이전 작성 내용을 확인하다 오류가 났습니다 — 자동 저장을 멈췄습니다. 백업 JSON을 불러오거나 '전체 비우기' 후 새로 시작하세요");
+  }
+}).then(() => {
   restored = true;
   lockables().forEach((n) => { n.inert = false; });
   if (statusEl.textContent === "이전 작성 내용 확인 중…") statusEl.textContent = "자동 저장 대기";
   form.addEventListener("input", save);
   form.addEventListener("change", save);
+}, () => {
+  notice("이 양식이 다른 탭에서 이미 열려 있습니다 — 그 탭에서 작성하거나, 그 탭을 닫고 이 탭을 새로고침하세요");
+  noticeUntil = Infinity;
 });
 
 document.addEventListener("paste", (ev) => {
@@ -760,13 +814,20 @@ document.getElementById("btn-preview").addEventListener("click", () => {
     (k === "data_url" && typeof v === "string"
       ? `${v.slice(0, 30)}…(이미지 약 ${Math.round((v.length * 3) / 4 / 1024)}KB)` : v), 2);
 });
+const exportBlocked = () => {
+  if (blockReason !== "unreadable") return false;
+  notice("저장된 사진을 읽지 못한 상태라 지금 내보내면 사진이 빠집니다 — 새로고침 후 다시 시도하세요");
+  return true;
+};
 document.getElementById("btn-save").addEventListener("click", () => {
+  if (exportBlocked()) return;
   const blob = new Blob([json()], { type: "application/json" });
   const a = el("a", { href: URL.createObjectURL(blob), download: "schema-intake.json" });
   document.body.append(a); a.click(); a.remove();
   statusEl.textContent = "schema-intake.json 저장 → teamweaver/private/ 로 옮겨 주세요";
 });
 document.getElementById("btn-copy").addEventListener("click", async () => {
+  if (exportBlocked()) return;
   try { await navigator.clipboard.writeText(json()); statusEl.textContent = "JSON을 클립보드에 복사했습니다"; }
   catch { document.getElementById("out").textContent = json(); statusEl.textContent = "복사 불가 — 미리보기에서 직접 복사하세요"; }
 });
@@ -775,6 +836,10 @@ document.getElementById("file").addEventListener("change", async (ev) => {
   const f = ev.target.files[0];
   if (!f) return;
   ev.target.value = "";
+  if (blockReason === "unreadable") {
+    notice("저장된 초안을 읽지 못한 상태라 지금 불러오면 내용이 섞일 수 있습니다 — 새로고침 후 다시 불러오세요");
+    return;
+  }
   let data;
   try { data = JSON.parse(await f.text()); }
   catch { notice("JSON을 읽지 못했습니다 — 작성 중인 내용은 그대로입니다"); return; }
@@ -787,7 +852,8 @@ document.getElementById("file").addEventListener("change", async (ev) => {
     notice("JSON 내용 형식이 맞지 않습니다 — 작성 중인 내용은 그대로입니다");
     return;
   }
-  save(); statusEl.textContent = `${f.name}을 불러왔습니다`;
+  if (blockReason === "invalid") { blockReason = null; noticeUntil = 0; }   // the loaded file replaces the bad draft
+  save(); persistNow(); statusEl.textContent = `${f.name}을 불러왔습니다`;
 });
 let resetArmed = false;
 document.getElementById("btn-reset").addEventListener("click", async (ev) => {
@@ -796,9 +862,18 @@ document.getElementById("btn-reset").addEventListener("click", async (ev) => {
     setTimeout(() => { resetArmed = false; ev.target.textContent = "전체 비우기"; }, 4000);
     return;
   }
+  resetting = true;                     // stops every further write, including the pagehide flush
   clearTimeout(saveTimer);
-  try { await draftDelete(); } catch {}
+  saveTimer = null;
+  await saving.catch(() => {});
   try { localStorage.removeItem(LEGACY_LS_KEY); localStorage.removeItem(TEXT_LS_KEY); } catch {}
+  try { await draftDelete(); }
+  catch {
+    resetting = false;
+    save();                              // the text copy was already removed; keep what is on screen
+    notice("저장된 사진 초안을 지우지 못했습니다 — 새로고침 후 다시 '전체 비우기'를 눌러 주세요");
+    return;
+  }
   location.reload();
 });
 </script>

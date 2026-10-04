@@ -92,6 +92,8 @@ def _collect(data: dict) -> list[tuple[str, bytes, dict]]:
 
 def extract(json_path: Path, out_dir: Path) -> list[dict]:
     out_dir = Path(out_dir)
+    if Path(json_path).resolve().is_relative_to(out_dir.resolve()):
+        raise ValueError(f"{json_path} is inside {out_dir}; replacing the output would delete the input")
     if out_dir.exists() and any(out_dir.iterdir()) and not (out_dir / MARKER).is_file():
         raise ValueError(f"{out_dir} was not created by this script; refusing to replace it")
     planned = _collect(json.loads(Path(json_path).read_text(encoding="utf-8")))

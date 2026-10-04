@@ -61,7 +61,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: main 2026-10-04 **521 passed, 10 deselected**, `--group benchmark` 포함)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: main 2026-10-05 **546 passed, 10 deselected**, `--group benchmark` 포함)
 - HiGHS/SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
