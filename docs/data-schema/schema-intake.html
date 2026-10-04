@@ -366,14 +366,42 @@ function clearAll() {
   }));
 }
 
-function isIntake(data) {
-  return data && data.schema === "teamweaver-schema-intake" && data.version === 1
-    && typeof data.parts === "object" && data.parts !== null;
+const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+const isStr = (v) => typeof v === "string";
+const optStr = (v) => v === undefined || isStr(v);
+
+function answerOk(q, a) {
+  if (q.type === "text" || q.type === "textarea") return isStr(a);
+  if (q.type === "radio") return isObj(a) && isStr(a.choice) && optStr(a.other);
+  if (q.type === "checks") return isObj(a) && Array.isArray(a.choices) && a.choices.every(isStr) && optStr(a.other);
+  if (q.type === "range") return isObj(a) && ["min", "typical", "max"].every((k) => isStr(a[k]));
+  if (q.type === "table") {
+    return Array.isArray(a) && a.every((r) => isObj(r) && q.columns.every((c) => optStr(r[c.key])));
+  }
+  return false;
+}
+
+// Returns the first problem found, or "" when `data` is a well-formed export of this form.
+// Questions absent from the file are allowed (older versions); malformed ones are not.
+function intakeProblem(data) {
+  if (!isObj(data) || data.schema !== "teamweaver-schema-intake" || data.version !== 1 || !isObj(data.parts)) {
+    return "이 양식(version 1)의 JSON이 아닙니다";
+  }
+  for (const p of PARTS) {
+    const part = data.parts[p.id];
+    if (part === undefined) continue;
+    if (!isObj(part) || !isObj(part.answers)) return `${p.title}: 형식이 맞지 않습니다`;
+    for (const q of p.qs) {
+      const entry = part.answers[q.key];
+      if (entry === undefined) continue;
+      if (!isObj(entry) || !answerOk(q, entry.answer)) return `${p.title} · ${q.label}: 답 형식이 맞지 않습니다`;
+    }
+  }
+  return "";
 }
 
 // Replaces every answer: fields absent from `data` (e.g. an older version) end up empty,
 // never keeping a stale value from what this browser had autosaved.
-const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
 const str = (v) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
 
 function fill(data) {
@@ -434,7 +462,8 @@ function json() { return JSON.stringify(collect(), null, 2); }
 render();
 try {
   const s = localStorage.getItem(STORE_KEY);
-  if (s && isIntake(JSON.parse(s))) { apply(JSON.parse(s)); statusEl.textContent = "이전 작성 내용을 불러왔습니다"; }
+  const saved = s ? JSON.parse(s) : null;
+  if (saved && !intakeProblem(saved) && apply(saved)) statusEl.textContent = "이전 작성 내용을 불러왔습니다";
 } catch {}
 form.addEventListener("input", save);
 form.addEventListener("change", save);
@@ -460,8 +489,9 @@ document.getElementById("file").addEventListener("change", async (ev) => {
   let data;
   try { data = JSON.parse(await f.text()); }
   catch { statusEl.textContent = "JSON을 읽지 못했습니다 — 작성 중인 내용은 그대로입니다"; return; }
-  if (!isIntake(data)) {
-    statusEl.textContent = "이 양식(version 1)의 JSON이 아닙니다 — 작성 중인 내용은 그대로입니다";
+  const problem = intakeProblem(data);
+  if (problem) {
+    statusEl.textContent = `${problem} — 불러오지 않았고, 작성 중인 내용은 그대로입니다`;
     return;
   }
   if (!apply(data)) {
