@@ -7,17 +7,16 @@ from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from api.deps import get_graph, get_openai_client_or_none, get_sqlite_conn
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
-from api.schemas import EntryIn, SwapIn, WhatifResponse
+from api.schemas import EntryIn, MilpParamsIn, SwapIn, WhatifResponse
 from core.config import load_pricing
 from core.evaluate.plan_eval import PlanEvaluation, evaluate_plan
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.milp import MilpParams
 from core.optimize.types import AssignEntry
 from core.scoring.engine import ScoringEngine
 
@@ -28,7 +27,7 @@ class WhatifRequest(BaseModel):
     entries: list[EntryIn]
     swap: SwapIn
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
-    milp_params: dict = {}
+    milp_params: MilpParamsIn = MilpParamsIn()
 
 
 def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
@@ -70,10 +69,7 @@ def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
 def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
           conn=Depends(get_sqlite_conn),
           client=Depends(get_openai_client_or_none)):
-    try:
-        params = MilpParams(**req.milp_params)
-    except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=f"invalid milp_params: {exc}") from exc
+    params = req.milp_params.to_milp_params()
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
     before_entries, after_entries = _swapped_entries(graph, req.entries, req.swap)

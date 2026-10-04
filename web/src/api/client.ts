@@ -1,4 +1,7 @@
-import type { Meta, AssignEntry, PlanEvent, ReportRequest, Swap, WhatifResponse } from "./types";
+import type {
+  Meta, AssignEntry, PlacementSettings, PlanEvent, ReportRequest, SettingsResponse, Swap,
+  WhatifResponse,
+} from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
 
@@ -12,13 +15,46 @@ export async function fetchMeta(): Promise<Meta> {
   return (await res.json()) as Meta;
 }
 
+export async function fetchSettings(): Promise<SettingsResponse> {
+  const res = await fetch(`${API_BASE}/api/settings`);
+  if (!res.ok) throw new Error(`GET /api/settings 실패: ${res.status}`);
+  return (await res.json()) as SettingsResponse;
+}
+
+/** 409 = 화면이 읽은 뒤 다른 사람이 먼저 저장했다. 호출자가 새로 읽어 다시 보여 줘야 한다. */
+export class SettingsConflictError extends Error {}
+
+/** basedOn은 화면이 읽은 설정의 updated_at이다 -- 그사이 다른 저장이 있으면 서버가 409로 거부한다. */
+export async function saveSettings(
+  settings: PlacementSettings, basedOn: string | null,
+): Promise<SettingsResponse> {
+  const res = await fetch(`${API_BASE}/api/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ settings, based_on: basedOn }),
+  });
+  if (res.status === 409) {
+    const detail = await res.json().catch(() => ({}));
+    throw new SettingsConflictError(String(detail.detail ?? "다른 사용자가 먼저 저장했다"));
+  }
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`설정 저장 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
+  }
+  return (await res.json()) as SettingsResponse;
+}
+
+/** milpParams는 *플랜을 계산한* 설정이다(최신 설정이 아니다) -- 설정을 바꾼 뒤
+ *  예전 플랜을 교체 검토하면, 플랜과 교체 점수가 서로 다른 기준이 된다. null이면
+ *  보내지 않아 서버 모델 기본값으로 계산된다(설정을 못 불러온 상태에서 계산한 플랜). */
 export async function postWhatif(
   entries: AssignEntry[], swap: Swap, weights: Record<string, number>,
+  milpParams: PlacementSettings | null,
 ): Promise<WhatifResponse> {
   const res = await fetch(`${API_BASE}/api/whatif`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries, swap, weights }),
+    body: JSON.stringify({ entries, swap, weights, ...(milpParams ? { milp_params: milpParams } : {}) }),
   });
   if (!res.ok) throw new Error(`POST /api/whatif 실패: ${res.status}`);
   return (await res.json()) as WhatifResponse;
@@ -60,6 +96,7 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
  *  않는다. */
 export async function downloadReport(
   plan: PlanEvent, whatif: WhatifResponse | null, swap: Swap | null,
+  milpParams: PlacementSettings | null = null,
 ) {
   const body: ReportRequest = {
     plan_label: plan.label,
@@ -73,6 +110,7 @@ export async function downloadReport(
     swap: whatif ? swap : null,
     objective_delta: whatif?.objective_delta ?? null,
     swap_violations: whatif ? swapWarnings(whatif) : [],
+    milp_params: milpParams,
   };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",

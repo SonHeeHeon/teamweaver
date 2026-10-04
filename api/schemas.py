@@ -1,4 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from api.settings import PlacementSettings
+from core.optimize.milp import MilpParams
 
 
 class PersonOut(BaseModel):
@@ -76,6 +79,47 @@ class WhatifResponse(BaseModel):
     fallback_used: bool
 
 
+class MilpParamsIn(BaseModel):
+    """/api/optimize·/api/whatif의 milp_params 요청 계약(K8).
+
+    예전에는 형식 없는 dict를 MilpParams(**dict)로 넘겨, 오타 키가 조용히 무시되고
+    범위 검사가 없었다(min_alloc=-1도 통과). 모든 필드는 선택이며 빠진 것은
+    MilpParams 기본값이다(기본값 변경은 C6 소관). 범위는 관리자 설정 화면보다 넓다 --
+    실험·테스트가 쓰는 값(작은 time_limit 등)을 막지 않되 계산이 무의미해지는 값만 거른다."""
+    model_config = ConfigDict(extra="forbid")
+
+    lam: float | None = Field(default=None, ge=0.0, le=10.0)
+    mu: float | None = Field(default=None, ge=0.0, le=10.0)
+    min_alloc: float | None = Field(default=None, gt=0.0, le=1.0)
+    clique_threshold_months: int | None = Field(default=None, ge=1, le=120)
+    pair_keep_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
+    slack_penalty: float | None = Field(default=None, ge=0.0)
+    time_limit: int | None = Field(default=None, ge=1, le=3600)
+    gap: float | None = Field(default=None, ge=0.0, le=1.0)
+    max_pairs: int | None = Field(default=None, ge=1)
+
+    def to_milp_params(self) -> MilpParams:
+        return MilpParams(**self.model_dump(exclude_none=True))
+
+
+class SettingsUpdate(BaseModel):
+    """PUT /api/settings 본문. based_on은 화면이 읽은 설정의 updated_at(저장한 적
+    없으면 null)이다. 그사이 다른 사람이 저장했으면 409로 거부한다 -- 6개 필드를
+    통째로 덮어쓰므로, 확인 없이 받으면 남의 변경이 조용히 사라진다."""
+    model_config = ConfigDict(extra="forbid")
+    settings: PlacementSettings
+    based_on: str | None
+
+
+class SettingsBody(BaseModel):
+    """GET/PUT /api/settings 응답. bounds는 PlacementSettings 필드 제약에서 만든다."""
+    settings: dict
+    defaults: dict
+    bounds: dict[str, dict[str, float]]
+    updated_at: str | None
+    load_error: str | None
+
+
 class EntryIn(BaseModel):
     """api.routes.whatif과 api.routes.report이 공유하는 배치 항목 모델.
     여기 두는 이유: schemas.py -> routes 방향으로만 import가 흐르게 해서
@@ -111,3 +155,16 @@ class ReportRequest(BaseModel):
     swap: SwapIn | None = None
     objective_delta: float | None = None
     swap_violations: list[str] = []
+    # 이 플랜을 계산한 배치 설정(K8). PDF에 "계산 기준"으로 표시한다. 없으면
+    # (설정을 못 불러와 모델 기본값으로 계산했거나 구버전 클라이언트) 표시하지 않는다.
+    milp_params: PlacementSettings | None = None
+
+    @model_validator(mode="after")
+    def _basis_must_be_complete(self) -> "ReportRequest":
+        """일부 필드만 오면 나머지가 설정 기본값(30% 등)으로 채워져, 실제 계산과
+        다른 기준이 PDF에 찍힌다 -- 전체를 요구한다."""
+        if self.milp_params is not None:
+            missing = set(PlacementSettings.model_fields) - self.milp_params.model_fields_set
+            if missing:
+                raise ValueError(f"milp_params에 빠진 필드: {sorted(missing)}")
+        return self

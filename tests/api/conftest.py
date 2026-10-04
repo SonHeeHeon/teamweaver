@@ -32,6 +32,15 @@ def _skip_warm(monkeypatch):
     monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "1")
 
 
+@pytest.fixture(autouse=True)
+def settings_path(monkeypatch, tmp_path):
+    """관리자 설정 파일(K8)을 테스트마다 빈 임시 경로로 돌린다 -- 사용자 홈의
+    ~/.teamweaver/settings.json을 읽거나 덮어쓰지 않게 한다."""
+    path = tmp_path / "teamweaver-settings" / "settings.json"
+    monkeypatch.setenv("TEAMWEAVER_SETTINGS_PATH", str(path))
+    return path
+
+
 @pytest.fixture
 def client():
     with TestClient(app) as c:   # lifespan 실행 -> MemoryGraph/sqlite 준비 (워밍은 스킵됨)

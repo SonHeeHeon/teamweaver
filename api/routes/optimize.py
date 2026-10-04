@@ -7,11 +7,11 @@ from pydantic import BaseModel, Field
 
 from api.cache import ResultCache
 from api.deps import get_cache, get_graph
+from api.schemas import MilpParamsIn
 from api.sse import sse_event, stream_sync_generator
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.alternatives import generate_plans_streaming
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
-from core.optimize.milp import MilpParams
 from core.scoring.engine import ScoringEngine
 
 router = APIRouter()
@@ -19,7 +19,7 @@ router = APIRouter()
 
 class OptimizeRequest(BaseModel):
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
-    milp_params: dict = {}
+    milp_params: MilpParamsIn = MilpParamsIn()
     n_alternatives: int = Field(default=3, ge=0, le=6)
 
 
@@ -29,7 +29,10 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
     eng = ScoringEngine(graph)
     S = eng.skill_matrix(req.weights)
     C = eng.synergy_matrix()
-    key = ResultCache.key(req.weights, req.milp_params, req.n_alternatives)
+    # 요청 본문 검증(422)은 스트림 시작 전에 끝난다 -- 잘못된 milp_params가
+    # SSE error 프레임(HTTP 200)으로 숨지 않는다.
+    params = req.milp_params.to_milp_params()
+    key = ResultCache.key(req.weights, params, req.n_alternatives)
 
     def _plan_payload(plan, index: int, cached: bool, ub: float) -> dict:
         """캐시 히트/미스 두 경로가 같은 모양을 내도록 조립을 한 곳에 모은다."""
@@ -51,7 +54,6 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
         cached = cache.get(key)
         count = 0
         try:
-            params = MilpParams(**req.milp_params)
             # UB는 (graph, S, params)에만 의존하고 플랜별로 달라지지 않는다 --
             # 요청당 1회만 푼다. 플랜마다 풀면 그 배수만큼 낭비다.
             # 실측(동결 fixture): 프로세스 첫 solve는 CBC 기동 비용이 섞여

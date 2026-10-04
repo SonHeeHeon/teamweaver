@@ -1,14 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { downloadReport, fetchMeta, postWhatif, streamOptimize } from "./api/client";
-import type { Meta, PlanEvent, Swap, WhatifResponse } from "./api/types";
+import {
+  downloadReport, fetchMeta, fetchSettings, postWhatif, saveSettings, SettingsConflictError,
+  streamOptimize,
+} from "./api/client";
+import type {
+  Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap, WhatifResponse,
+} from "./api/types";
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { AssignmentTable } from "./components/AssignmentTable";
 import { NetworkGraph } from "./components/NetworkGraph";
 import { SwapControl } from "./components/SwapControl";
 import { BriefingPanel } from "./components/BriefingPanel";
+import { SettingsTab } from "./components/SettingsTab";
+import { describeChanges } from "./components/settingsFields";
 
-type Tab = "req" | "whatif";
+type Tab = "req" | "whatif" | "settings";
+
+
 
 export default function App() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -34,9 +43,19 @@ export default function App() {
   // -- 그렇지 않으면 이전 플랜 entries로 계산된 브리핑이 새 플랜 아래
   // 표시된다(35초 안팎 걸리는 LLM 브리핑 창에서 실제로 발생 가능).
   const swapGen = useRef(0);
+  // 관리자 배치 설정(K8). 서버에 저장된 조직 공통 값이다.
+  const [settings, setSettings] = useState<SettingsResponse | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  // 지금 보이는 플랜들을 *계산한* 기준. what-if·PDF는 최신 설정·가중치가 아니라
+  // 이 스냅숏을 쓴다 -- 계산 뒤 설정이나 가중치를 바꾸고 교체를 검토하면 플랜과
+  // 교체 점수가 서로 다른 기준이 되기 때문이다. null = 설정을 못 불러와 모델
+  // 기본값으로 계산했다.
+  const [planBasis, setPlanBasis] =
+    useState<{ params: PlacementSettings | null; weights: Record<string, number> } | null>(null);
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
+    fetchSettings().then(setSettings).catch((e) => setSettingsError(String(e)));
   }, []);
 
   async function run() {
@@ -49,10 +68,24 @@ export default function App() {
     setLastSwap(null);
     setHighlighted(null);
     setWhatifBusy(false);
+    // 실행할 때마다 서버 설정을 다시 읽는다: 페이지를 연 뒤 다른 관리자가 바꾼
+    // 설정도 반영하고, 첫 로딩이 끝나기 전에 눌러도 모델 기본값으로 새지 않는다.
+    // 읽기에 실패하면 마지막으로 알던 설정을 쓰고(없으면 모델 기본값) 경고한다.
+    let params: PlacementSettings | null = settings?.settings ?? null;
+    try {
+      const fresh = await fetchSettings();
+      setSettings(fresh);
+      setSettingsError(null);
+      params = fresh.settings;
+    } catch (e) {
+      setSettingsError(String(e));
+    }
+    setPlanBasis({ params, weights });
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
-      for await (const ev of streamOptimize({ weights })) {
+      for await (const ev of streamOptimize(
+          { weights, ...(params ? { milp_params: { ...params } } : {}) })) {
         if (ev.event === "plan") {
           setPlans((prev) => [...prev, ev.data]);
           setSelected((cur) => cur ?? ev.data.label);
@@ -86,7 +119,8 @@ export default function App() {
     setWhatifBusy(true);
     setHighlighted(swap.out_person_id);
     try {
-      const res = await postWhatif(current.entries, swap, weights);
+      const res = await postWhatif(current.entries, swap, planBasis?.weights ?? weights,
+                                   planBasis?.params ?? null);
       if (gen !== swapGen.current) return;   // 그 사이 플랜이 바뀌었다 -- 폐기
       setWhatif(res);
       setLastSwap(swap);
@@ -111,7 +145,8 @@ export default function App() {
       </header>
 
       <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
-        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"]] as const).map(([id, label]) => (
+        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["settings", "배치 설정"]] as const)
+          .map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -130,18 +165,60 @@ export default function App() {
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
         )}
-        {tab === "req" ? (
+        {settingsError && (
+          <p role="alert" className="mb-4 rounded-md bg-amber-50 px-4 py-2 text-sm text-amber-800">
+            배치 설정을 불러오지 못했다({settingsError}).{" "}
+            {settings ? "마지막으로 불러온 설정으로 계산한다."
+                      : "지금 계산하면 서버 모델 기본값으로 계산된다(배치 설정 미적용)."}
+          </p>
+        )}
+        {tab === "settings" ? (
+          settings ? (
+            <SettingsTab data={settings}
+                         onSave={async (s) => {
+                           try {
+                             setSettings(await saveSettings(s, settings.updated_at));
+                             setSettingsError(null);
+                           } catch (e) {
+                             if (e instanceof SettingsConflictError) {
+                               // 최신 값을 다시 읽어 폼을 갈아 끼우고, 이유를 알린다.
+                               fetchSettings().then(setSettings).catch(() => {});
+                             }
+                             throw e;
+                           }
+                         }} />
+          ) : (
+            <p className="text-sm text-slate-500">
+              {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
+            </p>
+          )
+        ) : tab === "req" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} />
         ) : (
           <div className="space-y-6">
+            {plans.length > 0 && planBasis && settings && (
+              planBasis.params === null
+              || describeChanges(planBasis.params, settings.settings).length > 0) && (
+              <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2
+                                         text-sm text-amber-800">
+                {planBasis.params
+                  ? `이 결과는 이전 설정으로 계산됐다(바뀐 설정: ${
+                      describeChanges(planBasis.params, settings.settings).join(", ")}). `
+                  : "이 결과는 배치 설정 없이 서버 모델 기본값으로 계산됐다. "}
+                현재 설정을 반영하려면 요건 설정 탭에서 다시 실행할 것.
+                교체 검토와 PDF는 계산 당시 기준을 그대로 쓴다.
+              </p>
+            )}
             <PlanCards plans={plans} selected={selected} onSelect={selectPlan} />
             {current && (
               <button
                 disabled={pdfBusy}
                 onClick={async () => {
                   setPdfBusy(true);
-                  try { await downloadReport(current, whatif, lastSwap); }
+                  try {
+                    await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null);
+                  }
                   catch (e) { setError(String(e)); }
                   finally { setPdfBusy(false); }
                 }}

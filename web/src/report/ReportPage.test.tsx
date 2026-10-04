@@ -98,3 +98,28 @@ describe("ReportPage", () => {
     expect(screen.queryByText(/규칙 기반\(결정론적\)/)).not.toBeInTheDocument();
   });
 });
+
+describe("ReportPage — 계산 기준 표기(K8)", () => {
+  afterEach(() => {
+    delete (window as any).__REPORT_DATA__;
+    delete (window as any).__REPORT_READY__;
+  });
+  const base = { plan_label: "A", entries: [], objective: 1, fulfillment: 1,
+                 optimization_ratio: 1, unfilled: [], briefing: null, fallback_used: false,
+                 swap: null, objective_delta: null, swap_violations: [] };
+
+  it("플랜을 계산한 배치 설정을 보여 준다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    window.__REPORT_DATA__ = { ...base, milp_params: { min_alloc: 0.3,
+      clique_threshold_months: 6, lam: 0.3, mu: 0.2, time_limit: 120, gap: 0.05 } };
+    render(<ReportPage />);
+    expect(await screen.findByText(/최소 투입률 30%/)).toBeInTheDocument();
+  });
+
+  it("설정 없이 계산한 플랜은 모델 기본값임을 밝힌다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    window.__REPORT_DATA__ = { ...base, milp_params: null };
+    render(<ReportPage />);
+    expect(await screen.findByText(/서버 모델 기본값/)).toBeInTheDocument();
+  });
+});

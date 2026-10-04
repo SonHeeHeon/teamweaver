@@ -7,6 +7,7 @@ n_alternatives 전체를 보내는 stateless 계약은 그대로다. 이 캐시�
 import hashlib
 import json
 
+from core.optimize.milp import MilpParams
 from core.optimize.types import PlanAssignment
 
 
@@ -15,10 +16,14 @@ class ResultCache:
         self._store: dict[str, list[PlanAssignment]] = {}
 
     @staticmethod
-    def key(weights: dict, milp_params: dict, n_alternatives: int) -> str:
+    def key(weights: dict, milp_params: MilpParams | dict, n_alternatives: int) -> str:
+        """milp_params는 요청 원문이 아니라 *적용된* 전체 값으로 키를 만든다 --
+        `{}`과 기본값을 명시한 요청은 같은 계산이므로 같은 키여야 하고, 부팅
+        사전계산(저장된 설정)과 웹 요청(같은 설정을 명시)이 맞물려야 한다(K8)."""
+        params = milp_params if isinstance(milp_params, MilpParams) else MilpParams(**milp_params)
         payload = json.dumps(
             {"weights": dict(sorted(weights.items())),
-             "milp_params": dict(sorted(milp_params.items())),
+             "milp_params": params.model_dump(),
              "n_alternatives": n_alternatives},
             sort_keys=True)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()

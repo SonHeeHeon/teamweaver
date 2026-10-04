@@ -54,6 +54,13 @@ export function ReportPage() {
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
       <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
+      <p className="text-xs text-slate-500">
+        계산 기준: {data.milp_params
+          ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
+            + `반복 협업 기준 ${data.milp_params.clique_threshold_months}개월 · `
+            + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
+          : "서버 모델 기본값(배치 설정 미적용)"}
+      </p>
 
       <section className="mt-6 grid grid-cols-3 gap-4">
         {[["최적화율", pct(data.optimization_ratio)],

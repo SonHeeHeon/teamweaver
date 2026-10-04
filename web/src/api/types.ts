@@ -114,4 +114,26 @@ export interface ReportRequest {
   swap: Swap | null;
   objective_delta: number | null;
   swap_violations: string[];
+  /** 이 플랜을 계산한 배치 설정(K8). PDF에 "계산 기준"으로 표시한다. */
+  milp_params: PlacementSettings | null;
+}
+
+/** 관리자 배치 설정(K8) -- api/settings.py PlacementSettings 미러. */
+export interface PlacementSettings {
+  min_alloc: number;
+  clique_threshold_months: number;
+  lam: number;
+  mu: number;
+  time_limit: number;
+  gap: number;
+}
+
+/** GET/PUT /api/settings 응답. bounds는 서버 pydantic 제약에서 만든 값이다 --
+ *  화면 검사 범위를 서버와 이중으로 정의하지 않는다. */
+export interface SettingsResponse {
+  settings: PlacementSettings;
+  defaults: PlacementSettings;
+  bounds: Record<keyof PlacementSettings, { min: number; max: number }>;
+  updated_at: string | null;
+  load_error: string | null;
 }

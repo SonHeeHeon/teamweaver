@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import App from "./App";
 import type { Meta, PlanEvent, WhatifResponse } from "./api/types";
@@ -8,6 +8,9 @@ import type { Meta, PlanEvent, WhatifResponse } from "./api/types";
 // (deferred 프라미스는 각 테스트 안에서 만든다).
 vi.mock("./api/client", () => ({
   fetchMeta: vi.fn(),
+  fetchSettings: vi.fn(),
+  saveSettings: vi.fn(),
+  SettingsConflictError: class extends Error {},
   streamOptimize: vi.fn(),
   postWhatif: vi.fn(),
   downloadReport: vi.fn(),
@@ -19,7 +22,26 @@ vi.mock("react-force-graph-2d", () => ({
   default: () => <div data-testid="fg" />,
 }));
 
-import { fetchMeta, streamOptimize, postWhatif } from "./api/client";
+import {
+  fetchMeta, fetchSettings, saveSettings, streamOptimize, postWhatif, downloadReport,
+} from "./api/client";
+import type { SettingsResponse } from "./api/types";
+
+const SETTINGS: SettingsResponse = {
+  settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
+              time_limit: 120, gap: 0.05 },
+  defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
+              time_limit: 120, gap: 0.05 },
+  bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
+            lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
+            gap: { min: 0, max: 0.2 } },
+  updated_at: null,
+  load_error: null,
+};
+
+beforeEach(() => {
+  vi.mocked(fetchSettings).mockResolvedValue(SETTINGS);
+});
 
 const META: Meta = {
   people: [
@@ -112,5 +134,109 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
     // busy 상태로 멈춰 있지도 않아야 한다 (finally 가드 확인).
     expect(screen.queryByText("브리핑 생성 중…")).not.toBeInTheDocument();
     expect(screen.getByText(/인력을 교체하면/)).toBeInTheDocument();
+  });
+});
+
+
+describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준으로 쓰인다", () => {
+  function planStream() {
+    return (async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })();
+  }
+
+  it("최적화에 저장된 설정을 milp_params로 보내고, 설정을 바꾼 뒤에도 교체 검토·PDF는 계산 당시 설정을 쓴다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+    const changed = { ...SETTINGS.settings, min_alloc: 0.5 };
+    vi.mocked(saveSettings).mockResolvedValue({ ...SETTINGS, settings: changed,
+                                                updated_at: "2026-10-05T00:00:00+00:00" });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(SETTINGS.settings);
+    expect(screen.queryByText(/이전 설정/)).not.toBeInTheDocument();
+
+    // 관리자가 최소 투입률을 50%로 바꾼다.
+    fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
+    fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null));
+
+    // 결과 화면에는 "이전 설정으로 계산됨" 안내가 뜬다.
+    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    expect(await screen.findByText(/바뀐 설정: 최소 투입률 30%→50%/)).toBeInTheDocument();
+
+    // 교체 검토는 플랜을 계산한 30% 기준으로 보낸다(50%가 아니다).
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(postWhatif).mock.calls[0][3]).toEqual(SETTINGS.settings);
+
+    fireEvent.click(await screen.findByRole("button", { name: "PDF 내려받기" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    expect(vi.mocked(downloadReport).mock.calls[0][3]).toEqual(SETTINGS.settings);
+  });
+
+  it("계산 후 가중치를 바꿔도 교체 검토는 계산 당시 가중치를 쓴다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue({ ...META, skills: ["Java"] });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.click(screen.getByRole("button", { name: "요건 설정" }));
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(postWhatif).mock.calls[0][2]).toEqual({});
+  });
+
+  it("실행할 때마다 서버 설정을 다시 읽어 다른 관리자가 바꾼 값도 반영한다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    const other = { ...SETTINGS.settings, min_alloc: 0.4 };
+    vi.mocked(fetchSettings).mockReset()
+      .mockResolvedValueOnce(SETTINGS)                                  // 페이지 열 때
+      .mockResolvedValueOnce({ ...SETTINGS, settings: other });         // 실행 직전
+    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(other);
+    expect(screen.queryByText(/이전 설정/)).not.toBeInTheDocument();
+  });
+
+  it("첫 설정 로딩이 끝나기 전에 실행해도 모델 기본값으로 새지 않는다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    const never = new Promise<SettingsResponse>(() => {});
+    vi.mocked(fetchSettings).mockReset()
+      .mockReturnValueOnce(never)                                       // 첫 로딩은 끝나지 않음
+      .mockResolvedValueOnce(SETTINGS);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(SETTINGS.settings);
+  });
+
+  it("설정을 못 불러오면 경고하고 milp_params 없이(모델 기본값) 계산한다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    vi.mocked(fetchSettings).mockRejectedValue(new Error("down"));
+    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
+
+    render(<App />);
+    expect(await screen.findByText(/배치 설정을 불러오지 못했다/)).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(vi.mocked(streamOptimize).mock.calls[0][0]).not.toHaveProperty("milp_params");
   });
 });

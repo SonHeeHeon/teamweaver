@@ -2,6 +2,7 @@ import sqlite3
 from fastapi import Request
 from core.graph.memory_graph import MemoryGraph
 from api.cache import ResultCache
+from api.settings import SettingsStore
 
 
 def get_graph(request: Request) -> MemoryGraph:
@@ -14,6 +15,10 @@ def get_sqlite_conn(request: Request) -> sqlite3.Connection:
 
 def get_cache(request: Request) -> ResultCache:
     return request.app.state.cache
+
+
+def get_settings_store(request: Request) -> SettingsStore:
+    return request.app.state.settings_store
 
 
 def get_openai_client_or_none():
