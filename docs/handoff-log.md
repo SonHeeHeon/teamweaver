@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-04 · Codex · C0 안전 관문 구현 체크포인트 — 통합은 C1까지 보류
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `2edd3f7` (**main 미병합**, push 미실행). 작업 중 main `f87309c`의 K7 문서도 merge(`9b7a8a0`)해 반영했다.
+- 한 일: `solve_milp_diagnostic`의 반환 직전에 독립 검증을 강제했다. 서비스 wrapper와 모든 대안 solve가 이를 공유한다.
+  검증기는 NaN/무한대 공개값, 중복 plan entry, 비유한 재계산·제약 기준을 거절한다. 실제 CBC 0초/1초와 실패 주입 회귀 테스트 24개를 추가했다.
+- 상대 영향: **기본 fixture Plan A가 budget 잔차 2~2.5e-6(tol=1e-6)로 거절되므로 정상 API warm-up 부팅이 실패한다.**
+  API 코드는 수정하지 않았다. C1 수치 정책 분석 및 Claude warm-up 정책 확인이 필요하며, 해결 전 main에 통합하면 안 된다.
+  `pruned_pairs`/`_overfamiliar_pairs`의 시그니처·의미·목적식 4항은 유지돼 K1 평가기 계약 변화는 없다.
+- 검증: 관련 4파일 **64 passed**. 전체 `uv run --offline --group benchmark pytest -q --tb=short --disable-warnings` → **539 passed, 6 failed, 10 deselected**(6건 모두 budget 거절; 기존 테스트 기대 유지).
+  최고 역량 독립 `gpt-6-astra` 최종 리뷰: safety PASS / local checkpoint ACCEPTABLE / main merge NOT_READY. HTML 정적 검사 통과; 브라우저 파일 정책으로 렌더링 QA 미수행.
+- 근거: `docs/superpowers/reviews/2026-10-04-c0-independent-review.md`, `outputs/phase0-c0-eli5.html`, `docs/work-split.md` 요청 절.
+
 ## 2026-10-04 · Claude · K7 main 병합
 - 브랜치/커밋: `feat/claude-schema-intake`(`30c08ae` `2dacab6` `edf5bbf` + 이 기록)를 사용자 승인으로 **main에 fast-forward 병합**.
 - 한 일: 스키마 입력 양식의 불러오기를 엄격하게 바꿨다(Stop 훅 지적 2건 반영). 답 하나라도 형식이 틀리면 파일 전체를 거부하고 초안과 자동저장을 보존한다.
