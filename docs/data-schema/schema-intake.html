@@ -373,34 +373,51 @@ function isIntake(data) {
 
 // Replaces every answer: fields absent from `data` (e.g. an older version) end up empty,
 // never keeping a stale value from what this browser had autosaved.
-function apply(data) {
+const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+const str = (v) => (typeof v === "string" || typeof v === "number" ? String(v) : "");
+
+function fill(data) {
   clearAll();
   PARTS.forEach((p) => p.qs.forEach((q) => {
     const a = data?.parts?.[p.id]?.answers?.[q.key]?.answer;
-    if (a === undefined) return;
+    if (a === undefined || a === null) return;
     const name = fid(p.id, q.key);
-    const set = (n, v) => { const f = form.querySelector(`[name="${n}"]`); if (f) f.value = v ?? ""; };
+    const set = (n, v) => { const f = form.querySelector(`[name="${n}"]`); if (f) f.value = str(v); };
     if (q.type === "text" || q.type === "textarea") set(name, a);
-    if (q.type === "radio") {
+    if (q.type === "radio" && isObj(a)) {
       form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = i.value === a.choice; });
       if (q.other) set(`${name}.other`, a.other);
     }
-    if (q.type === "checks") {
-      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = (a.choices || []).includes(i.value); });
+    if (q.type === "checks" && isObj(a)) {
+      const picked = Array.isArray(a.choices) ? a.choices : [];
+      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = picked.includes(i.value); });
       if (q.other) set(`${name}.other`, a.other);
     }
-    if (q.type === "range") ["min", "typical", "max"].forEach((k) => set(`${name}.${k}`, a[k]));
-    if (q.type === "table") {
+    if (q.type === "range" && isObj(a)) ["min", "typical", "max"].forEach((k) => set(`${name}.${k}`, a[k]));
+    if (q.type === "table" && Array.isArray(a)) {
       const tbody = form.querySelector(`#${CSS.escape(name)} tbody`);
       tbody.innerHTML = "";
-      const rows = a.length ? a : [];
-      for (let i = 0; i < Math.max(rows.length, q.rows); i++) {
+      for (let i = 0; i < Math.max(a.length, q.rows); i++) {
         const tr = addRow(tbody, p.id, q);
-        const row = rows[i];
-        if (row) q.columns.forEach((c) => { tr.querySelector(`[name="${name}.row.${c.key}"]`).value = row[c.key] ?? ""; });
+        const row = a[i];
+        if (isObj(row)) q.columns.forEach((c) => {
+          tr.querySelector(`[name="${name}.row.${c.key}"]`).value = str(row[c.key]);
+        });
       }
     }
   }));
+}
+
+// All-or-nothing: if anything in `data` breaks filling, the draft present before the call is restored.
+function apply(data) {
+  const snapshot = collect();
+  try {
+    fill(data);
+    return true;
+  } catch {
+    fill(snapshot);
+    return false;
+  }
 }
 
 function save() {
@@ -447,7 +464,11 @@ document.getElementById("file").addEventListener("change", async (ev) => {
     statusEl.textContent = "이 양식(version 1)의 JSON이 아닙니다 — 작성 중인 내용은 그대로입니다";
     return;
   }
-  apply(data); save(); statusEl.textContent = `${f.name}을 불러왔습니다`;
+  if (!apply(data)) {
+    statusEl.textContent = "JSON 내용 형식이 맞지 않습니다 — 작성 중인 내용은 그대로입니다";
+    return;
+  }
+  save(); statusEl.textContent = `${f.name}을 불러왔습니다`;
 });
 let resetArmed = false;
 document.getElementById("btn-reset").addEventListener("click", (ev) => {
