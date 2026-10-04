@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-05 · claude-b · K4 PDF 생성의 Host 신뢰 제거 (감사 [A-P1])
+- 브랜치/커밋: `feat/claude-b-pdf-origin` `bd70251`(코드) + 이 기록. main 병합은 사용자 승인 후.
+- 한 일:
+  - `/api/report`의 PDF 브라우저 주소를 요청 Host 헤더가 아니라 `TEAMWEAVER_PDF_ORIGIN` 또는 실제로 연결을 받은 소켓 주소(`scope["server"]`)에서만 만든다.
+  - 브라우저 요청을 그 origin으로만 허용한다. 웹소켓·service worker는 막는다. 데이터 주입 스크립트는 그 origin 문서에서만 동작한다.
+    - 한계: 내부 origin이 302로 외부를 가리키면 그 한 번은 나간다(route가 리다이렉트 다음 단계를 못 본다). 탐지해서 렌더를 실패시키고, 데이터는 주입되지 않는다. 앱에는 열린 리다이렉트가 없다.
+  - 자원 상한(환경변수로 조정): 본문 2 MiB(413, JSON 파싱 전), 동시 생성 2건(429, 대기열 없음), 전체 60초(504).
+    - 기준: 300명/60프로젝트 합성 데이터 실측. 최악치 1,500건이 본문 143KB, 렌더 0.74초였다.
+  - 500 응답에 예외 원문(내부 URL 포함)을 싣지 않는다. 원문은 로그에만 남긴다.
+- 상대 영향: 없음(claude-b 영역만 수정).
+  - 운영 참고: TLS를 uvicorn이 직접 받거나 유닉스 소켓으로 띄울 때는 `TEAMWEAVER_PDF_ORIGIN`이 필요하다.
+  - 동시성 상한은 프로세스별로 센다(`--workers N`이면 N배).
+- 검증: `uv run --group benchmark pytest -q` → **593 passed, 13 deselected**(기준선 546 + 새 테스트 47). `uv run pytest -m slow -q` → 13 passed.
+  - 결함 주입 15종(Host 신뢰 복귀, route·ws 가드 제거, root_path 미처리 등)이 모두 테스트에 걸린다.
+- 리뷰: Codex는 2회 모두 쿼터 소진이었다. 그래서 Claude Opus 적대적 리뷰를 2라운드 받았다. 1라운드 지적 6건(root_path 우회 등)과 2라운드 NIT 4건을 반영했다. 남은 MUST는 없다.
+- 근거: `.omc/reports/2026-10-05-k4-pdf-origin.md`(루트, gitignore)
+
 ## 2026-10-05 · claude(채팅 세션) · 3인 체제 문서 초안: claude-a·claude-b·codex 영역 분리
 - 브랜치/커밋: 커밋하지 않았다. 루트 작업 트리의 미커밋 변경이며, 사용자가 검토하고 승인한 뒤 main에 커밋한다.
 - 한 일: `docs/work-split.md`에 "에이전트와 작업 위치" 절을 추가하고 Claude 영역을 claude-a(입력·평가·근거)와 claude-b(API·웹·스크립트)로 나눴다. `CLAUDE.md`·`AGENTS.md`의 "두 에이전트" 문구를 세 에이전트로 고쳤다.

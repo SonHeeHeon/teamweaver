@@ -62,7 +62,7 @@
 
 ### Claude (K*) — 담당 ID를 줄마다 표시했다
 - **K1** ✅ What-if 계약 정정 (2026-10-04 완료, main 병합. [A-P2] what-if 항목 해소)
-- **K4** (claude-b) [A-P1] PDF 생성이 요청 Host를 신뢰하지 않게 한다: 고정 내부 origin, 브라우저 로컬 접근 제한, 요청 크기·동시성 한도(`api/routes/report.py`, `api/pdf.py`).
+- **K4** ✅ (claude-b, 2026-10-05 `feat/claude-b-pdf-origin`, main 병합은 사용자 승인 대기) [A-P1] PDF 생성이 요청 Host를 신뢰하지 않게 한다: 고정 내부 origin, 브라우저 로컬 접근 제한, 요청 크기·동시성 한도(`api/routes/report.py`, `api/pdf.py`).
 - **K5** (claude-a) [A-P1·P2] 설명 근거의 사실성: 리뷰 근거 자리에 숫자 대신 원문 인용이나 출처 ID를 넣고, "직접 인용"과 "요약"을 구분한다.
   테스트는 원문에 포함된 인용인지 검사하게 한다(`api/rag/**`. 공유 계약 `core/rag/sqlite_rag.py`·`core/datagen` 변경은 "요청"에 기록한다).
 - **K6** (claude-a) [A-P2] `MemoryGraph.synergy_context_memory`의 int8 누적 넘침(128경로 이상에서 도달 노드 누락)을 수정한다(공유 계약 `core/graph/`. "요청"에 기록한다).
