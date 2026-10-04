@@ -9,6 +9,7 @@ import json
 import math
 from pathlib import Path
 from typing import Any
+from experiments.phase1.evidence import assess_record, classify_case, summarize_stages
 
 from experiments.phase1.checkpoint import (
     CheckpointCorrupt,
@@ -75,7 +76,8 @@ def _load_run(run_dir: Path) -> tuple[dict[str, Any], dict[str, Any], list[dict[
                     raise ValueError("terminal result checksum mismatch")
                 if result.get("case_id", case_id) != case_id:
                     raise ValueError("terminal result belongs to another case")
-            rows.append({"case_id": case_id, "checkpoint": case_row, "result": result})
+            rows.append({"case_id": case_id, "checkpoint": case_row, "result": result,
+                         "raw_candidate_available": (expected_path.parent / "raw-solution.json").is_file()})
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise CheckpointCorrupt(f"terminal result missing or changed: {case_id}") from exc
     return manifest, checkpoint, rows
@@ -99,6 +101,7 @@ def _case_table(rows: list[dict[str, Any]]) -> str:
         result = item["result"] or {}
         payload = result.get("payload", {})
         case = row.get("case", {})
+        assessment = assess_record(item)
         validation = payload.get("validation", {})
         issues = validation.get("issues", [])
         evidence = payload.get("evidence", {})
@@ -112,10 +115,10 @@ def _case_table(rows: list[dict[str, Any]]) -> str:
           <td class="num">{_number(payload.get('objective'))}</td>
           <td class="num">{_number(payload.get('best_bound'))}</td>
           <td class="num">{_gap(payload.get('normalized_gap'))}</td>
-          <td>{_text(validation.get('valid'))}</td>
+          <td>{_text(assessment.validation_state)} / {_text(assessment.evidence_source)}</td>
           <td>{_text(evidence.get('native_status'))}</td>
           <td class="num">{_number(result.get('elapsed_seconds'), 3)}</td>
-          <td>{_text('; '.join(str(issue) for issue in issues) if issues else result.get('error'))}</td>
+          <td>{_text(assessment.failure_category)}: {_text('; '.join(assessment.error_messages) or ','.join(assessment.issue_codes))}</td>
         </tr>""")
     if not rendered:
         return '<tr><td colspan="12">기록된 실행 결과가 없습니다.</td></tr>'
@@ -147,11 +150,12 @@ def render_report(run_dir: Path, output_path: Path) -> Path:
         (item["result"] or {}).get("payload", {}).get("quality_status", "NOT_RECORDED")
         for item in rows
     )
-    validation_failures = sum(
-        (item["result"] or {}).get("payload", {}).get("validation", {}).get("valid") is False
-        or item["checkpoint"]["status"] in {"VALIDATION_ERROR", "INPUT_MISMATCH", "ORACLE_MISMATCH"}
-        for item in rows
-    )
+    validation_failures = sum(assess_record(item).validation_state == 'FAIL' for item in rows)
+    stages = summarize_stages(manifest, rows)
+    stage_rows = ''.join(f'<tr><td>{_text(solver)}</td><td>{_text(stage)}</td>'
+                         + ''.join(f'<td>{values[key]}</td>' for key in ('planned', 'recorded', 'done', 'validated', 'quality_pass', 'validation_failures'))
+                         + f'<td>{_json(values["failure_categories"])}</td><td>{_json(values["issue_codes"])}</td></tr>'
+                         for solver, groups in sorted(stages.items()) for stage, values in sorted(groups.items()))
     unavailable = sorted({
         name for name, record in manifest.get("solvers", {}).items()
         if record.get("state") == "UNAVAILABLE"
@@ -189,6 +193,9 @@ main{{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px}} h1{{
 <p>이 결과는 가상 입력에서 구현 정확도와 솔버 실행 특성을 비교하는 기술 실험입니다. 실제 인력 배치가 고객 만족, 프로젝트 성과, 인력 교체 감소로 이어진다는 현실 성과 검증은 아닙니다.</p></section>
 <section><h2>실행 상태 요약</h2><p><b>터미널 상태:</b> {_json(dict(sorted(counts.items())))}</p><p><b>품질 상태:</b> {_json(dict(sorted(quality_counts.items())))}</p><p><b>체크포인트 상태:</b> {_text(checkpoint['status'])}</p><p class="note">완료 표시는 사전 등록 일정 전체가 기록되고 체크포인트도 COMPLETE일 때만 나옵니다.</p></section>
 <section><h2>솔버·버전·가용성</h2><div class="tablewrap"><table><thead><tr><th>솔버</th><th>사전 상태</th><th>버전</th><th>연결 방식</th><th>실행 관찰</th><th>오류</th></tr></thead><tbody>{_solver_table(manifest, rows)}</tbody></table></div></section>
+<section><h2>단계별 분모와 실패 원인</h2><p>core는 primary+confirmation입니다. oracle·pilot·compatibility는 별도 집계하며 미실행·실패·중단도 예정 분모에 남깁니다. DONE·검증 통과·품질 통과는 서로 다른 수치입니다.</p>
+<div class="tablewrap"><table><thead><tr><th>솔버</th><th>단계</th><th>예정</th><th>기록</th><th>DONE</th><th>검증 통과</th><th>품질 통과</th><th>검증 실패</th><th>실패 범주</th><th>이슈</th></tr></thead><tbody>{stage_rows}</tbody></table></div>
+<p class="note">반복 측정은 독립 고객 사례가 아닙니다. 완료 사례만의 속도는 생존 편향이 있으며 native Optimal만으로 검증 통과를 추정하지 않습니다. 과거 거절 원시 해가 없으면 잔차·원인 복원은 불가능합니다.</p></section>
 <section><h2>고정 실행 조건과 신원</h2><dl class="meta">
 <dt>매니페스트 SHA-256</dt><dd><code>{_text(manifest_sha)}</code></dd>
 <dt>체크포인트의 SHA-256</dt><dd><code>{_text(checkpoint['manifest_sha256'])}</code></dd>
