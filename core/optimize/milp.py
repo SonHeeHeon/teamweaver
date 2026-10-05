@@ -24,6 +24,20 @@ def _floor2(v: float) -> float:
     return math.floor(v * 100 + 1e-9) / 100
 
 
+def display_alloc(value: float, min_alloc: float) -> float:
+    """반환·표시용 투입률. 해 값보다 크게 만들지 않는다(C3 [A-P2]).
+
+    보통은 소수 둘째 자리 내림이다. min_alloc이 그보다 정밀해(예 0.205) 내림이 최소값 아래로
+    떨어지면, 끌어올린 뒤 반올림하던 예전 규칙은 해 값 0.206을 0.21로 돌려줘 가용률을 넘겼다.
+    그때는 해 값을 6자리 내림으로 그대로 둔다. 솔버가 최소값 바로 아래(허용오차 1e-6 안)에 둔
+    값만 최소값으로 올린다 -- 호출부가 value >= min_alloc - 1e-6일 때만 부른다."""
+    two = _floor2(value)
+    if two >= min_alloc - 1e-12:
+        return two
+    fine = math.floor(value * 1e6 + 1e-9) / 1e6
+    return max(fine, min_alloc)
+
+
 class MilpParams(BaseModel):
     lam: float = 0.3
     mu: float = 0.2
@@ -189,11 +203,9 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             zval, aval = z[i][j].value(), a[i][j].value()
             if zval and zval > 0.5 and aval is not None and aval >= params.min_alloc - 1e-6:
                 # floor (not nearest-round) so reported alloc never exceeds the
-                # true solved value; clamp up to min_alloc for the rare case CBC's
-                # value sits an epsilon below it (see _floor2 docstring above).
-                alloc = max(params.min_alloc, _floor2(aval))
+                # true solved value (display_alloc, C3).
                 entries.append(AssignEntry(person_id=people[i].id, project_id=projects[j].id,
-                                           alloc=round(alloc, 2)))
+                                           alloc=display_alloc(aval, params.min_alloc)))
     unfilled = [f"{projects[j].id}:{g.value}:{int(round(v.value()))}명 미충원"
                 for (j, g), v in slack.items() if v.value() and v.value() > 0.5]
     objective = float(pulp.value(prob.objective))

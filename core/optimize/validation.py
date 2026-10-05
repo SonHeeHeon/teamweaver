@@ -13,8 +13,13 @@ from core.optimize.milp import MilpParams
 
 
 def _display_alloc(value: float, min_alloc: float) -> float:
+    """Independent copy of the display rule (C3): never above the solved value.
+    Two-decimal floor, unless that drops below a finer min_alloc -- then keep
+    the value at 6 decimals (clamped to min_alloc only within tolerance)."""
     floored = math.floor(value * 100 + 1e-9) / 100
-    return round(max(min_alloc, floored), 2)
+    if floored >= min_alloc - 1e-12:
+        return floored
+    return max(math.floor(value * 1_000_000 + 1e-9) / 1_000_000, min_alloc)
 
 
 def _independent_reward_pairs(
