@@ -289,3 +289,38 @@ def test_roster_above_availability_is_a_warning(tmp_path):
             r["available_mm"] = "0.5"
     _, report = load_bundle(write_bundle(tmp_path / "b", tables))
     assert any(i.file == "current_assignments.csv" and "above" in i.message for i in report.warnings)
+
+
+def test_only_the_last_ten_years_of_history_count(tmp_path):
+    """A 20-year source: work that ended before the window is ignored for collaboration, work that started
+    earlier is cut, and skill months above 120 are read as 120 with a warning (user decision 2026-10-05)."""
+    import csv
+    import datetime as dt
+    import json
+    from core.ingest.convert import LOOKBACK_MONTHS, _coworks, lookback_start, to_dataset
+    from core.ingest.loader import load_bundle
+    from core.ingest.org_profile import generate_org_bundle
+    first = dt.date(2026, 10, 1)
+    since = lookback_start(first)
+    assert since == dt.date(2016, 10, 1) and LOOKBACK_MONTHS == 120
+    old = [{"project_code": "OLD", "person_id": p, "start_date": dt.date(2008, 1, 1), "end_date": dt.date(2012, 12, 31)}
+           for p in ("A", "B")]
+    edge = [{"project_code": "EDGE", "person_id": p, "start_date": dt.date(2015, 1, 1), "end_date": dt.date(2017, 3, 31)}
+            for p in ("A", "C")]
+    cw = {(c.a_id, c.b_id): c.co_months for c in _coworks(old + edge, first - dt.timedelta(days=1), since)}
+    assert ("A", "B") not in cw and cw[("A", "C")] == 6                 # 2016-10 .. 2017-03 only
+    root = generate_org_bundle(tmp_path / "b", 100, seed=5)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    m.pop("files", None)
+    (root / "manifest.json").write_text(json.dumps(m, ensure_ascii=False), "utf-8")
+    path = root / "person_skills.csv"
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+    rows[0]["experience_months"] = "240"                                 # a 20-year veteran's skill table
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    b, rep = load_bundle(root)
+    to_dataset(b, rep)
+    assert any("120개월로 보았다" in str(x) for x in rep.warnings)
+    assert any(n.startswith("업무 이력: 최근 10년(2016-10~)") for n in rep.notes)

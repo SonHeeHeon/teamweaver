@@ -17,6 +17,15 @@ from core.ingest.report import IngestReport
 
 # Upper bounds (exclusive) in months for proxy levels 1..4; 96+ months is level 5.
 MONTH_BANDS = (12, 36, 60, 96)
+# Only the last 10 years of history count, even when the source has 20+ years: old work and skills are not
+# remembered well (user decision 2026-10-05). Older work rows are ignored, rows that started earlier are cut.
+LOOKBACK_MONTHS = 120
+
+
+def lookback_start(first: dt.date, months: int = LOOKBACK_MONTHS) -> dt.date:
+    """First day of the window: `months` calendar months before the horizon's first month."""
+    k = first.year * 12 + first.month - 1 - months
+    return dt.date(k // 12, k % 12 + 1, 1)
 
 
 def level_from_months(months: int, bands: tuple[int, ...] = MONTH_BANDS) -> int:
@@ -31,14 +40,16 @@ def _months_between(start: dt.date, end: dt.date) -> set[tuple[int, int]]:
     return out
 
 
-def _coworks(work: list[dict], cutoff: dt.date) -> list[CoworkRecord]:
-    """Pairs who were on the same project code on the same days, counted up to `cutoff` (the day
-    before the planning horizon), so open-ended or future-dated assignments never invent history."""
+def _coworks(work: list[dict], cutoff: dt.date, since: dt.date | None = None) -> list[CoworkRecord]:
+    """Pairs who were on the same project code on the same days, counted from `since` (the lookback window)
+    up to `cutoff` (the day before the planning horizon), so open-ended or future-dated assignments never
+    invent history and work older than the window does not count."""
     by_code: dict[str, dict[str, list[tuple[dt.date, dt.date]]]] = defaultdict(lambda: defaultdict(list))
     for w in work:
         end = min(w["end_date"], cutoff)
-        if w["start_date"] <= end:
-            by_code[w["project_code"]][w["person_id"]].append((w["start_date"], end))
+        start = w["start_date"] if since is None else max(w["start_date"], since)
+        if start <= end:
+            by_code[w["project_code"]][w["person_id"]].append((start, end))
     shared_months: dict[tuple[str, str], set] = defaultdict(set)
     shared_codes: dict[tuple[str, str], int] = defaultdict(int)
     for members in by_code.values():
@@ -86,12 +97,19 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     rates = {(r["career_grade"], r["role_type"]): r["monthly_rate"] for r in t["rate_card.csv"]}
 
     skills: dict[str, dict[str, int]] = defaultdict(dict)
+    over = []
     for s in t["person_skills.csv"]:
         if s["experience_months"] == 0:
             report.warn("person_skills.csv", f"{s['person_id']}의 {s['skill_name']}은 경력 0개월이라 보유 기술로 보지 않았다",
                         row=s["__row__"], column="experience_months")
             continue
-        skills[s["person_id"]][s["skill_name"]] = level_from_months(s["experience_months"])
+        if s["experience_months"] > LOOKBACK_MONTHS:
+            over.append(s)
+        skills[s["person_id"]][s["skill_name"]] = level_from_months(min(s["experience_months"], LOOKBACK_MONTHS))
+    if over:
+        report.warn("person_skills.csv", f"기술 경력 {len(over)}건이 최근 {LOOKBACK_MONTHS}개월을 넘어 "
+                    f"{LOOKBACK_MONTHS}개월로 보았다(예: {over[0]['person_id']} {over[0]['skill_name']} "
+                    f"{over[0]['experience_months']}개월) — 기술 경력은 최근 10년 기준으로 뽑아 달라")
     avail: dict[str, dict[dt.date, float]] = defaultdict(dict)
     for a in t["availability.csv"]:
         if a["month"] in month_index:
@@ -159,8 +177,15 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     report.notes.append(f"숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다"
                         f"(경계 {MONTH_BANDS}개월 → 1~5). 요구 경력도 같은 구간을 쓴다.")
     cutoff = first - dt.timedelta(days=1)
+    since = lookback_start(first)
     report.notes.append(f"협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, "
                         f"{cutoff.isoformat()}까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다.")
+    work = t["work_history.csv"]
+    old = sum(w["end_date"] < since for w in work)
+    cut = sum(w["start_date"] < since <= w["end_date"] for w in work)
+    report.notes.append(f"업무 이력: 최근 {LOOKBACK_MONTHS // 12}년({since.strftime('%Y-%m')}~)만 봤다"
+                        + (f" — 그 전에 끝난 {old}건은 제외, 그 전에 시작한 {cut}건은 시작을 잘랐다." if old or cut
+                           else " — 모든 행이 이 기간 안에 있다."))
     planned = {j.id for j in projects}
     current = [CurrentAssignment(person_id=r["person_id"], project_id=r["project_id"], alloc=r["alloc"],
                                  locked=r["locked"] == "Y")
@@ -171,6 +196,6 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
                     "planning horizon and are ignored")
     if current:
         report.notes.append(f"현재 투입 {len(current)}건(잠금 {sum(c.locked for c in current)}건)을 연속성 입력으로 넘겼다.")
-    ds = Dataset(people=people, projects=projects, coworks=_coworks(t["work_history.csv"], cutoff),
+    ds = Dataset(people=people, projects=projects, coworks=_coworks(work, cutoff, since),
                  reviews=reviews, current=current)
     return ds, parse_reviews_rule_based(ds.reviews)

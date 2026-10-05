@@ -28,7 +28,10 @@ from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS,
 
 GENERATOR = "core.ingest.org_profile v1"
 SIZES = {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}
-HISTORY_MONTHS = 120       # last 10 years of work history (user decision 2026-10-05)
+LOOKBACK_MONTHS = 120      # the export (and the loader) keeps only the last 10 years of history -- careers can be
+                           # longer (20+ years), but old work and skills are not remembered well (user decision 2026-10-05)
+CAREER_MONTHS = 300        # careers are simulated up to 25 years back, then cut to the lookback window
+TENURE = {"초급": (12, 72), "중급": (60, 120), "고급": (108, 192), "특급": (156, 300)}   # months of service by grade
 LLM_ERA_MONTHS = 36           # LLM-era skills only exist in the last three years of history
 
 CATALOG = {
@@ -124,7 +127,7 @@ def _people(rng: random.Random, groups: dict[str, int]) -> list[dict]:
 
 def _work_history(rng: random.Random, people: list[dict], last: dt.date):
     """Past project codes per group; AI codes and LLM-era skills live only in the last LLM_ERA_MONTHS."""
-    origin = _month_add(last, -HISTORY_MONTHS)
+    origin = _month_add(last, -CAREER_MONTHS)
     llm_origin = _month_add(last, -(LLM_ERA_MONTHS - 1))      # inclusive window: exactly LLM_ERA_MONTHS months
     codes = defaultdict(list)
     by_group = defaultdict(int)
@@ -132,8 +135,8 @@ def _work_history(rng: random.Random, people: list[dict], last: dt.date):
         by_group[p["_group"]] += 1
     k = 0
     for g, n in by_group.items():
-        span_origin, span = (llm_origin, LLM_ERA_MONTHS) if g == "AI" else (origin, HISTORY_MONTHS)
-        for _ in range(max(8, n)):
+        span_origin, span = (llm_origin, LLM_ERA_MONTHS) if g == "AI" else (origin, CAREER_MONTHS)
+        for _ in range(max(8, n) * span // 120):        # about the same number running at any time
             k += 1
             start = _month_add(span_origin, rng.randrange(0, span - 4))
             end = min(_month_add(start, rng.randint(4, 18) - 1), last)
@@ -147,10 +150,8 @@ def _work_history(rng: random.Random, people: list[dict], last: dt.date):
     n = 0
     tech = [s for s in SKILL_CATEGORY if SKILL_CATEGORY[s] != "Domain"]
     all_codes = [c for cs in codes.values() for c in cs]
-    # career length by grade (months before the horizon); juniors joined recently
-    tenure = {"초급": (12, 40), "중급": (36, 84), "고급": (72, 120), "특급": (96, 120)}
     for p in people:
-        lo_t, hi_t = tenure[p["career_grade"]]
+        lo_t, hi_t = TENURE[p["career_grade"]]
         t = _month_add(last, -rng.randint(lo_t, hi_t) + 1)
         while t <= last:
             # continuous career: the next assignment starts right after the previous one (0-2 month gap)
@@ -180,6 +181,21 @@ def _work_history(rng: random.Random, people: list[dict], last: dt.date):
                     work_skills.append((p["person_id"], skill, ss, e))
             t = _month_add(e, 1 + rng.choice((0, 0, 0, 1, 2)))
     return works, work_skills, [c for cs in codes.values() for c in cs]
+
+
+def _apply_lookback(works: list[dict], work_skills: list, last: dt.date):
+    """The export keeps the last LOOKBACK_MONTHS: older rows are dropped, rows that started earlier are cut to the
+    window start (their skill months too). The hidden outcome rule was computed on the full career before this."""
+    start = _month_add(last, -(LOOKBACK_MONTHS - 1))
+    kept = []
+    for w in works:
+        if w["_end"] < start:
+            continue
+        if w["_start"] < start:
+            w["_start"], w["start_date"] = start, start.isoformat()
+        kept.append(w)
+    skills = [(pid, sk, max(ss, start), e) for pid, sk, ss, e in work_skills if e >= start]
+    return kept, skills
 
 
 def _describe_works(works: list[dict], last: dt.date) -> None:
@@ -290,7 +306,8 @@ def _past_outcomes(rng: random.Random, past_codes: list[dict], works: list[dict]
     raw = []
     for code in past_codes:
         team = by_code.get(code["code"], [])
-        if code["end"] >= last or len({w["person_id"] for w in team}) < 2:
+        if (code["end"] >= last or code["end"] < _month_add(last, -(LOOKBACK_MONTHS - 1))
+                or len({w["person_id"] for w in team}) < 2):
             continue
         members = sorted({w["person_id"] for w in team})
         start = min(w["_start"] for w in team)
@@ -323,10 +340,11 @@ def _past_outcomes(rng: random.Random, past_codes: list[dict], works: list[dict]
                    if rng.random() < 0.03 and m not in {x[0] for x in picked}]
         for m, who, reason in picked:
             row = max((x for x in team if x["person_id"] == m), key=lambda x: x["_start"])
-            span = _months(row["_start"], row["_end"])
+            begin = max(row["_start"], _month_add(last, -(LOOKBACK_MONTHS - 1)))   # inside the exported window
+            span = _months(begin, row["_end"])
             if span < 2:
                 continue                                      # a one-month stint cannot be cut short
-            left = _month_add(row["_start"], rng.randint(0, span - 2))      # last month before the swap
+            left = _month_add(begin, rng.randint(0, span - 2))                # last month before the swap
             row["_end"], row["end_date"] = left, _month_end(left).isoformat()
             for k in row["_ws"]:                                # skill months end with the stint
                 pid, skill, ss, e = work_skills[k]
@@ -469,6 +487,7 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     outcomes, replacements = _past_outcomes(random.Random(seed * 15485863 + 7), past_codes, works, people, last,
                                             work_skills)
     work_skills = [x for x in work_skills if x is not None]
+    works, work_skills = _apply_lookback(works, work_skills, last)
     _describe_works(works, last)
     availability, supply = [], [0.0] * HORIZON_MONTHS
     avail = defaultdict(list)

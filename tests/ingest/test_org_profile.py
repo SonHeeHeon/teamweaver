@@ -219,3 +219,20 @@ def test_committed_demo_bundle_validates_and_matches_the_generator(tmp_path):
     fresh = generate_org_bundle(tmp_path / "fresh", 100, seed=SEED)
     for f in sorted(fresh.iterdir()):
         assert (demo / f.name).read_bytes() == f.read_bytes(), f"{f.name} is stale: rerun python -m rehearsal.make_demo"
+
+
+def test_senior_careers_fill_the_window_and_juniors_start_late(bundle):
+    """Careers are longer than 10 years for seniors (up to 25), but only the last 10 years are exported."""
+    _, _, b, _, _ = bundle
+    grade = {p["person_id"]: p["career_grade"] for p in b.tables["people.csv"]}
+    first = {}
+    for w in b.tables["work_history.csv"]:
+        first[w["person_id"]] = min(first.get(w["person_id"], w["start_date"]), w["start_date"])
+    window = min(first.values())
+    seniors = [d for pid, d in first.items() if grade[pid] == "특급"]
+    juniors = [d for pid, d in first.items() if grade[pid] == "초급"]
+    # 13+ years of service: the window is full, except someone between assignments right at its start
+    assert sum(d == window for d in seniors) / len(seniors) > 0.8
+    assert all((d.year - window.year) * 12 + d.month - window.month <= 12 for d in seniors)
+    assert all(d > window for d in juniors)                              # at most 6 years of service
+    assert max(int(s["experience_months"]) for s in b.tables["person_skills.csv"]) <= 120
