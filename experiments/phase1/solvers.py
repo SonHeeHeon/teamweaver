@@ -6,7 +6,7 @@ import pulp
 
 from core.domain.models import Grade
 from core.optimize.audit_types import RawMilpSolution, SolverEvidence
-from core.optimize.milp import _floor2, _overfamiliar_pairs, pruned_pairs
+from core.optimize.milp import _overfamiliar_pairs, display_alloc, pruned_pairs
 from core.optimize.types import AssignEntry, PlanAssignment
 from core.optimize.validation import validate_raw_solution
 from core.optimize.candidate import rebuild_plan
@@ -468,14 +468,12 @@ def _extract_solution(
     for (i, j), selected in z.items():
         allocation = a[(i, j)]
         if selected > 0.5 and allocation >= benchmark.params.min_alloc - 1e-6:
-            display_allocation = max(
-                benchmark.params.min_alloc, _floor2(allocation)
-            )
+            # 서비스와 같은 표시 규칙(C3): 해 값보다 크게 만들지 않는다.
             entries.append(
                 AssignEntry(
                     person_id=people[i].id,
                     project_id=projects[j].id,
-                    alloc=round(display_allocation, 2),
+                    alloc=display_alloc(allocation, benchmark.params.min_alloc),
                 )
             )
     unfilled = [

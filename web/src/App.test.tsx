@@ -922,6 +922,51 @@ describe("App — 409 뒤 서버 상태로 맞추기 전에 한 적용(K13 남�
 });
 
 
+describe("App — 대안 부족 안내(C2)", () => {
+  it("요청한 대안보다 적게 오면 '조건을 만족하는 대안 없음'을 알린다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+      yield { event: "done" as const, data: { count: 1, requested_alternatives: 3 } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    expect(await screen.findByText(/조건을 만족하는 대안 없음/)).toBeInTheDocument();
+  });
+
+  it("솔버가 시간 안에 못 끝내 끊겼으면 조건 미충족이 아니라 그 사실을 알린다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+      yield { event: "done" as const,
+              data: { count: 1, requested_alternatives: 3, stop_reason: "time_limit" } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    expect(await screen.findByText(/시간 안에 끝나지 않아/)).toBeInTheDocument();
+    expect(screen.queryByText(/조건을 만족하는 대안 없음/)).not.toBeInTheDocument();
+  });
+
+  it("요청한 만큼 오면 안내하지 않는다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+      yield { event: "done" as const, data: { count: 1, requested_alternatives: 0 } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(screen.queryByText(/조건을 만족하는 대안/)).not.toBeInTheDocument();
+  });
+});
+
+
 describe("App — 관리자 로그인(K14)", () => {
   const LOCKED = { token_required: false, login_required: true, protected: true,
                    logged_in: false, expires_at: null };

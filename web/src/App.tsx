@@ -126,6 +126,9 @@ export default function App() {
   const [applyBusy, setApplyBusy] = useState(false);
   // 저장된 적용 교체를 불러왔다는 안내(K13). 재실행·전환이면 지운다.
   const [notice, setNotice] = useState<string | null>(null);
+  // 요청한 대안 중 조건을 만족해 나온 수(C2). 모자라면 "대안 없음" 안내를 플랜 카드 아래에 둔다.
+  const [altShortfall, setAltShortfall] =
+    useState<{ found: number; requested: number; solverFailed: boolean } | null>(null);
   // 적용 요청의 세대. 플랜 전환·재실행·되돌리기·선택 변경이면 올려, 늦게 온 응답(성공·409
   // 모두)을 버리고 버튼 잠금도 바로 푼다 -- 늦은 409가 더 최신 실행의 플랜을 지우지 않게.
   const applyGen = useRef(0);
@@ -164,6 +167,7 @@ export default function App() {
     cancelApply();
     setDataset(info);
     setPlans([]);
+    setAltShortfall(null);
     commitEdits({});
     setNotice(null);
     setSelected(null);
@@ -205,6 +209,7 @@ export default function App() {
     setRunning(true);
     setError(null);
     setPlans([]);
+    setAltShortfall(null);
     commitEdits({});
     setNotice(null);
     setSelected(null);
@@ -239,6 +244,11 @@ export default function App() {
           void restoreEdits(ev.data, gen);
           setSelected((cur) => cur ?? ev.data.label);
           setTab("whatif");
+        } else if (ev.event === "done") {
+          const requested = ev.data.requested_alternatives;
+          const found = Math.max(0, ev.data.count - 1);
+          if (requested !== undefined && found < requested)
+            setAltShortfall({ found, requested, solverFailed: ev.data.stop_reason === "time_limit" });
         } else if (ev.event === "error") {
           setError(ev.data.message);
         }
@@ -584,6 +594,18 @@ export default function App() {
               </p>
             )}
             <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan} />
+            {altShortfall && (
+              <p className="mt-2 text-xs text-slate-500">
+                {altShortfall.solverFailed
+                  ? `대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 다시 실행하면 더 나올 수 있다.`
+                  : <>
+                      {altShortfall.found === 0
+                        ? "조건을 만족하는 대안 없음"
+                        : `조건을 만족하는 대안 ${altShortfall.found}개(요청 ${altShortfall.requested}개)`}
+                      {" — 대안은 Plan A와 구성이 달라야 하고, 품질이 A의 95% 이상이며, 미충원이 A보다 많지 않아야 한다."}
+                    </>}
+              </p>
+            )}
             {current && (
               <button
                 disabled={pdfBusy}
