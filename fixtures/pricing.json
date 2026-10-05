@@ -1,13 +1,13 @@
 {
   "as_of": "2026-10-05",
   "currency": "USD",
-  "_policy": "LLM 작업을 복잡도로 두 단계로 나눈다(사용자 결정 2026-10-05). 판단이 필요한 교체 설명(briefing)은 complex_model, 리뷰 문장 생성·분석처럼 단순한 작업은 simple_model. 모델 교체는 이 파일만 수정하면 된다. 동결 fixture(fixtures/meta.json)는 생성 당시 모델(gpt-5-mini/nano)을 그대로 기록한다. 참고(2026-10-05 가격 확인): gpt-6-luna($0.10/$0.50)가 gpt-5.5($5/$30)보다 훨씬 싸다 -- 복잡도 단계와 가격 단계가 반대다. 시연 중 상시 호출은 briefing뿐이고 simple 단계는 fixture 재생성 때만 쓴다. 추론 깊이(reasoning_effort)는 모델 항목 안에 둔다 -- 모델을 바꾸면 그 모델이 지원하는 값만 적용된다(없으면 보내지 않음).",
+  "_policy": "LLM 작업 전부 gpt-6-luna를 쓴다(사용자 결정 2026-10-05: 공식 단가 확인 결과 gpt-6-luna $0.10/$0.50가 gpt-5.5 $5/$30보다 싸고, 실측 품질도 교체 설명·리뷰 분석 모두 충분). complex/simple 두 키는 남겨 두어 나중에 단계별로 다른 모델을 쓸 수 있다. 모델 교체는 이 파일만 수정한다. 추론 깊이(reasoning_effort)는 모델 항목 안에 둔다. 동결 fixture(fixtures/meta.json)는 생성 당시 모델(gpt-5-mini/nano)을 그대로 기록한다.",
   "complex_model": "gpt-6-luna",
-  "simple_model": "gpt-5.5",
-  "gen_model": "gpt-5.5",
-  "parse_model": "gpt-5.5",
-  "final_gen_model": "gpt-5.5",
-  "final_parse_model": "gpt-5.5",
+  "simple_model": "gpt-6-luna",
+  "gen_model": "gpt-6-luna",
+  "parse_model": "gpt-6-luna",
+  "final_gen_model": "gpt-6-luna",
+  "final_parse_model": "gpt-6-luna",
   "briefing_model": "gpt-6-luna",
   "models": {
     "gpt-5": {
