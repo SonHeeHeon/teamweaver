@@ -22,14 +22,15 @@ from collections import defaultdict
 from pathlib import Path
 
 from core.ingest.contract import GRADES, HORIZON_MONTHS, SCHEMA_VERSION
+from core.ingest.convert import LOOKBACK_MONTHS
 from core.ingest.review_text import ORG_REVIEW_ITEMS, negative_text, positive_text
 from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS, _month_add, _month_end, _months,
                                    _review_rounds, _write_csv)
 
 GENERATOR = "core.ingest.org_profile v1"
 SIZES = {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}
-LOOKBACK_MONTHS = 120      # the export (and the loader) keeps only the last 10 years of history -- careers can be
-                           # longer (20+ years), but old work and skills are not remembered well (user decision 2026-10-05)
+# the export keeps only the last LOOKBACK_MONTHS (10 years, same constant as the loader) -- careers can be longer
+# (20+ years), but old work and skills are not remembered well (user decision 2026-10-05)
 CAREER_MONTHS = 300        # careers are simulated up to 25 years back, then cut to the lookback window
 TENURE = {"초급": (12, 72), "중급": (60, 120), "고급": (108, 192), "특급": (156, 300)}   # months of service by grade
 LLM_ERA_MONTHS = 36           # LLM-era skills only exist in the last three years of history
@@ -487,6 +488,8 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     outcomes, replacements = _past_outcomes(random.Random(seed * 15485863 + 7), past_codes, works, people, last,
                                             work_skills)
     work_skills = [x for x in work_skills if x is not None]
+    for w in works:
+        del w["_ws"]                              # indices into the pre-filter list; stale from here on
     works, work_skills = _apply_lookback(works, work_skills, last)
     _describe_works(works, last)
     availability, supply = [], [0.0] * HORIZON_MONTHS

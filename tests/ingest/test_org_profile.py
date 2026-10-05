@@ -219,6 +219,14 @@ def test_committed_demo_bundle_validates_and_matches_the_generator(tmp_path):
     fresh = generate_org_bundle(tmp_path / "fresh", 100, seed=SEED)
     for f in sorted(fresh.iterdir()):
         assert (demo / f.name).read_bytes() == f.read_bytes(), f"{f.name} is stale: rerun python -m rehearsal.make_demo"
+    import io
+    import zipfile
+    for n in (200, 300):
+        root = generate_org_bundle(tmp_path / f"n{n}", n, seed=SEED)
+        with zipfile.ZipFile(demo.parent / f"org-n{n}.zip") as zf:
+            assert sorted(zf.namelist()) == sorted(p.name for p in root.iterdir())
+            for p in root.iterdir():
+                assert zf.read(p.name) == p.read_bytes(), f"org-n{n}.zip is stale: rerun python -m rehearsal.make_demo"
 
 
 def test_senior_careers_fill_the_window_and_juniors_start_late(bundle):

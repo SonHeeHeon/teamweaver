@@ -97,11 +97,15 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     rates = {(r["career_grade"], r["role_type"]): r["monthly_rate"] for r in t["rate_card.csv"]}
 
     skills: dict[str, dict[str, int]] = defaultdict(dict)
-    over = []
+    over, stale = [], []
+    since = lookback_start(bundle.horizon[0])
     for s in t["person_skills.csv"]:
         if s["experience_months"] == 0:
             report.warn("person_skills.csv", f"{s['person_id']}의 {s['skill_name']}은 경력 0개월이라 보유 기술로 보지 않았다",
                         row=s["__row__"], column="experience_months")
+            continue
+        if s.get("last_used_month") is not None and s["last_used_month"] < since:
+            stale.append(s)                   # last used before the 10-year window: not remembered (user decision)
             continue
         if s["experience_months"] > LOOKBACK_MONTHS:
             over.append(s)
@@ -110,6 +114,10 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
         report.warn("person_skills.csv", f"기술 경력 {len(over)}건이 최근 {LOOKBACK_MONTHS}개월을 넘어 "
                     f"{LOOKBACK_MONTHS}개월로 보았다(예: {over[0]['person_id']} {over[0]['skill_name']} "
                     f"{over[0]['experience_months']}개월) — 기술 경력은 최근 10년 기준으로 뽑아 달라")
+    if stale:
+        report.warn("person_skills.csv", f"최근 {LOOKBACK_MONTHS // 12}년({since.strftime('%Y-%m')}~) 안에 쓴 적이 없는 기술 "
+                    f"{len(stale)}건은 보유 기술로 보지 않았다(예: {stale[0]['person_id']} {stale[0]['skill_name']}, "
+                    f"마지막 {stale[0]['last_used_month'].strftime('%Y-%m')})")
     avail: dict[str, dict[dt.date, float]] = defaultdict(dict)
     for a in t["availability.csv"]:
         if a["month"] in month_index:
@@ -177,7 +185,6 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     report.notes.append(f"숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다"
                         f"(경계 {MONTH_BANDS}개월 → 1~5). 요구 경력도 같은 구간을 쓴다.")
     cutoff = first - dt.timedelta(days=1)
-    since = lookback_start(first)
     report.notes.append(f"협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, "
                         f"{cutoff.isoformat()}까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다.")
     work = t["work_history.csv"]

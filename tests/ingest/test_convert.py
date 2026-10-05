@@ -291,6 +291,30 @@ def test_roster_above_availability_is_a_warning(tmp_path):
     assert any(i.file == "current_assignments.csv" and "above" in i.message for i in report.warnings)
 
 
+def test_skills_last_used_before_the_window_are_not_held(tmp_path):
+    import csv
+    import json
+    from core.ingest.convert import to_dataset
+    from core.ingest.loader import load_bundle
+    from core.ingest.org_profile import generate_org_bundle
+    root = generate_org_bundle(tmp_path / "b", 100, seed=5)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    m.pop("files", None)
+    (root / "manifest.json").write_text(json.dumps(m, ensure_ascii=False), "utf-8")
+    path = root / "person_skills.csv"
+    rows = list(csv.DictReader(path.open(encoding="utf-8")))
+    pid, skill = rows[0]["person_id"], rows[0]["skill_name"]
+    rows[0]["last_used_month"] = "2012-06"                              # a skill nobody has used for 14 years
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    b, rep = load_bundle(root)
+    ds, _ = to_dataset(b, rep)
+    assert skill not in next(p for p in ds.people if p.id == pid).skills
+    assert any("쓴 적이 없는 기술 1건" in str(x) for x in rep.warnings)
+
+
 def test_only_the_last_ten_years_of_history_count(tmp_path):
     """A 20-year source: work that ended before the window is ignored for collaboration, work that started
     earlier is cut, and skill months above 120 are read as 120 with a warning (user decision 2026-10-05)."""
@@ -323,4 +347,5 @@ def test_only_the_last_ten_years_of_history_count(tmp_path):
     b, rep = load_bundle(root)
     to_dataset(b, rep)
     assert any("120개월로 보았다" in str(x) for x in rep.warnings)
+    assert not any("쓴 적이 없는 기술" in str(x) for x in rep.warnings)        # the generator exports in-window skills only
     assert any(n.startswith("업무 이력: 최근 10년(2016-10~)") for n in rep.notes)
