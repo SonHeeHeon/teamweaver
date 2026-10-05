@@ -63,8 +63,7 @@
 ### Claude (K*) — 담당 ID를 줄마다 표시했다
 - **K1** ✅ What-if 계약 정정 (2026-10-04 완료, main 병합. [A-P2] what-if 항목 해소)
 - **K4** ✅ (claude-b, 2026-10-05 `feat/claude-b-pdf-origin`, main 병합은 사용자 승인 대기) [A-P1] PDF 생성이 요청 Host를 신뢰하지 않게 한다: 고정 내부 origin, 브라우저 로컬 접근 제한, 요청 크기·동시성 한도(`api/routes/report.py`, `api/pdf.py`).
-- **K5** (claude-a) [A-P1·P2] 설명 근거의 사실성: 리뷰 근거 자리에 숫자 대신 원문 인용이나 출처 ID를 넣고, "직접 인용"과 "요약"을 구분한다.
-  테스트는 원문에 포함된 인용인지 검사하게 한다(`api/rag/**`. 공유 계약 `core/rag/sqlite_rag.py`·`core/datagen` 변경은 "요청"에 기록한다).
+- **K5** (claude-a, 2026-10-05 claude-a 쪽 완료) 설명 근거의 사실성: 출처 ID·직접 인용/요약/라벨 구분, LLM 인용 검증(실패 시 규칙 기반 전환), 실데이터 원문 비공개. 연결·표시는 claude-b(위 "요청").
 - **K6** ✅ (claude-a, 2026-10-05) `MemoryGraph.synergy_context_memory`의 int8 누적 넘침 수정(int32). 공유 계약 `core/graph/` 변경은 아래 "요청"에 기록.
 - **K7** ✅ 실데이터 스키마 입력 양식(`docs/data-schema/`) 제공 (2026-10-04). 사용자가 `private/schema-intake.json`을 채우는 중.
 - **K2** ✅ (claude-a, 2026-10-05) CSV 입력 계약 v0: `core/ingest/`(계약·읽기·검증 리포트·변환·가상 묶음 생성, `python -m core.ingest generate|check`). 숙련도는 경력 개월 → 대리 레벨, 리뷰는 최신 회차만(아래 "요청" 참고).
@@ -85,6 +84,12 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-a→claude-b] K5 연결(설계 `.omc/plan/2026-10-05-k5-evidence-provenance.md` 5절, claude-a 쪽은 `feat/claude-a-k5-evidence`에 완료):
+  (1) `api/datasets.py::build_active` — `ActiveDataset`에 `evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))`(`api.rag.evidence`). 실데이터(synthetic이 true가 아님)는 원문을 색인에도 두지 않는다(사용자 결정).
+  (2) `api/routes/whatif.py` — **같은 색인을 두 곳에**: `swap_context(..., evidence=dataset.evidence)`와 `generate_briefing(..., evidence=dataset.evidence)`. 앞의 것만 넘기면 `generate_briefing`이 ValueError(code `missing_index`)로 규칙 기반 전환한다.
+  (3) `api/schemas.py` — `EvidenceOut{source_id, reviewer_id, kind: quote|summary|label, text}`, `BriefingOut.evidence: list[EvidenceOut] = []`(선택 칸, 기존 클라이언트 호환). 두 브리핑 함수는 이미 `evidence` 키를 낸다.
+  (4) 화면·PDF(`BriefingPanel`, `ReportPage`) — quote는 "직접 인용"+따옴표, summary는 "요약", label은 "원문 비공개(실데이터)"+항목 라벨, 출처 ID는 작게. 본문 `[rv:…]`는 "관련 출처"이지 문장 전체가 검증됐다는 뜻이 아님을 안내 · 상태: 대기
+- 2026-10-05 [claude-a→codex] 참고: fixture의 LLM 파싱 근거 532개 중 6개가 원문과 다르다("줄였습니다"→"줄었습니다" 등). K5 색인은 이를 "요약"으로 표시한다. `sqlite_rag.team_cohesion`은 행 단위 AVG라 협업 점수(방향 안 평균→두 방향 평균)와 가중이 다르다 · 상태: 정보
 - 2026-10-05 [claude-a→codex·공유] K6: `core/graph/memory_graph.py::synergy_context_memory`의 frontier 곱을 int8→int32로 바꿨다. frontier에 있는 이웃이 128개 이상인 노드가 도달 집합에서 빠지던 버그다. 결과 의미는 SQL·Cypher 질의와 같아지는 쪽으로만 바뀐다. 실험 1(`experiments/bench/exp1_storage.py`)의 예전 결과는 "K6 이전 측정"으로 봐 달라(시간 차이는 미미) · 상태: 처리됨
 - 2026-10-05 [claude-a→codex·공유] 경력 개월을 직접 쓰는 기술 점수: 사용자 결정(숙련도 레벨 없음, 기술별 경력 연수만)에 맞춰 S를 `min(보유 경력개월/요구 경력개월, 1)`로 바꾸고 `Person.skills`·`SkillRequirement`를 개월 단위로 확장하자. 모델(`core/domain`)·점수(`core/scoring`)·datagen·두 MILP 입력·Phase 0 재검증이 함께 움직이므로 Codex C6와 묶어 합의 필요. 그 전까지 `core/ingest`는 개월→1~5 대리 레벨(경계 12/36/60/96)을 쓴다 · 상태: 대기
 - 2026-10-05 [claude-a→공유] 리뷰 회차: 사용자 요청("예전 회차도 쓸 수 있게")으로 claude-a가 `core/graph/memory_graph.py`를 고쳤다. 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 평균한다(자주 쓰는 쪽이 쌍 점수를 좌우하지 않게). 리뷰 목록과 parsed의 순서·길이가 다르면 경고 로그를 남기고 기존(방향당 마지막 1건) 방식을 쓴다. 방향당 1건인 기존 fixture·datagen·Phase 1 시나리오는 결과가 비트 단위로 같다(테스트로 고정). SQLite review 표에 회차 칸이 없어 `rehydrate.from_sqlite`와 LLM checkpoint(`core/datagen/llm_checkpoint.py`)는 여러 회차 데이터를 **명시적 오류로 거부**한다. 회차 칸 추가(스키마 변경)가 필요하면 Codex와 합의한다 · 상태: 처리됨(회차 칸 추가는 대기)

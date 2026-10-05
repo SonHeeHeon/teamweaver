@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-05 · claude-a · K5 설명 근거의 출처·직접 인용 (claude-a 쪽)
+- 브랜치/커밋: `feat/claude-a-k5-evidence` (main + `feat/claude-a-review-rounds` + `feat/claude-a-k6-int8` 병합 위, main 미병합)
+- 한 일: 브리핑 문맥의 리뷰 근거를 극성 숫자에서 출처 ID가 붙은 근거로 바꿀 수 있게 했다(`api/rag/evidence.py`).
+  LLM 브리핑은 인용을 원문과 글자 그대로 대조하고, 하나라도 어긋나면(없는 출처·바꿔 쓴 인용·본문 속 따옴표·인용 없는 출처 표시) 버리고 규칙 기반으로 전환한다(사용자 결정).
+  실데이터(synthetic이 true가 아님)는 원문을 화면·LLM 어디에도 보내지 않고 항목 라벨만 쓴다(사용자 결정). 버린 사유는 `code=`로 로그에 남는다.
+- 상대 영향:
+  - **claude-b**: 연결 4건을 work-split "요청"에 올렸다. 연결 전에는 API 동작이 그대로다(색인을 안 넘기면 예전과 같음).
+    `generate_briefing`·`rule_based_briefing` 결과에 `evidence` 키가 새로 있지만 지금 `BriefingOut`이 버린다.
+  - **Codex**: 공유 계약 변경 없음. 참고 정보 1건(요청란).
+  - 테스트 기준선: 이 브랜치 850 passed, 15 deselected.
+- 검증: `uv run --group benchmark pytest -q` → 850 passed. 변이 2종(느슨한 인용 비교, 본문 따옴표 검사 제거) → 시험 실패 확인.
+  리뷰: Codex 시도 1회 → 주간 한도 소진(재시도 10-10 13:16) → Claude Opus 폴백 적대적 2라운드(1차 MUST 1·SHOULD 3, 2차 MUST 1·SHOULD 2 모두 반영). 2차 수정분은 시험으로만 확인.
+- 근거: `.omc/reports/2026-10-05-k5-evidence.md`
+
 ## 2026-10-05 · claude-a · K6 협업 탐색 int8 넘침 수정
 - 브랜치/커밋: `feat/claude-a-k6-int8` (main 미병합, 사용자 승인 대기)
 - 한 일: `MemoryGraph.synergy_context_memory`가 한 홉 확장에서 frontier 이웃 수를 int8로 세어, 128개 이상(정확히 256개면 0)일 때 그 노드를 도달 집합에서 빠뜨렸다. int32로 바꾸고 127/128/150/256 병렬 경로 시험을 추가했다(고치기 전 128·150·256 실패 확인).
