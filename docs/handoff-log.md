@@ -34,6 +34,7 @@
   - 테스트 기준선: 이 브랜치 850 passed, 15 deselected.
 - 검증: `uv run --group benchmark pytest -q` → 850 passed. 변이 2종(느슨한 인용 비교, 본문 따옴표 검사 제거) → 시험 실패 확인.
   리뷰: Codex 시도 1회 → 주간 한도 소진(재시도 10-10 13:16) → Claude Opus 폴백 적대적 2라운드(1차 MUST 1·SHOULD 3, 2차 MUST 1·SHOULD 2 모두 반영). 2차 수정분은 시험으로만 확인.
+- 자체 리뷰(사용자 결정: 교차 리뷰 중단, 각자 자체 리뷰): main 대비 전체 diff 재검토 + 연결 흉내 스모크(가상 198조합 통과, 숨김 모드 100조합 원문 유출 없음), MUST 0.
 - 근거: `.omc/reports/2026-10-05-k5-evidence.md`
 
 ## 2026-10-05 · claude-a · K6 협업 탐색 int8 넘침 수정
