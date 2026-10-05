@@ -39,7 +39,7 @@ SPECIALTIES = {
     "클라우드": ["AWS", "Azure", "Private Cloud", "Kubernetes", "Terraform", "Docker", "Go", "Git"],
 }
 SECTORS = (("대외금융", 0.5, "금융 업무"), ("대외공공", 0.25, "공공 업무"), ("대내", 0.25, "그룹사 업무"))
-HISTORY_MONTHS = 100          # work history spans this many months before the planning horizon
+HISTORY_MONTHS = 100          # test-only generic generator; demo and rehearsal data (org_profile) use 10 years
 
 
 def _review_rounds(first: dt.date) -> list[tuple[str, dt.date]]:

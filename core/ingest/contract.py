@@ -65,6 +65,11 @@ FILES: tuple[FileSpec, ...] = (
         Column("start_date", "date"),
         Column("end_date", "date"),
         Column("status", "enum", choices=WORK_STATUSES),
+        # optional context the real 업무이력 also carries (업무명·원청사·업종·업무개요); not used by the model yet
+        Column("work_name", "str", required=False),
+        Column("client", "str", required=False),
+        Column("industry", "str", required=False),
+        Column("summary", "str", required=False),
     ), key=("work_id",)),
     FileSpec("availability.csv", (
         Column("person_id", "str", ref="people.csv:person_id"),
@@ -114,6 +119,25 @@ FILES: tuple[FileSpec, ...] = (
         Column("alloc", "float", min=0.0, max=1.0),
         Column("locked", "enum", choices=YES_NO),
     ), key=("person_id", "project_id"), optional=True),
+    # Past project outcomes (the company records customer evaluations, customer-requested replacements and
+    # follow-on projects -- schema answers). Optional; the model does not read them, the model lab calibrates on them.
+    FileSpec("project_outcomes.csv", (
+        Column("project_code", "str"),
+        Column("client", "str"),
+        Column("industry", "str", required=False),
+        Column("closed_month", "month"),
+        Column("customer_score", "int", min=1, max=5),
+        Column("schedule", "enum", choices=("준수", "지연")),
+        Column("follow_on", "enum", choices=YES_NO),
+    ), key=("project_code",), optional=True),
+    FileSpec("replacements.csv", (
+        Column("project_code", "str"),
+        # no ref: real records include people who have left (reason 이직); unknown ids are a warning (loader)
+        Column("person_id", "str"),
+        Column("requested_by", "enum", choices=("고객", "내부")),
+        Column("reason", "str"),
+        Column("replaced_at", "date"),
+    ), key=("project_code", "person_id"), optional=True),
 )
 
 FILE_SPECS = {f.name: f for f in FILES}

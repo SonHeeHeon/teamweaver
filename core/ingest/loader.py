@@ -292,6 +292,14 @@ def _check_rules(tables: dict[str, list[dict]], horizon: list[dt.date], report: 
                             f"any month's availability ({best.get(pid, 0.0):.2f})")
 
 
+    known = {p["person_id"] for p in tables.get("people.csv") or []}
+    gone = sorted({r["person_id"] for r in tables.get("replacements.csv") or []
+                   if r["person_id"] is not None and r["person_id"] not in known})
+    if gone:
+        report.warn("replacements.csv", f"{len(gone)} people are not in people.csv (e.g. {', '.join(gone[:3])}); "
+                    "their replacement records are kept for outcome analysis only")
+
+
 def _check_hashes(root: Path, manifest: dict, report: IngestReport) -> None:
     """Optional manifest "files": {name: sha256}. When present, every listed file must match."""
     files = manifest.get("files")
