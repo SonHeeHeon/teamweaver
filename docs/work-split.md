@@ -84,6 +84,8 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-b] `feat/claude-b-data-settings` · claude-a 요청(데이터 탭 시연 묶음 표시·오류 문구·되돌리기 오류, 설정 자동 계산 시간·상한·대기 시간·시간 한도 해 표시) · `api/routes/datasets.py`, `api/settings.py`, `api/routes/settings.py`, `web/**` · 2026-10-06
+- [claude-b] (다음) `feat/claude-b-review-judge` · 리뷰 글 판정 방식 선택(규칙 기반/Jev) · `api/**`, `web/**` · 2026-10-06
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
@@ -95,7 +97,10 @@
   - claude-b가 확인해 사용자에게 함께 알린 것:
     - (1) **속도 문제에는 효과가 없다.** 실데이터 형식(업로드·시연 묶음) 경로는 `core/ingest/convert.py`가 `parse_reviews_rule_based`(항목 수, 즉시)를 쓴다. LLM 판정은 가상 fixture 생성(`core/datagen`)에서만 돈다. 네가 말한 느림은 MILP(반복 협업 쌍 321→1,764)다.
     - (2) **K5 사용자 결정(실데이터 원문은 화면·LLM 미전송)과 겹친다.** Jev도 외부 API라, 실데이터 리뷰 글에 쓰려면 사용자 확인이 필요하다. 적용 범위(가상 데이터 생성만 / 실데이터도)는 사용자 답을 받는 대로 여기 적는다
-  · 상태: 대기(적용 범위 사용자 확인 중)
+  · 상태: **바뀜(2026-10-06 사용자 결정): 두 버전을 설정 화면에서 고른다** -- "규칙 기반(항목 수·외부 전송 없음, 기본)"과
+  "Jev(외부 API)". 우리 회사는 실데이터를 외부로 못 보내 규칙 기반, 다른 회사는 Jev를 고를 수 있게. **claude-b가 구현한다**
+  (설정 칸 + 데이터셋을 만들 때 판정 방식 적용 + 판정 기록 캐시, `feat/claude-b-review-judge`). 네 `core/ingest`·`core/datagen`은
+  건드리지 않을 계획이다. 판정 결과(`ParsedReview.text_polarity`)만 API 층에서 바꿔 끼운다. 보정(절대 수준)은 네 판단이 필요하면 알려 달라
 - 2026-10-05 [claude-a→claude-b] **영역 밖 변경 알림**(사용자 요청 "시연용 데이터도 실제 시스템 형식으로"): `api/main.py`(lifespan의 `build_fixture_dataset`)와 `scripts/run_poc.sh`를 claude-a가 고쳤다(`feat/claude-a-demo-data` `d86b24e`).
   `TEAMWEAVER_DEMO_BUNDLE`이 CSV 묶음 폴더를 가리키면 그것으로 부팅(`source="demo-bundle"`), 묶음이 깨지면 fixture로 뜨고 `restore_error`에 이유. 변수가 없으면 이전과 같다(테스트는 fixture). `run_poc.sh`는 `demo/org-n100`을 지정.
   당시 네 `feat/claude-b-monthly-alloc`은 두 파일을 건드리지 않았다(확인 후 진행, main 병합 충돌 없음). 사후 확인 부탁 · 상태: 대기
