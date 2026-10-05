@@ -129,9 +129,11 @@ class MilpParamsIn(BaseModel):
     # 받기만 하고 계산에는 쓰지 않는다. 자동 시간은 GET /api/settings의 effective_time_limit을
     # time_limit으로 보내야 적용된다 -- 이 칸만 true로 보내면 time_limit 기본값(120초)이 쓰인다.
     time_limit_auto: bool | None = None
+    # 리뷰 판정 방식도 받기만 한다(데이터셋 버전에 이미 반영돼 있다 -- 계산 파라미터가 아니다).
+    review_judge: Literal["rule", "jev"] | None = None
 
     def to_milp_params(self) -> MilpParams:
-        return MilpParams(**self.model_dump(exclude_none=True, exclude={"time_limit_auto"}))
+        return MilpParams(**self.model_dump(exclude_none=True, exclude={"time_limit_auto", "review_judge"}))
 
 
 class SettingsUpdate(BaseModel):
@@ -141,6 +143,9 @@ class SettingsUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     settings: PlacementSettings
     based_on: str | None
+    # Jev 판정이 실패해 데이터가 규칙 기반으로 만들어진 상태에서 판정을 다시 시도한다(화면의 "판정 다시 시도").
+    # 이 표시 없이 다른 칸만 저장하면 데이터셋을 다시 만들지 않는다 -- 저장마다 외부 호출·재구성이 일어나지 않게.
+    retry_judge: bool = False
 
 
 class SettingsBody(BaseModel):
@@ -153,6 +158,10 @@ class SettingsBody(BaseModel):
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
     effective_time_limit: int | None = None
+    # Jev 키(TYPESAFE_API_KEY)가 서버에 있는지 -- 없으면 화면이 Jev 선택을 막는다.
+    jev_available: bool = False
+    # PUT으로 판정 방식이 바뀌어 활성 데이터셋을 다시 만들었으면 그 정보(화면은 데이터셋 전환처럼 처리한다).
+    dataset: dict | None = None
 
 
 class PlanEvaluationOut(BaseModel):
@@ -294,7 +303,7 @@ class ReportRequest(BaseModel):
             raise ValueError("applied_swaps가 있으면 base_entries(원 플랜 명단)가 필요하다")
         if self.milp_params is not None:
             # time_limit_auto는 계산에 쓰지 않는 표시용 칸이라 요구하지 않는다(이전 화면 호환, 리뷰 S4).
-            missing = (set(PlacementSettings.model_fields) - {"time_limit_auto"}
+            missing = (set(PlacementSettings.model_fields) - {"time_limit_auto", "review_judge"}
                        - self.milp_params.model_fields_set)
             if missing:
                 raise ValueError(f"milp_params에 빠진 필드: {sorted(missing)}")

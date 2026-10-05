@@ -20,6 +20,8 @@ interface Props {
   adminToken?: string | null;
   /** 관리자 동작이 401을 받았다(K14) -- App이 로그인 화면으로 보낸다. */
   onLoginRequired?: () => void;
+  /** 설정의 리뷰 글 판정 방식. jev면 업로드한 평가 원문이 외부로 전송된다고 알린다. */
+  reviewJudge?: "rule" | "jev";
 }
 
 function where(i: IngestIssue): string {
@@ -43,7 +45,7 @@ function IssueList({ title, items, tone }: { title: string; items: IngestIssue[]
   );
 }
 
-export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired }: Props) {
+export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired, reviewJudge }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -93,6 +95,11 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
         </p>
       </div>
 
+      {active?.judge_error && (
+        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {active.judge_error}
+        </p>
+      )}
       {active?.restore_error && (
         <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {active.restore_error}
@@ -106,6 +113,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
             {" · "}{SOURCE_LABEL[active.source] ?? active.source}
             {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
             {" · "}{active.people}명 · 프로젝트 {active.projects}건
+            {" · 리뷰 판정 "}{active.review_judge === "jev" ? "Jev" : "규칙 기반"}
             <span className="ml-2 font-mono text-xs text-slate-400">{active.version.slice(0, 12)}</span>
           </p>
         ) : (
@@ -113,6 +121,12 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
         )}
       </div>
 
+      {reviewJudge === "jev" && (
+        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          지금 리뷰 글 판정 방식이 <b>Jev</b>다. 묶음을 올리면 그 안의 동료 평가 원문이 외부(TypeSafe Jev API)로 전송된다.
+          보낼 수 없는 자료라면 먼저 배치 설정에서 규칙 기반으로 바꾼다.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm text-slate-700">
           <span className="sr-only">묶음 zip 파일</span>

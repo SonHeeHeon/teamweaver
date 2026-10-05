@@ -50,6 +50,11 @@ class DatasetInfo:
     people: int
     projects: int
     activated_at: str
+    # 리뷰 글 판정 방식(사용자 결정 2026-10-06, api/review_judge.py). version은 판정까지 반영한 계산 버전이고
+    # content_version은 원천 파일만의 해시다(업로드 저장·복원 대조용 -- 판정 방식을 바꿔도 같은 묶음이다).
+    content_version: str = ""
+    review_judge: str = "rule"
+    judge_error: str | None = None      # Jev를 골랐지만 판정에 실패해 규칙 기반으로 만든 경우 그 이유
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -115,8 +120,25 @@ def bundle_version(root: Path) -> str:
     return dir_version(root, sorted(_ALLOWED))
 
 
+def jev_cache_path() -> Path:
+    from api.storage import data_dir
+    return data_dir() / "jev_judgments.json"
+
+
 def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
-                 source: str, synthetic: bool | None) -> ActiveDataset:
+                 source: str, synthetic: bool | None, review_judge: str = "rule",
+                 judge_cache: Path | None = None) -> ActiveDataset:
+    content_version, judge, judge_error = version, "rule", None
+    if review_judge == "jev":
+        from api.review_judge import JevJudgeError, judge_reviews, judged_version
+        try:
+            judged = judge_reviews(ds, parsed, cache_path=judge_cache or jev_cache_path())
+            parsed, judge, version = judged, "jev", judged_version(version, "jev", judged)
+        except JevJudgeError as exc:
+            # 판정을 못 하면 데이터를 못 쓰는 게 아니라 규칙 기반으로 쓴다 -- 이유는 화면(데이터 탭)에 보인다.
+            judge_error = f"Jev 판정에 실패해 규칙 기반으로 판정했다: {exc}"
+        except Exception as exc:                # noqa: BLE001 -- 예상 밖 오류로 부팅·전환이 죽지 않게(리뷰 M2)
+            judge_error = f"Jev 판정 중 예상하지 못한 오류로 규칙 기반으로 판정했다: {type(exc).__name__}"
     graph = MemoryGraph.build(ds, parsed)
     # build_sqlite(공유 계약 core/graph)는 파일 경로를 받는다. 임시 파일에 만든 뒤
     # 메모리 DB로 복사하고 파일은 바로 지운다 -- 이름·리뷰가 든 DB가 디스크에 남지 않게.
@@ -131,7 +153,8 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
             src.close()
     info = DatasetInfo(dataset_id=dataset_id, version=version, source=source,
                        synthetic=synthetic, people=len(ds.people), projects=len(ds.projects),
-                       activated_at=_now())
+                       activated_at=_now(), content_version=content_version, review_judge=judge,
+                       judge_error=judge_error)
     # 원문 공개는 manifest가 명시적으로 가상(synthetic=true)인 경우만이다(사용자 결정: 실데이터
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index
@@ -250,11 +273,13 @@ class DatasetStore:
     def save(self, data: bytes, info: DatasetInfo) -> None:
         from api.storage import atomic_write, ensure_private_dir
         ensure_private_dir(self.dir)
-        zip_path = self.dir / f"{info.version}.zip"
+        # 원천 내용 해시로 저장한다 -- 판정 방식(계산 버전)이 바뀌어도 같은 묶음으로 복원된다.
+        version = info.content_version or info.version
+        zip_path = self.dir / f"{version}.zip"
         atomic_write(zip_path, data)
         try:
             atomic_write(self.pointer, json.dumps({
-                "version": info.version, "dataset_id": info.dataset_id,
+                "version": version, "dataset_id": info.dataset_id,
                 "activated_at": info.activated_at}, ensure_ascii=False).encode("utf-8"))
         except OSError:
             # 포인터를 못 바꿨으면 새 사본은 고아다 -- 지우고 이전 상태를 그대로 둔다.

@@ -599,6 +599,7 @@ export default function App() {
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <DatasetTab active={dataset} onSwitched={datasetSwitched}
+                        reviewJudge={settings?.settings.review_judge}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
           </div>
         ) : tab === "settings" ? (
@@ -606,11 +607,21 @@ export default function App() {
             <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <SettingsTab data={settings}
-                         onSave={async (s) => {
+                         activeJudge={dataset?.review_judge}
+                         onSave={async (s, opts) => {
                            try {
-                             setSettings(await saveSettings(s, settings.updated_at,
-                                                            adminToken || null));
+                             const saved = await saveSettings(s, settings.updated_at, adminToken || null,
+                                                              opts?.retryJudge ?? false);
+                             setSettings(saved);
                              setSettingsError(null);
+                             // 리뷰 판정 방식을 바꿔 서버가 데이터셋을 다시 만들었다: 데이터셋 전환과 같다.
+                             // 버전이 같으면(Jev 실패로 규칙 기반 그대로) 계산 결과를 비우지 않는다.
+                             if (saved.dataset && saved.dataset.version !== dataset?.version) {
+                               await datasetSwitched(saved.dataset);
+                             } else if (saved.dataset) {
+                               setDataset({ ...dataset, ...saved.dataset });
+                             }
+                             return saved;
                            } catch (e) {
                              if (e instanceof AdminLoginRequiredError) adminExpired();
                              if (e instanceof SettingsConflictError) {

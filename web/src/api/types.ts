@@ -216,6 +216,8 @@ export interface PlacementSettings {
   allocation_mode: "fixed" | "monthly";
   /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
   time_limit_auto?: boolean;
+  /** 리뷰 글 판정 방식: rule = 항목 수(외부 전송 없음, 기본), jev = 원문을 Jev API로 보내 판정. */
+  review_judge?: "rule" | "jev";
 }
 
 export interface TimeHint {
@@ -236,6 +238,10 @@ export interface SettingsResponse {
   recommended_time_monthly?: TimeHint | null;
   /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
   effective_time_limit?: number | null;
+  /** 서버에 Jev 키가 있는지. 없으면 Jev 판정을 고를 수 없다. */
+  jev_available?: boolean;
+  /** 판정 방식을 바꿔 활성 데이터셋을 다시 만들었으면 그 정보(저장 응답에만). */
+  dataset?: DatasetInfo | null;
 }
 
 /** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */
@@ -249,6 +255,12 @@ export interface DatasetInfo {
   activated_at: string;
   /** 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유(K13). */
   restore_error?: string | null;
+  /** 원천 파일만의 해시(판정 방식과 무관). */
+  content_version?: string;
+  /** 이 데이터셋을 만든 리뷰 글 판정 방식. */
+  review_judge?: "rule" | "jev";
+  /** Jev를 골랐지만 판정에 실패해 규칙 기반으로 만든 경우 그 이유. */
+  judge_error?: string | null;
 }
 
 /** core.ingest IngestReport의 Issue 그대로. row는 헤더를 뺀 1부터, 파일 단위 문제면 null. */

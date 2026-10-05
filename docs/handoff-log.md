@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-06 · claude-b · 리뷰 글 판정 방식 선택(규칙 기반 기본 / Jev)
+- 브랜치/커밋: `feat/claude-b-review-judge` (main 병합)
+- 한 일:
+  - 설정 `review_judge: "rule"|"jev"`(기본 rule)을 추가했다. jev면 데이터셋을 만들 때 리뷰 원문을 TypeSafe Jev API로 보내 `text_polarity`를 다시 판정한다. Score 5단계를 확률 기댓값으로 바꿔 [-1,1]에 놓고, 병렬 16·전체 한도 120초로 부른다. 판정 결과는 캐시(데이터 폴더 `jev_judgments.json`, 0600, 지금 데이터만)에 둔다.
+  - 판정 방식을 바꾸면 PUT /api/settings가 활성 데이터셋을 같은 원천으로 다시 만든다(업로드는 저장된 zip에서). jev 버전은 sha256(원 버전·판정값)이고, `content_version`은 원천 해시라 업로드 저장·복원에 쓴다.
+  - Jev가 실패하면 규칙 기반으로 만들고 `judge_error`를 남긴다. 화면에서 "판정 다시 시도"(`retry_judge`)를 누를 수 있다.
+  - 화면: 설정 탭에 선택지·외부 전송 경고·실측 수준 차이 안내, 데이터 탭에 판정 방식·실패 이유·Jev 상태 업로드 경고.
+- 상대 영향:
+  - `DatasetInfo`에 `content_version`·`review_judge`·`judge_error`가 생겼다. `DatasetStore`는 `content_version`으로 저장한다(기존 포인터는 그대로 호환).
+  - `MilpParamsIn`은 `review_judge`를 받기만 한다. `PlacementSettings.to_milp_params`는 `NON_SOLVER_FIELDS`를 뺀다.
+  - 실측(시연 100명, 1,372건): 첫 판정 17초, 캐시 0.01초. 규칙 기반과 상관 0.88이지만 평균 0.56 대 0.16이고 음수가 없다(보정 안 함).
+  - 테스트는 `tests/api/conftest.py` autouse로 Jev 주소를 막는다.
+- 검증: `uv run --group benchmark pytest -q` → 1257 passed, 19 deselected. `-m slow` → 19 passed. `npx vitest run` → 150 passed. `npx tsc -b`·oxlint·build 통과. 실제 키 스모크 2회. Opus 폴백 적대적 리뷰 2라운드(1차 MUST 2·SHOULD 7, 2차 MUST 0·SHOULD 2), 모두 반영.
+- 근거: `.omc/reports/2026-10-06-review-judge-setting.md`
+
 ## 2026-10-06 · claude-b · claude-a 요청 처리: 데이터 탭 표시·자동 계산 시간·시간 한도 배지
 - 브랜치/커밋: `feat/claude-b-data-settings` (main 병합)
 - 한 일:

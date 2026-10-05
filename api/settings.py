@@ -29,6 +29,10 @@ log = logging.getLogger(__name__)
 SETTINGS_PATH_ENV = "TEAMWEAVER_SETTINGS_PATH"
 
 
+# 설정이지만 MILP 파라미터가 아닌 칸: 자동 시간 표시, 리뷰 판정 방식(데이터셋을 만드는 방식).
+NON_SOLVER_FIELDS = frozenset({"time_limit_auto", "review_judge"})
+
+
 class PlacementSettings(BaseModel):
     """관리자가 바꿀 수 있는 배치 규칙. 범위는 화면 검사에도 그대로 쓰인다(bounds()).
 
@@ -52,11 +56,15 @@ class PlacementSettings(BaseModel):
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
     allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # 리뷰 글 판정 방식(사용자 결정 2026-10-06). "rule": 좋은 점·아쉬운 점 항목 수(외부 전송 없음, 기본).
+    # "jev": 리뷰 원문을 TypeSafe Jev API로 보내 글을 읽고 판정(외부 전송이 허용된 조직만). 계산 파라미터가
+    # 아니라 데이터셋을 만드는 방식이다 -- 바꾸면 서버가 활성 데이터셋을 다시 만든다(api/routes/settings.py).
+    review_judge: Literal["rule", "jev"] = "rule"
 
     def to_milp_params(self, n_people: int | None = None) -> MilpParams:
         """n_people을 주고 자동이 켜져 있으면 권장 시간으로 바꿔 쓴다(부팅 사전계산). 화면 요청은 이미 실제
         시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다."""
-        data = self.model_dump(exclude={"time_limit_auto"})
+        data = self.model_dump(exclude=NON_SOLVER_FIELDS)
         if self.time_limit_auto and n_people is not None:
             from core.optimize.time_budget import recommend
             data["time_limit"] = recommend(n_people, allocation_mode=self.allocation_mode).per_solve_s
