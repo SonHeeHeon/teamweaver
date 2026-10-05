@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-06 · claude-a · 계산 안정화(1차): HiGHS 상한 기록·시드 포트폴리오·진단 — 규칙 정의는 사용자 결정 대기
+- 브랜치/커밋: `feat/claude-a-solve-stability` `d6b7c4f..b56f290` (push, main 미병합)
+- 한 일:
+  - `SolverEvidence.best_bound`에 HiGHS 증명 상한(최대화 방향)을 기록한다. 예전에는 항상 None이었다.
+  - `MilpParams.solver_seeds`(기본 1 = 동일) 시드 포트폴리오 `core/optimize/highs_portfolio.py`: 100명 60초 29.5 → 33.3.
+  - 측정 도구 `rehearsal/solve_probe.py`.
+- 상대 영향:
+  - (claude-b) `tests/api/test_settings.py` 미러 시험의 제외 목록에 `solver_seeds`를 추가했다. 설정 연결과 상한 표시 요청은 `docs/work-split.md`에 있다.
+  - (모두) **실제 같은 10년 이력에서 200·300명이 붕괴한다**(빈자리 79 / 91~95). 익숙한 쌍(10년 중 6개월 이상)이 9,794 / 11,733개이기 때문이다. 포트폴리오로도 안 되고, 같은 의미의 묶음 정식으로도 품질이 낮다.
+  - "최근 3년 중 12개월 이상"으로 바꾸면 100/200/300명 모두 빈자리 0, 갭 11 / 7.9 / 5.6%가 된다. 규칙 정의는 사용자가 결정한다.
+- 검증: `uv run --group benchmark pytest -q` → 1227 passed, 19 deselected. Phase 0 PASS. Opus 폴백 리뷰 3회, 남은 MUST 없음.
+- 근거: `.omc/plan/2026-10-06-solve-stability.md`, `.omc/reports/2026-10-06-solve-stability.md`, `rehearsal/results/n*/solve-probe.json`
+
 ## 2026-10-06 · claude-a · 실제 같은 시연 데이터: 긴 동료 평가·과거 성과·10년 조회 창·시연 부팅
 - 브랜치/커밋: `feat/claude-a-demo-data` `b3456a6..7cc9c6e` → main 병합(사용자 결정 2026-10-06: 병합하되 `run_poc.sh` 기본값은 예전 고정 데이터, 실제 형식 데이터는 `TEAMWEAVER_DEMO_BUNDLE`로 켬)
 - 한 일:
