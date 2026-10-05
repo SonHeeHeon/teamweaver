@@ -55,7 +55,7 @@ def test_plan_token_binds_monthly_values_and_ignores_empty_ones():
 
 
 def test_whatif_on_a_valid_monthly_roster_reports_no_false_violations(client):
-    """정상 월별 명단의 교체 검토는 '교체 전에도 위반'이 아니어야 한다(평가기는 평균만 읽는다 -- API가 달별 재검사)."""
+    """정상 월별 명단의 교체 검토는 '교체 전에도 위반'이 아니어야 한다(평가기가 달별로 검사)."""
     meta = client.get("/api/meta").json()
     g = client.app.state.dataset.graph
     pa, pb = [p for p in g.projects if len(p.months) >= 2][:2]

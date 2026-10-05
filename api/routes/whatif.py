@@ -18,7 +18,6 @@ from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
 from api.schemas import EntryIn, MilpParamsIn, SwapIn, WhatifResponse
 from core.config import load_pricing
-from api.monthly_eval import adjust_for_monthly, check_monthly_entries
 from core.evaluate.plan_eval import PlanEvaluation, evaluate_plan
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.types import AssignEntry
@@ -66,9 +65,8 @@ def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
 
 def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
     try:
-        check_monthly_entries(graph, params, entries)
-        # 월별 투입률 명단은 평가기가 달별 값을 읽기 전까지 가용률·예산·범위를 달별로 다시 본다(api/monthly_eval).
-        return adjust_for_monthly(graph, params, entries, evaluate_plan(graph, S, C, params, entries))
+        # 월별 투입률(monthly_alloc)은 평가기가 달별로 검사한다(claude-a 020ee6d) -- 달·평균이 틀린 입력은 ValueError → 422.
+        return evaluate_plan(graph, S, C, params, entries)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

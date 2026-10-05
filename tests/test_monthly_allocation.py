@@ -106,7 +106,7 @@ def test_optimization_ratio_stays_within_one_for_monthly_plans():
 
 
 def test_monthly_plan_has_no_false_violations_in_report_metrics():
-    """평가기는 평균만 읽어 정상 월별 플랜을 '가용률 위반'으로 봤다 -- API가 달별로 다시 본다(리뷰 M2)."""
+    """정상 월별 플랜이 '가용률 위반'으로 보이지 않는다(평가기가 달별로 검사, 리뷰 M2)."""
     from api.routes.plans import roster_metrics
     g, S, C = _two_projects()
     params = MilpParams(**P, allocation_mode="monthly")
@@ -116,7 +116,7 @@ def test_monthly_plan_has_no_false_violations_in_report_metrics():
 
 
 def test_monthly_recheck_catches_overloads_that_the_mean_hides():
-    """평균으로는 가려지는 위반을 달별 재검사가 잡는다(리뷰 2차 S3): 가용률은 X 평균 0.2지만 1월 0.5,
+    """평균으로는 가려지는 위반을 달별 검사가 잡는다(리뷰 2차 S3): 가용률은 X 평균 0.2지만 1월 0.5,
     예산은 X 평균 0.6이지만 1월 0.9(예산 700)."""
     from api.routes.plans import roster_metrics
     from core.optimize.types import AssignEntry
@@ -143,16 +143,17 @@ def test_ratio_is_not_computed_when_params_and_roster_disagree():
 
 
 def test_monthly_entries_must_cover_the_project_months_and_match_the_mean():
-    from api.monthly_eval import check_monthly_entries
+    """잘못된 월별 입력(진행 달과 다름·평균 불일치)은 평가에서 거절된다 -- API는 이를 422로 낸다."""
+    from core.evaluate.plan_eval import evaluate_plan
     from core.optimize.types import AssignEntry
-    g, _, _ = _two_projects()
+    g, S, C = _two_projects()
     params = MilpParams(**P, allocation_mode="monthly")
-    with pytest.raises(ValueError, match="진행 달"):
-        check_monthly_entries(g, params, [AssignEntry(person_id="p0", project_id="Y", alloc=0.5,
-                                                      monthly_alloc={0: 0.5, 5: 0.5})])
-    with pytest.raises(ValueError, match="평균"):
-        check_monthly_entries(g, params, [AssignEntry(person_id="p0", project_id="Y", alloc=0.9,
-                                                      monthly_alloc={0: 0.5, 1: 0.5, 2: 0.5})])
+    with pytest.raises(ValueError, match="months"):
+        evaluate_plan(g, S, C, params, [AssignEntry(person_id="p0", project_id="Y", alloc=0.5,
+                                                    monthly_alloc={0: 0.5, 5: 0.5})])
+    with pytest.raises(ValueError, match="mean"):
+        evaluate_plan(g, S, C, params, [AssignEntry(person_id="p0", project_id="Y", alloc=0.9,
+                                                    monthly_alloc={0: 0.5, 1: 0.5, 2: 0.5})])
 
 
 def test_monthly_alternatives_are_generated_and_validated():
