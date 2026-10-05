@@ -84,7 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- (없음)
+- [claude-a] feat/claude-a-scale-rehearsal · `core/ingest/org_profile.py`(신규), `rehearsal/`(신규: 실행기·결과·보고서), `docs/model-roadmap.md` · 2026-10-05 16:30 · 장시간 계산(300명 시간 sweep, 백그라운드)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
