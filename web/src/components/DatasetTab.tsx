@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { resetDataset, uploadDataset } from "../api/client";
+import { AdminLoginRequiredError, resetDataset, uploadDataset } from "../api/client";
 import type { DatasetInfo, IngestIssue, UploadResult } from "../api/types";
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   onSwitched: (info: DatasetInfo) => void;
   /** 서버가 관리자 토큰을 요구하면 App이 넘겨준다(없으면 null). */
   adminToken?: string | null;
+  /** 관리자 동작이 401을 받았다(K14) -- App이 로그인 화면으로 보낸다. */
+  onLoginRequired?: () => void;
 }
 
 function where(i: IngestIssue): string {
@@ -31,7 +33,7 @@ function IssueList({ title, items, tone }: { title: string; items: IngestIssue[]
   );
 }
 
-export function DatasetTab({ active, onSwitched, adminToken = null }: Props) {
+export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -47,6 +49,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null }: Props) {
       setResult(r);
       if (r.activated && r.dataset) onSwitched(r.dataset);
     } catch (e) {
+      if (e instanceof AdminLoginRequiredError) onLoginRequired?.();
       setError(String(e));
     } finally {
       setBusy(false);
@@ -60,6 +63,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null }: Props) {
     try {
       onSwitched(await resetDataset(adminToken));
     } catch (e) {
+      if (e instanceof AdminLoginRequiredError) onLoginRequired?.();
       setError(String(e));
     } finally {
       setBusy(false);

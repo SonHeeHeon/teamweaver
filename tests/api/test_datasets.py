@@ -316,7 +316,7 @@ def test_requests_from_a_stale_screen_are_409(client, path, body):
 
 def test_admin_token_guards_switch_reset_and_settings(client, bundle_zip, monkeypatch):
     monkeypatch.setenv("TEAMWEAVER_ADMIN_TOKEN", "s3cret")
-    assert client.get("/api/admin").json() == {"token_required": True}
+    assert client.get("/api/admin").json()["token_required"] is True
     assert client.post("/api/datasets", content=bundle_zip, headers=ZIP).status_code == 401
     assert client.post("/api/datasets/reset", json={}).status_code == 401
     settings = client.get("/api/settings").json()["settings"]
@@ -331,7 +331,7 @@ def test_admin_token_guards_switch_reset_and_settings(client, bundle_zip, monkey
 
 
 def test_admin_token_is_not_required_when_unset(client):
-    assert client.get("/api/admin").json() == {"token_required": False}
+    assert client.get("/api/admin").json()["token_required"] is False
 
 
 def test_many_directory_entries_are_rejected_before_parsing(tmp_path):

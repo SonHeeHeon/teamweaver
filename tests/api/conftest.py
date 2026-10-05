@@ -66,6 +66,12 @@ def data_dir(monkeypatch, tmp_path):
     path = tmp_path / "teamweaver-data"
     monkeypatch.setenv("TEAMWEAVER_DATA_DIR", str(path))
     monkeypatch.delenv("TEAMWEAVER_PLAN_SECRET", raising=False)
+    # 관리자 로그인(K14): 테스트마다 비밀번호 미설정·잠금 초기 상태에서 시작한다.
+    for k in ("TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH", "TEAMWEAVER_ADMIN_TOKEN"):
+        monkeypatch.delenv(k, raising=False)
+    from api.admin import THROTTLE
+    THROTTLE._state.clear()
+    THROTTLE._inflight.clear()
     return path
 
 

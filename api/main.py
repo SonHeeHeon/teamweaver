@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from api.admin import warn_if_unprotected
 from api.cache import ResultCache
 from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
 from api.routes.datasets import validate_and_build
@@ -36,6 +37,7 @@ WARM_GAP_MIN = 0.05
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_env()
+    warn_if_unprotected()
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
     def build_fixture_dataset() -> ActiveDataset:
         ds, parsed = load_fixtures(FIXTURES_DIR)
@@ -117,7 +119,9 @@ app.add_middleware(report.ReportBodyLimit)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=False,
+    # 관리자 세션 쿠키(K14)를 dev(:5173 → :8000)에서도 보내려면 필요하다. 허용 origin은 위의
+    # 명시 목록뿐이라 다른 사이트에는 쿠키가 붙은 응답을 읽게 해 주지 않는다.
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

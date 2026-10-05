@@ -10,7 +10,11 @@ vi.mock("./api/client", () => ({
   fetchMeta: vi.fn(),
   fetchSettings: vi.fn(),
   fetchActiveDataset: vi.fn(),
-  fetchAdminStatus: vi.fn(async () => ({ token_required: false })),
+  fetchAdminStatus: vi.fn(async () => ({ token_required: false, login_required: false,
+                                         protected: true, logged_in: false, expires_at: null })),
+  adminLogin: vi.fn(),
+  adminLogout: vi.fn(async () => {}),
+  AdminLoginRequiredError: class extends Error {},
   DatasetChangedError: class extends Error {},
   uploadDataset: vi.fn(),
   resetDataset: vi.fn(),
@@ -37,7 +41,7 @@ vi.mock("react-force-graph-2d", () => ({
 import {
   fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
   postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap,
-  loadPlanEdits, savePlanEdits, EditsConflictError,
+  loadPlanEdits, savePlanEdits, EditsConflictError, adminLogin, adminLogout, AdminLoginRequiredError,
 } from "./api/client";
 import type { SettingsResponse } from "./api/types";
 
@@ -57,7 +61,11 @@ const FIXTURE_INFO = { dataset_id: "fixture-demo-100x20", version: "a".repeat(64
                        source: "fixture" as const, synthetic: true, people: 3, projects: 1,
                        activated_at: "2026-10-05T00:00:00+00:00" };
 
+const OPEN_ADMIN = { token_required: false, login_required: false, protected: true,
+                     logged_in: false, expires_at: null };
+
 beforeEach(() => {
+  vi.mocked(fetchAdminStatus).mockReset().mockResolvedValue(OPEN_ADMIN);
   vi.mocked(fetchSettings).mockResolvedValue(SETTINGS);
   vi.mocked(fetchActiveDataset).mockResolvedValue(FIXTURE_INFO);
 });
@@ -357,7 +365,7 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
 
   it("서버가 관리자 토큰을 요구하면 입력칸을 보여 주고 업로드에 싣는다", async () => {
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
-    vi.mocked(fetchAdminStatus).mockResolvedValueOnce({ token_required: true });
+    vi.mocked(fetchAdminStatus).mockResolvedValue({ ...OPEN_ADMIN, token_required: true });
     vi.mocked(uploadDataset).mockReset().mockResolvedValue({
       activated: false, detail: "x", report: null });
     render(<App />);
@@ -859,5 +867,72 @@ describe("App — 충돌 뒤 줄 선 저장은 버린다(Opus 검증 S1)", () =>
     await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledTimes(2));   // 강제 복원
     await new Promise((r) => setTimeout(r, 20));
     expect(savePlanEdits).toHaveBeenCalledTimes(1);                        // 두 번째는 버렸다
+  });
+});
+
+
+describe("App — 관리자 로그인(K14)", () => {
+  const LOCKED = { token_required: false, login_required: true, protected: true,
+                   logged_in: false, expires_at: null };
+  const IN = { ...LOCKED, logged_in: true, expires_at: 9999999999 };
+
+  it("로그인 전에는 배치 설정·데이터 탭이 로그인 화면이고, 로그인하면 내용이 보인다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    let loggedIn = false;
+    vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
+    vi.mocked(adminLogin).mockReset().mockImplementation(async () => { loggedIn = true; });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
+    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
+    expect(screen.getByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "pw" } });
+    fireEvent.click(screen.getByRole("button", { name: "로그인" }));
+    expect(await screen.findByRole("button", { name: "로그아웃" })).toBeInTheDocument();
+    expect(screen.getByLabelText("묶음 zip 파일")).toBeInTheDocument();
+  });
+
+  it("요건 설정·결과 화면은 로그인 없이 쓴다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(fetchAdminStatus).mockReset().mockResolvedValue(LOCKED);
+    render(<App />);
+    expect(await screen.findByRole("button", { name: "최적화 실행" })).toBeInTheDocument();
+  });
+
+  it("로그아웃하면 다시 로그인 화면이 된다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    let loggedIn = true;
+    vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
+    vi.mocked(adminLogout).mockReset().mockImplementation(async () => { loggedIn = false; });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "로그아웃" }));
+    await waitFor(() => expect(adminLogout).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
+    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
+  });
+
+  it("세션이 끝나 저장이 401이면 로그인 화면으로 보낸다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    let expired = false;
+    vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (expired ? LOCKED : IN));
+    vi.mocked(saveSettings).mockReset().mockImplementation(async () => {
+      expired = true;
+      throw new AdminLoginRequiredError("x");
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "배치 설정" }));
+    fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "40" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    expect(await screen.findByText(/세션이 끝났다/)).toBeInTheDocument();
+    // 입력하던 값은 남아 있다(폼을 언마운트하지 않는다).
+    expect((screen.getByLabelText(/최소 투입률/) as HTMLInputElement).value).toBe("40");
+  });
+
+  it("관리자 보호가 없는 서버면 경고를 띄운다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(fetchAdminStatus).mockReset().mockResolvedValue({ ...LOCKED, login_required: false,
+                                                                 protected: false });
+    render(<App />);
+    expect(await screen.findByText(/관리자 비밀번호 미설정/)).toBeInTheDocument();
   });
 });

@@ -32,16 +32,22 @@ def _dist_missing() -> bool:
 
 
 @contextlib.contextmanager
-def _run_server(data: Path):
+def _run_server(data: Path, admin_password: str | None = None):
     """data 폴더(설정·업로드 데이터·적용 교체·서명키)를 쓰는 실서버 하나를 띄운다."""
     saved = {k: os.environ.get(k) for k in
              ("TEAMWEAVER_SKIP_WARM", "TEAMWEAVER_SETTINGS_PATH", "TEAMWEAVER_ADMIN_TOKEN",
-              "TEAMWEAVER_DATA_DIR", "TEAMWEAVER_PLAN_SECRET")}
+              "TEAMWEAVER_DATA_DIR", "TEAMWEAVER_PLAN_SECRET", "TEAMWEAVER_ADMIN_PASSWORD",
+              "TEAMWEAVER_ADMIN_PASSWORD_HASH")}
     os.environ["TEAMWEAVER_SKIP_WARM"] = "1"
     os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(data / "settings.json")
     os.environ["TEAMWEAVER_DATA_DIR"] = str(data)
     os.environ.pop("TEAMWEAVER_ADMIN_TOKEN", None)
     os.environ.pop("TEAMWEAVER_PLAN_SECRET", None)
+    os.environ.pop("TEAMWEAVER_ADMIN_PASSWORD", None)
+    os.environ.pop("TEAMWEAVER_ADMIN_PASSWORD_HASH", None)
+    if admin_password:
+        from api.admin import hash_password
+        os.environ["TEAMWEAVER_ADMIN_PASSWORD_HASH"] = hash_password(admin_password)
     prev_override = app.dependency_overrides.get(get_openai_client_or_none)
     app.dependency_overrides[get_openai_client_or_none] = lambda: None
     with socket.socket() as s:
@@ -234,3 +240,43 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
     assert "서명 확인" in text, "재기동 후 서명키가 바뀌었다"
     swap_line = next((ln for ln in text.splitlines() if "→" in ln and "빠진 인력" not in ln), "")
     assert any(n in re.sub(r"\s+", "", swap_line) for n in uploaded_names)
+
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
+    """K14: 비밀번호를 설정한 서버에서는 로그인해야 배치 설정을 저장할 수 있고, 로그아웃하면 다시 막힌다.
+    세션 쿠키는 HttpOnly라 페이지 스크립트가 읽을 수 없다."""
+    from playwright.sync_api import expect, sync_playwright
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        try:
+            with _run_server(tmp_path / "data", admin_password="correct horse 9") as base:
+                page = browser.new_page()
+                page.set_default_timeout(60_000)
+                page.goto(base + "/")
+                page.get_by_role("button", name="배치 설정").click()
+                expect(page.get_by_role("heading", name="관리자 로그인")).to_be_visible()
+                page.get_by_label("비밀번호").fill("wrong")
+                page.get_by_role("button", name="로그인", exact=True).click()
+                expect(page.get_by_role("alert")).to_contain_text("맞지 않는다")
+                page.get_by_label("비밀번호").fill("correct horse 9")
+                page.get_by_role("button", name="로그인", exact=True).click()
+                expect(page.get_by_role("button", name="로그아웃")).to_be_visible()
+                cookies = {c["name"]: c for c in page.context.cookies()}
+                assert cookies["tw_admin"]["httpOnly"] is True
+                assert cookies["tw_admin"]["sameSite"] == "Strict"
+                assert page.evaluate("document.cookie").find("tw_admin") == -1
+                page.get_by_label(re.compile("최소 투입률")).fill("35")
+                page.get_by_role("button", name="저장").click()
+                expect(page.get_by_text("다음 '최적화 실행'부터")).to_be_visible()
+                page.get_by_role("button", name="로그아웃").click()
+                expect(page.get_by_role("button", name="관리자 로그인")).to_be_visible()
+                status = page.request.put(base + "/api/settings", data={
+                    "settings": {"min_alloc": 0.4, "clique_threshold_months": 6, "lam": 0.3,
+                                 "mu": 0.2, "time_limit": 120, "gap": 0.05},
+                    "based_on": None}).status
+                assert status == 401
+        finally:
+            browser.close()

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  adminLogout, AdminLoginRequiredError, type AdminStatus, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
@@ -23,6 +23,7 @@ import { SwapControl } from "./components/SwapControl";
 import { BriefingPanel } from "./components/BriefingPanel";
 import { SettingsTab } from "./components/SettingsTab";
 import { DatasetTab } from "./components/DatasetTab";
+import { AdminLogin } from "./components/AdminLogin";
 import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
@@ -80,8 +81,20 @@ export default function App() {
     useState<{ params: PlacementSettings | null; weights: Record<string, number>;
                datasetVersion: string } | null>(null);
   // 관리자 토큰(K9): 서버가 TEAMWEAVER_ADMIN_TOKEN을 요구할 때만 입력받는다. 메모리에만 둔다.
-  const [adminRequired, setAdminRequired] = useState(false);
+  // 관리자 상태(K14). 토큰만 설정된 서버(스크립트용)면 예전처럼 토큰 입력칸을 쓴다.
+  const [admin, setAdmin] = useState<AdminStatus | null>(null);
   const [adminToken, setAdminToken] = useState("");
+  const [loginReason, setLoginReason] = useState<string | null>(null);
+  const adminRequired = !!admin?.token_required;
+  const needLogin = !!admin?.login_required && !admin.logged_in;
+  function refreshAdmin() {
+    fetchAdminStatus().then(setAdmin).catch(() => {});
+  }
+  /** 관리자 동작이 401: 세션이 없거나 끝났다 -- 로그인 화면으로. */
+  function adminExpired() {
+    setLoginReason("로그인이 필요하거나 세션이 끝났다. 다시 로그인할 것.");
+    refreshAdmin();
+  }
 
   // 지금 서버가 계산에 쓰는 데이터셋(K9). 업로드로 바뀌면 진행 중이던 최적화
   // 스트림의 남은 플랜도 버린다 -- runGen이 바뀌면 이전 데이터셋의 결과다.
@@ -135,8 +148,13 @@ export default function App() {
     fetchMeta().then(setMeta).catch((e) => setError(String(e)));
     fetchSettings().then(setSettings).catch((e) => setSettingsError(String(e)));
     fetchActiveDataset().then(setDataset).catch(() => setDataset(null));
-    fetchAdminStatus().then((s) => setAdminRequired(s.token_required)).catch(() => {});
+    refreshAdmin();
   }, []);
+
+  // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
+  useEffect(() => {
+    if (tab === "settings" || tab === "data") refreshAdmin();
+  }, [tab]);
 
   /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
    *  있다)를 모두 비우고 meta를 새로 읽는다. 옛 플랜으로 교체를 검토하면 없는 ID라 실패한다. */
@@ -444,8 +462,31 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <h1 className="text-xl font-semibold text-slate-900">TeamWeaver</h1>
-        <p className="text-sm text-slate-500">지식 그래프 · LLM 기반 지능형 인력 배치</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">TeamWeaver</h1>
+            <p className="text-sm text-slate-500">지식 그래프 · LLM 기반 지능형 인력 배치</p>
+          </div>
+          <div className="text-sm">
+            {admin?.login_required && (admin.logged_in ? (
+              <span className="text-slate-600">
+                관리자{" · "}
+                <button className="underline" onClick={async () => {
+                  try { await adminLogout(); } catch (e) { setError(String(e)); }
+                  setLoginReason(null); refreshAdmin();
+                }}>로그아웃</button>
+              </span>
+            ) : (
+              <button className="rounded-md border border-slate-300 px-3 py-1 text-slate-700"
+                      onClick={() => setTab("settings")}>관리자 로그인</button>
+            ))}
+            {admin && !admin.protected && (
+              <span role="status" className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800">
+                관리자 비밀번호 미설정 — 누구나 배치 설정·데이터를 바꿀 수 있다
+              </span>
+            )}
+          </div>
+        </div>
       </header>
 
       <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
@@ -477,11 +518,20 @@ export default function App() {
                       : "지금 계산하면 서버 모델 기본값으로 계산된다(배치 설정 미적용)."}
           </p>
         )}
-        {tab === "data" ? (
+        {/* 편집 중에 세션이 끝났으면(loginReason) 탭 내용을 언마운트하지 않고 위에 로그인을 띄운다 --
+            설정 폼에 입력하던 값이 사라지지 않게. 처음 여는 경우엔 로그인 화면이 탭을 대신한다. */}
+        {(tab === "data" || tab === "settings") && needLogin && loginReason && (
+          <div className="mb-6">
+            <AdminLogin reason={loginReason} onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+          </div>
+        )}
+        {(tab === "data" || tab === "settings") && needLogin && !loginReason ? (
+          <AdminLogin onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+        ) : tab === "data" ? (
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <DatasetTab active={dataset} onSwitched={datasetSwitched}
-                        adminToken={adminToken || null} />
+                        adminToken={adminToken || null} onLoginRequired={adminExpired} />
           </div>
         ) : tab === "settings" ? (
           settings ? (
@@ -494,6 +544,7 @@ export default function App() {
                                                             adminToken || null));
                              setSettingsError(null);
                            } catch (e) {
+                             if (e instanceof AdminLoginRequiredError) adminExpired();
                              if (e instanceof SettingsConflictError) {
                                // 최신 값을 다시 읽어 폼을 갈아 끼우고, 이유를 알린다.
                                fetchSettings().then(setSettings).catch(() => {});

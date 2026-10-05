@@ -25,10 +25,48 @@ function adminHeaders(token: string | null): Record<string, string> {
   return token ? { "X-Admin-Token": token } : {};
 }
 
-export async function fetchAdminStatus(): Promise<{ token_required: boolean }> {
-  const res = await fetch(`${API_BASE}/api/admin`);
+/** 관리자 로그인 상태(K14). login_required면 비밀번호 로그인이 필요한 서버, protected=false면
+ *  관리자 동작이 아무 보호 없이 열려 있다(비밀번호·토큰 미설정). */
+export interface AdminStatus {
+  login_required: boolean;
+  protected: boolean;
+  logged_in: boolean;
+  expires_at: number | null;
+  token_required: boolean;
+}
+
+/** 관리자 동작이 401을 받았다 -- 로그인하지 않았거나 세션이 끝났다. */
+export class AdminLoginRequiredError extends Error {}
+
+// 관리자 세션은 HttpOnly 쿠키다. dev(:5173 → :8000)는 교차 origin이라 include로 보내야 한다.
+const WITH_COOKIE: RequestCredentials = "include";
+
+export async function fetchAdminStatus(): Promise<AdminStatus> {
+  const res = await fetch(`${API_BASE}/api/admin`, { credentials: WITH_COOKIE });
   if (!res.ok) throw new Error(`GET /api/admin 실패: ${res.status}`);
-  return (await res.json()) as { token_required: boolean };
+  return (await res.json()) as AdminStatus;
+}
+
+/** 비밀번호가 맞으면 서버가 세션 쿠키를 심는다. 틀리면 이유(잠금 포함)를 담아 throw. */
+export async function adminLogin(password: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/login`, {
+    method: "POST", credentials: WITH_COOKIE,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(String(detail.detail ?? `로그인 실패(${res.status})`));
+  }
+}
+
+export async function adminLogout(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/logout`, { method: "POST", credentials: WITH_COOKIE });
+  if (!res.ok) throw new Error(`로그아웃 실패(${res.status})`);
+}
+
+function throwIfLoginRequired(res: Response): void {
+  if (res.status === 401) throw new AdminLoginRequiredError("관리자 로그인이 필요하다.");
 }
 
 export async function fetchMeta(): Promise<Meta> {
@@ -51,10 +89,11 @@ export async function saveSettings(
   settings: PlacementSettings, basedOn: string | null, adminToken: string | null = null,
 ): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/api/settings`, {
-    method: "PUT",
+    method: "PUT", credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
     body: JSON.stringify({ settings, based_on: basedOn }),
   });
+  throwIfLoginRequired(res);
   if (res.status === 409) {
     const detail = await res.json().catch(() => ({}));
     throw new SettingsConflictError(String(detail.detail ?? "다른 사용자가 먼저 저장했다"));
@@ -252,9 +291,11 @@ export async function uploadDataset(file: Blob, adminToken: string | null = null
 ): Promise<UploadResult> {
   const res = await fetch(`${API_BASE}/api/datasets`, {
     method: "POST",
+    credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/zip", ...adminHeaders(adminToken) },
     body: file,
   });
+  throwIfLoginRequired(res);
   if (res.status === 200 || res.status === 422) return (await res.json()) as UploadResult;
   const detail = await res.json().catch(() => ({}));
   throw new Error(`업로드 실패(${res.status}): ${detail.detail ?? ""}`);
@@ -264,9 +305,11 @@ export async function resetDataset(adminToken: string | null = null): Promise<Da
   // JSON으로 보낸다: 서버는 교차 사이트 단순 POST를 막으려고 JSON 요청만 받는다.
   const res = await fetch(`${API_BASE}/api/datasets/reset`, {
     method: "POST",
+    credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
     body: "{}",
   });
+  throwIfLoginRequired(res);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(`되돌리기 실패(${res.status}): ${detail.detail ?? ""}`);

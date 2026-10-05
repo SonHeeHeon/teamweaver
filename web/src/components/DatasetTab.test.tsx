@@ -3,7 +3,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { DatasetTab } from "./DatasetTab";
 import type { DatasetInfo } from "../api/types";
 
-vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn() }));
+vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn(),
+                                  AdminLoginRequiredError: class extends Error {} }));
 import { resetDataset, uploadDataset } from "../api/client";
 
 const FIXTURE: DatasetInfo = { dataset_id: "fixture-demo-100x20", version: "f".repeat(64),
