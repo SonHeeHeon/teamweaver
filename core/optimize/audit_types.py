@@ -32,6 +32,8 @@ class RawMilpSolution:
     variable_count: int
     constraint_count: int
     evidence: SolverEvidence
+    # 월별 모드의 달별 투입률 {(i, j, m): 값}. 있으면 a[(i, j)]는 진행 달 평균이다(검증기가 일치를 본다).
+    a_month: dict[tuple[int, int, int], float] | None = None
 
 
 @dataclass(frozen=True)

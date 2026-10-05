@@ -21,6 +21,10 @@ DEFAULT_TOLERANCE = 0.01
 # 200, organisation-shaped data). 2026-10-05 rehearsal: rehearsal/results/n{100,200,300}/sweep.json -- HiGHS hit the
 # 5 % gap at 9.5 / 21 / 92 s; CBC never got within 1 % (300 people: 2 seats unfilled even at 240 s).
 MEASURED: dict[int, int | None] = {100: 15, 200: 30, 300: 120}
+# 월별 투입률(allocation_mode="monthly", claude-b 2026-10-05): 같은 조직형 데이터에서 월별 Plan A가 gap 5% 안에서 끝난
+# 시간(outputs/c6-monthly-scale*.json: 100명 16초, 200명 120초 한도에서 76초, 300명 360초 한도에서 309초).
+# 권장 시간 안에서 못 끝내면 고정 투입률보다 낮을 수 있다(300명 180초: −1.6%), 끝내면 +15~20%.
+MEASURED_MONTHLY: dict[int, int | None] = {100: 16, 200: 77, 300: 309}
 # Margin over the measured minimum: plan A is solved with a stricter 1 % gap in the service, and real data may be
 # harder than the synthetic bundles. Rounded up to 30 s steps.
 MARGIN = 1.5
@@ -58,8 +62,9 @@ def recommend_from_sweeps(results_dir: Path, solver: str = "highs",
 
 
 def recommend(n_people: int, table: dict[int, int | None] | None = None,
-              fallback_s: int = 120) -> TimeBudget:
-    table = MEASURED if table is None else table
+              fallback_s: int = 120, allocation_mode: str = "fixed") -> TimeBudget:
+    if table is None:
+        table = MEASURED_MONTHLY if allocation_mode == "monthly" else MEASURED
     sizes = sorted(s for s, v in table.items() if v is not None)
     if not sizes:
         return TimeBudget(fallback_s, 4 * fallback_s, False, "측정값 없음 — 기본값")
@@ -67,6 +72,8 @@ def recommend(n_people: int, table: dict[int, int | None] | None = None,
         if n_people <= s:
             v = _with_margin(table[s])
             return TimeBudget(v, 4 * v, True,
-                              f"{s}명 리허설 측정 {table[s]}초(HiGHS, 최선 대비 1% 이내) × 여유 {MARGIN}")
+                              f"{s}명 측정 {table[s]}초"
+                              f"({'월별 투입률, gap 5% 안 종료' if allocation_mode == 'monthly' else 'HiGHS, 최선 대비 1% 이내'})"
+                              f" × 여유 {MARGIN}")
     v = _with_margin(table[sizes[-1]])
     return TimeBudget(v, 4 * v, False, f"{sizes[-1]}명보다 큼 — 측정 범위 밖, 최소 {v}초 이상 권장")

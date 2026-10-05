@@ -84,6 +84,8 @@ def _skill_relaxation_upper_bound(graph: MemoryGraph, S: np.ndarray, params: Mil
 
     prob = pulp.LpProblem("teamweaver_skill_ub", pulp.LpMaximize)
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), 0.0, 1.0)  # relaxed (was Binary)
+    if getattr(params, "allocation_mode", "fixed") == "monthly":
+        return _monthly_skill_upper_bound(graph, S, params, prob, z)
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
              for j, pj in enumerate(projects) for g in pj.grade_headcount}
@@ -107,6 +109,37 @@ def _skill_relaxation_upper_bound(graph: MemoryGraph, S: np.ndarray, params: Mil
         prob += pulp.lpSum(people[i].monthly_rate * a[i][j] for i in range(nP)) \
                 <= pj.monthly_budget
 
+    prob.solve(pulp.PULP_CBC_CMD(msg=0))
+    status = pulp.LpStatus[prob.status]
+    if status != "Optimal":
+        raise RuntimeError(f"skill-relaxation LP failed: {status}")
+    return float(pulp.value(prob.objective))
+
+
+def _monthly_skill_upper_bound(graph, S, params, prob, z) -> float:
+    """월별 투입률 정식의 같은 LP 완화(리뷰 M1): 달별 a, 달별 가용률·예산, 기술항 S × 진행 달 평균.
+    고정판 상한은 월별 해의 기술항보다 작을 수 있어 최적화율이 100%를 넘었다."""
+    people, projects = graph.people, graph.projects
+    nP = len(people)
+    am = {(i, j, m): pulp.LpVariable(f"am_{i}_{j}_{m}", 0.0, 1.0)
+          for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
+    slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
+             for j, pj in enumerate(projects) for g in pj.grade_headcount}
+    prob += pulp.lpSum(S[i, j] * (1.0 / len(projects[j].months)) * v for (i, j, m), v in am.items())
+    for (i, j, m), v in am.items():
+        prob += v <= z[i][j]
+        prob += v >= params.min_alloc * z[i][j]
+    for i, person in enumerate(people):
+        for m in range(len(person.availability)):
+            active = [j for j, pj in enumerate(projects) if m in pj.months]
+            if active:
+                prob += pulp.lpSum(am[(i, j, m)] for j in active) <= person.availability[m]
+    for j, pj in enumerate(projects):
+        for g, need in pj.grade_headcount.items():
+            members = [i for i, pe in enumerate(people) if pe.grade == g]
+            prob += pulp.lpSum(z[i][j] for i in members) + slack[(j, g)] == need
+        for m in pj.months:
+            prob += pulp.lpSum(people[i].monthly_rate * am[(i, j, m)] for i in range(nP)) <= pj.monthly_budget
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
     status = pulp.LpStatus[prob.status]
     if status != "Optimal":
