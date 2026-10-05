@@ -1,0 +1,112 @@
+[
+ {
+  "size": 200,
+  "env": {
+   "commit": "3f3a640",
+   "python": "3.12.13",
+   "machine": "arm64",
+   "system": "Darwin 25.5.0",
+   "started_at": "2026-10-05T16:09:36+00:00"
+  },
+  "started_at": "2026-10-05T16:09:36+00:00",
+  "dataset": "org-n200-s2026",
+  "people": 200,
+  "projects": 40,
+  "coworks": 15312,
+  "runs": [
+   {
+    "config": {},
+    "time_limit": 60,
+    "overfamiliar_pairs": 9794,
+    "elapsed_s": 72.9,
+    "termination": "time_limit_incumbent",
+    "accepted": true,
+    "objective": -7891.78,
+    "best_bound": 1677.7003,
+    "parts": {
+     "skill": 8.22,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -7900.0
+    },
+    "gap": 1.2126
+   },
+   {
+    "config": {
+     "solver_seeds": 4
+    },
+    "time_limit": 60,
+    "overfamiliar_pairs": 9794,
+    "elapsed_s": 77.9,
+    "termination": "time_limit_incumbent",
+    "accepted": true,
+    "objective": -7891.78,
+    "best_bound": 1677.7003,
+    "parts": {
+     "skill": 8.22,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -7900.0
+    },
+    "gap": 1.2126
+   }
+  ],
+  "gap_definition": "|best_bound - objective| / |objective| (HiGHS mip_gap)"
+ },
+ {
+  "size": 200,
+  "env": {
+   "commit": "3f3a640",
+   "python": "3.12.13",
+   "machine": "arm64",
+   "system": "Darwin 25.5.0",
+   "started_at": "2026-10-05T16:18:56+00:00"
+  },
+  "started_at": "2026-10-05T16:18:56+00:00",
+  "dataset": "org-n200-s2026",
+  "people": 200,
+  "projects": 40,
+  "coworks": 15312,
+  "runs": [
+   {
+    "config": {
+     "clique_threshold_months": 999
+    },
+    "time_limit": 60,
+    "overfamiliar_pairs": 0,
+    "elapsed_s": 30.1,
+    "termination": "Optimal",
+    "accepted": true,
+    "objective": 114.3456,
+    "best_bound": 118.1177,
+    "parts": {
+     "skill": 91.614,
+     "synergy": 22.635,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0
+    },
+    "gap": 0.033
+   },
+   {
+    "config": {
+     "clique_threshold_months": 24
+    },
+    "time_limit": 60,
+    "overfamiliar_pairs": 318,
+    "elapsed_s": 61.2,
+    "termination": "time_limit_incumbent",
+    "accepted": true,
+    "objective": 108.7672,
+    "best_bound": 115.8813,
+    "parts": {
+     "skill": 91.378,
+     "synergy": 17.923,
+     "overfamiliarity": -0.6,
+     "unfilled": -0.0
+    },
+    "gap": 0.0654
+   }
+  ],
+  "gap_definition": "|best_bound - objective| / |objective| (HiGHS mip_gap)"
+ }
+]

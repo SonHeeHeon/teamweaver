@@ -1,0 +1,56 @@
+[
+ {
+  "size": 300,
+  "env": {
+   "commit": "3f3a640",
+   "python": "3.12.13",
+   "machine": "arm64",
+   "system": "Darwin 25.5.0",
+   "started_at": "2026-10-05T16:16:33+00:00"
+  },
+  "started_at": "2026-10-05T16:16:33+00:00",
+  "dataset": "org-n300-s2026",
+  "people": 300,
+  "projects": 60,
+  "coworks": 24004,
+  "runs": [
+   {
+    "config": {},
+    "time_limit": 180,
+    "overfamiliar_pairs": 11733,
+    "elapsed_s": 206.8,
+    "termination": "time_limit_incumbent",
+    "accepted": true,
+    "objective": -9086.6667,
+    "best_bound": 3458.7619,
+    "parts": {
+     "skill": 13.333,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -9100.0
+    },
+    "gap": 1.3806
+   },
+   {
+    "config": {
+     "solver_seeds": 4
+    },
+    "time_limit": 180,
+    "overfamiliar_pairs": 11733,
+    "elapsed_s": 208.9,
+    "termination": "time_limit_incumbent",
+    "accepted": true,
+    "objective": -9483.2167,
+    "best_bound": 3462.0656,
+    "parts": {
+     "skill": 16.783,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -9500.0
+    },
+    "gap": 1.3651
+   }
+  ],
+  "gap_definition": "|best_bound - objective| / |objective| (HiGHS mip_gap)"
+ }
+]
