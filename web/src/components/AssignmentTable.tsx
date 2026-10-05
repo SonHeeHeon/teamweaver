@@ -1,5 +1,5 @@
 import type { AssignEntry, Person, Project } from "../api/types";
-import { formatAlloc } from "./allocFormat";
+import { formatAlloc, formatMonthly } from "./allocFormat";
 
 interface Props {
   entries: AssignEntry[];
@@ -34,8 +34,11 @@ export function AssignmentTable({ entries, people, projects }: Props) {
                     {p?.name ?? e.person_id}
                     <span className="ml-2 text-xs text-slate-500">{p?.grade}</span>
                   </span>
-                  <span className="tabular-nums text-slate-600">
+                  <span className="text-right tabular-nums text-slate-600">
                     {formatAlloc(e.alloc)}
+                    {e.monthly_alloc && (
+                      <span className="block text-[11px] text-slate-400">{formatMonthly(e.monthly_alloc)}</span>
+                    )}
                   </span>
                 </li>
               );

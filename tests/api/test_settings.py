@@ -348,3 +348,21 @@ def test_max_concurrent_projects_setting_reaches_the_solver(small_graph_client, 
             "weights": {}, "milp_params": {"max_concurrent_projects": 1}, "n_alternatives": 0}) as res:
         list(res.iter_lines())
     assert seen[0].max_concurrent_projects == 1
+
+
+def test_settings_carry_the_recommended_time_for_the_active_dataset(client):
+    """claude-a 요청: 설정 화면에 지금 데이터 규모의 권장 계산 시간을 안내한다(core/optimize/time_budget)."""
+    from core.optimize.time_budget import recommend
+    body = client.get("/api/settings").json()
+    rt = body["recommended_time"]
+    n = len(client.get("/api/meta").json()["people"])
+    assert rt["n_people"] == n and rt["per_solve_s"] == recommend(n).per_solve_s
+    assert rt["worst_case_total_s"] == 4 * rt["per_solve_s"] and rt["basis"]
+
+
+def test_settings_also_carry_the_monthly_recommended_time(client):
+    from core.optimize.time_budget import recommend
+    body = client.get("/api/settings").json()
+    n = body["recommended_time"]["n_people"]
+    assert body["recommended_time_monthly"]["per_solve_s"] == recommend(n, allocation_mode="monthly").per_solve_s
+    assert body["recommended_time_monthly"]["per_solve_s"] >= body["recommended_time"]["per_solve_s"]

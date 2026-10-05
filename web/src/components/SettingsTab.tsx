@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { PlacementSettings, SettingsResponse } from "../api/types";
-import { FIELDS, toInput } from "./settingsFields";
+import { FIELDS, MODE_LABEL, toInput, type NumKey } from "./settingsFields";
 
-type Key = keyof PlacementSettings;
+type Key = NumKey;
+type Mode = PlacementSettings["allocation_mode"];
 
 function parseField(f: (typeof FIELDS)[number], raw: string,
-                    b: { min: number; max: number }): number | string {
+                    b: { min: number; max: number } | undefined): number | string {
   if (raw.trim() === "") return "값을 입력해야 한다";
   // Number()는 "0x10"·"1e1"도 받아들인다 -- 평범한 십진수만 허용한다.
   if (!/^\d+(\.\d+)?$/.test(raw.trim())) return "숫자가 아니다";
@@ -14,7 +15,7 @@ function parseField(f: (typeof FIELDS)[number], raw: string,
   if (f.integer && !Number.isInteger(n)) return "정수여야 한다";
   const v = f.percent ? n / 100 : n;
   // 부동소수 비교 오차(30/100 등)로 경계값이 거절되지 않게 아주 작은 여유를 둔다.
-  if (v < b.min - 1e-9 || v > b.max + 1e-9) {
+  if (b && (v < b.min - 1e-9 || v > b.max + 1e-9)) {
     return `${toInput(f, b.min)}~${toInput(f, b.max)}${f.unit} 범위여야 한다`;
   }
   return f.percent ? Math.round(v * 10000) / 10000 : v;
@@ -29,6 +30,7 @@ export function SettingsTab({ data, onSave }: Props) {
   const fromSettings = (s: PlacementSettings) =>
     Object.fromEntries(FIELDS.map((f) => [f.key, toInput(f, s[f.key])])) as Record<Key, string>;
   const [form, setForm] = useState<Record<Key, string>>(() => fromSettings(data.settings));
+  const [mode, setMode] = useState<Mode>(data.settings.allocation_mode ?? "fixed");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // 서버 값이 바뀌면(다른 사람 저장·실행 시 재조회·내 저장) 폼을 새 값으로 다시 채운다.
@@ -38,13 +40,17 @@ export function SettingsTab({ data, onSave }: Props) {
   if (seenUpdatedAt !== data.updated_at) {
     setSeenUpdatedAt(data.updated_at);
     setForm(fromSettings(data.settings));
+    setMode(data.settings.allocation_mode ?? "fixed");
   }
 
+  const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time) : data.recommended_time;
   const parsed = FIELDS.map((f) => [f.key, parseField(f, form[f.key], data.bounds[f.key])] as const);
   const errors = Object.fromEntries(parsed.filter(([, v]) => typeof v === "string"));
   const valid = Object.keys(errors).length === 0;
-  const next = valid ? (Object.fromEntries(parsed) as unknown as PlacementSettings) : null;
-  const dirty = next !== null && FIELDS.some((f) => next[f.key] !== data.settings[f.key]);
+  const next = valid
+    ? ({ ...Object.fromEntries(parsed), allocation_mode: mode } as unknown as PlacementSettings) : null;
+  const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
+                                  || mode !== (data.settings.allocation_mode ?? "fixed"));
 
   async function save() {
     if (!next) return;
@@ -74,6 +80,23 @@ export function SettingsTab({ data, onSave }: Props) {
         </p>
       )}
       <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <fieldset>
+          <legend className="block text-sm font-medium text-slate-800">투입률 방식</legend>
+          <div className="mt-1 flex flex-wrap gap-4 text-sm">
+            {(["fixed", "monthly"] as Mode[]).map((m) => (
+              <label key={m} className="flex items-center gap-1.5">
+                <input type="radio" name="allocation_mode" value={m} checked={mode === m}
+                       onChange={() => setMode(m)} />
+                {MODE_LABEL[m]}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            달마다 따로: 다른 프로젝트가 끝나 한가해진 달에 더 많이 배치할 수 있다. 가상 조직 데이터 측정(Plan A)에서 끝까지
+            풀면 100명 +20.5%, 200명 +15.4%, 300명 +15.0%였지만 시간이 2~4배 더 든다(300명 약 5분). 시간이 모자라면 오히려
+            낮을 수 있으니(300명 180초: −1.6%) 아래 계산 시간을 권장값 이상으로 둔다. 교체 검토·PDF는 가용률·예산을 달별로 확인한다.
+          </p>
+        </fieldset>
         {FIELDS.map((f) => (
           <div key={f.key}>
             <label className="block text-sm font-medium text-slate-800" htmlFor={`set-${f.key}`}>
@@ -103,6 +126,13 @@ export function SettingsTab({ data, onSave }: Props) {
               </p>
             )}
             <p id={`set-${f.key}-help`} className="mt-1 text-xs text-slate-500">{f.help}</p>
+            {f.key === "time_limit" && hint && (
+              <p className="mt-1 text-xs text-sky-700">
+                지금 데이터({hint.n_people}명, {MODE_LABEL[mode]}) 권장: {hint.per_solve_s}초
+                (Plan A와 대안 3개 최악 합계 {hint.worst_case_total_s}초)
+                {hint.measured ? "" : " · 측정 범위 밖이라 최소 기준"} — {hint.basis}
+              </p>
+            )}
           </div>
         ))}
       </div>

@@ -5,9 +5,9 @@ import type { SettingsResponse } from "../api/types";
 
 const DATA: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3 },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3 },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },
@@ -112,5 +112,36 @@ describe("SettingsTab — 서버 값이 바뀌면", () => {
     render(<SettingsTab data={DATA} onSave={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(/최소 투입률/), { target: { value: "30.555" } });
     expect(screen.getByText("소수 둘째 자리까지만 입력할 수 있다")).toBeInTheDocument();
+  });
+});
+
+
+describe("SettingsTab — 권장 계산 시간 안내(claude-a 요청)", () => {
+  it("데이터 규모의 권장 시간을 계산 시간 칸 아래에 보여 준다", async () => {
+    const withHint = { ...DATA, recommended_time: { n_people: 100, per_solve_s: 30, worst_case_total_s: 120,
+                                                    measured: true, basis: "100명 리허설 측정" } };
+    render(<SettingsTab data={withHint} onSave={vi.fn()} />);
+    expect(screen.getByText(/지금 데이터\(100명, 기간 내내 한 비율\) 권장: 30초/)).toBeInTheDocument();
+  });
+});
+
+
+describe("SettingsTab — 투입률 방식(월별 투입률)", () => {
+  it("월별을 고르면 월별 기준 권장 시간을 보여 준다", () => {
+    const hint = (s: number) => ({ n_people: 300, per_solve_s: s, worst_case_total_s: 4 * s, measured: true, basis: "측정" });
+    render(<SettingsTab data={{ ...DATA, recommended_time: hint(180), recommended_time_monthly: hint(480) }}
+                        onSave={vi.fn()} />);
+    expect(screen.getByText(/권장: 180초/)).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("달마다 따로"));
+    expect(screen.getByText(/달마다 따로\) 권장: 480초/)).toBeInTheDocument();
+  });
+
+  it("방식을 바꾸면 저장에 실린다", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsTab data={DATA} onSave={onSave} />);
+    fireEvent.click(screen.getByLabelText("달마다 따로"));
+    fireEvent.click(screen.getByRole("button", { name: /저장/ }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].allocation_mode).toBe("monthly");
   });
 });

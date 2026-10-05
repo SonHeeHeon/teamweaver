@@ -4,7 +4,7 @@ import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
-import { formatAlloc } from "../components/allocFormat";
+import { formatAlloc, formatMonthly } from "../components/allocFormat";
 
 declare global {
   interface Window {
@@ -79,6 +79,7 @@ export function ReportPage() {
         계산 기준: {data.milp_params
           ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
             + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
+            + `투입률 ${data.milp_params.allocation_mode === "monthly" ? "달마다 따로" : "기간 내내 한 비율"} · `
             + `반복 협업 기준 ${data.milp_params.clique_threshold_months}개월 · `
             + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
           : "서버 모델 기본값(배치 설정 미적용)"}
@@ -195,7 +196,12 @@ export function ReportPage() {
                 <td className="py-1">{byId.get(e.person_id)?.name ?? e.person_id}</td>
                 <td className="py-1 text-slate-600">{byId.get(e.person_id)?.grade ?? "-"}</td>
                 <td className="py-1 text-slate-600">{jName.get(e.project_id) ?? e.project_id}</td>
-                <td className="py-1 text-right tabular-nums">{formatAlloc(e.alloc)}</td>
+                <td className="py-1 text-right tabular-nums">
+                  {formatAlloc(e.alloc)}
+                  {e.monthly_alloc && (
+                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc)}</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -46,6 +46,12 @@ def swap_warnings(before, after) -> list[str]:
     return out
 
 
+def _ratio_allowed(params, entries) -> bool:
+    """명단에 월별 항목이 있는데 계산 기준이 fixed면 상한(분모)이 맞지 않아 100%를 넘을 수 있다 -- 산정하지 않는다
+    (리뷰 2차 S2: 서명 없는 PDF나 API 직접 호출에서 생길 수 있다)."""
+    return not (getattr(params, "allocation_mode", "fixed") == "fixed" and any(e.monthly_alloc for e in entries))
+
+
 def roster_metrics(graph: MemoryGraph, S, C, params, weights: dict, entries,
                    ub: float | None = None) -> dict:
     """명단 하나의 지표를 서버가 다시 계산한다(교체 없는 PDF, claude-a 교차 리뷰 S1).
@@ -54,7 +60,7 @@ def roster_metrics(graph: MemoryGraph, S, C, params, weights: dict, entries,
     ev = _evaluate(graph, S, C, params, roster)
     unfilled = _unfilled(ev.shortfalls)
     ratio = None
-    if not ev.violations:
+    if not ev.violations and _ratio_allowed(params, roster):
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc for e in roster)
         if ub is None:
@@ -76,7 +82,7 @@ def apply_one(graph: MemoryGraph, S, C, params, weights: dict, entries, swap,
     after = _evaluate(graph, S, C, params, after_entries)
     unfilled = _unfilled(after.shortfalls)
     feasible = not after.violations
-    if feasible:
+    if feasible and _ratio_allowed(params, after_entries):
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc for e in after_entries)
         if ub is None:      # 같은 (graph, S, params)면 같은 값 -- PDF 재계산은 한 번만 풀어 넘긴다

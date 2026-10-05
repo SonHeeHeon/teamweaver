@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from api.storage import data_dir
@@ -42,6 +44,10 @@ class PlacementSettings(BaseModel):
     gap: float = Field(default=0.05, ge=0.0, le=0.2)
     # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
     max_concurrent_projects: int = Field(default=3, ge=1, le=6)
+    # 투입률 방식(월별 투입률, 사용자 결정 2026-10-05). 기본 "fixed": 조직형 데이터 측정(outputs/c6-monthly-scale*.json)에서
+    # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
+    # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
+    allocation_mode: Literal["fixed", "monthly"] = "fixed"
 
     def to_milp_params(self) -> MilpParams:
         return MilpParams(**self.model_dump())

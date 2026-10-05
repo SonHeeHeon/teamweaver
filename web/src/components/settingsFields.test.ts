@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { describeChanges } from "./settingsFields";
 
 const BASE = { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-               time_limit: 120, gap: 0.05, max_concurrent_projects: 3 };
+               time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const };
 
 describe("describeChanges", () => {
   it("바뀐 필드만 이전→현재로 나열한다(최소 투입률이 같아도 다른 변경을 보여 준다)", () => {
