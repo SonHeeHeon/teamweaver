@@ -25,6 +25,10 @@ def _fmt(v, nd=1, suffix=""):
     return f"{v:,.{nd}f}{suffix}" if isinstance(v, (int, float)) else html.escape(str(v))
 
 
+def _unf(r: dict) -> str:
+    return "" if not r.get("accepted") else f" · 미충원 {r.get('unfilled_seats')}"
+
+
 def _curve_svg(sweep: dict) -> str:
     """gap_to_best (%) against time limit, one line per solver. Unaccepted runs are drawn as an X at the top."""
     W, H, L, B = 360, 200, 46, 30
@@ -66,18 +70,30 @@ def build() -> Path:
     sizes = [s for s in (100, 200, 300) if (RESULTS / f"n{s}").exists()]
     pipe = {s: _load(s, "pipeline") for s in sizes}
     sweep = {s: _load(s, "sweep") for s in sizes}
-    rows_pipe, rows_plans, rows_rec, curves, rows_switch = [], [], [], [], []
+    rows_pipe, rows_plans, rows_rec, curves, rows_switch, rows_pairs = [], [], [], [], [], []
+
+    def best(p):
+        return max(p.get("plans", []), key=lambda x: x["objective"], default=None) if p else None
+
+    def cell(p):
+        if not p:
+            return "—"
+        b = best(p)
+        if b is None:
+            return f"안 없음 ({_fmt(p['steps'].get('optimize_s'), 0, '초')})"
+        return (f"{len(p['plans'])}안 · {_fmt(p['steps'].get('optimize_s'), 0, '초')} · 최선 {_fmt(b['objective'], 1)}"
+                f" · 미충원 {len(b['unfilled'])}")
+
     for s in sizes:
-        before, after = _load(s, "pipeline-cbc"), pipe[s]
-        if before and after:
-            def best(p):
-                return max(p.get("plans", []), key=lambda x: x["objective"], default=None)
-            b, a = best(before), best(after)
-            rows_switch.append(
-                f"<tr><td>{s}명</td><td>{_fmt(before['steps'].get('optimize_s'), 1, '초')} → {_fmt(after['steps'].get('optimize_s'), 1, '초')}</td>"
-                f"<td>{len(before.get('plans', []))} → {len(after.get('plans', []))}</td>"
-                f"<td>{_fmt(b and b['objective'], 1)} → {_fmt(a and a['objective'], 1)}</td>"
-                f"<td>{len(b['unfilled']) if b else '—'} → {len(a['unfilled']) if a else '—'}</td></tr>")
+        cbc, dflt, now = _load(s, "pipeline-cbc"), _load(s, "pipeline-default-pairs"), pipe[s]
+        rows_switch.append(f"<tr><td>{s}명</td><td>{cell(cbc)}</td><td>{cell(dflt)}</td><td><b>{cell(now)}</b></td></tr>")
+        pr = _load(s, "pairs")
+        if pr:
+            cells = "".join(
+                f"<td>{_fmt(r.get('full_objective'), 1) if r.get('accepted') else '해 없음'}"
+                f"{_unf(r)}"
+                f" · {_fmt(r['wall_s'], 0, '초')}</td>" for r in pr["runs"])
+            rows_pairs.append(f"<tr><td>{s}명 ({pr['projects']}개 사업)</td>{cells}</tr>")
     for s in sizes:
         p = pipe[s]
         if p:
@@ -113,11 +129,15 @@ th{{color:var(--muted)}}.wrap{{overflow-x:auto}}figure{{margin:1em 0}}figcaption
 </style></head><body><main>
 <h1>규모별 리허설 비교 (100·200·300명)</h1>
 <p class="sub">가상 조직 데이터(core/ingest/org_profile.py) · 사업 효과 NOT_CALIBRATED · 수치는 rehearsal/results의 원본 그대로</p>
-<h2>솔버 전환 전후 (CBC → HiGHS, 같은 데이터·같은 설정)</h2><div class="wrap"><table>
-<tr><th>규모</th><th>배치 A~D 시간</th><th>나온 안 수</th><th>가장 좋은 안 목적값</th><th>그 안의 미충원</th></tr>
-{''.join(rows_switch) or '<tr><td colspan=5>비교 자료 없음</td></tr>'}</table></div>
-<p class="sub">CBC 결과는 전환 전 리허설 실행(rehearsal/results/n*/pipeline-cbc.json)이다. 목적값은 클수록 좋다.</p>
-<h2>전 과정 소요 시간 (실제 서버, 관리자 기본 설정, HiGHS)</h2><div class="wrap"><table>
+<h2>개선 과정 한눈에 (같은 데이터, 관리자 기본 설정, 실제 서버 전 과정)</h2><div class="wrap"><table>
+<tr><th>규모</th><th>① 처음: CBC</th><th>② 솔버 HiGHS 전환</th><th>③ 협업 보상 쌍 5000→200</th></tr>
+{''.join(rows_switch) or '<tr><td colspan=4>비교 자료 없음</td></tr>'}</table></div>
+<p class="sub">목적값은 클수록 좋다. ①은 pipeline-cbc.json(300명은 측정 전 중단), ②는 pipeline-default-pairs.json, ③은 pipeline.json.</p>
+<h2>왜 ③인가: 협업 보상 쌍 수별 A안 (HiGHS 120초, 예전 기본 목적식으로 재채점)</h2><div class="wrap"><table>
+<tr><th>규모</th><th>보상 끔</th><th>200쌍</th><th>400쌍</th><th>800쌍</th><th>예전 기본(최대 5000)</th></tr>
+{''.join(rows_pairs) or '<tr><td colspan=6>미실행</td></tr>'}</table></div>
+<p class="sub">쌍 변수는 (쌍 수 × 사업 수)로 늘어 큰 규모에서 솔버가 좋은 해를 찾지 못했다. 시간을 600초로 늘려도 200명 미충원 57석은 그대로였다.</p>
+<h2>현재 설정의 전 과정 소요 시간 (HiGHS, 보상 쌍 200)</h2><div class="wrap"><table>
 <tr><th>규모</th><th>구성</th><th>업로드</th><th>배치 A~D</th><th>교체 검토(LLM)</th><th>PDF</th><th>나온 안(종료 사유)</th></tr>
 {''.join(rows_pipe) or '<tr><td colspan=7>미실행</td></tr>'}</table></div>
 <h2>안별 결과</h2><div class="wrap"><table>

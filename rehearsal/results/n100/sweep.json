@@ -1,0 +1,105 @@
+{
+ "size": 100,
+ "env": {
+  "commit": "a7bf67d",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T10:12:33+00:00"
+ },
+ "limits": [
+  15,
+  30,
+  60
+ ],
+ "best_objective": 41.901019889369934,
+ "runs": [
+  {
+   "solver": "cbc",
+   "time_limit": 15,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 38.49640003224928,
+   "skill_term": 36.5747,
+   "unfilled_seats": 0,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 13.38,
+   "gap_to_best": 0.081254
+  },
+  {
+   "solver": "highs",
+   "time_limit": 15,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 41.901019889369934,
+   "skill_term": 37.9526,
+   "unfilled_seats": 0,
+   "termination": "Optimal",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 9.57,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "highs",
+   "time_limit": 30,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 41.901019889369934,
+   "skill_term": 37.9526,
+   "unfilled_seats": 0,
+   "termination": "Optimal",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 9.51,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 30,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 40.06716591939486,
+   "skill_term": 36.5629,
+   "unfilled_seats": 0,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 28.08,
+   "gap_to_best": 0.043766
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 40.77139547982145,
+   "skill_term": 37.0359,
+   "unfilled_seats": 0,
+   "termination": "Optimal",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 32.53,
+   "gap_to_best": 0.026959
+  },
+  {
+   "solver": "highs",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": 41.901019889369934,
+   "skill_term": 37.9526,
+   "unfilled_seats": 0,
+   "termination": "Optimal",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 9.51,
+   "gap_to_best": 0.0
+  }
+ ],
+ "people": 100,
+ "projects": 20,
+ "finished_at": "2026-10-05T10:12:33+00:00"
+}

@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-05 · claude-a · 규모 리허설 결과: 보상 쌍 상한 200 + 인원별 권장 시간 + 모델 실험실
+- 브랜치/커밋: `feat/claude-a-scale-rehearsal`(`a7bf67d` 쌍 상한, `55c59a4` 모델 실험실, 이 항목 커밋) → main 병합.
+- 한 일:
+  - **서비스 기본 협업 보상 쌍 상한 5000 → 200**(`MilpParams.max_pairs`). 200명부터 쌍 변수(쌍×사업) 때문에 HiGHS가 600초에도 미충원 57석, 300명은 해 없음 → 200이면 세 규모 모두 미충원 0.
+  - **인원별 권장 시간**(`core/optimize/time_budget.py`): 100/200/300명 → 30/60/180초(측정 15/30/120초 × 1.5).
+  - 전 과정 재측정(실제 서버): 100명 29초, 200명 189초, 300명 392초 — 모두 A~D 4안·미충원 0·교체 검토·PDF 정상. 전후 비교 보고서 `rehearsal/results/rehearsal-report.html`.
+  - 모델 실험실(`core/evaluate/factor_lab/`) 100명 결과: 검증용 가정에서는 현재 모델(S만)이 최선, 제안·소형·단기 사업에 적합도 낮은 사람이 앉는 경향(0.53 vs 0.63~0.67).
+- 상대 영향:
+  - **모두**: 서비스 해가 달라진다(더 빨리·더 좋게). 화면의 "협업 시너지"는 상위 200쌍만 보상. 이전 플랜 토큰·캐시 무효.
+  - **claude-b**: 설정 화면 연결 요청 1건(work-split "요청"). C6 병합 뒤 "자리당 적합도" 항 정식 변경을 claude-a가 이어서 한다(상태 파일).
+  - 테스트 기준선: 1107 passed, 19 deselected, Phase 0 PASS 11.
+- 근거: `docs/model-roadmap.md`, `.omc/reports/2026-10-05-scale-rehearsal.md`
+
 ## 2026-10-05 · claude-a · 서비스 솔버 HiGHS 전환(K3) + 규모 리허설 도구
 - 브랜치/커밋: `feat/claude-a-highs-service`(← `feat/claude-a-scale-rehearsal`), main 병합 예정.
 - 한 일:

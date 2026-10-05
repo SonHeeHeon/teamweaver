@@ -1,0 +1,129 @@
+{
+ "size": 300,
+ "env": {
+  "commit": "a7bf67d",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T10:04:07+00:00"
+ },
+ "llm": true,
+ "steps": {
+  "generate_s": 0.13,
+  "upload_s": 0.34,
+  "optimize_s": 391.87,
+  "whatif_s": 8.6,
+  "apply_s": 0.92,
+  "pdf_s": 1.86
+ },
+ "bundle": {
+  "dataset_id": "org-n300-s2026",
+  "schema_version": 1,
+  "horizon_start": "2026-10",
+  "horizon_months": 6,
+  "cost_unit": "가상비용점(월)",
+  "synthetic": true,
+  "seed": 2026,
+  "generator": "core.ingest.org_profile v1",
+  "groups": {
+   "DP": 100,
+   "AI": 100,
+   "AU": 100
+  },
+  "flagship_project": "J001",
+  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+  "peak_demand_ratio": 0.8494
+ },
+ "upload": {
+  "status": 200,
+  "activated": true,
+  "errors": 0,
+  "warnings": 0,
+  "notes": [
+   "리뷰: 모든 회차 6676건을 썼다(평가자→피평가자 5395쌍, 그중 1229쌍은 여러 회차). 협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.",
+   "숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다(경계 (12, 36, 60, 96)개월 → 1~5). 요구 경력도 같은 구간을 쓴다.",
+   "협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, 2026-09-30까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다."
+  ]
+ },
+ "settings": {
+  "min_alloc": 0.3,
+  "clique_threshold_months": 6,
+  "lam": 0.3,
+  "mu": 0.2,
+  "time_limit": 120,
+  "gap": 0.05
+ },
+ "optimize_done": {
+  "event": "done",
+  "count": 4,
+  "requested_alternatives": 3
+ },
+ "picked_plan": "C",
+ "swap": {
+  "out_person_id": "AI0012",
+  "in_person_id": "AI0004",
+  "project_id": "J001"
+ },
+ "whatif": {
+  "status": 200,
+  "objective_delta": -0.1888888888888971,
+  "feasible": true,
+  "fallback_used": false,
+  "evidence": 0,
+  "rationale": "조건부 교체를 권고한다. 두 사람은 Python, Java, Spring, LLM 파인튜닝, 그룹사 업무, 금융 업무에서 모두 레벨 1이며, AI0012는 Docker가 레벨 2로 AI0004의 레벨 1보다 높다. 반면 AI0004는 Airflow, FastAPI, Kafka, Private Cloud, 프롬프트 엔지니어링 등 AI0012에게 기재되지 않은 기술을 보유하므로, 해당 기술이 필요한 역할이라면 교체 적합성이 높아진다."
+ },
+ "apply": {
+  "status": 200,
+  "feasible": true,
+  "objective": 129.93396693121693,
+  "warnings": []
+ },
+ "pdf": {
+  "status": 200,
+  "bytes": 458168,
+  "detail": null
+ },
+ "plans": [
+  {
+   "label": "A",
+   "arrived_s": 124.46,
+   "objective": 128.89382712888957,
+   "fulfillment": 0.39545430944963655,
+   "optimization_ratio": 0.8367943948422453,
+   "entries": 345,
+   "unfilled": [],
+   "people": 209
+  },
+  {
+   "label": "B",
+   "arrived_s": 214.08,
+   "objective": 129.59581696798566,
+   "fulfillment": 0.4007191069574247,
+   "optimization_ratio": 0.8411211617084464,
+   "entries": 336,
+   "unfilled": [],
+   "people": 205
+  },
+  {
+   "label": "C",
+   "arrived_s": 304.54,
+   "objective": 130.23264769801946,
+   "fulfillment": 0.3981613447559711,
+   "optimization_ratio": 0.8402222743165052,
+   "entries": 341,
+   "unfilled": [],
+   "people": 208
+  },
+  {
+   "label": "D",
+   "arrived_s": 391.87,
+   "objective": 127.1960465276621,
+   "fulfillment": 0.3948404724818276,
+   "optimization_ratio": 0.8268370574442575,
+   "entries": 343,
+   "unfilled": [],
+   "people": 205
+  }
+ ],
+ "finished_at": "2026-10-05T10:10:50+00:00"
+}

@@ -17,8 +17,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_TOLERANCE = 0.01
-# people -> seconds per solve (HiGHS, 1 thread). None until measured.
-MEASURED: dict[int, int | None] = {100: None, 200: None, 300: None}
+# people -> smallest measured time limit within 1 % of the best plan A (HiGHS, 1 thread, synergy pairs capped at
+# 200, organisation-shaped data). 2026-10-05 rehearsal: rehearsal/results/n{100,200,300}/sweep.json -- HiGHS hit the
+# 5 % gap at 9.5 / 21 / 92 s; CBC never got within 1 % (300 people: 2 seats unfilled even at 240 s).
+MEASURED: dict[int, int | None] = {100: 15, 200: 30, 300: 120}
+# Margin over the measured minimum: plan A is solved with a stricter 1 % gap in the service, and real data may be
+# harder than the synthetic bundles. Rounded up to 30 s steps.
+MARGIN = 1.5
+STEP_S = 30
+
+
+def _with_margin(seconds: int) -> int:
+    return int(-(-seconds * MARGIN // STEP_S) * STEP_S)
 
 
 @dataclass(frozen=True)
@@ -55,7 +65,8 @@ def recommend(n_people: int, table: dict[int, int | None] | None = None,
         return TimeBudget(fallback_s, 4 * fallback_s, False, "측정값 없음 — 기본값")
     for s in sizes:
         if n_people <= s:
-            v = table[s]
-            return TimeBudget(v, 4 * v, True, f"{s}명 리허설 측정(HiGHS, 최선 대비 1% 이내)")
-    v = table[sizes[-1]]
+            v = _with_margin(table[s])
+            return TimeBudget(v, 4 * v, True,
+                              f"{s}명 리허설 측정 {table[s]}초(HiGHS, 최선 대비 1% 이내) × 여유 {MARGIN}")
+    v = _with_margin(table[sizes[-1]])
     return TimeBudget(v, 4 * v, False, f"{sizes[-1]}명보다 큼 — 측정 범위 밖, 최소 {v}초 이상 권장")
