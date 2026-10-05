@@ -55,7 +55,7 @@ def test_same_month_on_two_shared_projects_counts_once(tmp_path):
     assert (c.co_months, c.project_count) == (3, 2)
 
 
-def test_latest_review_round_is_used_and_older_rounds_are_reported(tmp_path):
+def test_every_review_round_is_kept_oldest_first(tmp_path):
     tables = base_tables()
     tables["reviews.csv"].append({"review_id": "R2", "review_round": "2026H1", "project_code": "X-1",
                                   "reviewer_id": "P2", "reviewee_id": "P1", "reviewed_at": "2026-06-20",
@@ -64,11 +64,13 @@ def test_latest_review_round_is_used_and_older_rounds_are_reported(tmp_path):
                                    {"review_id": "R2", "polarity": "positive", "item": "소통"},
                                    {"review_id": "R2", "polarity": "negative", "item": "일정관리"}]
     ds, parsed, report = _convert(tmp_path, tables)
-    assert len(ds.reviews) == 1
-    r = ds.reviews[0]
-    assert r.positive.items == ["리더십", "소통"] and r.positive.text == "최근 평가"
-    assert parsed[0].text_polarity == pytest.approx((2 - 1) / 3)
-    assert any("1건" in n and "이전 회차" in n for n in report.notes)
+    assert [r.positive.text for r in ds.reviews] == ["설계가 꼼꼼했다", "최근 평가"]
+    assert ds.reviews[1].positive.items == ["리더십", "소통"]
+    assert [p.text_polarity for p in parsed] == pytest.approx([0.0, (2 - 1) / 3])
+    assert any("2건" in n and "1쌍은 여러 회차" in n and "두 방향을 반반" in n for n in report.notes)
+    graph = MemoryGraph.build(ds, parsed)
+    key = tuple(sorted((graph.pid_index["P1"], graph.pid_index["P2"])))
+    assert graph.pair_review_score[key] == pytest.approx((0.5 * 0 + 0.5 * 0 + 0.5 * (1 / 3) + 0.5 * (1 / 3)) / 2)
 
 
 def test_conversion_refuses_a_bundle_with_errors(tmp_path):
@@ -192,15 +194,13 @@ def test_several_rows_for_one_person_on_a_code_and_year_crossing(tmp_path):
     assert [(c.co_months, c.project_count) for c in ds.coworks] == [(2, 1)]          # Dec 2024 + Feb 2025
 
 
-def test_two_reviews_of_one_pair_on_the_same_date_are_an_error(tmp_path):
+def test_two_reviews_of_one_pair_on_the_same_date_are_both_kept(tmp_path):
     tables = base_tables()
     tables["reviews.csv"].append({**tables["reviews.csv"][0], "review_id": "R2", "review_round": "9"})
     tables["review_items.csv"] += [{"review_id": "R2", "polarity": "positive", "item": "소통"},
                                    {"review_id": "R2", "polarity": "negative", "item": "일정관리"}]
-    bundle, report = load_bundle(write_bundle(tmp_path / "b", tables))
-    with pytest.raises(ValueError):
-        to_dataset(bundle, report)
-    assert any(i.file == "reviews.csv" and "같은 날짜" in i.message for i in report.errors)
+    ds, _, _ = _convert(tmp_path, tables)
+    assert len(ds.reviews) == 2
 
 
 def test_requirement_months_on_a_band_boundary(tmp_path):
@@ -210,19 +210,18 @@ def test_requirement_months_on_a_band_boundary(tmp_path):
     assert ds.projects[0].requirements[0].min_level == 2
 
 
-def test_same_day_pair_in_an_older_round_does_not_block_regardless_of_row_order(tmp_path):
+def test_review_order_does_not_depend_on_row_order(tmp_path):
+    texts = []
     for order in ("old-first", "new-first"):
         tables = base_tables()
         r1 = tables["reviews.csv"][0]
-        old2 = {**r1, "review_id": "R2"}
         new3 = {**r1, "review_id": "R3", "reviewed_at": "2026-06-01", "positive_text": "최신"}
-        tables["reviews.csv"] = [r1, old2, new3] if order == "old-first" else [new3, r1, old2]
-        for rid in ("R2", "R3"):
-            tables["review_items.csv"] += [{"review_id": rid, "polarity": "positive", "item": "소통"},
-                                           {"review_id": rid, "polarity": "negative", "item": "일정관리"}]
-        ds, _, report = _convert(tmp_path / order, tables)
-        assert ds.reviews[0].positive.text == "최신"
-        assert any("2건" in n for n in report.notes)
+        tables["reviews.csv"] = [r1, new3] if order == "old-first" else [new3, r1]
+        tables["review_items.csv"] += [{"review_id": "R3", "polarity": "positive", "item": "소통"},
+                                       {"review_id": "R3", "polarity": "negative", "item": "일정관리"}]
+        ds, _, _ = _convert(tmp_path / order, tables)
+        texts.append([r.positive.text for r in ds.reviews])
+    assert texts[0] == texts[1] == ["설계가 꼼꼼했다", "최신"]
 
 
 def test_no_project_inside_the_horizon_is_an_error(tmp_path):
@@ -232,3 +231,23 @@ def test_no_project_inside_the_horizon_is_an_error(tmp_path):
     with pytest.raises(ValueError):
         to_dataset(bundle, report)
     assert any("하나도 없다" in i.message for i in report.errors)
+
+
+def test_multi_round_datasets_are_refused_by_paths_without_a_round_id(tmp_path):
+    import sqlite3
+    from core.datagen.llm_checkpoint import apply_checkpoint, generate_and_parse_checkpointed
+    from core.graph.rehydrate import from_sqlite
+    from core.graph.sqlite_store import build_sqlite
+    tables = base_tables()
+    tables["reviews.csv"].append({**tables["reviews.csv"][0], "review_id": "R2", "reviewed_at": "2026-06-20"})
+    tables["review_items.csv"] += [{"review_id": "R2", "polarity": "positive", "item": "소통"},
+                                   {"review_id": "R2", "polarity": "negative", "item": "일정관리"}]
+    ds, parsed, _ = _convert(tmp_path, tables)
+    build_sqlite(ds, parsed, tmp_path / "g.db")
+    conn = sqlite3.connect(tmp_path / "g.db")
+    with pytest.raises(ValueError, match="several rounds"):
+        from_sqlite(conn)
+    with pytest.raises(ValueError, match="one review per direction"):
+        apply_checkpoint(ds, {})
+    with pytest.raises(ValueError, match="one review per direction"):
+        generate_and_parse_checkpointed(ds, None, "g", "p", 0, tmp_path / "ck.json")

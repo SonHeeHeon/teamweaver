@@ -268,3 +268,74 @@ def test_memory_matches_sqlite_at_larger_scale_and_full_hop_range(tmp_path):
             print(f"hops={hops}: reached={len(mem)}")
     finally:
         conn.close()
+
+
+def _legacy_pair_scores(ds, parsed):
+    """The pre-2026-10-05 algorithm: one review per direction (last wins), one polarity per direction."""
+    pid = {p.id: i for i, p in enumerate(ds.people)}
+    pol = {(r.reviewer_id, r.reviewee_id): r.text_polarity for r in parsed}
+    acc = {}
+    for (rv, re_), r in {(r.reviewer_id, r.reviewee_id): r for r in ds.reviews}.items():
+        key = tuple(sorted((pid[rv], pid[re_])))
+        acc.setdefault(key, []).append(0.5 * _expected_item_score(r) + 0.5 * pol.get((rv, re_), 0.0))
+    return {k: sum(v) / len(v) for k, v in acc.items()}
+
+
+@pytest.mark.parametrize("seed", [1, 3, 42])
+def test_one_review_per_direction_gives_exactly_the_old_scores(seed):
+    ds = generate_dataset(40, 8, seed=seed)
+    parsed = parse_reviews_rule_based(ds.reviews)
+    assert MemoryGraph.build(ds, parsed).pair_review_score == _legacy_pair_scores(ds, parsed)
+
+
+def test_frozen_fixture_scores_are_unchanged():
+    from core.config import FIXTURES_DIR
+    from core.datagen.fixtures_io import load_fixtures
+    ds, parsed = load_fixtures(FIXTURES_DIR)
+    assert MemoryGraph.build(ds, parsed).pair_review_score == _legacy_pair_scores(ds, parsed)
+
+
+def _review(rv, re_, pos, neg):
+    return PeerReview(reviewer_id=rv, reviewee_id=re_,
+                      positive=ReviewSection(items=pos, text="t"), negative=ReviewSection(items=neg, text="t"))
+
+
+def test_every_round_of_a_pair_is_averaged_with_equal_weight():
+    from core.domain.models import Dataset, ParsedReview
+    ds0 = generate_dataset(5, 1, seed=1)
+    a, b = ds0.people[0].id, ds0.people[1].id
+    reviews = [_review(a, b, ["소통", "협업", "성실"], ["문서화"]),        # item score 0.5
+               _review(a, b, ["소통"], ["문서화", "일정관리", "성실"])]     # item score -0.5
+    parsed = [ParsedReview(reviewer_id=a, reviewee_id=b, text_polarity=1.0),
+              ParsedReview(reviewer_id=a, reviewee_id=b, text_polarity=0.0)]
+    ds = Dataset(people=ds0.people, projects=ds0.projects, coworks=[], reviews=reviews)
+    g = MemoryGraph.build(ds, parsed)
+    key = tuple(sorted((g.pid_index[a], g.pid_index[b])))
+    # (0.5*0.5 + 0.5*1.0 + 0.5*-0.5 + 0.5*0.0) / 2 = 0.25 ; the old code kept only the last round (-0.25)
+    assert g.pair_review_score[key] == pytest.approx(0.25)
+
+
+def test_misaligned_parsed_list_falls_back_to_the_old_behaviour():
+    from core.domain.models import Dataset, ParsedReview
+    ds0 = generate_dataset(5, 1, seed=1)
+    a, b = ds0.people[0].id, ds0.people[1].id
+    reviews = [_review(a, b, ["소통", "협업", "성실"], ["문서화"]),
+               _review(a, b, ["소통"], ["문서화", "일정관리", "성실"])]
+    parsed = [ParsedReview(reviewer_id=a, reviewee_id=b, text_polarity=0.0)]      # not one per review
+    ds = Dataset(people=ds0.people, projects=ds0.projects, coworks=[], reviews=reviews)
+    assert MemoryGraph.build(ds, parsed).pair_review_score == _legacy_pair_scores(ds, parsed)
+
+
+def test_directions_are_balanced_before_the_pair_average():
+    from core.domain.models import Dataset, ParsedReview
+    ds0 = generate_dataset(5, 1, seed=1)
+    a, b = ds0.people[0].id, ds0.people[1].id
+    good = _review(a, b, ["소통", "협업", "성실"], ["문서화"])          # item 0.5
+    bad = _review(b, a, ["소통"], ["문서화", "일정관리", "성실"])        # item -0.5
+    reviews = [good, good, good, bad]
+    parsed = [ParsedReview(reviewer_id=r.reviewer_id, reviewee_id=r.reviewee_id, text_polarity=0.0) for r in reviews]
+    ds = Dataset(people=ds0.people, projects=ds0.projects, coworks=[], reviews=reviews)
+    g = MemoryGraph.build(ds, parsed)
+    key = tuple(sorted((g.pid_index[a], g.pid_index[b])))
+    # a→b averages to 0.25, b→a is -0.25; three a→b rounds must not outweigh the single b→a view
+    assert g.pair_review_score[key] == pytest.approx(0.0)
