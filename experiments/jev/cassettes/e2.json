@@ -1,0 +1,7450 @@
+{
+ "00b216f444d38fe6e2302f8272590504937e237d5252956bb75a94121ff5bf64": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.82,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.18,
+     "3": 0.8,
+     "4": 0.02
+    },
+    "score": 2.83,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 635,
+  "latency_s": 0.1884623330552131,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:07+0900"
+ },
+ "00d1b7ca73967ebbd4661f7cb178f4e11ac490fa6f9530c9c648f5a44130c9ea": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.6,
+     "3": 0.25,
+     "4": 0.0
+    },
+    "score": 2.1,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 614,
+  "latency_s": 0.2676387499086559,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:56+0900"
+ },
+ "01a8ac11601c45eadc2850a4e4de3dc3d0a836dc65421d311208bc23828c5a96": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.58,
+     "3": 0.33,
+     "4": 0.0
+    },
+    "score": 2.24,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 600,
+  "latency_s": 0.18097762507386506,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:29+0900"
+ },
+ "01ebf5b1030735bb55a8a2056743df281fcce5ce85be4bd9ed03da49d112f4af": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.41,
+     "3": 0.55,
+     "4": 0.0
+    },
+    "score": 2.51,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 600,
+  "latency_s": 0.21436554100364447,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:09+0900"
+ },
+ "0234719266711ffb6a1b5fb614d4564db6e29b69b81d17761da3293c37f7b298": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.08,
+     "2": 0.52,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.32,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 532,
+  "latency_s": 0.20348620903678238,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:13+0900"
+ },
+ "02e504ec92c83474759017067a011ec4f958d3fe49bcc657778758fe16755eef": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.82,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.19,
+     "3": 0.79,
+     "4": 0.01
+    },
+    "score": 2.81,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 527,
+  "latency_s": 0.22192466701380908,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:58+0900"
+ },
+ "03d96974853a79cf0b4143f766bcbc2252a3138ba9a8abec3e6fd6e4a0d1d594": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.03,
+     "3": 0.86,
+     "4": 0.11
+    },
+    "score": 3.08,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 620,
+  "latency_s": 0.19126604194752872,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:21+0900"
+ },
+ "0509c1e8908ed21bc7be9435508851b63cc18abcbce302fd0ff8231c401b02a7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.07,
+     "3": 0.88,
+     "4": 0.05
+    },
+    "score": 2.98,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.19990816712379456,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:10+0900"
+ },
+ "0533592f6c4ad19635123a47ce85dcfee1e34317004e3c7d5b25700a1df172d1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.12,
+     "2": 0.69,
+     "3": 0.19,
+     "4": 0.0
+    },
+    "score": 2.07,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 582,
+  "latency_s": 0.1977859998587519,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:38+0900"
+ },
+ "05fc1ff5ee29b017ca0eee8ced00fe0cd59ddc271bc0762108f2b20aefc0a9f5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.37,
+     "2": 0.57,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.68,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 597,
+  "latency_s": 0.2005056671332568,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:32+0900"
+ },
+ "065fd1b998fe918762867f9b4acb07edf0b6976e54d2ff51e076f292216c6ca6": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.25,
+     "2": 0.6,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.9,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 636,
+  "latency_s": 0.19540512491948903,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:51+0900"
+ },
+ "09ad4235d5efc644d532fa40c9c7be595dd1c21b6d0b14a3c90db0737d361b38": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.51,
+     "3": 0.46,
+     "4": 0.0
+    },
+    "score": 2.43,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 570,
+  "latency_s": 0.1768274160567671,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "09dbff4c59956c891c111928e331cfae1749856e9417b8aac7498327bfbe8df0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.6,
+     "3": 0.35,
+     "4": 0.0
+    },
+    "score": 2.3,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 596,
+  "latency_s": 0.35239170817658305,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:01+0900"
+ },
+ "0b57c45f6f74cdef8ea97622a2bedcb938fdc3b23e6de732d432777c10ab10b5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.76,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.75,
+     "2": 0.21,
+     "3": 0.03,
+     "4": 0.0
+    },
+    "score": 1.26,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 630,
+  "latency_s": 0.1806144171860069,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:34+0900"
+ },
+ "0cd89816a2ebef6f539332c41ea0da307bc67fc98564acfac570a672830d4322": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.07,
+     "2": 0.33,
+     "3": 0.6,
+     "4": 0.0
+    },
+    "score": 2.53,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.2089444170705974,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:09+0900"
+ },
+ "0e8e0e80cf1f2613bc2eec9faf2938d887c619078cab09142286c660a684fe5a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.81,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.19,
+     "3": 0.79,
+     "4": 0.02
+    },
+    "score": 2.82,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 519,
+  "latency_s": 0.18559070792980492,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:38+0900"
+ },
+ "0eacf363ca48ebb1fc8818a58c7d4eb10873aa987f913cb975d84aed44b19476": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.36,
+     "2": 0.52,
+     "3": 0.12,
+     "4": 0.0
+    },
+    "score": 1.76,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 619,
+  "latency_s": 0.19382241694256663,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:57+0900"
+ },
+ "0f0dfe56720e5bd9d3152f25aa8c93a7b76837fce69ac1a0d5d22b1b12096402": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.66,
+     "3": 0.25,
+     "4": 0.0
+    },
+    "score": 2.16,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 542,
+  "latency_s": 0.2006552501115948,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:32+0900"
+ },
+ "0f80377e28f165e6f8345e3f5e026afe06aa21199f9eda989659d8407021f9a7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.62,
+     "3": 0.23,
+     "4": 0.0
+    },
+    "score": 2.08,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 640,
+  "latency_s": 0.18238437501713634,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:38+0900"
+ },
+ "11b24668c2e430d087859787f0b9f7fc289d898e1f21f96c908d47333a779597": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.6,
+     "3": 0.25,
+     "4": 0.0
+    },
+    "score": 2.1,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 650,
+  "latency_s": 0.1810827909503132,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:51+0900"
+ },
+ "12650c1608b45377e2fc4d6e8b0fa2ed2d8852e09cf5c9314da8a4fd9a77bdaf": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.48,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.42,
+     "3": 0.48,
+     "4": 0.0
+    },
+    "score": 2.38,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 558,
+  "latency_s": 0.19745112513191998,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:00+0900"
+ },
+ "13497edf7252dab01b84f69b1de3f1829a32ac47e5b3dc4689a944c3d6e91afd": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.46,
+     "3": 0.51,
+     "4": 0.0
+    },
+    "score": 2.48,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 641,
+  "latency_s": 0.20037841703742743,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:59+0900"
+ },
+ "13654254529ee70a4fd3f5f8f156923d4a6ac07b413354c3e0e4f9d9f6abbd73": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.61,
+     "2": 0.33,
+     "3": 0.05,
+     "4": 0.0
+    },
+    "score": 1.43,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 603,
+  "latency_s": 0.20104695903137326,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:12+0900"
+ },
+ "13b0760ede041ff72bfaa7399ae82591b496f3f09b36768500b34710783c93b7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.15,
+     "3": 0.82,
+     "4": 0.03
+    },
+    "score": 2.87,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.1802127081900835,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:56+0900"
+ },
+ "13b85f8a445d851abbec9d665c8083cfbcc1d12ac032e6cb160f9d66ebcbd5f4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.12,
+     "2": 0.68,
+     "3": 0.2,
+     "4": 0.0
+    },
+    "score": 2.07,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 537,
+  "latency_s": 0.20730920904316008,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:02+0900"
+ },
+ "1423a0b53ef83e7039bf339faf2a9949af09879764dedccb150ecc0adf81f910": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.25,
+     "3": 0.73,
+     "4": 0.01
+    },
+    "score": 2.73,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 598,
+  "latency_s": 0.2038497910834849,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:49+0900"
+ },
+ "16e2ba9a8f2099686ebd939a5e8d151ca5825bcc616c5d15447aa2835be5d317": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.56,
+     "3": 0.35,
+     "4": 0.0
+    },
+    "score": 2.27,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 640,
+  "latency_s": 0.2074333329219371,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:20+0900"
+ },
+ "16e3f3808df8059dbe654658428ae85325468c358fb513df442e5943c11014b1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.35,
+     "2": 0.55,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.74,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 589,
+  "latency_s": 0.21935387491248548,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "186a59ba3799e0d05f6bcc862c2d530ee0d13cae071c077fdc9df1a89a312fa0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.61,
+     "3": 0.34,
+     "4": 0.0
+    },
+    "score": 2.3,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 574,
+  "latency_s": 0.2193005841691047,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:38+0900"
+ },
+ "196e61223734ac2dd8cb64a307a661f7b9df04f02e7833f2a93cd33e6fadc178": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.86,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.14,
+     "3": 0.84,
+     "4": 0.02
+    },
+    "score": 2.88,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 577,
+  "latency_s": 0.17262616707012057,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:34+0900"
+ },
+ "1a00daa4150d46992b324ea2888365e6d03bba3065fbe73f3667aa913c11d991": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.89,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.11,
+     "3": 0.87,
+     "4": 0.02
+    },
+    "score": 2.9,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 583,
+  "latency_s": 0.272183959139511,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:13+0900"
+ },
+ "1a62be09666e668a4ec85732fe7b9d2d5510833e702d752f7e70721c276433a3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.84,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.16,
+     "3": 0.82,
+     "4": 0.01
+    },
+    "score": 2.83,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 582,
+  "latency_s": 0.18055366701446474,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:02+0900"
+ },
+ "1aa7cc011c17eb4ed1533cd8b28c406315fc7148df2f5d3b8553bd1cc17b7cec": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.31,
+     "3": 0.68,
+     "4": 0.0
+    },
+    "score": 2.66,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.18207370792515576,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:39+0900"
+ },
+ "1dbc033c46ad09f26c2879fadb90ee69beb342184b0baad0037cb7e4d71482c5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.31,
+     "3": 0.67,
+     "4": 0.0
+    },
+    "score": 2.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 554,
+  "latency_s": 0.17966616712510586,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:08+0900"
+ },
+ "1ded5a15697c484a7cfcbd46909ce8ef5024f08d9aacb289c04c425c262fcfcd": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.07,
+     "3": 0.86,
+     "4": 0.07
+    },
+    "score": 3.0,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 647,
+  "latency_s": 0.18304404197260737,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:30+0900"
+ },
+ "1e9947c958bf5b3cd6820a0763c0b4fdc55b246fb75d0891cd6625d542a3a9fe": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.54,
+     "3": 0.43,
+     "4": 0.0
+    },
+    "score": 2.4,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 648,
+  "latency_s": 0.20755479205399752,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:07+0900"
+ },
+ "1ec0c756f5e98e73c8f492aa76d4df6f7e61dd2fc7d091095928e2e9ec13c5fc": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.84,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.83,
+     "2": 0.15,
+     "3": 0.02,
+     "4": 0.0
+    },
+    "score": 1.19,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 619,
+  "latency_s": 0.20870154188014567,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:35+0900"
+ },
+ "1f9d5636cd6d9949ead17a32fedf9f0e3b831affbe803cc2211447dc836637e6": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.79,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.23,
+     "3": 0.74,
+     "4": 0.02
+    },
+    "score": 2.77,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 565,
+  "latency_s": 0.17453920794650912,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:21+0900"
+ },
+ "20e7d57f11ad7f750c6311503143f07fdeb2a9d35f5464a7df12fb9f6233216f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.33,
+     "3": 0.64,
+     "4": 0.01
+    },
+    "score": 2.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 690,
+  "latency_s": 0.17941583297215402,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:31+0900"
+ },
+ "22eeb01b04405946a533e4b1687e6d101392ad8cf5ed7578ae6835cbc57b4cc4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.58,
+     "3": 0.33,
+     "4": 0.0
+    },
+    "score": 2.24,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 623,
+  "latency_s": 0.22667708294466138,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "245626ccc9048fc8533cea15355b7fe6087774dcbba98fb8e69f501cac9fe27d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.14,
+     "3": 0.84,
+     "4": 0.02
+    },
+    "score": 2.87,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 549,
+  "latency_s": 0.2037117499858141,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:51+0900"
+ },
+ "24e9c56e084b36f499b82827bca86801ee639d3ad31f2f0b250708f54981d078": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.5,
+     "3": 0.44,
+     "4": 0.0
+    },
+    "score": 2.39,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 575,
+  "latency_s": 0.204036665847525,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:16+0900"
+ },
+ "25d194c9211b1e96c1ba48413420d93063f4c00f01b02326107b68a6960709a2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.38,
+     "2": 0.51,
+     "3": 0.11,
+     "4": 0.0
+    },
+    "score": 1.74,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 639,
+  "latency_s": 0.1838518341537565,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:46+0900"
+ },
+ "271c55fe751a47931c8e2e63cb85b0db18dc6378e3f3f63eecd29acff1c56b39": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.65,
+     "3": 0.24,
+     "4": 0.0
+    },
+    "score": 2.13,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 596,
+  "latency_s": 0.21260445890948176,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:22+0900"
+ },
+ "279b9d14556dfecdc2ed10a1c6496b9ad4b6f6aff9057599731de14acac65577": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.29,
+     "3": 0.6900000000000001,
+     "4": 0.0
+    },
+    "score": 2.68,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 592,
+  "latency_s": 0.1948828329332173,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "2808420854681d750c13ff2a3615e45ce3a135e5fa40540852f3d3d4fdfc0823": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.28,
+     "3": 0.71,
+     "4": 0.01
+    },
+    "score": 2.72,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 557,
+  "latency_s": 0.1951591658871621,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:11+0900"
+ },
+ "28241aed6d319651fd5fe8e1eb25d0b62d6d8957b088c1991e93e1d244b61405": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.68,
+     "3": 0.21,
+     "4": 0.0
+    },
+    "score": 2.09,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 589,
+  "latency_s": 0.18567316699773073,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:37+0900"
+ },
+ "287c6096bcc1ddfc4c7c9fbdeecbc3e79846ce600320b1ecd7379d23b1a2dc64": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.08,
+     "3": 0.89,
+     "4": 0.03
+    },
+    "score": 2.95,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.21809483296237886,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:55+0900"
+ },
+ "28aa08b13015008cf61122c15e04196cf48be192a57fbe95424106ef35797b7d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.33,
+     "3": 0.63,
+     "4": 0.01
+    },
+    "score": 2.62,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 602,
+  "latency_s": 0.2019589589908719,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:53+0900"
+ },
+ "2a030714be149d121cc64575060bea3db98cdbb22802d1dee63691c15832eca3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.83,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.18,
+     "3": 0.8,
+     "4": 0.02
+    },
+    "score": 2.82,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 552,
+  "latency_s": 0.18486595922149718,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:10+0900"
+ },
+ "2c41a84919e1987e63cde2e79bb9e3de926f5383c5c2c662a762dfb245758398": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.14,
+     "2": 0.68,
+     "3": 0.18,
+     "4": 0.0
+    },
+    "score": 2.05,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 641,
+  "latency_s": 0.1912937918677926,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:13+0900"
+ },
+ "2f357f98870b196b1c149238b43820f94e3aa30b710440f76eb940c392c4bf8c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.54,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.48,
+     "3": 0.49,
+     "4": 0.0
+    },
+    "score": 2.45,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 641,
+  "latency_s": 0.19447270804084837,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:29+0900"
+ },
+ "2f8f63ba8a8ee2fb3adcbc7349a32baf19ae3923da286a146dd998e5326f09a2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.07,
+     "3": 0.88,
+     "4": 0.05
+    },
+    "score": 2.97,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 584,
+  "latency_s": 0.19640500005334616,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:02+0900"
+ },
+ "2fb1a1ed370ba1de3b2f6ddca0b6295fd4cf548e50674e4371ef3b58a1a1e68e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.12,
+     "3": 0.82,
+     "4": 0.05
+    },
+    "score": 2.91,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 633,
+  "latency_s": 0.1945697080809623,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:30+0900"
+ },
+ "30df317c04b1a4d3071e5a762e359bfc3d31dad884c3e92bcce3fb7a909e405b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.41,
+     "2": 0.49,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.69,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 566,
+  "latency_s": 0.18434145883657038,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:12+0900"
+ },
+ "3164baf5154b8fd7cb156e4cdae202e7b15f65766d2c6c6f5acecc0ee99b7795": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.61,
+     "3": 0.34,
+     "4": 0.0
+    },
+    "score": 2.29,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 540,
+  "latency_s": 0.21614237502217293,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:57+0900"
+ },
+ "3199e63441cbb465f0e13f24d5a393882a953ba55ca53c0650360ad409db7cf5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.28,
+     "3": 0.7,
+     "4": 0.01
+    },
+    "score": 2.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 572,
+  "latency_s": 0.18710283283144236,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:46+0900"
+ },
+ "323a5625adc824648a63aa219e5a76f533a510f161186e51f73f829580f5b0f8": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.36,
+     "3": 0.62,
+     "4": 0.01
+    },
+    "score": 2.63,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 658,
+  "latency_s": 0.20011562504805624,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:03+0900"
+ },
+ "3328914125e4d7751d72fd00aa653b7581f605b4669b988a4e3340f2f5959ff3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.84,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.16,
+     "3": 0.81,
+     "4": 0.03
+    },
+    "score": 2.87,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 593,
+  "latency_s": 0.1752825421281159,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "338b231f2542ef0a4ac537deedf24075096570445d2583856b2ead83fbb3cafa": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.55,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.35,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 698,
+  "latency_s": 0.26937424996867776,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:11+0900"
+ },
+ "33e1a6c967fd96d8d68edd6ff7f531e379ee0b39156ac2b0c7789a5a47db4bc4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.44,
+     "3": 0.51,
+     "4": 0.0
+    },
+    "score": 2.47,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 668,
+  "latency_s": 0.1926009999588132,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:49+0900"
+ },
+ "34252e72e4b5a9b8eecc481cd233f74d8dea653688031b82ea089020b9c42efa": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.2,
+     "2": 0.65,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.95,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 572,
+  "latency_s": 0.1936128749512136,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:33+0900"
+ },
+ "34c913540e0fc4de55edb42e184abb6f4541b6e1202b510cb066dc1271f8c9b1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.14,
+     "3": 0.84,
+     "4": 0.01
+    },
+    "score": 2.85,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 578,
+  "latency_s": 0.21600016695447266,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:45+0900"
+ },
+ "35ea2f32a26efb5b883f002e74af07ab171fd2a39c7fc672aebb8990edcc4f2d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.08,
+     "2": 0.59,
+     "3": 0.33,
+     "4": 0.0
+    },
+    "score": 2.25,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 674,
+  "latency_s": 0.21127587486989796,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:48+0900"
+ },
+ "369b8720546a19ff7767eb2ab6ad491f79cfb3964ab0ae8386681023928c602a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.86,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.11,
+     "3": 0.84,
+     "4": 0.05
+    },
+    "score": 2.93,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 608,
+  "latency_s": 0.18147616600617766,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:54+0900"
+ },
+ "376060b303856c052264fb565b7a4716cf206c76d8229fa56bffc81e36e4ae90": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.68,
+     "2": 0.26,
+     "3": 0.05,
+     "4": 0.0
+    },
+    "score": 1.34,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 621,
+  "latency_s": 0.1860982079524547,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:30+0900"
+ },
+ "378e040b0c20c8444fbfe6464a2b304e3947574a47f415eaeee7a83ed7a1c7ee": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.23,
+     "3": 0.74,
+     "4": 0.02
+    },
+    "score": 2.77,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 689,
+  "latency_s": 0.2007986248936504,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:45+0900"
+ },
+ "37d75b25099c822a96066399f34f3b783ad7f09ed705030f019d499bc96ccedc": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.77,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.18,
+     "2": 0.72,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.91,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 564,
+  "latency_s": 0.19279816700145602,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:49+0900"
+ },
+ "38622c8ebd874f502e1edfa9ad22608180e93845beb8456a71a254547325f1b4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.56,
+     "3": 0.42,
+     "4": 0.0
+    },
+    "score": 2.4,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 623,
+  "latency_s": 0.18883616686798632,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:52+0900"
+ },
+ "38b43157011715cc9ec1ddeba68b9fc770fd50a23ce906cf43812da908b856ad": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.55,
+     "2": 0.39,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.51,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 567,
+  "latency_s": 0.19787412509322166,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:19+0900"
+ },
+ "3981cd01b2c330dd7a43ee92f067e8fc73e6d57ac0f12ca6cd877f51a1be6503": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.24,
+     "2": 0.61,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.91,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.1859714169986546,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:59+0900"
+ },
+ "39c3841c3ee3760c9a253d36a06e9372ab877ed1b59776f30021baca2873d709": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.53,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.5,
+     "2": 0.43,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.56,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 586,
+  "latency_s": 0.19144887500442564,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:35+0900"
+ },
+ "3b1824d3baadd62807a5080fc2cdd41fdd0ce6dbd5cb02c1724febe9033d0f78": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.18,
+     "2": 0.59,
+     "3": 0.23,
+     "4": 0.0
+    },
+    "score": 2.05,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 601,
+  "latency_s": 0.1791014161426574,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:31+0900"
+ },
+ "3c5359283ef372e81641c4b81e0315464d0965d131baf1cc76c8aa0375fc8a80": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.35,
+     "3": 0.63,
+     "4": 0.0
+    },
+    "score": 2.61,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 567,
+  "latency_s": 0.19566320907324553,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "3c6d5d678c9cb0cc31eef45bbc06845a4b271fba7e7efbea6ae0984b39e2dc81": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.15,
+     "3": 0.83,
+     "4": 0.02
+    },
+    "score": 2.86,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 574,
+  "latency_s": 0.20866070804186165,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:33+0900"
+ },
+ "3caa126bbaa3b45d8a9af4013f7b608436d2edd4a8c94c60d0306663b4417204": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.56,
+     "3": 0.39,
+     "4": 0.0
+    },
+    "score": 2.34,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 605,
+  "latency_s": 0.1842905420344323,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:52+0900"
+ },
+ "3d97c5bd242581ce6b6ecb7657820784c547be003d084a54bdb7b99b0d9b1c05": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.8,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.01,
+     "3": 0.76,
+     "4": 0.23
+    },
+    "score": 3.22,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 630,
+  "latency_s": 0.1817963330540806,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:45+0900"
+ },
+ "3e28c230dc2bf13517ed7a43dc4c0b9308d251a6721d517dc07c7f5141553dd6": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.21,
+     "2": 0.61,
+     "3": 0.18,
+     "4": 0.0
+    },
+    "score": 1.96,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 604,
+  "latency_s": 0.17870354186743498,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:09+0900"
+ },
+ "3e9ac2e9d5fc6d82d8cb8bb439578f5eb5873b15835c3f741c696fde89c1df0a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.63,
+     "3": 0.22,
+     "4": 0.0
+    },
+    "score": 2.06,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 558,
+  "latency_s": 0.20213904208503664,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:59+0900"
+ },
+ "3ef9c047eebfa195c0f2a10997eb1b434c12f70f838b151b5f0adfac1a180356": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.28,
+     "2": 0.54,
+     "3": 0.17,
+     "4": 0.0
+    },
+    "score": 1.89,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 612,
+  "latency_s": 0.2200505828950554,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:48+0900"
+ },
+ "3f7dc8cea722b180c487d6bde0a403f75f514c91fe09847eb2a672b0457604dd": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.12,
+     "2": 0.65,
+     "3": 0.23,
+     "4": 0.0
+    },
+    "score": 2.11,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.18535650009289384,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:12+0900"
+ },
+ "40e6d1cb3562376b149e450d603da363c9633e07e0ecbda10c1b76ff8763be85": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.55,
+     "3": 0.34,
+     "4": 0.0
+    },
+    "score": 2.23,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 599,
+  "latency_s": 0.21495295781642199,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:56+0900"
+ },
+ "4147955ac05d3b2b9d7a53520b68eb618b81d2d03165850878cabdaf7a054e19": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.23,
+     "3": 0.75,
+     "4": 0.01
+    },
+    "score": 2.74,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 556,
+  "latency_s": 0.17458208301104605,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "4159bdba76c79040b8a8fe4855380c0048910bdf48f3ad9fedfc40d970f474c0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.53,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.49,
+     "2": 0.43,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.55,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 625,
+  "latency_s": 0.1928153750486672,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:43+0900"
+ },
+ "43cb8138c24369ecfdcaa08c061767dd43ee13c59dd2c1e080d9a2ccd91c62d4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.05,
+     "3": 0.89,
+     "4": 0.06
+    },
+    "score": 3.0,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 590,
+  "latency_s": 0.20437587518244982,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:14+0900"
+ },
+ "440abb99f13adb5ac86d74d1eb16328918f985e56677516b595c2c1514d2cc9a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.53,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.51,
+     "2": 0.42,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.56,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 575,
+  "latency_s": 0.18504429096356034,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:01+0900"
+ },
+ "44b014fb713f0815750757b3d4505cb56b4a2e69738d4493bc69cbbabac1f944": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.37,
+     "2": 0.54,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 576,
+  "latency_s": 0.20498850010335445,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:46+0900"
+ },
+ "44d995247e7788419e41a23cb8e54f03e4314461edbf812cd812da0ac2fa5efe": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.33,
+     "2": 0.57,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.77,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 576,
+  "latency_s": 0.18342016683891416,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:06+0900"
+ },
+ "452c54a476714297d1e1a96482fdda22761f28ea6ea7d9e09981e53b8a7b4127": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.3,
+     "2": 0.58,
+     "3": 0.12,
+     "4": 0.0
+    },
+    "score": 1.82,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 611,
+  "latency_s": 0.18218629201874137,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:07+0900"
+ },
+ "45366843c15cbf78e38fb6691b464ac424766abf4af4505a29d8d927b3014601": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.48,
+     "3": 0.47,
+     "4": 0.0
+    },
+    "score": 2.41,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 642,
+  "latency_s": 0.17627274990081787,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:22+0900"
+ },
+ "45d60b09326f1ce6eccd72ee1f6c0207cf46d25276b7f6e0673a72b3a91a941d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.34,
+     "3": 0.63,
+     "4": 0.01
+    },
+    "score": 2.63,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 609,
+  "latency_s": 0.18283216608688235,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:05+0900"
+ },
+ "46d32f8c1b6be066dda173be0cd017dedbd53973b1737bc54668ebf9019be7fb": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.89,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.06,
+     "3": 0.87,
+     "4": 0.07
+    },
+    "score": 3.01,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 596,
+  "latency_s": 0.22042099991813302,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:21+0900"
+ },
+ "47669cafdabe4a39df105dae219a75a3dd5585a7eac5a4e5878200bab9e1ba99": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.29,
+     "2": 0.6,
+     "3": 0.11,
+     "4": 0.0
+    },
+    "score": 1.82,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 607,
+  "latency_s": 0.20048983301967382,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:09+0900"
+ },
+ "47d75cf0bd391cd460da7ec4df8ae912b7f210558534027d82e4d519cba8dc28": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.8,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.22,
+     "3": 0.76,
+     "4": 0.01
+    },
+    "score": 2.78,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 590,
+  "latency_s": 0.18548374995589256,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:54+0900"
+ },
+ "48e826698e879f667e241c368470d0b67a180f768eecb8a0cf8cc5348060dead": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.35,
+     "2": 0.56,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.74,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 567,
+  "latency_s": 0.4425628751050681,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:18+0900"
+ },
+ "49280c499461fe4b6eacba72da8dfd96ec96cdefb15cb94041d4dbb00eba699c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.35,
+     "2": 0.56,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.73,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 590,
+  "latency_s": 0.18941333307884634,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:17+0900"
+ },
+ "4942d6c6eb06e088d9d7a38b97965b2085b8cf3df2766508c953b9f502a57e8f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.07,
+     "2": 0.55,
+     "3": 0.38,
+     "4": 0.0
+    },
+    "score": 2.31,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 554,
+  "latency_s": 0.24077016720548272,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:42+0900"
+ },
+ "49f6ed84a7cafc11ac98193561b884699b3fdd46344c334240e912141454077c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.44,
+     "3": 0.52,
+     "4": 0.0
+    },
+    "score": 2.49,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 633,
+  "latency_s": 0.18138420907780528,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:52+0900"
+ },
+ "4a60494e6d5eceec6781a9baa100ccb35491515cea4e87f96cc3aefeea969ba2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.49,
+     "3": 0.48,
+     "4": 0.0
+    },
+    "score": 2.46,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 633,
+  "latency_s": 0.20205237506888807,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:53+0900"
+ },
+ "4b60e5db6bc39a18888e69ce8328d41a9d48abf2443ea4705c20ef65db633272": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.8,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.2,
+     "3": 0.78,
+     "4": 0.02
+    },
+    "score": 2.81,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 536,
+  "latency_s": 0.17083204188384116,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:57+0900"
+ },
+ "4c1be3d35d74831ee2cae5b3af804546f453bfe31f78658b521776d768c689c2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.33,
+     "2": 0.57,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.77,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 601,
+  "latency_s": 0.18213816592469811,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:11+0900"
+ },
+ "4c27eb3da4eb9548a70fe6d17bb6d9b3e461d71e3ab68d89299c2b2194d59a56": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.92,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.02,
+     "3": 0.91,
+     "4": 0.07
+    },
+    "score": 3.04,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 605,
+  "latency_s": 0.21550504211336374,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:48+0900"
+ },
+ "4d35e4a46a1cedf6393e55ef191ab5e27b546b41bc3f63c39d5e70ebeb4cc00d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.82,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.02,
+     "1": 0.8,
+     "2": 0.16,
+     "3": 0.02,
+     "4": 0.0
+    },
+    "score": 1.18,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 587,
+  "latency_s": 0.21294758399017155,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:32+0900"
+ },
+ "4e0d055ff068dfb16558e3b92bb6381286552d10abe8a6a076f99e49abe549db": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.16,
+     "2": 0.53,
+     "3": 0.3,
+     "4": 0.01
+    },
+    "score": 2.16,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 1406,
+  "latency_s": 0.2110764579847455,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:20+0900"
+ },
+ "5046ae48df36ff7e1b40e8c81ca6968fabc44763120f6707008ce0c39eb9475b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.05,
+     "3": 0.88,
+     "4": 0.07
+    },
+    "score": 3.02,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 592,
+  "latency_s": 0.19702420802786946,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:00+0900"
+ },
+ "516fc1136897c447cda95cf583b77ac92e68a83eea04c4c18158bb9a2c7b5dfa": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.35,
+     "3": 0.61,
+     "4": 0.01
+    },
+    "score": 2.6,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 683,
+  "latency_s": 0.19709625001996756,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "51be85502a9fa62db5223e9c0fec9d37f633c8e47b9381fedfd5b9615ad77a59": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.33,
+     "3": 0.64,
+     "4": 0.01
+    },
+    "score": 2.63,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 654,
+  "latency_s": 0.17967966687865555,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:49+0900"
+ },
+ "5444372c4ec1993705820e3124b8dd6b73f626bf8a9d4dfb9705464a9872e903": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.58,
+     "3": 0.38,
+     "4": 0.0
+    },
+    "score": 2.34,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 624,
+  "latency_s": 0.1928670417983085,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "5451eead0aa9cb29bd69af016a6b5091bca23ac3b2638a937bc65555b2bf14dc": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.76,
+     "2": 0.2,
+     "3": 0.03,
+     "4": 0.0
+    },
+    "score": 1.25,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 587,
+  "latency_s": 0.18712554196827114,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:11+0900"
+ },
+ "54caa71ccd5c0c1c4bae0d904132e5ec16221d07df4e6a990165d7ddf575c8d0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.52,
+     "3": 0.39,
+     "4": 0.0
+    },
+    "score": 2.31,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 662,
+  "latency_s": 0.18302783300168812,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:35+0900"
+ },
+ "55506ab2153cccaf41389ed21c5255baf2de3aba212f885526dcc47231af7ad1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.35,
+     "3": 0.62,
+     "4": 0.01
+    },
+    "score": 2.61,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.20126362494193017,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:29+0900"
+ },
+ "55ffc529b09e9e7eaa70f93c505ad107df33ef3e39a1e0fd47dc630c305f39c1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.7,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.33,
+     "3": 0.65,
+     "4": 0.01
+    },
+    "score": 2.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 599,
+  "latency_s": 0.1874604590702802,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:13+0900"
+ },
+ "5613732d423d309c22f2a613508c146cfee1c590d7c6c0b057f7c6401b7f9022": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.66,
+     "3": 0.24,
+     "4": 0.0
+    },
+    "score": 2.14,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 545,
+  "latency_s": 0.1938443339895457,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:03+0900"
+ },
+ "563b9ff605ea61b649dd550341eb3c391e3da789eb7a805253affcb15645e4f5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.35,
+     "3": 0.63,
+     "4": 0.0
+    },
+    "score": 2.62,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 566,
+  "latency_s": 0.1921839581336826,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:31+0900"
+ },
+ "56ac2e5bf13a9801f2c366f5d28048b2ebc19bdab209145bed0492746e7445bb": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.32,
+     "3": 0.65,
+     "4": 0.0
+    },
+    "score": 2.62,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 574,
+  "latency_s": 0.19198866607621312,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:35+0900"
+ },
+ "58eb8f4cd25a041bb876b160e31640142cdd498423d0c5a4dd4ebfcf67d174f8": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.49,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.47,
+     "2": 0.46,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.6,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 581,
+  "latency_s": 0.1905191249679774,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:00+0900"
+ },
+ "5ac0144a2407df4a5c7fb96d3a933029beddb36190b679b8b85285e81484b5e3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.18,
+     "3": 0.77,
+     "4": 0.02
+    },
+    "score": 2.77,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 618,
+  "latency_s": 0.1986875410657376,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:37+0900"
+ },
+ "5bd07ca0ac15f222a3fc528653eb69ab49ae25564983569e35923c479a3e5de1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.29,
+     "3": 0.69,
+     "4": 0.01
+    },
+    "score": 2.7,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 601,
+  "latency_s": 0.18973979214206338,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:41+0900"
+ },
+ "5c0705d43b6518d72679cc5ff33f264c7ad98f7a7240e4ab4b59563e6026613e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.02,
+     "3": 0.89,
+     "4": 0.09
+    },
+    "score": 3.07,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 559,
+  "latency_s": 0.17879395792260766,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:46+0900"
+ },
+ "5c7e30565f07bf7540f57af925c60b6c097020277c34be417fa9968aacfff395": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.41,
+     "2": 0.52,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.18466691696085036,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:13+0900"
+ },
+ "5d1782a3df46109014d7b618992d320c0703518333cbe12c92116e81595d8281": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.87,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.07,
+     "3": 0.85,
+     "4": 0.08
+    },
+    "score": 3.01,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 632,
+  "latency_s": 0.18818687507882714,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:05+0900"
+ },
+ "5dbe0be17f76e342d3a9c7d2063c8a25ea047ba9972bdd580b15f91a7d58ed64": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.7,
+     "3": 0.13,
+     "4": 0.0
+    },
+    "score": 1.95,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 617,
+  "latency_s": 0.19587787496857345,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "5f5a934f877b6a5f080fac6c70f3aa89b14c2c399d6bf0d442aebcc180942fa7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.87,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.14,
+     "3": 0.85,
+     "4": 0.01
+    },
+    "score": 2.87,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 560,
+  "latency_s": 0.18880591681227088,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:19+0900"
+ },
+ "60d778e2e654563e3705269996fb8ba56b907a6e011670efc51b99f27cc6bad7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.31,
+     "3": 0.68,
+     "4": 0.0
+    },
+    "score": 2.67,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 607,
+  "latency_s": 0.19501533405855298,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:29+0900"
+ },
+ "65c3c2235998cc5c2f1ecba20edc580b88481e1654f931ba65466b76b8af600f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.02,
+     "3": 0.88,
+     "4": 0.1
+    },
+    "score": 3.08,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 574,
+  "latency_s": 0.2863822500221431,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:10+0900"
+ },
+ "66771d9c519dab728399ebe6a6cbd26bcd491d0420852adfbb7714c080adf01a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.58,
+     "3": 0.31,
+     "4": 0.0
+    },
+    "score": 2.2,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 597,
+  "latency_s": 0.22258416702970862,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:59+0900"
+ },
+ "66c6c3f5c784041fd048d967d250ad3ed323f6e83b2104d149aecc5b39b202f4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.07,
+     "2": 0.6,
+     "3": 0.33,
+     "4": 0.0
+    },
+    "score": 2.27,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 701,
+  "latency_s": 0.1923862500116229,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:41+0900"
+ },
+ "66f6fe73b68764ce492606687706122f5ea4c1f03d706f8f51f544aca0ce7601": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.43,
+     "3": 0.52,
+     "4": 0.0
+    },
+    "score": 2.48,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 593,
+  "latency_s": 0.19939729198813438,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:20+0900"
+ },
+ "6771b3e6a23e7da780d0995af048b4e79b377a7d991b76876ebdc8e64e16823e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.1,
+     "3": 0.85,
+     "4": 0.04
+    },
+    "score": 2.93,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 618,
+  "latency_s": 0.20562075008638203,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:36+0900"
+ },
+ "6a02f0afd2de0dd4e4891eb4407ae5a57d4b6245b63dd02f1c23808f284b6c61": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.61,
+     "3": 0.28,
+     "4": 0.0
+    },
+    "score": 2.17,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 602,
+  "latency_s": 0.18724062503315508,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:44+0900"
+ },
+ "6af940e63fdce30869bafc994fd60993650950b9d10388ba8c004edd9ef46b0f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.43,
+     "3": 0.52,
+     "4": 0.01
+    },
+    "score": 2.49,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.2863862910307944,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:43+0900"
+ },
+ "6c0bd9721ed5a9c444a8fb21bd4902d9b0d6a72d3b74804d3068f48945ab1c23": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.83,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.13,
+     "3": 0.81,
+     "4": 0.06
+    },
+    "score": 2.92,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 648,
+  "latency_s": 0.20235054194927216,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:58+0900"
+ },
+ "6d4898e44a7fe597e1c77c1a4f347ab038e67e863772e32cde6899e9c818939e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.59,
+     "3": 0.3,
+     "4": 0.0
+    },
+    "score": 2.19,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 539,
+  "latency_s": 0.21256137499585748,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:33+0900"
+ },
+ "6d852d146f18e7096acb56d3b5937710dedb3f7ac12027767045bface2901976": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.46,
+     "2": 0.45,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.61,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 593,
+  "latency_s": 0.20229533407837152,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:18+0900"
+ },
+ "6f38f55fc620628d9cc2e12e8fb22bf2b63032db7bc26183dbb3bab3e439202b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.43,
+     "2": 0.51,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.64,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 582,
+  "latency_s": 0.19315120903775096,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:39+0900"
+ },
+ "705303c2b71deaa5c0a744cdd120ea581b9f03a1ac6fca5bb79b789941df45bb": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.2,
+     "2": 0.56,
+     "3": 0.24,
+     "4": 0.0
+    },
+    "score": 2.03,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 631,
+  "latency_s": 0.2196695830207318,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:58+0900"
+ },
+ "70b5570ca7915e2c3e186d1acade641a28f5767424582c373a2891bf47351732": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.61,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.54,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.34,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 598,
+  "latency_s": 0.18734083301387727,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:53+0900"
+ },
+ "715ec709d5aad6e29c92d7d110d519c721abef5fe2c8398009b35244f1b89958": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.45,
+     "3": 0.53,
+     "4": 0.0
+    },
+    "score": 2.52,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 637,
+  "latency_s": 0.21517920796759427,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:33+0900"
+ },
+ "7241087a482f8a7c3ad959af786b338c1f69456ff825e013894044afbcdf410e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.27,
+     "2": 0.62,
+     "3": 0.11,
+     "4": 0.0
+    },
+    "score": 1.84,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 642,
+  "latency_s": 0.21501404186710715,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:55+0900"
+ },
+ "7274457d6cab4864d0be6ef0df48b0a8e3d32e2bfcf607a683b174a80057e738": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.61,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.53,
+     "3": 0.43,
+     "4": 0.0
+    },
+    "score": 2.39,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 554,
+  "latency_s": 0.22274766699410975,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:14+0900"
+ },
+ "729f4948e1b374df7818c614117010366fce075e274197d9460da196a791760b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.53,
+     "3": 0.45,
+     "4": 0.0
+    },
+    "score": 2.43,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 514,
+  "latency_s": 0.25601204205304384,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:43+0900"
+ },
+ "733a7c62e165d98727bc38fbd8d72d980853bd64c4adcc4c45290c8a87472dd7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.6,
+     "2": 0.36,
+     "3": 0.04,
+     "4": 0.0
+    },
+    "score": 1.43,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 611,
+  "latency_s": 0.18306274991482496,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "740929011790dad0bc9d17ece088fc88d449bd3d073fdc5266ca8941cf0cd980": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.77,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.25,
+     "3": 0.73,
+     "4": 0.02
+    },
+    "score": 2.76,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 592,
+  "latency_s": 0.4309730001259595,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:33+0900"
+ },
+ "743e8cd247cc6ebec65eeaaab37352be7a3ce4a137260210a2d950a926e871fa": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.49,
+     "3": 0.48,
+     "4": 0.0
+    },
+    "score": 2.44,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 587,
+  "latency_s": 0.22967345803044736,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "74a4e9e0f444a370b07a2785c1edd09c13781075d68e2b086b60b3041255251c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.81,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.2,
+     "3": 0.78,
+     "4": 0.01
+    },
+    "score": 2.8,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 566,
+  "latency_s": 0.18635116703808308,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:40+0900"
+ },
+ "76a692ec45f19754fd25d8f0c018449e4785a5af0e77546351a0b17b47337efd": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.74,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.68,
+     "3": 0.22,
+     "4": 0.0
+    },
+    "score": 2.12,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 644,
+  "latency_s": 0.18473012512549758,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:21+0900"
+ },
+ "77055bdbfe4b4dd66f29053a95f6906cae05c746de5a6466a2f5e34d134c01de": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.23,
+     "2": 0.62,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.92,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 638,
+  "latency_s": 0.19207925000227988,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:31+0900"
+ },
+ "7a23bbd6d3084b2e431d5050873374f618fb4d49f001acc25a2c9e9a3ae2f783": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.92,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.03,
+     "3": 0.9,
+     "4": 0.07
+    },
+    "score": 3.04,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 605,
+  "latency_s": 0.19370812480337918,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:42+0900"
+ },
+ "7b44db6e6b180403e03d75f6ad4dba4f97d672649c43e52adc4f82f8fdfa7b2f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.85,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.01,
+     "3": 0.82,
+     "4": 0.17
+    },
+    "score": 3.16,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 560,
+  "latency_s": 0.18397395801730454,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:08+0900"
+ },
+ "7de6af2af99e7519b886a50e0e3a41b429816462cede3205a75316bb903c69c1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.61,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.42,
+     "3": 0.56,
+     "4": 0.0
+    },
+    "score": 2.53,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 628,
+  "latency_s": 0.18190270802006125,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:36+0900"
+ },
+ "7ef1f1d42155894126adb99d7b18e4332baadcfd9048b244d6bc768aa0600a46": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.37,
+     "2": 0.5700000000000001,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.69,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 527,
+  "latency_s": 0.25192554108798504,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:42+0900"
+ },
+ "81efcc7f50db1facc050220b87ac3f92ef09778bee26c2f44ac7a117beb59e47": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.48,
+     "3": 0.46,
+     "4": 0.0
+    },
+    "score": 2.4,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 601,
+  "latency_s": 0.1937890420667827,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "82bf9e8c6568c443cd7d366bd808f1a400b1d8d1612c120ff86c02771272c778": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.45,
+     "3": 0.52,
+     "4": 0.0
+    },
+    "score": 2.49,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 653,
+  "latency_s": 0.1733142090961337,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:00+0900"
+ },
+ "847278ab97c1bf98c50ae7735fff4a21fc7750f400d71bb9bd91a4156d1b64b0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.89,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.11,
+     "3": 0.87,
+     "4": 0.02
+    },
+    "score": 2.9,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 559,
+  "latency_s": 0.17986300005577505,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:31+0900"
+ },
+ "850ab8c0a47699106027d7978a4c7eb1d8f78e16cdd9437c0775e388b404e270": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.44,
+     "2": 0.48,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.64,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 561,
+  "latency_s": 0.19251158414408565,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:10+0900"
+ },
+ "85225fc08db5fdd7c5fa7416fdc0cb27e7b6fd58ad55aa986e2423a339614e34": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.11,
+     "3": 0.86,
+     "4": 0.03
+    },
+    "score": 2.92,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 634,
+  "latency_s": 0.20015099993906915,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:32+0900"
+ },
+ "86c5d1489e025300980de2d75a33a03c6da5d63d52299fe1364282d14ded227f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.43,
+     "2": 0.49,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 655,
+  "latency_s": 0.19352833391167223,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:41+0900"
+ },
+ "88f44a8b40ef26f0240c891c3ac3567ae7db920e6342757f4eaf430159ee3a9f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.2,
+     "3": 0.76,
+     "4": 0.01
+    },
+    "score": 2.75,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 564,
+  "latency_s": 0.2129757080692798,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:44+0900"
+ },
+ "8a7c157f13b6318d4db0233f3fd054ed006816583cb18430e8faad1e3dc6b5a0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.36,
+     "2": 0.52,
+     "3": 0.12,
+     "4": 0.0
+    },
+    "score": 1.76,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 575,
+  "latency_s": 0.21289029088802636,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:21+0900"
+ },
+ "8a9102c6931c07731a2366c0655afe775b36c5daec180ab9341d865c039e2349": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.65,
+     "3": 0.18,
+     "4": 0.0
+    },
+    "score": 2.0,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 639,
+  "latency_s": 0.18826208310201764,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:03+0900"
+ },
+ "8ad9be1db15af9e5ad7f9da2b394705d15f2ea4dfd196ef196e311f72d9a88c9": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.38,
+     "3": 0.6,
+     "4": 0.01
+    },
+    "score": 2.6,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 568,
+  "latency_s": 0.19888712489046156,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "8adb4963eacab91dcef9d43454e31f7c085b5408a2f7fdf9ce1488b7d59caf85": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.44,
+     "3": 0.54,
+     "4": 0.0
+    },
+    "score": 2.52,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 538,
+  "latency_s": 0.19053245801478624,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:06+0900"
+ },
+ "8ceabb00679ef494bc28997266941fc060f6173ac77f20744080297539a6b229": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.52,
+     "3": 0.46,
+     "4": 0.0
+    },
+    "score": 2.44,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 618,
+  "latency_s": 0.1994746250566095,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:44+0900"
+ },
+ "8ea4c23beb5fe3115154a451ea8f25761be7b90175e277d4bb6752bcf439916e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.05,
+     "3": 0.89,
+     "4": 0.06
+    },
+    "score": 3.01,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 589,
+  "latency_s": 0.18500416702590883,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:05+0900"
+ },
+ "8f92c9edfe5e99446f698bfde1356084b607ac2e967c9a0c2417f87e372ce994": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.36,
+     "2": 0.57,
+     "3": 0.07,
+     "4": 0.0
+    },
+    "score": 1.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 578,
+  "latency_s": 0.21607837500050664,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:19+0900"
+ },
+ "913642d7a5ecc171b42a0b48b21af61e44d0f1ea4705ad2543887b8e708bfcb4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.56,
+     "3": 0.39,
+     "4": 0.0
+    },
+    "score": 2.33,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 551,
+  "latency_s": 0.18381745787337422,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:45+0900"
+ },
+ "91d336d8c6b813e6ca34dde4856e6e17a406ded8d99673e711e2ba61ceecb17d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.2,
+     "2": 0.67,
+     "3": 0.13,
+     "4": 0.0
+    },
+    "score": 1.93,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 543,
+  "latency_s": 0.20078404201194644,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:02+0900"
+ },
+ "940228e1e68dca1ffaf6bff0e6271bfab1792c1f2ef9265ffc0a56db7b3492bf": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.47,
+     "3": 0.48,
+     "4": 0.0
+    },
+    "score": 2.42,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 625,
+  "latency_s": 0.23701200005598366,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:07+0900"
+ },
+ "958b12394331228b3c65dfcec76eaabd72ee5bd7b99f5f26ef2d348f701cb08c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.78,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.21,
+     "3": 0.76,
+     "4": 0.01
+    },
+    "score": 2.75,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 552,
+  "latency_s": 0.19819104112684727,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:53+0900"
+ },
+ "95b258b40fcc1ffe78b9b882e83886d17b32b54bd37e8e5f9c262bdbc632685c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.31,
+     "2": 0.63,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.75,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 550,
+  "latency_s": 0.17398695787414908,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:40+0900"
+ },
+ "976e4e7c57401886efced734b911eb67027de0b222b8838fb4e526e3ecb5f5ab": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.74,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.28,
+     "3": 0.7,
+     "4": 0.01
+    },
+    "score": 2.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 550,
+  "latency_s": 0.1960761658847332,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:36+0900"
+ },
+ "996443f39f116326e168a68e8ec09ebfe7777e920ace86c15fbf208581c8107a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.41,
+     "3": 0.57,
+     "4": 0.0
+    },
+    "score": 2.55,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 576,
+  "latency_s": 0.17668229201808572,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:12+0900"
+ },
+ "9b3fff30adf5623bfedadea47b10b86027372ae3b7b3b4045662b38d32c68ca5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.7,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.68,
+     "2": 0.26,
+     "3": 0.05,
+     "4": 0.0
+    },
+    "score": 1.35,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 569,
+  "latency_s": 0.19840162503533065,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:02+0900"
+ },
+ "9f6dab20cba139ff507d4c082e07aaac81986fd2efb7620e927abdaf04270ba3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.34,
+     "2": 0.56,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.75,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 543,
+  "latency_s": 0.1922473341692239,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:51+0900"
+ },
+ "a23f1e1ab52f5109d5966a0e3b3adf9c9e28e18dabc79003c75575a2bbe40d0a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.36,
+     "3": 0.61,
+     "4": 0.0
+    },
+    "score": 2.58,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 619,
+  "latency_s": 0.22087904205545783,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:37+0900"
+ },
+ "a35437122ef9f91ba9b92b28b06ea375bdd061612970bb6b68f8c5f27884ffca": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.47,
+     "2": 0.47,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.59,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 546,
+  "latency_s": 0.18070166697725654,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "a5485f4209380bfd0510e4187a0dc7217b978e5aca01276a67bc3a398040224e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.61,
+     "3": 0.22,
+     "4": 0.0
+    },
+    "score": 2.04,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 622,
+  "latency_s": 0.17589333397336304,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:06+0900"
+ },
+ "a5c6f616cef6d4f626f97b78b0010876b6751a52fb8daf408b994548ceae3ea0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.06,
+     "3": 0.86,
+     "4": 0.08
+    },
+    "score": 3.01,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 629,
+  "latency_s": 0.22152954200282693,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:58+0900"
+ },
+ "a718f12630ef0f3a64305c4330fd48dbfa94f306d898551fb8c80c08d642f9f4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.43,
+     "3": 0.52,
+     "4": 0.0
+    },
+    "score": 2.46,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 563,
+  "latency_s": 0.2082239999435842,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:43+0900"
+ },
+ "a724aaac7ccaf45dbe1175ce59c90865005333c4f356d8f4bad2378bc43c9191": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.59,
+     "3": 0.31,
+     "4": 0.0
+    },
+    "score": 2.21,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 619,
+  "latency_s": 0.20131645910441875,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:03+0900"
+ },
+ "a8b0dab6b0feba4025717fa61c9865bb904a99c7469a9a20d511001375d8ded0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.55,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.35,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 624,
+  "latency_s": 0.23577295802533627,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:40+0900"
+ },
+ "a8d618861bc95fcdf880b8c09d808c094bd57e5aab7dbf4edc2a2cb9d3f3ab7f": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.06,
+     "3": 0.89,
+     "4": 0.05
+    },
+    "score": 2.99,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 599,
+  "latency_s": 0.20785870891995728,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:49+0900"
+ },
+ "aad2c6757f6075b50be66627addb8b3a0fea1e4cb2c47051158c6832f5c4954b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.16,
+     "2": 0.66,
+     "3": 0.18,
+     "4": 0.0
+    },
+    "score": 2.03,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 575,
+  "latency_s": 0.20271950005553663,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:08+0900"
+ },
+ "aad9d0ca16d1115a10a3ad001bd7541385d29404ca54dc8f5ee23245a638256b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.61,
+     "3": 0.22,
+     "4": 0.0
+    },
+    "score": 2.05,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 554,
+  "latency_s": 0.19643837492913008,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:09+0900"
+ },
+ "ab23c578cb5ecb60df716b96c424cd079875efaf3a5063958aa1b88f8f1e38b2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.58,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.5,
+     "3": 0.47,
+     "4": 0.0
+    },
+    "score": 2.44,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 550,
+  "latency_s": 0.17880333284847438,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:44+0900"
+ },
+ "ab3e394774aa8c787fb8796abb2c93fd0258022babf0cc936d0e5e20f85b717c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.33,
+     "3": 0.65,
+     "4": 0.01
+    },
+    "score": 2.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 588,
+  "latency_s": 0.19129691692069173,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:54+0900"
+ },
+ "ac2cb2f980cffc2bba25344e31105bab84a32cb90cf0f7f368e65ae51c559993": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.4,
+     "3": 0.57,
+     "4": 0.01
+    },
+    "score": 2.58,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 586,
+  "latency_s": 0.20083954115398228,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:52+0900"
+ },
+ "ac454c175acff5e6a82c624b45415e36deb7f8b17e6071a3d59dcded4b1eac56": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.89,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.03,
+     "3": 0.87,
+     "4": 0.1
+    },
+    "score": 3.07,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 538,
+  "latency_s": 0.19565608305856586,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:53+0900"
+ },
+ "ac7c7cd2d1888e0163ba17595a58fc9de5416dbc55805dad641f46eada3237db": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.39,
+     "3": 0.59,
+     "4": 0.0
+    },
+    "score": 2.57,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 556,
+  "latency_s": 0.19771445798687637,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:40+0900"
+ },
+ "ac8621f4ff9b2109e7e8df7709029cdb96c6537610704fbfeb5706888b84fda2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.67,
+     "2": 0.29,
+     "3": 0.04,
+     "4": 0.0
+    },
+    "score": 1.37,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 594,
+  "latency_s": 0.19432829204015434,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:39+0900"
+ },
+ "ae2f44414629fec30a53b5525f6c276dc281cb1a9eb962ee6fbb4754ec4ddbe9": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.08,
+     "2": 0.47000000000000003,
+     "3": 0.45,
+     "4": 0.0
+    },
+    "score": 2.38,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 691,
+  "latency_s": 0.18026270787231624,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:19+0900"
+ },
+ "b1ebf16e34d0ca41fe8eabb7982d16ee0d3ee72c7229af37ce903b29ffbcec4a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.86,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.02,
+     "3": 0.83,
+     "4": 0.15
+    },
+    "score": 3.14,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 568,
+  "latency_s": 0.21695670788176358,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:16+0900"
+ },
+ "b2e122159bfdac1d1347d8ac2605fc95e21794df10a49d11f67c0dc52cd205b9": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.36,
+     "3": 0.62,
+     "4": 0.01
+    },
+    "score": 2.61,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 604,
+  "latency_s": 0.1859289170242846,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:17+0900"
+ },
+ "b35d6e2ea88360b41d58d820ebefca3e89343ed864941453053c87d5412db5ea": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.43,
+     "2": 0.49,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.65,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 562,
+  "latency_s": 0.1851687920279801,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:57+0900"
+ },
+ "b453b1b019460cfd6a86e487015bf698f52f691d35657e9d81005306d3ea674a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.09,
+     "3": 0.86,
+     "4": 0.05
+    },
+    "score": 2.96,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 866,
+  "latency_s": 0.1756412498652935,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:20+0900"
+ },
+ "b6b1915550efe4cfb4e04a084e5537763c3dac7cc0cdf79dce1fcc9175338fde": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.6,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.43,
+     "3": 0.55,
+     "4": 0.0
+    },
+    "score": 2.53,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 592,
+  "latency_s": 0.1951639170292765,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:06+0900"
+ },
+ "b6c1911935efc7783bc0294aaede336fe0837a6f5384d62702b0217098e5f779": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.76,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.72,
+     "3": 0.11,
+     "4": 0.0
+    },
+    "score": 1.93,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 561,
+  "latency_s": 0.193091084016487,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:01+0900"
+ },
+ "b7223980a585c4e9190784549e8d1f54565513b148598d54c618b8dcae03ccf8": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.87,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.1,
+     "3": 0.86,
+     "4": 0.04
+    },
+    "score": 2.93,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 591,
+  "latency_s": 0.22010166617110372,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:22+0900"
+ },
+ "b78f0e0029ee070f3491362912422dc1890f934aef8640e3036d8a7f54a13c66": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.57,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.4,
+     "2": 0.48,
+     "3": 0.12,
+     "4": 0.0
+    },
+    "score": 1.72,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 588,
+  "latency_s": 0.17674466595053673,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:11+0900"
+ },
+ "b826d862244d973656788f1bfa51d1736bec2e16693ebe39f60f19015ea0799b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.36,
+     "3": 0.6,
+     "4": 0.0
+    },
+    "score": 2.55,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 620,
+  "latency_s": 0.19103291584178805,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:16+0900"
+ },
+ "b98cba2ebef4418f841a4a5675df6f911701503697a95c62f29de83ff6062de2": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.9,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.08,
+     "3": 0.88,
+     "4": 0.04
+    },
+    "score": 2.96,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 553,
+  "latency_s": 0.19736241712234914,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:22+0900"
+ },
+ "b9f6d6f38e67c7c114410de678501ca5be81cc3a79333d4a3a1e70c6b0297c72": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.4,
+     "3": 0.56,
+     "4": 0.0
+    },
+    "score": 2.52,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 570,
+  "latency_s": 0.1908718328922987,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "ba4e6552e667f736e21187313ab90a30f92951201e1d83a6f55854620d008fc1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.44,
+     "2": 0.48,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.64,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 585,
+  "latency_s": 0.2113337079063058,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:51+0900"
+ },
+ "bb45ebc1c12ed05bfde83ac70f424310c2d874acaffd131dafd39ef7b3bbf119": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.18,
+     "2": 0.68,
+     "3": 0.14,
+     "4": 0.0
+    },
+    "score": 1.96,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 617,
+  "latency_s": 0.2101719998754561,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:34+0900"
+ },
+ "bbbff15422a84988eeef1b82cc4f3f53f6316fc6f8cffde6d26a6d8d3e1c0acb": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.28,
+     "3": 0.7,
+     "4": 0.01
+    },
+    "score": 2.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 613,
+  "latency_s": 0.1887370420154184,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:00+0900"
+ },
+ "bc175b0f5ef28379ede85ff2c34271793ec23cfb46058eadf7422efe404c010e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.08,
+     "2": 0.51,
+     "3": 0.41,
+     "4": 0.0
+    },
+    "score": 2.32,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 559,
+  "latency_s": 0.1801533750258386,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:45+0900"
+ },
+ "bc6586eac1fe84ac7dbe9cfef9b36a4b55e5cf612f632aed430e873250b1d09a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.11,
+     "2": 0.63,
+     "3": 0.26,
+     "4": 0.0
+    },
+    "score": 2.15,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 591,
+  "latency_s": 0.18116029119119048,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:14+0900"
+ },
+ "bc85b494c53455d5a983b42ed5bbce6b0eda4e3dc1e8c8e20798ac4373700c9d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.74,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.29,
+     "3": 0.69,
+     "4": 0.01
+    },
+    "score": 2.7,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 568,
+  "latency_s": 0.19137883302755654,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:12+0900"
+ },
+ "be12f5f34ca1afec30b53ee3b3c9c6105538b23f742067a0daaa682e863f4092": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.14,
+     "2": 0.66,
+     "3": 0.2,
+     "4": 0.0
+    },
+    "score": 2.06,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 585,
+  "latency_s": 0.2130908751860261,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:17+0900"
+ },
+ "bed1a13a4c76c8d2086255c600400807466a4b97e754de525a8dfd71213f7748": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.3,
+     "2": 0.61,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.79,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 545,
+  "latency_s": 0.18626233306713402,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:35+0900"
+ },
+ "c361cefd676fd5b0bca37edc730c72474cb0d2d51602bc8a80a928cb1c1adaa5": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.25,
+     "3": 0.72,
+     "4": 0.01
+    },
+    "score": 2.72,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 591,
+  "latency_s": 0.18280041706748307,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:39+0900"
+ },
+ "c403fa7dffd0b19c643508bdeaf41cc945e425996169e2cab9dff82e49579e76": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.63,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.56,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.37,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 526,
+  "latency_s": 0.18924266705289483,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:10+0900"
+ },
+ "c44898d2a1a6aa16ce10a07b63dc9cf9dfc5688fd95e0d3b28a709fe8ddd55a7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.61,
+     "3": 0.29,
+     "4": 0.0
+    },
+    "score": 2.2,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 536,
+  "latency_s": 0.1800002499949187,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:04+0900"
+ },
+ "c519bf6b8b04a77d0be4e71c15787269f75ee8e6aa4efc24613a15eb6a4aa96d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.57,
+     "3": 0.37,
+     "4": 0.0
+    },
+    "score": 2.31,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 587,
+  "latency_s": 0.2189107919111848,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:14+0900"
+ },
+ "c84512ee919167db9cd8f69bb85ddb15763bc48888c7df6887adfc99379f970d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.82,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.16,
+     "3": 0.79,
+     "4": 0.04
+    },
+    "score": 2.86,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 611,
+  "latency_s": 0.19037262513302267,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:57+0900"
+ },
+ "c858ab8687f05eb505ac7634effa27fe7427961d9879b33e26fb042063c6067c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.58,
+     "4": 0.42
+    },
+    "score": 3.41,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 605,
+  "latency_s": 0.19146983418613672,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:42+0900"
+ },
+ "cb268951e3a87cf9bc2a2427ddba4a3cd97452c1a9099dda709f18b033c49488": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.22,
+     "2": 0.55,
+     "3": 0.23,
+     "4": 0.0
+    },
+    "score": 2.01,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 594,
+  "latency_s": 0.1826997920870781,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:58+0900"
+ },
+ "ccd28aa0d19368f471358bd00c30e0422cbfc7d5683f3ecdec7dfc98c4965d82": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.7,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.68,
+     "2": 0.28,
+     "3": 0.04,
+     "4": 0.0
+    },
+    "score": 1.36,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 582,
+  "latency_s": 0.27858599997125566,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:30+0900"
+ },
+ "ccfab17897430bec68ba419433c08def546ebd9365a83bfc3db14e1c3efc066e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.17,
+     "2": 0.63,
+     "3": 0.2,
+     "4": 0.0
+    },
+    "score": 2.03,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 537,
+  "latency_s": 0.20216837502084672,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:48+0900"
+ },
+ "cdf6a1541f30188ecbaff13ca8c2271cd19e103a2fcba731b82197244a16e7bf": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.67,
+     "3": 0.24,
+     "4": 0.0
+    },
+    "score": 2.15,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 603,
+  "latency_s": 0.17889866698533297,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "ceae970ce23085c7a47894700bb56f7cb273a97d3cc7cb7ad436cfb2f2256db7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.6,
+     "3": 0.25,
+     "4": 0.0
+    },
+    "score": 2.1,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 573,
+  "latency_s": 0.18384587485343218,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:07+0900"
+ },
+ "ced58cdd549c42219d9e7f585e1ef53634c62cc6198958daac5ddbac72e01bb7": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.04,
+     "2": 0.34,
+     "3": 0.62,
+     "4": 0.0
+    },
+    "score": 2.6,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 637,
+  "latency_s": 0.1818242089357227,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:01+0900"
+ },
+ "cfd41845c1710814864be143780468d3089180368d4c025ad68a5085dc29e6a1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.58,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.5,
+     "3": 0.4,
+     "4": 0.0
+    },
+    "score": 2.3,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 609,
+  "latency_s": 0.19957033288665116,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "cff599c7672657b30ceda5364a511c2833012e8ec6069a3ee274458b6f85d284": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.21,
+     "2": 0.64,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.94,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 680,
+  "latency_s": 0.22971266601234674,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:37+0900"
+ },
+ "d0c6e6395cda7b21d20be2fff5dd9a2854601d2c67f7552cf9854dac3aabc530": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.32,
+     "3": 0.66,
+     "4": 0.01
+    },
+    "score": 2.67,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 602,
+  "latency_s": 0.1947823748923838,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:05+0900"
+ },
+ "d1c083c8906cefb4984520387eec2027e5604a16b5cf493237f31a84f4dbdb3c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.8,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.02,
+     "1": 0.78,
+     "2": 0.18,
+     "3": 0.02,
+     "4": 0.0
+    },
+    "score": 1.2,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 585,
+  "latency_s": 0.18642425001598895,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "d2efd55a07bdbc792c958086382e2e5feb597d87941a1886a7e15ed17c5a3c85": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.06,
+     "3": 0.9,
+     "4": 0.04
+    },
+    "score": 2.98,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.19186458410695195,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "d6a57b143aeee5941fa750621879716029e0a7afca47357cf48f528263e42cdd": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.18,
+     "2": 0.61,
+     "3": 0.21,
+     "4": 0.0
+    },
+    "score": 2.03,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 607,
+  "latency_s": 0.1947639158461243,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:15+0900"
+ },
+ "d7249509e3e3ee9638de2662678d51ab1b57fbea2425555b69569fff922c4462": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.05,
+     "2": 0.59,
+     "3": 0.36,
+     "4": 0.0
+    },
+    "score": 2.31,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 553,
+  "latency_s": 0.18760095885954797,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:34+0900"
+ },
+ "d7ad54c30032059c2ff40ba967600cb9348821d775720f52d0c2489cbc8dd3ce": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.7,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.15,
+     "2": 0.64,
+     "3": 0.21,
+     "4": 0.0
+    },
+    "score": 2.06,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 564,
+  "latency_s": 0.1915052500553429,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:19+0900"
+ },
+ "d7caef9c3cd54d3821c8dff4a1142440163b6352cff13589c36c22dae0aa896e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.29,
+     "2": 0.63,
+     "3": 0.08,
+     "4": 0.0
+    },
+    "score": 1.79,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 612,
+  "latency_s": 0.24176862509921193,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:55+0900"
+ },
+ "d7ed1ab20666d569f2688bba16119a03e8aeb86d7a077add23d6ac6f7b6e880e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.39,
+     "3": 0.59,
+     "4": 0.0
+    },
+    "score": 2.58,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 555,
+  "latency_s": 0.1805342088919133,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:30+0900"
+ },
+ "d8c83297f0bae9cfaa3030d5976fb2ef608c0f740a719019853987c2dff4b327": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.74,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.29,
+     "3": 0.69,
+     "4": 0.01
+    },
+    "score": 2.71,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 581,
+  "latency_s": 0.19419287494383752,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:38+0900"
+ },
+ "d91cabc5fb9d3a9f0c1a67f994cc312b5f30ab086e183c56880fd6435a552cc4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.29,
+     "3": 0.69,
+     "4": 0.0
+    },
+    "score": 2.67,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 556,
+  "latency_s": 0.20090762502513826,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:17+0900"
+ },
+ "d96436f1f1587f419ccc952f0dece07e46dee8e62aa1f8348a496be5d18df6c4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.08,
+     "2": 0.57,
+     "3": 0.35,
+     "4": 0.0
+    },
+    "score": 2.27,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 638,
+  "latency_s": 0.1876119589433074,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:08+0900"
+ },
+ "daa70e1b2d2e7cc10c92a1afb2bb3848db48c448c1d180f41d9d534e117b5473": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.1,
+     "2": 0.67,
+     "3": 0.23,
+     "4": 0.0
+    },
+    "score": 2.13,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 613,
+  "latency_s": 0.1857242500409484,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:42+0900"
+ },
+ "db0f95aa13a6d213a291ea6ac3c60ad4b7cf773c69d9ba1f72b79f0a82c15282": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.1,
+     "3": 0.86,
+     "4": 0.04
+    },
+    "score": 2.94,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 555,
+  "latency_s": 0.2025386670138687,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:18+0900"
+ },
+ "dbd2c519ed08293f9e376e41d3d57a52a707a0c3d552316f271ae647bb335e33": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.67,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.34,
+     "3": 0.63,
+     "4": 0.01
+    },
+    "score": 2.62,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 607,
+  "latency_s": 0.20674124988727272,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:18+0900"
+ },
+ "ddc76642e458e1e88f351c420754ee899ca446239bfa232bad1ef7b8effc5057": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.56,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.42,
+     "2": 0.48,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.67,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 582,
+  "latency_s": 0.18845925014466047,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:06+0900"
+ },
+ "e0e3de68c8392ce05b6f7199f446dfe1dc8d8ad65fda36c30c5b4587623a6542": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.69,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.67,
+     "2": 0.28,
+     "3": 0.04,
+     "4": 0.0
+    },
+    "score": 1.35,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 545,
+  "latency_s": 0.1809510828461498,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:54+0900"
+ },
+ "e1d02e1157c6f4d10ec8abd5ff20656b7ad2aa0fdf094cef06bc0cf9c2c03d04": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.83,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.18,
+     "3": 0.81,
+     "4": 0.01
+    },
+    "score": 2.82,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 581,
+  "latency_s": 0.23737458395771682,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:52+0900"
+ },
+ "e356da5a6880e9132e492e07485f0626e41bb77f84b1871a54bc8faddecdbc34": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.91,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.07,
+     "3": 0.9,
+     "4": 0.03
+    },
+    "score": 2.95,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 581,
+  "latency_s": 0.19822441693395376,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:36+0900"
+ },
+ "e37a29ca74da4cb91aaa6be0fae3aa6713417c19fe6efcd4347e43d48e586a3a": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.53,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.13,
+     "2": 0.44,
+     "3": 0.43,
+     "4": 0.0
+    },
+    "score": 2.3,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 531,
+  "latency_s": 0.1830789998639375,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:44+0900"
+ },
+ "e3a99d6afbcc71b614ba203b069b3f1c87938e11f8bc7ddabb5a0b30929aeaff": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.83,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.17,
+     "3": 0.8,
+     "4": 0.02
+    },
+    "score": 2.83,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 624,
+  "latency_s": 0.28425299981608987,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:41+0900"
+ },
+ "e4589219be88bb49e57ca6d4eee178b282b18d966eda989414d88151ad512d3e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.31,
+     "2": 0.59,
+     "3": 0.1,
+     "4": 0.0
+    },
+    "score": 1.79,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 640,
+  "latency_s": 0.19316287501715124,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:41+0900"
+ },
+ "e470d6ad0db0abdf49ba3efbbcb29af99d0615566b0f71b3e2e2d7012416661e": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.52,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.51,
+     "2": 0.4,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.57,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 610,
+  "latency_s": 0.18861416587606072,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:39+0900"
+ },
+ "e496fb6548f20a6f68204866ff5e06089c9eaa0e3ef6b7ca509643eceb09e267": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.59,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.44,
+     "3": 0.53,
+     "4": 0.01
+    },
+    "score": 2.53,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 620,
+  "latency_s": 0.20452466583810747,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:47+0900"
+ },
+ "e6846218be2c98b63f1855d967b0e5ceb250e251fa66391f69dd2e85bc462013": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.34,
+     "2": 0.54,
+     "3": 0.12,
+     "4": 0.0
+    },
+    "score": 1.78,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 556,
+  "latency_s": 0.1861535410862416,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:40+0900"
+ },
+ "e6ef82da25c24972b83e0397efb4941cd336c6441db05d39ff9477aa3872ac82": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.72,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.27,
+     "3": 0.7,
+     "4": 0.0
+    },
+    "score": 2.68,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 553,
+  "latency_s": 0.18412845791317523,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:59+0900"
+ },
+ "e7c72b260b1e028e96c6c9b15fa305dcda44a3a045626acef2048f48d5799ba1": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.01,
+     "1": 0.61,
+     "2": 0.33,
+     "3": 0.05,
+     "4": 0.0
+    },
+    "score": 1.41,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.18214958417229354,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:55+0900"
+ },
+ "e7d9c41854874ee32b70acc652fd584ab808a3850957ef11d7f244a33ca3e2c0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.4,
+     "2": 0.54,
+     "3": 0.06,
+     "4": 0.0
+    },
+    "score": 1.66,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 606,
+  "latency_s": 0.19880091701634228,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:01+0900"
+ },
+ "e8ab093a4ddbcf90e7283fd51b173be123cee37af86ca8afea74dfb54e25593d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.83,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.01,
+     "2": 0.16,
+     "3": 0.8,
+     "4": 0.03
+    },
+    "score": 2.86,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 609,
+  "latency_s": 0.21542145917192101,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:54+0900"
+ },
+ "ee01bb2a7f5784ba416dbe3fc0b85c5aff5e7a3de5c059355ab1a5d1e42175e0": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.68,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.61,
+     "3": 0.3,
+     "4": 0.0
+    },
+    "score": 2.21,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 592,
+  "latency_s": 0.21823079185560346,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:56+0900"
+ },
+ "eefda73b547d720a6b13f48e89c4994f67dcda27f6034e7662105f437b1b73d3": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.06,
+     "2": 0.42,
+     "3": 0.52,
+     "4": 0.0
+    },
+    "score": 2.46,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 587,
+  "latency_s": 0.17924941703677177,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:50+0900"
+ },
+ "ef74cc196e2c3205122195c72dab7c5443632d09195272cd68ae86f32d78216b": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.66,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.22,
+     "2": 0.59,
+     "3": 0.19,
+     "4": 0.0
+    },
+    "score": 1.97,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 525,
+  "latency_s": 0.18734150007367134,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:08+0900"
+ },
+ "f160cf2bafbfa0106d12509dba27d6b9fc38eafc0edc53597590b9792c341c36": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.55,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.07,
+     "2": 0.4,
+     "3": 0.53,
+     "4": 0.0
+    },
+    "score": 2.47,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 603,
+  "latency_s": 0.23190237511880696,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:22+0900"
+ },
+ "f1bf81d383a151de7fd104d8096c73abdc2b2c7b1d9eb23c391761ff7a0c34c9": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.73,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.23,
+     "2": 0.68,
+     "3": 0.09,
+     "4": 0.0
+    },
+    "score": 1.86,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 557,
+  "latency_s": 0.18607200006954372,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:37+0900"
+ },
+ "f4b6fc05cf57512f7dfb1e0dc5d69ff0d4c5628e934171269a225428e57cf46c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.64,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.26,
+     "2": 0.57,
+     "3": 0.17,
+     "4": 0.0
+    },
+    "score": 1.9,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 646,
+  "latency_s": 0.2043940001167357,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:56+0900"
+ },
+ "f6648213921775b666c6c04c2a1fa08c1ae0b129a21b13f68401f7a81138208d": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.71,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.2,
+     "2": 0.65,
+     "3": 0.15,
+     "4": 0.0
+    },
+    "score": 1.95,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 600,
+  "latency_s": 0.1888212920166552,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:46+0900"
+ },
+ "f6e2a84025f546137b58e0091eaf20248a9dc9a794414a3d0c7804ad1100d800": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.54,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.41,
+     "2": 0.45,
+     "3": 0.14,
+     "4": 0.0
+    },
+    "score": 1.74,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 557,
+  "latency_s": 0.183562999824062,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:20+0900"
+ },
+ "f79eb3f985d7ff50b4a6eb59de5def1c7ee0ad7db15d818f08d2491f19809b9c": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.61,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.03,
+     "2": 0.4,
+     "3": 0.56,
+     "4": 0.01
+    },
+    "score": 2.56,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 612,
+  "latency_s": 0.19886237499304116,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:05+0900"
+ },
+ "f82983d5fd1c9fd5a16a185ba34ba18f7c27dd18e4e7685e2789e1f5be4e7070": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.88,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.0,
+     "2": 0.12,
+     "3": 0.86,
+     "4": 0.02
+    },
+    "score": 2.89,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 574,
+  "latency_s": 0.21865754202008247,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:34+0900"
+ },
+ "f86c00f5a8dc848f5f229a650da587e14c8d1fde3c9f2801d2b887b5a8765bf4": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.75,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.16,
+     "2": 0.7,
+     "3": 0.14,
+     "4": 0.0
+    },
+    "score": 1.98,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 576,
+  "latency_s": 0.21521020797081292,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:29+0900"
+ },
+ "f963441f056966e0ca63e3f59c8c4e6541b6241cc8525df18e999ddc0bfca4b8": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.61,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.09,
+     "2": 0.54,
+     "3": 0.37,
+     "4": 0.0
+    },
+    "score": 2.27,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 601,
+  "latency_s": 0.18429141701199114,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:18+0900"
+ },
+ "fb0137e3e3a7160502e194cf74208f1348fd271a34137fe2a6e670da01b9cbdb": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.62,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.02,
+     "2": 0.41,
+     "3": 0.57,
+     "4": 0.0
+    },
+    "score": 2.55,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 547,
+  "latency_s": 0.2017249590717256,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:37:16+0900"
+ },
+ "fdbf3249d99ed4116ec0b8ec3b4a57878f461b1792e58bc6ece6e02723dd6d79": {
+  "answers": {
+   "polarity": {
+    "confidence": 0.65,
+    "legend": {
+     "0": "매우 부정적",
+     "1": "다소 부정적",
+     "2": "중립",
+     "3": "다소 긍정적",
+     "4": "매우 긍정적"
+    },
+    "probabilities": {
+     "0": 0.0,
+     "1": 0.25,
+     "2": 0.59,
+     "3": 0.16,
+     "4": 0.0
+    },
+    "score": 1.91,
+    "type": "score"
+   }
+  },
+  "attempts": 1,
+  "input_tokens": 529,
+  "latency_s": 0.20940583292394876,
+  "model": "jev-1.13.0",
+  "recorded_at": "2026-10-05T23:36:36+0900"
+ }
+}
