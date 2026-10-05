@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeamWeaver 현황 지도</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#222;--muted:#666;--acc:#2f6f5e;--box:#eef5f2;--warn:#fff4e0;--line:#dcd9d2;--ok:#2f7d4f;--wip:#a8641a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1d1c;--fg:#e8e6e1;--muted:#aaa;--acc:#7cc4ad;--box:#24302c;--warn:#3a3222;--line:#3a3d3b;--ok:#7cc49a;--wip:#e0a35a}}
+body{background:var(--bg);color:var(--fg);font:17px/1.75 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;margin:0;padding:32px 16px}
+main{max-width:760px;margin:auto}h1{font-size:1.65em;margin:0 0 .2em;line-height:1.35}.sub{color:var(--muted);margin-bottom:2em}
+h2{color:var(--acc);border-bottom:1px solid currentColor;padding-bottom:.2em;margin-top:2.2em}
+.box{background:var(--box);border-radius:10px;padding:14px 18px;margin:1em 0}.warn{background:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:.93em;margin:.8em 0}td,th{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}.ok{color:var(--ok);font-weight:600}.wip{color:var(--wip);font-weight:600}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:1em 0}.flow span{background:var(--box);border-radius:8px;padding:6px 10px;font-size:.92em}
+.flow b{color:var(--muted);font-weight:400}
+</style></head><body><main>
+<h1>TeamWeaver — 지금 어디까지 왔나</h1>
+<div class="sub">쉬운 현황 지도 · 2026-10-05 기준 (이전판: 2026-09-12) · 모든 데이터는 가상이며, 실제 성과 효과는 아직 검증 전입니다</div>
+
+<h2>한 줄 요약</h2>
+<p>TeamWeaver는 <b>"누구를 어느 프로젝트에 얼마나 넣으면 좋은가"</b>를 계산해 주는 시제품입니다. 9월까지는 <b>가상 데이터로 돌아가는 완성된 시연판</b>이었고, 그 뒤 한 달 동안 <b>계산이 정말 맞는지 검증</b>하고 <b>실제 회사 자료를 넣을 수 있게</b> 만드는 일을 했습니다.</p>
+
+<h2>어떻게 동작하나</h2>
+<div class="flow"><span>인사 자료 (CSV 묶음 업로드 또는 가상 자료)</span><b>→</b><span>검사 리포트</span><b>→</b><span>기술 적합도·협업 궁합 계산</span><b>→</b><span>최적 배치 A안 + 대안 B·C·D</span><b>→</b><span>교체 검토·적용</span><b>→</b><span>근거 붙은 AI 설명</span><b>→</b><span>PDF 보고서</span></div>
+<ul>
+<li><b>기술 적합도</b>: 프로젝트가 원하는 기술 수준을 그 사람이 얼마나 채우는지.</li>
+<li><b>협업 궁합</b>: 함께 일한 기간과 서로 남긴 동료 평가. 이제 예전 회차 평가까지 모두 반영합니다.</li>
+<li><b>지켜야 할 조건</b>: 사람마다 한 달에 쓸 수 있는 시간, 프로젝트 월 예산, 등급별 필요 인원, 최소 투입률(관리자가 화면에서 30% 등으로 설정).</li>
+<li>이 조건들을 한꺼번에 만족하면서 점수가 가장 높은 조합을 <b>수학 최적화(MILP)</b>로 찾습니다. 퍼즐을 손으로 맞추는 대신 컴퓨터가 모든 경우를 체계적으로 따져 보는 방식입니다.</li>
+</ul>
+
+<h2>9월 이후 달라진 것</h2>
+<table>
+<tr><th>분야</th><th>무엇이 달라졌나</th><th>상태</th></tr>
+<tr><td>계산 검증 (Phase 0·1)</td><td>정답을 아는 작은 문제로 계산기를 시험(11/11 통과)하고, 무료 계산기 3종(CBC·HiGHS·SCIP)을 357번 비교. HiGHS가 잠정 1위. 다만 계산 결과 일부가 엄격한 검사를 통과하지 못하는 문제(예산이 아주 미세하게 넘는 등)를 발견해 지금 고치는 중</td><td class="wip">진행 중</td></tr>
+<tr><td>실데이터 준비 (K7·K2·K9)</td><td>실제 인사 시스템 항목을 묻는 입력 양식 → 답변을 바탕으로 CSV 묶음 형식과 엄격한 검사기를 만들고, 화면에서 zip으로 올리면 검사 후 데이터가 바뀌도록 연결. 숙련도는 원천에 없어 <b>경력 개월</b>로 대신함</td><td class="ok">완료</td></tr>
+<tr><td>교체 검토 정확성 (K1·K10)</td><td>사람을 바꿨을 때 점수를 전체 조건으로 다시 계산(참고값)하고, 위반이 생기면 경고. 검토만 하던 교체를 실제 명단에 "적용"하고 되돌릴 수 있음. PDF에도 적용 내역이 찍힘</td><td class="ok">완료</td></tr>
+<tr><td>AI 설명의 사실성 (K5)</td><td>설명에 쓰인 동료 평가 문장에 출처를 붙이고, "직접 인용"이 원문과 한 글자라도 다르면 그 설명을 버림. 실제 회사 자료는 평가 원문을 화면·AI 어디에도 보내지 않고 항목 이름만 사용</td><td class="ok">완료</td></tr>
+<tr><td>관리·보안 (K4·K8·K13·K14)</td><td>PDF 생성기가 외부 주소로 끌려가지 않게 막음, 관리자 배치 설정 화면, 업로드 자료·적용 내역 저장, 관리자 로그인</td><td class="ok">완료</td></tr>
+<tr><td>AI 모델 정리</td><td>판단이 필요한 교체 설명은 gpt-6-luna, 단순 작업은 gpt-5.5로 나누고 지시문을 다듬어 설명이 짧고 결론이 분명해짐(응답 14초 → 4~6초)</td><td class="wip">검토 중</td></tr>
+<tr><td>작은 버그 (K6)</td><td>연결이 128개 넘는 사람을 탐색에서 빠뜨리던 숫자 넘침 수정</td><td class="ok">완료</td></tr>
+</table>
+
+<h2>누가 일하고 있나</h2>
+<p>Claude 계정 두 개(claude-a, claude-b)가 일을 나눠 맡고, Codex는 이제 <b>검토(리뷰)만</b> 합니다. 각자 맡은 파일이 정해져 있어 서로의 작업을 덮어쓰지 않고, 공유 작업일지(<code>docs/handoff-log.md</code>)에 한 일을 남깁니다.</p>
+<ul>
+<li><b>claude-b 진행 중</b>: 계산 결과 검증 강화와 실험 보고서 정정(C0·C1), 대안 중복 제거(C2), 투입률 반올림(C3), 실험 원자료 보관(C4), 경력 개월로 직접 점수 내기.</li>
+<li><b>claude-a</b>: 실데이터 입력·근거 설명·평가 쪽을 맡았고, 지금은 AI 모델 정리와 다음 과제를 고르는 중.</li>
+</ul>
+
+<h2>숫자 세 개를 헷갈리지 마세요</h2>
+<div class="box">
+<b>최적화율 약 0.93</b> — 이론상 최고치 대비 기술 점수를 얼마나 끌어올렸나.<br>
+<b>기술 충족률 약 0.55</b> — 요구 기술을 실제로 채운 비율(보조 지표).<br>
+<b>계산 허용 오차 5% 이하</b> — 계산기가 "이 정도면 최선에 충분히 가깝다"고 멈추는 기준.<br>
+셋은 기준(분모)이 모두 달라서 서로 비교하면 안 됩니다.
+</div>
+
+<h2>아직 아닌 것 (솔직하게)</h2>
+<div class="box warn">
+<ul style="margin:0">
+<li><b>실제 성과는 모릅니다.</b> 모든 결과는 가상 자료로 계산이 맞는지만 보여 줍니다. "이 배치로 프로젝트가 더 잘 됐다"는 증거는 실제 자료와 결과가 쌓여야 생깁니다(NOT_CALIBRATED).</li>
+<li><b>계산 결과의 엄격 검사 문제</b>가 아직 정리 중입니다(아주 작은 예산 초과 등). 고치기 전까지는 일부 경우 추천이 나오지 않을 수 있습니다.</li>
+<li><b>필수 기술은 아직 "반드시"가 아니라 "점수로 유도"</b>입니다. 회사 배치 규칙이 정해지면 모델에 반영합니다.</li>
+<li>실제 인사 자료는 아직 넣어 보지 않았습니다. 형식과 검사기, 업로드 화면은 준비됐습니다.</li>
+</ul>
+</div>
+
+<h2>다음 단계</h2>
+<ol>
+<li>계산 결과 검증 문제를 마무리해 서비스 기본 계산기를 확정(검증된 HiGHS 연결 포함).</li>
+<li>경력 개월로 직접 점수를 내고, 회사 배치 규칙(필수 기술, 동시 프로젝트 수 등)을 모델에 반영.</li>
+<li>실제 인사 자료 일부로 업로드 → 배치 → 설명 → PDF 전 과정을 시험.</li>
+<li>그 다음에야 "실제로 더 좋은 팀이 만들어지는가"를 재는 단계로 갈 수 있습니다.</li>
+</ol>
+<p style="color:var(--muted);font-size:.9em">실행: <code>scripts/run_poc.sh</code> · 시험 기준선(10-05 main): Python 914, 웹 123, 느린 E2E 18 통과 · 상세 이력은 <code>docs/handoff-log.md</code>, 품질 점검 처리 현황은 <code>outputs/eli5-mid-project-quality-audit.html</code></p>
+</main></body></html>
