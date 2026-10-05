@@ -58,10 +58,21 @@ export interface PlanEvent {
   plan_token?: string;
 }
 
+/** 브리핑 근거 하나(K5). quote = 원문 그대로(검증됨), summary = 파서가 바꿔 쓴 문장,
+ *  label = 실데이터라 원문 비공개(항목 라벨만). */
+export interface Evidence {
+  source_id: string;
+  reviewer_id: string;
+  kind: "quote" | "summary" | "label";
+  text: string;
+}
+
 export interface Briefing {
   rationale: string;
   risks: string[];
   alternatives: string[];
+  /** 구버전 서버 응답에는 없을 수 있다. */
+  evidence?: Evidence[];
 }
 
 export interface ObjectiveBreakdown {

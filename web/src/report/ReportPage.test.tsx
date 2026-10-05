@@ -187,3 +187,22 @@ describe("ReportPage — 원 플랜 서명", () => {
     expect(await screen.findByText(/서명 확인/)).toBeInTheDocument();
   });
 });
+
+
+describe("ReportPage — 브리핑 근거(K5)", () => {
+  afterEach(() => { delete (window as any).__REPORT_DATA__; delete (window as any).__REPORT_READY__; });
+  it("PDF에도 근거 종류·출처를 찍는다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = { plan_label: "A", entries: [], objective: 1, fulfillment: 1,
+      optimization_ratio: 1, unfilled: [], fallback_used: true, swap: null, objective_delta: null,
+      swap_violations: [], milp_params: null, meta: META, dataset_version: META.dataset_version,
+      applied_swaps: [], applied_violations: [],
+      briefing: { rationale: "근거 [rv:p1>p2#1:pos]", risks: [], alternatives: [],
+                  evidence: [{ source_id: "rv:p1>p2#1:pos", reviewer_id: "p1", kind: "quote",
+                               text: "꼼꼼하다" }] } };
+    render(<ReportPage />);
+    expect(await screen.findByText("직접 인용")).toBeInTheDocument();
+    expect(screen.getByText(/김일번 리뷰 · rv:p1>p2#1:pos/)).toBeInTheDocument();
+    expect(screen.getByText(/검증됐다는 뜻은 아니다/)).toBeInTheDocument();
+  });
+});

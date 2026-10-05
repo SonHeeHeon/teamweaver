@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from api.datasets import ActiveDataset
-from api.deps import (check_dataset_version, get_dataset, get_graph,
+from api.briefing_evidence import clamp_briefing
+from api.deps import (check_dataset_version, get_dataset, get_evidence, get_graph,
                       get_openai_client_or_none, get_sqlite_conn)
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
@@ -71,7 +72,7 @@ def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
 @router.post("/api/whatif", response_model=WhatifResponse)
 def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
           conn=Depends(get_sqlite_conn), dataset: ActiveDataset = Depends(get_dataset),
-          client=Depends(get_openai_client_or_none)):
+          evidence=Depends(get_evidence), client=Depends(get_openai_client_or_none)):
     check_dataset_version(req.dataset_version, dataset)
     params = req.milp_params.to_milp_params()
     eng = ScoringEngine(graph)
@@ -87,7 +88,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     new_shortfalls = [asdict(s) for s in after.shortfalls
                       if s.missing > old_missing.get((s.project_id, s.grade), 0)]
 
-    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id)
+    # 근거 색인은 두 곳에 같이 넘긴다(K5): 문맥에만 넘기면 브리핑의 인용 검증이 꺼진다.
+    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence)
     fallback_used = False
     if client is None:
         briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
@@ -96,7 +98,7 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         try:
             model = load_pricing()["briefing_model"]
             briefing = generate_briefing(client, model, ctx, req.swap.out_person_id,
-                                         req.swap.in_person_id)
+                                         req.swap.in_person_id, evidence=evidence)
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
             briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
             fallback_used = True
@@ -108,6 +110,6 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "new_violations": new_violations,
         "new_shortfalls": new_shortfalls,
         "feasible": not after.violations,
-        "briefing": briefing,
+        "briefing": clamp_briefing(briefing),
         "fallback_used": fallback_used,
     }

@@ -347,3 +347,25 @@ def test_redirect_out_of_origin_is_detected_and_gets_no_data(decoy):
     assert decoy.hits == ["/landed"]
     assert escaped == [f"{target}/landed"]               # 탐지된다 -> 렌더 실패 처리
     assert leaked is None                                # 데이터는 주입되지 않았다
+
+
+
+@pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
+def test_report_prints_briefing_evidence(live_server):
+    """K5: 브리핑 근거(종류 배지·출처)가 실제 PDF에 찍힌다. 근거는 서버 색인의 실제 인용이어야
+    받으므로(지어낸 문장은 422) 활성 데이터셋에서 하나 고른다."""
+    index = app.state.dataset.evidence
+    ev = next(e for pid in ("p001", "p002", "p003", "p004", "p005")
+              for e in index.for_person(pid) if e.kind == "quote")
+    payload = {**_PAYLOAD, "briefing": {**_PAYLOAD["briefing"], "evidence": [
+        {"source_id": ev.source_id, "reviewer_id": ev.reviewer_id, "kind": "quote", "text": ev.text}]}}
+    res = httpx.post(f"{live_server}/api/report", json=payload, timeout=120.0)
+    assert res.status_code == 200, res.text
+    text = _extract_text(res.content)
+    assert "직접 인용" in text and ev.source_id in text
+    assert re.sub(r"\s", "", ev.text)[:10] in re.sub(r"\s", "", text)
+
+    forged = {**_PAYLOAD, "briefing": {**_PAYLOAD["briefing"], "evidence": [
+        {"source_id": ev.source_id, "reviewer_id": ev.reviewer_id, "kind": "quote",
+         "text": "근거 마커 XYZZY-QUOTE"}]}}
+    assert httpx.post(f"{live_server}/api/report", json=forged, timeout=120.0).status_code == 422

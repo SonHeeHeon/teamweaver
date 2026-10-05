@@ -19,7 +19,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_graph, get_sqlite_conn
+from api.deps import get_evidence, get_graph, get_sqlite_conn
 from api.main import app
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
@@ -92,6 +92,7 @@ def small_graph_client(tmp_path):
 
     app.dependency_overrides[get_graph] = lambda: graph
     app.dependency_overrides[get_sqlite_conn] = lambda: conn
+    app.dependency_overrides[get_evidence] = lambda: None     # 픽스처 100명 색인이 같은 ID에 붙지 않게
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

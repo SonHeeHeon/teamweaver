@@ -19,8 +19,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from api.pdf import (DEFAULT_MAX_BODY_BYTES, PDF_SLOTS, BrowserLaunchError, OriginUnavailable, PdfSettings,
                      render_report_pdf, resolve_internal_origin)
+from api.briefing_evidence import verify_report_evidence
 from api.datasets import ActiveDataset
-from api.deps import check_dataset_version, get_dataset, get_graph
+from api.deps import check_dataset_version, get_dataset, get_evidence, get_graph
 from api.plan_token import verify_plan
 from api.routes.meta import build_meta
 from api.routes.plans import apply_one, roster_metrics
@@ -198,10 +199,13 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
 @router.post(REPORT_PATH)
 async def report(req: ReportRequest, request: Request,
                  dataset: ActiveDataset = Depends(get_dataset),
-                 graph: MemoryGraph = Depends(get_graph)) -> Response:
+                 graph: MemoryGraph = Depends(get_graph),
+                 evidence=Depends(get_evidence)) -> Response:
     # 데이터셋 버전은 가장 먼저 본다 -- 원인이 더 정확하고(빌드가 없어도 409), 값싸다
     # (claude-a 교차 리뷰 S3).
     check_dataset_version(req.dataset_version, dataset)
+    # 화면이 보낸 근거가 "직접 인용" 배지로 찍히기 전에 서버 색인으로 확인한다(K5 연결 리뷰 S1).
+    verify_report_evidence(req.briefing, evidence)
     try:
         import playwright                           # noqa: F401
     except ImportError:

@@ -20,11 +20,15 @@ import zipfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING
 
 from core.domain.models import Dataset
 from core.graph.memory_graph import MemoryGraph
 from core.graph.sqlite_store import build_sqlite
 from core.ingest.loader import FILE_SPECS
+
+if TYPE_CHECKING:
+    from api.rag.evidence import EvidenceIndex
 
 MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024
 MAX_ENTRIES = 64
@@ -57,10 +61,13 @@ class ActiveDataset:
     전환으로 물러난 데이터셋은 그것을 쓰는 요청이 모두 끝나는 즉시 연결을 닫는다
     (deps.get_dataset이 acquire/release). 쓰는 요청이 없으면 retire 때 바로 닫는다."""
 
-    def __init__(self, graph: MemoryGraph, sqlite_conn: sqlite3.Connection, info: DatasetInfo):
+    def __init__(self, graph: MemoryGraph, sqlite_conn: sqlite3.Connection, info: DatasetInfo,
+                 evidence=None):
         self.graph = graph
         self.sqlite_conn = sqlite_conn
         self.info = info
+        # 리뷰 근거 색인(K5, api.rag.evidence). 가상 데이터만 원문을 담고 실데이터는 항목 라벨만.
+        self.evidence = evidence
         self._lock = threading.Lock()       # whatif 등 동기 라우트는 스레드풀에서 돈다
         self._users = 0
         self._retired = False
@@ -125,7 +132,11 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     info = DatasetInfo(dataset_id=dataset_id, version=version, source=source,
                        synthetic=synthetic, people=len(ds.people), projects=len(ds.projects),
                        activated_at=_now())
-    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info)
+    # 원문 공개는 manifest가 명시적으로 가상(synthetic=true)인 경우만이다(사용자 결정: 실데이터
+    # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
+    from api.rag.evidence import build_evidence_index
+    evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
+    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence)
 
 
 def _strip_common_folder(names: list[PurePosixPath]) -> list[PurePosixPath]:

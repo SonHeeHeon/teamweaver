@@ -42,6 +42,12 @@ def get_sqlite_conn(dataset: ActiveDataset = Depends(get_dataset)) -> sqlite3.Co
     return dataset.sqlite_conn
 
 
+def get_evidence(dataset: ActiveDataset = Depends(get_dataset)):
+    """브리핑 근거 색인(K5). graph·SQLite와 같은 데이터셋에서 나온다 -- 테스트가 graph만 바꿔
+    끼우면 이것도 함께 바꿔야 다른 사람의 리뷰가 붙지 않는다."""
+    return dataset.evidence
+
+
 def get_cache(request: Request) -> ResultCache:
     return request.app.state.cache
 

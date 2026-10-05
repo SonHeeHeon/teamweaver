@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchMeta } from "../api/client";
 import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
+import { EvidenceList } from "../components/EvidenceList";
+import { hasMarkers } from "../components/evidenceMarkers";
 
 declare global {
   interface Window {
@@ -68,7 +70,9 @@ export function ReportPage() {
           ? "명단이 서버가 계산한 플랜과 일치(서명 확인)"
           : "화면이 보낸 명단 — 서버 계산 여부 미검증"}
         {" · "}지표는 서버가 이 명단으로 다시 계산한 값
-        {data.swap ? " · 교체 검토 미리보기(Δ·브리핑)는 화면에서 보낸 값" : ""}
+        {data.swap || data.briefing
+          ? " · 교체 검토 미리보기(Δ·브리핑 본문)는 화면에서 보낸 값(근거 출처·인용은 서버 확인)"
+          : ""}
       </p>
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params
@@ -169,6 +173,10 @@ export function ReportPage() {
           <ul className="list-inside list-disc text-sm">
             {(data.briefing.alternatives ?? []).map((a: string) => <li key={a}>{a}</li>)}
           </ul>
+          <EvidenceList evidence={data.briefing.evidence ?? []} nameOf={nameOf}
+                        hasInlineMarkers={hasMarkers([data.briefing.rationale ?? "",
+                                                      ...(data.briefing.risks ?? []),
+                                                      ...(data.briefing.alternatives ?? [])])} />
         </section>
       )}
 

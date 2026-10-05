@@ -1,9 +1,13 @@
 import type { ObjectiveBreakdown, WhatifResponse } from "../api/types";
 import { swapWarnings } from "../api/whatifWarnings";
+import { EvidenceList } from "./EvidenceList";
+import { hasMarkers } from "./evidenceMarkers";
 
 interface Props {
   result: WhatifResponse | null;
   loading: boolean;
+  /** 근거의 평가자 ID를 이름으로 보여 줄 때(없으면 ID 그대로). */
+  nameOf?: (personId: string) => string;
 }
 
 const TERMS: [keyof ObjectiveBreakdown, string][] = [
@@ -15,7 +19,7 @@ const TERMS: [keyof ObjectiveBreakdown, string][] = [
 
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(4)}`;
 
-export function BriefingPanel({ result, loading }: Props) {
+export function BriefingPanel({ result, loading, nameOf }: Props) {
   if (loading) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
@@ -83,6 +87,9 @@ export function BriefingPanel({ result, loading }: Props) {
           {result.briefing.alternatives.map((a) => <li key={a}>{a}</li>)}
         </ul>
       </div>
+      <EvidenceList evidence={result.briefing.evidence ?? []} nameOf={nameOf}
+                    hasInlineMarkers={hasMarkers([result.briefing.rationale, ...result.briefing.risks,
+                                                  ...result.briefing.alternatives])} />
     </div>
   );
 }

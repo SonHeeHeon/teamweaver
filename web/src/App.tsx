@@ -634,7 +634,8 @@ export default function App() {
                                people={meta.people} onSelectionChange={selectionChanged}
                                entries={current.entries}
                                onSwap={runSwap} busy={whatifBusy} />
-                  <BriefingPanel result={whatif} loading={whatifBusy} />
+                  <BriefingPanel result={whatif} loading={whatifBusy}
+                                 nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
                   <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap
                                   ? `${lastSwap.out_person_id}-${lastSwap.in_person_id}` : ""}`}
                                 result={whatifBusy ? null : whatif} swap={lastSwap}

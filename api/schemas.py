@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -11,6 +11,10 @@ from core.optimize.milp import MilpParams
 # 서버를 오래 붙잡는다. 화면의 정상 사용(교체 수십 건)보다 넉넉하다.
 MAX_APPLIED_SWAPS = 50
 MAX_PLAN_ENTRIES = 5000
+# 브리핑 근거(K5) 상한. 응답에 싣기 전에 서버가 이 값으로 자른다(api/briefing_evidence.clamp_briefing).
+MAX_EVIDENCE = 50
+MAX_EVIDENCE_ID_CHARS = 200
+MAX_EVIDENCE_TEXT_CHARS = 2000
 
 class PersonOut(BaseModel):
     id: str
@@ -48,10 +52,20 @@ class MetaResponse(BaseModel):
     dataset_version: str
 
 
+class EvidenceOut(BaseModel):
+    """브리핑 근거 하나(K5). kind: quote = 원문 그대로(검증됨), summary = 파서가 바꿔 쓴 문장,
+    label = 실데이터라 원문 비공개(리뷰 항목 라벨만)."""
+    source_id: str = Field(max_length=MAX_EVIDENCE_ID_CHARS)
+    reviewer_id: str = Field(max_length=MAX_EVIDENCE_ID_CHARS)
+    kind: Literal["quote", "summary", "label"]
+    text: str = Field(max_length=MAX_EVIDENCE_TEXT_CHARS)
+
+
 class BriefingOut(BaseModel):
     rationale: str
     risks: list[str]
     alternatives: list[str]
+    evidence: list[EvidenceOut] = Field(default=[], max_length=MAX_EVIDENCE)
 
 
 class ObjectiveBreakdownOut(BaseModel):
