@@ -38,7 +38,9 @@ def test_records_then_replays_without_key(tmp_path):
     assert b.replayed and b.answers == a.answers and b.latency_s == a.latency_s
 
 
-def test_missing_recording_without_key_is_an_error_not_a_guess(tmp_path):
+def test_missing_recording_without_key_is_an_error_not_a_guess(tmp_path, monkeypatch):
+    # .env defines TYPESAFE_API_KEY and other tests load it into os.environ (load_env), so remove it here
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     with pytest.raises(MissingRecording):
         JevClient(tmp_path / "none.json", api_key=None).ask("s", {"q": choice("p", {"x": "X"})})
 

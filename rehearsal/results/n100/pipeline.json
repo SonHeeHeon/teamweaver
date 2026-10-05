@@ -1,20 +1,20 @@
 {
  "size": 100,
  "env": {
-  "commit": "e6bb873",
+  "commit": "146fc60",
   "python": "3.12.13",
   "machine": "arm64",
   "system": "Darwin 25.5.0",
-  "started_at": "2026-10-05T10:00:08+00:00"
+  "started_at": "2026-10-05T10:34:26+00:00"
  },
  "llm": true,
  "steps": {
   "generate_s": 0.04,
-  "upload_s": 0.08,
-  "optimize_s": 28.52,
-  "whatif_s": 8.19,
-  "apply_s": 0.13,
-  "pdf_s": 1.18
+  "upload_s": 0.07,
+  "optimize_s": 28.17,
+  "whatif_s": 7.11,
+  "apply_s": 0.16,
+  "pdf_s": 1.06
  },
  "bundle": {
   "dataset_id": "org-n100-s2026",
@@ -49,7 +49,8 @@
   "lam": 0.3,
   "mu": 0.2,
   "time_limit": 120,
-  "gap": 0.05
+  "gap": 0.05,
+  "max_concurrent_projects": 3
  },
  "optimize_done": {
   "event": "done",
@@ -67,8 +68,8 @@
   "objective_delta": -0.25464285714286206,
   "feasible": true,
   "fallback_used": false,
-  "evidence": 2,
-  "rationale": "조건부 교체를 권고한다. 두 사람은 Kafka, Spark, 검색엔진, 데이터 모델링, 메타데이터 관리, 워크플로우·BPM 등 공통 기술이 모두 레벨 1이며, DP0037은 Airflow·ETL·Python·비정형 문서 처리(OCR) 등 추가 기술을 보유한 반면 DP0006은 AWS·SQL·Spring·BI Reporting 등을 보유해 프로젝트 우선 기술에 따라 적합성이 달라진다. DP0006은 협업과 품질의식에 대한 긍정 리뷰가 있으나 멘토링·리더십·기술공유 보완 의견도 있어 인수인계와 역할 범위를 확인하는 조건이 필요하다 [rv:DP0060>DP0006#1:pos] [rv:DP0060>DP0006#1:neg]"
+  "evidence": 0,
+  "rationale": "교체는 보류하는 것이 타당합니다. DP0037은 DP0006에게 없는 ETL과 비정형 문서 처리(OCR)를 보유하지만, 두 기술 모두 요구 최소 레벨 2보다 낮고 금융 업무·메타데이터 관리도 최소 레벨 3·2에 미달합니다. 교체 후 배치 점수 변화 total은 -0.25464285714286206으로 감소 방향입니다."
  },
  "apply": {
   "status": 200,
@@ -78,13 +79,13 @@
  },
  "pdf": {
   "status": 200,
-  "bytes": 446795,
+  "bytes": 366647,
   "detail": null
  },
  "plans": [
   {
    "label": "A",
-   "arrived_s": 10.1,
+   "arrived_s": 9.87,
    "objective": 41.901019889369934,
    "fulfillment": 0.3405185185185185,
    "optimization_ratio": 0.8347615950442535,
@@ -94,7 +95,7 @@
   },
   {
    "label": "B",
-   "arrived_s": 16.65,
+   "arrived_s": 16.33,
    "objective": 41.07416288665042,
    "fulfillment": 0.33013703703703706,
    "optimization_ratio": 0.8198399401777969,
@@ -104,7 +105,7 @@
   },
   {
    "label": "C",
-   "arrived_s": 23.08,
+   "arrived_s": 22.75,
    "objective": 41.1314592893218,
    "fulfillment": 0.34354814814814816,
    "optimization_ratio": 0.8163351261442451,
@@ -114,7 +115,7 @@
   },
   {
    "label": "D",
-   "arrived_s": 28.52,
+   "arrived_s": 28.17,
    "objective": 41.093450249750276,
    "fulfillment": 0.3375888888888889,
    "optimization_ratio": 0.8331034297366516,
@@ -123,5 +124,5 @@
    "people": 75
   }
  ],
- "finished_at": "2026-10-05T10:00:47+00:00"
+ "finished_at": "2026-10-05T10:35:03+00:00"
 }

@@ -1,20 +1,20 @@
 {
  "size": 300,
  "env": {
-  "commit": "a7bf67d",
+  "commit": "146fc60",
   "python": "3.12.13",
   "machine": "arm64",
   "system": "Darwin 25.5.0",
-  "started_at": "2026-10-05T10:04:07+00:00"
+  "started_at": "2026-10-05T10:35:10+00:00"
  },
  "llm": true,
  "steps": {
   "generate_s": 0.13,
   "upload_s": 0.34,
-  "optimize_s": 391.87,
-  "whatif_s": 8.6,
-  "apply_s": 0.92,
-  "pdf_s": 1.86
+  "optimize_s": 395.31,
+  "whatif_s": 9.77,
+  "apply_s": 0.85,
+  "pdf_s": 1.82
  },
  "bundle": {
   "dataset_id": "org-n300-s2026",
@@ -51,7 +51,8 @@
   "lam": 0.3,
   "mu": 0.2,
   "time_limit": 120,
-  "gap": 0.05
+  "gap": 0.05,
+  "max_concurrent_projects": 3
  },
  "optimize_done": {
   "event": "done",
@@ -70,7 +71,7 @@
   "feasible": true,
   "fallback_used": false,
   "evidence": 0,
-  "rationale": "조건부 교체를 권고한다. 두 사람은 Python, Java, Spring, LLM 파인튜닝, 그룹사 업무, 금융 업무에서 모두 레벨 1이며, AI0012는 Docker가 레벨 2로 AI0004의 레벨 1보다 높다. 반면 AI0004는 Airflow, FastAPI, Kafka, Private Cloud, 프롬프트 엔지니어링 등 AI0012에게 기재되지 않은 기술을 보유하므로, 해당 기술이 필요한 역할이라면 교체 적합성이 높아진다."
+  "rationale": "교체는 보류를 권고합니다. 프로젝트 요구 기준에서 두 사람 모두 제시된 기술 레벨이 최소치에 미달하거나 해당 기술 정보가 없지만, AI0012는 Kubernetes 레벨 1과 LLM Application 레벨 1을 보유한 반면 AI0004는 두 기술이 제시되지 않았고 금융 업무는 둘 다 레벨 1로 최소 레벨 3에 미달합니다. 교체 후 배치 점수 total은 -0.1889로 하락합니다."
  },
  "apply": {
   "status": 200,
@@ -80,13 +81,13 @@
  },
  "pdf": {
   "status": 200,
-  "bytes": 458168,
+  "bytes": 457147,
   "detail": null
  },
  "plans": [
   {
    "label": "A",
-   "arrived_s": 124.46,
+   "arrived_s": 124.54,
    "objective": 128.89382712888957,
    "fulfillment": 0.39545430944963655,
    "optimization_ratio": 0.8367943948422453,
@@ -96,7 +97,7 @@
   },
   {
    "label": "B",
-   "arrived_s": 214.08,
+   "arrived_s": 215.27,
    "objective": 129.59581696798566,
    "fulfillment": 0.4007191069574247,
    "optimization_ratio": 0.8411211617084464,
@@ -106,7 +107,7 @@
   },
   {
    "label": "C",
-   "arrived_s": 304.54,
+   "arrived_s": 306.81,
    "objective": 130.23264769801946,
    "fulfillment": 0.3981613447559711,
    "optimization_ratio": 0.8402222743165052,
@@ -116,7 +117,7 @@
   },
   {
    "label": "D",
-   "arrived_s": 391.87,
+   "arrived_s": 395.3,
    "objective": 127.1960465276621,
    "fulfillment": 0.3948404724818276,
    "optimization_ratio": 0.8268370574442575,
@@ -125,5 +126,5 @@
    "people": 205
   }
  ],
- "finished_at": "2026-10-05T10:10:50+00:00"
+ "finished_at": "2026-10-05T10:41:59+00:00"
 }

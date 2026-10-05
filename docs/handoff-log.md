@@ -32,7 +32,9 @@
 - 상대 영향:
   - **모두**: 서비스 해가 달라진다(더 빨리·더 좋게). 화면의 "협업 시너지"는 상위 200쌍만 보상. 이전 플랜 토큰·캐시 무효.
   - **claude-b**: 설정 화면 연결 요청 1건(work-split "요청"). C6 병합 뒤 "자리당 적합도" 항 정식 변경을 claude-a가 이어서 한다(상태 파일).
-  - 테스트 기준선: 1107 passed, 19 deselected, Phase 0 PASS 11.
+  - **claude-b**: `tests/jev/test_jev_harness.py`의 "키 없음" 시험이 `.env`의 `TYPESAFE_API_KEY`(다른 시험이 load_env로 올림)에 따라 순서 의존 실패 → `monkeypatch.delenv`로 고립시켰다.
+  - C6(동시 프로젝트 상한)와 합친 뒤 100·300명 전 과정을 다시 돌려 결과 동일 확인(28초/395초, 4안·미충원 0).
+  - 테스트 기준선: **1126 passed, 19 deselected**, Phase 0 PASS 11.
 - 근거: `docs/model-roadmap.md`, `.omc/reports/2026-10-05-scale-rehearsal.md`
 ## 2026-10-05 · claude-b · Jev(판단 전용 AI) 대체 가능성 실험 장치 + 기준선
 - 브랜치/커밋: `feat/claude-b-jev-experiment` `ddd8d4f` → main fast-forward·push(사용자 요청: 실험 과정·결과를 시연용으로 남김).
