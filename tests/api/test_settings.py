@@ -32,7 +32,7 @@ def test_settings_convert_to_milp_params_keeping_hidden_fields_at_model_default(
 
 @pytest.mark.parametrize("field, value", [
     ("min_alloc", 0.0), ("min_alloc", 1.01), ("lam", -0.1), ("mu", 1.5),
-    ("clique_threshold_months", 0), ("time_limit", 4), ("time_limit", 601), ("gap", 0.5),
+    ("clique_threshold_months", 0), ("time_limit", 4), ("time_limit", 901), ("gap", 0.5),
     ("pair_keep_ratio", 0.5),            # 노출하지 않는 필드는 받지 않는다
 ])
 def test_out_of_range_or_unknown_setting_is_rejected(field, value):
@@ -87,7 +87,7 @@ def test_get_settings_returns_values_defaults_and_bounds(client):
     assert body["settings"]["min_alloc"] == pytest.approx(0.30)
     assert body["defaults"] == body["settings"]
     assert body["bounds"]["min_alloc"] == {"min": 0.05, "max": 1.0}
-    assert body["bounds"]["time_limit"] == {"min": 5, "max": 600}
+    assert body["bounds"]["time_limit"] == {"min": 5, "max": 900}
     assert set(body["bounds"]) == set(body["settings"])
     assert body["updated_at"] is None and body["load_error"] is None
 
@@ -175,7 +175,8 @@ def test_warmup_uses_stored_settings(monkeypatch, settings_path):
                         lambda graph, S, C, params, n_alternatives, outcome=None: seen.append(params) or [])
     with TestClient(main.app) as c:
         cache = c.app.state.cache
-        key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(), 3,
+        n = len(c.app.state.dataset.graph.people)           # 자동 계산 시간(기본)은 인원수로 정해진다
+        key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(n_people=n), 3,
                               c.app.state.dataset.info.version)
         assert cache.get(key) == []
     assert seen and seen[0].min_alloc == pytest.approx(0.45)
@@ -202,6 +203,9 @@ def test_report_accepts_plan_basis_and_rejects_bad_one(client, monkeypatch, tmp_
     assert seen[0]["milp_params"]["min_alloc"] == pytest.approx(0.30)
     bad = client.post("/api/report", json={**base, "milp_params": {"min_alloc": 3}})
     assert bad.status_code == 422
+    # 자동 시간 칸이 생기기 전의 화면은 time_limit_auto를 보내지 않는다 -- 그래도 PDF는 받는다(리뷰 S4).
+    legacy = {k: v for k, v in PlacementSettings().model_dump().items() if k != "time_limit_auto"}
+    assert client.post("/api/report", json={**base, "milp_params": legacy}).status_code == 200
 
 
 # --- 리뷰 반영(1라운드) ----------------------------------------------------
@@ -264,8 +268,12 @@ def test_milp_params_in_mirrors_every_model_field():
     from api.schemas import MilpParamsIn
     # solver는 일부러 HTTP 계약 밖에 둔다: 서비스 솔버는 HiGHS로 고정(사용자 결정 2026-10-05), "cbc"는 측정용.
     # seat_fit_weight도 HTTP 밖: 로드맵 3번 실험에서 기각된 측정용 항(기본 0)이라 클라이언트가 켤 수 없게 한다.
-    # solver_seeds도 HTTP 밖(2026-10-06 claude-a): 동시에 쓰는 CPU 코어 수라 요청마다 정하지 않고 서버 설정이 정한다.
-    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds"}
+    # time_limit_auto는 그 반대: 관리자 설정의 표시 칸이라 HTTP에는 있지만 모델에는 없다(계산엔 time_limit 숫자만).
+    # review_judge도 같다: 데이터셋을 만드는 방식이라 HTTP에선 받기만 한다(api.settings.NON_SOLVER_FIELDS).
+    # solver_seeds는 HTTP 밖(2026-10-06 claude-a): 동시에 쓰는 CPU 코어 수라 요청마다 정하지 않고 서버 설정이 정한다.
+    from api.settings import NON_SOLVER_FIELDS
+    assert set(MilpParamsIn.model_fields) - NON_SOLVER_FIELDS == \
+        set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds"}
     with pytest.raises(Exception):
         MilpParamsIn(solver="cbc")
     with pytest.raises(Exception):
@@ -283,7 +291,7 @@ def test_warmup_is_skipped_when_stored_time_limit_is_large(monkeypatch, settings
 
     import api.main as main
 
-    SettingsStore(settings_path).save(PlacementSettings(time_limit=300))
+    SettingsStore(settings_path).save(PlacementSettings(time_limit=300, time_limit_auto=False))
     seen = []
     monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
     monkeypatch.setattr(main, "generate_plans", lambda *a, **k: seen.append(1) or [])
@@ -367,3 +375,47 @@ def test_settings_also_carry_the_monthly_recommended_time(client):
     n = body["recommended_time"]["n_people"]
     assert body["recommended_time_monthly"]["per_solve_s"] == recommend(n, allocation_mode="monthly").per_solve_s
     assert body["recommended_time_monthly"]["per_solve_s"] >= body["recommended_time"]["per_solve_s"]
+
+
+
+def test_auto_time_limit_uses_the_recommendation_for_the_active_dataset(client):
+    """claude-a 요청: 계산 시간 기본은 '자동(인원 기준)'. 서버가 실제로 쓸 값(effective)을 함께 준다."""
+    from core.optimize.time_budget import recommend
+    body = client.get("/api/settings").json()
+    n = body["recommended_time"]["n_people"]
+    assert body["settings"]["time_limit_auto"] is True
+    assert body["effective_time_limit"] == recommend(n).per_solve_s
+    manual = PlacementSettings(time_limit=77, time_limit_auto=False)
+    assert manual.to_milp_params(n_people=n).time_limit == 77
+    monthly = PlacementSettings(allocation_mode="monthly")
+    assert monthly.to_milp_params(n_people=n).time_limit == recommend(n, allocation_mode="monthly").per_solve_s
+
+
+def test_time_limited_plans_are_flagged_in_the_stream(small_graph_client, monkeypatch):
+    """claude-a 요청: 시간 한도에서 멈춘 해(최선 증명 전)는 플랜에 표시가 붙는다."""
+    import json as _json
+    import api.routes.optimize as route
+    from core.optimize.types import AssignEntry, PlanAssignment
+    plan = PlanAssignment(entries=[AssignEntry(person_id="p000", project_id="j00", alloc=0.5)],
+                          objective=1.0, unfilled=[], violations=[], label="A", time_limited=True)
+    monkeypatch.setattr(route, "generate_plans_streaming", lambda *a, **k: iter([plan]))
+    with small_graph_client.stream("POST", "/api/optimize", json={"weights": {"Python": 3}, "n_alternatives": 0}) as res:
+        events = [_json.loads(l[5:].strip()) for l in res.iter_lines() if l.startswith("data:")]
+    assert next(e for e in events if e.get("label") == "A")["time_limited"] is True
+
+
+def test_settings_file_saved_before_auto_time_keeps_its_manual_time(tmp_path):
+    # 자동 계산 시간 이전에 저장된 파일(칸 없음)은 관리자가 정한 시간을 그대로 쓴다(리뷰 S1).
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"settings": {"time_limit": 300}, "updated_at": "2026-10-01T00:00:00+00:00"}),
+                    encoding="utf-8")
+    state = SettingsStore(path).current()
+    assert state.load_error is None
+    assert state.settings.time_limit_auto is False
+    assert state.settings.to_milp_params(n_people=100).time_limit == 300
+
+
+def test_saved_auto_flag_round_trips(tmp_path):
+    path = tmp_path / "settings.json"
+    SettingsStore(path).save(PlacementSettings(time_limit_auto=True))
+    assert SettingsStore(path).current().settings.time_limit_auto is True

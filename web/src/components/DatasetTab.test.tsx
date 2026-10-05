@@ -91,3 +91,34 @@ describe("DatasetTab — 저장(K13)", () => {
     expect(await screen.findByText(/재기동하면 기본 데이터로 돌아간다/)).toBeInTheDocument();
   });
 });
+
+
+describe("DatasetTab — 시연 데이터·오류 문구(claude-a 요청)", () => {
+  it("시연 묶음은 '시연 데이터(실제 형식)'로, 서버가 준 오류 문장은 그대로 보인다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, source: "demo-bundle",
+      restore_error: "시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x" } as any} onSwitched={vi.fn()} />);
+    expect(screen.getByText(/시연 데이터\(실제 형식\)/)).toBeInTheDocument();
+    expect(screen.getByText("시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x")).toBeInTheDocument();
+    expect(screen.queryByText(/저장된 업로드 데이터를 복원하지 못해/)).not.toBeInTheDocument();
+  });
+});
+
+
+describe("DatasetTab — 리뷰 판정 방식", () => {
+  it("판정 방식을 보이고, Jev 실패로 규칙 기반이 됐으면 이유를 알린다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, review_judge: "rule",
+      judge_error: "Jev 판정에 실패해 규칙 기반으로 판정했다: HTTP 401" }} onSwitched={vi.fn()} />);
+    expect(screen.getByText(/리뷰 판정 규칙 기반/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("HTTP 401");
+  });
+});
+
+
+describe("DatasetTab — Jev 설정에서 업로드 경고", () => {
+  it("판정 방식이 Jev면 업로드한 평가 원문이 외부로 간다고 알린다", () => {
+    const { rerender } = render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} reviewJudge="rule" />);
+    expect(screen.queryByText(/외부\(TypeSafe Jev API\)로 전송된다/)).not.toBeInTheDocument();
+    rerender(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} reviewJudge="jev" />);
+    expect(screen.getByText(/외부\(TypeSafe Jev API\)로 전송된다/)).toBeInTheDocument();
+  });
+});

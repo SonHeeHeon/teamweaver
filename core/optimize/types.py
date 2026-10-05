@@ -33,6 +33,8 @@ class PlanAssignment(BaseModel):
     # (e.g. over-budget projects). Treat a non-empty `violations` as Greedy-only
     # signal, not something to expect from any MILP-produced plan.
     violations: list[str]
+    # 솔버가 시간 한도에서 멈춘 해(최선임을 증명하기 전)인지. 화면이 "시간 한도 도달" 배지를 단다(claude-a 요청).
+    time_limited: bool = False
     label: str = "A"
 
     def pairs(self) -> set[tuple[str, str]]:

@@ -59,8 +59,9 @@ def _too_big() -> str:
     return f"업로드는 {MAX_UPLOAD_BYTES // (1024 * 1024)}MiB(zip)까지다."
 
 
-def validate_and_build(data: bytes) -> tuple[ActiveDataset | None, dict | None, str | None]:
-    """(활성 후보, 리포트, 묶음 단계 오류 메시지). 스레드에서 돈다(CPU·파일 작업)."""
+def validate_and_build(data: bytes, review_judge: str = "rule"
+                       ) -> tuple[ActiveDataset | None, dict | None, str | None]:
+    """(활성 후보, 리포트, 묶음 단계 오류 메시지). 스레드에서 돈다(CPU·파일 작업, Jev면 외부 호출)."""
     with tempfile.TemporaryDirectory(prefix="teamweaver-upload-") as tmp:
         try:
             root = extract_bundle_zip(data, Path(tmp) / "bundle")
@@ -78,8 +79,33 @@ def validate_and_build(data: bytes) -> tuple[ActiveDataset | None, dict | None, 
         manifest = bundle.manifest
         synthetic = manifest.get("synthetic") if isinstance(manifest.get("synthetic"), bool) else None
         active = build_active(ds, parsed, dataset_id=str(manifest["dataset_id"]),
-                              version=bundle_version(root), source="upload", synthetic=synthetic)
+                              version=bundle_version(root), source="upload", synthetic=synthetic,
+                              review_judge=review_judge)
         return active, _report_dict(report), None
+
+
+def _current_judge(app) -> str:
+    return app.state.settings_store.current().settings.review_judge
+
+
+def rebuild_with_judge(app, review_judge: str) -> tuple[ActiveDataset | None, str | None]:
+    """지금 활성 데이터셋을 같은 원천으로, 주어진 판정 방식으로 다시 만든다(스레드에서 돈다).
+
+    업로드 데이터는 서버에 저장된 묶음에서 다시 읽는다. 저장본이 없으면(저장 실패) 다시 만들 수 없다 --
+    (None, 이유)를 돌려주고 지금 데이터를 그대로 둔다."""
+    info = app.state.dataset.info
+    if info.source != "upload":
+        return app.state.build_fixture_dataset(review_judge=review_judge), None
+    try:
+        saved = app.state.dataset_store.load()
+    except ValueError as exc:
+        return None, f"저장된 업로드 묶음을 읽지 못해 판정 방식을 바꿔 다시 만들지 못했다: {exc}"
+    if saved is None or saved[0].get("version") != info.content_version:
+        return None, "지금 업로드 데이터의 저장본이 없어 판정 방식을 바꿔 다시 만들지 못했다(다시 업로드할 것)."
+    active, _report, err = validate_and_build(saved[1], review_judge)
+    if active is None:
+        return None, f"저장된 업로드 묶음을 다시 만들지 못했다: {err or '검증 오류'}"
+    return active, None
 
 
 def _activate(request: Request, new: ActiveDataset) -> None:
@@ -89,6 +115,13 @@ def _activate(request: Request, new: ActiveDataset) -> None:
     old = state.dataset
     state.dataset = new
     old.retire()
+    # Jev 판정 캐시는 지금 데이터의 판정만 둔다. 새 데이터가 Jev가 아니면 이전 데이터의 판정(글 해시·값)을
+    # 남기지 않는다 -- Jev면 judge_reviews가 이미 지금 데이터만 남겼다(리뷰 S4). 설정 탭에서 규칙 기반으로
+    # 바꾸는 경우(같은 데이터)는 여기를 거치지 않아 캐시가 남는다 -- 다시 Jev로 바꿀 때 재사용한다.
+    if new.info.review_judge != "jev":
+        from api.datasets import jev_cache_path
+        from api.review_judge import clear_cache
+        clear_cache(jev_cache_path())
 
 
 @router.post("/api/datasets", dependencies=[Depends(require_admin)])
@@ -107,7 +140,7 @@ async def upload_dataset(request: Request):
         async with state.dataset_lock:
             data = await _read_capped(request)
             active, report, archive_error = await anyio.to_thread.run_sync(
-                validate_and_build, data)
+                validate_and_build, data, _current_judge(request.app))
             if archive_error is not None:
                 return JSONResponse(status_code=422, content={
                     "activated": False, "detail": archive_error, "report": None})
@@ -157,7 +190,9 @@ async def reset_dataset(request: Request) -> dict:
             _activate(request, fixture)
             await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
-            request.app.state.dataset_restore_error = None
-            return {**fixture.info.to_dict(), "restore_error": None}
+            # 시연 묶음을 못 읽어 예전 fixture로 되돌아갔으면 그 이유를 알린다(claude-a 요청 -- 조용히 바뀌지 않게).
+            err = getattr(request.app.state, "demo_bundle_error", None)
+            request.app.state.dataset_restore_error = err
+            return {**fixture.info.to_dict(), "restore_error": err}
     finally:
         state.dataset_switching = False

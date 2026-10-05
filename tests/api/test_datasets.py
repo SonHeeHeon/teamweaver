@@ -511,3 +511,17 @@ def test_unexpected_restore_error_still_boots_with_fixture(client, bundle_zip, m
     with TestClient(main.app) as again:
         info = again.get("/api/datasets/active").json()
         assert info["source"] == "fixture" and info["restore_error"]
+
+
+def test_reset_reports_a_broken_demo_bundle(client, monkeypatch, tmp_path):
+    """claude-a 요청: 기본 데이터로 되돌릴 때 시연 묶음을 못 읽어 예전 fixture가 되면 이유를 알린다."""
+    def build_with_error():
+        ds = original()                       # 실제 빌더는 시작할 때 오류를 비우고, 묶음 실패 시 채운다
+        client.app.state.demo_bundle_error = "시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: 테스트"
+        return ds
+    original = client.app.state.build_fixture_dataset
+    monkeypatch.setattr(client.app.state, "build_fixture_dataset", build_with_error)
+    res = client.post("/api/datasets/reset", json={})
+    assert res.status_code == 200
+    assert res.json()["restore_error"].startswith("시연 데이터 묶음을 읽지 못해")
+    assert client.get("/api/datasets/active").json()["restore_error"].startswith("시연 데이터 묶음을 읽지 못해")

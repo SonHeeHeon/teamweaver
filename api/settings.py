@@ -29,6 +29,10 @@ log = logging.getLogger(__name__)
 SETTINGS_PATH_ENV = "TEAMWEAVER_SETTINGS_PATH"
 
 
+# 설정이지만 MILP 파라미터가 아닌 칸: 자동 시간 표시, 리뷰 판정 방식(데이터셋을 만드는 방식).
+NON_SOLVER_FIELDS = frozenset({"time_limit_auto", "review_judge"})
+
+
 class PlacementSettings(BaseModel):
     """관리자가 바꿀 수 있는 배치 규칙. 범위는 화면 검사에도 그대로 쓰인다(bounds()).
 
@@ -40,7 +44,11 @@ class PlacementSettings(BaseModel):
     clique_threshold_months: int = Field(default=6, ge=1, le=24)
     lam: float = Field(default=0.3, ge=0.0, le=1.0)
     mu: float = Field(default=0.2, ge=0.0, le=1.0)
-    time_limit: int = Field(default=120, ge=5, le=600)
+    # 계산 시간 상한 900초(claude-a 리허설: 300명 월별 309초, 고정 권장 180초 × 여유).
+    time_limit: int = Field(default=120, ge=5, le=900)
+    # 자동(인원 기준, 기본): 활성 데이터 인원수와 투입률 방식으로 권장 시간(core/optimize/time_budget)을 쓴다.
+    # 끄면 위 time_limit(관리자 수동값)을 쓴다. 서버가 GET /api/settings에서 실제로 쓸 값(effective)을 함께 준다.
+    time_limit_auto: bool = True
     gap: float = Field(default=0.05, ge=0.0, le=0.2)
     # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
     max_concurrent_projects: int = Field(default=3, ge=1, le=6)
@@ -48,9 +56,19 @@ class PlacementSettings(BaseModel):
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
     allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # 리뷰 글 판정 방식(사용자 결정 2026-10-06). "rule": 좋은 점·아쉬운 점 항목 수(외부 전송 없음, 기본).
+    # "jev": 리뷰 원문을 TypeSafe Jev API로 보내 글을 읽고 판정(외부 전송이 허용된 조직만). 계산 파라미터가
+    # 아니라 데이터셋을 만드는 방식이다 -- 바꾸면 서버가 활성 데이터셋을 다시 만든다(api/routes/settings.py).
+    review_judge: Literal["rule", "jev"] = "rule"
 
-    def to_milp_params(self) -> MilpParams:
-        return MilpParams(**self.model_dump())
+    def to_milp_params(self, n_people: int | None = None) -> MilpParams:
+        """n_people을 주고 자동이 켜져 있으면 권장 시간으로 바꿔 쓴다(부팅 사전계산). 화면 요청은 이미 실제
+        시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다."""
+        data = self.model_dump(exclude=NON_SOLVER_FIELDS)
+        if self.time_limit_auto and n_people is not None:
+            from core.optimize.time_budget import recommend
+            data["time_limit"] = recommend(n_people, allocation_mode=self.allocation_mode).per_solve_s
+        return MilpParams(**data)
 
     @classmethod
     def bounds(cls) -> dict[str, dict[str, float]]:
@@ -103,7 +121,10 @@ class SettingsStore:
         # 던지는데, 그게 lifespan을 죽이면 서버가 아예 안 뜬다(리뷰 실측).
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
-            settings = PlacementSettings(**raw["settings"])
+            # 자동 계산 시간(2026-10-06) 이전에 저장된 파일에는 이 칸이 없다. 파일이 있다는 것은
+            # 관리자가 값을 정해 저장했다는 뜻이므로 수동으로 읽는다 -- 정한 시간이 몰래 바뀌지 않게(리뷰 S1).
+            saved = {"time_limit_auto": False, **raw["settings"]}
+            settings = PlacementSettings(**saved)
             updated_at = raw.get("updated_at")
             if updated_at is not None and not isinstance(updated_at, str):
                 raise ValueError(f"updated_at이 문자열이 아니다: {updated_at!r}")

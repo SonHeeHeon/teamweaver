@@ -97,3 +97,12 @@ def small_graph_client(tmp_path):
         yield c
     app.dependency_overrides.clear()
     conn.close()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_jev_calls(monkeypatch):
+    """lifespan의 load_env가 .env의 실제 TYPESAFE_API_KEY를 올려도 테스트가 실제 Jev API로 리뷰 글을
+    보내지 않게 주소를 닿지 않는 곳으로 돌린다(리뷰 지적: 가짜를 빠뜨린 새 테스트의 외부 전송 방지).
+    httpx.MockTransport를 쓰는 테스트는 주소와 무관하게 동작한다."""
+    import api.review_judge as rj
+    monkeypatch.setattr(rj, "URL", "http://jev.invalid/v1/systemone")

@@ -27,7 +27,7 @@ import { AdminLogin } from "./components/AdminLogin";
 import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
-import { stepBody } from "./api/types";
+import { effectiveSettings, stepBody } from "./api/types";
 
 type Tab = "req" | "whatif" | "settings" | "data";
 
@@ -179,6 +179,8 @@ export default function App() {
     setPlanBasis(null);
     setWeights({});
     setRunning(false);
+    // 인원이 바뀌면 자동 계산 시간도 바뀐다 -- 설정 탭이 이전 데이터 기준 값을 보이지 않게 다시 읽는다(리뷰 S2).
+    fetchSettings().then(setSettings).catch(() => {});
     try {
       const fresh = await fetchMeta();
       setMeta(fresh);
@@ -221,12 +223,12 @@ export default function App() {
     // 실행할 때마다 서버 설정을 다시 읽는다: 페이지를 연 뒤 다른 관리자가 바꾼
     // 설정도 반영하고, 첫 로딩이 끝나기 전에 눌러도 모델 기본값으로 새지 않는다.
     // 읽기에 실패하면 마지막으로 알던 설정을 쓰고(없으면 모델 기본값) 경고한다.
-    let params: PlacementSettings | null = settings?.settings ?? null;
+    let params: PlacementSettings | null = settings ? effectiveSettings(settings) : null;
     try {
       const fresh = await fetchSettings();
       setSettings(fresh);
       setSettingsError(null);
-      params = fresh.settings;
+      params = effectiveSettings(fresh);      // 자동 계산 시간이면 서버가 정한 실제 값(claude-a 요청)
     } catch (e) {
       setSettingsError(String(e));
     }
@@ -597,6 +599,7 @@ export default function App() {
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <DatasetTab active={dataset} onSwitched={datasetSwitched}
+                        reviewJudge={settings?.settings.review_judge}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
           </div>
         ) : tab === "settings" ? (
@@ -604,11 +607,21 @@ export default function App() {
             <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <SettingsTab data={settings}
-                         onSave={async (s) => {
+                         activeJudge={dataset?.review_judge}
+                         onSave={async (s, opts) => {
                            try {
-                             setSettings(await saveSettings(s, settings.updated_at,
-                                                            adminToken || null));
+                             const saved = await saveSettings(s, settings.updated_at, adminToken || null,
+                                                              opts?.retryJudge ?? false);
+                             setSettings(saved);
                              setSettingsError(null);
+                             // 리뷰 판정 방식을 바꿔 서버가 데이터셋을 다시 만들었다: 데이터셋 전환과 같다.
+                             // 버전이 같으면(Jev 실패로 규칙 기반 그대로) 계산 결과를 비우지 않는다.
+                             if (saved.dataset && saved.dataset.version !== dataset?.version) {
+                               await datasetSwitched(saved.dataset);
+                             } else if (saved.dataset) {
+                               setDataset({ ...dataset, ...saved.dataset });
+                             }
+                             return saved;
                            } catch (e) {
                              if (e instanceof AdminLoginRequiredError) adminExpired();
                              if (e instanceof SettingsConflictError) {
@@ -631,12 +644,12 @@ export default function App() {
           <div className="space-y-6">
             {plans.length > 0 && planBasis && settings && (
               planBasis.params === null
-              || describeChanges(planBasis.params, settings.settings).length > 0) && (
+              || describeChanges(planBasis.params, effectiveSettings(settings)).length > 0) && (
               <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2
                                          text-sm text-amber-800">
                 {planBasis.params
                   ? `이 결과는 이전 설정으로 계산됐다(바뀐 설정: ${
-                      describeChanges(planBasis.params, settings.settings).join(", ")}). `
+                      describeChanges(planBasis.params, effectiveSettings(settings)).join(", ")}). `
                   : "이 결과는 배치 설정 없이 서버 모델 기본값으로 계산됐다. "}
                 현재 설정을 반영하려면 요건 설정 탭에서 다시 실행할 것.
                 교체 검토와 PDF는 계산 당시 기준을 그대로 쓴다.
@@ -688,6 +701,12 @@ export default function App() {
                 {plans.length === 0
                   ? "Plan A 계산 중… (최초 실행은 약 8초)"
                   : `대안 계산 중… (${plans.length}개 도착)`}
+                {planBasis?.params && (
+                  <span className="ml-1">
+                    · 최악의 경우 약 {Math.ceil((4 * planBasis.params.time_limit) / 60)}분(Plan A와 대안 3개,
+                    각 {planBasis.params.time_limit}초 한도)
+                  </span>
+                )}
               </p>
             )}
             {notice && (

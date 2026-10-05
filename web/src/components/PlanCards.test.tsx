@@ -36,3 +36,12 @@ describe("PlanCards", () => {
     expect(screen.getByText(/미충원/)).toBeInTheDocument();
   });
 });
+
+
+describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
+  it("시간 한도에서 멈춘 해에 배지를 단다", () => {
+    render(<PlanCards plans={[{ ...plan("A", 0.9), time_limited: true }, plan("B", 0.8)]} selected="A"
+                      onSelect={() => {}} />);
+    expect(screen.getAllByText("시간 한도 도달(최선 증명 전)")).toHaveLength(1);
+  });
+});

@@ -35,6 +35,36 @@
 - 검증: `uv run --group benchmark pytest -q` → 1227 passed, 19 deselected. Phase 0 PASS. Opus 폴백 리뷰 3회, 남은 MUST 없음.
 - 근거: `.omc/plan/2026-10-06-solve-stability.md`, `.omc/reports/2026-10-06-solve-stability.md`, `rehearsal/results/n*/solve-probe.json`
 
+---
+
+## 2026-10-06 · claude-b · 리뷰 글 판정 방식 선택(규칙 기반 기본 / Jev)
+- 브랜치/커밋: `feat/claude-b-review-judge` (main 병합)
+- 한 일:
+  - 설정 `review_judge: "rule"|"jev"`(기본 rule)을 추가했다. jev면 데이터셋을 만들 때 리뷰 원문을 TypeSafe Jev API로 보내 `text_polarity`를 다시 판정한다. Score 5단계를 확률 기댓값으로 바꿔 [-1,1]에 놓고, 병렬 16·전체 한도 120초로 부른다. 판정 결과는 캐시(데이터 폴더 `jev_judgments.json`, 0600, 지금 데이터만)에 둔다.
+  - 판정 방식을 바꾸면 PUT /api/settings가 활성 데이터셋을 같은 원천으로 다시 만든다(업로드는 저장된 zip에서). jev 버전은 sha256(원 버전·판정값)이고, `content_version`은 원천 해시라 업로드 저장·복원에 쓴다.
+  - Jev가 실패하면 규칙 기반으로 만들고 `judge_error`를 남긴다. 화면에서 "판정 다시 시도"(`retry_judge`)를 누를 수 있다.
+  - 화면: 설정 탭에 선택지·외부 전송 경고·실측 수준 차이 안내, 데이터 탭에 판정 방식·실패 이유·Jev 상태 업로드 경고.
+- 상대 영향:
+  - `DatasetInfo`에 `content_version`·`review_judge`·`judge_error`가 생겼다. `DatasetStore`는 `content_version`으로 저장한다(기존 포인터는 그대로 호환).
+  - `MilpParamsIn`은 `review_judge`를 받기만 한다. `PlacementSettings.to_milp_params`는 `NON_SOLVER_FIELDS`를 뺀다.
+  - 실측(시연 100명, 1,372건): 첫 판정 17초, 캐시 0.01초. 규칙 기반과 상관 0.88이지만 평균 0.56 대 0.16이고 음수가 없다(보정 안 함).
+  - 테스트는 `tests/api/conftest.py` autouse로 Jev 주소를 막는다.
+- 검증: `uv run --group benchmark pytest -q` → 1257 passed, 19 deselected. `-m slow` → 19 passed. `npx vitest run` → 150 passed. `npx tsc -b`·oxlint·build 통과. 실제 키 스모크 2회. Opus 폴백 적대적 리뷰 2라운드(1차 MUST 2·SHOULD 7, 2차 MUST 0·SHOULD 2), 모두 반영.
+- 근거: `.omc/reports/2026-10-06-review-judge-setting.md`
+
+## 2026-10-06 · claude-b · claude-a 요청 처리: 데이터 탭 표시·자동 계산 시간·시간 한도 배지
+- 브랜치/커밋: `feat/claude-b-data-settings` (main 병합)
+- 한 일:
+  - 데이터 탭: `source="demo-bundle"`를 "시연 데이터(실제 형식)"로 표시. 서버 오류 문장을 그대로 보여 준다. 기본 데이터로 되돌릴 때 시연 묶음이 실패하면 이유(`restore_error`)를 돌려준다. 선택 파일 2개에는 "(선택 · 계산에 쓰지 않음)" 표시.
+  - 설정: `time_limit_auto`(새 설치 기본 켬)는 인원 기준 `time_budget.recommend`로 계산 시간을 정한다. GET `/api/settings`가 `effective_time_limit`을 주고, 웹은 이 숫자를 `milp_params.time_limit`으로 보낸다. 부팅 사전계산도 같은 값을 써서 캐시가 맞는다. `time_limit` 상한은 600에서 900으로 올렸다. 실행 안내에 A~D 최악 대기 시간을 보인다.
+  - 시간 한도에서 멈춘 해: `PlanAssignment.time_limited`(`alternatives._solve`가 `termination_reason == "time_limit_incumbent"`이면 True) → SSE `time_limited` → 플랜 카드 배지 "시간 한도 도달(최선 증명 전)".
+- 상대 영향:
+  - `core/optimize/types.py`·`alternatives.py`(Codex 영역)를 임시 위임 범위에서 고쳤다. 새 칸은 기본값 False라 기존 호출은 그대로 동작한다.
+  - 기존 `settings.json`(칸 없음)은 수동으로 읽는다. 관리자가 정한 시간은 바뀌지 않는다.
+  - 기본 설정의 계산 시간은 100명 기준 120초에서 30초가 된다(자동). 시간 한도 해는 캐시하지 않는다.
+- 검증: `uv run --group benchmark pytest -q` → 1221 passed, 19 deselected. `-m slow` → 19 passed. `npx vitest run` → 142 passed. `npx tsc -b`·oxlint·build 통과. Opus 폴백 리뷰(Codex 쿼터 소진): MUST 1(소유 영역 절차, work-split에 기록), SHOULD 4 반영.
+- 근거: `.omc/reports/2026-10-06-data-settings.md`
+
 ## 2026-10-06 · claude-a · 실제 같은 시연 데이터: 긴 동료 평가·과거 성과·10년 조회 창·시연 부팅
 - 브랜치/커밋: `feat/claude-a-demo-data` `b3456a6..7cc9c6e` → main 병합(사용자 결정 2026-10-06: 병합하되 `run_poc.sh` 기본값은 예전 고정 데이터, 실제 형식 데이터는 `TEAMWEAVER_DEMO_BUNDLE`로 켬)
 - 한 일:

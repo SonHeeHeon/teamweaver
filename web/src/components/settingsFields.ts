@@ -1,7 +1,11 @@
 import type { PlacementSettings } from "../api/types";
 
 /** 숫자 칸만(투입률 방식은 SettingsTab이 따로 고른다). */
-export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode">;
+export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode" | "time_limit_auto" | "review_judge">;
+
+export const JUDGE_LABEL: Record<"rule" | "jev", string> = {
+  rule: "규칙 기반(외부 전송 없음)", jev: "Jev(글을 읽고 판정 · 외부 전송)",
+};
 type Key = NumKey;
 
 /** 화면 표시 정보. percent=true면 0~1 값을 % 단위로 입력받는다. 범위는 서버
@@ -47,5 +51,7 @@ export function describeChanges(before: PlacementSettings, now: PlacementSetting
     .map((f) => `${f.label} ${formatValue(f, before[f.key])}→${formatValue(f, now[f.key])}`);
   const b = before.allocation_mode ?? "fixed", n = now.allocation_mode ?? "fixed";
   if (b !== n) out.push(`투입률 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
+  const ab = before.time_limit_auto !== false, an = now.time_limit_auto !== false;
+  if (ab !== an) out.push(`계산 시간 ${ab ? "자동" : "수동"}→${an ? "자동" : "수동"}`);
   return out;
 }

@@ -87,11 +87,13 @@ export class SettingsConflictError extends Error {}
 /** basedOn은 화면이 읽은 설정의 updated_at이다 -- 그사이 다른 저장이 있으면 서버가 409로 거부한다. */
 export async function saveSettings(
   settings: PlacementSettings, basedOn: string | null, adminToken: string | null = null,
+  retryJudge = false,
 ): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/api/settings`, {
     method: "PUT", credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
-    body: JSON.stringify({ settings, based_on: basedOn }),
+    body: JSON.stringify(retryJudge ? { settings, based_on: basedOn, retry_judge: true }
+                                    : { settings, based_on: basedOn }),
   });
   throwIfLoginRequired(res);
   if (res.status === 409) {

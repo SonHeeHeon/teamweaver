@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SettingsTab } from "./SettingsTab";
-import type { SettingsResponse } from "../api/types";
+import type { PlacementSettings, SettingsResponse } from "../api/types";
 
 const DATA: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },
@@ -143,5 +143,79 @@ describe("SettingsTab — 투입률 방식(월별 투입률)", () => {
     fireEvent.click(screen.getByRole("button", { name: /저장/ }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0].allocation_mode).toBe("monthly");
+  });
+});
+
+
+describe("SettingsTab — 계산 시간 자동(claude-a 요청)", () => {
+  it("자동이면 권장값을 보여 주고 입력을 잠그며, 끄면 수동값으로 저장한다", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const hint = { n_people: 100, per_solve_s: 30, worst_case_total_s: 120, measured: true, basis: "측정" };
+    render(<SettingsTab data={{ ...DATA, settings: { ...DATA.settings, time_limit_auto: true },
+                                recommended_time: hint }} onSave={onSave} />);
+    const input = screen.getByLabelText(/계산 시간 한도/) as HTMLInputElement;
+    expect(input.disabled).toBe(true);
+    expect(input.value).toBe("30");
+    fireEvent.click(screen.getByLabelText("자동(인원 기준)"));
+    expect(input.disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /저장/ }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({ time_limit_auto: false, time_limit: 120 });
+  });
+});
+
+
+describe("SettingsTab — 리뷰 글 판정 방식(규칙 기반 / Jev)", () => {
+  it("Jev를 고르면 외부 전송 경고가 보이고 저장 값에 실린다", async () => {
+    const onSave = vi.fn(async (_s: PlacementSettings) => ({
+      ...DATA, jev_available: true,
+      dataset: { dataset_id: "d", version: "j", source: "fixture" as const, synthetic: true, people: 1, projects: 1,
+                 activated_at: "t", review_judge: "jev" as const } }));
+    render(<SettingsTab data={{ ...DATA, jev_available: true }} onSave={onSave} />);
+    expect(screen.queryByText(/외부\(TypeSafe Jev API\)로 전송된다/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/Jev\(글을 읽고 판정/));
+    expect(screen.getByRole("alert")).toHaveTextContent("동료 평가 원문이 외부(TypeSafe Jev API)로 전송된다");
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({ review_judge: "jev" });
+    expect(await screen.findByText(/새 판정 방식으로 데이터를 다시 만들었다/)).toBeInTheDocument();
+  });
+
+  it("서버에 키가 없으면 Jev를 고를 수 없다", () => {
+    render(<SettingsTab data={{ ...DATA, jev_available: false }} onSave={vi.fn()} />);
+    expect((screen.getByLabelText(/Jev\(글을 읽고 판정/) as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByText(/TYPESAFE_API_KEY\)가 없어/)).toBeInTheDocument();
+  });
+});
+
+
+describe("SettingsTab — Jev 실패 응답", () => {
+  it("판정이 실패해 규칙 기반으로 만들었으면 성공처럼 말하지 않는다", async () => {
+    const onSave = vi.fn(async (_s: PlacementSettings) => ({
+      ...DATA, jev_available: true,
+      dataset: { dataset_id: "d", version: "v", source: "fixture" as const, synthetic: true, people: 1, projects: 1,
+                 activated_at: "t", review_judge: "rule" as const,
+                 judge_error: "Jev 판정에 실패해 규칙 기반으로 판정했다: Jev API 오류(HTTP 503)" } }));
+    render(<SettingsTab data={{ ...DATA, jev_available: true }} onSave={onSave} />);
+    fireEvent.click(screen.getByLabelText(/Jev\(글을 읽고 판정/));
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    expect(await screen.findByText(/설정은 저장했지만 .*HTTP 503.*'판정 다시 시도'로 다시 판정할 수 있다/)).toBeInTheDocument();
+    expect(screen.queryByText(/새 판정 방식으로 데이터를 다시 만들었다/)).not.toBeInTheDocument();
+  });
+});
+
+
+describe("SettingsTab — 판정 다시 시도", () => {
+  it("설정은 Jev인데 데이터가 규칙 기반이면 재시도 버튼으로 다시 판정을 요청한다", async () => {
+    const onSave = vi.fn(async (_s: PlacementSettings, _o?: { retryJudge?: boolean }) => {});
+    const jevSaved = { ...DATA, jev_available: true, settings: { ...DATA.settings, review_judge: "jev" as const } };
+    const { rerender } = render(<SettingsTab data={jevSaved} onSave={onSave} activeJudge="jev" />);
+    expect(screen.queryByRole("button", { name: "판정 다시 시도" })).not.toBeInTheDocument();
+    rerender(<SettingsTab data={jevSaved} onSave={onSave} activeJudge="rule" />);
+    expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "판정 다시 시도" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][1]).toEqual({ retryJudge: true });
+    expect(onSave.mock.calls[0][0]).toMatchObject({ review_judge: "jev" });
   });
 });

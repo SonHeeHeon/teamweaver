@@ -54,6 +54,8 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             "optimization_ratio": (skill_term / ub) if ub > 0 else 0.0,
             "index": index,
             "cached": cached,
+            # 솔버가 시간 한도에서 멈춘 해(최선 증명 전) -- 화면 배지(claude-a 요청)
+            "time_limited": bool(getattr(plan, "time_limited", False)),
             "dataset_version": dataset.info.version,
             # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
             "plan_token": sign_plan(dataset.info.version, plan.label,

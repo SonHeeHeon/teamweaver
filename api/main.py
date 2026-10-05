@@ -40,8 +40,16 @@ WARM_GAP_MIN = 0.05
 async def lifespan(app: FastAPI):
     load_env()
     warn_if_unprotected()
+    # 관리자 배치 설정(K8)을 데이터셋보다 먼저 읽는다 -- 리뷰 글 판정 방식(review_judge)이 데이터셋을 만드는 방식이다.
+    settings_store = SettingsStore(default_settings_path())
+    app.state.settings_store = settings_store
+
+    def current_judge() -> str:
+        return settings_store.current().settings.review_judge
+
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
-    def build_fixture_dataset() -> ActiveDataset:
+    def build_fixture_dataset(review_judge: str | None = None) -> ActiveDataset:
+        judge = review_judge or current_judge()
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
@@ -54,14 +62,15 @@ async def lifespan(app: FastAPI):
                 ds, parsed = to_dataset(bundle, report)      # ValueError with the report if it does not validate
                 return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
                                     version=bundle_version(root), source="demo-bundle",
-                                    synthetic=bundle.manifest.get("synthetic") is True)
+                                    synthetic=bundle.manifest.get("synthetic") is True,
+                                    review_judge=judge)
             except Exception as exc:                    # noqa: BLE001
                 log.error("시연 데이터 묶음(%s)을 읽지 못해 기본 데이터로 시작한다: %s", root, exc)
                 app.state.demo_bundle_error = f"시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: {exc}"
         ds, parsed = load_fixtures(FIXTURES_DIR)
         return build_active(ds, parsed, dataset_id="fixture-demo-100x20",
                             version=dir_version(FIXTURES_DIR, list(FIXTURE_DATA_FILES)),
-                            source="fixture", synthetic=True)
+                            source="fixture", synthetic=True, review_judge=judge)
 
     app.state.build_fixture_dataset = build_fixture_dataset
     # 업로드해 둔 데이터가 있으면 그것으로 뜬다(K13). 같은 검증·변환을 다시 거치고, 내용
@@ -75,18 +84,19 @@ async def lifespan(app: FastAPI):
         saved = store.load()
         if saved is not None:
             pointer, blob = saved
-            active, report, archive_error = validate_and_build(blob)
+            active, report, archive_error = validate_and_build(blob, review_judge=current_judge())
             if active is None:
                 raise ValueError(archive_error or "저장된 묶음이 지금 검증을 통과하지 못한다: "
                                  + "; ".join(e["message"] for e in (report or {}).get("errors", [])[:3]))
-            if active.info.version != pointer["version"]:
+            if active.info.content_version != pointer["version"]:
                 raise ValueError("저장된 묶음의 내용 해시가 저장 당시와 다르다")
             restored = active
     except Exception as exc:                        # noqa: BLE001
         # 어떤 이유로 실패해도(로더 계약 변경으로 옛 묶음이 새 코드에서 터지는 경우 포함) 서버는
         # 기본 데이터로 뜬다 -- 저장본이 남아 있어 재기동마다 죽는 일을 막는다(Opus 리뷰 S4).
         log.error("업로드 데이터 복원 실패, 기본 데이터로 시작한다: %s", exc)
-        app.state.dataset_restore_error = str(exc)
+        # 화면은 이 문장을 그대로 보여 준다(원인 문구를 서버가 정한다 -- 시연 묶음 실패와 구분).
+        app.state.dataset_restore_error = f"저장된 업로드 데이터를 복원하지 못해 기본 데이터로 시작했다: {exc}"
     app.state.dataset = restored or build_fixture_dataset()
     if restored is None and app.state.dataset_restore_error is None:
         app.state.dataset_restore_error = app.state.demo_bundle_error
@@ -98,10 +108,9 @@ async def lifespan(app: FastAPI):
     app.state.cache = cache
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
-    store = SettingsStore(default_settings_path())
-    app.state.settings_store = store
-    warm_params = store.current().settings.to_milp_params()
-    # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 600초 × Plan A·대안 4회)
+    store = settings_store
+    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people))
+    # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 900초 × Plan A·대안 4회)
     # gap이 작으면(실측: gap 0·120초에서 부팅 377초) 재기동이 오래 멈춘다 -- 기본값
     # 수준(120초 이하, gap 5% 이상)일 때만 한다(기본 설정 실측 ~34초).
     warm_ok = (warm_params.time_limit <= WARM_TIME_LIMIT_MAX
