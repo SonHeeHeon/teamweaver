@@ -871,6 +871,57 @@ describe("App — 충돌 뒤 줄 선 저장은 버린다(Opus 검증 S1)", () =>
 });
 
 
+describe("App — 409 뒤 서버 상태로 맞추기 전에 한 적용(K13 남은 SHOULD)", () => {
+  it("강제 복원이 끝나기 전에 적용한 옛 이력 기준 저장은 서버로 보내지 않는다", async () => {
+    const STEP = {
+      entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
+      evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
+      objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
+      optimization_ratio: 0.7, unfilled: [], warnings: [],
+    };
+    const other = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
+                    swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" } };
+    const restore = deferred<any>();
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    vi.mocked(loadPlanEdits).mockReset()
+      .mockResolvedValueOnce({ swaps: [], steps: [], updated_at: null, revision: 0 })
+      .mockReturnValueOnce(restore.promise);
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+    vi.mocked(applySwap).mockReset().mockResolvedValueOnce({ ...STEP })
+      .mockResolvedValue({ ...STEP, entries: [{ person_id: "p1", project_id: "j1", alloc: 1 }] });
+    vi.mocked(savePlanEdits).mockReset().mockRejectedValueOnce(new EditsConflictError(3))
+      .mockResolvedValue({ revision: 4 });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledTimes(2));   // 409 → 강제 복원 대기 중
+    // 복원이 끝나기 전에 한 번 더 검토·적용한다(화면에는 아직 옛 이력 1건이 보인다).
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p1" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 2건 적용/);
+    await act(async () => {
+      restore.resolve({ swaps: [other.swap], steps: [other], updated_at: null, revision: 3 });
+      await Promise.resolve();
+    });
+    expect(await screen.findByText(/다른 화면에서 먼저 저장해/)).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 20));
+    // 첫 저장(409)만 나갔다 -- 옛 이력 + 새 교체로 서버의 최신 저장분을 덮지 않는다.
+    expect(savePlanEdits).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/교체 1건 적용/)).toBeInTheDocument();     // 서버 상태(다른 화면의 1건)
+  });
+});
+
+
 describe("App — 관리자 로그인(K14)", () => {
   const LOCKED = { token_required: false, login_required: true, protected: true,
                    logged_in: false, expires_at: null };

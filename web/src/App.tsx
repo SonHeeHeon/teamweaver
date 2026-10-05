@@ -345,11 +345,18 @@ export default function App() {
     };
     const runAt = runGen.current;
     const enqueuedAt = chainGen.current[token] ?? 0;
+    // 저장은 매번 이력 전체를 보낸다. 줄에서 기다리는 사이 이 플랜의 화면 상태가 다시 바뀌었으면
+    // (다음 적용·취소, 409 뒤 서버 상태 복원) 이 저장은 낡았다 -- 특히 강제 복원 전에 한 적용은
+    // 옛 이력 기준이라 보내면 다른 화면이 먼저 저장한 것을 덮는다(K13 남은 SHOULD).
+    const mutAt = mutGen.current[label] ?? 0;
     const prev = saveChain.current[token] ?? Promise.resolve();
     // expected_revision은 보내는 순간의 값을 쓴다(앞 저장의 응답으로 갱신된 뒤).
     saveChain.current[token] = prev.then(() => {
       // 앞 저장이 충돌해 서버 상태로 다시 맞추는 중이면, 그 전에 줄 선 저장은 버린다(덮어쓰기 방지).
       if ((chainGen.current[token] ?? 0) !== enqueuedAt) return null;
+      // 같은 실행 안에서만 본다: mutGen은 라벨 기준이라, 재실행 뒤 새 플랜의 복원이 올린 세대로
+      // 이전 실행의 사용자 편집 저장을 버리면 안 된다(자체 리뷰 SHOULD).
+      if (runAt === runGen.current && (mutGen.current[label] ?? 0) !== mutAt) return null;
       return savePlanEdits(token, { ...body, expected_revision: knownRevision.current[token] ?? 0 });
     }).then((r) => {
       if (r && runAt === runGen.current) knownRevision.current[token] = r.revision;
