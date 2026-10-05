@@ -162,8 +162,8 @@ class PlanEditIn(BaseModel):
     milp_params: MilpParamsIn | None = None
     dataset_version: str
     swaps: list["SwapIn"] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
-    # 화면이 보낸 단조 증가 번호. 늦게 도착한 옛 요청이 나중 상태를 덮지 못하게 한다.
-    revision: int = Field(ge=0)
+    # 화면이 마지막으로 본 서버 revision(저장분이 없으면 0). 다르면 409와 최신 상태.
+    expected_revision: int = Field(ge=0)
 
 
 class EntryIn(BaseModel):

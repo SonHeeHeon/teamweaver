@@ -1,5 +1,4 @@
 """K13: 적용한 교체의 저장·복원과 플랜 서명키 고정."""
-import itertools
 import json
 import stat
 
@@ -19,13 +18,10 @@ def _plan(client, weights=None):
     raise AssertionError("plan 이벤트가 없다")
 
 
-_REV = itertools.count(1)
-
-
-def _body(plan, swaps, **extra):
+def _body(plan, swaps, expected=0, **extra):
     return {"plan_label": plan["label"], "base_entries": plan["entries"], "weights": {},
             "dataset_version": plan["dataset_version"], "swaps": swaps,
-            "revision": next(_REV), **extra}
+            "expected_revision": expected, **extra}
 
 
 def _first_swap(client, plan):
@@ -96,7 +92,7 @@ def test_empty_swap_list_clears(tiny):
     plan = _plan(tiny)
     swap = _first_swap(tiny, plan)
     tiny.put(f"/api/plans/edits/{plan['plan_token']}", json=_body(plan, [swap]))
-    assert tiny.put(f"/api/plans/edits/{plan['plan_token']}", json=_body(plan, [])).json()["saved"] == 0
+    assert tiny.put(f"/api/plans/edits/{plan['plan_token']}", json=_body(plan, [], expected=1)).json()["saved"] == 0
     assert tiny.get(f"/api/plans/edits/{plan['plan_token']}").json()["swaps"] == []
 
 
@@ -114,22 +110,54 @@ def test_store_keeps_at_most_the_newest_records(tmp_path, monkeypatch):
     store = pe.PlanEditStore(tmp_path)
     for k in range(5):
         tok = f"{k:064x}"
-        store.put(tok, {"swaps": [], "n": k}, revision=1)
+        store.put(tok, {"swaps": [], "n": k}, expected=0)
         os.utime(store._path(tok), (1000 + k, 1000 + k))          # 생성 순서를 mtime으로 고정
     names = sorted(p.stem for p in (tmp_path / "plan_edits").glob("*.json"))
     assert len(names) == 3 and f"{0:064x}" not in names
 
 
-def test_late_older_save_cannot_overwrite_a_newer_cancel(tiny):
-    """적용(rev 1) 직후 원래대로(rev 2)를 보냈는데 rev 1 요청이 늦게 도착해도 취소가 이긴다(Opus 리뷰 M1)."""
+def test_stale_writer_gets_409_with_current_revision(tiny):
+    """두 화면이 같은 revision(0)에서 출발하면, 먼저 저장한 쪽만 성공하고 늦은 쪽은 409를 받는다.
+    서버가 번호를 매기므로 클라이언트가 큰 숫자를 보내 남의 저장을 막을 수도 없다(Codex 3차 리뷰)."""
     plan = _plan(tiny)
     swap = _first_swap(tiny, plan)
     url = f"/api/plans/edits/{plan['plan_token']}"
-    cancel = tiny.put(url, json=_body(plan, [], revision=2)).json()
-    assert cancel["applied"] is True
-    late = tiny.put(url, json=_body(plan, [swap], revision=1)).json()
-    assert late["applied"] is False
-    assert tiny.get(url).json()["swaps"] == []
+    first = tiny.put(url, json=_body(plan, [swap], expected=0))
+    assert first.status_code == 200 and first.json()["revision"] == 1
+    late = tiny.put(url, json=_body(plan, [], expected=0))
+    assert late.status_code == 409 and late.json()["detail"]["revision"] == 1
+    assert tiny.get(url).json()["revision"] == 1 and tiny.get(url).json()["swaps"] == [swap]
+    assert tiny.put(url, json=_body(plan, [], expected=10**15)).status_code == 409
+    ok = tiny.put(url, json=_body(plan, [], expected=1))
+    assert ok.status_code == 200 and ok.json()["revision"] == 2
+    assert tiny.get(url).json() == {"swaps": [], "steps": [], "revision": 2,
+                                    "updated_at": tiny.get(url).json()["updated_at"]}
+
+
+def test_put_racing_a_reset_does_not_rewrite_pruned_data(tiny):
+    """교체 재생 중에 되돌리기(prune)가 끝나도, 저장 직전 같은 잠금 안에서 버전을 다시 보므로
+    옛 데이터셋 기록을 다시 쓰지 않는다(Codex 3차 리뷰)."""
+    import api.routes.plans as plans_route
+    plan = _plan(tiny)
+    swap = _first_swap(tiny, plan)
+    real = plans_route._replay_steps
+
+    def replay_then_switch(graph, record):
+        out = real(graph, record)
+        # 재생이 끝난 직후, 다른 요청이 데이터셋을 바꿨다고 흉내 낸다.
+        from api.datasets import DatasetInfo
+        ds = tiny.app.state.dataset
+        tiny.app.state.dataset = type(ds)(ds.graph, ds.sqlite_conn,
+                                          DatasetInfo("x", "9" * 64, "upload", True, 1, 1, "t"))
+        return out
+
+    plans_route._replay_steps = replay_then_switch
+    try:
+        res = tiny.put(f"/api/plans/edits/{plan['plan_token']}", json=_body(plan, [swap]))
+    finally:
+        plans_route._replay_steps = real
+    assert res.status_code == 409
+    assert tiny.app.state.plan_edit_store.get(plan["plan_token"]) is None
 
 
 def test_token_path_param_must_be_hex(tiny):
@@ -145,7 +173,7 @@ def test_reset_and_new_upload_prune_other_datasets_edits(tiny, data_dir):
     tiny.put(f"/api/plans/edits/{plan['plan_token']}", json=_body(plan, [swap]))
     store = tiny.app.state.plan_edit_store
     stale = {"dataset_version": "f" * 64, "swaps": [swap], "base_entries": []}
-    store.put("e" * 64, stale, revision=1)
+    store.put("e" * 64, stale, expected=0)
     assert tiny.post("/api/datasets/reset", json={}).status_code == 200
     left = {p.stem for p in (data_dir / "plan_edits").glob("*.json")}
     assert "e" * 64 not in left and plan["plan_token"] in left      # 현재(fixture) 것은 남는다
@@ -160,11 +188,23 @@ def test_store_itself_rejects_non_token_names(tmp_path):
             store.get(bad)
 
 
-def test_corrupt_revision_in_saved_record_can_be_overwritten(tmp_path):
+def test_corrupt_revision_in_saved_record_counts_as_zero(tmp_path):
     import api.plan_edits as pe
     store = pe.PlanEditStore(tmp_path)
     tok = "c" * 64
     (tmp_path / "plan_edits").mkdir(parents=True)
     (tmp_path / "plan_edits" / f"{tok}.json").write_text('{"revision": "abc", "swaps": []}')
-    assert store.put(tok, {"swaps": [1]}, revision=5) is True
-    assert store.get(tok)["revision"] == 5
+    assert store.put(tok, {"swaps": [1]}, expected=0) == (True, 1)
+    assert store.get(tok)["revision"] == 1
+
+
+def test_secret_is_published_whole_even_under_concurrent_first_use(tmp_path):
+    """여러 스레드가 동시에 처음 키를 만들어도 모두 같은 32바이트 키를 읽는다(빈 파일 노출 없음)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from api.storage import load_or_create_secret
+    path = tmp_path / "keys" / "plan_secret"
+    with ThreadPoolExecutor(16) as ex:
+        keys = list(ex.map(lambda _: load_or_create_secret(path), range(64)))
+    assert len(set(keys)) == 1 and len(keys[0]) == 32
+    assert not [p for p in path.parent.iterdir() if p.name != "plan_secret"]   # 임시 파일 정리

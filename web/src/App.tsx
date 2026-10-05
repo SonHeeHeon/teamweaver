@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  applySwap, DatasetChangedError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
 import type {
-  AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
+  AssignEntry,  AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
   WhatifResponse,
 } from "./api/types";
 
@@ -96,10 +96,17 @@ export default function App() {
     editsRef.current = next;
     setEdits(next);
   }
-  // 플랜별 저장 요청 줄(앞 요청이 끝난 뒤 다음을 보낸다)과 단조 증가 revision. 서버도 revision이
+  // 플랜별 저장 요청 줄(앞 요청이 끝난 뒤 다음을 보낸다). 서버가 매긴 revision을 플랜별로 기억해
+  // 저장 때 보낸다 -- 서버는 다르면 409(compare-and-set). 클라이언트 시각을 믿지 않는다(Codex 3차).
   // 작거나 같은 요청을 무시한다 -- 다른 탭과 섞여도 마지막 상태가 이긴다(Opus 리뷰 M1).
   const saveChain = useRef<Record<string, Promise<void>>>({});
-  const revision = useRef(Date.now() * 1000);
+  const knownRevision = useRef<Record<string, number>>({});
+  // 플랜별 로컬 변경 세대(적용·취소·원래대로마다 +1). 늦게 온 복원이 그사이의 변경을 덮지 못하게.
+  const mutGen = useRef<Record<string, number>>({});
+  const bumpMut = (label: string) => { mutGen.current[label] = (mutGen.current[label] ?? 0) + 1; };
+  // 지금 검토 결과(whatif)가 기준으로 삼은 명단. 적용 직전에 현재 명단과 같은지 본다.
+  const reviewBase = useRef<AssignEntry[] | null>(null);
+  const selectedRef = useRef<string | null>(null);
   const [applyBusy, setApplyBusy] = useState(false);
   // 저장된 적용 교체를 불러왔다는 안내(K13). 재실행·전환이면 지운다.
   const [notice, setNotice] = useState<string | null>(null);
@@ -236,15 +243,19 @@ export default function App() {
     setWhatifBusy(false);
   }
 
+  selectedRef.current = selected;
+
   async function runSwap(swap: Swap) {
     if (!current) return;
     const gen = ++swapGen.current;
+    const base = current.entries;
     setWhatifBusy(true);
     setHighlighted(swap.out_person_id);
     try {
       const res = await postWhatif(current.entries, swap, planBasis?.weights ?? weights,
                                    planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
       if (gen !== swapGen.current) return;   // 그 사이 플랜이 바뀌었다 -- 폐기
+      reviewBase.current = base;
       setWhatif(res);
       setLastSwap(swap);
     } catch (e) {
@@ -258,13 +269,17 @@ export default function App() {
 
   /** 이 플랜에 저장해 둔 적용 교체가 있으면 서버가 원 플랜에서 다시 적용한 단계로 스택을
    *  복원한다(K13). 저장 키는 원 플랜 서명이라, 같은 데이터·규칙·가중치로 다시 계산한 플랜에만 붙는다. */
-  async function restoreEdits(plan: PlanEvent, gen: number) {
+  async function restoreEdits(plan: PlanEvent, gen: number, force = false) {
     if (!plan.plan_token) return;
+    const startMut = mutGen.current[plan.label] ?? 0;
     try {
       const saved = await loadPlanEdits(plan.plan_token);
-      // 그사이 사용자가 이 플랜에 직접 적용했으면 그 상태가 우선이다(복원으로 덮지 않는다).
-      if (!saved || saved.steps.length === 0 || gen !== runGen.current
-          || editsRef.current[plan.label]) return;
+      if (gen !== runGen.current) return;
+      // 그사이 이 플랜에서 적용·취소가 있었으면(세대가 바뀜) 그 상태가 우선이다 -- 스택이 비어
+      // 있어도(취소) 덮지 않는다(Codex 3차). force는 저장 충돌 후 서버 상태로 맞출 때.
+      if (!force && (mutGen.current[plan.label] ?? 0) !== startMut) return;
+      knownRevision.current[plan.label] = saved.revision;
+      if (!force && saved.steps.length === 0) return;
       const edit: PlanEdit = {
         stack: saved.steps.map((st) => ({
           plan: { ...plan, entries: st.entries, objective: st.objective, fulfillment: st.fulfillment,
@@ -273,8 +288,22 @@ export default function App() {
         history: saved.steps.map((st) => ({ ...st.swap, objective_delta: st.objective_delta,
                                              feasible: st.feasible, warnings: st.warnings })),
       };
-      commitEdits({ ...editsRef.current, [plan.label]: edit });
-      setNotice(`Plan ${plan.label}: 저장해 둔 적용 교체 ${edit.history.length}건을 불러왔다.`);
+      const next = { ...editsRef.current };
+      if (edit.history.length) next[plan.label] = edit; else delete next[plan.label];
+      bumpMut(plan.label);
+      commitEdits(next);
+      // 명단이 바뀌었으니 이 플랜의 진행 중 검토·적용은 무효다(옛 명단 기준, Codex 3차).
+      if (selectedRef.current === plan.label) {
+        swapGen.current += 1;
+        cancelApply();
+        setWhatif(null);
+        setLastSwap(null);
+        setWhatifBusy(false);
+        reviewBase.current = null;
+      }
+      setNotice(force
+        ? `Plan ${plan.label}: 다른 화면에서 먼저 저장해 이 변경은 저장되지 않았다. 최신 저장분(${edit.history.length}건)을 불러왔다.`
+        : `Plan ${plan.label}: 저장해 둔 적용 교체 ${edit.history.length}건을 불러왔다.`);
     } catch (e) {
       // 복원 실패는 작업을 막지 않는다 -- 전역 오류가 아니라 안내로 알린다.
       if (gen === runGen.current) setNotice(`Plan ${plan.label}: 저장해 둔 적용 교체를 불러오지 못했다(${String(e)}).`);
@@ -292,18 +321,19 @@ export default function App() {
       milp_params: planBasis.params, dataset_version: planBasis.datasetVersion,
       swaps: history.map((h) => ({ out_person_id: h.out_person_id, in_person_id: h.in_person_id,
                                    project_id: h.project_id })),
-      // 시각 기반 revision: 늦게 연 다른 탭이 한 번 저장했다고 먼저 연 탭의 이후 저장이 전부
-      // 버려지지 않게, 매 저장마다 지금 시각과 직전 값+1 중 큰 값을 쓴다(Opus 2라운드 M1').
-      revision: (revision.current = Math.max(Date.now() * 1000, revision.current + 1)),
     };
+    const runAt = runGen.current;
     const prev = saveChain.current[label] ?? Promise.resolve();
-    saveChain.current[label] = prev.then(() => savePlanEdits(token, body)).then((r) => {
-      if (r && !r.applied) {
-        setNotice(`Plan ${label}: 다른 화면에서 더 최근에 저장한 적용 교체가 있어 이 변경은 저장되지 않았다. `
-                  + "다시 계산하면 최신 저장분을 불러온다.");
-      }
+    // expected_revision은 보내는 순간의 값을 쓴다(앞 저장의 응답으로 갱신된 뒤).
+    saveChain.current[label] = prev.then(() => savePlanEdits(token, {
+      ...body, expected_revision: knownRevision.current[label] ?? 0 })).then((r) => {
+      knownRevision.current[label] = r.revision;
     }).catch((e) => {
-      if (e instanceof DatasetChangedError) void externalSwitch();
+      if (runAt !== runGen.current) return;          // 재실행·전환 뒤의 늦은 오류는 무시
+      if (e instanceof EditsConflictError) {
+        knownRevision.current[label] = e.revision;
+        void restoreEdits(base, runGen.current, true);   // 서버 상태로 맞춘다
+      } else if (e instanceof DatasetChangedError) void externalSwitch();
       else setError(`적용 교체를 서버에 저장하지 못했다(새로고침하면 사라질 수 있다): ${String(e)}`);
     });
   }
@@ -314,6 +344,13 @@ export default function App() {
     if (!current || !whatif || !lastSwap || !selected) return;
     const label = selected;
     const swap = lastSwap;
+    // 검토가 기준으로 삼은 명단과 지금 명단이 다르면(그사이 복원 등) 적용하지 않는다(Codex 3차).
+    if (reviewBase.current !== current.entries) {
+      setNotice(`Plan ${label}: 검토한 뒤 명단이 바뀌어 이 검토 결과는 적용할 수 없다. 다시 검토할 것.`);
+      setWhatif(null);
+      setLastSwap(null);
+      return;
+    }
     const gen = ++applyGen.current;
     const baseEntries = current.entries;      // 이 적용이 기준으로 삼은 명단
     setApplyBusy(true);
@@ -340,6 +377,7 @@ export default function App() {
       const nextEdit = {
         stack: [...e.stack, { plan, violations: res.evaluation.violations.map((v) => v.message) }],
         history: [...e.history, record] };
+      bumpMut(label);
       commitEdits({ ...editsRef.current, [label]: nextEdit });
       persistEdits(label, nextEdit.history);
       setWhatif(null);            // 검토 결과는 적용으로 소비됐다 -- 새 명단에서 다시 검토한다
@@ -365,6 +403,7 @@ export default function App() {
     const next = { stack: e.stack.slice(0, -1), history: e.history.slice(0, -1) };
     const out = { ...editsRef.current };
     if (next.history.length === 0) delete out[selected]; else out[selected] = next;
+    bumpMut(selected);
     commitEdits(out);
     persistEdits(selected, next.history);
   }
@@ -378,6 +417,7 @@ export default function App() {
     if (!editsRef.current[selected]) return;
     const out = { ...editsRef.current };
     delete out[selected];
+    bumpMut(selected);
     commitEdits(out);
     persistEdits(selected, []);
   }

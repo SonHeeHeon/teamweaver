@@ -40,3 +40,36 @@ def atomic_write(path: Path, data: bytes) -> None:
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
+
+
+def load_or_create_secret(path: Path, *, attempts: int = 20, wait: float = 0.05) -> bytes:
+    """32바이트 이상 비밀 키를 파일에서 읽거나 처음 한 번 만든다(여러 워커가 동시에 불러도 같은 키).
+
+    완전히 쓰고 fsync한 0600 임시 파일을 os.link로 게시한다 -- 링크는 원자적이고 대상이 있으면
+    실패하므로, 빈·반쯤 쓴 파일이 공개되는 순간이 없고 경쟁에서 진 쪽은 이긴 쪽 파일을 읽는다.
+    읽은 값이 짧으면(외부 도구가 쓰는 중 등) 잠깐 재시도한 뒤 ValueError."""
+    import secrets
+    import time
+    ensure_private_dir(path.parent)
+    if not path.exists():
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}-", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="ascii") as f:
+                f.write(secrets.token_bytes(32).hex())
+                f.flush()
+                os.fsync(f.fileno())
+            try:
+                os.link(tmp, path)
+            except FileExistsError:
+                pass
+        finally:
+            Path(tmp).unlink(missing_ok=True)
+    for _ in range(attempts):
+        try:
+            value = bytes.fromhex(path.read_text(encoding="ascii").strip())
+            if len(value) >= 32:
+                return value
+        except ValueError:
+            pass
+        time.sleep(wait)
+    raise ValueError(f"{path.name}에서 올바른 키를 읽지 못했다")

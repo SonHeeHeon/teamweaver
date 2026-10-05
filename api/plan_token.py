@@ -16,7 +16,7 @@ import logging
 import os
 import secrets
 
-from api.storage import data_dir, ensure_private_dir
+from api.storage import data_dir, load_or_create_secret
 from core.optimize.milp import MilpParams
 
 log = logging.getLogger(__name__)
@@ -32,19 +32,7 @@ def _secret() -> bytes:
     if key in _cache:
         return _cache[key]
     try:
-        if not path.exists():
-            # 처음 만들 때 여러 워커가 동시에 만들어 서로 다른 키를 쓰지 않게 O_EXCL로 만든다 --
-            # 이미 있으면(다른 워커가 먼저 만듦) 그 파일을 읽는다.
-            ensure_private_dir(path.parent)
-            try:
-                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                with os.fdopen(fd, "w", encoding="ascii") as f:
-                    f.write(secrets.token_bytes(32).hex())
-            except FileExistsError:
-                pass
-        value = bytes.fromhex(path.read_text(encoding="ascii").strip())
-        if len(value) < 32:
-            raise ValueError("plan_secret 파일이 너무 짧다")
+        value = load_or_create_secret(path)          # 여러 워커가 동시에 불러도 같은 키
     except (OSError, ValueError) as exc:
         log.warning("플랜 서명키를 %s에 고정하지 못해 임시 키를 쓴다(재기동하면 서명 무효): %s", path, exc)
         value = secrets.token_bytes(32)

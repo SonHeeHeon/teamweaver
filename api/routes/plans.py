@@ -156,12 +156,21 @@ async def save_plan_edits(plan_token: str, body: PlanEditIn, request: Request,
               "swaps": [s.model_dump() for s in body.swaps]}
     if body.swaps:
         await anyio.to_thread.run_sync(_replay_steps, graph, record)     # 잘못된 교체는 404/422
-    try:
-        # 빈 목록(취소·원래대로)도 revision과 함께 남긴다 -- 늦게 온 옛 저장이 되살리지 못하게.
-        applied = await anyio.to_thread.run_sync(store.put, plan_token, record, body.revision)
-    except OSError as exc:
-        raise HTTPException(status_code=500, detail=f"적용 교체를 저장하지 못했다: {exc}") from exc
-    return {"saved": len(body.swaps), "applied": applied}
+    # 저장은 데이터셋 전환(업로드·되돌리기, 같은 잠금 안에서 prune)과 겹치지 않게 같은 잠금 안에서
+    # 버전을 다시 확인한 뒤 한다 -- 진행 중이던 PUT이 되돌리기로 지운 인사 데이터를 다시 쓰지
+    # 못하게(Codex 3차 리뷰).
+    async with request.app.state.dataset_lock:
+        check_dataset_version(dataset.info.version, request.app.state.dataset)
+        try:
+            ok, revision = await anyio.to_thread.run_sync(
+                store.put, plan_token, record, body.expected_revision)
+        except OSError as exc:
+            raise HTTPException(status_code=500, detail=f"적용 교체를 저장하지 못했다: {exc}") from exc
+    if not ok:
+        raise HTTPException(status_code=409, detail={
+            "code": "edits_changed", "revision": revision,
+            "message": "다른 화면에서 먼저 저장했다. 최신 저장분을 불러올 것."})
+    return {"saved": len(body.swaps), "revision": revision}
 
 
 @router.get("/api/plans/edits/{plan_token}")
@@ -173,8 +182,11 @@ async def load_plan_edits(plan_token: str, request: Request,
     if not TOKEN_RE.fullmatch(plan_token):
         raise HTTPException(status_code=422, detail="plan_token 형식이 아니다.")
     record = await anyio.to_thread.run_sync(request.app.state.plan_edit_store.get, plan_token)
-    if (record is None or record.get("dataset_version") != dataset.info.version
-            or not record.get("swaps")):
-        return {"swaps": [], "steps": [], "updated_at": None}
+    revision = request.app.state.plan_edit_store.revision_of(record)
+    if record is None or record.get("dataset_version") != dataset.info.version:
+        return {"swaps": [], "steps": [], "updated_at": None, "revision": 0}
+    if not record.get("swaps"):
+        return {"swaps": [], "steps": [], "updated_at": record.get("updated_at"), "revision": revision}
     steps = await anyio.to_thread.run_sync(_replay_steps, graph, record)
-    return {"swaps": record["swaps"], "steps": steps, "updated_at": record.get("updated_at")}
+    return {"swaps": record["swaps"], "steps": steps, "updated_at": record.get("updated_at"),
+            "revision": revision}

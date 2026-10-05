@@ -20,8 +20,12 @@ vi.mock("./api/client", () => ({
   postWhatif: vi.fn(),
   downloadReport: vi.fn(),
   applySwap: vi.fn(),
-  loadPlanEdits: vi.fn(async () => null),
-  savePlanEdits: vi.fn(async () => ({ applied: true })),
+  loadPlanEdits: vi.fn(async () => ({ swaps: [], steps: [], updated_at: null, revision: 0 })),
+  savePlanEdits: vi.fn(async () => ({ revision: 1 })),
+  EditsConflictError: class extends Error {
+    revision: number;
+    constructor(r: number) { super("conflict"); this.revision = r; }
+  },
 }));
 
 // NetworkGraph는 react-force-graph-2d를 통해 <canvas>를 그리는데 jsdom에는
@@ -33,7 +37,7 @@ vi.mock("react-force-graph-2d", () => ({
 import {
   fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
   postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap,
-  loadPlanEdits, savePlanEdits,
+  loadPlanEdits, savePlanEdits, EditsConflictError,
 } from "./api/client";
 import type { SettingsResponse } from "./api/types";
 
@@ -538,7 +542,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
       yield { event: "plan" as const, data: PLAN_A };
     })());
     vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
-      { swaps: [STEP.swap], steps: [STEP], updated_at: null });
+      { swaps: [STEP.swap], steps: [STEP], updated_at: null, revision: 1 });
     vi.mocked(downloadReport).mockReset();
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
@@ -555,10 +559,10 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
       yield { event: "plan" as const, data: PLAN_A };
     })());
-    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(null);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue({ swaps: [], steps: [], updated_at: null, revision: 0 });
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
-    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ applied: true });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -583,7 +587,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
       yield { event: "plan" as const, data: PLAN_A };
     })());
-    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(null);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue({ swaps: [], steps: [], updated_at: null, revision: 0 });
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockRejectedValue(new Error("disk full"));
@@ -611,12 +615,12 @@ describe("App — 저장 요청 순서(K13 리뷰 M1)", () => {
     vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
       yield { event: "plan" as const, data: PLAN_A };
     })());
-    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(null);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue({ swaps: [], steps: [], updated_at: null, revision: 0 });
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
-    const first = deferred<{ applied: boolean }>();
+    const first = deferred<{ revision: number }>();
     vi.mocked(savePlanEdits).mockReset()
-      .mockReturnValueOnce(first.promise).mockResolvedValue({ applied: true });
+      .mockReturnValueOnce(first.promise).mockResolvedValue({ revision: 1 });
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -628,12 +632,13 @@ describe("App — 저장 요청 순서(K13 리뷰 M1)", () => {
     fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));
     await new Promise((r) => setTimeout(r, 20));
     expect(savePlanEdits).toHaveBeenCalledTimes(1);          // 취소 저장은 앞 요청을 기다린다
-    await act(async () => { first.resolve({ applied: true }); await Promise.resolve(); });
+    await act(async () => { first.resolve({ revision: 1 }); await Promise.resolve(); });
     await waitFor(() => expect(savePlanEdits).toHaveBeenCalledTimes(2));
     const [a, b] = vi.mocked(savePlanEdits).mock.calls.map((c) => c[1]);
     expect(a.swaps).toHaveLength(1);
     expect(b.swaps).toEqual([]);
-    expect(b.revision).toBeGreaterThan(a.revision);
+    expect(a.expected_revision).toBe(0);
+    expect(b.expected_revision).toBe(1);          // 앞 저장의 응답으로 받은 서버 번호
   });
 });
 
@@ -654,7 +659,7 @@ describe("App — 복원과 로컬 적용의 경합(K13 리뷰 S1)", () => {
     vi.mocked(loadPlanEdits).mockReset().mockReturnValue(slow.promise);
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
-    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ applied: true });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -666,7 +671,7 @@ describe("App — 복원과 로컬 적용의 경합(K13 리뷰 S1)", () => {
     const old = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
                   swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" } };
     await act(async () => {
-      slow.resolve({ swaps: [old.swap, old.swap], steps: [old, old], updated_at: null });
+      slow.resolve({ swaps: [old.swap, old.swap], steps: [old, old], updated_at: null, revision: 2 });
       await Promise.resolve();
     });
     expect(screen.queryByText(/교체 2건 적용/)).not.toBeInTheDocument();
@@ -675,22 +680,27 @@ describe("App — 복원과 로컬 적용의 경합(K13 리뷰 S1)", () => {
 });
 
 
-describe("App — 다른 화면의 더 최근 저장(K13 리뷰 M1')", () => {
-  it("서버가 저장을 무시하면(applied=false) 알린다", async () => {
+describe("App — 다른 화면이 먼저 저장(서버 revision, Codex 3차)", () => {
+  it("저장이 409(edits_changed)면 서버의 최신 저장분으로 화면을 맞추고 알린다", async () => {
     const STEP = {
       entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
       evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
       objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
       optimization_ratio: 0.7, unfilled: [], warnings: [],
     };
+    const other = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
+                    swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" } };
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
       yield { event: "plan" as const, data: PLAN_A };
     })());
-    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(null);
+    vi.mocked(loadPlanEdits).mockReset()
+      .mockResolvedValueOnce({ swaps: [], steps: [], updated_at: null, revision: 0 })
+      .mockResolvedValue({ swaps: [other.swap, other.swap], steps: [other, other], updated_at: null,
+                           revision: 3 });
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
-    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ applied: false });
+    vi.mocked(savePlanEdits).mockReset().mockRejectedValue(new EditsConflictError(3));
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -698,43 +708,43 @@ describe("App — 다른 화면의 더 최근 저장(K13 리뷰 M1')", () => {
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
     fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
-    expect(await screen.findByText(/더 최근에 저장한 적용 교체가 있어/)).toBeInTheDocument();
+    expect(await screen.findByText(/다른 화면에서 먼저 저장해/)).toBeInTheDocument();
+    expect(screen.getByText(/교체 2건 적용/)).toBeInTheDocument();
   });
 
-  it("revision은 저장할 때마다 지금 시각 이상으로 커진다", async () => {
+  it("늦게 온 복원은 그사이 적용 후 취소한 상태를 되살리지 않는다", async () => {
     const STEP = {
       entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
       evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
       objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
       optimization_ratio: 0.7, unfilled: [], warnings: [],
     };
-    const opened = Date.now();
+    const slow = deferred<any>();
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
       yield { event: "plan" as const, data: PLAN_A };
     })());
-    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(null);
+    vi.mocked(loadPlanEdits).mockReset().mockReturnValue(slow.promise);
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
-    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ applied: true });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
-    const later = opened + 60_000;                              // 1분 뒤 저장(다른 탭이 그사이 열렸다고 가정)
-    const spy = vi.spyOn(Date, "now").mockReturnValue(later);
-    try {
-      fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
-      fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-      fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
-      fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
-      await waitFor(() => expect(savePlanEdits).toHaveBeenCalled());
-    } finally {
-      spy.mockRestore();
-    }
-    expect(vi.mocked(savePlanEdits).mock.calls[0][1].revision).toBeGreaterThanOrEqual(later * 1000);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));
+    const old = { ...STEP, swap: { out_person_id: "p1", in_person_id: "p3", project_id: "j1" } };
+    await act(async () => {
+      slow.resolve({ swaps: [old.swap], steps: [old], updated_at: null, revision: 1 });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText(/교체 1건 적용/)).not.toBeInTheDocument();
   });
 });
-
 
 describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
   it("적용 응답이 오기 전에 저장분이 복원되면 옛 명단 기준 적용 결과는 버린다", async () => {
@@ -753,7 +763,7 @@ describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
     vi.mocked(loadPlanEdits).mockReset().mockReturnValue(restore.promise);
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockReturnValue(apply.promise);
-    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ applied: true });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -764,13 +774,15 @@ describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
     const saved = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
                     swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" } };
     await act(async () => {
-      restore.resolve({ swaps: [saved.swap], steps: [saved], updated_at: null });
+      restore.resolve({ swaps: [saved.swap], steps: [saved], updated_at: null, revision: 1 });
       await Promise.resolve();
     });
     await screen.findByText(/저장해 둔 적용 교체 1건을 불러왔다/);
     await act(async () => { apply.resolve({ ...STEP }); await Promise.resolve(); });
-    expect(await screen.findByText(/적용하는 사이 명단이 바뀌어/)).toBeInTheDocument();
+    // 복원이 도착하는 순간 진행 중이던 적용·검토를 무효화했다 -- 늦은 적용 결과는 쌓이지 않는다.
     expect(screen.queryByText(/교체 2건 적용/)).not.toBeInTheDocument();
+    expect(screen.getByText(/교체 1건 적용/)).toBeInTheDocument();
     expect(savePlanEdits).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /^이 교체 적용/ })).not.toBeInTheDocument();
   });
 });

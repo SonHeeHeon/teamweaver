@@ -112,29 +112,39 @@ export async function savePlanEdits(
   planToken: string,
   body: { plan_label: string; base_entries: AssignEntry[]; weights: Record<string, number>;
           milp_params: PlacementSettings | null; dataset_version: string; swaps: Swap[];
-          revision: number },
-): Promise<{ applied: boolean }> {
+          expected_revision: number },
+): Promise<{ revision: number }> {
   const res = await fetch(`${API_BASE}/api/plans/edits/${encodeURIComponent(planToken)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   await throwIfDatasetChanged(res);
+  if (res.status === 409) {
+    const detail = (await res.json().catch(() => ({}))).detail ?? {};
+    if (detail.code === "edits_changed") throw new EditsConflictError(Number(detail.revision ?? 0));
+  }
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(`적용 교체 저장 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
   }
-  // applied=false: 서버에 더 최근 저장(다른 탭·사용자)이 있어 이 요청은 무시됐다.
-  const result = await res.json().catch(() => ({}));
-  return { applied: result.applied !== false };
+  return (await res.json()) as { revision: number };
 }
 
-/** 저장된 적용 교체를 불러온다. 없으면 null(서버는 빈 목록을 준다). */
-export async function loadPlanEdits(planToken: string): Promise<SavedPlanEdits | null> {
+/** 409 edits_changed: 다른 화면이 먼저 저장했다(서버 revision이 내가 본 것과 다르다). */
+export class EditsConflictError extends Error {
+  revision: number;
+  constructor(revision: number) {
+    super("다른 화면에서 먼저 저장했다");
+    this.revision = revision;
+  }
+}
+
+/** 저장된 적용 교체와 서버 revision을 불러온다(저장분이 없으면 steps가 비고 revision 0). */
+export async function loadPlanEdits(planToken: string): Promise<SavedPlanEdits> {
   const res = await fetch(`${API_BASE}/api/plans/edits/${encodeURIComponent(planToken)}`);
   if (!res.ok) throw new Error(`적용 교체 불러오기 실패(${res.status})`);
-  const body = (await res.json()) as SavedPlanEdits;
-  return body.steps.length ? body : null;
+  return (await res.json()) as SavedPlanEdits;
 }
 
 export interface OptimizeRequest {

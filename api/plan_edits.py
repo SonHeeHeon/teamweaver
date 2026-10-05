@@ -5,8 +5,10 @@
 수치는 저장하지 않는다 -- 불러올 때 서버가 원 플랜에서 다시 적용해 계산한다(PDF와 같은 원칙).
 
 - 레코드마다 파일 하나(`plan_edits/<token>.json`): 요청마다 전체를 읽고 쓰지 않는다.
-- `revision`: 화면이 보낸 단조 증가 번호. 저장된 것보다 작거나 같으면 무시한다 -- 늦게 도착한
-  옛 요청이 나중 상태(취소 등)를 덮지 못한다. 취소도 빈 목록 레코드로 남겨 순서를 지킨다.
+- `revision`: **서버가 매기는** 번호(0 = 저장 없음). 화면은 마지막으로 본 번호(expected)를 보내고,
+  저장된 번호와 다르면 거절한다(compare-and-set) -- 늦게 도착한 옛 요청이나 다른 화면의 변경을
+  덮지 못하고, 클라이언트가 보낸 큰 숫자로 남의 저장을 막을 수도 없다(Codex 3차 리뷰).
+  취소도 빈 목록 레코드로 남겨 번호를 이어 간다.
 - 서버 전체 공유다: 같은 데이터·설정·가중치로 계산한 플랜이면 사용자가 달라도 같은 키다.
 """
 import json
@@ -43,24 +45,28 @@ class PlanEditStore:
         with self._lock:
             return self._read(self._path(token))
 
-    def put(self, token: str, record: dict, revision: int) -> bool:
-        """revision이 저장된 것보다 크면 저장하고 True. 아니면 무시하고 False."""
+    @staticmethod
+    def revision_of(record: dict | None) -> int:
+        try:
+            return int(record.get("revision", 0)) if record is not None else 0
+        except (TypeError, ValueError):
+            return 0                                 # 손상된 레코드는 0으로 본다
+
+    def put(self, token: str, record: dict, expected: int) -> tuple[bool, int]:
+        """저장된 revision이 expected와 같으면 저장하고 (True, 새 번호). 아니면 (False, 현재 번호)."""
         path = self._path(token)
         with self._lock:
             old = self._read(path)
-            try:
-                stored = int(old.get("revision", -1)) if old is not None else -1
-            except (TypeError, ValueError):
-                stored = -1                          # 손상된 레코드는 덮어쓸 수 있게
-            if stored >= revision:
-                return False
+            current = self.revision_of(old)
+            if current != expected:
+                return False, current
             ensure_private_dir(self.dir)
-            atomic_write(path, json.dumps({**record, "revision": revision},
+            atomic_write(path, json.dumps({**record, "revision": current + 1},
                                           ensure_ascii=False).encode("utf-8"))
             files = sorted(self.dir.glob("*.json"), key=lambda p: p.stat().st_mtime)
             for stale in files[:max(0, len(files) - MAX_SAVED_EDITS)]:
                 stale.unlink(missing_ok=True)
-            return True
+            return True, current + 1
 
     def prune(self, keep_dataset_version: str | None) -> None:
         """다른 데이터셋의 레코드를 지운다(되돌리기·새 업로드 때). 업로드 데이터의 사번·명단이

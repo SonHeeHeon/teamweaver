@@ -221,4 +221,6 @@ export interface SavedPlanEdits {
   swaps: Swap[];
   steps: (ApplySwapResponse & { swap: Swap })[];
   updated_at: string | null;
+  /** 서버가 매긴 저장 번호(0 = 저장 없음). 다음 저장 때 expected_revision으로 보낸다. */
+  revision: number;
 }
