@@ -62,22 +62,22 @@
 
 ### Claude (K*) — 담당 ID를 줄마다 표시했다
 - **K1** ✅ What-if 계약 정정 (2026-10-04 완료, main 병합. [A-P2] what-if 항목 해소)
-- **K4** ✅ (claude-b, 2026-10-05 `feat/claude-b-pdf-origin`, main 병합은 사용자 승인 대기) [A-P1] PDF 생성이 요청 Host를 신뢰하지 않게 한다: 고정 내부 origin, 브라우저 로컬 접근 제한, 요청 크기·동시성 한도(`api/routes/report.py`, `api/pdf.py`).
-- **K5** (claude-a, 2026-10-05 claude-a 쪽 완료) 설명 근거의 사실성: 출처 ID·직접 인용/요약/라벨 구분, LLM 인용 검증(실패 시 규칙 기반 전환), 실데이터 원문 비공개. 연결·표시는 claude-b(위 "요청").
+- **K4** ✅ (claude-b, 2026-10-05, main 병합) [A-P1] PDF 생성이 요청 Host를 신뢰하지 않게 한다: 고정 내부 origin, 브라우저 로컬 접근 제한, 요청 크기·동시성 한도(`api/routes/report.py`, `api/pdf.py`).
+- **K5** ✅ (claude-a 근거 색인 + claude-b 연결, 2026-10-05 main 병합 `67242b9..e6072d1`) 설명 근거의 사실성: 출처 ID·직접 인용/요약/라벨 구분, LLM 인용 검증(실패 시 규칙 기반 전환), 실데이터 원문 비공개. PDF 근거는 서버 색인으로 재확인. 실데이터의 리뷰 *항목 라벨*은 정해진 짧은 목록이라 LLM·화면·PDF로 나가도 된다(사용자 결정 2026-10-05).
 - **K6** ✅ (claude-a, 2026-10-05) `MemoryGraph.synergy_context_memory`의 int8 누적 넘침 수정(int32). 공유 계약 `core/graph/` 변경은 아래 "요청"에 기록.
 - **K7** ✅ 실데이터 스키마 입력 양식(`docs/data-schema/`) 제공 (2026-10-04). 사용자가 `private/schema-intake.json`을 채우는 중.
 - **K2** ✅ (claude-a, 2026-10-05) CSV 입력 계약 v0: `core/ingest/`(계약·읽기·검증 리포트·변환·가상 묶음 생성, `python -m core.ingest generate|check`). 숙련도는 경력 개월 → 대리 레벨, 리뷰는 최신 회차만(아래 "요청" 참고).
-- **K8** ✅ (claude-b, 2026-10-05 `feat/claude-b-milp-settings`, main 병합은 사용자 승인 대기) 관리자 배치 설정 화면: 최소 투입률(실데이터 답변상 30%, 관리자가 바꿀 수 있어야 함) 등 MILP 파라미터를
+- **K8** ✅ (claude-b, 2026-10-05, main 병합) 관리자 배치 설정 화면: 최소 투입률(실데이터 답변상 30%, 관리자가 바꿀 수 있어야 함) 등 MILP 파라미터를
   웹 설정 화면에서 바꿔 `/api/optimize`의 `milp_params`로 보낸다. 기본값 변경과 동시 프로젝트 수 제한 같은 새 제약은
   모델 변경이라 Codex(C6) 소관이다. 화면은 그 결과를 따라간다.
-- **K9** ✅ (claude-b, 2026-10-05 `feat/claude-b-dataset-upload`, K8 브랜치 위, main 병합은 사용자 승인 대기) CSV 묶음(zip) 업로드 → `core.ingest` 검증 → 활성 데이터셋 전환, 캐시 키에 데이터셋 버전, 화면 "데이터" 탭.
-- **K10** ✅ (claude-b, 2026-10-05 `feat/claude-b-swap-apply`, K9 위, main 병합은 사용자 승인 대기) 교체 "검토 → 적용" 흐름: 적용한 교체로 명단을 바꾸고 이력·위반을 남기며, PDF가 적용 명단과 교체 목록을 보여 준다.
-- **K13** ✅ (claude-b, 2026-10-05 `feat/claude-b-persistence`, main 위, main 병합 대기 — Codex 3차 지적 반영 완료) 업로드 데이터·적용 교체·플랜 서명키 영속 + claude-a 교차 리뷰 반영.
-- **K14** ✅ (claude-b, 2026-10-05 `feat/claude-b-admin-login`, K13 위, main 병합 대기) 관리자 로그인 화면(비밀번호 하나, HttpOnly 세션).
+- **K9** ✅ (claude-b, 2026-10-05, main 병합) CSV 묶음(zip) 업로드 → `core.ingest` 검증 → 활성 데이터셋 전환, 캐시 키에 데이터셋 버전, 화면 "데이터" 탭.
+- **K10** ✅ (claude-b, 2026-10-05, main 병합) 교체 "검토 → 적용" 흐름: 적용한 교체로 명단을 바꾸고 이력·위반을 남기며, PDF가 적용 명단과 교체 목록을 보여 준다.
+- **K13** ✅ (claude-b, 2026-10-05, main 병합) 업로드 데이터·적용 교체·플랜 서명키 영속 + claude-a 교차 리뷰 반영.
+- **K14** ✅ (claude-b, 2026-10-05, main 병합) 관리자 로그인 화면(비밀번호 하나, HttpOnly 세션).
 - **K3** (claude-a·claude-b·codex 합의, C0·C5·C6 이후) 검증된 솔버를 서비스에 연결한다. 인터페이스는 Codex와 합의한다.
 
 ### 미배정 (사용자 결정 필요 — 스키마 양식 D절에서 일부 답을 받음)
-- [A-P2] 패키징: wheel에 fixture와 웹 산출물이 없다. 배포 단위(소스 checkout, 컨테이너, wheel)를 먼저 정해야 한다.
+- ~~[A-P2] 패키징~~ → 결정(2026-10-05 사용자): PoC라 **소스 checkout 그대로** 실행한다. `scripts/run_poc.sh`(의존성·웹 빌드·Chromium 준비 후 한 포트로 API+웹+PDF). wheel·컨테이너는 만들지 않는다.
 - [A-P1] 미기재 등급을 0명으로 볼지 자유 인원으로 볼지: 배치 규칙 결정 사항이며 C6의 입력이다.
 
 ## 진행 중

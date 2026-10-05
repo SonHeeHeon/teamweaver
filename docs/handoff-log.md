@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-05 · claude-b · 정리: 실행 스크립트, 409 뒤 적용 경합 수정, 결정 기록
+- 브랜치/커밋: `feat/claude-b-cleanup`(main `b48d5c8` 위). 이 기록을 포함한 브랜치를 main에 fast-forward하고 origin에 push한다(사용자 지시).
+- 한 일:
+  - `scripts/run_poc.sh` 추가. 배포는 소스 그대로(사용자 결정)이며, 의존성·웹 빌드·Chromium을 준비한 뒤 uvicorn 한 포트로 띄운다. `.env`를 읽고, 외부 주소로 열 때 관리자 비밀번호가 없으면 경고한다.
+  - 웹: 409 뒤 서버 상태 복원이 끝나기 전에 한 적용이 옛 이력으로 서버의 최신 저장분을 덮던 경합을 고쳤다(K13 남은 SHOULD). 같은 실행 안에서 기다리는 사이 플랜 화면 상태가 바뀐 저장은 보내지 않는다. 남은 경계: 강제 복원 자체가 네트워크 오류로 실패하면 그 뒤 저장이 서버 최신분을 덮을 수 있다(예전 동작).
+  - work-split: K4·K8~K14 상태를 "main 병합"으로 바꿨다. 결정 두 가지를 기록했다. 실데이터의 리뷰 항목 라벨은 외부로 나가도 된다. 패키징은 소스 그대로다.
+  - 병합된 claude-b worktree·브랜치 8개를 정리했다.
+- 상대 영향: 없음. 실행 방법은 `scripts/run_poc.sh` 머리 주석에 있다.
+- 검증: vitest 124 passed(새 회귀 테스트는 수정 전 실패를 확인), `npx tsc -b`·oxlint·build 통과, slow UI E2E 3 passed. 실행 스크립트로 띄워 `/api/meta`·`/`·`/report` 200, PDF 200(148KB)을 확인했다.
+- 근거: `.omc/reports/2026-10-05-claude-b-cleanup.md`
+
 ## 2026-10-05 · claude-b · main 병합: K5 연결 + claude-a K5·회차 확장·K6
 - 브랜치/커밋: `feat/claude-b-k5-connect` → main fast-forward(`67242b9..e6072d1`, 사용자 승인) + 이 기록.
 - 한 일: main에 claude-a `feat/claude-a-k5-evidence`(K5 근거 색인, `feat/claude-a-review-rounds`, `feat/claude-a-k6-int8` 포함)와 claude-b K5 연결이 들어갔다.
