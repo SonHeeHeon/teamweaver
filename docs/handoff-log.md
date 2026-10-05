@@ -22,6 +22,27 @@
 
 ---
 
+## 2026-10-05 · claude-b · 월별 투입률(사용자 결정) 끝까지: 모델·검증·API·화면·PDF + 권장 시간
+- 브랜치/커밋: `feat/claude-b-monthly-alloc` → main fast-forward·push.
+- 한 일:
+  - `MilpParams.allocation_mode`: fixed(기본, 이전과 같음) | monthly(진행 달마다 투입률). 다음을 함께 바꿨다.
+    - 서비스 MILP, 독립 검증기, C1 보정 LP, Phase 0 오라클(월별 MILP = 오라클 테스트)
+    - 최적화율 분모(월별 LP 완화 상한)
+  - 계약: `AssignEntry`/`EntryIn.monthly_alloc`(없으면 직렬화에서 빠짐). 서명은 월별 값을 묶는다. 교체는 빠지는 사람의 월별 값을 이어받는다.
+  - 화면·PDF: "1~3월 20%, 4~6월 100%" 구간 요약, 설정 화면에 투입률 방식(기본 fixed), 방식별 권장 계산 시간(claude-a 요청 처리).
+  - claude-a가 plan_eval에 월별 지원(`020ee6d`)을 넣었으므로, 임시로 둔 API 재검사(`api/monthly_eval.py`)는 지웠다.
+  - 측정(조직형 데이터, HiGHS, Plan A, `outputs/c6-monthly-scale*.json`):
+    - 끝까지 풀면 월별은 100/200/300명에서 +20.5/+15.4/+15.0%이고, 16/77/309초 걸린다.
+    - 고정 방식 권장 시간 안에서는 200명이 시간 한도에 걸리고(+9.7%), 300명은 −1.6%다.
+    - 그래서 월별 권장 시간 `time_budget.MEASURED_MONTHLY`(×1.5 → 30/120/480초)를 추가했다.
+- 상대 영향:
+  - (모두) `MilpParams`·`PlacementSettings`에 `allocation_mode`가 생겼다. plan_token은 params 전체를 서명하므로 이전 토큰은 무효가 된다.
+  - (모두) `core.optimize.time_budget.recommend(n, allocation_mode=)` 인자가 추가됐다(기본 fixed, 결과 동일).
+  - (Codex) 벤치 정식(`experiments/phase1/solvers.py`)은 fixed만 지원하고, monthly면 ValueError를 낸다. 월별 정식은 서비스와 오라클에 있다.
+  - 테스트 기준선: **1180 passed, 19 deselected**, slow 19, vitest 133, Phase 0 PASS 11.
+- 검증: 위 기준선을 확인했다. 실제 lifespan(사전계산 포함)은 4플랜 17초. 리뷰 Opus 폴백 2라운드: 1차 MUST 2(최적화율 분모, 평가기 평균)를 반영했고 2차는 승인이었으며 SHOULD 3도 반영했다.
+- 근거: `.omc/reports/2026-10-05-monthly-allocation.md`, `.omc/plan/2026-10-05-monthly-allocation.md`
+
 ## 2026-10-05 · claude-a · 데이터 개요·시연 노트 + plan_eval 달별 투입률 지원(claude-b 요청)
 - 브랜치/커밋: `feat/claude-a-seat-fit` → main.
 - 한 일:
