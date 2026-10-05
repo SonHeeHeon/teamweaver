@@ -1,0 +1,109 @@
+{
+ "experiment": "c6-concurrency-cost",
+ "business_validity": "NOT_CALIBRATED",
+ "fixture": "100x20",
+ "params": {
+  "lam": 0.3,
+  "mu": 0.2,
+  "min_alloc": 0.3,
+  "clique_threshold_months": 6,
+  "pair_keep_ratio": 0.15,
+  "slack_penalty": 100.0,
+  "time_limit": 120,
+  "gap": 0.05,
+  "max_pairs": 5000,
+  "max_concurrent_projects": 3,
+  "solver": "highs"
+ },
+ "varied": "max_concurrent_projects",
+ "command": "uv run --group benchmark python -m experiments.c6.concurrency_cost outputs/c6-concurrency-cost.json",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "measured_at": "2026-10-05 18:13",
+ "rows": [
+  {
+   "K": 6,
+   "seconds": 43.0,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "objectives": [
+    40.597,
+    40.545,
+    40.425,
+    40.438
+   ],
+   "alternatives_stop": {}
+  },
+  {
+   "K": 3,
+   "seconds": 43.0,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "objectives": [
+    40.597,
+    40.545,
+    40.425,
+    40.438
+   ],
+   "alternatives_stop": {}
+  },
+  {
+   "K": 6,
+   "seconds": 42.7,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "objectives": [
+    40.597,
+    40.545,
+    40.425,
+    40.438
+   ],
+   "alternatives_stop": {}
+  },
+  {
+   "K": 3,
+   "seconds": 42.7,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "objectives": [
+    40.597,
+    40.545,
+    40.425,
+    40.438
+   ],
+   "alternatives_stop": {}
+  },
+  {
+   "K": 1,
+   "seconds": 40.6,
+   "labels": [
+    "A",
+    "B",
+    "C",
+    "D"
+   ],
+   "objectives": [
+    39.78,
+    39.653,
+    39.587,
+    39.589
+   ],
+   "alternatives_stop": {}
+  }
+ ]
+}

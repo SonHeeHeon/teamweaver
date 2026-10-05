@@ -112,9 +112,10 @@ describe("ReportPage — 계산 기준 표기(K8)", () => {
   it("플랜을 계산한 배치 설정을 보여 준다", async () => {
     vi.mocked(fetchMeta).mockResolvedValue(META);
     window.__REPORT_DATA__ = { ...base, milp_params: { min_alloc: 0.3,
-      clique_threshold_months: 6, lam: 0.3, mu: 0.2, time_limit: 120, gap: 0.05 } };
+      clique_threshold_months: 6, lam: 0.3, mu: 0.2, time_limit: 120, gap: 0.05, max_concurrent_projects: 1 } };
     render(<ReportPage />);
     expect(await screen.findByText(/최소 투입률 30%/)).toBeInTheDocument();
+    expect(screen.getByText(/동시 프로젝트 최대 1개/)).toBeInTheDocument();
   });
 
   it("설정 없이 계산한 플랜은 모델 기본값임을 밝힌다", async () => {

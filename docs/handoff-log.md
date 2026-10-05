@@ -34,6 +34,41 @@
   - **claude-b**: 설정 화면 연결 요청 1건(work-split "요청"). C6 병합 뒤 "자리당 적합도" 항 정식 변경을 claude-a가 이어서 한다(상태 파일).
   - 테스트 기준선: 1107 passed, 19 deselected, Phase 0 PASS 11.
 - 근거: `docs/model-roadmap.md`, `.omc/reports/2026-10-05-scale-rehearsal.md`
+## 2026-10-05 · claude-b · Jev(판단 전용 AI) 대체 가능성 실험 장치 + 기준선
+- 브랜치/커밋: `feat/claude-b-jev-experiment` `ddd8d4f` → main fast-forward·push(사용자 요청: 실험 과정·결과를 시연용으로 남김).
+- 한 일: Jev가 대체할 수 있는 영역을 세 자리로 나눠 시험하는 장치를 만들었다(`experiments/jev/`, 보고서 `outputs/jev-experiment.html`).
+  - E1 솔버 대신: 자리마다 Jev가 고르기(Choice)로 사람을 뽑는다. 숫자 조건은 코드가 지킨다.
+  - E2 모델 재료 대신: 리뷰 글 → 극성(Score). 기준선은 LLM 파서다.
+  - E3 판단 보조: 교체 후보 중 최선을 고른다.
+  - Jev 응답은 cassette로 기록해 키 없이 재생한다. 기준선은 측정을 마쳤고, Jev 행은 키를 받은 뒤 채운다.
+- 기준선(합성 데이터, NOT_CALIBRATED):
+  - E1(100명): 솔버 40.58 / 기술 1등 규칙 30.11 / 무작위 11.41
+  - E2: 정답 상관 gpt-6-luna 0.85(2.6초/건), 기록된 gpt-5-nano 0.56
+  - E3(37건, 후보 4명): 기술 1등 81% [66,91], 무작위 기댓값 43%(동점 17건)
+- 상대 영향: 없음. 서비스 코드 변경 없음. 의존성 추가 없음(httpx로 HTTP 직접 호출). `experiments/jev/cassettes/e2_luna.json`은 OpenAI 판정 결과 기록이다(키 미포함).
+- 검증: `pytest tests/jev` 8 passed, 전체 1108 passed. 리뷰 Opus 2라운드: 1차 MUST 3(E3 동점, E2 지시문 동등성, 척도 가정)을 반영했고 2차는 승인이었다.
+- 근거: `.omc/reports/2026-10-05-jev-experiment.md`(Jev 결과 후 작성), `outputs/jev-experiment.json`
+
+## 2026-10-05 · claude-b · C6 배치 규칙(동시 프로젝트 상한) + 월별 투입률 측정 + whatif 재료 연결
+- 브랜치/커밋: `feat/claude-b-c6-rules` (main `0a15c4f`에서 시작, main `d5d23cc`(K3 HiGHS) 병합 `cd19450`, C6 `ce225d1`) → main fast-forward·push.
+- 한 일:
+  - **C6 동시 프로젝트 상한**: 한 사람이 같은 달에 맡는 프로젝트 수 ≤ K. 기본 3이고 관리자 설정에서 1~6으로 바꾼다(사용자 답변 "최대 3개, 보통 1개").
+    - 반영한 곳: 서비스 MILP, 벤치 정식, Phase 0 오라클, 독립 검증기(`concurrent_projects`), greedy, 설정 화면, PDF 계산 기준 줄.
+    - 행은 묶일 수 있는 달에만 넣는다. 조건은 (K+1)·min_alloc ≤ 가용률이다.
+  - **평가기 공백 메움**: 평가기(`core/evaluate`)가 이 규칙을 모른다. What-if·교체 적용·PDF 재계산이 위반을 놓치지 않게 `api/routes/whatif.py::_with_concurrency_check`가 위반을 덧붙인다. claude-a에게 요청했다.
+  - **claude-a 요청 처리**: whatif가 `swap_context(project_id=)`와 `generate_briefing(score_change=)`를 넘긴다. score_change에는 `feasible`과, 위반이 있으면 `new_violations`도 들어간다.
+  - **월별 투입률은 측정만 했다**(`experiments/c6/monthly_alloc.py`, `outputs/c6-monthly-alloc.json`): 25~100명에서 목적값 +11~13%, 같은 솔버·1스레드로 풀이 시간 1.1~3.8배. 서비스 반영은 사용자 결정 대기다.
+  - **상한 비용**(`experiments/c6/concurrency_cost.py`, `outputs/c6-concurrency-cost.json`, HiGHS 서비스 설정): K=3은 K=6과 시간·점수가 같다(약 43초, 4플랜). min_alloc 0.3에서는 상한 행이 묶이지 않기 때문이다. K=1은 −2%다.
+  - C5 Gurobi는 사용자 결정으로 보류했다(상용 유료).
+- 상대 영향:
+  - (claude-a) "요청" 2건이 있다. 평가기에 `concurrent_projects` 위반을 넣는 것과, 브리핑 프롬프트가 `score_change.feasible`을 쓰게 하는 것이다.
+  - (모두) `MilpParams`·`PlacementSettings`·`MilpParamsIn`에 `max_concurrent_projects`가 생겼다. PDF 요청의 `milp_params`는 이 칸까지 있어야 한다(전체 필드 요구). 그래서 새로고침 전에 열려 있던 탭은 PDF 요청에서 422를 받을 수 있다.
+  - (모두) `plan_token`이 params 전체에 서명하므로, 이전 계산에 묶인 저장 교체는 새로 계산하면 연결이 끊긴다(K3도 같은 효과).
+  - (모두) 예전 Phase 1 raw 결과를 새 검증기로 다시 검증하면 `concurrent_projects`가 새로 뜰 수 있다(벤치 min_alloc 0.2).
+  - 테스트 기준선: **1100 passed, 19 deselected**, slow 19, vitest 129, Phase 0 PASS 11.
+- 검증: 위 기준선을 확인했다. 실제 lifespan(사전계산 포함)으로 4플랜이 43초에 나왔다. 상한 테스트 6개와 평가기 공백 테스트는 수정 전 실패를 확인했다.
+  리뷰: Codex 소진 → Claude Opus 폴백 2라운드. 1차 MUST 1(평가기 공백)을 API에서 반영했고 SHOULD 5도 반영했다. 2차는 승인이었고, SHOULD 1(측정 출처 스크립트)도 반영했다.
+- 근거: `.omc/reports/2026-10-05-c6-rules.md`
 
 ## 2026-10-05 · claude-a · 서비스 솔버 HiGHS 전환(K3) + 규모 리허설 도구
 - 브랜치/커밋: `feat/claude-a-highs-service`(← `feat/claude-a-scale-rehearsal`), main 병합 예정.

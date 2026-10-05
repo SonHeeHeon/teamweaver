@@ -3,7 +3,7 @@
 걸리기 때문이다. 결과는 검토용 참고값이며 재최적화가 아니다.
 XAI 브리핑은 LLM structured output을 우선 시도하고, 실패하면 결정론적
 fallback으로 전환한다 -- 발표 중 API 장애에도 데모가 죽지 않게 하기 위해서다."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,7 +18,7 @@ from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
 from api.schemas import EntryIn, MilpParamsIn, SwapIn, WhatifResponse
 from core.config import load_pricing
-from core.evaluate.plan_eval import PlanEvaluation, evaluate_plan
+from core.evaluate.plan_eval import PlanEvaluation, PlanViolation, evaluate_plan
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.types import AssignEntry
 from core.scoring.engine import ScoringEngine
@@ -64,9 +64,29 @@ def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
 
 def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
     try:
-        return evaluate_plan(graph, S, C, params, entries)
+        ev = evaluate_plan(graph, S, C, params, entries)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _with_concurrency_check(graph, params, entries, ev)
+
+
+def _with_concurrency_check(graph, params, entries, ev: PlanEvaluation) -> PlanEvaluation:
+    """C6 동시 프로젝트 상한 위반을 덧붙인다. 평가기(core/evaluate, claude-a 영역)가 아직 이 규칙을
+    모른다 -- 교체 검토·적용·PDF가 상한을 넘는 명단을 "위반 없음"으로 보이지 않게 API에서 메운다.
+    평가기가 같은 코드를 내기 시작하면 중복되지 않게 건너뛴다(work-split 요청 참고)."""
+    if any(v.code == "concurrent_projects" for v in ev.violations):
+        return ev
+    months = {p.id: p.months for p in graph.projects}
+    count: dict[tuple[str, int], int] = {}
+    for e in entries:
+        for m in months.get(e.project_id, ()):
+            count[(e.person_id, m)] = count.get((e.person_id, m), 0) + 1
+    limit = params.max_concurrent_projects
+    extra = tuple(
+        PlanViolation("concurrent_projects", f"{pid}:month{m}", float(n), float(limit),
+                      f"{pid}의 계획 {m + 1}번째 달 동시 프로젝트 {n}개가 상한 {limit}개를 초과")
+        for (pid, m), n in sorted(count.items()) if n > limit)
+    return replace(ev, violations=ev.violations + extra) if extra else ev
 
 
 @router.post("/api/whatif", response_model=WhatifResponse)
@@ -89,7 +109,17 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
                       if s.missing > old_missing.get((s.project_id, s.grade), 0)]
 
     # 근거 색인은 두 곳에 같이 넘긴다(K5): 문맥에만 넘기면 브리핑의 인용 검증이 꺼진다.
-    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence)
+    # 교체 대상 프로젝트의 요구 기술과 점수 변화를 넘긴다(claude-a 요청 2026-10-05): 없으면 LLM이
+    # "정보 부족으로 단정 어렵다"를 반복했다.
+    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence,
+                       project_id=req.swap.project_id)
+    score_change = {k: getattr(after.objective, k) - getattr(before.objective, k)
+                    for k in ("skill", "synergy", "overfamiliarity", "unfilled")}
+    score_change["total"] = after.objective.total - before.objective.total
+    # 점수만 보면 가용률·예산을 어기면서 total만 오른 교체도 "권고"로 읽힌다 -- 위반 여부를 같이 준다.
+    score_change["feasible"] = not after.violations
+    if new_violations:
+        score_change["new_violations"] = [v["message"] for v in new_violations][:5]
     fallback_used = False
     if client is None:
         briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
@@ -98,7 +128,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         try:
             model = load_pricing()["briefing_model"]
             briefing = generate_briefing(client, model, ctx, req.swap.out_person_id,
-                                         req.swap.in_person_id, evidence=evidence)
+                                         req.swap.in_person_id, evidence=evidence,
+                                         score_change=score_change)
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
             briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
             fallback_used = True

@@ -1,0 +1,190 @@
+{
+  "experiment": "c6-monthly-allocation",
+  "business_validity": "NOT_CALIBRATED",
+  "params": {
+    "lam": 0.3,
+    "mu": 0.2,
+    "min_alloc": 0.3,
+    "clique_threshold_months": 6,
+    "pair_keep_ratio": 0.15,
+    "slack_penalty": 100.0,
+    "time_limit": 120,
+    "gap": 0.01,
+    "max_pairs": 5000,
+    "max_concurrent_projects": 3,
+    "solver": "highs"
+  },
+  "timing": "같은 모델 코드·같은 솔버·threads=1, prob.solve만 측정",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "rows": [
+    {
+      "people": 25,
+      "projects": 5,
+      "seed": 2,
+      "solver": "highs",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 5.424904761904761,
+        "seconds": 0.046509666834026575,
+        "variables": 501,
+        "constraints": 1139,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 20
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 6.017404761904766,
+        "seconds": 0.08174220891669393,
+        "variables": 826,
+        "constraints": 1789,
+        "assignments_with_varying_alloc": 5,
+        "assignments": 20
+      },
+      "objective_gain_ratio": 0.1092185072373454,
+      "time_ratio": 1.7575315946338095
+    },
+    {
+      "people": 25,
+      "projects": 5,
+      "seed": 2,
+      "solver": "cbc",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 5.42490476190476,
+        "seconds": 0.10442508291453123,
+        "variables": 501,
+        "constraints": 1139,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 20
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 6.017404761904766,
+        "seconds": 0.2930282079614699,
+        "variables": 826,
+        "constraints": 1789,
+        "assignments_with_varying_alloc": 5,
+        "assignments": 20
+      },
+      "objective_gain_ratio": 0.10921850723734558,
+      "time_ratio": 2.806109411484065
+    },
+    {
+      "people": 50,
+      "projects": 10,
+      "seed": 42,
+      "solver": "highs",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 16.602461126373626,
+        "seconds": 0.39704874996095896,
+        "variables": 2861,
+        "constraints": 6858,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 52
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 18.701211147741134,
+        "seconds": 1.469291500048712,
+        "variables": 4211,
+        "constraints": 9558,
+        "assignments_with_varying_alloc": 26,
+        "assignments": 51
+      },
+      "objective_gain_ratio": 0.12641198225927874,
+      "time_ratio": 3.7005317361991055
+    },
+    {
+      "people": 50,
+      "projects": 10,
+      "seed": 42,
+      "solver": "cbc",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 16.602461124503968,
+        "seconds": 0.6713578330818564,
+        "variables": 2861,
+        "constraints": 6858,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 52
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 18.66787781429562,
+        "seconds": 2.24344279197976,
+        "variables": 4211,
+        "constraints": 9558,
+        "assignments_with_varying_alloc": 25,
+        "assignments": 51
+      },
+      "objective_gain_ratio": 0.1244042479185964,
+      "time_ratio": 3.3416498347554464
+    },
+    {
+      "people": 100,
+      "projects": 20,
+      "seed": 42,
+      "solver": "highs",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 40.59531805555608,
+        "seconds": 8.579587083077058,
+        "variables": 18901,
+        "constraints": 49255,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 106
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 45.429565524521834,
+        "seconds": 16.441798832966015,
+        "variables": 24301,
+        "constraints": 60055,
+        "assignments_with_varying_alloc": 49,
+        "assignments": 102
+      },
+      "objective_gain_ratio": 0.11908386731568216,
+      "time_ratio": 1.916385797330142
+    },
+    {
+      "people": 100,
+      "projects": 20,
+      "seed": 42,
+      "solver": "cbc",
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 40.56698472555554,
+        "seconds": 8.438128791982308,
+        "variables": 18901,
+        "constraints": 49255,
+        "assignments_with_varying_alloc": 0,
+        "assignments": 107
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 45.42009098038595,
+        "seconds": 9.141259790863842,
+        "variables": 24301,
+        "constraints": 60055,
+        "assignments_with_varying_alloc": 48,
+        "assignments": 102
+      },
+      "objective_gain_ratio": 0.11963191959330291,
+      "time_ratio": 1.0833278344304997
+    }
+  ],
+  "note": "합성 데이터. 목적값은 현행 모델 점수이지 현실 성과가 아니다. gap 1% 안의 작은 차이는 잡음일 수 있다."
+}

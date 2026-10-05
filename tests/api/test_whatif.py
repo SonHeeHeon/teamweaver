@@ -137,3 +137,31 @@ def test_whatif_missing_entry_for_swap_out_person_returns_422(client):
         assert res.status_code == 422
     finally:
         app.dependency_overrides.pop(get_openai_client_or_none, None)
+
+
+def test_whatif_reports_swap_that_exceeds_the_concurrent_project_limit(client):
+    """C6: 평가기(core/evaluate)가 아직 동시 프로젝트 상한을 모른다 -- API가 위반으로 덧붙여, 상한을
+    넘는 교체가 "위반 없음"으로 보이지 않게 한다(C6 리뷰 MUST)."""
+    app.dependency_overrides[get_openai_client_or_none] = lambda: None
+    try:
+        meta = client.get("/api/meta").json()
+        projects = meta["projects"]
+        j1, j2 = next((a, b) for a in projects for b in projects
+                      if a["id"] < b["id"] and a["start_month"] <= b["end_month"] and b["start_month"] <= a["end_month"])
+        p_in, p_out = meta["people"][0]["id"], meta["people"][1]["id"]
+        body = {
+            "entries": [{"person_id": p_in, "project_id": j1["id"], "alloc": 0.3},
+                        {"person_id": p_out, "project_id": j2["id"], "alloc": 0.3}],
+            "swap": {"out_person_id": p_out, "in_person_id": p_in, "project_id": j2["id"]},
+            "weights": {}, "milp_params": {"max_concurrent_projects": 1},
+        }
+        res = client.post("/api/whatif", json=body)
+        assert res.status_code == 200, res.text
+        out = res.json()
+        assert "concurrent_projects" in {v["code"] for v in out["new_violations"]}
+        assert out["feasible"] is False
+        body["milp_params"] = {"max_concurrent_projects": 2}
+        out2 = client.post("/api/whatif", json=body).json()
+        assert "concurrent_projects" not in {v["code"] for v in out2["new_violations"]}
+    finally:
+        app.dependency_overrides.pop(get_openai_client_or_none, None)

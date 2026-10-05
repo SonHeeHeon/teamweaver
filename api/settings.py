@@ -40,6 +40,8 @@ class PlacementSettings(BaseModel):
     mu: float = Field(default=0.2, ge=0.0, le=1.0)
     time_limit: int = Field(default=120, ge=5, le=600)
     gap: float = Field(default=0.05, ge=0.0, le=0.2)
+    # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
+    max_concurrent_projects: int = Field(default=3, ge=1, le=6)
 
     def to_milp_params(self) -> MilpParams:
         return MilpParams(**self.model_dump())

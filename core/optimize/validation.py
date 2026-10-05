@@ -181,6 +181,17 @@ def validate_raw_solution(
                 if month in project.months
             )
             upper("availability", f"person={person.id},month={month}", load, availability)
+            count = sum(
+                solution.z[(i, j)]
+                for j, project in enumerate(projects)
+                if month in project.months
+            )
+            upper(
+                "concurrent_projects",
+                f"person={person.id},month={month}",
+                count,
+                float(params.max_concurrent_projects),
+            )
 
     for j, project in enumerate(projects):
         for grade, required in project.grade_headcount.items():

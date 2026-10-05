@@ -175,6 +175,8 @@ export interface PlacementSettings {
   mu: number;
   time_limit: number;
   gap: number;
+  /** 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6). */
+  max_concurrent_projects: number;
 }
 
 /** GET/PUT /api/settings 응답. bounds는 서버 pydantic 제약에서 만든 값이다 --

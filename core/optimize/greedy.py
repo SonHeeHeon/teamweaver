@@ -5,8 +5,10 @@ from core.graph.memory_graph import MemoryGraph
 from core.optimize.types import AssignEntry, PlanAssignment
 
 
-def solve_greedy(graph: MemoryGraph, S: np.ndarray) -> PlanAssignment:
+def solve_greedy(graph: MemoryGraph, S: np.ndarray, max_concurrent_projects: int = 3) -> PlanAssignment:
     remaining = {p.id: list(p.availability) for p in graph.people}
+    # 같은 달 동시 프로젝트 수(C6) -- MILP와 같은 규칙.
+    concurrent = {p.id: [0] * len(p.availability) for p in graph.people}
     entries, unfilled, violations = [], [], []
     proj_index = graph.project_index
 
@@ -21,10 +23,13 @@ def solve_greedy(graph: MemoryGraph, S: np.ndarray) -> PlanAssignment:
                 free = min(remaining[p.id][m] for m in proj.months)
                 if free < 0.2:
                     continue
+                if any(concurrent[p.id][m] >= max_concurrent_projects for m in proj.months):
+                    continue
                 # 내림: 반올림하면 남은 가용률 0.206을 0.21로 올려 가용률을 넘긴다(C3).
                 alloc = math.floor(min(1.0, free) * 100 + 1e-9) / 100
                 for m in proj.months:
                     remaining[p.id][m] -= alloc
+                    concurrent[p.id][m] += 1
                 entries.append(AssignEntry(person_id=p.id, project_id=proj.id, alloc=alloc))
                 cost += p.monthly_rate * alloc
                 need -= 1

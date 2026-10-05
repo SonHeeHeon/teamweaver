@@ -55,6 +55,8 @@ class MilpParams(BaseModel):
     # 규모별 최선은 아니다(200명은 400쌍 +88.6이 더 좋다) -- 300명이 400쌍에서 무너져(미충원 50) 공통값으로 절충했다.
     # 뜻: 화면의 "협업 시너지"는 이제 협업 점수 |C| 상위 200쌍만 보상한다(반복 협업 감점 쌍은 그대로 전부).
     max_pairs: int = 200
+    # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
+    max_concurrent_projects: int = 3
     # 서비스 솔버(2026-10-05 사용자 결정: HiGHS로 고정). Phase 1(1스레드·240초)에서 HiGHS 79/112, CBC 22/112였고,
     # 조직형 100명 리허설에서도 같은 시간에 CBC보다 훨씬 좋은 해를 냈다(rehearsal/results). "cbc"는 비교·측정용으로만
     # 남긴다 -- API 요청(MilpParamsIn)과 관리자 설정에는 이 칸이 없어 바꿀 수 없다.
@@ -198,6 +200,15 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             active = [j for j, pj in enumerate(projects) if m in pj.months]
             if active:
                 prob += pulp.lpSum(a[i][j] for j in active) <= person.availability[m]
+    for i in range(nP):                                     # 제약 1b: 같은 달 동시 프로젝트 수(C6)
+        for m in range(len(people[i].availability)):
+            active = [j for j, pj in enumerate(projects) if m in pj.months]
+            # 상한+1곳에 최소 투입률로도 못 들어가는 달(가용률 < (K+1)·min_alloc)은 가용률 제약이 이미
+            # 막으므로 행을 넣지 않는다(리뷰 S3: 묶이지 않는 행이 풀이만 느리게 했다). 검증기는 전부 본다.
+            if (len(active) > params.max_concurrent_projects
+                    and (params.max_concurrent_projects + 1) * params.min_alloc
+                    <= people[i].availability[m] + 1e-6):
+                prob += pulp.lpSum(z[i][j] for j in active) <= params.max_concurrent_projects
     for j, pj in enumerate(projects):                       # 제약 2: 등급 정원 + slack
         for g, need in pj.grade_headcount.items():
             members = [i for i, pe in enumerate(people) if pe.grade == g]
