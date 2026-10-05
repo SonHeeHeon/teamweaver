@@ -47,4 +47,7 @@ def test_swap_falls_back_to_other_projects_when_the_flagship_has_no_candidate(tm
     swap = _pick_swap(g, plan, "J001", 0.3)
     assert swap is not None and swap["in_person_id"] not in {g.people[0].id, g.people[1].id}
     out = g.people[g.pid_index[swap["out_person_id"]]]
-    assert g.people[g.pid_index[swap["in_person_id"]]].grade == out.grade
+    inn = g.people[g.pid_index[swap["in_person_id"]]]
+    assert inn.grade == out.grade and inn.monthly_rate == out.monthly_rate
+    proj = g.projects[g.project_index[swap["project_id"]]]
+    assert all(inn.availability[m] >= 0.5 for m in range(proj.start_month, proj.end_month + 1))

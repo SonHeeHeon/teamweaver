@@ -86,9 +86,11 @@ def _pick_swap(graph, plan: dict, project_id: str, min_alloc: float) -> dict | N
     for out in entries:
         proj = graph.projects[graph.project_index[out["project_id"]]]
         months = range(proj.start_month, proj.end_month + 1)
-        grade = graph.people[graph.pid_index[out["person_id"]]].grade
-        cands = [p.id for p in graph.people if p.id not in used and p.grade == grade
-                 and all(p.availability[m] >= min_alloc for m in months)]
+        leaving = graph.people[graph.pid_index[out["person_id"]]]
+        need = max(min_alloc, out["alloc"])          # the newcomer inherits the leaver's allocation
+        # same grade (no headcount shortfall) and same role type (consulting rates are 10% higher -> budget)
+        cands = [p.id for p in graph.people if p.id not in used and p.grade == leaving.grade
+                 and p.monthly_rate == leaving.monthly_rate and all(p.availability[m] >= need for m in months)]
         if cands:
             inn = max(cands, key=lambda pid: score(pid, out["project_id"]))
             return {"out_person_id": out["person_id"], "in_person_id": inn, "project_id": out["project_id"]}
