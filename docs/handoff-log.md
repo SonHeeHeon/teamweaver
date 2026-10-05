@@ -22,6 +22,25 @@
 
 ---
 
+## 2026-10-06 · claude-b · 사람별 달별 투입률 조정(UX) + Jev 실험 실제 결과
+- 브랜치/커밋: `feat/claude-b-alloc-edit`(`50f6c2c`) + `feat/claude-b-jev-experiment`(`959832d`) → main fast-forward·push.
+- 한 일:
+  - **사람별 달별 조정**(사용자 결정: 기본은 기간 내내 한 비율, 겸임 인력만 수정):
+    - 배치 표 행마다 "달별 조정"을 두고, 위에 안내 배너를 단다. 편집기에서 달별 %를 넣거나 "모든 달 같게"로 맞춘다. 최소 투입률도 안내한다.
+    - 적용하면 서버가 명단 전체를 다시 평가한다(`POST /api/plans/apply-alloc`). 조정은 교체와 같은 이력에 쌓이고, 취소·초기화·서버 저장·PDF 재생이 같은 흐름을 탄다.
+    - 적용 단계는 교체|조정 판별 유니온이다. `kind`가 없는 예전 기록은 교체로 읽고, 교체는 여전히 `kind` 없이 직렬화한다.
+    - 명단에 월별 항목이 있으면 최적화율 분모는 월별 LP 상한이다. 화면·PDF에 안내한다.
+  - **Jev 실험 실제 실행**: 공식 api.typesafe.ai, jev-1.13.0, 391회 호출, 약 $0.011. 결과는 cassette로 기록해 키 없이 재생한다(`outputs/jev-experiment.html`).
+    - E1 솔버 대신(100명): Jev 26.24, MILP 40.58, 기술 1등 규칙 30.11, 무작위 11.41.
+    - E2 리뷰 극성: Jev r=0.854, gpt-6-luna 0.851. 차이 CI [-0.022, +0.025]로 구분되지 않는다. 0.20초 대 2.63초/건. 단, 평균 오차·긍부정 일치는 Jev가 낮다(0.213 대 0.162, 61% 대 74%).
+    - E3 교체 고르기(37건): Jev 40.5% [26,57], 기술 1등 76% [60,87], 무작위 45%.
+- 상대 영향:
+  - (claude-a) `PlanEditIn.swaps`·`ReportRequest.applied_swaps`가 교체와 `{"kind":"alloc", person_id, project_id, monthly_alloc}`를 받는다. `api.routes.plans.apply_step`이 공통 함수다. plan_eval은 그대로 쓴다(월별 지원 덕분).
+  - (claude-a) Jev E2 결과상 리뷰 글 판정(text_polarity)을 Jev로 바꾸면 같은 상관을 13배 빠르게 얻는다. 절대 수준은 덜 맞는다. 바꿀지는 claude-a와 사용자가 판단한다.
+  - 테스트 기준선: **1191 passed, 19 deselected**, slow 19, vitest 136.
+- 검증: 위 기준선, tsc·oxlint·build 통과. 리뷰는 Opus 폴백으로 했다. 달별 조정은 MUST 0이고 SHOULD 4를 반영했다. Jev 정리도 MUST 0이고 SHOULD 2를 반영했으며, 키 없는 재생이 수치를 재현함을 확인했다.
+- 근거: `.omc/reports/2026-10-06-alloc-edit-and-jev.md`
+
 ## 2026-10-05 · claude-b · 월별 투입률(사용자 결정) 끝까지: 모델·검증·API·화면·PDF + 권장 시간
 - 브랜치/커밋: `feat/claude-b-monthly-alloc` → main fast-forward·push.
 - 한 일:
