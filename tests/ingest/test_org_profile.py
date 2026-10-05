@@ -25,10 +25,10 @@ def test_bundle_passes_the_contract_with_no_errors(bundle):
 
 def test_group_composition_matches_the_size(bundle):
     size, _, b, _, ds = bundle
-    groups = {"DP": 0, "AI": 0}
+    groups = {}
     for row in b.tables["people.csv"]:
-        groups[row["person_id"][:2]] += 1
-    assert groups == {100: {"DP": 100, "AI": 0}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 200}}[size]
+        groups[row["person_id"][:2]] = groups.get(row["person_id"][:2], 0) + 1
+    assert groups == {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}[size]
     assert len(ds.projects) == size // 5
 
 

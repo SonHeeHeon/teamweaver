@@ -32,3 +32,19 @@ def test_swap_picks_someone_available_for_every_project_month(tmp_path):
     inn = g.people[g.pid_index[swap["in_person_id"]]]
     assert swap["in_person_id"] not in {p.id for p in g.people[:5]}
     assert all(inn.availability[m] >= 0.3 for m in range(j.start_month, j.end_month + 1))
+
+
+def test_swap_falls_back_to_other_projects_when_the_flagship_has_no_candidate(tmp_path):
+    root = generate_org_bundle(tmp_path / "b", 100, seed=3)
+    b, rep = load_bundle(root)
+    ds, parsed = to_dataset(b, rep)
+    g = MemoryGraph.build(ds, parsed)
+    other = next(j for j in g.projects if j.id != "J001")
+    plan = {"entries": [{"person_id": g.people[0].id, "project_id": "J001", "alloc": 0.5},
+                        {"person_id": g.people[1].id, "project_id": other.id, "alloc": 0.5}]}
+    swap = _pick_swap(g, plan, "J001", 1.01)          # nobody can be >100% available -> no candidate anywhere
+    assert swap is None
+    swap = _pick_swap(g, plan, "J001", 0.3)
+    assert swap is not None and swap["in_person_id"] not in {g.people[0].id, g.people[1].id}
+    out = g.people[g.pid_index[swap["out_person_id"]]]
+    assert g.people[g.pid_index[swap["in_person_id"]]].grade == out.grade

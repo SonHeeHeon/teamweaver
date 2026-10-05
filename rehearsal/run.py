@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent
 RESULTS = ROOT / "results"
 SEED = 2026
 SWEEP_LIMITS = {100: [30, 60, 120, 240], 200: [60, 120, 240, 600], 300: [60, 120, 240, 600, 1200]}
+# 300 = DP 100 + AI 100 + business automation 100 (core/ingest/org_profile.SIZES)
 
 
 def _now() -> str:
@@ -74,26 +75,24 @@ def _sse(lines):
 
 
 def _pick_swap(graph, plan: dict, project_id: str, min_alloc: float) -> dict | None:
-    """Out: the plan's weakest member on the project. In: the best-scoring person of the same grade, not in the
-    plan, with at least min_alloc available in every month of the project (a realistic manual swap that does not
-    create a grade shortfall by itself)."""
+    """A realistic manual swap. Out: a plan member (the flagship's weakest first, then the weakest elsewhere).
+    In: the best-scoring person of the same grade, not in the plan, with at least min_alloc available in every
+    month of that project -- so the swap does not create a grade shortfall or availability breach by itself."""
     from core.scoring.engine import ScoringEngine
     S = ScoringEngine(graph).skill_matrix({})
-    j = graph.project_index[project_id]
-    proj = graph.projects[j]
-    months = range(proj.start_month, proj.end_month + 1)
-    on = [e for e in plan["entries"] if e["project_id"] == project_id]
-    if not on:
-        return None
-    out = min(on, key=lambda e: S[graph.pid_index[e["person_id"]], j])
     used = {e["person_id"] for e in plan["entries"]}
-    grade = graph.people[graph.pid_index[out["person_id"]]].grade
-    cands = [p.id for p in graph.people if p.id not in used and p.grade == grade
-             and all(p.availability[m] >= min_alloc for m in months)]
-    if not cands:
-        return None
-    inn = max(cands, key=lambda pid: S[graph.pid_index[pid], j])
-    return {"out_person_id": out["person_id"], "in_person_id": inn, "project_id": project_id}
+    score = lambda pid, jid: S[graph.pid_index[pid], graph.project_index[jid]]
+    entries = sorted(plan["entries"], key=lambda e: (e["project_id"] != project_id, score(e["person_id"], e["project_id"])))
+    for out in entries:
+        proj = graph.projects[graph.project_index[out["project_id"]]]
+        months = range(proj.start_month, proj.end_month + 1)
+        grade = graph.people[graph.pid_index[out["person_id"]]].grade
+        cands = [p.id for p in graph.people if p.id not in used and p.grade == grade
+                 and all(p.availability[m] >= min_alloc for m in months)]
+        if cands:
+            inn = max(cands, key=lambda pid: score(pid, out["project_id"]))
+            return {"out_person_id": out["person_id"], "in_person_id": inn, "project_id": out["project_id"]}
+    return None
 
 
 @contextlib.contextmanager

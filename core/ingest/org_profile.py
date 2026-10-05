@@ -3,8 +3,8 @@
 The plain generator (core/ingest/synthetic.py) draws generic SI staff and projects. This one follows the
 user's description of the real organisation (2026-10-05) so the rehearsal looks like the real workload:
 
-- 100 people = data platform delivery group (DP) only; 200 / 300 = DP 100 + AI delivery group 100 / 200
-  (the AI head count is claude-a's assumption -- the user gave only the totals).
+- 100 people = data platform delivery group (DP) only; 200 = DP 100 + AI delivery group 100;
+  300 = DP 100 + AI 100 + business automation platform delivery group (AU) 100 (user decision 2026-10-05).
 - DP work: unstructured-to-metadata conversion and unstructured data marts for financial clients, plus
   internal (group affiliate) data platform work. AI work: AI agent development for financial clients.
 - The largest engagement is a joint AI agent programme for a large commercial bank: 8 internal people from
@@ -26,7 +26,7 @@ from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS,
                                    _review_rounds, _reviews, _write_csv)
 
 GENERATOR = "core.ingest.org_profile v1"
-SIZES = {100: {"DP": 100, "AI": 0}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 200}}
+SIZES = {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}
 HISTORY_MONTHS = 100
 LLM_ERA_MONTHS = 36           # LLM-era skills only exist in the last three years of history
 
@@ -36,6 +36,7 @@ CATALOG = {
              "데이터 모델링", "비정형 문서 처리(OCR)", "검색엔진", "BI Reporting"],
     "AI": ["LLM Application", "RAG·벡터DB", "AI 에이전트 프레임워크", "프롬프트 엔지니어링", "LLM 파인튜닝",
            "ML Ops", "Text Analysis"],
+    "Automation": ["RPA", "워크플로우·BPM", "로우코드 플랫폼", "지능형 문서 처리(IDP)", "프로세스 마이닝"],
     "Framework": ["Spring", "FastAPI", "React"],
     "Cloud": ["AWS", "Private Cloud", "Kubernetes", "Docker"],
     "Domain": ["금융 업무", "그룹사 업무", "공공 업무"],
@@ -55,10 +56,16 @@ FAMILIES = {
            ("MLOps", 0.15, False, ["ML Ops", "Kubernetes", "Docker", "AWS", "Python", "LLM 파인튜닝"]),
            ("AI 서비스 백엔드", 0.20, False, ["Java", "Spring", "FastAPI", "Python", "Docker", "React"]),
            ("AI 컨설턴트", 0.10, True, ["LLM Application", "프롬프트 엔지니어링", "Text Analysis"])],
+    "AU": [("RPA 개발", 0.35, False, ["RPA", "Python", "SQL", "지능형 문서 처리(IDP)", "Java"]),
+           ("워크플로우·BPM", 0.20, False, ["워크플로우·BPM", "Java", "Spring", "SQL", "React"]),
+           ("로우코드 플랫폼", 0.20, False, ["로우코드 플랫폼", "React", "워크플로우·BPM", "SQL", "Docker"]),
+           ("문서 자동화", 0.15, False, ["지능형 문서 처리(IDP)", "비정형 문서 처리(OCR)", "Python", "RPA", "LLM Application"]),
+           ("업무자동화 컨설턴트", 0.10, True, ["프로세스 마이닝", "RPA", "워크플로우·BPM"])],
 }
 # past-work domain mix per group
 DOMAINS = {"DP": (("금융 업무", 0.5), ("그룹사 업무", 0.4), ("공공 업무", 0.1)),
-           "AI": (("금융 업무", 0.6), ("그룹사 업무", 0.4))}
+           "AI": (("금융 업무", 0.6), ("그룹사 업무", 0.4)),
+           "AU": (("그룹사 업무", 0.6), ("금융 업무", 0.4))}
 
 FIN = [f"금융사 {c}{n}" for n in ("", "2") for c in "가나다라마바사아자차카타파하"]   # 300명 규모에서도 이름이 겹치지 않게
 AFF = [f"계열사 {c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
@@ -73,6 +80,10 @@ PROJECT_TYPES = {
     "AI": [("{c} AI 에이전트 개발", "대외금융", FIN, ["LLM Application", "AI 에이전트 프레임워크", "RAG·벡터DB", "프롬프트 엔지니어링", "금융 업무"], 0.50),
            ("{c} 사내 AI 어시스턴트", "대내", AFF, ["LLM Application", "RAG·벡터DB", "검색엔진", "FastAPI"], 0.30),
            ("{c} 상담 문서 AI 분석", "대외금융", FIN, ["Text Analysis", "LLM Application", "ML Ops", "금융 업무"], 0.20)],
+    "AU": [("{c} 업무자동화(RPA) 확산", "대내", AFF, ["RPA", "지능형 문서 처리(IDP)", "프로세스 마이닝", "그룹사 업무"], 0.40),
+           ("{c} 지능형 문서처리 자동화", "대외금융", FIN, ["지능형 문서 처리(IDP)", "비정형 문서 처리(OCR)", "RPA", "금융 업무"], 0.25),
+           ("{c} 업무 워크플로우 플랫폼 구축", "대내", AFF, ["워크플로우·BPM", "로우코드 플랫폼", "Java", "React"], 0.20),
+           ("{c} AI 기반 업무자동화", "대외금융", FIN, ["RPA", "LLM Application", "AI 에이전트 프레임워크", "금융 업무"], 0.15)],
 }
 FLAGSHIP = {
     "project_id": "J001",
@@ -121,9 +132,9 @@ def _work_history(rng: random.Random, people: list[dict], last: dt.date):
     tech = [s for s in SKILL_CATEGORY if SKILL_CATEGORY[s] != "Domain"]
     for p in people:
         own = codes[p["_group"]]
-        other = codes["AI" if p["_group"] == "DP" else "DP"]
+        other = [c for g, cs in codes.items() if g != p["_group"] for c in cs]
         picks = rng.sample(own, min(len(own), rng.randint(3, 9)))
-        if other and rng.random() < 0.15:          # a few people crossed over to the other group's work
+        if other and rng.random() < 0.15:          # a few people crossed over to another group's work
             picks.append(rng.choice(other))
         for code in picks:
             span = _months(code["start"], code["end"])
@@ -165,7 +176,7 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
     # flagship: always in execution for the whole horizon; DP seats always, AI seats only with the AI group
     seats = defaultdict(int)
     reqs = []
-    for g in ("DP", "AI"):
+    for g in ("DP", "AI"):                      # the flagship is a DP + AI joint programme (AU not involved)
         if groups.get(g):
             for grade, k in FLAGSHIP["seats"][g].items():
                 seats[grade] += k
