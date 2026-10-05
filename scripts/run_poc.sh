@@ -36,6 +36,8 @@ if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" \
 fi
 
 echo "TeamWeaver: http://$HOST:$PORT"
-# 시연 기본 데이터: 실제 시스템 형식의 조직형 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.
-export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$PWD/demo/org-n100}"
+# 시연 데이터: 실제 시스템 형식의 조직형 100명은 TEAMWEAVER_DEMO_BUNDLE="$PWD/demo/org-n100" 으로 켠다.
+# 기본은 예전 고정 데이터다(2026-10-06 사용자 결정) -- 10년 이력 데이터에서 계산이 느려(100명 안 A가 120초 한도,
+# 부팅 사전계산 ~8분) 계산 안정화 작업이 끝나면 기본값을 demo/org-n100으로 바꾼다.
+export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-}"
 exec uv run uvicorn api.main:app --host "$HOST" --port "$PORT"
