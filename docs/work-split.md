@@ -48,18 +48,15 @@
 순서는 제안이며 사용자가 바꿀 수 있다.
 
 ### Codex (모델·솔버 축) — 제안 순서
-- **C0** 🟡 [A-P0] 안전 관문 구현 체크포인트 `2edd3f7`(2026-10-04), **통합 검증 보류 / C1 필요**.
-  서비스 솔버 반환에 독립 검증을 강제하고 분수·무incumbent·NaN·중복 결과를 차단한다.
-  관련 테스트 64 passed. 전체 539 passed / 6 failed / 10 deselected; 기본 동결 데모 warm-up도 budget 잔차로 거절된다.
-  허용오차 정책과 기본 부팅을 해결하기 전 main 병합하지 않는다. 근거: `outputs/phase0-c0-eli5.html`.
-- **C1** 🟡 [A-P0] 설계·구현 계획 작성 및 최고 역량 독립 설계 리뷰 PASS(2026-10-04), **구현 전 / 사용자 계획 승인 대기**.
-  근거: `docs/superpowers/specs/2026-10-04-c1-numerical-evidence-design.md`, `docs/superpowers/plans/2026-10-04-c1-numerical-evidence.md`, `outputs/phase1-c1-design-eli5.html`.
-  Phase 1 보고서가 `payload.error`의 거절 87건(CBC 예산 85, CBC 이진 1, HiGHS 예산 1)을 집계하고 분류하게 한다.
-  예산 허용오차·단위·반올림을 분석한다. 분모를 핵심 108·파일럿 3·호환성 1로 분리한다([A-P2]).
-  C0 체크포인트의 6개 회귀와 기본 API 부팅 거절도 이 수치 정책 분석의 우선 확인 대상이다.
-- **C2** [A-P1] 대안 생성: 구성 서명으로 중복을 제거하고, 빈 계획을 제외하고, 최소 품질·미충원 한도를 두고, 부족하면 "대안 없음"을 반환한다(`core/optimize/alternatives.py`).
-- **C3** [A-P2] 표시 투입률 반올림: `max(min_alloc, floor)`가 가용률 위로 올리는 경로를 막는다(`milp.py`, `greedy.py`).
-- **C4** Phase 1 원시 증거(`experiments/results/phase1/`, 약 423MB) 보존: 아카이브, 해시, 재현 명령. 보관 경로는 사용자가 정한다.
+- **C0** ✅ [A-P0] 서비스 솔버 반환에 독립 검증 강제(분수·무incumbent·NaN·중복 차단). Codex 구현, 2026-10-05 claude-b가 C1과 함께 main 통합.
+- **C1** ✅ [A-P0] 수치 정책: 예산 극미세 초과(상대 1e-7 이하)만 고정팀 미세 LP로 보정 후 엄격 재검증, 과거 87건 거절 집계 정정, G4 소형 비교 9/9.
+  Codex G0~G3 구현 + G4 실행. claude-b가 G4 산출물 커밋·최종 리뷰(Opus)·main 통합(2026-10-05). 리뷰 반영: 대안 하나가 거절돼도 앞선 플랜 유지,
+  부팅 사전계산 실패해도 서버 기동, 보정 LP는 투입률을 올리지 않음, 다양성 컷을 이미 유효한 후보에도 확인.
+  근거: `outputs/phase1-c1-completion-eli5.html`, `outputs/phase1-c1-integration-service-smoke.json`, `outputs/phase0-c1-integration-revalidation.json`.
+- **C2** ✅ [A-P1] (claude-b 임시 인계, 2026-10-05) 대안: 빈 팀·중복 구성·A의 95% 미만·A보다 미충원 많은 후보 제외, 모자라면 화면에 "조건을 만족하는 대안 없음".
+  시간 한도에 걸린 해·실패로 끊긴 묶음은 캐시하지 않는다.
+- **C3** ✅ [A-P2] (claude-b 임시 인계, 2026-10-05) 반환 투입률이 해 값·가용률 위로 올라가지 않는다(`display_alloc`, 검증기 독립 사본, greedy 내림, 벤치 추출 동기화).
+- **C4** ✅ (claude-b, 2026-10-05) 원자료를 로컬 `~/Dev/teamweaver-archive/`에 압축·해시 보관(사용자 결정). `docs/phase1-checkpoint.md` 끝 절.
 - **C5** Gurobi 어댑터 계약과 mock 테스트. 평가판을 확보하면 같은 동결 입력으로 비교한다.
 - **C6** (배치 규칙 확정 후 — 사용자 답변 `private/schema-intake.json`의 `parts.rules.answers.*.answer`가 입력)
   필수 기술·등급 정책 반영([A-P1] 미기재 등급 선발 포함) → 두 MILP 정식 동기화
@@ -87,10 +84,12 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-b] `feat/claude-b-c1-integrate` · **Codex 영역 임시 인계(사용자 지시 2026-10-05, Codex 쿼터 10-10까지 소진)**: C0·C1 main 통합, C3, C2, C4 · `core/optimize/**`, `experiments/**`, `outputs/phase1-*`, 관련 tests · 시작 2026-10-05 14:30 · run 없음(C4 원자료 아카이브 `~/Dev/teamweaver-archive/`)
+- (없음)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-b→모두] `CLAUDE.md` "함정"에 추가 제안: MILP 정식 동기화 대상이 이제 세 곳이다 -- 서비스 `milp.py`, 벤치 `experiments/phase1/solvers.py`, 그리고 C1 보정 LP `core/optimize/numerics.py::_allocation_lp`(가용률·예산 행을 직접 씀)와 검증기 `validation.py`. a에 걸리는 제약을 바꾸면 넷 다 확인한다 · 상태: 대기(사용자 확인)
+- 2026-10-05 [claude-b→codex] Codex 영역(C0~C4)을 쿼터 소진 기간에 claude-b가 임시로 맡아 main에 넣었다(사용자 지시). 복귀하면 `docs/handoff-log.md`의 C1 통합·C2·C3 항목을 보고, 가능하면 Codex로 통합 결과를 한 번 다시 리뷰해 달라. Codex worktree(`.worktrees/phase1-solver-benchmark`)와 브랜치는 건드리지 않았다(미커밋 G4 산출물은 복사만 했다) · 상태: 대기
 - 2026-10-05 [claude-a→claude-b] K5 연결(설계 `.omc/plan/2026-10-05-k5-evidence-provenance.md` 5절, claude-a 쪽은 `feat/claude-a-k5-evidence`에 완료):
   (1) `api/datasets.py::build_active` — `ActiveDataset`에 `evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))`(`api.rag.evidence`). 실데이터(synthetic이 true가 아님)는 원문을 색인에도 두지 않는다(사용자 결정).
   (2) `api/routes/whatif.py` — **같은 색인을 두 곳에**: `swap_context(..., evidence=dataset.evidence)`와 `generate_briefing(..., evidence=dataset.evidence)`. 앞의 것만 넘기면 `generate_briefing`이 ValueError(code `missing_index`)로 규칙 기반 전환한다.

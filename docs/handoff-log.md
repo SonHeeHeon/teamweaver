@@ -22,6 +22,33 @@
 
 ---
 
+## 2026-10-05 · claude-b · Codex 영역 임시 인계: C0·C1 main 통합, C2, C3, C4
+- 브랜치/커밋: `feat/claude-b-c1-integrate` = Codex `feat/phase1-solver-benchmark`(`60bfc47`) + G4 산출물 + main 병합(`6f1b1c1`) + 리뷰 반영·C3·C2·C4. main fast-forward와 origin push(사용자 지시).
+- 배경: Codex 주간 쿼터가 10-10 13:16까지 소진됐다. 사용자 지시로 claude-b가 C*를 이어받았다. Codex worktree·브랜치는 수정하지 않았다.
+- 한 일:
+  - C1 마무리: Codex가 커밋하지 못한 G4 결과(`outputs/phase1-c1-g4-*`, completion ELI5)를 그대로 커밋했다(증거 tarball 해시 `57e6111…` 일치). 원시 캡처는 아카이브로 보냈다.
+  - 최종 리뷰(Opus, Codex G4 리뷰 대신) REVISE → 반영:
+    - (MUST) 대안 하나가 검증에 거절되면 A~C까지 묶음 전체와 부팅 사전계산이 실패하던 것을 고쳤다. 이제 앞선 유효 플랜을 유지하고, 사전계산이 실패해도 서버가 뜬다.
+    - 보정 LP 상한을 원본 값으로 했다(투입률을 올리지 않는다).
+    - 다양성 컷을 이미 유효한 후보에도 확인한다.
+    - 가드 회귀 테스트를 추가했다.
+  - main 병합: 코드 충돌은 없었다(문서 2개만 충돌). `service_smoke`의 캐시 키를 K8/K9 키로 고쳤다.
+  - C3: `display_alloc`이 해 값보다 크게 만들지 않는다(최소 투입률 0.205일 때 0.206이 0.21로 나오던 문제). 검증기 사본, greedy(내림), 벤치 추출, 웹 % 표시(0.1% 내림)를 함께 맞췄다.
+  - C2:
+    - 빈 팀, 중복 구성, A의 95% 미만, A보다 미충원이 많은 대안을 제외한다. 필요할 때는 미충원 상한을 모델 제약으로도 넣는다.
+    - 대안 solve 실패를 분류한다.
+    - 시간 한도에 걸린 해(PuLP가 "Optimal"로 보고 → `sol_status`로 구분)와 실패로 끊긴 묶음은 캐시하지 않는다.
+    - done SSE에 `requested_alternatives`·`stop_reason`을 넣고, 화면에 "조건을 만족하는 대안 없음"을 표시한다.
+  - C4: `experiments/results/phase1/`(2,788파일, 577MB)를 `~/Dev/teamweaver-archive/`에 48MB 압축으로 보관했다. 파일별 해시를 확인했다.
+- 상대 영향:
+  - (claude-a) `core/evaluate/plan_eval.py`는 바뀌지 않았다. 반환 alloc이 6자리일 수 있다(최소 투입률이 2자리보다 정밀할 때만). `plan_eval`은 자릿수를 가정하지 않는다.
+  - (모두) `generate_plans(_streaming)`에 `outcome` 인자가 생겼다. 이를 monkeypatch하는 테스트는 `outcome=None`을 받아야 한다.
+  - (모두) `SolverEvidence.termination_reason`이 시간 한도 해일 때 `time_limit_incumbent`다(서비스 경로만).
+  - (Codex) 위 "요청" 두 건.
+  - 테스트 기준선: **1044 passed, 19 deselected**(`--group benchmark`), slow 19, vitest 129.
+- 검증: 전체 1044 passed. slow 19 passed. 실제 lifespan(사전계산 포함) 4플랜 35.2초로 네 플랜 모두 보정 후 엄격 검증을 통과했다. Phase 0 재검증 PASS(11). vitest 129, tsc·oxlint·build 통과. C3·C2·리뷰 반영 테스트는 수정 전 실패를 확인했다.
+- 근거: `.omc/reports/2026-10-05-codex-takeover-c1-c4.md`, `outputs/phase1-c1-integration-service-smoke.json`, `outputs/phase0-c1-integration-revalidation.json`, `~/Dev/teamweaver-archive/README.md`
+
 ## 2026-10-05 · claude-b · 정리: 실행 스크립트, 409 뒤 적용 경합 수정, 결정 기록
 - 브랜치/커밋: `feat/claude-b-cleanup`(main `b48d5c8` 위). 이 기록을 포함한 브랜치를 main에 fast-forward하고 origin에 push한다(사용자 지시).
 - 한 일:
