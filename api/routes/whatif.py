@@ -7,17 +7,19 @@ from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
-from api.deps import get_graph, get_openai_client_or_none, get_sqlite_conn
+from api.datasets import ActiveDataset
+from api.briefing_evidence import clamp_briefing
+from api.deps import (check_dataset_version, get_dataset, get_evidence, get_graph,
+                      get_openai_client_or_none, get_sqlite_conn)
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
-from api.schemas import EntryIn, SwapIn, WhatifResponse
+from api.schemas import EntryIn, MilpParamsIn, SwapIn, WhatifResponse
 from core.config import load_pricing
 from core.evaluate.plan_eval import PlanEvaluation, evaluate_plan
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.milp import MilpParams
 from core.optimize.types import AssignEntry
 from core.scoring.engine import ScoringEngine
 
@@ -28,7 +30,8 @@ class WhatifRequest(BaseModel):
     entries: list[EntryIn]
     swap: SwapIn
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
-    milp_params: dict = {}
+    milp_params: MilpParamsIn = MilpParamsIn()
+    dataset_version: str | None = None      # 화면이 본 데이터셋. 다르면 409(K9)
 
 
 def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
@@ -68,12 +71,10 @@ def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
 
 @router.post("/api/whatif", response_model=WhatifResponse)
 def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
-          conn=Depends(get_sqlite_conn),
-          client=Depends(get_openai_client_or_none)):
-    try:
-        params = MilpParams(**req.milp_params)
-    except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=f"invalid milp_params: {exc}") from exc
+          conn=Depends(get_sqlite_conn), dataset: ActiveDataset = Depends(get_dataset),
+          evidence=Depends(get_evidence), client=Depends(get_openai_client_or_none)):
+    check_dataset_version(req.dataset_version, dataset)
+    params = req.milp_params.to_milp_params()
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
     before_entries, after_entries = _swapped_entries(graph, req.entries, req.swap)
@@ -87,7 +88,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     new_shortfalls = [asdict(s) for s in after.shortfalls
                       if s.missing > old_missing.get((s.project_id, s.grade), 0)]
 
-    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id)
+    # 근거 색인은 두 곳에 같이 넘긴다(K5): 문맥에만 넘기면 브리핑의 인용 검증이 꺼진다.
+    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence)
     fallback_used = False
     if client is None:
         briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
@@ -96,7 +98,7 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         try:
             model = load_pricing()["briefing_model"]
             briefing = generate_briefing(client, model, ctx, req.swap.out_person_id,
-                                         req.swap.in_person_id)
+                                         req.swap.in_person_id, evidence=evidence)
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
             briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
             fallback_used = True
@@ -108,6 +110,6 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "new_violations": new_violations,
         "new_shortfalls": new_shortfalls,
         "feasible": not after.violations,
-        "briefing": briefing,
+        "briefing": clamp_briefing(briefing),
         "fallback_used": fallback_used,
     }

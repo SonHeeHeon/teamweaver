@@ -70,13 +70,18 @@ def test_default_scenario_is_warmed_at_startup(monkeypatch):
     경로 자체를 검증할 수 없다(의도적 -- 그래서 기본 스위트가 빠르다). 이
     테스트는 그 가드를 명시적으로 해제한 별도 TestClient로 실제 부팅 워밍이
     동작하는지 확인한다. 동결 fixture(100명/20프로젝트) 전체를 실제로 풀므로
-    slow(실측 28.5초 안팎)."""
+    slow(실측 28.5초 안팎).
+
+    K8 이후 사전계산은 저장된 배치 설정으로 한다 -- 웹처럼 그 설정을
+    milp_params로 보내야 캐시에 맞는다(설정 파일은 conftest가 임시 경로로 돌린다)."""
     monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
     with TestClient(app) as warmed_client:
         import time
+        params = warmed_client.get("/api/settings").json()["settings"]
         start = time.monotonic()
         with warmed_client.stream(
-                "POST", "/api/optimize", json={"weights": {}, "n_alternatives": 3}) as res:
+                "POST", "/api/optimize",
+                json={"weights": {}, "milp_params": params, "n_alternatives": 3}) as res:
             list(res.iter_lines())
         elapsed = time.monotonic() - start
     assert elapsed < 2.0, f"캐시 히트인데 {elapsed:.1f}초 걸림 -- 워밍이 안 됐거나 캐시 미적중"

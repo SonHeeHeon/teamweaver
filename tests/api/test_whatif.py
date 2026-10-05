@@ -31,7 +31,7 @@ def test_whatif_swap_returns_delta_and_briefing(client):
         body_out = res.json()
         assert body_out["fallback_used"] is False
         assert body_out["briefing"] == {"rationale": "테스트 근거", "risks": ["테스트 리스크"],
-                                        "alternatives": ["테스트 대안"]}
+                                        "alternatives": ["테스트 대안"], "evidence": []}
     finally:
         app.dependency_overrides.pop(get_openai_client_or_none, None)
 

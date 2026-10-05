@@ -1,0 +1,111 @@
+"""CSV bundle contract v1: which files, which columns, and how each value is parsed.
+
+A bundle is one folder: manifest.json + the CSV files below (+ optional mapping.json that maps
+the real export headers onto these canonical column names). Values are parsed strictly; nothing
+missing is ever filled in silently.
+"""
+from dataclasses import dataclass
+
+SCHEMA_VERSION = 1
+HORIZON_MONTHS = 6
+
+GRADES = ("특급", "고급", "중급", "초급")
+ROLE_TYPES = ("개발", "컨설팅")
+SECTORS = ("대내", "대외금융", "대외공공")
+PHASES = ("실행", "제안")
+WORK_STATUSES = ("미등록", "진행중", "확정완료")
+POLARITIES = ("positive", "negative")
+
+
+@dataclass(frozen=True)
+class Column:
+    name: str
+    kind: str                       # str | int | float | date | month | enum
+    required: bool = True
+    choices: tuple[str, ...] = ()
+    min: float | None = None
+    max: float | None = None
+    ref: str | None = None          # "file.csv:column" that must contain this value
+
+
+@dataclass(frozen=True)
+class FileSpec:
+    name: str
+    columns: tuple[Column, ...]
+    key: tuple[str, ...]            # columns that must be unique together
+
+
+FILES: tuple[FileSpec, ...] = (
+    FileSpec("people.csv", (
+        Column("person_id", "str"),
+        Column("display_name", "str"),
+        Column("career_grade", "enum", choices=GRADES),
+        Column("role_type", "enum", choices=ROLE_TYPES),
+        Column("job_family", "str", required=False),
+    ), key=("person_id",)),
+    FileSpec("rate_card.csv", (
+        Column("career_grade", "enum", choices=GRADES),
+        Column("role_type", "enum", choices=ROLE_TYPES),
+        Column("monthly_rate", "int", min=1),
+    ), key=("career_grade", "role_type")),
+    FileSpec("person_skills.csv", (
+        Column("person_id", "str", ref="people.csv:person_id"),
+        Column("skill_name", "str"),
+        Column("skill_category", "str", required=False),
+        Column("project_count", "int", required=False, min=0),
+        Column("experience_months", "int", min=0),
+        Column("last_used_month", "month", required=False),
+    ), key=("person_id", "skill_name")),
+    FileSpec("work_history.csv", (
+        Column("person_id", "str", ref="people.csv:person_id"),
+        Column("work_id", "str"),
+        Column("project_code", "str"),
+        Column("start_date", "date"),
+        Column("end_date", "date"),
+        Column("status", "enum", choices=WORK_STATUSES),
+    ), key=("work_id",)),
+    FileSpec("availability.csv", (
+        Column("person_id", "str", ref="people.csv:person_id"),
+        Column("month", "month"),
+        Column("available_mm", "float", min=0.0, max=1.0),
+    ), key=("person_id", "month")),
+    FileSpec("projects.csv", (
+        Column("project_id", "str"),
+        Column("project_name", "str"),
+        Column("sector", "enum", choices=SECTORS),
+        Column("phase", "enum", choices=PHASES),
+        Column("start_month", "month"),
+        Column("end_month", "month"),
+        Column("monthly_budget", "int", min=1),
+    ), key=("project_id",)),
+    FileSpec("project_grade_requirements.csv", (
+        Column("project_id", "str", ref="projects.csv:project_id"),
+        Column("career_grade", "enum", choices=GRADES),
+        Column("headcount", "int", min=0),
+    ), key=("project_id", "career_grade")),
+    FileSpec("project_skill_requirements.csv", (
+        Column("project_id", "str", ref="projects.csv:project_id"),
+        Column("skill_name", "str"),
+        Column("min_experience_months", "int", min=0),
+        Column("headcount", "int", min=1),
+    ), key=("project_id", "skill_name")),
+    FileSpec("reviews.csv", (
+        Column("review_id", "str"),
+        Column("review_round", "str"),
+        Column("project_code", "str", required=False),
+        Column("reviewer_id", "str", ref="people.csv:person_id"),
+        Column("reviewee_id", "str", ref="people.csv:person_id"),
+        Column("reviewed_at", "date"),
+        Column("positive_text", "str"),
+        Column("negative_text", "str"),
+    ), key=("review_id",)),
+    FileSpec("review_items.csv", (
+        Column("review_id", "str", ref="reviews.csv:review_id"),
+        Column("polarity", "enum", choices=POLARITIES),
+        Column("item", "str"),
+    ), key=("review_id", "polarity", "item")),
+)
+
+FILE_SPECS = {f.name: f for f in FILES}
+
+MANIFEST_KEYS = ("dataset_id", "schema_version", "horizon_start", "horizon_months", "cost_unit", "synthetic")

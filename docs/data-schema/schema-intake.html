@@ -59,6 +59,14 @@
   .toc { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 18px; }
   .toc a { background:var(--accent-soft); color:var(--ink); text-decoration:none;
            border-radius:999px; padding:3px 12px; font-size:.88rem; }
+  .drop { border:2px dashed var(--line); border-radius:10px; padding:16px; text-align:center;
+          color:var(--muted); background:var(--bg); }
+  .drop.over { border-color:var(--accent); background:var(--accent-soft); color:var(--ink); }
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px; margin-top:12px; }
+  .shot { border:1px solid var(--line); border-radius:8px; padding:8px; background:var(--card);
+          display:flex; flex-direction:column; gap:6px; }
+  .shot img { width:100%; max-height:200px; object-fit:contain; background:var(--bg); border-radius:4px; }
+  .shot .meta { display:flex; justify-content:space-between; gap:6px; font-size:.8rem; color:var(--muted); }
   pre#out { white-space:pre-wrap; background:var(--bg); border:1px solid var(--line);
             border-radius:8px; padding:10px; font-size:.8rem; max-height:300px; overflow:auto; }
 </style>
@@ -123,8 +131,12 @@ const PARTS = [
         options: ["수시(본인이 원할 때)", "프로젝트 종료 시", "연 1~2회 정기", "거의 갱신 안 됨", "모름"], other: true },
       { key: "history_kept", label: "과거 값이 남나요?", type: "radio",
         options: ["변경 이력이 모두 남음", "최신 값으로 덮어씀", "모름"] },
-      { key: "items", label: "입력 항목 전체 목록", type: "table", columns: ITEM_COLUMNS, rows: 6,
-        help: "화면에 보이는 입력 칸을 한 줄에 하나씩 적어 주세요. 입력 화면을 보면서 위에서부터 옮기면 됩니다." },
+      { key: "screens", label: "입력 화면 캡처", type: "images",
+        help: "기술 이력을 입력·조회하는 화면을 캡처해 올려 주세요(여러 장 가능). 실명·사번·고객사명은 가린 뒤 올려 주세요. "
+              + "파일 선택, 이 칸에 끌어다 놓기, 캡처 후 이 페이지에서 붙여넣기(⌘V / Ctrl+V) 모두 됩니다. "
+              + "각 사진 아래에 어떤 화면인지 한 줄 적어 주세요." },
+      { key: "screen_notes", label: "화면만으로는 알기 어려운 것", type: "textarea",
+        help: "드롭다운을 펼쳐야 보이는 선택지, 칸의 의미, 필수 여부, 여러 개 입력 가능 여부 등을 적어 주세요." },
       { key: "level_form", label: "숙련도는 어떤 형태로 기록되나요?", type: "radio",
         options: ["단계형(예: 1~5, 초급~고급)", "경력 개월/연수만", "프로젝트 수행 기간만", "숙련도 기록 없음", "모름"], other: true },
       { key: "level_scale", label: "단계형이라면 각 단계의 이름과 기준", type: "textarea",
@@ -229,7 +241,12 @@ const PARTS = [
   },
 ];
 
-const STORE_KEY = "teamweaver-schema-intake-v1";
+const FORM_VERSION = 2;
+const LEGACY_LS_KEY = "teamweaver-schema-intake-v1";   // version-1 drafts lived in localStorage
+// Text answers are also written synchronously here on every edit: an IndexedDB write started while the
+// tab is closing does not finish, so the last keystrokes would otherwise be lost. Images are left out.
+const TEXT_LS_KEY = "teamweaver-schema-intake-text";
+const DB_NAME = "teamweaver-schema-intake";
 const form = document.getElementById("form");
 const statusEl = document.getElementById("status");
 const el = (tag, attrs = {}, ...kids) => {
@@ -241,6 +258,12 @@ const el = (tag, attrs = {}, ...kids) => {
   return n;
 };
 const fid = (part, q, suffix = "") => `${part}.${q}${suffix}`;
+
+// images[name] = [{name, caption, data_url}] for every "images" question
+const images = {};
+// Answers present in a loaded draft/file whose question no longer exists (e.g. v1 "skill.items").
+// Carried through unchanged so nothing the user typed is lost when the form changes.
+let legacy = {};
 
 function cellInput(col, name) {
   if (col.type === "select") {
@@ -261,6 +284,95 @@ function addRow(tbody, partId, q) {
   tr.append(el("td", {}, del));
   tbody.append(tr);
   return tr;
+}
+
+function renderGallery(name) {
+  const gallery = form.querySelector(`#${CSS.escape(name)} .gallery`);
+  gallery.innerHTML = "";
+  images[name].forEach((img, i) => {
+    const caption = el("input", { type: "text", placeholder: "어떤 화면인지 (예: 기술 등록 팝업)",
+                                  "aria-label": `${i + 1}번째 화면 설명`, "data-img": name });
+    caption.value = img.caption;
+    caption.addEventListener("input", () => { img.caption = caption.value; });
+    const del = el("button", { type: "button", class: "small", text: "삭제" });
+    del.addEventListener("click", () => { images[name].splice(i, 1); renderGallery(name); save(); });
+    gallery.append(el("div", { class: "shot" },
+      el("img", { src: img.data_url, alt: img.caption || img.name }),
+      el("div", { class: "meta" }, el("span", { text: `${i + 1}. ${img.name}` }), del),
+      caption));
+  });
+}
+
+const readAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(r.result);
+  r.onerror = () => reject(r.error);
+  r.readAsDataURL(file);
+});
+
+// Same rules as scripts/extract_intake_images.py: allowed type, strict base64, real image signature, size cap.
+const IMAGE_SIGNATURES = {
+  "image/png": [[0, "89504e47"]], "image/jpeg": [[0, "ffd8ff"]], "image/gif": [[0, "474946"]],
+  "image/webp": [[0, "52494646"], [8, "57454250"]], "image/bmp": [[0, "424d"]],
+};
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const DATA_URL_RE = /^data:(image\/[a-z]+);base64,([A-Za-z0-9+/]*={0,2})$/;
+function imageProblem(dataUrl) {
+  if (!isStr(dataUrl)) return "이미지 데이터가 아닙니다";
+  const m = DATA_URL_RE.exec(dataUrl);
+  if (!m || m[2].length % 4 !== 0) return "이미지 데이터 형식이 잘못됐습니다";
+  const sigs = IMAGE_SIGNATURES[m[1]];
+  if (!sigs) return `지원하지 않는 이미지 형식(${m[1]}) — PNG·JPEG·GIF·WEBP·BMP만 됩니다`;
+  const padding = m[2].endsWith("==") ? 2 : m[2].endsWith("=") ? 1 : 0;
+  if ((m[2].length / 4) * 3 - padding > MAX_IMAGE_BYTES) return "이미지가 15MB를 넘습니다";
+  let head = "";
+  try { head = [...atob(m[2].slice(0, 24))].map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""); }
+  catch { return "이미지 데이터 형식이 잘못됐습니다"; }
+  if (!sigs.every(([off, hex]) => head.slice(off * 2, off * 2 + hex.length) === hex)) {
+    return "이미지 내용이 형식과 맞지 않습니다(손상된 파일)";
+  }
+  return "";
+}
+// Header checks accept truncated files; only a successful decode proves the image is usable.
+async function decodeProblem(dataUrl) {
+  try { await createImageBitmap(await (await fetch(dataUrl)).blob()); return ""; }
+  catch { return "이미지를 열 수 없습니다(손상되었거나 잘린 파일)"; }
+}
+async function undecodableImage(data) {
+  for (const [pid, q] of imageQuestions()) {
+    const shots = data?.parts?.[pid]?.answers?.[q.key]?.answer;
+    if (!Array.isArray(shots)) continue;
+    for (const [i, m] of shots.entries()) {
+      if (await decodeProblem(m.data_url)) return `${q.label} ${i + 1}번째 사진을 열 수 없습니다(손상된 파일)`;
+    }
+  }
+  return "";
+}
+const newImageId = () => `img-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+async function addImages(name, files) {
+  if (!restored) return;
+  const target = images[name];          // replaced by a new array whenever another draft is loaded
+  const added = [], rejected = [];
+  for (const f of [...files].filter((x) => x.type.startsWith("image/"))) {
+    const dataUrl = await readAsDataUrl(f);
+    const problem = imageProblem(dataUrl) || (await decodeProblem(dataUrl));
+    if (problem) { rejected.push(`${f.name || "붙여넣은 이미지"}: ${problem}`); continue; }
+    added.push({ id: newImageId(), name: f.name || `캡처-${images[name].length + added.length + 1}.png`,
+                 caption: "", data_url: dataUrl });
+  }
+  if (images[name] !== target) {
+    notice("사진을 읽는 동안 다른 초안을 불러와서, 읽던 사진은 넣지 않았습니다 — 다시 올려 주세요");
+    return;
+  }
+  if (added.length) {
+    images[name].push(...added);
+    renderGallery(name);
+    save();
+    persistNow();                       // write the screenshot to IndexedDB right away, not after the debounce
+  }
+  if (rejected.length) notice(`추가하지 못한 사진 ${rejected.length}장 — ${rejected.join(" / ")}`);
+  else if (added.length) statusEl.textContent = `화면 ${added.length}장을 추가했습니다`;
 }
 
 function renderQuestion(partId, q) {
@@ -300,6 +412,23 @@ function renderQuestion(partId, q) {
     add.addEventListener("click", () => { addRow(tbody, partId, q); save(); });
     box.append(el("div", { class: "tablewrap" }, table), add);
   }
+  if (q.type === "images") {
+    images[name] = [];
+    const picker = el("input", { type: "file", accept: "image/*", multiple: "", hidden: "",
+                                 "data-picker": name });
+    const choose = el("button", { type: "button", text: "사진 선택" });
+    choose.addEventListener("click", () => picker.click());
+    picker.addEventListener("change", async () => { await addImages(name, picker.files); picker.value = ""; });
+    const drop = el("div", { class: "drop" }, el("div", { text: "여기에 사진을 끌어다 놓거나, 캡처 후 붙여넣기(⌘V / Ctrl+V)" }),
+                    el("div", { style: "margin-top:8px" }, choose), picker);
+    drop.addEventListener("dragover", (ev) => { ev.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (ev) => {
+      ev.preventDefault(); drop.classList.remove("over");
+      addImages(name, ev.dataTransfer.files);
+    });
+    box.append(el("div", { id: name }, drop, el("div", { class: "gallery" })));
+  }
   return box;
 }
 
@@ -337,19 +466,23 @@ function readValue(partId, q) {
     });
     return rows.filter((r) => Object.values(r).some((v) => v));
   }
+  if (q.type === "images") {
+    return images[name].map((img) => ({ id: img.id, name: img.name, caption: img.caption.trim(), data_url: img.data_url }));
+  }
 }
 
 function collect() {
   const out = {
     schema: "teamweaver-schema-intake",
-    version: 1,
+    version: FORM_VERSION,
     saved_at: new Date().toISOString(),
-    note: "각 답은 {question, answer} 형태다. 빈 문자열·빈 목록은 '모름/미입력'이다. 실데이터 값이 아니라 스키마 설명이다.",
+    note: "각 답은 {question, answer} 형태다. 빈 문자열·빈 목록은 '모름/미입력'이다. 실데이터 값이 아니라 스키마 설명이다. "
+        + "images 유형의 답은 [{name, caption, data_url}]이며 scripts/extract_intake_images.py로 파일로 꺼낼 수 있다.",
     table_columns: Object.fromEntries(ITEM_COLUMNS.map((c) => [c.key, c.label])),
     parts: {},
   };
   PARTS.forEach((p) => {
-    const part = { title: p.title, answers: {} };
+    const part = { title: p.title, answers: { ...(legacy[p.id] || {}) } };
     p.qs.forEach((q) => { part.answers[q.key] = { question: q.label, answer: readValue(p.id, q) }; });
     out.parts[p.id] = part;
   });
@@ -359,11 +492,16 @@ function collect() {
 function clearAll() {
   form.querySelectorAll("input[type=text], textarea, select").forEach((f) => { f.value = ""; });
   form.querySelectorAll("input[type=radio], input[type=checkbox]").forEach((f) => { f.checked = false; });
-  PARTS.forEach((p) => p.qs.filter((q) => q.type === "table").forEach((q) => {
-    const tbody = form.querySelector(`#${CSS.escape(fid(p.id, q.key))} tbody`);
-    tbody.innerHTML = "";
-    for (let i = 0; i < q.rows; i++) addRow(tbody, p.id, q);
+  PARTS.forEach((p) => p.qs.forEach((q) => {
+    const name = fid(p.id, q.key);
+    if (q.type === "table") {
+      const tbody = form.querySelector(`#${CSS.escape(name)} tbody`);
+      tbody.innerHTML = "";
+      for (let i = 0; i < q.rows; i++) addRow(tbody, p.id, q);
+    }
+    if (q.type === "images") { images[name] = []; renderGallery(name); }
   }));
+  legacy = {};
 }
 
 const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -378,23 +516,29 @@ function answerOk(q, a) {
   if (q.type === "table") {
     return Array.isArray(a) && a.every((r) => isObj(r) && q.columns.every((c) => optStr(r[c.key])));
   }
+  if (q.type === "images") {
+    return Array.isArray(a) && a.every((m) => isObj(m) && isStr(m.name) && isStr(m.caption)
+      && optStr(m.id) && !imageProblem(m.data_url));
+  }
   return false;
 }
 
 // Returns the first problem found, or "" when `data` is a well-formed export of this form.
 // Questions absent from the file are allowed (older versions); malformed ones are not.
+// Answers to questions this version no longer has must still be {question, answer} entries.
 function intakeProblem(data) {
-  if (!isObj(data) || data.schema !== "teamweaver-schema-intake" || data.version !== 1 || !isObj(data.parts)) {
-    return "이 양식(version 1)의 JSON이 아닙니다";
+  if (!isObj(data) || data.schema !== "teamweaver-schema-intake" || ![1, 2].includes(data.version)
+      || !isObj(data.parts)) {
+    return "이 양식(version 1·2)의 JSON이 아닙니다";
   }
   for (const p of PARTS) {
     const part = data.parts[p.id];
     if (part === undefined) continue;
     if (!isObj(part) || !isObj(part.answers)) return `${p.title}: 형식이 맞지 않습니다`;
-    for (const q of p.qs) {
-      const entry = part.answers[q.key];
-      if (entry === undefined) continue;
-      if (!isObj(entry) || !answerOk(q, entry.answer)) return `${p.title} · ${q.label}: 답 형식이 맞지 않습니다`;
+    for (const [key, entry] of Object.entries(part.answers)) {
+      const q = p.qs.find((x) => x.key === key);
+      if (!isObj(entry)) return `${p.title} · ${key}: 답 형식이 맞지 않습니다`;
+      if (q && !answerOk(q, entry.answer)) return `${p.title} · ${q.label}: 답 형식이 맞지 않습니다`;
     }
   }
   return "";
@@ -406,34 +550,52 @@ const str = (v) => (typeof v === "string" || typeof v === "number" ? String(v) :
 
 function fill(data) {
   clearAll();
-  PARTS.forEach((p) => p.qs.forEach((q) => {
-    const a = data?.parts?.[p.id]?.answers?.[q.key]?.answer;
-    if (a === undefined || a === null) return;
-    const name = fid(p.id, q.key);
-    const set = (n, v) => { const f = form.querySelector(`[name="${n}"]`); if (f) f.value = str(v); };
-    if (q.type === "text" || q.type === "textarea") set(name, a);
-    if (q.type === "radio" && isObj(a)) {
-      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = i.value === a.choice; });
-      if (q.other) set(`${name}.other`, a.other);
-    }
-    if (q.type === "checks" && isObj(a)) {
-      const picked = Array.isArray(a.choices) ? a.choices : [];
-      form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = picked.includes(i.value); });
-      if (q.other) set(`${name}.other`, a.other);
-    }
-    if (q.type === "range" && isObj(a)) ["min", "typical", "max"].forEach((k) => set(`${name}.${k}`, a[k]));
-    if (q.type === "table" && Array.isArray(a)) {
-      const tbody = form.querySelector(`#${CSS.escape(name)} tbody`);
-      tbody.innerHTML = "";
-      for (let i = 0; i < Math.max(a.length, q.rows); i++) {
-        const tr = addRow(tbody, p.id, q);
-        const row = a[i];
-        if (isObj(row)) q.columns.forEach((c) => {
-          tr.querySelector(`[name="${name}.row.${c.key}"]`).value = str(row[c.key]);
-        });
+  PARTS.forEach((p) => {
+    const answers = data?.parts?.[p.id]?.answers;
+    if (isObj(answers)) {
+      for (const [key, entry] of Object.entries(answers)) {
+        if (!p.qs.some((q) => q.key === key)) (legacy[p.id] ||= {})[key] = entry;
       }
     }
-  }));
+    p.qs.forEach((q) => {
+      const a = answers?.[q.key]?.answer;
+      if (a === undefined || a === null) return;
+      const name = fid(p.id, q.key);
+      const set = (n, v) => { const f = form.querySelector(`[name="${n}"]`); if (f) f.value = str(v); };
+      if (q.type === "text" || q.type === "textarea") set(name, a);
+      if (q.type === "radio" && isObj(a)) {
+        form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = i.value === a.choice; });
+        if (q.other) set(`${name}.other`, a.other);
+      }
+      if (q.type === "checks" && isObj(a)) {
+        const picked = Array.isArray(a.choices) ? a.choices : [];
+        form.querySelectorAll(`[name="${name}"]`).forEach((i) => { i.checked = picked.includes(i.value); });
+        if (q.other) set(`${name}.other`, a.other);
+      }
+      if (q.type === "range" && isObj(a)) ["min", "typical", "max"].forEach((k) => set(`${name}.${k}`, a[k]));
+      if (q.type === "table" && Array.isArray(a)) {
+        const tbody = form.querySelector(`#${CSS.escape(name)} tbody`);
+        tbody.innerHTML = "";
+        for (let i = 0; i < Math.max(a.length, q.rows); i++) {
+          const tr = addRow(tbody, p.id, q);
+          const row = a[i];
+          if (isObj(row)) q.columns.forEach((c) => {
+            tr.querySelector(`[name="${name}.row.${c.key}"]`).value = str(row[c.key]);
+          });
+        }
+      }
+      if (q.type === "images" && Array.isArray(a)) {
+        const seen = new Set();
+        images[name] = a.map((m) => {
+          let id = str(m.id);
+          if (!id || seen.has(id)) id = newImageId();     // ids key the autosave merge, so they must be unique
+          seen.add(id);
+          return { id, name: str(m.name), caption: str(m.caption), data_url: str(m.data_url) };
+        });
+        renderGallery(name);
+      }
+    });
+  });
 }
 
 // All-or-nothing: if anything in `data` breaks filling, the draft present before the call is restored.
@@ -448,36 +610,224 @@ function apply(data) {
   }
 }
 
-function save() {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(collect()));
-    statusEl.textContent = `자동 저장됨 ${new Date().toLocaleTimeString("ko-KR")}`;
-  } catch {
-    statusEl.textContent = "자동 저장 불가(브라우저 설정). JSON 저장을 이용하세요.";
-  }
+// Autosave lives in IndexedDB: screenshots quickly exceed localStorage's ~5MB quota.
+function db() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("drafts");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
+async function dbOp(mode, fn) {
+  const conn = await db();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = conn.transaction("drafts", mode);
+      const req = fn(tx.objectStore("drafts"));
+      tx.oncomplete = () => resolve(req.result);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } finally { conn.close(); }
+}
+const draftGet = () => dbOp("readonly", (s) => s.get("current"));
+const draftPut = (v) => dbOp("readwrite", (s) => s.put(v, "current"));
+const draftDelete = () => dbOp("readwrite", (s) => s.delete("current"));
+
+// Warnings (e.g. a rejected import) stay visible for a while instead of being replaced by autosave status.
+let noticeUntil = 0;
+function notice(text) {
+  statusEl.textContent = text;
+  // While autosave is held back the warning must stay on screen, not be replaced by routine status.
+  noticeUntil = blockReason ? Infinity : Date.now() + 8000;
+}
+window.addEventListener("beforeunload", (ev) => {
+  if (blockReason === "invalid" || blockReason === "unreadable") { ev.preventDefault(); ev.returnValue = ""; }
+});
+
+let saveTimer = null;
+let saving = Promise.resolve();
+// Why autosave is held back, if it is:
+//  "unreadable" — the stored full draft could not be read; writing would replace images we never saw.
+//  "invalid"    — the stored draft failed validation; keep it untouched until the user loads a file or resets.
+let blockReason = null;
+let resetting = false;
+function persistNow() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (blockReason || resetting) return;
+  const snapshot = JSON.stringify(collect());
+  saving = saving.then(() => draftPut(snapshot)).then(
+    () => { if (Date.now() > noticeUntil) statusEl.textContent = `자동 저장됨 ${new Date().toLocaleTimeString("ko-KR")}`; },
+    () => { statusEl.textContent = "자동 저장 실패 — 'JSON 저장'으로 파일을 남겨 주세요"; });
+}
+function imageQuestions() {
+  return PARTS.flatMap((p) => p.qs.filter((q) => q.type === "images").map((q) => [p.id, q]));
+}
+function textSnapshot() {
+  const d = collect();
+  // While the stored draft is unreadable, the screenshots on screen are not the real ones: say so,
+  // so a later restore keeps the stored screenshots instead of trusting this (empty) list.
+  const unknown = blockReason === "unreadable";
+  if (unknown) d.images_unknown = true;
+  for (const [pid, q] of imageQuestions()) {
+    const entry = d.parts[pid].answers[q.key];
+    entry.answer = unknown ? null : entry.answer.map(({ id, name, caption }) => ({ id, name, caption }));
+  }
+  return d;
+}
+// Debounced because each save serializes every screenshot; flushed when the tab is hidden or closed.
+let textCopyWarned = false;
+function save() {
+  if (blockReason === "invalid" || resetting) return;
+  try { localStorage.setItem(TEXT_LS_KEY, JSON.stringify(textSnapshot())); }
+  catch {
+    if (!textCopyWarned) {
+      textCopyWarned = true;
+      notice("글자 즉시 저장이 안 됩니다(브라우저 저장 공간) — 창을 닫기 전에 'JSON 저장'으로 파일을 남겨 주세요");
+    }
+  }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistNow, 300);
+}
+const flushPending = () => { if (saveTimer !== null) persistNow(); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) flushPending(); });
+window.addEventListener("pagehide", flushPending);
 
 function json() { return JSON.stringify(collect(), null, 2); }
 
+const parseOrNull = (raw) => { try { return raw ? JSON.parse(raw) : null; } catch { return null; } };
+
+async function restoreDraft() {
+  let full = null, fromLegacy = false, readFailed = false;
+  try { full = parseOrNull(await draftGet()); } catch { readFailed = true; }
+  if (readFailed) blockReason = "unreadable";
+  if (!full && !readFailed) {
+    try { full = parseOrNull(localStorage.getItem(LEGACY_LS_KEY)); fromLegacy = !!full; } catch {}
+  }
+  let text = null;
+  try { text = parseOrNull(localStorage.getItem(TEXT_LS_KEY)); } catch {}
+  let draft = full;
+  // The synchronous text copy wins when it is newer. It lists which screenshots the draft had (id, name,
+  // caption) but not their payloads; a payload is attached only from the full draft entry with the same id,
+  // so images from a different draft never get mixed in and deleted ones stay deleted.
+  let lostImages = 0;
+  if (isObj(text) && isObj(text.parts) && (!full || String(text.saved_at) > String(full.saved_at))) {
+    draft = text;
+    for (const [pid, q] of imageQuestions()) {
+      const entry = draft.parts[pid]?.answers?.[q.key];
+      if (!isObj(entry)) continue;
+      if (draft.images_unknown) {
+        entry.answer = full?.parts?.[pid]?.answers?.[q.key]?.answer ?? [];
+        continue;
+      }
+      if (!Array.isArray(entry.answer)) continue;
+      const stored = full?.parts?.[pid]?.answers?.[q.key]?.answer;
+      const storedList = (Array.isArray(stored) ? stored : []).filter((m) => isObj(m) && m.id);
+      const counts = storedList.reduce((c, m) => c.set(m.id, (c.get(m.id) || 0) + 1), new Map());
+      const byId = new Map(storedList.filter((m) => counts.get(m.id) === 1).map((m) => [m.id, m]));
+      const kept = entry.answer.filter((m) => isObj(m) && byId.has(m.id));
+      lostImages += entry.answer.length - kept.length;
+      entry.answer = kept.map((m) => ({ ...m, data_url: byId.get(m.id).data_url }));
+    }
+  }
+  const readFailNotice = "저장된 사진을 읽지 못했습니다 — 페이지를 새로고침해 주세요. 그 전까지 사진은 자동 저장하지 않습니다";
+  if (!draft) {
+    if (readFailed) notice(readFailNotice);
+    return;
+  }
+  if (intakeProblem(draft) || !apply(draft)) {
+    // A broken newer text copy must not hide a good full draft.
+    if (draft !== full && full && !intakeProblem(full) && apply(full)) {
+      if (readFailed) notice(readFailNotice);
+      else { notice("최근 글자 사본을 읽지 못해 마지막 전체 저장본을 불러왔습니다"); persistNow(); }
+      return;
+    }
+    const invalid = "자동 저장된 초안을 읽지 못해 자동 저장을 멈췄습니다 — 백업 JSON을 불러오거나 '전체 비우기' 후 새로 시작하세요";
+    if (!readFailed) blockReason = "invalid";
+    notice(readFailed ? `${invalid}. ${readFailNotice}` : invalid);
+    return;
+  }
+  // The version-1 localStorage draft is kept as a fallback copy; autosave now goes to IndexedDB.
+  if (readFailed) {
+    notice(readFailNotice);
+    return;
+  }
+  if (draft !== full || fromLegacy) persistNow();
+  if (lostImages) notice(`이전 작성 내용을 불러왔지만, 저장이 끝나기 전에 닫힌 사진 ${lostImages}장은 다시 올려 주세요`);
+  else statusEl.textContent = "이전 작성 내용을 불러왔습니다";
+}
+
+// Nothing is editable until the autosaved draft is restored, so a late restore cannot wipe fresh input.
+let restored = false;
+const lockables = () => [form, ...document.querySelectorAll(".bar button")];
+// Two tabs autosaving the same draft would overwrite each other: the first tab holds a Web Lock for its
+// whole lifetime (released by the browser when the tab closes, kept while it is hidden or frozen).
+// Without Web Locks (or if requesting one throws) the form still works, just without the tab guard.
+function acquireTabLock() {
+  return new Promise((resolve) => {
+    try {
+      if (!navigator.locks) { resolve(true); return; }
+      navigator.locks.request(DB_NAME, { ifAvailable: true }, (lock) => {
+        resolve(Boolean(lock));
+        return lock ? new Promise(() => {}) : undefined;
+      }).catch(() => resolve(true));
+    } catch { resolve(true); }
+  });
+}
+class OtherTab extends Error {}
+
 render();
-try {
-  const s = localStorage.getItem(STORE_KEY);
-  const saved = s ? JSON.parse(s) : null;
-  if (saved && !intakeProblem(saved) && apply(saved)) statusEl.textContent = "이전 작성 내용을 불러왔습니다";
-} catch {}
-form.addEventListener("input", save);
-form.addEventListener("change", save);
+lockables().forEach((n) => { n.inert = true; });
+statusEl.textContent = "이전 작성 내용 확인 중…";
+acquireTabLock().then(async (mine) => {
+  if (!mine) throw new OtherTab();
+  try { await restoreDraft(); }
+  catch {
+    // Unknown restore failure: keep whatever is stored untouched and say so, instead of a silent locked form.
+    blockReason = "invalid";
+    notice("이전 작성 내용을 확인하다 오류가 났습니다 — 자동 저장을 멈췄습니다. 백업 JSON을 불러오거나 '전체 비우기' 후 새로 시작하세요");
+  }
+}).then(() => {
+  restored = true;
+  lockables().forEach((n) => { n.inert = false; });
+  if (statusEl.textContent === "이전 작성 내용 확인 중…") statusEl.textContent = "자동 저장 대기";
+  form.addEventListener("input", save);
+  form.addEventListener("change", save);
+}, () => {
+  notice("이 양식이 다른 탭에서 이미 열려 있습니다 — 그 탭에서 작성하거나, 그 탭을 닫고 이 탭을 새로고침하세요");
+  noticeUntil = Infinity;
+});
+
+document.addEventListener("paste", (ev) => {
+  const files = [...(ev.clipboardData?.files || [])].filter((f) => f.type.startsWith("image/"));
+  if (!files.length || !restored) return;
+  ev.preventDefault();
+  const target = PARTS.flatMap((p) => p.qs.filter((q) => q.type === "images").map((q) => fid(p.id, q.key)))[0];
+  if (target) addImages(target, files);
+});
 
 document.getElementById("btn-preview").addEventListener("click", () => {
-  document.getElementById("out").textContent = json();
+  // Summarize image payloads; a regex over multi-MB data URLs overflows the regex engine's stack.
+  document.getElementById("out").textContent = JSON.stringify(collect(), (k, v) =>
+    (k === "data_url" && typeof v === "string"
+      ? `${v.slice(0, 30)}…(이미지 약 ${Math.round((v.length * 3) / 4 / 1024)}KB)` : v), 2);
 });
+const exportBlocked = () => {
+  if (blockReason !== "unreadable") return false;
+  notice("저장된 사진을 읽지 못한 상태라 지금 내보내면 사진이 빠집니다 — 새로고침 후 다시 시도하세요");
+  return true;
+};
 document.getElementById("btn-save").addEventListener("click", () => {
+  if (exportBlocked()) return;
   const blob = new Blob([json()], { type: "application/json" });
   const a = el("a", { href: URL.createObjectURL(blob), download: "schema-intake.json" });
   document.body.append(a); a.click(); a.remove();
   statusEl.textContent = "schema-intake.json 저장 → teamweaver/private/ 로 옮겨 주세요";
 });
 document.getElementById("btn-copy").addEventListener("click", async () => {
+  if (exportBlocked()) return;
   try { await navigator.clipboard.writeText(json()); statusEl.textContent = "JSON을 클립보드에 복사했습니다"; }
   catch { document.getElementById("out").textContent = json(); statusEl.textContent = "복사 불가 — 미리보기에서 직접 복사하세요"; }
 });
@@ -486,28 +836,44 @@ document.getElementById("file").addEventListener("change", async (ev) => {
   const f = ev.target.files[0];
   if (!f) return;
   ev.target.value = "";
+  if (blockReason === "unreadable") {
+    notice("저장된 초안을 읽지 못한 상태라 지금 불러오면 내용이 섞일 수 있습니다 — 새로고침 후 다시 불러오세요");
+    return;
+  }
   let data;
   try { data = JSON.parse(await f.text()); }
-  catch { statusEl.textContent = "JSON을 읽지 못했습니다 — 작성 중인 내용은 그대로입니다"; return; }
-  const problem = intakeProblem(data);
+  catch { notice("JSON을 읽지 못했습니다 — 작성 중인 내용은 그대로입니다"); return; }
+  const problem = intakeProblem(data) || (await undecodableImage(data));
   if (problem) {
-    statusEl.textContent = `${problem} — 불러오지 않았고, 작성 중인 내용은 그대로입니다`;
+    notice(`${problem} — 불러오지 않았고, 작성 중인 내용은 그대로입니다`);
     return;
   }
   if (!apply(data)) {
-    statusEl.textContent = "JSON 내용 형식이 맞지 않습니다 — 작성 중인 내용은 그대로입니다";
+    notice("JSON 내용 형식이 맞지 않습니다 — 작성 중인 내용은 그대로입니다");
     return;
   }
-  save(); statusEl.textContent = `${f.name}을 불러왔습니다`;
+  if (blockReason === "invalid") { blockReason = null; noticeUntil = 0; }   // the loaded file replaces the bad draft
+  save(); persistNow(); statusEl.textContent = `${f.name}을 불러왔습니다`;
 });
 let resetArmed = false;
-document.getElementById("btn-reset").addEventListener("click", (ev) => {
+document.getElementById("btn-reset").addEventListener("click", async (ev) => {
   if (!resetArmed) {
     resetArmed = true; ev.target.textContent = "정말 비울까요? 한 번 더 누르기";
     setTimeout(() => { resetArmed = false; ev.target.textContent = "전체 비우기"; }, 4000);
     return;
   }
-  try { localStorage.removeItem(STORE_KEY); } catch {}
+  resetting = true;                     // stops every further write, including the pagehide flush
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  await saving.catch(() => {});
+  try { localStorage.removeItem(LEGACY_LS_KEY); localStorage.removeItem(TEXT_LS_KEY); } catch {}
+  try { await draftDelete(); }
+  catch {
+    resetting = false;
+    save();                              // the text copy was already removed; keep what is on screen
+    notice("저장된 사진 초안을 지우지 못했습니다 — 새로고침 후 다시 '전체 비우기'를 눌러 주세요");
+    return;
+  }
   location.reload();
 });
 </script>

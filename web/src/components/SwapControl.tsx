@@ -11,6 +11,9 @@ interface Props {
   entries: AssignEntry[];
   onSwap: (swap: Swap) => void;
   busy: boolean;
+  /** 선택이 바뀌면 부른다. 이전 선택으로 검토한 결과는 더 이상 화면의 선택과 맞지 않으므로
+   *  App이 버린다(검토하지 않은 교체가 적용되는 것을 막는다, K10). */
+  onSelectionChange?: () => void;
 }
 
 function PersonChip({ id, label }: { id: string; label: string }) {
@@ -45,10 +48,12 @@ function DropSlotBox({ id, title, value }: { id: DropSlot; title: string; value:
   );
 }
 
-export function SwapControl({ people, entries, onSwap, busy }: Props) {
+export function SwapControl({ people, entries, onSwap, busy, onSelectionChange }: Props) {
   // 교체 대상은 (사람, 프로젝트) 쌍으로 식별한다 -- swapRules.entryKey 주석 참고.
-  const [outKey, setOutKey] = useState("");
-  const [inId, setInId] = useState("");
+  const [outKey, setOutKeyState] = useState("");
+  const [inId, setInIdState] = useState("");
+  const setOutKey = (v: string) => { setOutKeyState(v); onSelectionChange?.(); };
+  const setInId = (v: string) => { setInIdState(v); onSelectionChange?.(); };
   const byId = new Map(people.map((p) => [p.id, p]));
   const placed = new Set(entries.map((e) => e.person_id));
   const bench = people.filter((p) => !placed.has(p.id));

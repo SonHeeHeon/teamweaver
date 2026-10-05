@@ -1,0 +1,324 @@
+"""K8: 관리자 배치 설정(GET/PUT /api/settings)과 milp_params 요청 계약.
+
+설정은 서버 파일에 영속하지만 /api/optimize·/api/whatif는 stateless로 남는다 --
+웹이 설정을 읽어 milp_params로 명시적으로 보낸다(.omc/plan/2026-10-05-k8-milp-settings.md).
+"""
+import json
+
+import pytest
+
+from api.cache import ResultCache
+from api.settings import PlacementSettings, SettingsStore
+from core.optimize.milp import MilpParams
+
+
+# --- 설정 모델 -----------------------------------------------------------
+
+def test_setting_default_min_alloc_is_30_percent_but_model_default_is_untouched():
+    """실데이터 답변의 30%는 *설정의* 기본값이다. MilpParams 기본값 변경은 C6 소관."""
+    assert PlacementSettings().min_alloc == pytest.approx(0.30)
+    assert MilpParams().min_alloc == pytest.approx(0.20)
+
+
+def test_settings_convert_to_milp_params_keeping_hidden_fields_at_model_default():
+    s = PlacementSettings(min_alloc=0.4, lam=0.1, time_limit=30)
+    p = s.to_milp_params()
+    assert (p.min_alloc, p.lam, p.time_limit) == (0.4, 0.1, 30)
+    # 화면에 노출하지 않는 내부 근사값은 모델 기본값 그대로다.
+    assert p.pair_keep_ratio == MilpParams().pair_keep_ratio
+    assert p.max_pairs == MilpParams().max_pairs
+    assert p.slack_penalty == MilpParams().slack_penalty
+
+
+@pytest.mark.parametrize("field, value", [
+    ("min_alloc", 0.0), ("min_alloc", 1.01), ("lam", -0.1), ("mu", 1.5),
+    ("clique_threshold_months", 0), ("time_limit", 4), ("time_limit", 601), ("gap", 0.5),
+    ("pair_keep_ratio", 0.5),            # 노출하지 않는 필드는 받지 않는다
+])
+def test_out_of_range_or_unknown_setting_is_rejected(field, value):
+    with pytest.raises(ValueError):
+        PlacementSettings(**{field: value})
+
+
+# --- 저장소 --------------------------------------------------------------
+
+def test_store_round_trips_through_file(tmp_path):
+    path = tmp_path / "s" / "settings.json"
+    store = SettingsStore(path)
+    assert store.current().settings == PlacementSettings()
+    assert store.current().updated_at is None
+    store.save(PlacementSettings(min_alloc=0.25))
+    again = SettingsStore(path)
+    assert again.current().settings.min_alloc == pytest.approx(0.25)
+    assert again.current().updated_at is not None
+    assert again.current().load_error is None
+
+
+def test_store_reports_corrupt_file_instead_of_silently_defaulting(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text("{not json", encoding="utf-8")
+    state = SettingsStore(path).current()
+    assert state.settings == PlacementSettings()
+    assert state.load_error and "settings.json" in state.load_error
+
+
+def test_store_reports_out_of_range_file(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"settings": {"min_alloc": 7}}), encoding="utf-8")
+    state = SettingsStore(path).current()
+    assert state.settings == PlacementSettings()
+    assert state.load_error
+
+
+def test_save_is_atomic_and_clears_load_error(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text("{not json", encoding="utf-8")
+    store = SettingsStore(path)
+    store.save(PlacementSettings(min_alloc=0.5))
+    assert store.current().load_error is None
+    assert json.loads(path.read_text("utf-8"))["settings"]["min_alloc"] == 0.5
+    assert not [p for p in tmp_path.iterdir() if p.name.endswith(".tmp")]   # 임시 파일 잔존 없음
+
+
+# --- API ---------------------------------------------------------------
+
+def test_get_settings_returns_values_defaults_and_bounds(client):
+    body = client.get("/api/settings").json()
+    assert body["settings"]["min_alloc"] == pytest.approx(0.30)
+    assert body["defaults"] == body["settings"]
+    assert body["bounds"]["min_alloc"] == {"min": 0.05, "max": 1.0}
+    assert body["bounds"]["time_limit"] == {"min": 5, "max": 600}
+    assert set(body["bounds"]) == set(body["settings"])
+    assert body["updated_at"] is None and body["load_error"] is None
+
+
+def test_put_settings_persists_across_app_restart(client, settings_path):
+    new = dict(client.get("/api/settings").json()["settings"], min_alloc=0.35)
+    res = client.put("/api/settings", json={"settings": new, "based_on": None})
+    assert res.status_code == 200, res.text
+    assert res.json()["settings"]["min_alloc"] == pytest.approx(0.35)
+    assert json.loads(settings_path.read_text("utf-8"))["settings"]["min_alloc"] == 0.35
+
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+    with TestClient(app) as again:                      # lifespan이 파일에서 다시 읽는다
+        assert again.get("/api/settings").json()["settings"]["min_alloc"] == pytest.approx(0.35)
+
+
+@pytest.mark.parametrize("patch", [{"min_alloc": 0}, {"min_alloc": "x"}, {"typo_field": 1},
+                                   {"pair_keep_ratio": 0.2}])
+def test_put_invalid_settings_is_422_and_does_not_persist(client, settings_path, patch):
+    body = dict(client.get("/api/settings").json()["settings"], **patch)
+    assert client.put("/api/settings", json={"settings": body, "based_on": None}).status_code == 422
+    assert not settings_path.exists()
+
+
+def test_put_requires_every_field(client):
+    """일부만 보내면 나머지가 조용히 기본값으로 바뀐다 -- 전체를 요구한다."""
+    assert client.put("/api/settings", json={"settings": {"min_alloc": 0.4},
+                                             "based_on": None}).status_code == 422
+
+
+# --- milp_params 요청 계약 ----------------------------------------------
+
+@pytest.mark.parametrize("params", [{"min_alloc": -1}, {"min_alloc": 2}, {"mni_alloc": 0.3},
+                                    {"time_limit": 0}, {"gap": -0.1}])
+def test_optimize_rejects_invalid_milp_params_before_streaming(small_graph_client, params):
+    res = small_graph_client.post("/api/optimize", json={"weights": {}, "milp_params": params,
+                                                         "n_alternatives": 0})
+    assert res.status_code == 422, res.text
+
+
+def test_whatif_rejects_unknown_milp_param(client):
+    res = client.post("/api/whatif", json={
+        "entries": [{"person_id": "p000", "project_id": "j00", "alloc": 0.5}],
+        "swap": {"out_person_id": "p000", "in_person_id": "p001", "project_id": "j00"},
+        "milp_params": {"mni_alloc": 0.3}})
+    assert res.status_code == 422
+
+
+def test_cache_key_uses_effective_params_not_raw_request():
+    """{}과 기본값을 명시한 요청은 같은 계산이다 -- 같은 키여야 한다."""
+    explicit = MilpParams().model_dump()
+    assert ResultCache.key({}, MilpParams(), 3, "v") == ResultCache.key({}, MilpParams(**explicit), 3, "v")
+    assert ResultCache.key({}, MilpParams(), 3, "v") != ResultCache.key({}, MilpParams(min_alloc=0.3), 3, "v")
+
+
+def test_optimize_uses_sent_min_alloc(small_graph_client, monkeypatch):
+    """보낸 milp_params가 실제로 솔버까지 전달된다(설정 → 계산 연결)."""
+    seen = []
+
+    def fake(graph, S, C, params, n):
+        seen.append(params)
+        return iter(())
+
+    monkeypatch.setattr("api.routes.optimize.generate_plans_streaming", fake)
+    monkeypatch.setattr("api.routes.optimize._skill_relaxation_upper_bound",
+                        lambda graph, S, params: 1.0)
+    with small_graph_client.stream("POST", "/api/optimize", json={
+            "weights": {}, "milp_params": {"min_alloc": 0.3}, "n_alternatives": 0}) as res:
+        list(res.iter_lines())
+    assert seen and seen[0].min_alloc == pytest.approx(0.3)
+
+
+def test_warmup_uses_stored_settings(monkeypatch, settings_path):
+    """부팅 사전계산은 저장된 설정으로 한다 -- 웹이 그 설정을 보내므로 첫 실행이 캐시 히트."""
+    from fastapi.testclient import TestClient
+
+    import api.main as main
+
+    SettingsStore(settings_path).save(PlacementSettings(min_alloc=0.45))
+    seen = []
+    monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
+    monkeypatch.setattr(main, "generate_plans",
+                        lambda graph, S, C, params, n_alternatives: seen.append(params) or [])
+    with TestClient(main.app) as c:
+        cache = c.app.state.cache
+        key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(), 3,
+                              c.app.state.dataset.info.version)
+        assert cache.get(key) == []
+    assert seen and seen[0].min_alloc == pytest.approx(0.45)
+
+
+def test_report_accepts_plan_basis_and_rejects_bad_one(client, monkeypatch, tmp_path):
+    """PDF 요청의 milp_params(계산 기준)는 설정과 같은 계약으로 검사한다."""
+    import api.routes.report as report_route
+
+    index = tmp_path / "index.html"
+    index.write_text("<div id=\"root\"></div>")
+    monkeypatch.setattr(report_route, "_DIST_INDEX", index)
+    seen = []
+
+    async def fake_render(payload, *args, **kwargs):
+        seen.append(payload)
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(report_route, "render_report_pdf", fake_render)
+    base = {"plan_label": "A", "entries": [], "objective": 1.0, "fulfillment": 1.0,
+            "optimization_ratio": 1.0}
+    ok = client.post("/api/report", json={**base, "milp_params": PlacementSettings().model_dump()})
+    assert ok.status_code == 200, ok.text
+    assert seen[0]["milp_params"]["min_alloc"] == pytest.approx(0.30)
+    bad = client.post("/api/report", json={**base, "milp_params": {"min_alloc": 3}})
+    assert bad.status_code == 422
+
+
+# --- 리뷰 반영(1라운드) ----------------------------------------------------
+
+def test_unreadable_settings_folder_does_not_crash_boot(tmp_path):
+    """폴더 권한이 없으면 exists()부터 PermissionError -- 서버가 안 뜨면 안 된다."""
+    import os
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    os.chmod(locked, 0)
+    try:
+        state = SettingsStore(locked / "settings.json").current()
+    finally:
+        os.chmod(locked, 0o700)
+    assert state.settings == PlacementSettings()
+    assert state.load_error
+
+
+def test_non_string_updated_at_is_a_load_error(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"settings": PlacementSettings().model_dump(), "updated_at": 123}))
+    assert SettingsStore(path).current().load_error
+
+
+def test_saving_over_unreadable_file_keeps_a_copy(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text("{hand edited but broken", encoding="utf-8")
+    SettingsStore(path).save(PlacementSettings(min_alloc=0.4))
+    kept = [p for p in tmp_path.iterdir() if p.name.startswith("settings.json.unreadable-")]
+    assert len(kept) == 1 and kept[0].read_text("utf-8") == "{hand edited but broken"
+
+
+def test_put_reports_unwritable_location_as_500_with_reason(client, settings_path, monkeypatch):
+    from api.settings import SettingsStore as Store
+
+    def boom(self, settings):
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(Store, "_save_locked", boom)
+    res = client.put("/api/settings", json={"settings": PlacementSettings().model_dump(),
+                                            "based_on": None})
+    assert res.status_code == 500
+    assert "Permission denied" in res.json()["detail"]
+
+
+def test_report_basis_must_be_complete(client, monkeypatch, tmp_path):
+    import api.routes.report as report_route
+
+    index = tmp_path / "index.html"
+    index.write_text("x")
+    monkeypatch.setattr(report_route, "_DIST_INDEX", index)
+    base = {"plan_label": "A", "entries": [], "objective": 1.0, "fulfillment": 1.0,
+            "optimization_ratio": 1.0}
+    res = client.post("/api/report", json={**base, "milp_params": {"min_alloc": 0.25}})
+    assert res.status_code == 422
+
+
+def test_milp_params_in_mirrors_every_model_field():
+    """C6에서 MilpParams 필드가 늘면 HTTP 계약(extra=forbid)도 같이 늘려야 한다."""
+    from api.schemas import MilpParamsIn
+    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields)
+
+
+def test_zero_pair_keep_ratio_is_a_valid_experiment_value():
+    from api.schemas import MilpParamsIn
+    assert MilpParamsIn(pair_keep_ratio=0.0).to_milp_params().pair_keep_ratio == 0.0
+
+
+def test_warmup_is_skipped_when_stored_time_limit_is_large(monkeypatch, settings_path):
+    """사전계산이 기동을 막으므로 큰 시간 한도(최대 600초 × 4회)면 생략한다."""
+    from fastapi.testclient import TestClient
+
+    import api.main as main
+
+    SettingsStore(settings_path).save(PlacementSettings(time_limit=300))
+    seen = []
+    monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
+    monkeypatch.setattr(main, "generate_plans", lambda *a, **k: seen.append(1) or [])
+    with TestClient(main.app):
+        pass
+    assert seen == []
+
+
+
+# --- 리뷰 반영(2라운드) ----------------------------------------------------
+
+def test_put_based_on_stale_read_is_409_and_keeps_other_change(client, settings_path):
+    """A·B가 같은 화면을 열고 B가 먼저 저장하면, A의 저장은 B의 변경을 덮지 못한다."""
+    read = client.get("/api/settings").json()
+    b = client.put("/api/settings", json={"settings": dict(read["settings"], gap=0.1),
+                                         "based_on": read["updated_at"]})
+    assert b.status_code == 200
+    a = client.put("/api/settings", json={"settings": dict(read["settings"], min_alloc=0.4),
+                                         "based_on": read["updated_at"]})
+    assert a.status_code == 409
+    now = client.get("/api/settings").json()["settings"]
+    assert now["gap"] == pytest.approx(0.1) and now["min_alloc"] == pytest.approx(0.30)
+    ok = client.put("/api/settings", json={"settings": dict(now, min_alloc=0.4),
+                                          "based_on": b.json()["updated_at"]})
+    assert ok.status_code == 200
+
+
+def test_put_without_based_on_is_422(client):
+    assert client.put("/api/settings", json={"settings": PlacementSettings().model_dump()}
+                      ).status_code == 422
+
+
+def test_warmup_is_skipped_when_stored_gap_is_small(monkeypatch, settings_path):
+    """gap이 작으면 대안마다 시간 한도까지 간다(실측 gap 0·120초 → 부팅 377초)."""
+    from fastapi.testclient import TestClient
+
+    import api.main as main
+
+    SettingsStore(settings_path).save(PlacementSettings(gap=0.0))
+    seen = []
+    monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
+    monkeypatch.setattr(main, "generate_plans", lambda *a, **k: seen.append(1) or [])
+    with TestClient(main.app):
+        pass
+    assert seen == []

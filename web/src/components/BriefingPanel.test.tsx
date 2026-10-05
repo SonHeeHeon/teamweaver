@@ -87,3 +87,17 @@ describe("BriefingPanel", () => {
     expect(screen.queryByText(/규칙 기반/)).not.toBeInTheDocument();
   });
 });
+
+describe("BriefingPanel — 근거(K5)", () => {
+  it("브리핑 근거를 이름·출처와 함께 보여 준다", () => {
+    const zero = { skill: 0, synergy: 0, overfamiliarity: 0, unfilled: 0, total: 0 };
+    render(<BriefingPanel loading={false} nameOf={(id) => (id === "p1" ? "김일번" : id)} result={{
+      objective_delta: 0, before: zero, after: zero, new_violations: [], new_shortfalls: [],
+      feasible: true, fallback_used: true,
+      briefing: { rationale: "r", risks: [], alternatives: [],
+                  evidence: [{ source_id: "rv:p1>p2#1:neg", reviewer_id: "p1", kind: "summary",
+                               text: "공유가 늦다" }] } }} />);
+    expect(screen.getByText("요약")).toBeInTheDocument();
+    expect(screen.getByText(/김일번 리뷰 · rv:p1>p2#1:neg/)).toBeInTheDocument();
+  });
+});

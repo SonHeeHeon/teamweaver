@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from api.deps import get_graph
+from api.datasets import ActiveDataset
+from api.deps import get_dataset, get_graph
 from api.schemas import CoworkOut, MetaResponse, PersonOut, ProjectOut
 from core.config import load_review_items
 from core.graph.memory_graph import MemoryGraph
@@ -26,8 +27,9 @@ def _cowork_edges(graph: MemoryGraph) -> list[CoworkOut]:
     return out
 
 
-@router.get("/api/meta", response_model=MetaResponse)
-def get_meta(graph: MemoryGraph = Depends(get_graph)) -> MetaResponse:
+def build_meta(graph: MemoryGraph, dataset_version: str) -> MetaResponse:
+    """meta를 graph 하나에서 만든다. /api/report도 요청이 잡은 데이터셋으로 이걸 만들어
+    PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9)."""
     people = [PersonOut(id=p.id, name=p.name, grade=p.grade.value, skills=p.skills)
               for p in graph.people]
     projects = [ProjectOut(id=j.id, name=j.name, sector=j.sector.value, phase=j.phase.value,
@@ -38,4 +40,11 @@ def get_meta(graph: MemoryGraph = Depends(get_graph)) -> MetaResponse:
     return MetaResponse(people=people, projects=projects,
                         skills=sorted(graph.skill_index.keys()),
                         review_items=load_review_items(),
+                        dataset_version=dataset_version,
                         coworks=_cowork_edges(graph))
+
+
+@router.get("/api/meta", response_model=MetaResponse)
+def get_meta(graph: MemoryGraph = Depends(get_graph),
+             dataset: ActiveDataset = Depends(get_dataset)) -> MetaResponse:
+    return build_meta(graph, dataset.info.version)

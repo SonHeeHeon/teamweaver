@@ -19,7 +19,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_graph, get_sqlite_conn
+from api.deps import get_evidence, get_graph, get_sqlite_conn
 from api.main import app
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
@@ -27,9 +27,52 @@ from core.graph.memory_graph import MemoryGraph
 from core.graph.sqlite_store import build_sqlite
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _session_private_dirs(tmp_path_factory):
+    """모듈 단위 실서버 픽스처(live_server 등)는 함수 단위 격리보다 *먼저* 뜬다. 그때도 사용자 홈의
+    ~/.teamweaver(설정·업로드 데이터·적용 교체·서명키)를 읽거나 쓰지 않게 세션 시작에 임시 폴더로
+    돌린다. 함수 단위 픽스처(settings_path·data_dir)가 테스트마다 다시 덮는다."""
+    import os
+    base = tmp_path_factory.mktemp("teamweaver-session")
+    keys = ("TEAMWEAVER_DATA_DIR", "TEAMWEAVER_SETTINGS_PATH")
+    saved = {k: os.environ.get(k) for k in keys}
+    os.environ["TEAMWEAVER_DATA_DIR"] = str(base / "data")
+    os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(base / "settings.json")
+    yield
+    for k, v in saved.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+
+
 @pytest.fixture(autouse=True)
 def _skip_warm(monkeypatch):
     monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "1")
+
+
+@pytest.fixture(autouse=True)
+def settings_path(monkeypatch, tmp_path):
+    """관리자 설정 파일(K8)을 테스트마다 빈 임시 경로로 돌린다 -- 사용자 홈의
+    ~/.teamweaver/settings.json을 읽거나 덮어쓰지 않게 한다."""
+    path = tmp_path / "teamweaver-settings" / "settings.json"
+    monkeypatch.setenv("TEAMWEAVER_SETTINGS_PATH", str(path))
+    return path
+
+
+@pytest.fixture(autouse=True)
+def data_dir(monkeypatch, tmp_path):
+    """영속 저장 폴더(K13: 업로드 데이터·적용 교체·서명키)를 테스트마다 빈 임시 폴더로 돌린다."""
+    path = tmp_path / "teamweaver-data"
+    monkeypatch.setenv("TEAMWEAVER_DATA_DIR", str(path))
+    monkeypatch.delenv("TEAMWEAVER_PLAN_SECRET", raising=False)
+    # 관리자 로그인(K14): 테스트마다 비밀번호 미설정·잠금 초기 상태에서 시작한다.
+    for k in ("TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH", "TEAMWEAVER_ADMIN_TOKEN"):
+        monkeypatch.delenv(k, raising=False)
+    from api.admin import THROTTLE
+    THROTTLE._state.clear()
+    THROTTLE._inflight.clear()
+    return path
 
 
 @pytest.fixture
@@ -49,6 +92,7 @@ def small_graph_client(tmp_path):
 
     app.dependency_overrides[get_graph] = lambda: graph
     app.dependency_overrides[get_sqlite_conn] = lambda: conn
+    app.dependency_overrides[get_evidence] = lambda: None     # 픽스처 100명 색인이 같은 ID에 붙지 않게
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

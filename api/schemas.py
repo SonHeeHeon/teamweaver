@@ -1,5 +1,20 @@
-from pydantic import BaseModel, Field
+from typing import Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from api.settings import PlacementSettings
+from core.optimize.milp import MilpParams
+
+
+
+# PDF 재계산 상한(Codex 2라운드): 교체마다 명단 전체를 두 번 평가하므로 무제한이면 요청 하나가
+# 서버를 오래 붙잡는다. 화면의 정상 사용(교체 수십 건)보다 넉넉하다.
+MAX_APPLIED_SWAPS = 50
+MAX_PLAN_ENTRIES = 5000
+# 브리핑 근거(K5) 상한. 응답에 싣기 전에 서버가 이 값으로 자른다(api/briefing_evidence.clamp_briefing).
+MAX_EVIDENCE = 50
+MAX_EVIDENCE_ID_CHARS = 200
+MAX_EVIDENCE_TEXT_CHARS = 2000
 
 class PersonOut(BaseModel):
     id: str
@@ -32,12 +47,25 @@ class MetaResponse(BaseModel):
     skills: list[str]
     review_items: list[str]
     coworks: list[CoworkOut]
+    # 이 meta가 나온 활성 데이터셋(K9). 화면은 계산 요청에 이 값을 실어 보내고, 서버는
+    # 그사이 데이터셋이 바뀌었으면 409로 거부한다(옛 이름·명단과 새 결과가 섞이지 않게).
+    dataset_version: str
+
+
+class EvidenceOut(BaseModel):
+    """브리핑 근거 하나(K5). kind: quote = 원문 그대로(검증됨), summary = 파서가 바꿔 쓴 문장,
+    label = 실데이터라 원문 비공개(리뷰 항목 라벨만)."""
+    source_id: str = Field(max_length=MAX_EVIDENCE_ID_CHARS)
+    reviewer_id: str = Field(max_length=MAX_EVIDENCE_ID_CHARS)
+    kind: Literal["quote", "summary", "label"]
+    text: str = Field(max_length=MAX_EVIDENCE_TEXT_CHARS)
 
 
 class BriefingOut(BaseModel):
     rationale: str
     risks: list[str]
     alternatives: list[str]
+    evidence: list[EvidenceOut] = Field(default=[], max_length=MAX_EVIDENCE)
 
 
 class ObjectiveBreakdownOut(BaseModel):
@@ -76,6 +104,82 @@ class WhatifResponse(BaseModel):
     fallback_used: bool
 
 
+class MilpParamsIn(BaseModel):
+    """/api/optimize·/api/whatif의 milp_params 요청 계약(K8).
+
+    예전에는 형식 없는 dict를 MilpParams(**dict)로 넘겨, 오타 키가 조용히 무시되고
+    범위 검사가 없었다(min_alloc=-1도 통과). 모든 필드는 선택이며 빠진 것은
+    MilpParams 기본값이다(기본값 변경은 C6 소관). 범위는 관리자 설정 화면보다 넓다 --
+    실험·테스트가 쓰는 값(작은 time_limit 등)을 막지 않되 계산이 무의미해지는 값만 거른다."""
+    model_config = ConfigDict(extra="forbid")
+
+    lam: float | None = Field(default=None, ge=0.0, le=10.0)
+    mu: float | None = Field(default=None, ge=0.0, le=10.0)
+    min_alloc: float | None = Field(default=None, gt=0.0, le=1.0)
+    clique_threshold_months: int | None = Field(default=None, ge=1, le=120)
+    pair_keep_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
+    slack_penalty: float | None = Field(default=None, ge=0.0)
+    time_limit: int | None = Field(default=None, ge=1, le=3600)
+    gap: float | None = Field(default=None, ge=0.0, le=1.0)
+    max_pairs: int | None = Field(default=None, ge=1)
+
+    def to_milp_params(self) -> MilpParams:
+        return MilpParams(**self.model_dump(exclude_none=True))
+
+
+class SettingsUpdate(BaseModel):
+    """PUT /api/settings 본문. based_on은 화면이 읽은 설정의 updated_at(저장한 적
+    없으면 null)이다. 그사이 다른 사람이 저장했으면 409로 거부한다 -- 6개 필드를
+    통째로 덮어쓰므로, 확인 없이 받으면 남의 변경이 조용히 사라진다."""
+    model_config = ConfigDict(extra="forbid")
+    settings: PlacementSettings
+    based_on: str | None
+
+
+class SettingsBody(BaseModel):
+    """GET/PUT /api/settings 응답. bounds는 PlacementSettings 필드 제약에서 만든다."""
+    settings: dict
+    defaults: dict
+    bounds: dict[str, dict[str, float]]
+    updated_at: str | None
+    load_error: str | None
+
+
+class PlanEvaluationOut(BaseModel):
+    objective: ObjectiveBreakdownOut
+    violations: list[ViolationOut]
+    shortfalls: list[ShortfallOut]
+
+
+class ApplySwapResponse(BaseModel):
+    """교체를 적용한 명단과, 그 명단 전체를 현행 MILP 목적·제약으로 다시 평가한 결과(K10).
+    objective·fulfillment·optimization_ratio·unfilled는 플랜 카드·PDF 지표를 이 명단 기준으로
+    갈아 끼우기 위한 값이다(솔버 결과가 아니라 재평가 값)."""
+    entries: list["EntryIn"]
+    evaluation: PlanEvaluationOut
+    objective_delta: float
+    feasible: bool
+    objective: float
+    fulfillment: float
+    # 제약 위반이 있는 명단은 None(산정 불가) -- 상한이 제약을 지키는 배치에만 의미가 있다.
+    optimization_ratio: float | None
+    unfilled: list[str]
+    warnings: list[str]           # 이 교체로 새로 생긴 위반·미충원 문장
+
+
+class PlanEditIn(BaseModel):
+    """PUT /api/plans/edits/{plan_token} 본문(K13). 원 플랜(서명 검증용)과 적용한 교체 순서."""
+    model_config = ConfigDict(extra="forbid")
+    plan_label: str
+    base_entries: list["EntryIn"] = Field(max_length=MAX_PLAN_ENTRIES)
+    weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
+    milp_params: MilpParamsIn | None = None
+    dataset_version: str
+    swaps: list["SwapIn"] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
+    # 화면이 마지막으로 본 서버 revision(저장분이 없으면 0). 다르면 409와 최신 상태.
+    expected_revision: int = Field(ge=0)
+
+
 class EntryIn(BaseModel):
     """api.routes.whatif과 api.routes.report이 공유하는 배치 항목 모델.
     여기 두는 이유: schemas.py -> routes 방향으로만 import가 흐르게 해서
@@ -92,6 +196,8 @@ class SwapIn(BaseModel):
     project_id: str
 
 
+
+
 class ReportRequest(BaseModel):
     """확정 배치 + 그때의 지표·브리핑. 서버는 이걸 저장하지 않는다 --
     Playwright가 리포트 페이지에 주입할 뿐이다(stateless 유지).
@@ -104,10 +210,37 @@ class ReportRequest(BaseModel):
     entries: list[EntryIn]
     objective: float
     fulfillment: float
-    optimization_ratio: float
+    optimization_ratio: float | None      # 적용 후 명단에 위반이 있으면 None(산정 불가)
     unfilled: list[str] = []
     briefing: BriefingOut | None = None
     fallback_used: bool = False
     swap: SwapIn | None = None
     objective_delta: float | None = None
     swap_violations: list[str] = []
+    # 이 플랜을 계산한 배치 설정(K8). PDF에 "계산 기준"으로 표시한다. 없으면
+    # (설정을 못 불러와 모델 기본값으로 계산했거나 구버전 클라이언트) 표시하지 않는다.
+    milp_params: PlacementSettings | None = None
+    # 명단을 계산한 데이터셋(K9). PDF 페이지는 서버 meta로 이름을 붙이므로, 다르면 거부한다.
+    dataset_version: str | None = None
+    # 원 플랜에 적용한 교체(K10, 적용 순서)와 그 출발점인 원 플랜 명단. 교체가 있으면 서버가
+    # base_entries에서 순서대로 다시 적용해 명단·지표·교체별 Δ·경고·최종 위반을 계산하고,
+    # 클라이언트가 보낸 entries·지표는 쓰지 않는다 -- PDF의 적용 이력을 조작할 수 없게
+    # (Codex 지적). weights·milp_params는 그 재계산의 기준(계산 당시 스냅숏)이다.
+    applied_swaps: list[SwapIn] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
+    base_entries: list[EntryIn] | None = Field(default=None, max_length=MAX_PLAN_ENTRIES)
+    weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
+    # /api/optimize가 원 플랜에 붙인 서명(api/plan_token). 있으면 서버가 검증한다: 맞으면
+    # PDF에 "서버 계산 원 플랜 확인", 틀리면 422, 없으면 "클라이언트 제공·미검증"으로 표시.
+    plan_token: str | None = None
+
+    @model_validator(mode="after")
+    def _basis_must_be_complete(self) -> "ReportRequest":
+        """일부 필드만 오면 나머지가 설정 기본값(30% 등)으로 채워져, 실제 계산과
+        다른 기준이 PDF에 찍힌다 -- 전체를 요구한다."""
+        if self.applied_swaps and self.base_entries is None:
+            raise ValueError("applied_swaps가 있으면 base_entries(원 플랜 명단)가 필요하다")
+        if self.milp_params is not None:
+            missing = set(PlacementSettings.model_fields) - self.milp_params.model_fields_set
+            if missing:
+                raise ValueError(f"milp_params에 빠진 필드: {sorted(missing)}")
+        return self

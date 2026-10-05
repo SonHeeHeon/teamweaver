@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchMeta } from "../api/client";
 import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
+import { EvidenceList } from "../components/EvidenceList";
+import { hasMarkers } from "../components/evidenceMarkers";
 
 declare global {
   interface Window {
@@ -15,9 +17,12 @@ declare global {
  *  "이제 인쇄해도 된다"를 알린다. */
 export function ReportPage() {
   const data = window.__REPORT_DATA__;
-  const [meta, setMeta] = useState<Meta | null>(null);
+  // 서버가 PDF 요청 시점의 데이터셋으로 만든 meta를 함께 넣어 준다(K9) -- 있으면 그것만
+  // 쓴다. 따로 /api/meta를 부르면 렌더 중 전환된 새 데이터의 이름이 옛 명단에 붙는다.
+  const [meta, setMeta] = useState<Meta | null>(() => (data?.meta as Meta | undefined) ?? null);
 
   useEffect(() => {
+    if (window.__REPORT_DATA__?.meta) return;
     fetchMeta().then(setMeta).catch(() => setMeta(null));
   }, []);
 
@@ -43,7 +48,8 @@ export function ReportPage() {
 
   if (!data) return <p className="p-8">리포트 데이터가 없다.</p>;
 
-  const pct = (v: number) => `${((v ?? 0) * 100).toFixed(1)}%`;
+  // 적용 후 명단에 제약 위반이 있으면 최적화율은 null(산정 불가)이다(K10).
+  const pct = (v: number | null) => (v === null ? "산정 불가(제약 위반)" : `${((v ?? 0) * 100).toFixed(1)}%`);
   const byId = new Map((meta?.people ?? []).map((p) => [p.id, p]));
   const jName = new Map((meta?.projects ?? []).map((j) => [j.id, j.name]));
   const nameOf = (id: string) => byId.get(id)?.name ?? id;
@@ -54,6 +60,27 @@ export function ReportPage() {
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
       <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
+      {meta && data.dataset_version && meta.dataset_version !== data.dataset_version && (
+        <p className="mt-1 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800">
+          경고: 이 명단을 계산한 데이터셋과 지금 서버의 데이터셋이 다르다. 이름·등급 표시가 틀릴 수 있다.
+        </p>
+      )}
+      <p className="text-xs text-slate-500">
+        원 플랜: {data.plan_provenance === "verified"
+          ? "명단이 서버가 계산한 플랜과 일치(서명 확인)"
+          : "화면이 보낸 명단 — 서버 계산 여부 미검증"}
+        {" · "}지표는 서버가 이 명단으로 다시 계산한 값
+        {data.swap || data.briefing
+          ? " · 교체 검토 미리보기(Δ·브리핑 본문)는 화면에서 보낸 값(근거 출처·인용은 서버 확인)"
+          : ""}
+      </p>
+      <p className="text-xs text-slate-500">
+        계산 기준: {data.milp_params
+          ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
+            + `반복 협업 기준 ${data.milp_params.clique_threshold_months}개월 · `
+            + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
+          : "서버 모델 기본값(배치 설정 미적용)"}
+      </p>
 
       <section className="mt-6 grid grid-cols-3 gap-4">
         {[["최적화율", pct(data.optimization_ratio)],
@@ -65,6 +92,45 @@ export function ReportPage() {
           </div>
         ))}
       </section>
+
+      {(data.applied_swaps ?? []).length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-1 text-base font-semibold">적용된 교체 {data.applied_swaps.length}건</h2>
+          <p className="mb-2 text-xs text-slate-600">
+            Plan {data.plan_label}에 아래 교체를 순서대로 적용한 명단이다. 최적화가 고른 명단이
+            아니며, 지표는 적용 후 명단을 현행 점수 기준으로 다시 계산한 참고값이다.
+          </p>
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-300 text-left text-slate-600">
+              <tr><th className="py-1">#</th><th className="py-1">빠진 인력 → 들어간 인력</th>
+                  <th className="py-1">프로젝트</th><th className="py-1 text-right">Δ</th>
+                  <th className="py-1">경고</th></tr>
+            </thead>
+            <tbody>
+              {data.applied_swaps.map((s: any, k: number) => (
+                <tr key={k} className={`border-b border-slate-100 ${
+                  s.warnings?.length ? "bg-red-50 text-red-800" : ""}`}>
+                  <td className="py-1">{k + 1}</td>
+                  <td className="py-1">{nameOf(s.out_person_id)} → {nameOf(s.in_person_id)}</td>
+                  <td className="py-1">{jName.get(s.project_id) ?? s.project_id}</td>
+                  <td className="py-1 text-right tabular-nums">
+                    {s.objective_delta >= 0 ? "+" : ""}{s.objective_delta.toFixed(4)}
+                  </td>
+                  <td className="py-1">{(s.warnings ?? []).join(", ") || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {(data.applied_violations ?? []).length > 0 && (
+            <div className="mt-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <p className="font-medium">적용 후 명단의 제약 위반</p>
+              <ul className="list-inside list-disc">
+                {data.applied_violations.map((v: string) => <li key={v}>{v}</li>)}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="mb-2 text-base font-semibold">협업 네트워크</h2>
@@ -107,6 +173,10 @@ export function ReportPage() {
           <ul className="list-inside list-disc text-sm">
             {(data.briefing.alternatives ?? []).map((a: string) => <li key={a}>{a}</li>)}
           </ul>
+          <EvidenceList evidence={data.briefing.evidence ?? []} nameOf={nameOf}
+                        hasInlineMarkers={hasMarkers([data.briefing.rationale ?? "",
+                                                      ...(data.briefing.risks ?? []),
+                                                      ...(data.briefing.alternatives ?? [])])} />
         </section>
       )}
 

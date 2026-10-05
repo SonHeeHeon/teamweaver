@@ -5,10 +5,11 @@ SI 조직의 인력→프로젝트 배치 최적화 시제품. 기술 적합도(
 **모든 데이터는 가상(seed 고정)이며 사업 효과는 `NOT_CALIBRATED`** — 계산이 맞다는 것과
 현실 성과가 좋다는 것은 별개 주장이다. 문서·보고에서 둘을 섞지 않는다.
 
-**Codex와 병행 개발 중이다.** 작업 전에 다음 순서로 확인한다.
+**Codex와 Claude 2개 계정(claude-a, claude-b)이 병행 개발 중이다.** 작업 전에 다음 순서로 확인한다.
 1. `git worktree list`와 `git log --all`로 Codex의 새 브랜치나 커밋이 있는지 본다.
 2. `docs/handoff-log.md`(서로 한 일)와 `docs/work-split.md`(파일 소유 영역·작업 목록·요청 기록)를 읽는다.
-3. Claude 영역(`api/`, `web/`, `core/ingest/`, `core/evaluate/`, `scripts/`) 밖의 파일은 고치지 않는다.
+3. 내 ID(`echo $CLAUDE_AGENT_ID`: claude-a 또는 claude-b)의 영역 밖 파일은 고치지 않는다. 영역은 `docs/work-split.md`의 소유 영역 표가 정한다
+   (claude-a: `core/ingest/`, `core/evaluate/`, `api/rag/` · claude-b: `api/`(rag 제외), `web/`, `scripts/`).
 
 task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
@@ -23,6 +24,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 | `feat/phase1-solver-benchmark` | `.worktrees/phase1-solver-benchmark` | Codex 작업 브랜치. 이후 커밋은 `docs/handoff-log.md`에 기록된다 |
 | `feat/phase0-model-validation` | `.worktrees/phase0-model-validation` | 과거 브랜치(main에 포함됨) |
 
+- 작업 위치: 루트 체크아웃은 claude-a가 쓴다. claude-b는 `.worktrees/claude-b-<slug>`, Codex는 `.worktrees/`를 쓴다(`docs/work-split.md`).
 - 원격 `origin`(GitHub)이 있다. **push·PR은 사용자가 요청할 때만 한다.**
 - 개발 이력: Claude는 Plan 1~5와 K*, Codex는 Phase 0~1과 C*를 맡았다. 브랜치별 최신 상태는 `docs/handoff-log.md`에서 확인한다.
 - 기록 위치가 다르다: Plan 1~5는 루트 `.omc/plan`·`.omc/reports`(gitignore, 루트에만 존재).
@@ -37,6 +39,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
 - `core/optimize/milp.py` 제품 MILP(PuLP+CBC) · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
   · `validation.py` 원시 해 독립 검증 · `greedy.py` 기준선.
+- `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`).
+  숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
 - `web/` Vite+React+TS+Tailwind. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
 
@@ -59,7 +63,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: main 2026-10-04 **521 passed, 10 deselected**, `--group benchmark` 포함)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-05 K2 이후 **648 passed, 10 deselected**, `--group benchmark` 포함)
 - HiGHS/SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
