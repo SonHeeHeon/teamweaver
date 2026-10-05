@@ -76,3 +76,25 @@ def test_generation_is_deterministic(tmp_path):
 def test_unknown_size_is_refused(tmp_path):
     with pytest.raises(ValueError):
         generate_org_bundle(tmp_path, 150, seed=1)
+
+
+def test_current_roster_respects_grades_availability_and_locks(bundle):
+    size, _, b, _, ds = bundle
+    rows = b.tables["current_assignments.csv"]
+    assert rows and any(r["locked"] == "Y" for r in rows) or size == 100
+    grade = {p["person_id"]: p["career_grade"] for p in b.tables["people.csv"]}
+    asked = {(r["project_id"], r["career_grade"]) for r in b.tables["project_grade_requirements.csv"]}
+    assert all((r["project_id"], grade[r["person_id"]]) in asked for r in rows)
+    assert all(0.3 <= r["alloc"] <= 1.0 for r in rows)
+    assert len(ds.current) == len(rows) and any(c.project_id == "J001" for c in ds.current)
+
+
+def test_roster_does_not_change_the_other_tables(tmp_path, monkeypatch):
+    """The roster has its own RNG stream: with it removed, every other file is byte-identical."""
+    import core.ingest.org_profile as op
+    a = generate_org_bundle(tmp_path / "a", 200, seed=5)
+    monkeypatch.setattr(op, "_current_roster", lambda *args, **kw: [])
+    c = op.generate_org_bundle(tmp_path / "c", 200, seed=5)
+    for f in a.iterdir():
+        if f.name not in ("current_assignments.csv", "manifest.json"):
+            assert f.read_bytes() == (c / f.name).read_bytes(), f.name

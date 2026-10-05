@@ -243,6 +243,35 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
     return projects, grade_reqs, skill_reqs, peak
 
 
+def _current_roster(rng: random.Random, people: list[dict], projects: list[dict], avail: dict) -> list[dict]:
+    """Who is already on a running execution project at the start of the plan (continuity input).
+    70% of the execution projects running in month 0 (the flagship always) get 50-100% of their seats filled
+    with people of the right grade who still have capacity in every month of the project; 10% are locked."""
+    remaining = {p["person_id"]: list(avail[p["person_id"]]) for p in people}
+    by_grade = defaultdict(list)
+    for p in people:
+        by_grade[p["career_grade"]].append(p["person_id"])
+    rows = []
+    running = [j for j in projects if j["phase"] == "실행" and j["_start"] == 0]
+    for j in running:
+        if not j["_flagship"] and rng.random() > 0.7:
+            continue
+        months = range(j["_start"], j["_end"] + 1)
+        for grade, seats in j["_hc"].items():
+            want = round(seats * rng.uniform(0.5, 1.0))
+            cands = [pid for pid in by_grade[grade] if min(remaining[pid][m] for m in months) >= 0.3]
+            for pid in rng.sample(cands, min(want, len(cands))):
+                cap = min(remaining[pid][m] for m in months)
+                alloc = round(min(cap, rng.choice((0.3, 0.5, 0.5, 0.7, 1.0, 1.0))), 1)
+                if alloc < 0.3:
+                    continue
+                for m in months:
+                    remaining[pid][m] -= alloc
+                rows.append({"person_id": pid, "project_id": j["project_id"], "alloc": f"{alloc:.1f}",
+                             "locked": "Y" if rng.random() < 0.1 else "N"})
+    return rows
+
+
 def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str = "2026-10") -> Path:
     if size not in SIZES:
         raise ValueError(f"size must be one of {sorted(SIZES)}")
@@ -255,13 +284,17 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     people = _people(rng, groups)
     works, work_skills = _work_history(rng, people, last)
     availability, supply = [], [0.0] * HORIZON_MONTHS
+    avail = defaultdict(list)
     for p in people:
         for k, m in enumerate(horizon):
             mm = rng.choices((1.0, 0.7, 0.5, 0.3, 0.0), weights=(0.6, 0.1, 0.15, 0.05, 0.1))[0]
+            avail[p["person_id"]].append(mm)
             supply[k] += mm
             availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": f"{mm:.1f}"})
     projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon, supply)
     reviews, review_items = _reviews(rng, works, load_review_items(), _review_rounds(first))
+    # separate RNG stream so adding the roster does not change any other table of an existing seed
+    roster = _current_roster(random.Random(seed * 7919 + 1), people, projects, avail)
     rate_card = [{"career_grade": g, "role_type": r,
                   "monthly_rate": str(round(BASE_RATE[g] * (CONSULTING_PREMIUM if r == "컨설팅" else 1)))}
                  for g in GRADES for r in ("개발", "컨설팅")]
@@ -270,7 +303,8 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     tables = {"people.csv": people, "rate_card.csv": rate_card, "person_skills.csv": _person_skills(work_skills),
               "work_history.csv": works, "availability.csv": availability, "projects.csv": projects,
               "project_grade_requirements.csv": grade_reqs, "project_skill_requirements.csv": skill_reqs,
-              "reviews.csv": reviews, "review_items.csv": review_items}
+              "reviews.csv": reviews, "review_items.csv": review_items,
+              "current_assignments.csv": roster}
     hashes = {name: _write_csv(out_dir / name, name, rows) for name, rows in tables.items()}
     manifest = {"dataset_id": f"org-n{size}-s{seed}", "schema_version": SCHEMA_VERSION,
                 "horizon_start": horizon_start, "horizon_months": HORIZON_MONTHS, "cost_unit": "가상비용점(월)",

@@ -251,3 +251,41 @@ def test_multi_round_datasets_are_refused_by_paths_without_a_round_id(tmp_path):
         apply_checkpoint(ds, {})
     with pytest.raises(ValueError, match="one review per direction"):
         generate_and_parse_checkpointed(ds, None, "g", "p", 0, tmp_path / "ck.json")
+
+
+# ---- current roster (continuity input, optional file) -------------------------------------------
+
+def test_without_a_roster_the_dataset_has_no_current_assignments(tmp_path):
+    ds, _, _ = _convert(tmp_path)
+    assert ds.current == []
+
+
+def test_roster_rows_become_current_assignments(tmp_path):
+    tables = base_tables()
+    tables["current_assignments.csv"] = [{"person_id": "P1", "project_id": "J1", "alloc": "0.5", "locked": "Y"},
+                                         {"person_id": "P2", "project_id": "J1", "alloc": "0.3", "locked": "N"}]
+    ds, _, report = _convert(tmp_path, tables)
+    assert [(c.person_id, c.alloc, c.locked) for c in ds.current] == [("P1", 0.5, True), ("P2", 0.3, False)]
+    assert any("현재 투입 2건(잠금 1건)" in n for n in report.notes)
+
+
+@pytest.mark.parametrize("row, kind", [
+    ({"person_id": "P9", "project_id": "J1", "alloc": "0.5", "locked": "N"}, "error"),      # unknown person
+    ({"person_id": "P1", "project_id": "J1", "alloc": "1.5", "locked": "N"}, "error"),      # alloc range
+    ({"person_id": "P1", "project_id": "J1", "alloc": "0.5", "locked": "X"}, "error"),      # enum
+])
+def test_bad_roster_rows_are_errors(tmp_path, row, kind):
+    tables = base_tables()
+    tables["current_assignments.csv"] = [row]
+    _, report = load_bundle(write_bundle(tmp_path / "b", tables))
+    assert [i for i in report.issues if i.file == "current_assignments.csv" and i.level == kind]
+
+
+def test_roster_above_availability_is_a_warning(tmp_path):
+    tables = base_tables()
+    tables["current_assignments.csv"] = [{"person_id": "P1", "project_id": "J1", "alloc": "1.0", "locked": "N"}]
+    for r in tables["availability.csv"]:
+        if r["person_id"] == "P1":
+            r["available_mm"] = "0.5"
+    _, report = load_bundle(write_bundle(tmp_path / "b", tables))
+    assert any(i.file == "current_assignments.csv" and "above" in i.message for i in report.warnings)

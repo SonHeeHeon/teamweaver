@@ -136,6 +136,8 @@ def _read_mapping(root: Path, report: IngestReport) -> dict[str, dict[str, str]]
 def _read_table(root: Path, spec, mapping: dict[str, str], report: IngestReport) -> list[dict] | None:
     path = root / spec.name
     if not path.is_file():
+        if getattr(spec, "optional", False):
+            return []
         report.error(spec.name, "required file is missing")
         return None
     try:
@@ -268,6 +270,26 @@ def _check_rules(tables: dict[str, list[dict]], horizon: list[dt.date], report: 
                 report.error("availability.csv", f"{pid} has no availability for "
                              + ", ".join(m.strftime("%Y-%m") for m in missing)
                              + " (missing months are never assumed available)")
+
+
+    current = tables.get("current_assignments.csv") or []
+    if current:
+        phase = {p["project_id"]: p["phase"] for p in tables.get("projects.csv") or []}
+        best = defaultdict(float)
+        for row in avail or []:
+            if row["person_id"] is not None and row["month"] in horizon and row["available_mm"] is not None:
+                best[row["person_id"]] = max(best[row["person_id"]], row["available_mm"])
+        total = defaultdict(float)
+        for row in current:
+            if phase.get(row["project_id"]) == "제안":
+                report.warn("current_assignments.csv", f"{row['project_id']} is a proposal; a current roster is "
+                            "unusual there", row=row["__row__"], column="project_id")
+            if row["person_id"] is not None and row["alloc"] is not None:
+                total[row["person_id"]] += row["alloc"]
+        for pid, s in sorted(total.items()):
+            if s > best.get(pid, 0.0) + 1e-9:
+                report.warn("current_assignments.csv", f"{pid}'s current allocations add up to {s:.2f}, above "
+                            f"any month's availability ({best.get(pid, 0.0):.2f})")
 
 
 def _check_hashes(root: Path, manifest: dict, report: IngestReport) -> None:

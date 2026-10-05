@@ -73,8 +73,16 @@ class CoworkRecord(BaseModel):
     co_months: int = Field(ge=1)
     project_count: int = Field(ge=1)
 
+class CurrentAssignment(BaseModel):
+    """Someone already on a planned project when the plan is made (continuity). locked = must be kept."""
+    person_id: str; project_id: str
+    alloc: float = Field(ge=0.0, le=1.0)
+    locked: bool = False
+
+
 class Dataset(BaseModel):
     people: list[Person]
     projects: list[Project]
     coworks: list[CoworkRecord]
     reviews: list[PeerReview]
+    current: list[CurrentAssignment] = []       # optional current roster; empty = plan every seat from scratch
