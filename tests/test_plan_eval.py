@@ -206,3 +206,70 @@ def test_plan_eval_matches_the_solver_objective_with_per_seat_fit():
     seat_part = 0.5 * sum(float(S[g.pid_index[x.person_id], g.project_index[x.project_id]]) for x in raw.plan.entries)
     no_seat = evaluate_plan(g, S, C, params.model_copy(update={"seat_fit_weight": 0.0}), raw.plan.entries)
     assert ev.objective.skill - no_seat.objective.skill == pytest.approx(seat_part)
+
+
+# ---- 달별 투입률(monthly_alloc, claude-b 요청 2026-10-05) ---------------------------------------
+from dataclasses import dataclass as _dc
+
+
+@_dc
+class _MEntry:                      # stand-in until AssignEntry gains monthly_alloc on claude-b's branch
+    person_id: str
+    project_id: str
+    alloc: float
+    monthly_alloc: dict | None = None
+
+
+def test_without_monthly_alloc_results_are_bit_identical():
+    graph, S, C = _fixture()
+    plain = _entries(("p0", 0.5), ("p1", 1.0))
+    same = [_MEntry(e.person_id, e.project_id, e.alloc) for e in plain]
+    assert evaluate_plan(graph, S, C, ALL_PAIRS, plain) == evaluate_plan(graph, S, C, ALL_PAIRS, same)
+
+
+def test_monthly_alloc_checks_each_month_and_uses_the_mean_for_skill():
+    graph, S, C = _fixture(budget=10_000)
+    # project j0 runs months 0-1. p0: 0.2 then 0.8 (mean 0.5); p0 has availability 1.0 so month 1 is fine
+    entries = [_MEntry("p0", "j0", 0.5, {0: 0.2, 1: 0.8}), _MEntry("p1", "j0", 1.0)]
+    ev = evaluate_plan(graph, S, C, MilpParams(pair_keep_ratio=1.0, min_alloc=0.3), entries)
+    assert ev.objective.skill == pytest.approx(0.8 * 0.5 + 0.6 * 1.0)
+    codes = {(v.code, v.location) for v in ev.violations}
+    assert ("alloc_range", "p0:j0:month0") in codes and ("alloc_range", "p0:j0:month1") not in codes
+
+
+def test_monthly_alloc_budget_and_availability_are_per_month():
+    people = [_person("p0", availability=[1.0, 0.5, 1.0, 1.0, 1.0, 1.0]), _person("p1")]
+    graph = _graph(people, _project(budget=1_200))      # month0 cost 900, month1 cost 1300
+    S, C = np.array([[0.8], [0.6]]), np.zeros((2, 2))
+    entries = [_MEntry("p0", "j0", 0.6, {0: 0.4, 1: 0.8}), _MEntry("p1", "j0", 0.5)]
+    ev = evaluate_plan(graph, S, C, MilpParams(min_alloc=0.2), entries)
+    codes = {(v.code, v.location) for v in ev.violations}
+    assert ("availability", "p0:month1") in codes and ("availability", "p0:month0") not in codes
+    assert ("budget", "j0:month1") in codes and ("budget", "j0:month0") not in codes
+
+
+def test_bit_identity_against_golden_values():
+    """Values computed on the evaluator before monthly_alloc existed (same fixture as the hand-computed test)."""
+    graph, S, C = _fixture()
+    ev = evaluate_plan(graph, S, C, ALL_PAIRS, [_MEntry("p0", "j0", 0.5, {}), _MEntry("p1", "j0", 1.0, None)])
+    golden = evaluate_plan(graph, S, C, ALL_PAIRS, _entries(("p0", 0.5), ("p1", 1.0)))      # plain AssignEntry path
+    assert ev == golden and ev.objective.total == pytest.approx(1.0 + 0.15 - 0.2)
+    assert ev.objective.skill == 0.8 * 0.5 + 0.6 * 1.0 and ev.violations == ()
+
+
+@pytest.mark.parametrize("bad", [{0: 0.5}, {0: 0.5, 1: 0.5, 2: 0.5}, {0: 0.9, 1: 0.9}, {True: 0.5, 1: 0.5}])
+def test_monthly_alloc_must_cover_the_project_months_and_match_alloc(bad):
+    graph, S, C = _fixture()
+    with pytest.raises(ValueError):
+        evaluate_plan(graph, S, C, ALL_PAIRS, [_MEntry("p0", "j0", 0.5, bad)])
+
+
+def test_budget_location_stays_per_project_when_no_one_has_monthly_values():
+    graph, S, C = _fixture(budget=500)
+    ev = evaluate_plan(graph, S, C, ALL_PAIRS, [_MEntry("p0", "j0", 0.5), _MEntry("p1", "j0", 1.0)])
+    assert ("budget", "j0") in {(v.code, v.location) for v in ev.violations}
+
+
+def test_evaluator_advertises_monthly_support():
+    from core.evaluate import plan_eval
+    assert plan_eval.SUPPORTS_MONTHLY_ALLOC is True

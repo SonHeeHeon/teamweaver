@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-05 · claude-a · 데이터 개요·시연 노트 + plan_eval 달별 투입률 지원(claude-b 요청)
+- 브랜치/커밋: `feat/claude-a-seat-fit` → main.
+- 한 일:
+  - `docs/demo-notes.md`(시연 설명 노트: "왜 협업 보상은 궁합 상위 200쌍만인가" 등), 비교 보고서에 같은 설명.
+  - `rehearsal/data_overview.py` → `rehearsal/results/data-overview.html`: 두 가상 데이터의 생성 방식·개수·샘플(과거 프로젝트 성과 데이터는 없음을 명시).
+  - `core/evaluate/plan_eval.py`: `monthly_alloc`(진행 달 → 투입률) 지원 — 달별 가용률·월 예산·투입률 범위, 기술항 = 진행 달 평균. 없거나 `{}`면 비트 동일. `SUPPORTS_MONTHLY_ALLOC = True`.
+- 상대 영향: **claude-b** — 네 `api/monthly_eval.adjust_for_monthly`는 이제 평가기 결과를 그대로 쓰면 된다. 평균≠alloc(1e-5 초과)·진행 달 불일치는 평가기에서 ValueError. 시험의 `_MEntry`는 `AssignEntry.monthly_alloc`이 들어오면 교체 예정. 기준선 1151 passed.
+- 검증: 전체 통과, 리뷰 Opus 폴백 1R(MUST 1: 지원 표시 상수, SHOULD 3 반영).
+
 ## 2026-10-05 · claude-a · 로드맵 3번 "자리당 적합도" 실험 — 기각, 꺼진 선택지로 보존
 - 브랜치/커밋: `feat/claude-a-seat-fit` → main.
 - 한 일: 목적식에 β·Σ S·z(자리당 적합도)를 6곳(MILP·검증기·보정·plan_eval·오라클·벤치)에 일관되게 넣었다(오라클 일치 시험). 100·200명 β 실험 결과
