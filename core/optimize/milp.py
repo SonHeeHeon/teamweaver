@@ -57,6 +57,9 @@ class MilpParams(BaseModel):
     max_pairs: int = 200
     # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
     max_concurrent_projects: int = 3
+    # 자리당 적합도 가중(β, 로드맵 3번): 목적식 기술 항을 Σ S·a + β·Σ S·z 로. S·a만 쓰면 투입률이 낮은 자리(제안·소형 사업)의
+    # 적합도가 목적식에 거의 반영되지 않아 덜 맞는 사람이 앉았다(팩터 실험실 100명: 0.53 vs 0.63~0.67). 0이면 이전과 같다.
+    seat_fit_weight: float = 0.0
     # 서비스 솔버(2026-10-05 사용자 결정: HiGHS로 고정). Phase 1(1스레드·240초)에서 HiGHS 79/112, CBC 22/112였고,
     # 조직형 100명 리허설에서도 같은 시간에 CBC보다 훨씬 좋은 해를 냈다(rehearsal/results). "cbc"는 비교·측정용으로만
     # 남긴다 -- API 요청(MilpParamsIn)과 관리자 설정에는 이 칸이 없어 바꿀 수 없다.
@@ -182,6 +185,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
 
     prob += (
         pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ))
+        + params.seat_fit_weight * pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
         - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
         - params.slack_penalty * pulp.lpSum(slack.values()))

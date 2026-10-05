@@ -133,3 +133,15 @@ def test_oracle_raises_immediately_when_highs_hits_its_time_limit(monkeypatch):
         )
 
     assert calls == [1]
+
+
+@pytest.mark.parametrize("seed", [7, 11, 19])
+@pytest.mark.parametrize("beta", [0.5, 2.0])
+def test_oracle_matches_service_solver_with_per_seat_fit(seed, beta):
+    """Roadmap 3: the per-seat fit term beta * sum S*z must mean the same thing in the service MILP, the
+    independent validator (inside solve_milp_diagnostic) and the brute-force oracle."""
+    graph, skill, synergy = generated_tiny_fixture(seed)
+    params = MilpParams(pair_keep_ratio=1.0, time_limit=30, gap=0.0, seat_fit_weight=beta)
+    oracle = solve_tiny_oracle(graph, skill, synergy, params)
+    service = solve_milp_diagnostic(graph, skill, synergy, params)
+    assert service.objective == pytest.approx(oracle.objective, abs=1e-6)

@@ -1,0 +1,643 @@
+{
+ "size": 200,
+ "seed": 2026,
+ "time_limit": 90,
+ "rows": [
+  {
+   "beta": 0.0,
+   "solve_s": 20.7,
+   "termination": "Optimal",
+   "people": 139,
+   "entries": 230,
+   "unfilled": 0,
+   "old_objective_skill": 76.694,
+   "old_objective_total": 82.588,
+   "gaps": {
+    "phase": -0.18,
+    "seats": -0.343,
+    "months": -0.283
+   },
+   "mean_fit_all": 0.628,
+   "outcomes": {
+    "T1": 0.4902,
+    "T6": 0.6124,
+    "T7": 0.4998
+   },
+   "breakdown": {
+    "reqs": [
+     {
+      "group": "요구기술 1~2",
+      "projects": 6,
+      "seats": 18,
+      "filled": 18,
+      "fill_rate": 1.0,
+      "mean_fit": 0.802,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 3~4",
+      "projects": 23,
+      "seats": 74,
+      "filled": 74,
+      "fill_rate": 1.0,
+      "mean_fit": 0.649,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 5+",
+      "projects": 11,
+      "seats": 55,
+      "filled": 55,
+      "fill_rate": 1.0,
+      "mean_fit": 0.533,
+      "unfilled_share": 0.0
+     }
+    ],
+    "seats": [
+     {
+      "group": "정원 1~3",
+      "projects": 28,
+      "seats": 75,
+      "filled": 75,
+      "fill_rate": 1.0,
+      "mean_fit": 0.7,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 4~7",
+      "projects": 11,
+      "seats": 44,
+      "filled": 44,
+      "fill_rate": 1.0,
+      "mean_fit": 0.565,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 8+",
+      "projects": 1,
+      "seats": 28,
+      "filled": 28,
+      "fill_rate": 1.0,
+      "mean_fit": 0.357,
+      "unfilled_share": 0.0
+     }
+    ],
+    "months": [
+     {
+      "group": "기간 1~2개월",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.737,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 3~4개월",
+      "projects": 19,
+      "seats": 65,
+      "filled": 65,
+      "fill_rate": 1.0,
+      "mean_fit": 0.619,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 5~6개월",
+      "projects": 7,
+      "seats": 48,
+      "filled": 48,
+      "fill_rate": 1.0,
+      "mean_fit": 0.454,
+      "unfilled_share": 0.0
+     }
+    ],
+    "phase": [
+     {
+      "group": "실행",
+      "projects": 26,
+      "seats": 113,
+      "filled": 113,
+      "fill_rate": 1.0,
+      "mean_fit": 0.557,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "제안",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.737,
+      "unfilled_share": 0.0
+     }
+    ],
+    "budget": [
+     {
+      "group": "예산 보통(1.0~1.1)",
+      "projects": 18,
+      "seats": 78,
+      "filled": 78,
+      "fill_rate": 1.0,
+      "mean_fit": 0.606,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 빠듯(<1.0)",
+      "projects": 16,
+      "seats": 47,
+      "filled": 47,
+      "fill_rate": 1.0,
+      "mean_fit": 0.604,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 여유(>1.1)",
+      "projects": 6,
+      "seats": 22,
+      "filled": 22,
+      "fill_rate": 1.0,
+      "mean_fit": 0.783,
+      "unfilled_share": 0.0
+     }
+    ]
+   }
+  },
+  {
+   "beta": 0.25,
+   "solve_s": 17.9,
+   "termination": "Optimal",
+   "people": 141,
+   "entries": 272,
+   "unfilled": 0,
+   "old_objective_skill": 76.037,
+   "old_objective_total": 81.078,
+   "gaps": {
+    "phase": -0.123,
+    "seats": -0.33,
+    "months": -0.215
+   },
+   "mean_fit_all": 0.642,
+   "outcomes": {
+    "T1": 0.4968,
+    "T6": 0.6219,
+    "T7": 0.4633
+   },
+   "breakdown": {
+    "reqs": [
+     {
+      "group": "요구기술 1~2",
+      "projects": 6,
+      "seats": 18,
+      "filled": 18,
+      "fill_rate": 1.0,
+      "mean_fit": 0.819,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 3~4",
+      "projects": 23,
+      "seats": 74,
+      "filled": 74,
+      "fill_rate": 1.0,
+      "mean_fit": 0.65,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 5+",
+      "projects": 11,
+      "seats": 55,
+      "filled": 55,
+      "fill_rate": 1.0,
+      "mean_fit": 0.558,
+      "unfilled_share": 0.0
+     }
+    ],
+    "seats": [
+     {
+      "group": "정원 1~3",
+      "projects": 28,
+      "seats": 75,
+      "filled": 75,
+      "fill_rate": 1.0,
+      "mean_fit": 0.697,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 4~7",
+      "projects": 11,
+      "seats": 44,
+      "filled": 44,
+      "fill_rate": 1.0,
+      "mean_fit": 0.579,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 8+",
+      "projects": 1,
+      "seats": 28,
+      "filled": 28,
+      "fill_rate": 1.0,
+      "mean_fit": 0.367,
+      "unfilled_share": 0.0
+     }
+    ],
+    "months": [
+     {
+      "group": "기간 1~2개월",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.709,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 3~4개월",
+      "projects": 19,
+      "seats": 65,
+      "filled": 65,
+      "fill_rate": 1.0,
+      "mean_fit": 0.638,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 5~6개월",
+      "projects": 7,
+      "seats": 48,
+      "filled": 48,
+      "fill_rate": 1.0,
+      "mean_fit": 0.494,
+      "unfilled_share": 0.0
+     }
+    ],
+    "phase": [
+     {
+      "group": "실행",
+      "projects": 26,
+      "seats": 113,
+      "filled": 113,
+      "fill_rate": 1.0,
+      "mean_fit": 0.586,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "제안",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.709,
+      "unfilled_share": 0.0
+     }
+    ],
+    "budget": [
+     {
+      "group": "예산 보통(1.0~1.1)",
+      "projects": 18,
+      "seats": 78,
+      "filled": 78,
+      "fill_rate": 1.0,
+      "mean_fit": 0.636,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 빠듯(<1.0)",
+      "projects": 16,
+      "seats": 47,
+      "filled": 47,
+      "fill_rate": 1.0,
+      "mean_fit": 0.611,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 여유(>1.1)",
+      "projects": 6,
+      "seats": 22,
+      "filled": 22,
+      "fill_rate": 1.0,
+      "mean_fit": 0.752,
+      "unfilled_share": 0.0
+     }
+    ]
+   }
+  },
+  {
+   "beta": 0.5,
+   "solve_s": 16.9,
+   "termination": "Optimal",
+   "people": 141,
+   "entries": 284,
+   "unfilled": 0,
+   "old_objective_skill": 74.163,
+   "old_objective_total": 78.18,
+   "gaps": {
+    "phase": -0.112,
+    "seats": -0.32,
+    "months": -0.213
+   },
+   "mean_fit_all": 0.646,
+   "outcomes": {
+    "T1": 0.4951,
+    "T6": 0.621,
+    "T7": 0.4581
+   },
+   "breakdown": {
+    "reqs": [
+     {
+      "group": "요구기술 1~2",
+      "projects": 6,
+      "seats": 18,
+      "filled": 18,
+      "fill_rate": 1.0,
+      "mean_fit": 0.815,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 3~4",
+      "projects": 23,
+      "seats": 74,
+      "filled": 74,
+      "fill_rate": 1.0,
+      "mean_fit": 0.641,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 5+",
+      "projects": 11,
+      "seats": 55,
+      "filled": 55,
+      "fill_rate": 1.0,
+      "mean_fit": 0.575,
+      "unfilled_share": 0.0
+     }
+    ],
+    "seats": [
+     {
+      "group": "정원 1~3",
+      "projects": 28,
+      "seats": 75,
+      "filled": 75,
+      "fill_rate": 1.0,
+      "mean_fit": 0.7,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 4~7",
+      "projects": 11,
+      "seats": 44,
+      "filled": 44,
+      "fill_rate": 1.0,
+      "mean_fit": 0.572,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 8+",
+      "projects": 1,
+      "seats": 28,
+      "filled": 28,
+      "fill_rate": 1.0,
+      "mean_fit": 0.38,
+      "unfilled_share": 0.0
+     }
+    ],
+    "months": [
+     {
+      "group": "기간 1~2개월",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.705,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 3~4개월",
+      "projects": 19,
+      "seats": 65,
+      "filled": 65,
+      "fill_rate": 1.0,
+      "mean_fit": 0.645,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 5~6개월",
+      "projects": 7,
+      "seats": 48,
+      "filled": 48,
+      "fill_rate": 1.0,
+      "mean_fit": 0.492,
+      "unfilled_share": 0.0
+     }
+    ],
+    "phase": [
+     {
+      "group": "실행",
+      "projects": 26,
+      "seats": 113,
+      "filled": 113,
+      "fill_rate": 1.0,
+      "mean_fit": 0.593,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "제안",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.705,
+      "unfilled_share": 0.0
+     }
+    ],
+    "budget": [
+     {
+      "group": "예산 보통(1.0~1.1)",
+      "projects": 18,
+      "seats": 78,
+      "filled": 78,
+      "fill_rate": 1.0,
+      "mean_fit": 0.646,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 빠듯(<1.0)",
+      "projects": 16,
+      "seats": 47,
+      "filled": 47,
+      "fill_rate": 1.0,
+      "mean_fit": 0.609,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 여유(>1.1)",
+      "projects": 6,
+      "seats": 22,
+      "filled": 22,
+      "fill_rate": 1.0,
+      "mean_fit": 0.758,
+      "unfilled_share": 0.0
+     }
+    ]
+   }
+  },
+  {
+   "beta": 1.0,
+   "solve_s": 16.7,
+   "termination": "Optimal",
+   "people": 134,
+   "entries": 288,
+   "unfilled": 0,
+   "old_objective_skill": 72.307,
+   "old_objective_total": 74.368,
+   "gaps": {
+    "phase": -0.112,
+    "seats": -0.29,
+    "months": -0.188
+   },
+   "mean_fit_all": 0.656,
+   "outcomes": {
+    "T1": 0.5025,
+    "T6": 0.6301,
+    "T7": 0.451
+   },
+   "breakdown": {
+    "reqs": [
+     {
+      "group": "요구기술 1~2",
+      "projects": 6,
+      "seats": 18,
+      "filled": 18,
+      "fill_rate": 1.0,
+      "mean_fit": 0.826,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 3~4",
+      "projects": 23,
+      "seats": 74,
+      "filled": 74,
+      "fill_rate": 1.0,
+      "mean_fit": 0.651,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "요구기술 5+",
+      "projects": 11,
+      "seats": 55,
+      "filled": 55,
+      "fill_rate": 1.0,
+      "mean_fit": 0.587,
+      "unfilled_share": 0.0
+     }
+    ],
+    "seats": [
+     {
+      "group": "정원 1~3",
+      "projects": 28,
+      "seats": 75,
+      "filled": 75,
+      "fill_rate": 1.0,
+      "mean_fit": 0.707,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 4~7",
+      "projects": 11,
+      "seats": 44,
+      "filled": 44,
+      "fill_rate": 1.0,
+      "mean_fit": 0.582,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "정원 8+",
+      "projects": 1,
+      "seats": 28,
+      "filled": 28,
+      "fill_rate": 1.0,
+      "mean_fit": 0.417,
+      "unfilled_share": 0.0
+     }
+    ],
+    "months": [
+     {
+      "group": "기간 1~2개월",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.715,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 3~4개월",
+      "projects": 19,
+      "seats": 65,
+      "filled": 65,
+      "fill_rate": 1.0,
+      "mean_fit": 0.641,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "기간 5~6개월",
+      "projects": 7,
+      "seats": 48,
+      "filled": 48,
+      "fill_rate": 1.0,
+      "mean_fit": 0.527,
+      "unfilled_share": 0.0
+     }
+    ],
+    "phase": [
+     {
+      "group": "실행",
+      "projects": 26,
+      "seats": 113,
+      "filled": 113,
+      "fill_rate": 1.0,
+      "mean_fit": 0.603,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "제안",
+      "projects": 14,
+      "seats": 34,
+      "filled": 34,
+      "fill_rate": 1.0,
+      "mean_fit": 0.715,
+      "unfilled_share": 0.0
+     }
+    ],
+    "budget": [
+     {
+      "group": "예산 보통(1.0~1.1)",
+      "projects": 18,
+      "seats": 78,
+      "filled": 78,
+      "fill_rate": 1.0,
+      "mean_fit": 0.649,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 빠듯(<1.0)",
+      "projects": 16,
+      "seats": 47,
+      "filled": 47,
+      "fill_rate": 1.0,
+      "mean_fit": 0.624,
+      "unfilled_share": 0.0
+     },
+     {
+      "group": "예산 여유(>1.1)",
+      "projects": 6,
+      "seats": 22,
+      "filled": 22,
+      "fill_rate": 1.0,
+      "mean_fit": 0.788,
+      "unfilled_share": 0.0
+     }
+    ]
+   }
+  }
+ ]
+}

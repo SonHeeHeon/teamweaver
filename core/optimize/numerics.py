@@ -227,6 +227,7 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         delta = max(abs(allocations[k]-native_capture.a[k]) for k in allocations)
         reward_pairs,penalty_pairs = set(candidate.reward_pairs),set(candidate.penalty_pairs)
         objective = (sum(float(S[i,j])*a for (i,j),a in allocations.items())
+                     + getattr(params,"seat_fit_weight",0.0)*sum(float(S[i,j])*v for (i,j),v in candidate.z.items())
                      + params.lam*sum(float(C[p,q])*v for (p,q,j),v in candidate.y.items() if (p,q) in reward_pairs)
                      - params.mu*sum(v for (p,q,j),v in candidate.y.items() if (p,q) in penalty_pairs)
                      - params.slack_penalty*sum(candidate.slack.values()))

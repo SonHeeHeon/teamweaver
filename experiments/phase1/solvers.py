@@ -134,6 +134,12 @@ def _build_model(
             for i in range(n_people)
             for j in range(n_projects)
         )
+        + getattr(params, "seat_fit_weight", 0.0)          # per-seat fit, kept in sync with core/optimize/milp.py
+        * pulp.lpSum(
+            float(skill[i, j]) * z[(i, j)]
+            for i in range(n_people)
+            for j in range(n_projects)
+        )
         + params.lam
         * pulp.lpSum(
             float(synergy[p, q]) * y[(p, q, j)]

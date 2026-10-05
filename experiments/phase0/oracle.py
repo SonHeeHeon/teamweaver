@@ -151,7 +151,8 @@ def solve_tiny_oracle(
             for i in range(n_people)
             for j in range(n_projects)
         }
-        skill_term = -float(result.fun)
+        skill_term = -float(result.fun) + getattr(params, "seat_fit_weight", 0.0) * sum(
+            float(skill[i, j]) * z[(i, j)] for i in range(n_people) for j in range(n_projects))
         reward_term = params.lam * sum(
             float(synergy[p, q]) * z[(p, j)] * z[(q, j)]
             for p, q in reward_pairs

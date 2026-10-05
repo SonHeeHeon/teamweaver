@@ -263,9 +263,12 @@ def test_milp_params_in_mirrors_every_model_field():
     """C6에서 MilpParams 필드가 늘면 HTTP 계약(extra=forbid)도 같이 늘려야 한다."""
     from api.schemas import MilpParamsIn
     # solver는 일부러 HTTP 계약 밖에 둔다: 서비스 솔버는 HiGHS로 고정(사용자 결정 2026-10-05), "cbc"는 측정용.
-    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields) - {"solver"}
+    # seat_fit_weight도 HTTP 밖: 로드맵 3번 실험에서 기각된 측정용 항(기본 0)이라 클라이언트가 켤 수 없게 한다.
+    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields) - {"solver", "seat_fit_weight"}
     with pytest.raises(Exception):
         MilpParamsIn(solver="cbc")
+    with pytest.raises(Exception):
+        MilpParamsIn(seat_fit_weight=1.0)
 
 
 def test_zero_pair_keep_ratio_is_a_valid_experiment_value():

@@ -191,3 +191,18 @@ def test_concurrent_projects_over_the_limit_is_a_violation(n, expect):
     assert len(found) == expect                      # months 0 and 1 when over the limit
     if expect:
         assert found[0].actual == 4.0 and found[0].limit == 3.0 and "상한 3개를 초과" in found[0].message
+
+
+def test_plan_eval_matches_the_solver_objective_with_per_seat_fit():
+    ds = generate_dataset(20, 4, seed=3)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    e = ScoringEngine(g)
+    S, C = e.skill_matrix({}), e.synergy_matrix()
+    params = MilpParams(time_limit=30, seat_fit_weight=0.5)
+    raw = solve_milp_diagnostic(g, S, C, params)
+    ev = evaluate_plan(g, S, C, params, raw.plan.entries)
+    # display allocations are floored, so allow the flooring loss on the S*a part only
+    assert ev.objective.total == pytest.approx(raw.objective, abs=0.05)
+    seat_part = 0.5 * sum(float(S[g.pid_index[x.person_id], g.project_index[x.project_id]]) for x in raw.plan.entries)
+    no_seat = evaluate_plan(g, S, C, params.model_copy(update={"seat_fit_weight": 0.0}), raw.plan.entries)
+    assert ev.objective.skill - no_seat.objective.skill == pytest.approx(seat_part)

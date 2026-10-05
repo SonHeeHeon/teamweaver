@@ -67,7 +67,8 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
         team = members.get(j, ())
         return p in team and q in team
 
-    skill = sum(float(S[i, j]) * a for (i, j), a in alloc.items())
+    skill = sum(float(S[i, j]) * a for (i, j), a in alloc.items()) \
+        + params.seat_fit_weight * sum(float(S[i, j]) for (i, j) in alloc)      # per-seat fit, same as the MILP
     reward = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)
     penalty = _overfamiliar_pairs(graph, params.clique_threshold_months)
     synergy = params.lam * sum(float(C[p, q]) for p, q in reward

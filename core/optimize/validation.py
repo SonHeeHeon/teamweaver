@@ -244,6 +244,10 @@ def validate_raw_solution(
         float(skill[i, j]) * solution.a[(i, j)]
         for i in range(n_people)
         for j in range(n_projects)
+    ) + getattr(params, "seat_fit_weight", 0.0) * sum(          # per-seat fit (roadmap 3), 0 = previous objective
+        float(skill[i, j]) * solution.z[(i, j)]
+        for i in range(n_people)
+        for j in range(n_projects)
     )
     synergy_term = params.lam * sum(
         float(synergy[p, q]) * solution.y[(p, q, j)]

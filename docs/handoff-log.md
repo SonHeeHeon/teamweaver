@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-05 · claude-a · 로드맵 3번 "자리당 적합도" 실험 — 기각, 꺼진 선택지로 보존
+- 브랜치/커밋: `feat/claude-a-seat-fit` → main.
+- 한 일: 목적식에 β·Σ S·z(자리당 적합도)를 6곳(MILP·검증기·보정·plan_eval·오라클·벤치)에 일관되게 넣었다(오라클 일치 시험). 100·200명 β 실험 결과
+  "작은 사업 손해"는 체계적이지 않았고(200명에선 반대), β를 키우면 쪼개기 비효율이 나빠져 **기본 0 유지**. HTTP 요청으로는 켤 수 없다(측정용).
+- 상대 영향:
+  - **모두**: `MilpParams`에 `seat_fit_weight`(0)가 생겨 `model_dump()`가 바뀐다 → 배포 전 서명한 plan_token과 그 토큰으로 저장된 적용 교체(K13)는 검증에 실패한다(오늘 max_pairs 변경 때와 같은 성격). 캐시는 프로세스 메모리라 무관.
+  - **Codex/벤치**: `experiments/phase1/solvers.py`가 바뀌어 Phase 1 매니페스트 `source_commit`이 달라진다(β 기본 0이라 해는 동일).
+  - 테스트 기준선: 1141 passed. Phase 0 PASS 11.
+- 근거: `docs/model-roadmap.md`, `rehearsal/results/factor_lab/seat_fit_n{100,200}.json`
+
 ## 2026-10-05 · claude-a · claude-b 요청 2건: 동시 프로젝트 위반(plan_eval) + 위반 교체는 '보류'
 - 브랜치/커밋: `feat/claude-a-scale-rehearsal` → main.
 - 한 일: `core/evaluate/plan_eval.py`가 `concurrent_projects` 위반을 낸다(MILP·검증기와 같은 규칙). 교체 설명은 이 교체로 새 위반이 생기면 결론을 '보류'로 하고 위반을 위험 1순위로 쓰며, 지키지 않은 LLM 답은 규칙 기반으로 전환(사유 `recommends_infeasible`). 교체 전부터 있던 위반만 있으면 보류를 강제하지 않는다.
