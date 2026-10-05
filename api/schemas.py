@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 
 from api.settings import PlacementSettings
 from core.optimize.milp import MilpParams
@@ -123,6 +123,7 @@ class MilpParamsIn(BaseModel):
     gap: float | None = Field(default=None, ge=0.0, le=1.0)
     max_pairs: int | None = Field(default=None, ge=1)
     max_concurrent_projects: int | None = Field(default=None, ge=1, le=6)
+    allocation_mode: Literal["fixed", "monthly"] | None = None
 
     def to_milp_params(self) -> MilpParams:
         return MilpParams(**self.model_dump(exclude_none=True))
@@ -144,6 +145,8 @@ class SettingsBody(BaseModel):
     bounds: dict[str, dict[str, float]]
     updated_at: str | None
     load_error: str | None
+    recommended_time: dict | None = None
+    recommended_time_monthly: dict | None = None
 
 
 class PlanEvaluationOut(BaseModel):
@@ -189,6 +192,20 @@ class EntryIn(BaseModel):
     person_id: str
     project_id: str
     alloc: float = Field(ge=0.0, le=1.0)
+    # 월별 투입률(키 = 프로젝트 진행 달 0~5). 없으면 모든 진행 달이 alloc(core/optimize/types.AssignEntry와 같은 뜻).
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] | None = None
+
+    @field_validator("monthly_alloc")
+    @classmethod
+    def _empty_is_none(cls, v):
+        return v or None                         # {}는 "월별 값 없음"과 같다
+
+    @model_serializer(mode="wrap")
+    def _omit_empty_monthly(self, handler):
+        data = handler(self)                     # 없으면 칸을 내보내지 않는다(서명·저장 바이트 유지)
+        if isinstance(data, dict) and data.get("monthly_alloc") is None:
+            data.pop("monthly_alloc", None)
+        return data
 
 
 class SwapIn(BaseModel):

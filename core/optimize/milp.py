@@ -40,6 +40,49 @@ def display_alloc(value: float, min_alloc: float) -> float:
     return max(fine, min_alloc)
 
 
+def _floor6(v: float) -> float:
+    return math.floor(v * 1_000_000 + 1e-9) / 1_000_000
+
+
+def plan_entries(graph: MemoryGraph, params: "MilpParams", z: dict, a: dict,
+                 a_month: dict | None = None) -> list[AssignEntry]:
+    """해 값 → 반환·표시용 배치 항목(서비스·보정이 같이 쓴다. 검증기는 독립 사본을 쓴다).
+
+    fixed: alloc = display_alloc(a). monthly: 달마다 display_alloc. 모든 진행 달이 같으면 고정 항목과 똑같이
+    (monthly_alloc 없음), 다르면 monthly_alloc과 진행 달 평균(6자리 내림 -- 해 값 평균보다 크지 않다)을 싣는다.
+    배치(z>0.5)인데 어느 달이든 최소 투입률보다 작으면(허용오차 밖) 항목을 만들지 않는다 -- 검증기가 잡는다."""
+    entries = []
+    for (i, j) in sorted(z):
+        if not z[(i, j)] or z[(i, j)] <= 0.5:
+            continue
+        pid, jid = graph.people[i].id, graph.projects[j].id
+        if a_month is None:
+            v = a[(i, j)]
+            if v is None or not math.isfinite(v) or v < params.min_alloc - 1e-6:
+                continue
+            entries.append(AssignEntry(person_id=pid, project_id=jid, alloc=display_alloc(v, params.min_alloc)))
+            continue
+        months = list(graph.projects[j].months)
+        vals = [a_month.get((i, j, m)) for m in months]
+        if any(v is None or not math.isfinite(v) or v < params.min_alloc - 1e-6 for v in vals):
+            continue
+        shown = {m: display_alloc(v, params.min_alloc) for m, v in zip(months, vals)}
+        if len(set(shown.values())) == 1:
+            entries.append(AssignEntry(person_id=pid, project_id=jid, alloc=shown[months[0]]))
+        else:
+            entries.append(AssignEntry(person_id=pid, project_id=jid,
+                                       alloc=_floor6(sum(shown.values()) / len(shown)), monthly_alloc=shown))
+    return entries
+
+
+def mean_alloc(graph: MemoryGraph, a_month: dict) -> dict:
+    """달별 값 → (i, j) 진행 달 평균."""
+    sums: dict = {}
+    for (i, j, m), v in a_month.items():
+        sums.setdefault((i, j), []).append(v)
+    return {k: sum(v) / len(v) for k, v in sums.items()}
+
+
 class MilpParams(BaseModel):
     lam: float = 0.3
     mu: float = 0.2
@@ -64,6 +107,12 @@ class MilpParams(BaseModel):
     # 조직형 100명 리허설에서도 같은 시간에 CBC보다 훨씬 좋은 해를 냈다(rehearsal/results). "cbc"는 비교·측정용으로만
     # 남긴다 -- API 요청(MilpParamsIn)과 관리자 설정에는 이 칸이 없어 바꿀 수 없다.
     solver: Literal["highs", "cbc"] = "highs"
+    # 투입률 방식(월별 투입률, 사용자 결정 2026-10-05). "fixed": (사람, 프로젝트)마다 기간 내내 한 비율.
+    # "monthly": 프로젝트 진행 달마다 따로(가용률·예산·최소 투입률을 달별로 지킨다). 기술항은 S × 진행 달 평균이라
+    # fixed 해가 그대로 monthly의 가능한 해다 -- 최적해끼리는 점수가 나빠질 수 없다(시간 한도에 걸리면 변수가 많은
+    # monthly가 더 낮을 수 있다: 300명 측정 −1.6%). 모델 기본값은 fixed(이전과 같음),
+    # 서비스 기본은 관리자 설정(api/settings.py)이 정한다.
+    allocation_mode: Literal["fixed", "monthly"] = "fixed"
 
 
 BOUND_SNAP_EPS = 1e-9
@@ -166,7 +215,18 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
-    a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
+    monthly = params.allocation_mode == "monthly"
+    if monthly:
+        # a[(i, j, m)]: 프로젝트 j의 진행 달마다. 아래 제약·목적에서 aget(i, j, m)으로 꺼낸다.
+        am = {(i, j, m): pulp.LpVariable(f"am_{i}_{j}_{m}", 0.0, 1.0)
+              for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
+        a = None
+    else:
+        am = None
+        a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
+
+    def aget(i, j, m):
+        return am[(i, j, m)] if monthly else a[i][j]
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)         # top |C| pairs -> synergy reward term
     # len(pruned) == max_pairs is not by itself evidence that the cap did anything --
     # keep_ratio alone can happen to select exactly max_pairs pairs, which would log a
@@ -184,16 +244,22 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
              for j, pj in enumerate(projects) for g in pj.grade_headcount}
 
     prob += (
-        pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ))
+        (pulp.lpSum(S[i, j] * (1.0 / len(projects[j].months)) * am[(i, j, m)] for (i, j, m) in am) if monthly
+         else pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ)))
         + params.seat_fit_weight * pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
         - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
         - params.slack_penalty * pulp.lpSum(slack.values()))
 
-    for i in range(nP):
-        for j in range(nJ):
-            prob += a[i][j] <= z[i][j]
-            prob += a[i][j] >= params.min_alloc * z[i][j]
+    if monthly:
+        for (i, j, m), v in am.items():
+            prob += v <= z[i][j]
+            prob += v >= params.min_alloc * z[i][j]
+    else:
+        for i in range(nP):
+            for j in range(nJ):
+                prob += a[i][j] <= z[i][j]
+                prob += a[i][j] >= params.min_alloc * z[i][j]
     for (p, q) in pairs:
         for j in range(nJ):
             prob += y[(p, q, j)] <= z[p][j]
@@ -203,7 +269,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         for m in range(len(person.availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
             if active:
-                prob += pulp.lpSum(a[i][j] for j in active) <= person.availability[m]
+                prob += pulp.lpSum(aget(i, j, m) for j in active) <= person.availability[m]
     for i in range(nP):                                     # 제약 1b: 같은 달 동시 프로젝트 수(C6)
         for m in range(len(people[i].availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
@@ -217,9 +283,10 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         for g, need in pj.grade_headcount.items():
             members = [i for i, pe in enumerate(people) if pe.grade == g]
             prob += pulp.lpSum(z[i][j] for i in members) + slack[(j, g)] == need
-    for j, pj in enumerate(projects):                       # 제약 3: 월 예산
-        prob += pulp.lpSum(people[i].monthly_rate * a[i][j] for i in range(nP)) \
-                <= pj.monthly_budget
+    for j, pj in enumerate(projects):                       # 제약 3: 월 예산(monthly면 달마다)
+        for m in (pj.months if monthly else pj.months[:1]):
+            prob += pulp.lpSum(people[i].monthly_rate * aget(i, j, m) for i in range(nP)) \
+                    <= pj.monthly_budget
     before_callback = capture_model_contract(prob) if extra_constraints else None
     if extra_constraints:
         extra_constraints(prob, z)
@@ -230,10 +297,13 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     if status not in ("Optimal", "Not Solved"):
         raise RuntimeError(f"MILP failed: {status}")
     raw_z = {(i, j): z[i][j].value() for i in range(nP) for j in range(nJ)}
-    raw_a = {(i, j): a[i][j].value() for i in range(nP) for j in range(nJ)}
+    raw_am = {key: var.value() for key, var in am.items()} if monthly else None
+    raw_a = (mean_alloc(graph, {k: (v if v is not None else float("nan")) for k, v in raw_am.items()}) if monthly
+             else {(i, j): a[i][j].value() for i in range(nP) for j in range(nJ)})
     raw_y = {key: var.value() for key, var in y.items()}
     raw_slack = {key: var.value() for key, var in slack.items()}
-    raw_values = (*raw_z.values(), *raw_a.values(), *raw_y.values(), *raw_slack.values())
+    raw_values = (*raw_z.values(), *raw_a.values(), *(raw_am or {}).values(), *raw_y.values(),
+                  *raw_slack.values())
     # HiGHS (via PuLP) fills every variable with 0.0 when it stops without any solution; only the solution
     # status tells that apart from a real all-zero plan, so it must count as "no incumbent" (review, 2026-10-05).
     # CBC leaves values empty (None) in that case, so the value check below already covers it.
@@ -260,15 +330,8 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             f"MILP found no incumbent solution within time_limit={params.time_limit}s "
             f"(status={status}) — cannot extract a plan")
 
-    entries = []
-    for i in range(nP):
-        for j in range(nJ):
-            zval, aval = z[i][j].value(), a[i][j].value()
-            if zval and zval > 0.5 and aval is not None and aval >= params.min_alloc - 1e-6:
-                # floor (not nearest-round) so reported alloc never exceeds the
-                # true solved value (display_alloc, C3).
-                entries.append(AssignEntry(person_id=people[i].id, project_id=projects[j].id,
-                                           alloc=display_alloc(aval, params.min_alloc)))
+    # floor (not nearest-round) so reported alloc never exceeds the true solved value (display_alloc, C3).
+    entries = plan_entries(graph, params, raw_z, raw_a, raw_am)
     unfilled = [f"{projects[j].id}:{g.value}:{int(round(v.value()))}명 미충원"
                 for (j, g), v in slack.items() if v.value() and v.value() > 0.5]
     objective = float(pulp.value(prob.objective))
@@ -287,20 +350,25 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         variable_count=len(prob.variables()),
         constraint_count=len(prob.constraints),
         evidence=evidence,
+        a_month={key: float(value) for key, value in raw_am.items()} if monthly else None,
     )
     snapped_z, nz = _snap_bounds(candidate.z, 0.0, 1.0, integral=True)
     snapped_a, na = _snap_bounds(candidate.a, 0.0, 1.0, integral=False)
     snapped_y, ny = _snap_bounds(candidate.y, 0.0, 1.0, integral=True)
     snapped_s, ns = _snap_bounds(candidate.slack, 0.0, None, integral=True)
-    n_snapped = nz + na + ny + ns
+    snapped_am, nam = (_snap_bounds(candidate.a_month, 0.0, 1.0, integral=False) if monthly else (None, 0))
+    if monthly:
+        snapped_a, na = mean_alloc(graph, snapped_am), 0       # 평균은 정리된 달별 값에서 다시 계산한다
+    n_snapped = nz + na + ny + ns + nam
     max_snap = max((abs(v - w) for raw, snapped in ((candidate.z, snapped_z), (candidate.a, snapped_a),
-                                                     (candidate.y, snapped_y), (candidate.slack, snapped_s))
+                                                     (candidate.y, snapped_y), (candidate.slack, snapped_s),
+                                                     *(((candidate.a_month, snapped_am),) if monthly else ()))
                     for (k, v), w in ((kv, snapped[kv[0]]) for kv in raw.items())), default=0.0)
     # The snapped values are what C1's eligibility check and allocation LP must see -- with the native HiGHS
     # residues every budget-residue case would be ruled INELIGIBLE (review SHOULD-1). The snap itself is
     # recorded so the evidence still says the native values were moved and by how much.
     validation_input = candidate if n_snapped == 0 else replace(
-        candidate, z=snapped_z, a=snapped_a, y=snapped_y, slack=snapped_s,
+        candidate, z=snapped_z, a=snapped_a, y=snapped_y, slack=snapped_s, a_month=snapped_am,
         evidence=replace(evidence, options={**evidence.options, "snapped_to_bounds": n_snapped,
                                             "max_snap": max_snap}))
     extra_rows, mutation = (), None
@@ -310,7 +378,8 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         fixed_values.update({var.name:float(validation_input.slack[key]) for key,var in slack.items()})
         try:
             extra_rows = project_additive_constraints(before_callback,after_callback,
-                allocation_variables={a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)},
+                allocation_variables=({v.name: key for key, v in am.items()} if monthly
+                                      else {a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)}),
                 fixed_values=fixed_values)
         except UnsupportedModelMutation as exc:
             mutation = str(exc)

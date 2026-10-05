@@ -63,7 +63,9 @@ def solve_tiny_oracle(
     params: MilpParams,
     deadline: float | None = None,
 ) -> OracleResult:
-    """Solve a tiny base model independently by enumerating every binary z."""
+    """Solve a tiny base model independently by enumerating every binary z.
+
+    allocation_mode="monthly"면 투입률 키가 (i, j, m)이다(OracleResult.a도 그 키) -- 서비스 MILP 월별 정식과 비교용."""
     people, projects = graph.people, graph.projects
     n_people, n_projects = len(people), len(projects)
     decision_count = n_people * n_projects
@@ -109,32 +111,39 @@ def solve_tiny_oracle(
         ):
             continue
 
+        # 투입률 변수: fixed면 (i, j), monthly면 (i, j, m)(진행 달마다) -- 서비스 MILP와 같은 식(월별 투입률).
+        monthly = getattr(params, "allocation_mode", "fixed") == "monthly"
+        var_keys = ([(i, j, m) for i in range(n_people) for j, project in enumerate(projects) for m in project.months]
+                    if monthly else [(i, j) for i in range(n_people) for j in range(n_projects)])
+        col = {key: c for c, key in enumerate(var_keys)}
+
+        def akey(i, j, m):
+            return (i, j, m) if monthly else (i, j)
+
         a_ub: list[list[float]] = []
         b_ub: list[float] = []
         for i, person in enumerate(people):
             for month, availability in enumerate(person.availability):
-                row = [0.0] * decision_count
+                row = [0.0] * len(var_keys)
                 for j, project in enumerate(projects):
                     if month in project.months:
-                        row[i * n_projects + j] = 1.0
+                        row[col[akey(i, j, month)]] = 1.0
                 if any(row):
                     a_ub.append(row)
                     b_ub.append(float(availability))
         for j, project in enumerate(projects):
-            row = [0.0] * decision_count
-            for i, person in enumerate(people):
-                row[i * n_projects + j] = float(person.monthly_rate)
-            a_ub.append(row)
-            b_ub.append(float(project.monthly_budget))
+            for month in (project.months if monthly else project.months[:1]):
+                row = [0.0] * len(var_keys)
+                for i, person in enumerate(people):
+                    row[col[akey(i, j, month)]] = float(person.monthly_rate)
+                a_ub.append(row)
+                b_ub.append(float(project.monthly_budget))
 
-        bounds = [
-            (params.min_alloc, 1.0) if z[(i, j)] else (0.0, 0.0)
-            for i in range(n_people)
-            for j in range(n_projects)
-        ]
+        bounds = [(params.min_alloc, 1.0) if z[(k[0], k[1])] else (0.0, 0.0) for k in var_keys]
+        cost = [-float(skill[k[0], k[1]]) / (len(projects[k[1]].months) if monthly else 1) for k in var_keys]
         remaining = _remaining_oracle_time(deadline)
         result = linprog(
-            c=-np.asarray(skill, dtype=float).reshape(-1),
+            c=np.asarray(cost, dtype=float),
             A_ub=np.asarray(a_ub, dtype=float) if a_ub else None,
             b_ub=np.asarray(b_ub, dtype=float) if b_ub else None,
             bounds=bounds,
@@ -146,11 +155,7 @@ def solve_tiny_oracle(
         if not result.success:
             continue
         feasible_count += 1
-        allocations = {
-            (i, j): float(result.x[i * n_projects + j])
-            for i in range(n_people)
-            for j in range(n_projects)
-        }
+        allocations = {key: float(result.x[c]) for key, c in col.items()}
         skill_term = -float(result.fun) + getattr(params, "seat_fit_weight", 0.0) * sum(
             float(skill[i, j]) * z[(i, j)] for i in range(n_people) for j in range(n_projects))
         reward_term = params.lam * sum(

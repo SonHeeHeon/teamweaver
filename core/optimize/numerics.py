@@ -11,6 +11,7 @@ from scipy.sparse import csr_matrix
 
 from core.optimize.audit_types import RawMilpSolution, ValidationReport
 from core.optimize.candidate import rebuild_plan
+from core.optimize.milp import mean_alloc
 from core.optimize.validation import validate_raw_solution
 
 
@@ -113,19 +114,35 @@ class CandidateAssessment:
     refinement: RefinementEvidence
 
 
+def _alloc_view(raw):
+    """보정이 움직이는 투입률 변수: fixed면 a[(i, j)], monthly면 a_month[(i, j, m)]."""
+    return raw.a_month if raw.a_month is not None else raw.a
+
+
+def _budget_cells(graph, raw):
+    """(project, month|None) 단위 예산 칸 -- monthly면 달마다, fixed면 프로젝트마다 하나."""
+    if raw.a_month is None:
+        return [(j, None) for j in range(len(graph.projects))]
+    return [(j, m) for j, p in enumerate(graph.projects) for m in p.months]
+
+
 def _residuals(graph, raw):
     if raw is None:
         return ()
+    view = _alloc_view(raw)
     rows = []
-    for j,project in enumerate(graph.projects):
-        terms = [p.monthly_rate*raw.a.get((i,j),float("nan"))
-                 if isinstance(raw.a.get((i,j)),(int,float)) else float("nan")
+    for j, m in _budget_cells(graph, raw):
+        project = graph.projects[j]
+        key = (lambda i: (i, j)) if m is None else (lambda i: (i, j, m))
+        terms = [p.monthly_rate*view.get(key(i),float("nan"))
+                 if isinstance(view.get(key(i)),(int,float)) else float("nan")
                  for i,p in enumerate(graph.people)]
         if not all(math.isfinite(x) for x in terms):
             return ()
         absolute = sum(terms)-project.monthly_budget
         scale = max(1.,abs(project.monthly_budget),sum(abs(x) for x in terms))
-        rows.append({"project_id":project.id,"absolute":absolute,"normalized":max(0.,absolute)/scale})
+        rows.append({"project_id":project.id if m is None else f"{project.id}:m{m}",
+                     "absolute":absolute,"normalized":max(0.,absolute)/scale})
     return tuple(rows)
 
 
@@ -148,21 +165,27 @@ def _linear_feasible(rows, allocations):
 def _allocation_lp(graph, S, params, native, extra, seconds, delta):
     """고정팀 투입률 LP. 가용률·예산 행을 직접 쓴다 -- milp.py의 a 관련 제약이 바뀌면 여기(와
     validation.py)도 함께 고친다(MILP 정식 동기화 대상, CLAUDE.md "함정")."""
-    keys = sorted(native.a)
+    view = _alloc_view(native)
+    monthly = native.a_month is not None
+    keys = sorted(view)
     index = {key:i for i,key in enumerate(keys)}
+    zf = lambda key: native.z[(key[0], key[1])]
     # 상한은 원본 값이다: 보정은 예산 초과를 줄이는 것이지, 목적(max S·a)을 따라 예산이 남는 배정을
     # 올리는 것이 아니다(통합 리뷰 SHOULD -- 올리면 벤치에서 목적값이 bound를 넘을 수 있었다).
-    bounds = [(max(params.min_alloc*native.z[key],native.a[key]-delta),
-               min(native.z[key],native.a[key])) if native.z[key] else (0.,0.) for key in keys]
+    bounds = [(max(params.min_alloc*zf(key),view[key]-delta),
+               min(zf(key),view[key])) if zf(key) else (0.,0.) for key in keys]
     if any(lo > hi for lo,hi in bounds):
         raise ValueError("inconsistent allocation bounds")
     rows = []
     for i,person in enumerate(graph.people):
         for month,availability in enumerate(person.availability):
-            rows.append(LinearAllocationConstraint({(i,j):1. for j,p in enumerate(graph.projects)
-                                                  if month in p.months},"LE",availability))
-    for j,project in enumerate(graph.projects):
-        rows.append(LinearAllocationConstraint({(i,j):float(p.monthly_rate) for i,p in enumerate(graph.people)},
+            rows.append(LinearAllocationConstraint({((i,j,month) if monthly else (i,j)):1.
+                                                    for j,p in enumerate(graph.projects)
+                                                    if month in p.months},"LE",availability))
+    for j, m in _budget_cells(graph, native):
+        project = graph.projects[j]
+        rows.append(LinearAllocationConstraint({((i,j) if m is None else (i,j,m)):float(p.monthly_rate)
+                                                for i,p in enumerate(graph.people)},
                                                "LE",float(project.monthly_budget)))
     rows.extend(extra)
     ub_rows,eq_rows,ub_rhs,eq_rhs = [],[],[],[]
@@ -178,7 +201,9 @@ def _allocation_lp(graph, S, params, native, extra, seconds, delta):
         if not data: return None
         triples = [(i,j,v) for i,row in enumerate(data) for j,v in row.items()]
         return csr_matrix(([t[2] for t in triples],([t[0] for t in triples],[t[1] for t in triples])),shape=(len(data),len(keys)))
-    result = linprog([-float(S[i,j]) for i,j in keys],A_ub=matrix(ub_rows),b_ub=ub_rhs or None,
+    coef = [(-float(S[k[0],k[1]])/len(graph.projects[k[1]].months)) if monthly else -float(S[k[0],k[1]])
+            for k in keys]
+    result = linprog(coef,A_ub=matrix(ub_rows),b_ub=ub_rhs or None,
                      A_eq=matrix(eq_rows),b_eq=eq_rhs or None,bounds=bounds,method="highs",
                      options={"time_limit":seconds,"primal_feasibility_tolerance":1e-10,
                               "dual_feasibility_tolerance":1e-10})
@@ -206,7 +231,7 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         return CandidateAssessment(native_capture,native_validation,candidate,initial,accepted,final,evidence)
     if initial.valid:
         # 독립 검증기는 기본 모델만 본다. 추가 조건(다양성 컷)은 여기서 확인한다(통합 리뷰 SHOULD).
-        if not _linear_feasible(extra_linear_constraints,candidate.a):
+        if not _linear_feasible(extra_linear_constraints,_alloc_view(candidate)):
             return finish("EXTRA_CONSTRAINT_VIOLATED")
         return finish("ALREADY_VALID",accepted=candidate,final=initial)
     if not policy.enabled:
@@ -224,9 +249,11 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
     try:
         allocations = _allocation_lp(graph,S,params,native_capture,extra_linear_constraints,
                                      end-time.monotonic(),policy.max_allocation_delta)
-        delta = max(abs(allocations[k]-native_capture.a[k]) for k in allocations)
+        native_view = _alloc_view(native_capture)
+        delta = max(abs(allocations[k]-native_view[k]) for k in allocations)
         reward_pairs,penalty_pairs = set(candidate.reward_pairs),set(candidate.penalty_pairs)
-        objective = (sum(float(S[i,j])*a for (i,j),a in allocations.items())
+        skill_alloc = allocations if native_capture.a_month is None else mean_alloc(graph, allocations)
+        objective = (sum(float(S[i,j])*a for (i,j),a in skill_alloc.items())
                      + getattr(params,"seat_fit_weight",0.0)*sum(float(S[i,j])*v for (i,j),v in candidate.z.items())
                      + params.lam*sum(float(C[p,q])*v for (p,q,j),v in candidate.y.items() if (p,q) in reward_pairs)
                      - params.mu*sum(v for (p,q,j),v in candidate.y.items() if (p,q) in penalty_pairs)

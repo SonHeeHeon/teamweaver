@@ -1,0 +1,42 @@
+{
+ "experiment": "c6-monthly-scale",
+ "business_validity": "NOT_CALIBRATED",
+ "solver": "HiGHS 1 thread",
+ "data": "core.ingest.org_profile seed 2026",
+ "time_limit": "core.optimize.time_budget.recommend",
+ "command": "uv run --group benchmark python -m experiments.c6.monthly_scale outputs/c6-monthly-scale-long-300.json",
+ "platform": "macOS-26.5.2-arm64-arm-64bit",
+ "measured_at": "2026-10-05 22:00",
+ "rows": [
+  {
+   "people": 300,
+   "projects": 60,
+   "mode": "monthly",
+   "time_limit": 360,
+   "accepted": true,
+   "objective": 148.27,
+   "unfilled": 0,
+   "entries": 317,
+   "monthly_entries": 204,
+   "termination": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "variables": 138703,
+   "wall_s": 308.7
+  },
+  {
+   "people": 300,
+   "projects": 60,
+   "mode": "monthly",
+   "time_limit": 600,
+   "accepted": true,
+   "objective": 148.27,
+   "unfilled": 0,
+   "entries": 317,
+   "monthly_entries": 204,
+   "termination": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "variables": 138703,
+   "wall_s": 316.7
+  }
+ ]
+}

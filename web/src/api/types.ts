@@ -39,7 +39,10 @@ export interface Meta {
 export interface AssignEntry {
   person_id: string;
   project_id: string;
+  /** 월별 투입률이면 진행 달 평균. */
   alloc: number;
+  /** 월별 투입률(키 = 진행 달 0~5). 없으면 모든 진행 달이 alloc. */
+  monthly_alloc?: Record<string, number>;
 }
 
 /** POST /api/optimize 의 `event: plan` 프레임 payload */
@@ -177,6 +180,12 @@ export interface PlacementSettings {
   gap: number;
   /** 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6). */
   max_concurrent_projects: number;
+  /** 투입률 방식: fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
+  allocation_mode: "fixed" | "monthly";
+}
+
+export interface TimeHint {
+  n_people: number; per_solve_s: number; worst_case_total_s: number; measured: boolean; basis: string;
 }
 
 /** GET/PUT /api/settings 응답. bounds는 서버 pydantic 제약에서 만든 값이다 --
@@ -184,9 +193,13 @@ export interface PlacementSettings {
 export interface SettingsResponse {
   settings: PlacementSettings;
   defaults: PlacementSettings;
-  bounds: Record<keyof PlacementSettings, { min: number; max: number }>;
+  bounds: Partial<Record<keyof PlacementSettings, { min: number; max: number }>>;
   updated_at: string | null;
   load_error: string | null;
+  /** 지금 데이터 규모의 권장 계산 시간(리허설 측정). 화면 안내용. */
+  recommended_time?: TimeHint | null;
+  /** 월별 투입률 기준 권장 시간(더 길다). */
+  recommended_time_monthly?: TimeHint | null;
 }
 
 /** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */

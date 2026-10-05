@@ -42,7 +42,12 @@ def _secret() -> bytes:
 
 def _canonical(dataset_version: str, label: str, entries: list[dict], weights: dict,
                params: MilpParams) -> bytes:
-    rows = sorted((e["person_id"], e["project_id"], float(e["alloc"])) for e in entries)
+    # 월별 투입률이 있는 항목만 그 값을 서명에 넣는다 -- 없는 항목의 행은 이전과 같다(params 칸이 늘면
+    # 토큰은 어차피 바뀐다).
+    rows = sorted((e["person_id"], e["project_id"], float(e["alloc"]))
+                  + ((tuple(sorted((int(m), float(v)) for m, v in e["monthly_alloc"].items())),)
+                     if e.get("monthly_alloc") else ())
+                  for e in entries)
     return json.dumps({"dataset": dataset_version, "label": label, "entries": rows,
                        "weights": dict(sorted(weights.items())), "params": params.model_dump()},
                       sort_keys=True, ensure_ascii=False).encode("utf-8")

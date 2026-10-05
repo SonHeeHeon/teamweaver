@@ -122,6 +122,12 @@ def validate_raw_solution(
     check_raw_values("a", solution.a, expected_a_keys, "unit")
     check_raw_values("slack", solution.slack, expected_slack_keys, "nonnegative")
     check_raw_values("y", solution.y, expected_y_keys, "unit")
+    monthly = solution.a_month is not None
+    if monthly:
+        expected_am_keys = {
+            (i, j, m) for i in range(n_people) for j, project in enumerate(projects) for m in project.months
+        }
+        check_raw_values("a_month", solution.a_month, expected_am_keys, "unit")
     for location, value in (
         ("objective", solution.objective),
         ("plan.objective", solution.plan.objective),
@@ -173,10 +179,25 @@ def validate_raw_solution(
                 params.min_alloc * z_value,
             )
 
+    if monthly:
+        # 달별 투입률: 각 달 값이 0..z, 배치면 최소 투입률 이상, 그리고 a는 진행 달 평균과 같아야 한다.
+        for (i, j, m), value in solution.a_month.items():
+            z_value = solution.z[(i, j)]
+            upper("allocation_upper", f"a[{i},{j},m{m}]<=z", value, z_value)
+            lower("allocation_lower", f"a[{i},{j},m{m}]>=min_alloc*z", value, params.min_alloc * z_value)
+        for i in range(n_people):
+            for j, project in enumerate(projects):
+                months = list(project.months)
+                mean = sum(solution.a_month[(i, j, m)] for m in months) / len(months)
+                equality("monthly_mean", f"a[{i},{j}]", solution.a[(i, j)], mean)
+
+    def month_alloc(i: int, j: int, month: int) -> float:
+        return solution.a_month[(i, j, month)] if monthly else solution.a[(i, j)]
+
     for i, person in enumerate(people):
         for month, availability in enumerate(person.availability):
             load = sum(
-                solution.a[(i, j)]
+                month_alloc(i, j, month)
                 for j, project in enumerate(projects)
                 if month in project.months
             )
@@ -209,11 +230,13 @@ def validate_raw_solution(
                 float(required),
             )
 
-        cost = sum(
-            person.monthly_rate * solution.a[(i, j)]
-            for i, person in enumerate(people)
-        )
-        upper("budget", f"project={project.id}", cost, float(project.monthly_budget))
+        for month in (project.months if monthly else project.months[:1]):
+            cost = sum(
+                person.monthly_rate * month_alloc(i, j, month)
+                for i, person in enumerate(people)
+            )
+            upper("budget", f"project={project.id}" + (f",month={month}" if monthly else ""),
+                  cost, float(project.monthly_budget))
 
     def check_pair_scope(
         code: str,
@@ -272,26 +295,40 @@ def validate_raw_solution(
     equality("objective", "solver", total, solution.objective)
     equality("plan_objective", "plan", solution.plan.objective, solution.objective)
 
-    expected_entries = {
-        (people[i].id, projects[j].id): _display_alloc(solution.a[(i, j)], params.min_alloc)
-        for i in range(n_people)
-        for j in range(n_projects)
-        if solution.z[(i, j)] > 0.5
-        and solution.a[(i, j)] >= params.min_alloc - tol
-    }
+    # 반환 항목의 표시 규칙(독립 사본): 달마다 _display_alloc, 모두 같으면 고정 항목, 다르면 monthly_alloc과
+    # 평균(6자리 내림).
+    expected_entries: dict = {}
+    for i in range(n_people):
+        for j, project in enumerate(projects):
+            if solution.z[(i, j)] <= 0.5:
+                continue
+            months = list(project.months)
+            values = [month_alloc(i, j, m) for m in months]
+            if any(v < params.min_alloc - tol for v in values):
+                continue
+            shown = {m: _display_alloc(v, params.min_alloc) for m, v in zip(months, values)}
+            if len(set(shown.values())) == 1:
+                expected_entries[(people[i].id, projects[j].id)] = (shown[months[0]], None)
+            else:
+                mean = math.floor(sum(shown.values()) / len(shown) * 1_000_000 + 1e-9) / 1_000_000
+                expected_entries[(people[i].id, projects[j].id)] = (mean, shown)
     actual_entries = {
-        (entry.person_id, entry.project_id): entry.alloc for entry in solution.plan.entries
+        (entry.person_id, entry.project_id): (entry.alloc, entry.monthly_alloc)
+        for entry in solution.plan.entries
     }
     equality(
         "plan_entry_count", "plan.entries", float(len(actual_entries)), float(len(expected_entries))
     )
     for key in set(expected_entries) | set(actual_entries):
-        equality(
-            "plan_allocation",
-            f"person={key[0]},project={key[1]}",
-            actual_entries.get(key, -1.0),
-            expected_entries.get(key, -1.0),
-        )
+        got_alloc, got_monthly = actual_entries.get(key, (-1.0, None))
+        want_alloc, want_monthly = expected_entries.get(key, (-1.0, None))
+        location = f"person={key[0]},project={key[1]}"
+        equality("plan_allocation", location, got_alloc, want_alloc)
+        if (got_monthly is None) != (want_monthly is None) or (
+                want_monthly is not None and (set(got_monthly) != set(want_monthly) or any(
+                    abs(got_monthly[m] - want_monthly[m]) > tol for m in want_monthly))):
+            issues.append(ValidationIssue("plan_monthly_allocation", location,
+                                          float(len(got_monthly or {})), float(len(want_monthly or {})), 1.0))
 
     expected_unfilled = sorted(
         f"{projects[j].id}:{grade.value}:{int(round(value))}명 미충원"

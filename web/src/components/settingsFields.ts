@@ -1,6 +1,8 @@
 import type { PlacementSettings } from "../api/types";
 
-type Key = keyof PlacementSettings;
+/** 숫자 칸만(투입률 방식은 SettingsTab이 따로 고른다). */
+export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode">;
+type Key = NumKey;
 
 /** 화면 표시 정보. percent=true면 0~1 값을 % 단위로 입력받는다. 범위는 서버
  *  bounds(SettingsResponse.bounds)가 정하고 여기서는 다시 정의하지 않는다. */
@@ -36,7 +38,14 @@ export function formatValue(f: Field, v: number): string {
 }
 
 /** 두 설정에서 값이 다른 필드를 "이름 이전→현재"로 나열한다. */
+export const MODE_LABEL: Record<PlacementSettings["allocation_mode"], string> = {
+  fixed: "기간 내내 한 비율", monthly: "달마다 따로",
+};
+
 export function describeChanges(before: PlacementSettings, now: PlacementSettings): string[] {
-  return FIELDS.filter((f) => before[f.key] !== now[f.key])
+  const out = FIELDS.filter((f) => before[f.key] !== now[f.key])
     .map((f) => `${f.label} ${formatValue(f, before[f.key])}→${formatValue(f, now[f.key])}`);
+  const b = before.allocation_mode ?? "fixed", n = now.allocation_mode ?? "fixed";
+  if (b !== n) out.push(`투입률 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
+  return out;
 }

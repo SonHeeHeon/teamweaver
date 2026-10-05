@@ -91,6 +91,10 @@ def _build_model(
     benchmark: BenchmarkProblem, factory: _VariableModelFactory
 ) -> _BuiltModel:
     """Create the one benchmark MILP shared unchanged by every backend."""
+    if getattr(benchmark.params, "allocation_mode", "fixed") != "fixed":
+        # 벤치는 솔버끼리 같은 식을 비교하는 도구라 고정 투입률 정식만 둔다. 월별 정식은 서비스 milp.py와
+        # 오라클(experiments/phase0/oracle.py)에 있고, 둘의 일치는 tests/test_monthly_allocation.py가 본다.
+        raise ValueError("benchmark formulation supports allocation_mode='fixed' only")
     graph, skill, synergy, params = (
         benchmark.graph,
         benchmark.S,
