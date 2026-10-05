@@ -786,3 +786,78 @@ describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
     expect(screen.queryByRole("button", { name: /^이 교체 적용/ })).not.toBeInTheDocument();
   });
 });
+
+
+describe("App — 재실행 뒤 revision이 섞이지 않는다(Opus 검증 M1)", () => {
+  it("새 계산(다른 plan_token)의 첫 저장은 옛 플랜의 revision이 아니라 0을 보낸다", async () => {
+    const STEP = {
+      entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
+      evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
+      objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
+      optimization_ratio: 0.7, unfilled: [], warnings: [],
+    };
+    const PLAN_A2 = { ...PLAN_A, plan_token: "tok-B" };
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset()
+      .mockReturnValueOnce((async function* () { yield { event: "plan" as const, data: PLAN_A }; })())
+      .mockReturnValueOnce((async function* () { yield { event: "plan" as const, data: PLAN_A2 }; })());
+    const pendingB = deferred<any>();
+    vi.mocked(loadPlanEdits).mockReset().mockImplementation(async (tok: string) =>
+      tok === "tok-A" ? { swaps: [], steps: [], updated_at: null, revision: 3 } : pendingB.promise);
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+    vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledWith("tok-A"));
+    fireEvent.click(screen.getByRole("button", { name: "요건 설정" }));
+    fireEvent.click(screen.getByRole("button", { name: "최적화 실행" }));
+    await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledWith("tok-B"));
+    fireEvent.change(await screen.findByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await waitFor(() => expect(savePlanEdits).toHaveBeenCalled());
+    const [tok, body] = vi.mocked(savePlanEdits).mock.calls[0];
+    expect(tok).toBe("tok-B");
+    expect(body.expected_revision).toBe(0);
+  });
+});
+
+
+describe("App — 충돌 뒤 줄 선 저장은 버린다(Opus 검증 S1)", () => {
+  it("앞 저장이 409면 그 뒤에 줄 선 저장은 보내지 않고 서버 상태로 맞춘다", async () => {
+    const STEP = {
+      entries: [{ person_id: "p3", project_id: "j1", alloc: 1 }],
+      evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
+      objective_delta: 0.5, feasible: true, objective: 1.5, fulfillment: 0.8,
+      optimization_ratio: 0.7, unfilled: [], warnings: [],
+    };
+    let rejectFirst!: (e: unknown) => void;
+    const first = { promise: new Promise<any>((_, rej) => { rejectFirst = rej; }) };
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
+    vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
+    vi.mocked(savePlanEdits).mockReset().mockReturnValueOnce(first.promise)
+      .mockResolvedValue({ revision: 9 });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
+    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
+    await screen.findByText(/교체 1건 적용/);
+    fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));   // 줄 선 두 번째 저장
+    await act(async () => { rejectFirst(new EditsConflictError(4)); await Promise.resolve(); });
+    await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledTimes(2));   // 강제 복원
+    await new Promise((r) => setTimeout(r, 20));
+    expect(savePlanEdits).toHaveBeenCalledTimes(1);                        // 두 번째는 버렸다
+  });
+});

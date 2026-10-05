@@ -100,7 +100,10 @@ export default function App() {
   // 저장 때 보낸다 -- 서버는 다르면 409(compare-and-set). 클라이언트 시각을 믿지 않는다(Codex 3차).
   // 작거나 같은 요청을 무시한다 -- 다른 탭과 섞여도 마지막 상태가 이긴다(Opus 리뷰 M1).
   const saveChain = useRef<Record<string, Promise<void>>>({});
+  // 저장 줄·revision은 플랜 라벨이 아니라 서명(plan_token)별로 둔다 -- 재실행하면 같은 "A"라도
+  // 다른 계산(다른 저장 키)이다(Opus 검증 M1). chainGen이 바뀌면 줄에 남은 저장은 버린다(충돌 뒤).
   const knownRevision = useRef<Record<string, number>>({});
+  const chainGen = useRef<Record<string, number>>({});
   // 플랜별 로컬 변경 세대(적용·취소·원래대로마다 +1). 늦게 온 복원이 그사이의 변경을 덮지 못하게.
   const mutGen = useRef<Record<string, number>>({});
   const bumpMut = (label: string) => { mutGen.current[label] = (mutGen.current[label] ?? 0) + 1; };
@@ -278,7 +281,7 @@ export default function App() {
       // 그사이 이 플랜에서 적용·취소가 있었으면(세대가 바뀜) 그 상태가 우선이다 -- 스택이 비어
       // 있어도(취소) 덮지 않는다(Codex 3차). force는 저장 충돌 후 서버 상태로 맞출 때.
       if (!force && (mutGen.current[plan.label] ?? 0) !== startMut) return;
-      knownRevision.current[plan.label] = saved.revision;
+      knownRevision.current[plan.plan_token] = saved.revision;
       if (!force && saved.steps.length === 0) return;
       const edit: PlanEdit = {
         stack: saved.steps.map((st) => ({
@@ -323,16 +326,23 @@ export default function App() {
                                    project_id: h.project_id })),
     };
     const runAt = runGen.current;
-    const prev = saveChain.current[label] ?? Promise.resolve();
+    const enqueuedAt = chainGen.current[token] ?? 0;
+    const prev = saveChain.current[token] ?? Promise.resolve();
     // expected_revision은 보내는 순간의 값을 쓴다(앞 저장의 응답으로 갱신된 뒤).
-    saveChain.current[label] = prev.then(() => savePlanEdits(token, {
-      ...body, expected_revision: knownRevision.current[label] ?? 0 })).then((r) => {
-      knownRevision.current[label] = r.revision;
+    saveChain.current[token] = prev.then(() => {
+      // 앞 저장이 충돌해 서버 상태로 다시 맞추는 중이면, 그 전에 줄 선 저장은 버린다(덮어쓰기 방지).
+      if ((chainGen.current[token] ?? 0) !== enqueuedAt) return null;
+      return savePlanEdits(token, { ...body, expected_revision: knownRevision.current[token] ?? 0 });
+    }).then((r) => {
+      if (r && runAt === runGen.current) knownRevision.current[token] = r.revision;
     }).catch((e) => {
       if (runAt !== runGen.current) return;          // 재실행·전환 뒤의 늦은 오류는 무시
       if (e instanceof EditsConflictError) {
-        knownRevision.current[label] = e.revision;
-        void restoreEdits(base, runGen.current, true);   // 서버 상태로 맞춘다
+        knownRevision.current[token] = e.revision;
+        chainGen.current[token] = (chainGen.current[token] ?? 0) + 1;
+        // 강제 복원도 같은 줄에 이어 붙여, 줄의 다른 저장과 순서가 섞이지 않게 한다(Opus 검증 S1).
+        saveChain.current[token] = (saveChain.current[token] ?? Promise.resolve())
+          .then(() => restoreEdits(base, runGen.current, true));
       } else if (e instanceof DatasetChangedError) void externalSwitch();
       else setError(`적용 교체를 서버에 저장하지 못했다(새로고침하면 사라질 수 있다): ${String(e)}`);
     });

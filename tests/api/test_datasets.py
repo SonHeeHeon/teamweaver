@@ -193,21 +193,26 @@ def test_extracted_files_do_not_stay_on_disk(client, bundle_zip, monkeypatch):
 
 
 def test_upload_while_another_is_running_is_409(client, bundle_zip, monkeypatch):
-    """처리 중이면 기다리지 않고 바로 409. (진짜 락으로 시험하면 검사가 빠졌을 때
-    테스트가 실패 대신 영원히 멈추므로, 들어가면 터지는 가짜 락을 쓴다.)"""
-    class Busy:
-        def locked(self):
-            return True
-
-        async def __aenter__(self):
-            raise AssertionError("처리 중인데 락을 기다리러 들어갔다")
-
-        async def __aexit__(self, *exc):
-            return False
-
-    monkeypatch.setattr(client.app.state, "dataset_lock", Busy())
+    """다른 전환(업로드·되돌리기)이 진행 중이면 기다리지 않고 바로 409."""
+    monkeypatch.setattr(client.app.state, "dataset_switching", True)
     assert client.post("/api/datasets", content=bundle_zip, headers=ZIP).status_code == 409
     assert client.post("/api/datasets/reset", json={}).status_code == 409
+
+
+def test_short_lock_holder_does_not_make_upload_409(client, bundle_zip):
+    """적용 교체 저장이 잠깐 잠금을 잡고 있어도 업로드는 거짓 409 없이 기다렸다 진행한다(Opus 검증 S2)."""
+    import threading
+    import time
+    lock = client.app.state.dataset_lock
+    client.portal.call(lock.acquire)
+    result = {}
+    t = threading.Thread(target=lambda: result.setdefault(
+        "code", client.post("/api/datasets", content=bundle_zip, headers=ZIP).status_code))
+    t.start()
+    time.sleep(0.3)
+    client.portal.call(lambda: lock.release())
+    t.join(timeout=30)
+    assert result.get("code") == 200
 
 
 # --- 캐시 분리 -----------------------------------------------------------

@@ -69,6 +69,7 @@ async def lifespan(app: FastAPI):
         app.state.dataset_restore_error = str(exc)
     app.state.dataset = restored or build_fixture_dataset()
     app.state.dataset_lock = asyncio.Lock()
+    app.state.dataset_switching = False
     graph = app.state.dataset.graph
 
     cache = ResultCache()

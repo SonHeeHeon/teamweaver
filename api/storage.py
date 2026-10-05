@@ -62,6 +62,15 @@ def load_or_create_secret(path: Path, *, attempts: int = 20, wait: float = 0.05)
                 os.link(tmp, path)
             except FileExistsError:
                 pass
+            except OSError:
+                # 하드 링크를 못 쓰는 파일시스템(exFAT·일부 네트워크 FS): O_EXCL로 만든다. 이 경우엔
+                # 쓰는 동안의 빈 파일이 잠깐 보일 수 있어, 아래 읽기 재시도가 받아 준다.
+                try:
+                    fd2 = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                    with os.fdopen(fd2, "w", encoding="ascii") as f2:
+                        f2.write(Path(tmp).read_text(encoding="ascii"))
+                except FileExistsError:
+                    pass
         finally:
             Path(tmp).unlink(missing_ok=True)
     for _ in range(attempts):

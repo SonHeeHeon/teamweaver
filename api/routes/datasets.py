@@ -97,34 +97,40 @@ async def upload_dataset(request: Request):
     if ctype not in _ZIP_TYPES:
         raise HTTPException(status_code=415,
                             detail="묶음은 zip 파일 하나로 보낸다(Content-Type: application/zip).")
-    lock = request.app.state.dataset_lock
-    if lock.locked():
+    state = request.app.state
+    # "전환 진행 중"은 잠금이 아니라 별도 표시로 본다 -- 적용 교체 저장이 잠깐 잡는 잠금 때문에
+    # 업로드가 거짓 409를 받지 않게(Opus 검증 S2). 확인과 표시 사이에 await가 없어 원자적이다.
+    if state.dataset_switching:
         raise HTTPException(status_code=409, detail="다른 데이터셋 업로드를 처리하는 중이다.")
-    async with lock:
-        data = await _read_capped(request)
-        active, report, archive_error = await anyio.to_thread.run_sync(
-            validate_and_build, data)
-        if archive_error is not None:
-            return JSONResponse(status_code=422, content={
-                "activated": False, "detail": archive_error, "report": None})
-        if active is None:
-            return JSONResponse(status_code=422, content={
-                "activated": False, "detail": "검증 오류가 있어 전환하지 않았다.", "report": report})
-        _activate(request, active)
-        # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
-        await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
-        # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
-        # 대신 "재기동하면 사라진다"는 사실을 응답에 싣는다.
-        persist_error = None
-        try:
-            await anyio.to_thread.run_sync(request.app.state.dataset_store.save, data, active.info)
-        except OSError as exc:
-            log.error("업로드 데이터 저장 실패: %s", exc)
-            persist_error = (f"서버에 저장하지 못했다(재기동하면 이전에 저장된 데이터, 없으면 기본 "
-                             f"데이터로 뜬다): {exc}")
-        request.app.state.dataset_restore_error = None
-        return {"activated": True, "dataset": active.info.to_dict(), "report": report,
-                "persisted": persist_error is None, "persist_error": persist_error}
+    state.dataset_switching = True
+    try:
+        async with state.dataset_lock:
+            data = await _read_capped(request)
+            active, report, archive_error = await anyio.to_thread.run_sync(
+                validate_and_build, data)
+            if archive_error is not None:
+                return JSONResponse(status_code=422, content={
+                    "activated": False, "detail": archive_error, "report": None})
+            if active is None:
+                return JSONResponse(status_code=422, content={
+                    "activated": False, "detail": "검증 오류가 있어 전환하지 않았다.", "report": report})
+            _activate(request, active)
+            # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
+            await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
+            # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
+            # 대신 "재기동하면 사라진다"는 사실을 응답에 싣는다.
+            persist_error = None
+            try:
+                await anyio.to_thread.run_sync(request.app.state.dataset_store.save, data, active.info)
+            except OSError as exc:
+                log.error("업로드 데이터 저장 실패: %s", exc)
+                persist_error = (f"서버에 저장하지 못했다(재기동하면 이전에 저장된 데이터, 없으면 기본 "
+                                 f"데이터로 뜬다): {exc}")
+            request.app.state.dataset_restore_error = None
+            return {"activated": True, "dataset": active.info.to_dict(), "report": report,
+                    "persisted": persist_error is None, "persist_error": persist_error}
+    finally:
+        state.dataset_switching = False
 
 
 @router.get("/api/datasets/active")
@@ -141,13 +147,17 @@ async def reset_dataset(request: Request) -> dict:
     ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
     if ctype != "application/json":
         raise HTTPException(status_code=415, detail="되돌리기는 JSON 요청으로 보낸다(Content-Type: application/json).")
-    lock = request.app.state.dataset_lock
-    if lock.locked():
+    state = request.app.state
+    if state.dataset_switching:
         raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
-    async with lock:
-        fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)
-        _activate(request, fixture)
-        await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
-        await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
-        request.app.state.dataset_restore_error = None
-        return {**fixture.info.to_dict(), "restore_error": None}
+    state.dataset_switching = True
+    try:
+        async with state.dataset_lock:
+            fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)
+            _activate(request, fixture)
+            await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
+            await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
+            request.app.state.dataset_restore_error = None
+            return {**fixture.info.to_dict(), "restore_error": None}
+    finally:
+        state.dataset_switching = False
