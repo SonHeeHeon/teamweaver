@@ -106,3 +106,13 @@ def test_usage_summary_computes_cost_from_pricing():
     assert u["gen-model"]["cost_usd"] == 3.0  # 1*1.0 + 1*2.0
     assert u["parse-model"]["cost_usd"] == 1.5  # 1*0.5 + 1*1.0
     assert u["total_cost_usd"] == 4.5
+
+
+def test_usage_summary_marks_unpriced_models_instead_of_zero():
+    from core.datagen.llm_checkpoint import usage_summary
+    ck = {"a:b": {"gen_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+                  "parse_usage": {"prompt_tokens": 80, "completion_tokens": 20}}}
+    pricing = {"models": {"gpt-5-nano": {"input_per_1m": 0.05, "output_per_1m": 0.40}}}
+    out = usage_summary(ck, pricing, "gpt-5.5", "gpt-5-nano")
+    assert out["gpt-5.5"]["cost_usd"] is None and out["gpt-5-nano"]["cost_usd"] is not None
+    assert out["total_cost_usd"] is None and out["unpriced_models"] == ["gpt-5.5"]

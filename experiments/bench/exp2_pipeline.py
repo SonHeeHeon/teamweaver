@@ -9,7 +9,7 @@ Hybrid    : 정형·항목 선택은 DB 직적재, 자유서술만 LLM 파싱
 
 출력 토큰 비율(out_ratio): Task 6이 266건 전량을 실 호출로 재동결하며 측정한
 `.omc/llm_checkpoint/seed42_p100_pr20.json`의 parse_usage 합계(gpt-5-nano,
-`pricing["parse_model"]`과 동일 모델) — prompt_tokens=74,390, completion_tokens=
+당시 `pricing["parse_model"]`과 동일 모델) — prompt_tokens=74,390, completion_tokens=
 429,783 → completion/prompt = 5.7774. gpt-5-nano/mini는 추론 모델이라 응답 이전
 내부 추론 토큰이 completion에 과금되므로, 브리프가 가정한 0.2(출력≈입력의 20%)는
 실측치보다 약 29배 작다 — 이 fixture(tok_full=87,896)에서 직접 비교하면
@@ -64,6 +64,9 @@ _ENC = tiktoken.get_encoding("o200k_base")
 MEASURED_COMPLETION_TOKENS = 429_783
 MEASURED_PROMPT_TOKENS = 74_390
 MEASURED_OUT_RATIO = MEASURED_COMPLETION_TOKENS / MEASURED_PROMPT_TOKENS  # 5.7774...
+# 위 실측이 나온 모델. pricing.json의 parse_model은 2026-10-05부터 gpt-5.5(단가 미확인)로
+# 바뀌었지만, 이 실험의 비용 추정은 실측 비율과 같은 모델 단가로 계산해야 맞다.
+MEASURED_MODEL = "gpt-5-nano"
 
 # 최종 리뷰 Important 10 반영: .superpowers/, .omc/는 둘 다 .gitignore 대상이라
 # 클론한 사람은 이 경로를 열어볼 수 없다 — exp1/exp3는 재실행해 검증할 수 있지만
@@ -200,14 +203,14 @@ def _latency() -> dict:
 
 def run(sample_calls: int = 10, live: bool = False, client=None) -> dict:
     pricing = load_pricing()
-    model = pricing["parse_model"]
+    model = MEASURED_MODEL
     ds, _ = load_fixtures(FIXTURES_DIR)
     payloads = build_payloads(ds)
 
     tok_full = sum(count_tokens(t) for t in payloads["full_llm"])
     tok_hyb = sum(count_tokens(t) for t in payloads["hybrid"])
     # 출력≈입력의 20%라는 안이한 가정 대신, Task 6에서 266건 전량 실호출로 측정한
-    # gpt-5-nano(parse_model) completion/prompt 비율을 쓴다 (모듈 docstring 참고).
+    # gpt-5-nano(당시 parse_model) completion/prompt 비율을 쓴다 (모듈 docstring 참고).
     out_ratio = MEASURED_OUT_RATIO
     accuracy = {"checked": 0, "item_match_rate": None,
                 "note": "live=False 이므로 미측정"}
@@ -238,7 +241,7 @@ def run(sample_calls: int = 10, live: bool = False, client=None) -> dict:
             "sensitivity": _sensitivity(ds, pricing),
             "output_token_assumption": out_ratio,
             "output_token_assumption_basis":
-                "Task 6 체크포인트 실측 gpt-5-nano(parse_model) completion/prompt "
+                "Task 6 체크포인트 실측 gpt-5-nano(당시 parse_model) completion/prompt "
                 f"= {MEASURED_COMPLETION_TOKENS:,}/{MEASURED_PROMPT_TOKENS:,} (266건 전량, "
                 f"{_LATENCY_SOURCE} — hybrid-shaped parse 워크로드에서 측정, "
                 "Full-LLM 페이로드로의 적용은 다른 형태 간 외삽임)",

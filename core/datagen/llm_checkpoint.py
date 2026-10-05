@@ -152,11 +152,19 @@ def usage_summary(checkpoint: dict, pricing: dict, gen_model: str, parse_model: 
             totals[model]["prompt_tokens"] += u["prompt_tokens"]
             totals[model]["completion_tokens"] += u["completion_tokens"]
     total_cost = 0.0
-    for model, u in totals.items():
-        rates = pricing["models"].get(model, {})
+    unpriced = []
+    for model, u in list(totals.items()):
+        rates = pricing["models"].get(model)
+        if rates is None:
+            # 단가를 모르는 모델은 0원으로 보이지 않게 None으로 둔다(2026-10-05, 새 모델 단가 미확인).
+            u["cost_usd"] = None
+            unpriced.append(model)
+            continue
         cost = (u["prompt_tokens"] / 1_000_000) * rates.get("input_per_1m", 0.0) + \
                (u["completion_tokens"] / 1_000_000) * rates.get("output_per_1m", 0.0)
         u["cost_usd"] = round(cost, 4)
         total_cost += cost
-    totals["total_cost_usd"] = round(total_cost, 4)
+    totals["total_cost_usd"] = None if unpriced else round(total_cost, 4)
+    if unpriced:
+        totals["unpriced_models"] = unpriced
     return totals

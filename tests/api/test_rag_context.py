@@ -94,3 +94,17 @@ def test_hidden_index_puts_no_review_text_in_the_context(data_and_conn):
     blob = repr(ctx)
     assert all(e["kind"] == "label" for pid in (out_id, in_id) for e in ctx[pid]["evidence"])
     assert not any(t in blob for t in texts)
+
+
+def test_project_id_adds_the_project_requirements(data_and_conn):
+    from api.rag.context import swap_context
+    ds, _, conn = data_and_conn
+    out_id, in_id = _reviewed_pair(ds)
+    j = ds.projects[0]
+    ctx = swap_context(conn, out_id, in_id, project_id=j.id)
+    assert ctx["project"]["id"] == j.id and ctx["project"]["name"] == j.name
+    assert ctx["project"]["requirements"] == sorted(
+        [{"skill": r.skill, "min_level": r.min_level, "headcount": r.headcount} for r in j.requirements],
+        key=lambda r: r["skill"])
+    assert "project" not in swap_context(conn, out_id, in_id)
+    assert "project" not in swap_context(conn, out_id, in_id, project_id="no-such-project")

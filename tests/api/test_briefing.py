@@ -193,7 +193,7 @@ def test_other_quote_styles_and_unclosed_quotes_are_checked(risk):
         generate_briefing(_client(_llm(risks=[risk])), "m", _ctx(idx), "p000", "p001", evidence=idx)
 
 
-@pytest.mark.parametrize("risk", ["동료가 \"무책임\"하다고 했다.", "‘소통’ 항목이 있다.", "동료가 「협업」을 언급했다."])
+@pytest.mark.parametrize("risk", ["동료가 \"무책임\"하다고 했다.", "‘무책임’ 지적이 있다.", "동료가 「일을 미룬다」고 했다."])
 def test_hidden_mode_rejects_any_quote_even_short_ones(risk):
     idx = _index(reveal=False)
     with pytest.raises(ValueError):
@@ -250,3 +250,59 @@ def test_rejections_carry_a_reason_code():
     with pytest.raises(ValueError) as info:
         generate_briefing(_client(bad), "m", _ctx(idx), "p000", "p001", evidence=idx)
     assert isinstance(info.value.__cause__, BriefingRejected) and info.value.__cause__.code == "quote_not_verbatim"
+
+
+# ---- 2026-10-05 튜닝: 숨김 모드 라벨 허용, 프로젝트·점수 변화, 생각 깊이 -----------------------
+
+def test_hidden_mode_allows_quoting_a_label_item():
+    idx = _index(reveal=False)
+    payload = _llm(citations=[], rationale="p001은 ‘소통’ 라벨이 있다 [rv:p097>p001#1:pos].", risks=["“문서화” 보완 필요."])
+    out = generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
+    assert out["evidence"] == []
+
+
+def test_hidden_mode_ignores_citations_that_only_echo_labels():
+    idx = _index(reveal=False)
+    payload = _llm(rationale="검토 [rv:p097>p001#1:pos].", risks=["없음"],
+                   citations=[{"source_id": _SID_POS, "quote": "좋은 점: 적극성·소통"},
+                              {"source_id": _SID_NEG, "quote": "문서화"}])
+    out = generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
+    assert out["evidence"] == []
+    bad = _llm(rationale="검토.", risks=["없음"], citations=[{"source_id": _SID_POS, "quote": "회의를 잘 이끌었다"}])
+    with pytest.raises(ValueError):
+        generate_briefing(_client(bad), "m", _ctx(idx), "p000", "p001", evidence=idx)
+
+
+def test_score_change_and_effort_reach_the_request():
+    idx = _index()
+    client = _client(_llm())
+    generate_briefing(client, "m", _ctx(idx), "p000", "p001", evidence=idx,
+                      score_change={"total": -0.12, "skill": -0.2}, reasoning_effort="low")
+    kw = client.chat.completions.create.call_args.kwargs
+    assert kw["reasoning_effort"] == "low"
+    assert json.loads(kw["messages"][1]["content"])["score_change"] == {"total": -0.12, "skill": -0.2}
+
+
+def test_effort_comes_from_the_model_entry_and_is_omitted_otherwise():
+    from core.config import load_pricing
+    model = load_pricing()["briefing_model"]
+    client = _client(_llm())
+    generate_briefing(client, model, _CTX, "p000", "p001")
+    assert client.chat.completions.create.call_args.kwargs.get("reasoning_effort") == \
+        load_pricing()["models"][model].get("reasoning_effort")
+    client = _client(_llm())
+    generate_briefing(client, "some-non-reasoning-model", _CTX, "p000", "p001")
+    assert "reasoning_effort" not in client.chat.completions.create.call_args.kwargs
+
+
+def test_hidden_mode_allows_quoting_the_whole_label_text():
+    idx = _index(reveal=False)
+    payload = _llm(citations=[], rationale="라벨은 \u201c좋은 점: 적극성·소통\u201d이다 [rv:p097>p001#1:pos].", risks=["없음"])
+    assert generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)["evidence"] == []
+
+
+def test_prompts_carry_the_length_limits_and_project_rule():
+    from api.rag.briefing import _SYSTEM, _SYSTEM_HIDDEN, _SYSTEM_SOURCED
+    for p in (_SYSTEM, _SYSTEM_SOURCED, _SYSTEM_HIDDEN):
+        assert "risks는 최대 3개" in p and "alternatives는 최대 2개" in p and "project가 있으면" in p
+    assert "citations는 항상 빈 배열" in _SYSTEM_HIDDEN

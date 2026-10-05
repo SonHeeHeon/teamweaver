@@ -15,21 +15,33 @@ import re
 
 from pydantic import ValidationError
 
-from api.rag.evidence import MIN_QUOTE_CHARS, EvidenceIndex
+from api.rag.evidence import MIN_QUOTE_CHARS, EvidenceIndex, normalize
+from core.config import load_pricing
 from api.schemas import BriefingOut
 
 log = logging.getLogger(__name__)
 
+# 공통 지시(2026-10-05 튜닝): 실측에서 gpt-6-luna가 위험 4~5개·대안 3~4개의 긴 설명을 내고, 문맥에
+# 프로젝트 요구 기술·점수 변화가 없어 매번 "정보가 부족해 단정하기 어렵다"로 끝났다. 길이 상한과
+# 결론 우선, 그리고 project·score_change를 받으면 그것으로 판단하라는 지시를 둔다.
+_BASE = (
+    "너는 SI 인력 배치 담당자를 돕는 설명가능AI(XAI) 브리핑 작성자다. 한국어로 쓴다."
+    " 입력: out_person(빠질 사람), in_person(들어올 사람), context(사람별 skills=기술:레벨 1~5,"
+    " coworks=협업 상대:함께한 개월, evidence=리뷰 근거). 있으면 context.project(교체 대상 프로젝트의"
+    " 요구 기술·최소 레벨·인원)와 score_change(교체 전후 배치 점수 변화, total이 양수면 개선)도 온다."
+    " 문맥에 있는 사실만 쓰고 지어내지 마라."
+    " project가 있으면 두 사람을 그 요구 기술 기준으로 비교해 결론을 내라(정보 부족이라고 얼버무리지 마라)."
+    " score_change가 있으면 그 방향과 어긋나는 결론을 쓰지 말고 total 값을 한 번 언급하라."
+    " 형식: rationale은 결론(교체 권고/조건부/보류)을 첫 문장에 두고 2~3문장, risks는 최대 3개,"
+    " alternatives는 최대 2개, 각 항목은 한 문장."
+)
 _SYSTEM = (
-    "너는 SI 인력 배치 시스템의 설명가능AI(XAI) 브리핑 작성자다. 주어진 그래프 문맥"
-    "(스킬·협업이력·리뷰근거)만 근거로, 인력 교체(스왑)에 대한 명분·리스크·대안을"
-    "한국어로 작성하라. 문맥에 없는 사실을 지어내지 마라."
+    _BASE +
     ' JSON {"rationale": str, "risks": list[str], "alternatives": list[str]}만 출력.'
 )
 _SYSTEM_SOURCED = (
-    "너는 SI 인력 배치 시스템의 설명가능AI(XAI) 브리핑 작성자다. 주어진 그래프 문맥"
-    "(스킬·협업이력·리뷰근거)만 근거로, 인력 교체(스왑)에 대한 명분·리스크·대안을 한국어로 작성하라."
-    " 문맥에 없는 사실을 지어내지 마라. 리뷰 근거는 kind가 quote인 근거만 쓴다."
+    _BASE +
+    " 리뷰 근거는 kind가 quote인 근거만 쓴다."
     " 그 근거를 쓴 문장 끝에 [source_id]를 붙이고, [source_id]를 붙인 출처마다 citations에 그 근거 text를"
     " 글자 하나 바꾸지 말고 넣어라. kind가 quote가 아닌 근거에는 [source_id]를 붙이지 마라."
     " 본문에는 따옴표를 쓰지 마라(인용은 citations에만)."
@@ -37,9 +49,10 @@ _SYSTEM_SOURCED = (
     ' "citations": [{"source_id": str, "quote": str}]}만 출력.'
 )
 _SYSTEM_HIDDEN = (
-    "너는 SI 인력 배치 시스템의 설명가능AI(XAI) 브리핑 작성자다. 주어진 그래프 문맥"
-    "(스킬·협업이력·리뷰 항목 라벨)만 근거로, 인력 교체(스왑)에 대한 명분·리스크·대안을 한국어로 작성하라."
-    " 리뷰 원문은 비공개다. 리뷰 문장을 지어내거나 따옴표로 인용하지 마라. 리뷰 근거를 쓸 때는 [source_id]만 붙여라."
+    _BASE +
+    " 리뷰 원문은 비공개이고 evidence에는 리뷰 항목 라벨(예: 좋은 점: 소통·협업)만 있다."
+    " 리뷰 문장을 지어내지 마라. 라벨을 근거로 쓸 때는 문장 끝에 [source_id]만 붙여라."
+    " citations는 항상 빈 배열 []로 둔다. 본문에 따옴표를 쓰지 마라."
     ' JSON {"rationale": str, "risks": list[str], "alternatives": list[str], "citations": []}만 출력.'
 )
 # 출처 표시는 괄호 단위가 아니라 본문 어디서든 찾는다([rv:a, rv:b]처럼 묶어 써도 하나씩 걸린다).
@@ -70,8 +83,14 @@ def _verified_citations(out: dict, ctx: dict, evidence: EvidenceIndex) -> list[d
     citations = out.get("citations", [])
     if not isinstance(citations, list):
         raise BriefingRejected("bad_citation_shape", "citations가 목록이 아니다")
-    if citations and not evidence.reveal_text:
-        raise BriefingRejected("hidden_citation", "원문 비공개 모드인데 인용을 냈다")
+    if not evidence.reveal_text:
+        # 숨김 모드: 인용은 받지 않는다. 다만 그 출처의 항목 라벨을 옮겨 적은 것은 원문 유출이 아니므로
+        # (라벨은 공개 허용, 사용자 결정 2026-10-05) 무시한다. 실측에서 가끔 이렇게 채워 설명이 버려졌다.
+        for c in citations:
+            if not (isinstance(c, dict) and isinstance(c.get("quote"), str)
+                    and _is_label_text(c["quote"], allowed.get(c.get("source_id")))):
+                raise BriefingRejected("hidden_citation", "원문 비공개 모드인데 인용을 냈다")
+        citations = []
     verified = []
     for c in citations:
         if not isinstance(c, dict) or not isinstance(c.get("source_id"), str) or not isinstance(c.get("quote"), str):
@@ -96,11 +115,31 @@ def _verified_citations(out: dict, ctx: dict, evidence: EvidenceIndex) -> list[d
     return verified
 
 
+def _label_items(row: dict | None) -> set[str]:
+    """label 근거 text("좋은 점: 소통·협업")의 항목들."""
+    if not row or row.get("kind") != "label" or ": " not in row.get("text", ""):
+        return set()
+    return {normalize(x) for x in row["text"].split(": ", 1)[1].split("·") if x.strip()}
+
+
+def _is_label_text(quote: str, row: dict | None) -> bool:
+    q = normalize(quote)
+    return bool(row) and row.get("kind") == "label" and bool(q) and (
+        q == normalize(row["text"]) or q in _label_items(row))
+
+
 def _check_inline_quotes(text: str, allowed: dict, evidence: EvidenceIndex) -> None:
-    """본문 속 따옴표 인용. 숨김 모드에서는 LLM이 원문을 본 적이 없으므로 따옴표 자체를 거부한다."""
+    """본문 속 따옴표 인용. 숨김 모드에서는 LLM이 원문을 본 적이 없으므로, 문맥의 항목 라벨을 감싼
+    따옴표(공개 허용)만 두고 나머지 따옴표는 거부한다."""
     if not evidence.reveal_text:
-        if any(ch in _QUOTE_CHARS for ch in text) or _SINGLE.search(text):
-            raise BriefingRejected("hidden_quote", "원문 비공개 모드인데 본문에 따옴표 인용이 있다")
+        # 항목 하나("소통")든 라벨 전체("좋은 점: 소통·협업")든 공개 허용된 라벨 문자열이면 따옴표를 허용한다.
+        labels = set().union(*(_label_items(r) for r in allowed.values())) if allowed else set()
+        labels |= {normalize(r["text"]) for r in allowed.values() if r.get("kind") == "label"}
+        spans = [next(g for g in m.groups() if g is not None) for m in _DOUBLE.finditer(text)]
+        spans += [g for m in _SINGLE.finditer(text) for g in m.groups() if g is not None]
+        leftover = _SINGLE.sub("", _DOUBLE.sub("", text))
+        if any(ch in _QUOTE_CHARS for ch in leftover) or any(normalize(sp) not in labels for sp in spans):
+            raise BriefingRejected("hidden_quote", "원문 비공개 모드인데 본문에 라벨이 아닌 따옴표 인용이 있다")
         return
     spans = [next(g for g in m.groups() if g is not None) for m in _DOUBLE.finditer(text)]
     spans += [g for m in _SINGLE.finditer(text) for g in m.groups()
@@ -114,7 +153,10 @@ def _check_inline_quotes(text: str, allowed: dict, evidence: EvidenceIndex) -> N
 
 
 def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
-                      evidence: EvidenceIndex | None = None) -> dict:
+                      evidence: EvidenceIndex | None = None, score_change: dict | None = None,
+                      reasoning_effort: str | None = None) -> dict:
+    """score_change: 교체 전후 배치 점수 변화(예: {"total": .., "skill": .., ...}). reasoning_effort를
+    주지 않으면 fixtures/pricing.json의 models[model].reasoning_effort를 쓴다(실측: low가 기본보다 ~5초 빠름)."""
     if evidence is None and _context_sources(ctx):
         # 출처가 붙은 근거(원문 인용)를 문맥에 넣고 검증기를 빠뜨리면 인용 검사가 통째로 꺼진다(K5 리뷰).
         raise BriefingRejected("missing_index", "근거 색인 없이 출처 근거 문맥이 들어왔다 -- generate_briefing에도 같은 색인을 넘길 것")
@@ -123,9 +165,16 @@ def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
     else:
         system = _SYSTEM_SOURCED if evidence.reveal_text else _SYSTEM_HIDDEN
     payload = {"out_person": out_id, "in_person": in_id, "context": ctx}
+    if score_change is not None:
+        payload["score_change"] = score_change
+    if reasoning_effort is None:
+        # 모델별 설정(pricing.json models[모델].reasoning_effort). 모델을 바꿔도 지원 안 하는 값이 남지 않게.
+        reasoning_effort = load_pricing().get("models", {}).get(model, {}).get("reasoning_effort")
+    effort = reasoning_effort
     resp = client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
+        **({"reasoning_effort": effort} if effort else {}),
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}])
     try:

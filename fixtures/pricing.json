@@ -1,16 +1,36 @@
 {
-  "as_of": "2026-08-05",
+  "as_of": "2026-10-05",
   "currency": "USD",
-  "_policy": "개발/반복 단계는 mini·nano로 비용을 억제하고, 최종 산출물 생성 시에만 gen_model을 gpt-5로 올린다. 모델 교체는 이 파일만 수정하면 되며 코드 변경은 불필요하다.",
-  "gen_model": "gpt-5-mini",
-  "parse_model": "gpt-5-nano",
-  "final_gen_model": "gpt-5",
-  "final_parse_model": "gpt-5-mini",
-  "briefing_model": "gpt-5-mini",
+  "_policy": "LLM 작업을 복잡도로 두 단계로 나눈다(사용자 결정 2026-10-05). 판단이 필요한 교체 설명(briefing)은 complex_model, 리뷰 문장 생성·분석처럼 단순한 작업은 simple_model. 모델 교체는 이 파일만 수정하면 된다. 동결 fixture(fixtures/meta.json)는 생성 당시 모델(gpt-5-mini/nano)을 그대로 기록한다. 참고(2026-10-05 가격 확인): gpt-6-luna($0.10/$0.50)가 gpt-5.5($5/$30)보다 훨씬 싸다 -- 복잡도 단계와 가격 단계가 반대다. 시연 중 상시 호출은 briefing뿐이고 simple 단계는 fixture 재생성 때만 쓴다. 추론 깊이(reasoning_effort)는 모델 항목 안에 둔다 -- 모델을 바꾸면 그 모델이 지원하는 값만 적용된다(없으면 보내지 않음).",
+  "complex_model": "gpt-6-luna",
+  "simple_model": "gpt-5.5",
+  "gen_model": "gpt-5.5",
+  "parse_model": "gpt-5.5",
+  "final_gen_model": "gpt-5.5",
+  "final_parse_model": "gpt-5.5",
+  "briefing_model": "gpt-6-luna",
   "models": {
-    "gpt-5":      {"input_per_1m": 1.25, "output_per_1m": 10.0},
-    "gpt-5-mini": {"input_per_1m": 0.25, "output_per_1m": 2.0},
-    "gpt-5-nano": {"input_per_1m": 0.05, "output_per_1m": 0.40}
+    "gpt-5": {
+      "input_per_1m": 1.25,
+      "output_per_1m": 10.0
+    },
+    "gpt-5-mini": {
+      "input_per_1m": 0.25,
+      "output_per_1m": 2.0
+    },
+    "gpt-5-nano": {
+      "input_per_1m": 0.05,
+      "output_per_1m": 0.4
+    },
+    "gpt-6-luna": {
+      "input_per_1m": 0.1,
+      "output_per_1m": 0.5,
+      "reasoning_effort": "low"
+    },
+    "gpt-5.5": {
+      "input_per_1m": 5.0,
+      "output_per_1m": 30.0
+    }
   },
-  "source_note": "OpenAI 공식 가격 페이지(developers.openai.com/api/docs/pricing)에서 2026-08-05 확인. 표준(Standard) 티어 기준."
+  "source_note": "OpenAI 공식 가격 페이지(developers.openai.com/api/docs/pricing), 표준(Standard) 티어. gpt-5·mini·nano는 2026-08-05, gpt-6-luna·gpt-5.5는 2026-10-05 확인."
 }

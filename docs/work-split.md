@@ -86,6 +86,8 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-a→claude-b] 교체 설명 재료 연결(`api/routes/whatif.py`, 2곳): `swap_context(..., project_id=req.swap.project_id)`와 `generate_briefing(..., score_change={항목: after-before, "total": objective_delta})`.
+  둘 다 선택 인자라 지금도 동작은 같다. 넘기면 LLM이 프로젝트 요구 기술·점수 변화로 결론을 낸다(실측: 넘기지 않으면 "정보 부족으로 단정 어려움"이 반복). claude-a 쪽은 `feat/claude-a-llm-tiers`에 완료 · 상태: 대기
 - 2026-10-05 [claude-a→claude-b] K5 연결(설계 `.omc/plan/2026-10-05-k5-evidence-provenance.md` 5절, claude-a 쪽은 `feat/claude-a-k5-evidence`에 완료):
   (1) `api/datasets.py::build_active` — `ActiveDataset`에 `evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))`(`api.rag.evidence`). 실데이터(synthetic이 true가 아님)는 원문을 색인에도 두지 않는다(사용자 결정).
   (2) `api/routes/whatif.py` — **같은 색인을 두 곳에**: `swap_context(..., evidence=dataset.evidence)`와 `generate_briefing(..., evidence=dataset.evidence)`. 앞의 것만 넘기면 `generate_briefing`이 ValueError(code `missing_index`)로 규칙 기반 전환한다.

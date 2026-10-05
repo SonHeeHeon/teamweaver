@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-05 · claude-a · LLM 모델 2단계 분리·프롬프트 튜닝 + 해설 문서 갱신
+- 브랜치/커밋: `feat/claude-a-llm-tiers` (main 미병합)
+- 한 일:
+  - 모델 2단계(사용자 지시): 교체 설명=`gpt-6-luna`(complex), 리뷰 생성·분석=`gpt-5.5`(simple). `fixtures/pricing.json`만 바꾸면 된다. 단가 확인 결과 luna($0.10/$0.50)가 5.5($5/$30)보다 싸다(복잡도 단계와 가격이 반대 — 사용자에게 보고).
+  - 교체 설명 프롬프트: 결론 먼저, 명분 2~3문장·위험 ≤3·대안 ≤2, `context.project`·`score_change`를 받으면 그것으로 판단. 추론 깊이는 모델 항목의 `reasoning_effort`(luna=low).
+    숨김 모드는 라벨을 옮겨 적은 인용·따옴표를 허용(라벨 공개는 사용자 결정), 그 밖의 인용은 계속 거부.
+  - `swap_context(..., project_id=)` 선택 인자(기존 SQLite 표 읽기만), `usage_summary`는 단가 없는 모델을 0원 대신 None, 리뷰 생성 프롬프트는 항목 단어 활용형 허용.
+  - `experiments/bench/exp2_pipeline.py`: 비용 추정 모델을 실측 모델 gpt-5-nano로 고정(parse_model 변경으로 깨지던 것).
+  - 해설 문서: `outputs/eli5-teamweaver-status.html`(9-12판 → 10-05 현황), `outputs/eli5-mid-project-quality-audit.html`(10-05 처리 현황 표 추가). 처음 Git에 올린다.
+- 상대 영향:
+  - **claude-b**: whatif 라우트 연결 2곳을 "요청"에 올렸다. `exp2_pipeline.py`(네가 임시로 맡은 experiments 영역) 한 군데를 고쳤다 — 실측 모델 고정뿐.
+  - 테스트 기준선: 922 passed, 18 deselected.
+- 검증: 전체 922 passed. 실제 API(fixture): 튜닝 전 설명 14초·위험 4~5개·결론 회피 → 튜닝 후 16/16 채택, 4~6초(project·score_change 넣은 조건), 위험 ≤3·대안 ≤2. 리뷰 분석 gpt-5.5 인용 60/60 원문 일치. 생성 6건 어색한 표현 0.
+  리뷰: Codex 주간 한도 소진 → Claude Opus 폴백 1라운드, MUST 0·SHOULD 2·nit 3 반영.
+- 근거: `.omc/reports/2026-10-05-llm-tiers.md`
+
 ## 2026-10-05 · claude-b · 정리: 실행 스크립트, 409 뒤 적용 경합 수정, 결정 기록
 - 브랜치/커밋: `feat/claude-b-cleanup`(main `b48d5c8` 위). 이 기록을 포함한 브랜치를 main에 fast-forward하고 origin에 push한다(사용자 지시).
 - 한 일:
