@@ -41,12 +41,20 @@ class PlanEvaluation:
     shortfalls: tuple[GradeShortfall, ...]
 
 
+# claude-b's monthly-allocation layer (api/monthly_eval.py on feat/claude-b-monthly-alloc) checks this flag and stops
+# recomputing per-month violations itself once the evaluator handles monthly_alloc.
+SUPPORTS_MONTHLY_ALLOC = True
+MONTHLY_MEAN_TOL = 1e-5        # alloc may be the 6-decimal floored mean of the monthly values (plan_entries)
+
 def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: MilpParams,
                   entries: list[AssignEntry]) -> PlanEvaluation:
     people, projects = graph.people, graph.projects
     pdx, jdx = graph.pid_index, graph.project_index
 
     alloc: dict[tuple[int, int], float] = {}
+    # 달별 투입률(claude-b 월별 투입률 작업, 2026-10-05 요청): 항목에 monthly_alloc {진행 달: 투입률}이 있으면
+    # 가용률·월 예산·투입률 범위를 달별로 검사하고 기술항은 진행 달 평균으로 계산한다. 없으면 이전과 비트 단위로 같다.
+    monthly: dict[tuple[int, int], dict[int, float]] = {}
     for e in entries:
         if e.person_id not in pdx:
             raise ValueError(f"unknown person_id: {e.person_id!r}")
@@ -58,6 +66,25 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
         if key in alloc:
             raise ValueError(f"duplicate assignment: {e.person_id} on {e.project_id}")
         alloc[key] = e.alloc
+        m_alloc = getattr(e, "monthly_alloc", None)
+        if m_alloc:                                  # None and {} both mean "same allocation every month"
+            months = set(projects[key[1]].months)
+            if not all(isinstance(m, int) and not isinstance(m, bool) for m in m_alloc):
+                raise ValueError(f"monthly_alloc keys must be integer months for {e.person_id} on {e.project_id}")
+            given = {m: float(v) for m, v in m_alloc.items()}
+            if set(given) != months:
+                raise ValueError(f"monthly_alloc for {e.person_id} on {e.project_id} must cover exactly the "
+                                 f"project months {sorted(months)}, got {sorted(given)}")
+            if not all(math.isfinite(v) for v in given.values()):
+                raise ValueError(f"non-finite monthly_alloc for {e.person_id} on {e.project_id}")
+            mean = sum(given.values()) / len(given)
+            if abs(mean - e.alloc) > MONTHLY_MEAN_TOL:
+                raise ValueError(f"alloc {e.alloc} of {e.person_id} on {e.project_id} is not the mean "
+                                 f"{mean:.6f} of its monthly_alloc")
+            monthly[key] = given
+
+    def month_alloc(i: int, j: int, month: int) -> float:
+        return monthly[(i, j)][month] if (i, j) in monthly else alloc[(i, j)]
 
     members: dict[int, set[int]] = {}
     for i, j in alloc:
@@ -67,7 +94,8 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
         team = members.get(j, ())
         return p in team and q in team
 
-    skill = sum(float(S[i, j]) * a for (i, j), a in alloc.items()) \
+    skill = sum(float(S[i, j]) * (sum(monthly[(i, j)].values()) / len(monthly[(i, j)]) if (i, j) in monthly else a)
+                for (i, j), a in alloc.items()) \
         + params.seat_fit_weight * sum(float(S[i, j]) for (i, j) in alloc)      # per-seat fit, same as the MILP
     reward = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)
     penalty = _overfamiliar_pairs(graph, params.clique_threshold_months)
@@ -87,15 +115,25 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
                 violations.append(PlanViolation(
                     "grade_over", f"{project.id}:{grade.value}", placed, need,
                     f"{project.id}의 {grade.value} 배치 {placed}명이 요구 {need}명을 초과"))
-        cost = sum(people[i].monthly_rate * alloc[(i, j)] for i in team)
-        if cost > project.monthly_budget + TOL:
-            violations.append(PlanViolation(
-                "budget", project.id, cost, project.monthly_budget,
-                f"{project.id} 월 비용 {cost:,.0f}이 예산 {project.monthly_budget:,}을 초과"))
+        if not any((i, j) in monthly for i in team):
+            cost = sum(people[i].monthly_rate * alloc[(i, j)] for i in team)
+            if cost > project.monthly_budget + TOL:
+                violations.append(PlanViolation(
+                    "budget", project.id, cost, project.monthly_budget,
+                    f"{project.id} 월 비용 {cost:,.0f}이 예산 {project.monthly_budget:,}을 초과"))
+        else:
+            # Per-month location (j:monthM) only when someone on this team has monthly values. A swap passes the
+            # leaver's monthly_alloc to the newcomer (whatif._swapped_entries), so before/after stay comparable.
+            for month in project.months:
+                cost = sum(people[i].monthly_rate * month_alloc(i, j, month) for i in team)
+                if cost > project.monthly_budget + TOL:
+                    violations.append(PlanViolation(
+                        "budget", f"{project.id}:month{month}", cost, project.monthly_budget,
+                        f"{project.id} {month + 1}번째 달 비용 {cost:,.0f}이 예산 {project.monthly_budget:,}을 초과"))
 
     for i, person in enumerate(people):
         for month, available in enumerate(person.availability):
-            load = sum(a for (pi, j), a in alloc.items()
+            load = sum(month_alloc(pi, j, month) for (pi, j) in alloc
                        if pi == i and month in projects[j].months)
             if load > available + TOL:
                 violations.append(PlanViolation(
@@ -117,6 +155,14 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
                 f"{people[i].id}의 계획 {month + 1}번째 달 동시 프로젝트 {n}개가 상한 {limit}개를 초과"))
 
     for (i, j), a in alloc.items():
+        if (i, j) in monthly:
+            for month, v in sorted(monthly[(i, j)].items()):
+                if v < params.min_alloc - TOL or v > 1.0 + TOL:
+                    violations.append(PlanViolation(
+                        "alloc_range", f"{people[i].id}:{projects[j].id}:month{month}", v, params.min_alloc,
+                        f"{people[i].id}의 {projects[j].id} {month + 1}번째 달 투입률 {v:.2f}가 허용 범위"
+                        f"({params.min_alloc:.2f}~1.00) 밖"))
+            continue
         if a < params.min_alloc - TOL or a > 1.0 + TOL:
             violations.append(PlanViolation(
                 "alloc_range", f"{people[i].id}:{projects[j].id}", a, params.min_alloc,

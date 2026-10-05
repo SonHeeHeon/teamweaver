@@ -14,6 +14,7 @@ ROLE_TYPES = ("개발", "컨설팅")
 SECTORS = ("대내", "대외금융", "대외공공")
 PHASES = ("실행", "제안")
 WORK_STATUSES = ("미등록", "진행중", "확정완료")
+YES_NO = ("Y", "N")
 POLARITIES = ("positive", "negative")
 
 
@@ -33,6 +34,7 @@ class FileSpec:
     name: str
     columns: tuple[Column, ...]
     key: tuple[str, ...]            # columns that must be unique together
+    optional: bool = False          # a missing optional file is an empty table, not an error
 
 
 FILES: tuple[FileSpec, ...] = (
@@ -104,6 +106,14 @@ FILES: tuple[FileSpec, ...] = (
         Column("polarity", "enum", choices=POLARITIES),
         Column("item", "str"),
     ), key=("review_id", "polarity", "item")),
+    # Who is on which planned project right now (the staffing system's current roster). Optional: without it
+    # every seat is planned from scratch, as before. locked=Y must be kept (e.g. a customer-named person).
+    FileSpec("current_assignments.csv", (
+        Column("person_id", "str", ref="people.csv:person_id"),
+        Column("project_id", "str", ref="projects.csv:project_id"),
+        Column("alloc", "float", min=0.0, max=1.0),
+        Column("locked", "enum", choices=YES_NO),
+    ), key=("person_id", "project_id"), optional=True),
 )
 
 FILE_SPECS = {f.name: f for f in FILES}

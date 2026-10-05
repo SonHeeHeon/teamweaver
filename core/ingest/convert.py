@@ -10,7 +10,7 @@ from collections import defaultdict
 from itertools import combinations
 
 from core.datagen.parse_reviews import parse_reviews_rule_based
-from core.domain.models import (CoworkRecord, Dataset, Grade, ParsedReview, PeerReview, Person,
+from core.domain.models import (CoworkRecord, CurrentAssignment, Dataset, Grade, ParsedReview, PeerReview, Person,
                                 Project, ProjectPhase, ReviewSection, Sector, SkillRequirement)
 from core.ingest.loader import Bundle
 from core.ingest.report import IngestReport
@@ -161,6 +161,16 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     cutoff = first - dt.timedelta(days=1)
     report.notes.append(f"협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, "
                         f"{cutoff.isoformat()}까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다.")
+    planned = {j.id for j in projects}
+    current = [CurrentAssignment(person_id=r["person_id"], project_id=r["project_id"], alloc=r["alloc"],
+                                 locked=r["locked"] == "Y")
+               for r in t.get("current_assignments.csv") or [] if r["project_id"] in planned]
+    dropped = len(t.get("current_assignments.csv") or []) - len(current)
+    if dropped:
+        report.warn("current_assignments.csv", f"{dropped} current assignments point at projects outside the "
+                    "planning horizon and are ignored")
+    if current:
+        report.notes.append(f"현재 투입 {len(current)}건(잠금 {sum(c.locked for c in current)}건)을 연속성 입력으로 넘겼다.")
     ds = Dataset(people=people, projects=projects, coworks=_coworks(t["work_history.csv"], cutoff),
-                 reviews=reviews)
+                 reviews=reviews, current=current)
     return ds, parse_reviews_rule_based(ds.reviews)
