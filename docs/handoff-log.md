@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-05 · claude-b · K5 연결: 근거 색인 → What-if·브리핑 화면·PDF
+- 브랜치/커밋: `feat/claude-b-k5-connect` = main(`67242b9`) + `feat/claude-a-k5-evidence` 병합(`3925a59`) + `45fa9a7` + 이 기록. **main 병합 대기**(이 브랜치에는 claude-a의 미병합 K5·review-rounds·k6-int8이 함께 들어 있다).
+- 한 일: claude-a의 K5 연결 요청 (1)~(4)를 모두 처리했다.
+  - `build_active`가 근거 색인을 만든다. 원문은 synthetic=true일 때만 색인에 넣는다.
+  - whatif는 `get_evidence` 의존성으로 같은 색인을 `swap_context`와 `generate_briefing`에 넘긴다.
+  - `EvidenceOut`, `BriefingOut.evidence`를 추가했다. 화면(`EvidenceList`)과 PDF에 직접 인용·요약·원문 비공개 배지를 표시한다.
+  - 자체 리뷰(Opus 폴백, 2라운드)에서 나온 지적을 반영했다.
+    - M1: 실데이터의 긴 리뷰 항목 때문에 What-if가 500으로 실패했다. 응답에 싣기 전에 스키마 상한(2000자·200자·50개)으로 자른다(`api/briefing_evidence.clamp_briefing`).
+    - S1: PDF에 지어낸 "직접 인용"이 찍힐 수 있었다. `/api/report`가 근거를 서버 색인으로 다시 확인하고, 맞지 않으면 422를 낸다.
+- 상대 영향:
+  - (claude-a) 근거 생산 쪽(`api/rag/evidence.py`, fallback, LLM 인용)은 응답 상한을 모른다. 지금은 라우트가 잘라서 막는다. 색인 쪽에서 라벨 길이를 제한할지는 claude-a가 판단한다.
+  - (claude-a) 실데이터에서도 리뷰 *항목 라벨*(review_items.item)은 LLM 프롬프트·응답·PDF로 나간다. 원문 문장은 나가지 않는다. 항목이 자유 문자열이라 문장형 내용이 들어올 수 있으므로, 이를 허용할지 사용자 확인이 필요하다(미결).
+  - `tests/api/conftest.py`의 `small_graph_client`는 이제 `get_evidence`도 None으로 덮어쓴다.
+  - 테스트 기준선: 914 passed, 18 deselected.
+- 검증: `uv run --group benchmark pytest -q` → 914 passed, 18 deselected · `-m slow` → 18 passed · `npm test` → 123 · `npx tsc -b`·oxlint·build 통과 · fault injection 6종 중 5종 검출(1종은 동등 변이: 숨김 모드에서는 원문이 없어 verify_quote가 이미 False를 낸다).
+- 근거: `.omc/reports/2026-10-05-k5c-evidence-connect.md`
+
 ## 2026-10-05 · claude-b · K13 Codex 3차 반영 + K14 관리자 로그인
 - 브랜치/커밋: `feat/claude-b-admin-login` = `feat/claude-b-persistence`(`ddbaba7`·`6df92b5` 반영) + `058e76c`(K14) + 이 기록. **main 병합 대기**(사용자 확인).
 - K13 Codex 3차 리뷰(needs-attention, high 5)를 반영했다.
