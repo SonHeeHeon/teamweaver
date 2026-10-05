@@ -36,4 +36,6 @@ if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" \
 fi
 
 echo "TeamWeaver: http://$HOST:$PORT"
+# 시연 기본 데이터: 실제 시스템 형식의 조직형 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.
+export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$PWD/demo/org-n100}"
 exec uv run uvicorn api.main:app --host "$HOST" --port "$PORT"

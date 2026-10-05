@@ -1,0 +1,31 @@
+{
+ "dataset_id": "org-n100-s2026",
+ "schema_version": 1,
+ "horizon_start": "2026-10",
+ "horizon_months": 6,
+ "cost_unit": "가상비용점(월)",
+ "synthetic": true,
+ "seed": 2026,
+ "generator": "core.ingest.org_profile v1",
+ "groups": {
+  "DP": 100
+ },
+ "flagship_project": "J001",
+ "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+ "peak_demand_ratio": 0.8377,
+ "files": {
+  "people.csv": "e8bc756a65c4178917fa1d733bcab2ffc36e0a3ecb520c73bb93a664fbc4e138",
+  "rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
+  "person_skills.csv": "694fbf678fc27b88ee67a3beb606dd466ebd4c10f48eb1fae7f4fdac7e3cc782",
+  "work_history.csv": "99ff6b05c74b08602ffc7662039b55fa08c5d50146ca71fe5b87369074e9d790",
+  "availability.csv": "f2f56f8d9a198f72ea06e9ef21f60f75f7e091be3d312b5a44d08e3c5f37ad9b",
+  "projects.csv": "3873f0453c0dddd253461c176a8ec1f35b17fa1ab491e8906bc38115a3d225ed",
+  "project_grade_requirements.csv": "7e9fd7efcce53de95b47f38a7126b35aa30eecfbf844267080af903750e0cec1",
+  "project_skill_requirements.csv": "01717f6d440289c8b607b078a87c6b0d30e050c12da38a89ebf8df03d3ec7ffd",
+  "reviews.csv": "34fd4f20c58eac5ce9a1f45f560e05d122c6d5b80e360cf1322aae42cee555b5",
+  "review_items.csv": "2873a121c44d095bab9eea8d434df113317af477e2739a5bf1e71c8461525667",
+  "current_assignments.csv": "9d607dd90c1b61a02f42435038fa34556d23de287524b47519b47927a7afeeae",
+  "project_outcomes.csv": "3f325a189795e636e0bece3a6428e05710a890eba8f4f5f6dd5b995ef7fe4180",
+  "replacements.csv": "ae494d879bd84733a2d383b0c5fbe6c14f1f1158af6b4a2bb798717111d6f072"
+ }
+}
