@@ -78,6 +78,44 @@
 - 교차 리뷰(claude-b → claude-a): `feat/claude-a-review-rounds` MUST 없음(노트 문구 SHOULD 1 → claude-a가 `3c24bc6`에서 반영). `feat/claude-a-k6-int8` MUST·SHOULD 없음.
 - 근거: `.omc/reports/2026-10-05-k13-persistence.md`, `.omc/reports/2026-10-05-xreview-claude-a-review-rounds.md`
 
+## 2026-10-05 · claude-a · K5 설명 근거의 출처·직접 인용 (claude-a 쪽)
+- 브랜치/커밋: `feat/claude-a-k5-evidence` (main + `feat/claude-a-review-rounds` + `feat/claude-a-k6-int8` 병합 위, main 미병합)
+- 한 일: 브리핑 문맥의 리뷰 근거를 극성 숫자에서 출처 ID가 붙은 근거로 바꿀 수 있게 했다(`api/rag/evidence.py`).
+  LLM 브리핑은 인용을 원문과 글자 그대로 대조하고, 하나라도 어긋나면(없는 출처·바꿔 쓴 인용·본문 속 따옴표·인용 없는 출처 표시) 버리고 규칙 기반으로 전환한다(사용자 결정).
+  실데이터(synthetic이 true가 아님)는 원문을 화면·LLM 어디에도 보내지 않고 항목 라벨만 쓴다(사용자 결정). 버린 사유는 `code=`로 로그에 남는다.
+- 상대 영향:
+  - **claude-b**: 연결 4건을 work-split "요청"에 올렸다. 연결 전에는 API 동작이 그대로다(색인을 안 넘기면 예전과 같음).
+    `generate_briefing`·`rule_based_briefing` 결과에 `evidence` 키가 새로 있지만 지금 `BriefingOut`이 버린다.
+  - **Codex**: 공유 계약 변경 없음. 참고 정보 1건(요청란).
+  - 테스트 기준선: 이 브랜치 850 passed, 15 deselected.
+- 검증: `uv run --group benchmark pytest -q` → 850 passed. 변이 2종(느슨한 인용 비교, 본문 따옴표 검사 제거) → 시험 실패 확인.
+  리뷰: Codex 시도 1회 → 주간 한도 소진(재시도 10-10 13:16) → Claude Opus 폴백 적대적 2라운드(1차 MUST 1·SHOULD 3, 2차 MUST 1·SHOULD 2 모두 반영). 2차 수정분은 시험으로만 확인.
+- 자체 리뷰(사용자 결정: 교차 리뷰 중단, 각자 자체 리뷰): main 대비 전체 diff 재검토 + 연결 흉내 스모크(가상 198조합 통과, 숨김 모드 100조합 원문 유출 없음), MUST 0.
+- 근거: `.omc/reports/2026-10-05-k5-evidence.md`
+
+## 2026-10-05 · claude-a · K6 협업 탐색 int8 넘침 수정
+- 브랜치/커밋: `feat/claude-a-k6-int8` (main 미병합, 사용자 승인 대기)
+- 한 일: `MemoryGraph.synergy_context_memory`가 한 홉 확장에서 frontier 이웃 수를 int8로 세어, 128개 이상(정확히 256개면 0)일 때 그 노드를 도달 집합에서 빠뜨렸다. int32로 바꾸고 127/128/150/256 병렬 경로 시험을 추가했다(고치기 전 128·150·256 실패 확인).
+- 상대 영향:
+  - **Codex (공유 `core/graph/`)**: 결과는 SQL·Cypher 질의와 같아지는 방향으로만 바뀐다. 실험 1의 예전 결과는 "K6 이전 측정"으로 볼 것(시간 차이 미미).
+  - 테스트 기준선: main 648 → 652 passed(이 브랜치 단독).
+- 검증: `uv run --group benchmark pytest -q` → 652 passed, 10 deselected. 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 1라운드, MUST·SHOULD 0, nit 2(주석 표현 반영, 실험 메모 위 기록).
+- 근거: `.omc/reports/2026-10-05-k6-int8.md`
+## 2026-10-05 · claude-a · 리뷰 회차 확장(예전 회차도 사용) + K2 main 병합
+- 브랜치/커밋: K2는 main에 fast-forward 병합(`f10e710`, 사용자 승인). 회차 확장은 `feat/claude-a-review-rounds`(main 미병합, 사용자 승인 대기).
+- 한 일: 사용자 요청("최신 회차만이 아니라 예전 회차도")으로 같은 평가자→피평가자의 모든 리뷰 회차를 협업 점수에 쓴다.
+  방향 안의 회차를 먼저 평균하고 두 방향을 평균한다. `core.ingest` 변환은 모든 회차를 넘기고, 같은 날 두 회차 오류는 없앴다.
+  K2 항목의 "최신 리뷰 회차만 쓴다"는 이 항목으로 정정한다. 점수 구간 12/36/60/96개월은 사용자 확정.
+- 상대 영향:
+  - **Codex·claude-b (공유 `core/graph/memory_graph.py`)**: 방향당 리뷰 1건인 데이터(fixture·datagen·Phase 1 시나리오·bench)는 쌍 점수가 비트 단위로 같다(테스트 고정).
+    리뷰 목록과 parsed의 순서·길이가 다르면 경고 로그 후 기존 방식(방향당 마지막 1건).
+  - **Codex (`core/graph/rehydrate.py`, `core/datagen/llm_checkpoint.py`)**: SQLite review 표에 회차 칸이 없어, 같은 방향 리뷰가 여러 건이면 `from_sqlite`와 LLM checkpoint가 `ValueError`로 거부한다.
+    중복 검사는 기존 review 스캔 안에서 하므로 exp5 `rehydrate_ms` 측정 경로에 질의가 늘지 않는다. 회차 칸이 필요하면 "요청"에서 합의.
+  - **claude-b**: K9 업로드 데이터에 여러 회차가 있으면 이제 모두 점수에 반영된다. `build_sqlite`·RAG 근거는 회차 수만큼 리뷰 행이 늘 뿐 오류는 없다.
+  - 테스트 기준선: 648 → **656 passed, 10 deselected**(`--group benchmark`), slow 10 passed.
+- 검증: `uv run --group benchmark pytest -q` → 656 passed · `pytest -m slow` → 10 passed · 방향 균형 제거 변이 → 시험 실패 확인. 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 2라운드, MUST 0.
+- 교차 리뷰 요청: claude-b에게 `feat/claude-a-review-rounds` 병합 전 리뷰를 부탁한다(`.omc/agents/claude-a-status.md`).
+- 근거: `.omc/reports/2026-10-05-review-rounds.md`
 ## 2026-10-05 · claude-b · 통합 브랜치 실브라우저 E2E
 - 브랜치/커밋: `feat/claude-b-integration`의 테스트 커밋(아래 기록 직전). main 병합은 사용자 승인 후.
 - 한 일: slow 테스트 `tests/api/test_ui_e2e.py`를 추가했다.

@@ -7,6 +7,8 @@
 한계(의도된 것): availability와 projects는 저장소에서 복원하지 않고 상수로
 채운다. 이 모듈의 목적은 재수화 **비용** 비교이지 완전한 상태 복원이 아니다.
 evidence는 SQLite review 테이블에 컬럼 자체가 없어 복원 대상에서 제외한다.
+같은 평가자→피평가자 리뷰가 여러 회차면 거부한다(ValueError) -- 표에 회차 칸이 없어
+항목을 회차별로 되돌릴 수 없기 때문이다(2026-10-05).
 """
 from core.domain.models import (CoworkRecord, Dataset, Grade, ParsedReview,
                                 PeerReview, Person, ReviewSection)
@@ -59,8 +61,16 @@ def from_sqlite(conn) -> MemoryGraph:
             "SELECT reviewer_id, reviewee_id, item, is_positive FROM review_item"):
         items.setdefault((rv, re_), {True: [], False: []})[bool(pos)].append(it)
     reviews, parsed = [], []
+    seen: set[tuple[str, str]] = set()
     for rv, re_, pol in conn.execute(
             "SELECT reviewer_id, reviewee_id, text_polarity FROM review"):
+        # The v1 schema stores review items per (reviewer, reviewee) without a round id, so several rounds
+        # of one direction cannot be told apart again; refuse instead of silently merging their items.
+        # Checked inside the existing scan so the measured rehydration path gets no extra query.
+        if (rv, re_) in seen:
+            raise ValueError(f"review store holds several rounds for {rv}→{re_}; "
+                             "rehydration supports one review per direction (no round column in the schema)")
+        seen.add((rv, re_))
         sel = items.get((rv, re_), {True: [_UNKNOWN], False: [_UNKNOWN]})
         reviews.append(PeerReview(
             reviewer_id=rv, reviewee_id=re_,
