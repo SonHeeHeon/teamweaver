@@ -4,7 +4,7 @@
   "platform": "macOS-26.5.2-arm64-arm-64bit",
   "machine": "arm64",
   "cpu_count": 10,
-  "cpu_model": "arm",
+  "cpu_model": "Apple M4",
   "ram": "16.0 GiB",
   "cbc": "Version: 2.10.3",
   "neo4j_server": "unavailable (ModuleNotFoundError)",
@@ -25,7 +25,9 @@
   "business_validity": "NOT_CALIBRATED",
   "solver": "CBC",
   "available_pulp_solvers": [
-   "PULP_CBC_CMD"
+   "PULP_CBC_CMD",
+   "SCIP_PY",
+   "HiGHS"
   ],
   "cases": [
    {
@@ -50,10 +52,10 @@
      "constraints": 8
     },
     "timings_seconds": {
-     "build": 0.0007945840479806066,
-     "solve": 0.055134707945398986,
-     "validate": 7.52920750528574e-05,
-     "total": 0.06228558300063014
+     "build": 0.00016045779921114445,
+     "solve": 0.0028018748853355646,
+     "validate": 4.583410918712616e-05,
+     "total": 0.00486329197883606
     },
     "passed": true
    },
@@ -79,10 +81,10 @@
      "constraints": 8
     },
     "timings_seconds": {
-     "build": 0.00027704203967005014,
-     "solve": 0.018395249964669347,
-     "validate": 6.491690874099731e-05,
-     "total": 0.021020457963459194
+     "build": 0.000223665963858366,
+     "solve": 0.00675616692751646,
+     "validate": 4.0833139792084694e-05,
+     "total": 0.008972208015620708
     },
     "passed": true
    },
@@ -108,10 +110,10 @@
      "constraints": 11
     },
     "timings_seconds": {
-     "build": 0.00031766598112881184,
-     "solve": 0.015683915931731462,
-     "validate": 5.512498319149017e-05,
-     "total": 0.018357207998633385
+     "build": 0.00025883386842906475,
+     "solve": 0.006657083053141832,
+     "validate": 4.537496715784073e-05,
+     "total": 0.009028208907693624
     },
     "passed": true
    },
@@ -137,10 +139,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.0006455000257119536,
-     "solve": 0.012598083005286753,
-     "validate": 7.904099766165018e-05,
-     "total": 0.016715417033992708
+     "build": 0.0003075001295655966,
+     "solve": 0.005061374977231026,
+     "validate": 5.6124990805983543e-05,
+     "total": 0.008754500187933445
     },
     "passed": true
    },
@@ -166,10 +168,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.000271917087957263,
-     "solve": 0.011445833020843565,
-     "validate": 7.487495895475149e-05,
-     "total": 0.015161291928961873
+     "build": 0.00026270817033946514,
+     "solve": 0.005172791192308068,
+     "validate": 7.30419997125864e-05,
+     "total": 0.009239250095561147
     },
     "passed": true
    },
@@ -195,10 +197,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.00028008304070681334,
-     "solve": 0.013433832908049226,
-     "validate": 7.78749817982316e-05,
-     "total": 0.017175332992337644
+     "build": 0.0002940420527011156,
+     "solve": 0.004935750039294362,
+     "validate": 6.008404307067394e-05,
+     "total": 0.008680709172040224
     },
     "passed": true
    },
@@ -224,10 +226,10 @@
      "constraints": 17
     },
     "timings_seconds": {
-     "build": 0.0002881661057472229,
-     "solve": 0.01074141706340015,
-     "validate": 7.433304563164711e-05,
-     "total": 0.014593250001780689
+     "build": 0.000299875158816576,
+     "solve": 0.005649166880175471,
+     "validate": 6.958283483982086e-05,
+     "total": 0.009531958028674126
     },
     "passed": true
    }
@@ -265,7 +267,7 @@
    "projects": 10,
    "parsed_reviews": 137,
    "status": "Optimal",
-   "objective": 16.785188155615085,
+   "objective": 16.50119807692308,
    "validation_valid": true,
    "validation_issues": [],
    "model_size": {
@@ -273,14 +275,14 @@
     "constraints": 6831
    },
    "timings_seconds": {
-    "solve": 0.6690536249661818,
-    "total": 0.6785589159699157
+    "solve": 0.17245508288033307,
+    "total": 0.182915291050449
    },
    "passed": true
   },
   "failures": [],
   "completed_cases": 11,
-  "elapsed_seconds": 1.2044562499504536,
+  "elapsed_seconds": 0.5158269999083132,
   "calculation_status": "PASS"
  }
 }

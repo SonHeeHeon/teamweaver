@@ -23,6 +23,8 @@ def _inject_cbc_candidate(monkeypatch, *, status, fractional=False, over_budget=
 
     def solve(problem, solver=None, **kwargs):
         problem.status = status
+        # a real solver that hands back values also reports a solution status (HiGHS is checked on it)
+        problem.sol_status = pulp.LpSolutionIntegerFeasible
         for variable in problem.variables():
             variable.varValue = values[variable.name]
         return status
@@ -31,11 +33,12 @@ def _inject_cbc_candidate(monkeypatch, *, status, fractional=False, over_budget=
     return solve
 
 
+@pytest.mark.parametrize("solver", ["highs", "cbc"])      # the gate must hold for the service solver and CBC
 @pytest.mark.parametrize("entrypoint", ["diagnostic", "plan", "stream"])
 @pytest.mark.parametrize("failure", ["fractional", "budget"])
-def test_service_entrypoints_reject_invalid_native_candidate(monkeypatch, entrypoint, failure):
+def test_service_entrypoints_reject_invalid_native_candidate(monkeypatch, entrypoint, failure, solver):
     graph, skill, synergy = budget_shortfall_fixture()
-    params = MilpParams(time_limit=0, pair_keep_ratio=0.0)
+    params = MilpParams(time_limit=0, pair_keep_ratio=0.0, solver=solver)
     _inject_cbc_candidate(
         monkeypatch,
         status=pulp.LpStatusNotSolved if failure == "fractional" else pulp.LpStatusOptimal,

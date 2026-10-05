@@ -37,7 +37,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/domain/models.py` 입력 계약(Pydantic). 6개월 고정 horizon, 레벨 1~5, 4등급.
 - `core/graph/memory_graph.py` S/C 계산용 인메모리 구조 · `core/graph/sqlite_store.py` 근거 검색용 SQLite.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
-- `core/optimize/milp.py` 제품 MILP(PuLP+CBC) · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
+- `core/optimize/milp.py` 제품 MILP(PuLP+**HiGHS**, 2026-10-05부터. `MilpParams.solver="cbc"`는 비교용) · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
   · `validation.py` 원시 해 독립 검증 · `greedy.py` 기준선.
 - `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`).
   숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월).
@@ -46,9 +46,14 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 코드만 봐서는 모르는 함정
 
-- **MILP 정식이 두 벌이다**: `core/optimize/milp.py::solve_milp_diagnostic`(서비스, CBC 고정)와
+- **MILP 정식이 두 벌이다**: `core/optimize/milp.py::solve_milp_diagnostic`(서비스, HiGHS)와
   `experiments/phase1/solvers.py::_build_model`(벤치, 3솔버 공용). 목적식·제약을 바꾸면 둘 다
-  고치고 Phase 0 검증을 다시 돌려야 한다. 벤치 결론(HiGHS 잠정 기본)은 아직 서비스에 연결 안 됨.
+  고치고 Phase 0 검증(`uv run --group benchmark python -m experiments.bench.phase0_model`)을 다시 돌려야 한다.
+- **HiGHS 경계 잔차**: HiGHS는 z=1.0000000000000007 같은 값을 돌려주고, 독립 검증기(C0)는 범위를 조금이라도
+  넘으면 거절한다. `milp._snap_bounds`가 1e-9 안쪽 잔차만 경계로 옮긴다(원본은 native_capture에 보존).
+  이 처리가 없으면 HiGHS 해가 전부 "검증 실패"가 된다(2026-10-05 리허설에서 실측).
+- **정답 비교는 gap=0**: Phase 0 오라클 사례·시험은 `gap=0.0`으로 푼다. 기본 5% gap이면 솔버가 최적 전에
+  멈춰도 정상인데, 예전에는 CBC가 우연히 최적을 내서 통과하고 있었다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -63,7 +68,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-05 K2 이후 **648 passed, 10 deselected**, `--group benchmark` 포함)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-05 HiGHS 전환 후 **1081 passed, 19 deselected**, `--group benchmark` 포함 · slow 19)
 - HiGHS/SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

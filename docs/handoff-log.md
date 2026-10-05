@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-05 · claude-a · 서비스 솔버 HiGHS 전환(K3) + 규모 리허설 도구
+- 브랜치/커밋: `feat/claude-a-highs-service`(← `feat/claude-a-scale-rehearsal`), main 병합 예정.
+- 한 일:
+  - **사용자 결정으로 서비스 MILP 솔버를 HiGHS로 고정**(`MilpParams.solver="highs"`, CBC는 비교용 내부값, HTTP·설정 화면에서 못 바꿈).
+    근거: Phase 1(1스레드·240초) HiGHS 79/112 vs CBC 22/112, 조직형 100명 리허설에서 같은 30·60초에 HiGHS +35.2/+41.5 vs CBC −5376/−460.
+  - **HiGHS 경계 잔차 처리**: HiGHS가 z=1.0000000000000007 같은 값을 돌려 엄격 검증기(C0)가 전부 거절하던 문제를 `_snap_bounds`(1e-9)로 해결.
+    정리된 값으로 C1 보정 자격·LP를 판단하고, 정리 개수·최대 이동량은 evidence.options에 남긴다. 검증기 허용오차는 그대로.
+  - HiGHS가 해를 못 찾으면(PuLP가 0을 채움) no-incumbent 예외로 처리(이전엔 "검증 거절"로 오분류).
+  - Phase 0 오라클 사례·시험은 `gap=0.0`(정확 최적 비교). 기본 5%로는 HiGHS가 최적 직전에 멈춰 실패했고, 예전 CBC 통과는 우연.
+  - 리허설: `core/ingest/org_profile.py`(100=DP, 200=DP+AI, 300=DP+AI+업무자동화, 익명 최대 사업 28석), `rehearsal/`(실제 서버 전 과정 + 시간별 품질 sweep + 비교 보고서), `docs/model-roadmap.md`(사용자 제안 4건 검토).
+- 상대 영향:
+  - **모두**: 서비스 해 값·시간이 CBC 때와 달라진다(같은 시간에 더 좋은 해). `outputs/phase1-*` 서비스 스모크의 `native_validation`은 이제 정리 후 값 기준. 게이트 시험은 HiGHS·CBC 둘 다 돈다.
+  - **claude-b**: `tests/api/test_settings.py`의 미러 시험에서 `solver`를 의도적 예외로 뺐다. `tests/test_solver_validation_gate.py` 가짜 솔버가 `sol_status`를 설정한다.
+  - 테스트 기준선: **1089 passed, 19 deselected**, slow 19, Phase 0 PASS 11.
+- 검증: 위 명령 전부 통과. 리뷰: Codex 주간 한도 소진 → Claude Opus 폴백 2라운드(1차 SHOULD 2, 2차 SHOULD 1·nit, 모두 반영).
+- 근거: `.omc/reports/2026-10-05-highs-switch.md`, `docs/model-roadmap.md`
+
 ## 2026-10-05 · claude-a · LLM 모델 2단계 분리·프롬프트 튜닝 + 해설 문서 갱신
 - 브랜치/커밋: `feat/claude-a-llm-tiers` (main 미병합)
 - 한 일:

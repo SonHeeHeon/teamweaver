@@ -1,6 +1,8 @@
 import logging
 import math
 from dataclasses import replace
+from typing import Literal
+
 import numpy as np
 import pulp
 from pydantic import BaseModel
@@ -50,6 +52,40 @@ class MilpParams(BaseModel):
     max_pairs: int = 5000
     # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
     max_concurrent_projects: int = 3
+    # 서비스 솔버(2026-10-05 사용자 결정: HiGHS로 고정). Phase 1(1스레드·240초)에서 HiGHS 79/112, CBC 22/112였고,
+    # 조직형 100명 리허설에서도 같은 시간에 CBC보다 훨씬 좋은 해를 냈다(rehearsal/results). "cbc"는 비교·측정용으로만
+    # 남긴다 -- API 요청(MilpParamsIn)과 관리자 설정에는 이 칸이 없어 바꿀 수 없다.
+    solver: Literal["highs", "cbc"] = "highs"
+
+
+BOUND_SNAP_EPS = 1e-9
+
+
+def _snap_bounds(values: dict, lo: float, hi: float | None, integral: bool) -> tuple[dict, int]:
+    """Move values that sit within BOUND_SNAP_EPS outside a variable bound (or of an integer, for binaries)
+    onto it. HiGHS's postsolve leaves residues like z = 1.0000000000000007 that the strict independent
+    validator (C0) rejects as out of domain. The snap is far below every solver tolerance (1e-6). The snapped
+    candidate becomes the assessment's native_capture too (so C1 judges what the validator sees); the evidence
+    keeps how many values moved and the largest move (snapped_to_bounds, max_snap), not which variables."""
+    out, n = {}, 0
+    for k, v in values.items():
+        w = v
+        if lo - BOUND_SNAP_EPS <= v < lo:
+            w = lo
+        elif hi is not None and hi < v <= hi + BOUND_SNAP_EPS:
+            w = hi
+        if integral and abs(w - round(w)) <= BOUND_SNAP_EPS:
+            w = float(round(w))
+        n += w != v
+        out[k] = w
+    return out, n
+
+
+def _solver_cmd(params: "MilpParams"):
+    """PuLP 솔버 객체. 둘 다 1스레드(Phase 1과 같은 조건, 동시 요청이 코어를 나눠 쓰게)."""
+    if params.solver == "cbc":
+        return pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap)
+    return pulp.HiGHS(msg=False, timeLimit=params.time_limit, gapRel=params.gap, threads=1)
 
 
 def pruned_pairs(C: np.ndarray, keep_ratio: float,
@@ -176,7 +212,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         extra_constraints(prob, z)
     after_callback = capture_model_contract(prob) if extra_constraints else None
 
-    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap))
+    prob.solve(_solver_cmd(params))
     status = pulp.LpStatus[prob.status]
     if status not in ("Optimal", "Not Solved"):
         raise RuntimeError(f"MILP failed: {status}")
@@ -185,11 +221,15 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     raw_y = {key: var.value() for key, var in y.items()}
     raw_slack = {key: var.value() for key, var in slack.items()}
     raw_values = (*raw_z.values(), *raw_a.values(), *raw_y.values(), *raw_slack.values())
-    has_incumbent = all(
+    # HiGHS (via PuLP) fills every variable with 0.0 when it stops without any solution; only the solution
+    # status tells that apart from a real all-zero plan, so it must count as "no incumbent" (review, 2026-10-05).
+    # CBC leaves values empty (None) in that case, so the value check below already covers it.
+    highs_without_solution = params.solver == "highs" and prob.sol_status == pulp.LpSolutionNoSolutionFound
+    has_incumbent = not highs_without_solution and all(
         isinstance(value, (int, float)) and math.isfinite(value) for value in raw_values
     )
     evidence = SolverEvidence(
-        solver_name="CBC",
+        solver_name={"cbc": "CBC", "highs": "HiGHS"}[params.solver],
         native_status=status,
         # PuLP는 CBC가 시간 한도에서 멈춰도 해가 있으면 status를 "Optimal"로 바꿔 준다 -- 그 경우
         # sol_status만 IntegerFeasible이다. 시간 한도에 걸린 해는 부하에 따라 달라지므로 구분해 둔다.
@@ -235,18 +275,33 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         constraint_count=len(prob.constraints),
         evidence=evidence,
     )
+    snapped_z, nz = _snap_bounds(candidate.z, 0.0, 1.0, integral=True)
+    snapped_a, na = _snap_bounds(candidate.a, 0.0, 1.0, integral=False)
+    snapped_y, ny = _snap_bounds(candidate.y, 0.0, 1.0, integral=True)
+    snapped_s, ns = _snap_bounds(candidate.slack, 0.0, None, integral=True)
+    n_snapped = nz + na + ny + ns
+    max_snap = max((abs(v - w) for raw, snapped in ((candidate.z, snapped_z), (candidate.a, snapped_a),
+                                                     (candidate.y, snapped_y), (candidate.slack, snapped_s))
+                    for (k, v), w in ((kv, snapped[kv[0]]) for kv in raw.items())), default=0.0)
+    # The snapped values are what C1's eligibility check and allocation LP must see -- with the native HiGHS
+    # residues every budget-residue case would be ruled INELIGIBLE (review SHOULD-1). The snap itself is
+    # recorded so the evidence still says the native values were moved and by how much.
+    validation_input = candidate if n_snapped == 0 else replace(
+        candidate, z=snapped_z, a=snapped_a, y=snapped_y, slack=snapped_s,
+        evidence=replace(evidence, options={**evidence.options, "snapped_to_bounds": n_snapped,
+                                            "max_snap": max_snap}))
     extra_rows, mutation = (), None
     if before_callback is not None:
-        fixed_values = {z[i][j].name:float(raw_z[(i,j)]) for i in range(nP) for j in range(nJ)}
-        fixed_values.update({var.name:float(raw_y[key]) for key,var in y.items()})
-        fixed_values.update({var.name:float(raw_slack[key]) for key,var in slack.items()})
+        fixed_values = {z[i][j].name:float(validation_input.z[(i,j)]) for i in range(nP) for j in range(nJ)}
+        fixed_values.update({var.name:float(validation_input.y[key]) for key,var in y.items()})
+        fixed_values.update({var.name:float(validation_input.slack[key]) for key,var in slack.items()})
         try:
             extra_rows = project_additive_constraints(before_callback,after_callback,
                 allocation_variables={a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)},
                 fixed_values=fixed_values)
         except UnsupportedModelMutation as exc:
             mutation = str(exc)
-    assessment = assess_candidate(graph,S,C,params,candidate,native_capture=candidate,
+    assessment = assess_candidate(graph,S,C,params,validation_input,native_capture=validation_input,
         policy=NumericalPolicy(enabled=mutation is None),extra_linear_constraints=extra_rows)
     if mutation is not None and assessment.accepted is None:
         assessment = replace(assessment,refinement=replace(assessment.refinement,reason=mutation))

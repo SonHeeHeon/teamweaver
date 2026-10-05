@@ -13,7 +13,7 @@
 
 ## 2. 현재 시스템 흐름 (현재 구현)
 
-fixture JSON → API 부팅 시 임시 SQLite(근거 검색) + MemoryGraph(S/C 계산) → CBC MILP →
+fixture JSON → API 부팅 시 임시 SQLite(근거 검색) + MemoryGraph(S/C 계산) → HiGHS MILP(2026-10-05 전환, 이전 CBC) →
 `/api/optimize` SSE로 A안부터 순차 전달 → 웹(가중치 슬라이더·후보 카드·협업 그래프·드래그 교체)
 → `/api/whatif`(교체 전후를 MILP 전체 목적·제약으로 재평가한 참고값과 새 위반·미충원 + LLM 브리핑, 실패 시 규칙 기반 fallback) → `/api/report`(Playwright PDF).
 

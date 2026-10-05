@@ -26,9 +26,10 @@ def test_oracle_selects_the_literal_best_person():
     assert result.a[(0, 0)] == pytest.approx(1.0)
 
 
-def test_oracle_matches_cbc_on_budget_shortfall_case():
+def test_oracle_matches_service_solver_on_budget_shortfall_case():
     graph, skill, synergy = budget_shortfall_fixture()
-    params = MilpParams(pair_keep_ratio=0.0, time_limit=30)
+    # gap=0: the service solver (HiGHS since 2026-10-05) must prove the exact optimum, not stop within 5%.
+    params = MilpParams(pair_keep_ratio=0.0, time_limit=30, gap=0.0)
 
     oracle = solve_tiny_oracle(graph, skill, synergy, params)
     cbc = solve_milp_diagnostic(graph, skill, synergy, params)
@@ -37,7 +38,7 @@ def test_oracle_matches_cbc_on_budget_shortfall_case():
     assert oracle.objective == pytest.approx(-99.685, abs=1e-6)
 
 
-def test_oracle_matches_cbc_when_all_objective_terms_are_active():
+def test_oracle_matches_service_solver_when_all_objective_terms_are_active():
     graph, skill, synergy, params, _ = all_terms_fixture()
 
     oracle = solve_tiny_oracle(graph, skill, synergy, params)
@@ -56,7 +57,7 @@ def test_oracle_rejects_more_than_twelve_binary_decisions():
 
 
 @pytest.mark.parametrize("seed", [7, 11, 19])
-def test_oracle_matches_cbc_across_generated_tiny_cases(seed):
+def test_oracle_matches_service_solver_across_generated_tiny_cases(seed):
     graph, skill, synergy = generated_tiny_fixture(seed)
     params = MilpParams(pair_keep_ratio=1.0, time_limit=30)
 
@@ -66,7 +67,7 @@ def test_oracle_matches_cbc_across_generated_tiny_cases(seed):
     assert cbc.objective == pytest.approx(oracle.objective, abs=1e-6)
 
 
-def test_oracle_matches_cbc_when_partial_pair_pruning_keeps_one_of_three_pairs():
+def test_oracle_matches_service_solver_when_partial_pair_pruning_keeps_one_of_three_pairs():
     graph, skill, synergy = generated_tiny_fixture(11)
     params = MilpParams(pair_keep_ratio=1 / 3, time_limit=30)
 
