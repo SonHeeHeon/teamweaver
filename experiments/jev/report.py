@@ -21,7 +21,7 @@ def _table(head, rows):
 
 
 NAMES = {"milp_plan_a": "수학 최적화(현행 솔버, Plan A)", "skill_best": "기술 점수 1등 규칙(우리 점수를 직접 씀 -- 상한에 가까움)",
-         "random": "무작위로 고르기(3회 평균)", "jev": "Jev가 고르기", "random_expected": "무작위(기댓값)",
+         "random": "무작위로 고르기(3회 평균, 미충원은 평균값)", "jev": "Jev가 고르기", "random_expected": "무작위(기댓값)",
          "llm_fixture": "LLM 파서(gpt-5-nano, 기록값)", "llm_luna": "LLM 파서(현행 gpt-6-luna)"}
 
 
@@ -57,10 +57,11 @@ def _e2(e) -> str:
     rows = []
     for k in ("jev", "llm_luna", "llm_fixture"):
         m = ms.get(k)
+        name = "Jev 점수 판정" if k == "jev" else NAMES[k]
         if not m or "pearson" not in m:
-            rows.append([NAMES[k], (m or {}).get("skipped", "아직 실행 안 함(키 필요)"), "", "", "", "", ""])
+            rows.append([name, (m or {}).get("skipped", "아직 실행 안 함(키 필요)"), "", "", "", "", ""])
             continue
-        rows.append([NAMES[k], _f(m["pearson"]), _f(m["spearman"]), _f(m["mae"]), _f(m["sign_agreement"], pct=True),
+        rows.append([name, _f(m["pearson"]), _f(m["spearman"]), _f(m["mae"]), _f(m["sign_agreement"], pct=True),
                      _f(m["pair_score_corr"]), _f(m.get("mean_latency_s"), 2) + "초" if m.get("mean_latency_s") else "—"])
     verdict = ""
     if "jev" in ms and "pearson" in ms.get("llm_luna", {}):
@@ -68,8 +69,12 @@ def _e2(e) -> str:
         ci = e.get("delta_pearson_jev_minus_luna_ci95")
         call = ("구분되지 않는다" if ci and ci[0] <= 0 <= ci[1] else "Jev가 높다" if d > 0 else "Jev가 낮다")
         ci_txt = f"95% 구간 [{ci[0]:+.3f}, {ci[1]:+.3f}]" if ci else "구간 없음"
+        j, l = ms["jev"], ms["llm_luna"]
         verdict = (f"<p class='verdict'>관측: 정답과의 상관 차이(Jev − 현행 LLM) <b>{d:+.3f}</b>, {ci_txt} → {call}. "
-                   f"응답 시간은 Jev {_f(ms['jev']['mean_latency_s'], 2)}초 vs LLM {_f(ms['llm_luna'].get('mean_latency_s'), 2)}초.</p>")
+                   f"다만 평균 오차(Jev {_f(j['mae'])} vs LLM {_f(l['mae'])})와 긍/부 일치({_f(j['sign_agreement'], pct=True)} vs "
+                   f"{_f(l['sign_agreement'], pct=True)})는 {'Jev가 낮다' if j['sign_agreement'] < l['sign_agreement'] else 'Jev가 같거나 높다'} "
+                   f"-- 순서(누가 더 긍정적인가)는 잘 맞히지만 절대 수준은 덜 맞는다. "
+                   f"응답 시간은 Jev {_f(j['mean_latency_s'], 2)}초 vs LLM {_f(l.get('mean_latency_s'), 2)}초.</p>")
     return (_table(["방법", "상관(피어슨)", "순위 상관", "평균 오차", "긍/부 일치", "협업 점수 상관", "1건당 시간"], rows)
             + f"<p class='small'>리뷰 {e['n_reviews']}건. 정답은 글을 만들 때 쓴 좋은 점·아쉬운 점 항목 수(글의 의도)다. "
               "판정기는 글만 보고(항목 목록은 안 봄), Jev와 LLM 파서에 같은 기준('서술 전체의 감성 강도')을 준다. "
@@ -89,9 +94,15 @@ def _e3(e) -> str:
         rows.append([NAMES[k], top, _f(m["mean_rank"], 2), _f(m.get("mean_regret"))])
     verdict = ""
     if "jev" in ms and ms["jev"].get("top1") is not None:
-        verdict = (f"<p class='verdict'>관측: 최선의 교체를 맞힌 비율 Jev <b>{_f(ms['jev']['top1'], pct=True)}</b>, "
-                   f"기술 1등 규칙 {_f(ms['skill_best']['top1'], pct=True)}, 무작위 기댓값 {_f(ms['random_expected']['top1'], pct=True)} "
-                   f"(n={e['n_cases']}, 구간이 겹치면 차이를 단정할 수 없다).</p>")
+        jv, sb, rnd = ms["jev"], ms["skill_best"], ms["random_expected"]
+        jci, sci = jv.get("top1_ci95"), sb.get("top1_ci95")
+        apart = jci and sci and (jci[1] < sci[0] or sci[1] < jci[0])
+        below_random = jv["top1"] < rnd["top1"] and jv["mean_rank"] > rnd["mean_rank"]
+        verdict = (f"<p class='verdict'>관측: 최선의 교체를 맞힌 비율 Jev <b>{_f(jv['top1'], pct=True)}</b>, "
+                   f"기술 1등 규칙 {_f(sb['top1'], pct=True)}, 무작위 기댓값 {_f(rnd['top1'], pct=True)} (n={e['n_cases']}). "
+                   + ("Jev와 기술 1등 규칙의 95% 구간이 겹치지 않는다. " if apart else "구간이 겹쳐 둘의 차이는 단정할 수 없다. ")
+                   + ("Jev는 적중률·평균 순위 모두 무작위 기댓값보다 낮다." if below_random else "")
+                   + "</p>")
     return (_table(["방법", "최선 적중(동점 1등 인정)", "평균 순위(1이 최선)", "최선 대비 점수 손실"], rows)
             + f"<p class='small'>교체 상황 {e['n_cases']}건, 후보 {e['k']}명씩. 후보는 교체해도 규칙 위반이 없는 같은 등급 사람만"
               f"(코드가 먼저 거름). 그래서 그런 후보가 {e['k']}명 이상인 배치만 사례가 된다. 정답은 현행 모델로 다시 평가한 최선이며, "

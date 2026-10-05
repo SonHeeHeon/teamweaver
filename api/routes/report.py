@@ -24,7 +24,7 @@ from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_dataset, get_evidence, get_graph
 from api.plan_token import verify_plan
 from api.routes.meta import build_meta
-from api.routes.plans import apply_one, roster_metrics
+from api.routes.plans import apply_step, roster_metrics
 from api.schemas import EntryIn, ReportRequest
 from core.config import REPO_ROOT
 from core.graph.memory_graph import MemoryGraph
@@ -133,7 +133,10 @@ def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
         people_ids.add(e["person_id"])
         project_ids.add(e["project_id"])
     for s in [*payload.get("applied_swaps", []), *([payload["swap"]] if payload.get("swap") else [])]:
-        people_ids.update((s["out_person_id"], s["in_person_id"]))
+        if s.get("kind") == "alloc":                          # 달별 투입률 조정: 사람 한 명
+            people_ids.add(s["person_id"])
+        else:
+            people_ids.update((s["out_person_id"], s["in_person_id"]))
         project_ids.add(s["project_id"])
     full = build_meta(graph, version).model_dump()
     full["people"] = [p for p in full["people"] if p["id"] in people_ids]
@@ -183,10 +186,10 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
         return {"objective": m["objective"], "fulfillment": m["fulfillment"],
                 "optimization_ratio": m["optimization_ratio"], "unfilled": m["unfilled"],
                 "applied_swaps": [], "applied_violations": m["violations"]}
-    ub = _skill_relaxation_upper_bound(graph, S, params)       # 요청당 한 번
+    ubs: dict = {}                                             # 방식별 상한을 요청당 한 번
     entries, records, last = req.base_entries, [], None
-    for swap in req.applied_swaps:
-        last = apply_one(graph, S, C, params, req.weights, entries, swap, ub=ub)
+    for swap in req.applied_swaps:                             # 교체·달별 투입률 조정(kind)
+        last = apply_step(graph, S, C, params, req.weights, entries, swap, ubs=ubs)
         records.append({**swap.model_dump(), "objective_delta": last["objective_delta"],
                         "feasible": last["feasible"], "warnings": last["warnings"]})
         entries = [EntryIn(**e) for e in last["entries"]]

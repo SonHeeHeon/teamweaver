@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  adminLogout, AdminLoginRequiredError, type AdminStatus, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
+  adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
 import type {
-  AssignEntry,  AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
+  AllocChange, AssignEntry,  AppliedStep, AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
   WhatifResponse,
 } from "./api/types";
 
@@ -13,7 +13,7 @@ import type {
  *  전체의 위반 문장이다 -- 되돌리기는 맨 위를 빼면 된다. 서버는 저장하지 않는다. */
 interface PlanEdit {
   stack: { plan: PlanEvent; violations: string[] }[];
-  history: AppliedSwap[];
+  history: AppliedStep[];
 }
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
@@ -27,6 +27,7 @@ import { AdminLogin } from "./components/AdminLogin";
 import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
+import { stepBody } from "./api/types";
 
 type Tab = "req" | "whatif" | "settings" | "data";
 
@@ -343,15 +344,14 @@ export default function App() {
 
   /** 플랜의 적용 교체 목록을 서버에 저장한다(빈 목록이면 지운다). 화면 상태는 이미 바뀐 뒤라,
    *  실패하면 "저장 안 됨"을 알린다 -- 조용히 넘어가면 새로고침 때 사라진다. */
-  function persistEdits(label: string, history: AppliedSwap[]) {
+  function persistEdits(label: string, history: AppliedStep[]) {
     const base = plans.find((p) => p.label === label);
     if (!base?.plan_token || !planBasis) return;
     const token = base.plan_token;
     const body = {
       plan_label: label, base_entries: base.entries, weights: planBasis.weights,
       milp_params: planBasis.params, dataset_version: planBasis.datasetVersion,
-      swaps: history.map((h) => ({ out_person_id: h.out_person_id, in_person_id: h.in_person_id,
-                                   project_id: h.project_id })),
+      swaps: history.map(stepBody),
     };
     const runAt = runGen.current;
     const enqueuedAt = chainGen.current[token] ?? 0;
@@ -412,6 +412,7 @@ export default function App() {
         return;
       }
       swapGen.current += 1;
+      setWhatifBusy(false);      // 진행 중이던 검토는 무효 -- 응답이 버려지므로 진행 표시도 내린다(리뷰 S1)
       const plan: PlanEvent = { ...current, entries: res.entries, objective: res.objective,
                                 fulfillment: res.fulfillment,
                                 optimization_ratio: res.optimization_ratio, unfilled: res.unfilled };
@@ -432,6 +433,54 @@ export default function App() {
       if (gen !== applyGen.current) return;          // 취소된 요청의 오류(늦은 409 포함)는 무시
       if (e instanceof DatasetChangedError) { await externalSwitch(); return; }
       setError(String(e));
+    } finally {
+      if (gen === applyGen.current) setApplyBusy(false);
+    }
+  }
+
+  /** 한 사람의 달별 투입률 조정을 적용한다(사람별 달별 조정). 교체 적용과 같은 세대·저장 규칙을 따른다. */
+  async function applyAllocChange(change: AllocChange): Promise<boolean> {
+    if (!current || !selected) return false;
+    const label = selected;
+    const gen = ++applyGen.current;
+    const baseEntries = current.entries;
+    setApplyBusy(true);
+    try {
+      const res = await applyAlloc(current.entries, change, planBasis?.weights ?? weights,
+                                   planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
+      if (gen !== applyGen.current) {
+        setNotice(`Plan ${label}: 조정하는 사이 다른 작업이 시작돼 이 조정은 적용하지 않았다. 다시 할 것.`);
+        return false;
+      }
+      const nowTop = editsRef.current[label]?.stack.at(-1)?.plan.entries
+        ?? plans.find((p) => p.label === label)?.entries;
+      if (nowTop !== baseEntries) {
+        setNotice(`Plan ${label}: 조정하는 사이 명단이 바뀌어(저장분 복원 등) 이 조정은 취소했다. 다시 할 것.`);
+        return false;
+      }
+      swapGen.current += 1;
+      setWhatifBusy(false);
+      const plan: PlanEvent = { ...current, entries: res.entries, objective: res.objective,
+                                fulfillment: res.fulfillment,
+                                optimization_ratio: res.optimization_ratio, unfilled: res.unfilled };
+      const record: AppliedStep = { ...change, objective_delta: res.objective_delta,
+                                    feasible: res.feasible, warnings: res.warnings };
+      const e = editsRef.current[label] ?? { stack: [], history: [] };
+      const nextEdit = {
+        stack: [...e.stack, { plan, violations: res.evaluation.violations.map((v) => v.message) }],
+        history: [...e.history, record] };
+      bumpMut(label);
+      commitEdits({ ...editsRef.current, [label]: nextEdit });
+      persistEdits(label, nextEdit.history);
+      setWhatif(null);            // 명단이 바뀌었으니 진행 중 검토 결과는 무효
+      setLastSwap(null);
+      setHighlighted(null);
+      return true;
+    } catch (e) {
+      if (gen !== applyGen.current) return false;
+      if (e instanceof DatasetChangedError) { await externalSwitch(); return false; }
+      setError(String(e));
+      return false;
     } finally {
       if (gen === applyGen.current) setApplyBusy(false);
     }
@@ -616,10 +665,7 @@ export default function App() {
                                          planBasis?.datasetVersion ?? null,
                                          edit && original
                                            ? { base: original.entries,
-                                               swaps: edit.history.map((h) => ({
-                                                 out_person_id: h.out_person_id,
-                                                 in_person_id: h.in_person_id,
-                                                 project_id: h.project_id })) }
+                                               swaps: edit.history.map(stepBody) }
                                            : null,
                                          { weights: planBasis?.weights ?? weights,
                                            planToken: original?.plan_token ?? null });
@@ -671,8 +717,9 @@ export default function App() {
                                 nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id}
                                 busy={applyBusy} onApply={applyReviewedSwap} />
                 </div>
-                <AssignmentTable entries={current.entries} people={meta.people}
-                                 projects={meta.projects} />
+                <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
+                                 projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
+                                 minAlloc={planBasis?.params?.min_alloc ?? 0.2} />
               </div>
             )}
           </div>

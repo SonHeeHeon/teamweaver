@@ -18,8 +18,11 @@ from api.deps import check_dataset_version, get_dataset, get_graph
 from api.plan_edits import TOKEN_RE
 from api.plan_token import verify_plan
 from api.routes.whatif import WhatifRequest, _evaluate, _swapped_entries
-from api.schemas import ApplySwapResponse, EntryIn, MilpParamsIn, PlanEditIn, SwapIn
-from core.optimize.milp import MilpParams
+from pydantic import BaseModel, Field
+from typing import Annotated
+
+from api.schemas import AllocChangeIn, ApplySwapResponse, EntryIn, MilpParamsIn, PlanEditIn, StepIn, SwapIn
+from core.optimize.milp import MilpParams, _floor6
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
 from core.optimize.types import AssignEntry, PlanAssignment
@@ -46,25 +49,33 @@ def swap_warnings(before, after) -> list[str]:
     return out
 
 
-def _ratio_allowed(params, entries) -> bool:
-    """명단에 월별 항목이 있는데 계산 기준이 fixed면 상한(분모)이 맞지 않아 100%를 넘을 수 있다 -- 산정하지 않는다
-    (리뷰 2차 S2: 서명 없는 PDF나 API 직접 호출에서 생길 수 있다)."""
-    return not (getattr(params, "allocation_mode", "fixed") == "fixed" and any(e.monthly_alloc for e in entries))
+def _upper_bound(graph: MemoryGraph, S, params, entries, ubs: dict | None) -> float:
+    """최적화율 분모. 명단에 월별 항목이 있으면 월별 정식의 상한을 쓴다 -- 섞인 명단도 월별 정식의
+    가능한 해이고, 월별 상한은 고정 상한 이상이라 비율이 1을 넘지 않는다(사람별 달별 조정, 2026-10-05).
+    ubs는 같은 요청 안에서 방식별 상한을 한 번만 풀기 위한 캐시."""
+    mode = "monthly" if (getattr(params, "allocation_mode", "fixed") == "monthly"
+                         or any(e.monthly_alloc for e in entries)) else "fixed"
+    if ubs is not None and mode in ubs:
+        return ubs[mode]
+    p = params if params.allocation_mode == mode else params.model_copy(update={"allocation_mode": mode})
+    ub = _skill_relaxation_upper_bound(graph, S, p)
+    if ubs is not None:
+        ubs[mode] = ub
+    return ub
 
 
 def roster_metrics(graph: MemoryGraph, S, C, params, weights: dict, entries,
-                   ub: float | None = None) -> dict:
+                   ubs: dict | None = None) -> dict:
     """명단 하나의 지표를 서버가 다시 계산한다(교체 없는 PDF, claude-a 교차 리뷰 S1).
     plan_eval로 목적 4항·위반·미충원을, metrics로 충족률·최적화율을 낸다."""
     roster = [AssignEntry(**e.model_dump()) for e in entries]
     ev = _evaluate(graph, S, C, params, roster)
     unfilled = _unfilled(ev.shortfalls)
     ratio = None
-    if not ev.violations and _ratio_allowed(params, roster):
+    if not ev.violations:
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc for e in roster)
-        if ub is None:
-            ub = _skill_relaxation_upper_bound(graph, S, params)
+        ub = _upper_bound(graph, S, params, roster, ubs)
         ratio = (skill_term / ub) if ub > 0 else 0.0
     plan = PlanAssignment(entries=roster, objective=ev.objective.total, unfilled=unfilled,
                           violations=[], label="report")
@@ -73,20 +84,56 @@ def roster_metrics(graph: MemoryGraph, S, C, params, weights: dict, entries,
             "violations": [v.message for v in ev.violations]}
 
 
+def _changed_entries(graph: MemoryGraph, entries, change: AllocChangeIn):
+    """한 사람·한 프로젝트의 투입률을 달별 값으로 바꾼 명단(전, 후). 달이 모두 같으면 일반 항목으로 정리한다."""
+    jdx = graph.project_index
+    if change.project_id not in jdx:
+        raise HTTPException(status_code=404, detail=f"unknown project_id: {change.project_id!r}")
+    months = set(graph.projects[jdx[change.project_id]].months)
+    if set(change.monthly_alloc) != months:
+        raise HTTPException(status_code=422, detail=f"{change.project_id}의 진행 달 {sorted(months)}을 모두 입력해야 한다"
+                                                    f"(받은 달 {sorted(change.monthly_alloc)})")
+    before = [AssignEntry(**e.model_dump()) for e in entries]
+    target = next((e for e in before if e.person_id == change.person_id and e.project_id == change.project_id), None)
+    if target is None:
+        raise HTTPException(status_code=422, detail=f"entries has no entry for {change.person_id!r} "
+                                                    f"on {change.project_id!r}")
+    values = {int(m): float(v) for m, v in change.monthly_alloc.items()}
+    if len(set(values.values())) == 1:
+        new = AssignEntry(person_id=target.person_id, project_id=target.project_id, alloc=next(iter(values.values())))
+    else:
+        new = AssignEntry(person_id=target.person_id, project_id=target.project_id,
+                          alloc=_floor6(sum(values.values()) / len(values)), monthly_alloc=values)
+    after = [new if e is target else e for e in before]
+    return before, after
+
+
+def apply_step(graph: MemoryGraph, S, C, params, weights: dict, entries, step,
+               ubs: dict | None = None) -> dict:
+    """적용 단계 하나(교체 또는 달별 투입률 조정)를 명단에 적용하고 전체를 다시 평가한다.
+    /api/plans/apply-swap·apply-alloc, 저장분 재생, PDF 재계산이 같이 쓴다."""
+    if isinstance(step, AllocChangeIn):
+        before_entries, after_entries = _changed_entries(graph, entries, step)
+    else:
+        before_entries, after_entries = _swapped_entries(graph, entries, step)
+    return _evaluated(graph, S, C, params, weights, before_entries, after_entries, ubs)
+
+
 def apply_one(graph: MemoryGraph, S, C, params, weights: dict, entries, swap,
-              ub: float | None = None) -> dict:
-    """교체 하나를 적용하고 명단 전체를 다시 평가한다. /api/plans/apply-swap과 PDF(적용 이력
-    재계산)가 같이 쓴다 -- 화면이 본 값과 PDF에 찍히는 값이 같은 함수에서 나온다."""
-    before_entries, after_entries = _swapped_entries(graph, entries, swap)
+              ubs: dict | None = None) -> dict:
+    """교체 하나를 적용하고 명단 전체를 다시 평가한다(apply_step의 교체 전용 이름, 호환용)."""
+    return apply_step(graph, S, C, params, weights, entries, swap, ubs)
+
+
+def _evaluated(graph, S, C, params, weights, before_entries, after_entries, ubs) -> dict:
     before = _evaluate(graph, S, C, params, before_entries)
     after = _evaluate(graph, S, C, params, after_entries)
     unfilled = _unfilled(after.shortfalls)
     feasible = not after.violations
-    if feasible and _ratio_allowed(params, after_entries):
+    if feasible:
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc for e in after_entries)
-        if ub is None:      # 같은 (graph, S, params)면 같은 값 -- PDF 재계산은 한 번만 풀어 넘긴다
-            ub = _skill_relaxation_upper_bound(graph, S, params)
+        ub = _upper_bound(graph, S, params, after_entries, ubs)
         ratio = (skill_term / ub) if ub > 0 else 0.0
     else:
         # 상한(LP 완화)은 제약을 지키는 배치에만 의미가 있다. 위반 명단에 나누면 100%를
@@ -119,6 +166,27 @@ def apply_swap(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     return apply_one(graph, S, C, params, req.weights, req.entries, req.swap)
 
 
+class AllocRequest(BaseModel):
+    """POST /api/plans/apply-alloc 본문: 지금 명단과 한 사람의 달별 투입률 조정."""
+    entries: list[EntryIn]
+    change: AllocChangeIn
+    weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
+    milp_params: MilpParamsIn = MilpParamsIn()
+    dataset_version: str | None = None
+
+
+@router.post("/api/plans/apply-alloc", response_model=ApplySwapResponse)
+def apply_alloc(req: AllocRequest, graph: MemoryGraph = Depends(get_graph),
+                dataset: ActiveDataset = Depends(get_dataset)) -> dict:
+    """사람별 달별 투입률 조정을 명단에 적용하고 전체를 다시 평가한다. 위반이 생겨도 적용은 되며
+    (결정은 사람이 한다) 위반·경고가 그대로 돌아간다 -- 교체 적용과 같은 계약."""
+    check_dataset_version(req.dataset_version, dataset)
+    params = req.milp_params.to_milp_params()
+    eng = ScoringEngine(graph)
+    S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
+    return apply_step(graph, S, C, params, req.weights, req.entries, req.change)
+
+
 # --- K13: 적용 교체 저장·복원 ------------------------------------------------
 
 def _edit_params(milp_params: dict | None):
@@ -130,12 +198,13 @@ def _replay_steps(graph: MemoryGraph, record: dict) -> list[dict]:
     params = _edit_params(record.get("milp_params"))
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(record["weights"]), eng.synergy_matrix()
-    ub = _skill_relaxation_upper_bound(graph, S, params)
+    ubs: dict = {}
     entries = [EntryIn(**e) for e in record["base_entries"]]
     steps = []
     for sw in record["swaps"]:
-        step = apply_one(graph, S, C, params, record["weights"], entries, SwapIn(**sw), ub=ub)
-        steps.append({**step, "swap": sw})
+        parsed = AllocChangeIn(**sw) if sw.get("kind") == "alloc" else SwapIn(**sw)
+        step = apply_step(graph, S, C, params, record["weights"], entries, parsed, ubs=ubs)
+        steps.append({**step, "swap": parsed.model_dump()})
         entries = [EntryIn(**e) for e in step["entries"]]
     return steps
 
@@ -159,7 +228,7 @@ async def save_plan_edits(plan_token: str, body: PlanEditIn, request: Request,
               "weights": body.weights,
               "milp_params": body.milp_params.model_dump(exclude_none=True) if body.milp_params else None,
               "dataset_version": dataset.info.version,
-              "swaps": [s.model_dump() for s in body.swaps]}
+              "swaps": [s.model_dump() for s in body.swaps]}          # 교체·달별 조정(kind로 구분)
     if body.swaps:
         await anyio.to_thread.run_sync(_replay_steps, graph, record)     # 잘못된 교체는 404/422
     # 저장은 데이터셋 전환(업로드·되돌리기, 같은 잠금 안에서 prune)과 겹치지 않게 같은 잠금 안에서

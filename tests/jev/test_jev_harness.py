@@ -107,3 +107,41 @@ def test_e3_tied_best_counts_as_a_hit():
     assert s["top1"] == 1.0 and s["mean_rank"] == 1 and s["mean_regret"] == 0
     assert e3_swap._random_expected([case], 3)["top1"] == pytest.approx(2 / 3)
     assert e3_swap._rank(case, "c") == 3
+
+
+def _score_transport(score, probs=None):
+    def handler(request):
+        a = {"type": "score", "score": score}
+        if probs is not None:
+            a["probabilities"] = probs
+        return httpx.Response(200, json={"answers": {"polarity": a}, "usage": {"input_tokens": 1}})
+    return httpx.MockTransport(handler)
+
+
+def _one_review():
+    from core.config import FIXTURES_DIR
+    from core.datagen.fixtures_io import load_fixtures
+    return load_fixtures(FIXTURES_DIR)[0].reviews[:1]
+
+
+def test_e2_uses_the_probability_expectation(tmp_path):
+    from experiments.jev import e2_reviews
+    probs = {"0": 0.0, "1": 0.0, "2": 0.2, "3": 0.8, "4": 0.0}           # 기댓값 2.8
+    c = JevClient(tmp_path / "t.json", api_key="test-key", transport=_score_transport(3.0, probs))
+    pol, log = e2_reviews.judge_with_jev(c, _one_review())
+    assert pol[0] == pytest.approx(2.8 / 4 * 2 - 1)
+
+
+def test_e2_falls_back_to_score_without_probabilities(tmp_path):
+    from experiments.jev import e2_reviews
+    c = JevClient(tmp_path / "t.json", api_key="test-key", transport=_score_transport(1.0))
+    pol, _ = e2_reviews.judge_with_jev(c, _one_review())
+    assert pol[0] == pytest.approx(-0.5)
+
+
+def test_e2_score_and_probabilities_on_different_scales_stop(tmp_path):
+    from experiments.jev import e2_reviews
+    probs = {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 1.0}           # 기댓값 4, score 0.9(0..1 척도로 보임)
+    c = JevClient(tmp_path / "t.json", api_key="test-key", transport=_score_transport(0.9, probs))
+    with pytest.raises(ValueError, match="척도"):
+        e2_reviews.judge_with_jev(c, _one_review())

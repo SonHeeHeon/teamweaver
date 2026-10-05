@@ -61,12 +61,16 @@ def judge_with_jev(client: JevClient, reviews) -> tuple[list[float], list[dict]]
         if not 0.0 <= s <= len(LEVELS) - 1:
             raise ValueError(f"Jev score {s}가 예상 척도 0..{len(LEVELS) - 1} 밖이다 -- 척도 가정을 다시 확인할 것")
         probs = a.get("probabilities")
+        expected = None
         if isinstance(probs, dict) and len(probs) == len(LEVELS):
-            # 확률이 등급별로 오면 그 기댓값(Σ i·p_i)과 score가 같은 척도인지 본다(0..1 척도면 크게 어긋난다).
             expected = sum(i * float(probs.get(str(i), probs.get(LEVELS[i], 0.0))) for i in range(len(LEVELS)))
+            # 확률이 등급별로 오면 그 기댓값(Σ i·p_i)과 score가 같은 척도인지 본다(0..1 척도면 크게 어긋난다).
             if abs(expected - s) > 1.0:
                 raise ValueError(f"Jev score {s}와 확률 기댓값 {expected:.2f}의 척도가 다르다 -- 척도 가정을 확인할 것")
-        out.append(s / (len(LEVELS) - 1) * 2 - 1)
+        # 판정값은 확률 기댓값을 쓴다. 실측(jev-1.13.0)에서 score도 사실상 기댓값(266건 차이 최대 0.02)이라 결과는
+        # 거의 같고, 소수점 정밀도를 확률에서 직접 얻으려는 것이다. 확률이 없으면 score를 쓴다.
+        level = expected if expected is not None else s
+        out.append(level / (len(LEVELS) - 1) * 2 - 1)
         log.append({"latency_s": ans.latency_s, "input_tokens": ans.input_tokens, "replayed": ans.replayed,
                     "raw_score": s, "probabilities": a.get("probabilities")})
     if len(log) >= 20 and max(x["raw_score"] for x in log) <= 1.0:
