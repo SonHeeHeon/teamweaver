@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-05 · claude-a · K6 협업 탐색 int8 넘침 수정
+- 브랜치/커밋: `feat/claude-a-k6-int8` (main 미병합, 사용자 승인 대기)
+- 한 일: `MemoryGraph.synergy_context_memory`가 한 홉 확장에서 frontier 이웃 수를 int8로 세어, 128개 이상(정확히 256개면 0)일 때 그 노드를 도달 집합에서 빠뜨렸다. int32로 바꾸고 127/128/150/256 병렬 경로 시험을 추가했다(고치기 전 128·150·256 실패 확인).
+- 상대 영향:
+  - **Codex (공유 `core/graph/`)**: 결과는 SQL·Cypher 질의와 같아지는 방향으로만 바뀐다. 실험 1의 예전 결과는 "K6 이전 측정"으로 볼 것(시간 차이 미미).
+  - 테스트 기준선: main 648 → 652 passed(이 브랜치 단독).
+- 검증: `uv run --group benchmark pytest -q` → 652 passed, 10 deselected. 리뷰: Codex 한도 소진(09:03 회복)으로 Claude Opus 폴백 1라운드, MUST·SHOULD 0, nit 2(주석 표현 반영, 실험 메모 위 기록).
+- 근거: `.omc/reports/2026-10-05-k6-int8.md`
 ## 2026-10-05 · claude-a · 리뷰 회차 확장(예전 회차도 사용) + K2 main 병합
 - 브랜치/커밋: K2는 main에 fast-forward 병합(`f10e710`, 사용자 승인). 회차 확장은 `feat/claude-a-review-rounds`(main 미병합, 사용자 승인 대기).
 - 한 일: 사용자 요청("최신 회차만이 아니라 예전 회차도")으로 같은 평가자→피평가자의 모든 리뷰 회차를 협업 점수에 쓴다.
