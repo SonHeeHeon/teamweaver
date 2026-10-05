@@ -17,6 +17,7 @@ from core.datagen.fixtures_io import load_fixtures
 from core.ingest.convert import to_dataset
 from core.ingest.loader import load_bundle
 from core.ingest.org_profile import generate_org_bundle
+from core.ingest.review_text import ORG_REVIEW_ITEMS
 from rehearsal.run import RESULTS, SEED
 
 FILE_LABEL = {
@@ -31,6 +32,8 @@ FILE_LABEL = {
     "reviews.csv": ("동료 평가", "반기마다 같은 사업을 한 동료가 서로 남긴 평가(좋은 점·아쉬운 점 문장)"),
     "review_items.csv": ("평가 항목", "동료 평가에 체크한 항목(예: 소통·책임감) — 좋은 점/아쉬운 점"),
     "current_assignments.csv": ("현재 투입 명단(선택)", "계획 시작 시점에 이미 실행 사업에 들어가 있는 사람·투입률·잠금(고객 지정 등)"),
+    "project_outcomes.csv": ("과거 사업 성과(선택)", "끝난 과거 사업마다 고객 평가 1~5·일정 준수·후속 과제 여부"),
+    "replacements.csv": ("인력 교체 기록(선택)", "과거 사업에서 교체된 사람·요청 주체(고객/내부)·사유"),
 }
 
 
@@ -113,22 +116,26 @@ th{{color:var(--muted);font-weight:600}}td.n{{text-align:right;font-variant-nume
 <h1>TeamWeaver 가상 데이터는 어떻게 만들어졌나</h1>
 <p class="sub">모든 값은 가상이다(실존 인물·고객 아님). 숫자와 샘플은 이 페이지를 만들 때 실제 데이터에서 읽었다 · 생성 시드 {SEED}</p>
 
-<div class="box warn"><b>먼저 짚을 점 — "과거 프로젝트 평가(성과)"는 이 데이터에 없다.</b> 가상 데이터에 있는 것은 <b>사람이 사람을 평가한 동료 평가</b>뿐이고,
-"그 프로젝트가 잘 됐는가"를 매긴 성과 기록은 만들지 않았다(만들면 우리가 정한 정답을 다시 찾는 순환이 된다).
-실제 회사에는 <b>고객 평가 기록 · 고객 요청 인력 교체와 사유 · 같은 고객의 후속 과제 기록</b>이 있다(스키마 양식 답변, 아직 확보 전).
-이 기록을 받으면 모델 실험실(로드맵 4번)에 성과 신호로 꽂아 계수를 보정할 수 있다. 그 전까지 사업 효과는 <b>NOT_CALIBRATED(검증 전)</b>다.</div>
+<div class="box warn"><b>과거 프로젝트 성과도 실제 시스템처럼 만들었다(2026-10-05).</b> 실제 회사에 있는 세 기록 — <b>고객 평가 · 고객 요청 인력 교체와 사유 · 같은 고객의 후속 과제</b> — 을
+<code>project_outcomes.csv</code>, <code>replacements.csv</code>로 흉내 냈다. 성과는 <b>숨은 정답 규칙</b>으로 정했다:
+개인의 실제 역량, 팀이 전에 함께 일해 본 비율, 그 업종 경험, 짧게 들락날락한 인원 비율, 고객별 궁합, 운.<br>
+<b>겹침을 숨기지 않는다.</b> "전에 함께 일함"은 모델의 협업 점수(함께 일한 개월)와, "업종 경험"은 도메인 기술 경력과 같은 방향의 신호다 —
+현실에서도 성과는 보이는 신호와 어느 정도 관련 있으므로 일부러 남겼다. 대신 핵심인 <b>실제 역량은 동료 평가에 일부만 드러나게</b> 했다:
+평가는 "보이는 역량"(실제 역량과 상관 약 0.45)과 평가자마다 다른 후함·박함으로 매겨져, 실측 상관이 사람 단위 0.32~0.44, 사업 단위(팀 평가 평균 ↔ 고객 점수) 0.12~0.23이다
+(실제 역량 ↔ 고객 점수는 0.45~0.54). 처음 만든 버전은 이 값이 0.97이라 "평가 = 정답"이 됐고, 리뷰에서 지적받아 고쳤다.
+모델이 전혀 못 보는 요소는 고객 궁합·들락날락·운이다. 가상 정답이므로 사업 효과는 여전히 <b>NOT_CALIBRATED</b> — 실제 기록을 받으면 같은 자리에 꽂는다.</div>
 
 <h2>1. 데이터는 두 종류다</h2>
 <table><tr><th></th><th>① 시연용 고정 데이터</th><th>② 규모 리허설용 조직형 데이터</th></tr>
 <tr><td>어디</td><td><code>fixtures/</code> (core/datagen)</td><td><code>core/ingest/org_profile.py</code> → CSV 묶음 → 업로드</td></tr>
 <tr><td>규모</td><td>{meta['n_people']}명 · 사업 {meta['n_projects']}개 (고정)</td><td>100명(데이터플랫폼) · 200명(+AI) · 300명(+업무자동화)</td></tr>
-<tr><td>동료 평가 문장</td><td><b>LLM이 작성</b>({html.escape(meta.get('gen_model',''))}, 평가 {len(fx.reviews)}건) 후 LLM이 핵심 문장·긍부정 추출</td><td>항목 이름으로 만든 <b>짧은 틀 문장</b>("소통, 협업 측면에서 기여했다") — 수천 건이라 LLM 비용을 쓰지 않음</td></tr>
+<tr><td>동료 평가 문장</td><td><b>LLM이 작성</b>({html.escape(meta.get('gen_model',''))}, 평가 {len(fx.reviews)}건) 후 LLM이 핵심 문장·긍부정 추출</td><td><b>문장 은행으로 조합한 긴 평가</b>(LLM 미사용): 장점 4~5문장·단점 1~2문장, 업무명·업종·기술을 넣어 실제 답변("장점 5줄, 단점 1줄")에 맞춤. 사람마다 고정 강·약점 성향이 있어 여러 동료의 평가가 같은 방향을 가리킴</td></tr>
 <tr><td>숙련도</td><td>기술별 레벨 1~5를 직접 뽑음(1인당 평균 {round(sum(len(p.skills) for p in fx.people)/len(fx.people),1)}개)</td><td>실제 시스템처럼 <b>기술별 경력 개월</b> → 레벨로 환산(12/36/60/96개월 경계), 1인당 약 19개</td></tr>
 <tr><td>쓰임</td><td>화면 시연·기본 데모·Phase 0/1 실험</td><td>실제 입력 형식(CSV) 검증, 100~300명 성능·품질 측정</td></tr></table>
 
 <h2>2. 조직형 데이터를 만드는 순서 (②)</h2>
 <p>앞뒤가 맞도록 <b>업무 이력을 먼저</b> 만들고, 기술 경력·협업·동료 평가를 모두 거기서 뽑는다.</p>
-<div class="flow"><span>① 사람 (그룹·직무·등급)</span><b>→</b><span>② 과거 업무 이력(최근 100개월, AI 계열은 36개월)</span><b>→</b><span>③ 기술 경력 개월 = 그 업무에서 쓴 기술의 기간 합</span><b>→</b><span>④ 함께 일한 쌍 = 같은 과거 사업에 같은 날 있었던 사람들</span><b>→</b><span>⑤ 동료 평가 = 반기마다 같은 사업 동료끼리(90% 확률)</span><b>→</b><span>⑥ 계획 사업·정원·예산(수요가 공급의 85%를 넘지 않게)</span></div>
+<div class="flow"><span>① 사람 (그룹·직무·등급, 숨은 실제 역량·강약점 성향)</span><b>→</b><span>② 끊김 없는 과거 업무 이력(최근 10년, 입사 시점은 등급별, LLM 계열 기술은 최근 36개월)</span><b>→</b><span>③ 기술 경력 개월 = 그 업무에서 쓴 기술의 기간 합</span><b>→</b><span>④ 함께 일한 쌍 = 같은 과거 사업에 같은 날 있었던 사람들</span><b>→</b><span>⑤ 동료 평가 = 반기마다 같은 사업 동료 3~6명(1인 연 ~10건)</span><b>→</b><span>⑥ 과거 사업 성과·교체 기록(숨은 규칙)</span><b>→</b><span>⑦ 계획 사업·정원·예산·현재 투입 명단</span></div>
 <ul>
 <li><b>그룹·직무</b>: 데이터플랫폼(데이터 엔지니어·비정형/문서AI·모델러·플랫폼·금융 데이터 컨설턴트), AI(LLM·에이전트·RAG·MLOps·AI 백엔드·AI 컨설턴트), 업무자동화(RPA·워크플로우/BPM·로우코드·문서 자동화·컨설턴트). 300명 직무 분포: {_counter(collections.Counter(r['job_family'] for r in t['people.csv']))}</li>
 <li><b>등급</b>(300명): {_counter(collections.Counter(r['career_grade'] for r in t['people.csv']))} · <b>단가</b>: 특급 1600, 고급 1300, 중급 1000, 초급 750(컨설팅 +10%, 가상 단위)</li>
@@ -136,7 +143,9 @@ th{{color:var(--muted);font-weight:600}}td.n{{text-align:right;font-variant-nume
   고객명은 익명(금융사 가·나…, 계열사 A·B…).</li>
 <li><b>최대 사업</b>: {html.escape(flag['project_name'])} — 6개월 실행, 내부 정원 {sum(r['headcount'] for r in flag_grades)}명
   ({', '.join(f"{r['career_grade']} {r['headcount']}" for r in flag_grades)}), 요구 기술 {', '.join(f"{r['skill_name']}({r['min_experience_months']}개월↑·{r['headcount']}명)" for r in flag_reqs)}. 외주 인력은 계산에 넣지 않음.</li>
-<li><b>동료 평가 회차</b>(300명): {_counter(collections.Counter(r['review_round'] for r in t['reviews.csv']))}. 좋은 점·아쉬운 점 항목은 각각 1~5개, 항목 목록 20개.</li>
+<li><b>동료 평가 회차</b>(300명): {_counter(collections.Counter(r['review_round'] for r in t['reviews.csv']))}. 좋은 점·아쉬운 점 항목은 각각 1~5개, 같은 20개 목록에서 고름(실제 제도와 동일): {html.escape(', '.join(ORG_REVIEW_ITEMS))}.</li>
+<li><b>과거 사업 성과</b>(300명): {len(t['project_outcomes.csv'])}개 사업 — 고객 평가 {_counter(collections.Counter(r['customer_score'] for r in t['project_outcomes.csv']))}점,
+  일정 지연 {sum(r['schedule'] == '지연' for r in t['project_outcomes.csv'])}건, 후속 과제 {sum(r['follow_on'] == 'Y' for r in t['project_outcomes.csv'])}건 · 인력 교체 {len(t['replacements.csv'])}건({_counter(collections.Counter(r['requested_by'] for r in t['replacements.csv']))}).</li>
 <li><b>월별 가용률</b>: 달마다 1.0(60%)·0.7·0.5·0.3·0(휴가·교육 등 10%) 중 하나.</li>
 </ul>
 
