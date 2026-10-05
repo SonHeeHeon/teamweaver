@@ -1,0 +1,58 @@
+{
+ "size": 200,
+ "env": {
+  "commit": "e5de0af",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T08:02:49+00:00"
+ },
+ "llm": true,
+ "steps": {
+  "generate_s": 0.09,
+  "upload_s": 0.23,
+  "optimize_s": 200.25
+ },
+ "bundle": {
+  "dataset_id": "org-n200-s2026",
+  "schema_version": 1,
+  "horizon_start": "2026-10",
+  "horizon_months": 6,
+  "cost_unit": "가상비용점(월)",
+  "synthetic": true,
+  "seed": 2026,
+  "generator": "core.ingest.org_profile v1",
+  "groups": {
+   "DP": 100,
+   "AI": 100
+  },
+  "flagship_project": "J001",
+  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+  "peak_demand_ratio": 0.8448
+ },
+ "upload": {
+  "status": 200,
+  "activated": true,
+  "errors": 0,
+  "warnings": 0,
+  "notes": [
+   "리뷰: 모든 회차 4228건을 썼다(평가자→피평가자 3462쌍, 그중 712쌍은 여러 회차). 협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.",
+   "숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다(경계 (12, 36, 60, 96)개월 → 1~5). 요구 경력도 같은 구간을 쓴다.",
+   "협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, 2026-09-30까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다."
+  ]
+ },
+ "settings": {
+  "min_alloc": 0.3,
+  "clique_threshold_months": 6,
+  "lam": 0.3,
+  "mu": 0.2,
+  "time_limit": 120,
+  "gap": 0.05
+ },
+ "optimize_done": {
+  "event": "error",
+  "message": "MILP returned an invalid incumbent candidate (status=Not Solved; independent_validation_failed:binary_domain; INELIGIBLE_CONSTRAINT_OR_DOMAIN)"
+ },
+ "plans": [],
+ "finished_at": "2026-10-05T08:06:12+00:00"
+}

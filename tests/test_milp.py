@@ -316,9 +316,10 @@ def test_pruned_pairs_default_cap_bounds_large_n():
     rng = np.random.default_rng(3)
     C = rng.normal(size=(400, 400)); C = (C + C.T) / 2
     np.fill_diagonal(C, 0.0)
-    # 기본 MilpParams.max_pairs 가 적용되어 상한을 넘지 않아야 한다
+    # 기본 MilpParams.max_pairs(2026-10-05부터 200, 규모 리허설 근거)가 적용되어 정확히 상한에서 잘려야 한다
     p = MilpParams()
-    assert len(pruned_pairs(C, p.pair_keep_ratio, max_pairs=p.max_pairs)) <= p.max_pairs
+    assert p.max_pairs == 200
+    assert len(pruned_pairs(C, p.pair_keep_ratio, max_pairs=p.max_pairs)) == 200
 
 
 def test_pruned_pairs_tie_break_is_deterministic_by_index():

@@ -1,0 +1,126 @@
+{
+ "size": 200,
+ "env": {
+  "commit": "e6bb873",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T09:46:47+00:00"
+ },
+ "limits": [
+  60,
+  120,
+  240,
+  600
+ ],
+ "best_objective": -5692.252083333333,
+ "runs": [
+  {
+   "solver": "cbc",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Not Solved",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 210.24
+  },
+  {
+   "solver": "highs",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -5692.252083333333,
+   "skill_term": 7.7479,
+   "unfilled_seats": 32,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 64.9,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "highs",
+   "time_limit": 120,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -5692.252083333333,
+   "skill_term": 7.7479,
+   "unfilled_seats": 32,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 124.73,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 120,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Not Solved",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 202.53
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 240,
+   "gap": 0.05,
+   "accepted": false,
+   "error": "RuntimeError: MILP failed: Infeasible",
+   "wall_s": 259.18
+  },
+  {
+   "solver": "highs",
+   "time_limit": 240,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -5692.252083333333,
+   "skill_term": 7.7479,
+   "unfilled_seats": 32,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 244.62,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "highs",
+   "time_limit": 600,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -5692.252083333333,
+   "skill_term": 7.7479,
+   "unfilled_seats": 32,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "ALREADY_VALID",
+   "wall_s": 609.32,
+   "gap_to_best": 0.0
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 600,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -11765.482733600884,
+   "skill_term": 32.6258,
+   "unfilled_seats": 82,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 493.72,
+   "gap_to_best": 1.066929
+  }
+ ],
+ "people": 200,
+ "projects": 40,
+ "finished_at": "2026-10-05T09:46:47+00:00"
+}

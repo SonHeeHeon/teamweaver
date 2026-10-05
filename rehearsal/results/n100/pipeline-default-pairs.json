@@ -1,0 +1,127 @@
+{
+ "size": 100,
+ "env": {
+  "commit": "d5d23cc",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T08:38:34+00:00"
+ },
+ "llm": true,
+ "steps": {
+  "generate_s": 0.04,
+  "upload_s": 0.08,
+  "optimize_s": 483.86,
+  "whatif_s": 7.3,
+  "apply_s": 0.13,
+  "pdf_s": 1.25
+ },
+ "bundle": {
+  "dataset_id": "org-n100-s2026",
+  "schema_version": 1,
+  "horizon_start": "2026-10",
+  "horizon_months": 6,
+  "cost_unit": "가상비용점(월)",
+  "synthetic": true,
+  "seed": 2026,
+  "generator": "core.ingest.org_profile v1",
+  "groups": {
+   "DP": 100
+  },
+  "flagship_project": "J001",
+  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+  "peak_demand_ratio": 0.8412
+ },
+ "upload": {
+  "status": 200,
+  "activated": true,
+  "errors": 0,
+  "warnings": 0,
+  "notes": [
+   "리뷰: 모든 회차 1179건을 썼다(평가자→피평가자 1013쌍, 그중 160쌍은 여러 회차). 협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.",
+   "숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다(경계 (12, 36, 60, 96)개월 → 1~5). 요구 경력도 같은 구간을 쓴다.",
+   "협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, 2026-09-30까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다."
+  ]
+ },
+ "settings": {
+  "min_alloc": 0.3,
+  "clique_threshold_months": 6,
+  "lam": 0.3,
+  "mu": 0.2,
+  "time_limit": 120,
+  "gap": 0.05
+ },
+ "optimize_done": {
+  "event": "done",
+  "count": 4,
+  "requested_alternatives": 3
+ },
+ "picked_plan": "B",
+ "swap": {
+  "out_person_id": "DP0023",
+  "in_person_id": "DP0024",
+  "project_id": "J001"
+ },
+ "whatif": {
+  "status": 200,
+  "objective_delta": -0.4208333333333343,
+  "feasible": true,
+  "fallback_used": false,
+  "evidence": 1,
+  "rationale": "조건부 교체를 권고한다. DP0024는 Hadoop에서 DP0023보다 높고 Data Lake & Data Catalog 역량도 보유하지만, 공통 기술인 AWS·Python·SQL·Scala에서는 DP0023보다 낮으며 ETL·Airflow·Spark 역량은 확인되지 않는다. DP0023에 대해서는 리뷰에서 소통·문제해결·전문성 등의 보완 필요가 언급되어 있으나, 프로젝트 요구 기술이 없는 만큼 실제 교체 전 역할 적합성을 확인해야 한다 [rv:DP0069>DP0023#1:neg]."
+ },
+ "apply": {
+  "status": 200,
+  "feasible": true,
+  "objective": 41.244210317460315,
+  "warnings": []
+ },
+ "pdf": {
+  "status": 200,
+  "bytes": 441227,
+  "detail": null
+ },
+ "plans": [
+  {
+   "label": "A",
+   "arrived_s": 121.02,
+   "objective": 41.528150203500104,
+   "fulfillment": 0.31537851851851845,
+   "optimization_ratio": 0.8067777643510182,
+   "entries": 128,
+   "unfilled": [],
+   "people": 73
+  },
+  {
+   "label": "B",
+   "arrived_s": 241.9,
+   "objective": 41.69264986679981,
+   "fulfillment": 0.32072222222222224,
+   "optimization_ratio": 0.7885742985229605,
+   "entries": 132,
+   "unfilled": [],
+   "people": 74
+  },
+  {
+   "label": "C",
+   "arrived_s": 362.91,
+   "objective": 41.10538948412693,
+   "fulfillment": 0.3375555555555555,
+   "optimization_ratio": 0.7901548709808703,
+   "entries": 124,
+   "unfilled": [],
+   "people": 74
+  },
+  {
+   "label": "D",
+   "arrived_s": 483.86,
+   "objective": 41.678108036408,
+   "fulfillment": 0.3292851851851851,
+   "optimization_ratio": 0.7897598806082231,
+   "entries": 129,
+   "unfilled": [],
+   "people": 73
+  }
+ ],
+ "finished_at": "2026-10-05T08:46:47+00:00"
+}

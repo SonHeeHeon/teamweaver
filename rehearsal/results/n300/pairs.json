@@ -1,0 +1,81 @@
+{
+ "size": 300,
+ "env": {
+  "commit": "e6bb873",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T09:57:41+00:00"
+ },
+ "time_limit": 120,
+ "runs": [
+  {
+   "cap": 0,
+   "reward_pairs": 0,
+   "overfamiliar_pairs": 915,
+   "y_vars_approx": 54900,
+   "accepted": true,
+   "full_objective": 131.572,
+   "skill": 125.239,
+   "synergy": 6.332,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "Optimal",
+   "wall_s": 57.69
+  },
+  {
+   "cap": 200,
+   "reward_pairs": 200,
+   "overfamiliar_pairs": 915,
+   "y_vars_approx": 66900,
+   "accepted": true,
+   "full_objective": 133.965,
+   "skill": 121.718,
+   "synergy": 12.847,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "Optimal",
+   "wall_s": 98.16
+  },
+  {
+   "cap": 400,
+   "reward_pairs": 400,
+   "overfamiliar_pairs": 915,
+   "y_vars_approx": 78900,
+   "accepted": true,
+   "full_objective": -4890.772,
+   "skill": 99.582,
+   "synergy": 14.845,
+   "unfilled_seats": 50,
+   "violations": 0,
+   "termination": "time_limit_incumbent",
+   "wall_s": 125.04
+  },
+  {
+   "cap": 800,
+   "reward_pairs": 800,
+   "overfamiliar_pairs": 915,
+   "y_vars_approx": 102900,
+   "accepted": true,
+   "full_objective": -6604.19,
+   "skill": 85.738,
+   "synergy": 12.073,
+   "unfilled_seats": 67,
+   "violations": 0,
+   "termination": "time_limit_incumbent",
+   "wall_s": 124.32
+  },
+  {
+   "cap": "default",
+   "reward_pairs": 5000,
+   "overfamiliar_pairs": 915,
+   "y_vars_approx": 354900,
+   "accepted": false,
+   "error": "RuntimeError: MILP found no incumbent solution within time_limit=120s (status=Not Solved) — cannot extract a plan",
+   "wall_s": 155.46
+  }
+ ],
+ "people": 300,
+ "projects": 60,
+ "finished_at": "2026-10-05T09:57:41+00:00"
+}

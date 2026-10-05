@@ -1,0 +1,86 @@
+{
+ "size": 100,
+ "env": {
+  "commit": "e6bb873",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T09:42:41+00:00"
+ },
+ "time_limit": 120,
+ "runs": [
+  {
+   "cap": 0,
+   "reward_pairs": 0,
+   "overfamiliar_pairs": 321,
+   "y_vars_approx": 6420,
+   "accepted": true,
+   "full_objective": 41.153,
+   "skill": 40.028,
+   "synergy": 1.126,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "Optimal",
+   "wall_s": 5.46
+  },
+  {
+   "cap": 200,
+   "reward_pairs": 200,
+   "overfamiliar_pairs": 321,
+   "y_vars_approx": 10420,
+   "accepted": true,
+   "full_objective": 42.609,
+   "skill": 37.953,
+   "synergy": 5.056,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "Optimal",
+   "wall_s": 9.76
+  },
+  {
+   "cap": 400,
+   "reward_pairs": 400,
+   "overfamiliar_pairs": 321,
+   "y_vars_approx": 14420,
+   "accepted": true,
+   "full_objective": 42.142,
+   "skill": 37.022,
+   "synergy": 6.12,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "Optimal",
+   "wall_s": 9.0
+  },
+  {
+   "cap": 800,
+   "reward_pairs": 800,
+   "overfamiliar_pairs": 321,
+   "y_vars_approx": 22420,
+   "accepted": true,
+   "full_objective": 40.729,
+   "skill": 35.174,
+   "synergy": 5.556,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "time_limit_incumbent",
+   "wall_s": 120.75
+  },
+  {
+   "cap": "default",
+   "reward_pairs": 742,
+   "overfamiliar_pairs": 321,
+   "y_vars_approx": 21260,
+   "accepted": true,
+   "full_objective": 41.495,
+   "skill": 36.68,
+   "synergy": 6.214,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "termination": "time_limit_incumbent",
+   "wall_s": 120.76
+  }
+ ],
+ "people": 100,
+ "projects": 20,
+ "finished_at": "2026-10-05T09:42:41+00:00"
+}

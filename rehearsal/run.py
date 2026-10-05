@@ -277,10 +277,66 @@ def run_sweep(size: int, limits: list[int]) -> dict:
             "people": len(graph.people), "projects": len(graph.projects), "finished_at": _now()}
 
 
+PAIR_CAPS = (0, 200, 400, 800, None)      # None = the pre-2026-10-05 default (pair_keep_ratio 0.15, max_pairs 5000)
+# Fixed yardstick: every plan is re-scored under the OLD default objective, so the comparison does not move when the
+# service default changes (it changed to max_pairs=200 because of these very results).
+LEGACY_PAIRS = {"pair_keep_ratio": 0.15, "max_pairs": 5000}
+
+
+def run_pairs(size: int, time_limit: int = 120, caps=PAIR_CAPS) -> dict:
+    """Model size, not time, limited the 200-person run: synergy pair variables grow with pairs x projects
+    (~3,000 pairs x 40 projects at 200 people). Solve plan A with the synergy reward capped to the top-|C| `cap`
+    pairs (0 = reward term off) and score every plan under the FULL service objective with plan_eval, so plans
+    from smaller models are judged by the same yardstick as the default one."""
+    from api.settings import PlacementSettings
+    from core.evaluate.plan_eval import evaluate_plan
+    from core.graph.memory_graph import MemoryGraph
+    from core.ingest.convert import to_dataset
+    from core.ingest.loader import load_bundle
+    from core.optimize.milp import _overfamiliar_pairs, pruned_pairs, solve_milp_assessment
+    from core.scoring.engine import ScoringEngine
+    work = Path(tempfile.mkdtemp(prefix=f"rehearsal-pairs-n{size}-"))
+    bundle, report = load_bundle(_bundle(size, work))
+    ds, parsed = to_dataset(bundle, report)
+    graph = MemoryGraph.build(ds, parsed)
+    eng = ScoringEngine(graph)
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    full = PlacementSettings().to_milp_params().model_copy(update={"time_limit": time_limit, **LEGACY_PAIRS})
+    runs = []
+    for cap in caps:
+        upd = {} if cap is None else ({"pair_keep_ratio": 0.0, "max_pairs": 1} if cap == 0
+                                      else {"pair_keep_ratio": 1.0, "max_pairs": cap})
+        params = full.model_copy(update=upd)
+        n_pairs = len(pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)) if cap != 0 else 0
+        row = {"cap": "default" if cap is None else cap, "reward_pairs": n_pairs,
+               "overfamiliar_pairs": len(_overfamiliar_pairs(graph, params.clique_threshold_months)),
+               "y_vars_approx": (n_pairs + len(_overfamiliar_pairs(graph, params.clique_threshold_months))) * len(graph.projects)}
+        t = time.perf_counter()
+        try:
+            a = solve_milp_assessment(graph, S, C, params)
+            if a.accepted is None:
+                raise RuntimeError(f"no accepted solution ({a.refinement.reason})")
+            ev = evaluate_plan(graph, S, C, full, a.accepted.plan.entries)
+            o = ev.objective
+            row.update({"accepted": True, "full_objective": round(o.total, 3), "skill": round(o.skill, 3),
+                        "synergy": round(o.synergy, 3), "unfilled_seats": sum(s.missing for s in ev.shortfalls),
+                        "violations": len(ev.violations),
+                        "termination": getattr(a.validation_candidate.evidence, "termination_reason", None)})
+        except Exception as exc:  # noqa: BLE001
+            row.update({"accepted": False, "error": f"{type(exc).__name__}: {exc}"[:300]})
+        row["wall_s"] = round(time.perf_counter() - t, 2)
+        runs.append(row)
+        print(f"[pairs n{size}] cap={row['cap']} pairs={n_pairs} -> {row.get('full_objective')} "
+              f"unfilled={row.get('unfilled_seats')} {row['wall_s']}s", flush=True)
+    return {"size": size, "env": _env_info(), "time_limit": time_limit, "runs": runs,
+            "yardstick_params": full.model_dump(),
+            "people": len(graph.people), "projects": len(graph.projects), "finished_at": _now()}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--size", type=int, required=True, choices=sorted(SWEEP_LIMITS))
-    ap.add_argument("--stage", choices=("pipeline", "sweep", "all"), default="all")
+    ap.add_argument("--stage", choices=("pipeline", "sweep", "pairs", "all"), default="all")
     ap.add_argument("--no-llm", action="store_true")
     ap.add_argument("--no-pdf", action="store_true")
     ap.add_argument("--limits", type=int, nargs="*", help="override the sweep time limits (seconds)")
@@ -292,6 +348,9 @@ def main() -> None:
         (outdir / "pipeline.json").write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         print(f"[pipeline n{args.size}] steps={res.get('steps')} plans={[(p['label'], p['arrived_s']) for p in res.get('plans', [])]}",
               flush=True)
+    if args.stage == "pairs":
+        res = run_pairs(args.size)
+        (outdir / "pairs.json").write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     if args.stage in ("sweep", "all"):
         res = run_sweep(args.size, args.limits or SWEEP_LIMITS[args.size])
         (outdir / "sweep.json").write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

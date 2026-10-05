@@ -1,0 +1,130 @@
+{
+ "size": 100,
+ "env": {
+  "commit": "e5de0af",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T08:02:49+00:00"
+ },
+ "limits": [
+  30,
+  60,
+  120,
+  240
+ ],
+ "best_objective": -58.05863046238009,
+ "runs": [
+  {
+   "solver": "cbc",
+   "time_limit": 30,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -4975.022436507937,
+   "skill_term": 22.8053,
+   "unfilled_seats": 44,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 21.47,
+   "gap_to_best": 84.689628
+  },
+  {
+   "solver": "highs",
+   "time_limit": 30,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Optimal",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 30.72
+  },
+  {
+   "solver": "highs",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Optimal",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 60.59
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 60,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -73.4583489800344,
+   "skill_term": 26.8827,
+   "unfilled_seats": 1,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 50.89,
+   "gap_to_best": 0.265244
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 120,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -73.4583489800344,
+   "skill_term": 26.8827,
+   "unfilled_seats": 1,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 110.93,
+   "gap_to_best": 0.265244
+  },
+  {
+   "solver": "highs",
+   "time_limit": 120,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Optimal",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 120.56
+  },
+  {
+   "solver": "highs",
+   "time_limit": 240,
+   "gap": 0.05,
+   "accepted": false,
+   "objective": null,
+   "skill_term": null,
+   "unfilled_seats": null,
+   "termination": "no_accepted_solution",
+   "native_status": "Optimal",
+   "refinement": "INELIGIBLE_CONSTRAINT_OR_DOMAIN",
+   "wall_s": 240.58
+  },
+  {
+   "solver": "cbc",
+   "time_limit": 240,
+   "gap": 0.05,
+   "accepted": true,
+   "objective": -58.05863046238009,
+   "skill_term": 37.1996,
+   "unfilled_seats": 1,
+   "termination": "time_limit_incumbent",
+   "native_status": "Optimal",
+   "refinement": "REFINED",
+   "wall_s": 230.51,
+   "gap_to_best": 0.0
+  }
+ ],
+ "people": 100,
+ "projects": 20,
+ "finished_at": "2026-10-05T08:02:49+00:00"
+}

@@ -1,0 +1,74 @@
+{
+ "size": 100,
+ "env": {
+  "commit": "46e327f",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-05T07:44:40+00:00"
+ },
+ "llm": true,
+ "steps": {
+  "generate_s": 0.04,
+  "upload_s": 0.08,
+  "optimize_s": 221.25
+ },
+ "bundle": {
+  "dataset_id": "org-n100-s2026",
+  "schema_version": 1,
+  "horizon_start": "2026-10",
+  "horizon_months": 6,
+  "cost_unit": "가상비용점(월)",
+  "synthetic": true,
+  "seed": 2026,
+  "generator": "core.ingest.org_profile v1",
+  "groups": {
+   "DP": 100
+  },
+  "flagship_project": "J001",
+  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+  "peak_demand_ratio": 0.8377
+ },
+ "upload": {
+  "status": 200,
+  "activated": true,
+  "errors": 0,
+  "warnings": 0,
+  "notes": [
+   "리뷰: 모든 회차 1038건을 썼다(평가자→피평가자 895쌍, 그중 143쌍은 여러 회차). 협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.",
+   "숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다(경계 (12, 36, 60, 96)개월 → 1~5). 요구 경력도 같은 구간을 쓴다.",
+   "협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, 2026-09-30까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다."
+  ]
+ },
+ "settings": {
+  "min_alloc": 0.3,
+  "clique_threshold_months": 6,
+  "lam": 0.3,
+  "mu": 0.2,
+  "time_limit": 120,
+  "gap": 0.05
+ },
+ "optimize_done": {
+  "event": "done",
+  "count": 1,
+  "requested_alternatives": 3,
+  "stop_reason": "quality"
+ },
+ "picked_plan": "A",
+ "swap": null,
+ "plans": [
+  {
+   "label": "A",
+   "arrived_s": 110.83,
+   "objective": -73.4583489800344,
+   "fulfillment": 0.27067658730158733,
+   "optimization_ratio": 0.5678011682248779,
+   "entries": 119,
+   "unfilled": [
+    "J019:특급:1명 미충원"
+   ],
+   "people": 68
+  }
+ ],
+ "finished_at": "2026-10-05T07:48:22+00:00"
+}
