@@ -146,6 +146,27 @@ describe("ReportPage — 서버가 넣어 준 meta(K9)", () => {
 });
 
 
+describe("ReportPage — 달별 투입률 조정", () => {
+  afterEach(() => { delete (window as any).__REPORT_DATA__; delete (window as any).__REPORT_READY__; });
+
+  it("조정 이력과 명단의 달별 요약을 찍는다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    const monthly = { "0": 0.5, "1": 0.5, "2": 1, "3": 1 };
+    window.__REPORT_DATA__ = {
+      plan_label: "A", entries: [{ person_id: "p1", project_id: "j1", alloc: 0.75, monthly_alloc: monthly }],
+      objective: 1, fulfillment: 1, optimization_ratio: 0.9, unfilled: [], briefing: null,
+      fallback_used: false, swap: null, objective_delta: null, swap_violations: [],
+      milp_params: null, dataset_version: META.dataset_version, meta: META,
+      applied_swaps: [{ kind: "alloc", person_id: "p1", project_id: "j1", monthly_alloc: monthly,
+                        objective_delta: -0.1, feasible: true, warnings: [] }],
+      applied_violations: [], plan_provenance: "unverified" };
+    render(<ReportPage />);
+    expect(await screen.findByText("적용된 변경 1건")).toBeInTheDocument();
+    expect(screen.getByText("투입률 조정: 김일번 1~2월 50%, 3~4월 100%")).toBeInTheDocument();
+  });
+});
+
+
 describe("ReportPage — 적용된 교체(K10)", () => {
   afterEach(() => {
     delete (window as any).__REPORT_DATA__;

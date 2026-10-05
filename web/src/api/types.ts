@@ -140,7 +140,7 @@ export interface ReportRequest {
   dataset_version: string | null;
   /** 원 플랜에 적용한 교체(K10, 적용 순서)와 원 플랜 명단. 서버가 base_entries에서 다시
    *  적용해 명단·지표·Δ·경고·위반을 계산한다 -- 화면이 계산한 수치는 보내지 않는다. */
-  applied_swaps: Swap[];
+  applied_swaps: Step[];
   base_entries: AssignEntry[] | null;
   weights: Record<string, number>;
   /** 원 플랜의 서버 서명. 없으면 PDF에 "미검증"으로 표시된다. */
@@ -155,6 +155,29 @@ export interface AppliedSwap {
   objective_delta: number;
   feasible: boolean;
   warnings: string[];
+}
+
+/** 적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정). 키 = 진행 달(0~5). */
+export interface AllocChange {
+  kind: "alloc";
+  person_id: string;
+  project_id: string;
+  monthly_alloc: Record<string, number>;
+}
+
+/** 적용 이력의 한 단계(교체 또는 달별 조정). kind가 없으면 교체다(예전 기록). */
+export type Step = (Swap & { kind?: "swap" }) | AllocChange;
+export type AppliedStep = Step & { objective_delta: number; feasible: boolean; warnings: string[] };
+
+export function isAlloc(s: Step): s is AllocChange {
+  return (s as AllocChange).kind === "alloc";
+}
+
+/** 결과 칸을 뺀 요청용 단계(저장·PDF 본문). */
+export function stepBody(s: Step): Step {
+  return isAlloc(s)
+    ? { kind: "alloc", person_id: s.person_id, project_id: s.project_id, monthly_alloc: s.monthly_alloc }
+    : { out_person_id: s.out_person_id, in_person_id: s.in_person_id, project_id: s.project_id };
 }
 
 /** POST /api/plans/apply-swap 응답 -- 교체 후 명단과 그 명단 전체의 재평가(K10). */
@@ -244,8 +267,8 @@ export interface UploadResult {
 
 /** GET /api/plans/edits/{token} -- 저장된 적용 교체를 서버가 원 플랜에서 다시 적용한 단계(K13). */
 export interface SavedPlanEdits {
-  swaps: Swap[];
-  steps: (ApplySwapResponse & { swap: Swap })[];
+  swaps: Step[];
+  steps: (ApplySwapResponse & { swap: Step })[];
   updated_at: string | null;
   /** 서버가 매긴 저장 번호(0 = 저장 없음). 다음 저장 때 expected_revision으로 보낸다. */
   revision: number;

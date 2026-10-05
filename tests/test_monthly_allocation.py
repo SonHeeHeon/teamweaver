@@ -134,12 +134,13 @@ def test_monthly_recheck_catches_overloads_that_the_mean_hides():
     assert any("1번째 달 비용" in v for v in m2["violations"])                  # 평균 600 < 700이라 평균으론 못 잡음
 
 
-def test_ratio_is_not_computed_when_params_and_roster_disagree():
+def test_ratio_uses_the_monthly_bound_when_a_fixed_plan_has_monthly_entries():
+    """고정 방식 플랜에 사람별 달별 조정이 들어와도(설정은 fixed) 분모를 월별 상한으로 써서 1을 넘지 않는다."""
     from api.routes.plans import roster_metrics
     g, S, C = _two_projects()
     raw = solve_milp_diagnostic(g, S, C, MilpParams(**P, allocation_mode="monthly"))
     m = roster_metrics(g, S, C, MilpParams(**P), {}, raw.plan.entries)          # 월별 명단 + fixed 기준
-    assert m["optimization_ratio"] is None
+    assert m["optimization_ratio"] == pytest.approx(1.0, abs=1e-6)
 
 
 def test_monthly_entries_must_cover_the_project_months_and_match_the_mean():

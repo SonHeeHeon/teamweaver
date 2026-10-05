@@ -98,14 +98,21 @@ export function ReportPage() {
 
       {(data.applied_swaps ?? []).length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-1 text-base font-semibold">적용된 교체 {data.applied_swaps.length}건</h2>
+          <h2 className="mb-1 text-base font-semibold">
+            {/* 텍스트 노드를 예전과 같게("적용된 교체 " + 수 + "건") -- PDF 글자 추출이 노드 경계에 따라 띄어쓰기를 바꾼다 */}
+            {`${data.applied_swaps.some((s: any) => s.kind === "alloc") ? "적용된 변경" : "적용된 교체"} `}
+            {data.applied_swaps.length}건
+          </h2>
           <p className="mb-2 text-xs text-slate-600">
-            Plan {data.plan_label}에 아래 교체를 순서대로 적용한 명단이다. 최적화가 고른 명단이
+            Plan {data.plan_label}에 아래 변경(교체·달별 투입률 조정)을 순서대로 적용한 명단이다.
+            {(data.entries ?? []).some((e: any) => e.monthly_alloc)
+              ? " 달별 투입률이 들어간 명단의 최적화율은 '달마다 따로' 기준 상한(더 큼)으로 나눈 값이다."
+              : ""} 최적화가 고른 명단이
             아니며, 지표는 적용 후 명단을 현행 점수 기준으로 다시 계산한 참고값이다.
           </p>
           <table className="w-full text-sm">
             <thead className="border-b border-slate-300 text-left text-slate-600">
-              <tr><th className="py-1">#</th><th className="py-1">빠진 인력 → 들어간 인력</th>
+              <tr><th className="py-1">#</th><th className="py-1">변경(빠진 인력 → 들어간 인력 / 투입률 조정)</th>
                   <th className="py-1">프로젝트</th><th className="py-1 text-right">Δ</th>
                   <th className="py-1">경고</th></tr>
             </thead>
@@ -114,7 +121,9 @@ export function ReportPage() {
                 <tr key={k} className={`border-b border-slate-100 ${
                   s.warnings?.length ? "bg-red-50 text-red-800" : ""}`}>
                   <td className="py-1">{k + 1}</td>
-                  <td className="py-1">{nameOf(s.out_person_id)} → {nameOf(s.in_person_id)}</td>
+                  <td className="py-1">{s.kind === "alloc"
+                    ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc) || ""}`
+                    : `${nameOf(s.out_person_id)} → ${nameOf(s.in_person_id)}`}</td>
                   <td className="py-1">{jName.get(s.project_id) ?? s.project_id}</td>
                   <td className="py-1 text-right tabular-nums">
                     {s.objective_delta >= 0 ? "+" : ""}{s.objective_delta.toFixed(4)}

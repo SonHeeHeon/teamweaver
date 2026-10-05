@@ -1,6 +1,6 @@
 import type {
   Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
-  SavedPlanEdits, SettingsResponse, Swap, UploadResult, WhatifResponse,
+  SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
@@ -145,12 +145,32 @@ export async function applySwap(
   return (await res.json()) as ApplySwapResponse;
 }
 
+/** 한 사람의 달별 투입률 조정을 명단에 적용한다(사람별 달별 조정). 응답은 교체 적용과 같은 모양. */
+export async function applyAlloc(
+  entries: AssignEntry[], change: AllocChange, weights: Record<string, number>,
+  milpParams: PlacementSettings | null, datasetVersion: string | null,
+): Promise<ApplySwapResponse> {
+  const res = await fetch(`${API_BASE}/api/plans/apply-alloc`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entries, change, weights,
+                           ...(milpParams ? { milp_params: milpParams } : {}),
+                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}) }),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`투입률 조정 실패(${res.status}): ${JSON.stringify(detail.detail ?? "")}`);
+  }
+  return (await res.json()) as ApplySwapResponse;
+}
+
 /** 플랜에 적용한 교체를 서버에 저장한다(K13). swaps가 비면 저장분을 지운다.
  *  서버는 원 플랜 서명(plan_token)을 검증하고 교체를 다시 적용해 본 뒤 저장한다. */
 export async function savePlanEdits(
   planToken: string,
   body: { plan_label: string; base_entries: AssignEntry[]; weights: Record<string, number>;
-          milp_params: PlacementSettings | null; dataset_version: string; swaps: Swap[];
+          milp_params: PlacementSettings | null; dataset_version: string; swaps: Step[];
           expected_revision: number },
 ): Promise<{ revision: number }> {
   const res = await fetch(`${API_BASE}/api/plans/edits/${encodeURIComponent(planToken)}`, {
@@ -231,7 +251,7 @@ export async function downloadReport(
   plan: PlanEvent, whatif: WhatifResponse | null, swap: Swap | null,
   milpParams: PlacementSettings | null = null,
   datasetVersion: string | null = null,
-  applied: { base: AssignEntry[]; swaps: Swap[] } | null = null,
+  applied: { base: AssignEntry[]; swaps: Step[] } | null = null,
   basis: { weights: Record<string, number>; planToken: string | null } =
     { weights: {}, planToken: null },
 ) {

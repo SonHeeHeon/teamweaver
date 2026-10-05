@@ -1,6 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
+from pydantic import (BaseModel, ConfigDict, Discriminator, Field, Tag, field_validator, model_serializer,
+                      model_validator)
 
 from api.settings import PlacementSettings
 from core.optimize.milp import MilpParams
@@ -179,7 +180,7 @@ class PlanEditIn(BaseModel):
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn | None = None
     dataset_version: str
-    swaps: list["SwapIn"] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
+    swaps: list["StepIn"] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
     # 화면이 마지막으로 본 서버 revision(저장분이 없으면 0). 다르면 409와 최신 상태.
     expected_revision: int = Field(ge=0)
 
@@ -209,9 +210,38 @@ class EntryIn(BaseModel):
 
 
 class SwapIn(BaseModel):
+    kind: Literal["swap"] = "swap"
     out_person_id: str
     in_person_id: str
     project_id: str
+
+    @model_serializer(mode="wrap")
+    def _omit_default_kind(self, handler):
+        # 교체는 kind를 내보내지 않는다 -- 저장된 교체·응답·PDF 기록이 이전과 같은 모양(kind 없음 = 교체).
+        data = handler(self)
+        if isinstance(data, dict) and data.get("kind") == "swap":
+            data.pop("kind", None)
+        return data
+
+
+class AllocChangeIn(BaseModel):
+    """적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정, 2026-10-05).
+    monthly_alloc은 그 프로젝트의 진행 달 전부(키 0~5). 모든 달이 같으면 일반 항목으로 정리된다."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["alloc"] = "alloc"
+    person_id: str
+    project_id: str
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
+        min_length=1)
+
+
+def _step_kind(v) -> str:
+    return (v.get("kind", "swap") if isinstance(v, dict) else getattr(v, "kind", "swap")) or "swap"
+
+
+# 적용 이력의 한 단계. kind가 없는 예전 기록은 교체로 읽는다(저장된 교체·PDF 요청 호환).
+StepIn = Annotated[Union[Annotated[SwapIn, Tag("swap")], Annotated[AllocChangeIn, Tag("alloc")]],
+                   Discriminator(_step_kind)]
 
 
 
@@ -244,7 +274,7 @@ class ReportRequest(BaseModel):
     # base_entries에서 순서대로 다시 적용해 명단·지표·교체별 Δ·경고·최종 위반을 계산하고,
     # 클라이언트가 보낸 entries·지표는 쓰지 않는다 -- PDF의 적용 이력을 조작할 수 없게
     # (Codex 지적). weights·milp_params는 그 재계산의 기준(계산 당시 스냅숏)이다.
-    applied_swaps: list[SwapIn] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
+    applied_swaps: list[StepIn] = Field(default=[], max_length=MAX_APPLIED_SWAPS)
     base_entries: list[EntryIn] | None = Field(default=None, max_length=MAX_PLAN_ENTRIES)
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     # /api/optimize가 원 플랜에 붙인 서명(api/plan_token). 있으면 서버가 검증한다: 맞으면

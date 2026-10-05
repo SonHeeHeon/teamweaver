@@ -24,6 +24,7 @@ vi.mock("./api/client", () => ({
   postWhatif: vi.fn(),
   downloadReport: vi.fn(),
   applySwap: vi.fn(),
+  applyAlloc: vi.fn(),
   loadPlanEdits: vi.fn(async () => ({ swaps: [], steps: [], updated_at: null, revision: 0 })),
   savePlanEdits: vi.fn(async () => ({ revision: 1 })),
   EditsConflictError: class extends Error {
@@ -40,7 +41,7 @@ vi.mock("react-force-graph-2d", () => ({
 
 import {
   fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
-  postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap,
+  postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap, applyAlloc,
   loadPlanEdits, savePlanEdits, EditsConflictError, adminLogin, adminLogout, AdminLoginRequiredError,
 } from "./api/client";
 import type { SettingsResponse } from "./api/types";
@@ -963,6 +964,60 @@ describe("App — 대안 부족 안내(C2)", () => {
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(screen.queryByText(/조건을 만족하는 대안/)).not.toBeInTheDocument();
+  });
+});
+
+
+describe("App — 사람별 달별 투입률 조정", () => {
+  it("행의 '달별 조정'으로 달마다 비율을 바꾸면 적용·이력·저장에 실린다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    const monthly = { "0": 0.5, "1": 0.5, "2": 1, "3": 1 };
+    vi.mocked(applyAlloc).mockReset().mockResolvedValue({
+      entries: [{ person_id: "p1", project_id: "j1", alloc: 0.75, monthly_alloc: monthly }],
+      evaluation: { objective: ZERO_TERMS, violations: [], shortfalls: [] },
+      objective_delta: -0.1, feasible: true, objective: 0.9, fulfillment: 1, optimization_ratio: 0.9,
+      unfilled: [], warnings: [] });
+    vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    expect(screen.getByText(/여러 프로젝트에 나눠 들어가는 사람은/)).toBeInTheDocument();     // 기능 안내
+    fireEvent.click(screen.getByRole("button", { name: "김일번 달별 조정" }));
+    fireEvent.change(screen.getByLabelText("1월 투입률"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("2월 투입률"), { target: { value: "50" } });
+    fireEvent.click(screen.getByRole("button", { name: "적용" }));
+    await waitFor(() => expect(applyAlloc).toHaveBeenCalled());
+    expect(vi.mocked(applyAlloc).mock.calls[0][1]).toEqual(
+      { kind: "alloc", person_id: "p1", project_id: "j1", monthly_alloc: { "0": 0.5, "1": 0.5, "2": 1, "3": 1 } });
+    expect(await screen.findByText(/투입률 조정: 김일번/)).toBeInTheDocument();
+    expect(screen.getByText(/1~2월 50%, 3~4월 100%/, { selector: "span" })).toBeInTheDocument();
+    await waitFor(() => expect(savePlanEdits).toHaveBeenCalled());
+    expect(vi.mocked(savePlanEdits).mock.calls[0][1].swaps).toEqual(
+      [{ kind: "alloc", person_id: "p1", project_id: "j1", monthly_alloc: monthly }]);
+  });
+
+  it("적용이 실패하면 편집기가 열린 채 입력을 남긴다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
+      { swaps: [], steps: [], updated_at: null, revision: 0 });
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "plan" as const, data: PLAN_A };
+    })());
+    vi.mocked(applyAlloc).mockReset().mockRejectedValue(new Error("투입률 조정 실패(422)"));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.click(screen.getByRole("button", { name: "김일번 달별 조정" }));
+    fireEvent.change(screen.getByLabelText("1월 투입률"), { target: { value: "40" } });
+    expect(screen.getByText(/달마다 최소/)).toBeInTheDocument();                     // 최소 투입률 안내
+    fireEvent.click(screen.getByRole("button", { name: "적용" }));
+    expect(await screen.findByText(/투입률 조정 실패/)).toBeInTheDocument();
+    expect((screen.getByLabelText("1월 투입률") as HTMLInputElement).value).toBe("40");
   });
 });
 
