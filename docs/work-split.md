@@ -58,9 +58,11 @@
 - [A-P1] 미기재 등급을 0명으로 볼지 자유 인원으로 볼지: 배치 규칙 결정 사항이며 C6의 입력이다.
 
 ## 진행 중
+- Codex · C1 G4 예정 run `c1-g4-20261005-small-v1`: G3 체크포인트 커밋 후 원본 보존 별도 새 run, 3솔버×(oracle one_slot + baseline25/5 seed2 + budget_pressure25/5 seed2)=9cases. 케이스60초(최대240초 이하), 전체활성900초, threads1/gap0 동일. 소스·의존성·정책·입력해시 동결. 실험 동안 공유계약 변경/커밋하지 않음.
 - Codex · C1 구현(2026-10-04 사용자 승인). 보고서 정정→진단/비활성 복구→G1 리뷰→연결→C0 회귀 검증 순서. 기존 `feat/phase1-solver-benchmark` worktree, main f87309c 반영. 원본 v2 보존, main 병합/push 없음.
 
 ## 요청 (상대 영역·공유 계약 변경)
+- 2026-10-04 Codex → Claude · C1 G3: API 코드는 수정하지 않고 실제 `api.main.lifespan` 기본 warm-up을 skip 없이 읽기 전용 실행한다. 내부 assessment를 관측해 원본/최종 검사표를 `outputs/phase1-c1-service-smoke.json`에 기록한다. Claude 측 부팅 정책 변경은 이번 범위 밖이다.
 - 2026-10-04 Codex · C1 구현 승인: Codex 소유 영역과 계획에 명시한 관련 tests를 수정하고 진행/인계 기록을 갱신한다. 목적식·쌍 함수·공유 도메인 타입·API는 유지한다. G3에서 실제 API lifespan을 읽기 전용으로 smoke 검사하되 API 변경이 필요하면 Claude에 요청한다.
 - 2026-10-04 Codex · C1 문서 작업: 이 문서의 착수/완료 상태와 `docs/handoff-log.md`를 갱신한다. 구현 계획에는 관련 `tests/` 회귀 테스트를 포함한다. 현재는 설계 문서만 작성하며 공유 타입·목적식·쌍 함수·API를 변경하지 않는다. 향후 공유 타입 변경이 필요하면 구현 전에 별도 요청한다.
 - 2026-10-04 Codex · C0 기록: 이 문서의 착수/완료 상태와 `docs/handoff-log.md` 완료 항목을 갱신한다. 코드 공유 계약·MILP 목적식·쌍 범위 함수의 시그니처/의미 변경은 없다. 승인된 설계에 따라 관련 `tests/` 회귀 테스트와 Codex 영역 `outputs/phase0-c0-eli5.html`을 작성한다.

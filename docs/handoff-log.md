@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-05 · Codex · C1 G3 서비스 연결 / C0 회귀 해결
+- 브랜치: `feat/phase1-solver-benchmark`, main 미병합/push 없음. G3 최고역량 독립gpt-6-astra PASS.
+- 한 일: service native assessment→제한 고정팀 LP→strict finalgate 연결. callback 전후 모델 계약·추가 선형 조건 투영, unsupported변형은 복구 거절. 기존6실패 테스트 수정/제외 없음.
+- 상대 영향: C0의 기본warm-up budget회귀가 해결됐다. API·목적식4항·쌍 함수 시그니처/의미는 그대로. 최종main통합은 G4/최종리뷰 및 사용자승인 전 보류.
+- 검증: 전체616passed/0failed/10deselected74.24s; 독립41passed; projection누락 결함주입2FAIL. Phase0새경로11PASS1.063s. 실제APIlifespan skip없이4plans26.331s, A/C nativebudgetFAIL→maxdelta3.333e-9/strictfinalPASS.
+- 근거: `outputs/phase1-c1-g3-eli5.html`, `outputs/phase0-c1-revalidation.json`, `outputs/phase1-c1-service-smoke.json`, `docs/superpowers/reviews/2026-10-05-c1-g3-review.md`. NOT_CALIBRATED. HTML화면QA미수행/정적검사PASS.
+
 ## 2026-10-04 · Codex · C1 G1 진단·비활성 복구 체크포인트
 - 브랜치/커밋: `feat/phase1-solver-benchmark` `98ba47f` (main 미병합 / push 없음).
 - 한 일: 기존 CBC 출력·원시값을 보존해 A(문턱 완화)/B(outputFormat6)/C(고정팀 미세LP)를 비교. 제품 service는 연결하지 않은 상태에서 복구 정책·callback 변형 거절·최종 재검증을 구현했다.

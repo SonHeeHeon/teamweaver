@@ -1,5 +1,6 @@
 import logging
 import math
+from dataclasses import replace
 import numpy as np
 import pulp
 from pydantic import BaseModel
@@ -94,9 +95,13 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, in
     return result
 
 
-def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
-    """Return an independently validated candidate or raise, including on timeout."""
+def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+                          params: MilpParams, extra_constraints=None):
+    """Capture native evidence and assess it without weakening the final gate."""
+    from core.optimize.numerics import (
+        NumericalPolicy, assess_candidate, capture_model_contract,
+        project_additive_constraints, UnsupportedModelMutation,
+    )
     people, projects = graph.people, graph.projects
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
@@ -145,8 +150,10 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     for j, pj in enumerate(projects):                       # 제약 3: 월 예산
         prob += pulp.lpSum(people[i].monthly_rate * a[i][j] for i in range(nP)) \
                 <= pj.monthly_budget
+    before_callback = capture_model_contract(prob) if extra_constraints else None
     if extra_constraints:
         extra_constraints(prob, z)
+    after_callback = capture_model_contract(prob) if extra_constraints else None
 
     prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap))
     status = pulp.LpStatus[prob.status]
@@ -206,15 +213,37 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         constraint_count=len(prob.constraints),
         evidence=evidence,
     )
-    # Local import avoids the cycle: validation imports MilpParams from here.
-    from core.optimize.validation import validate_raw_solution
+    extra_rows, mutation = (), None
+    if before_callback is not None:
+        fixed_values = {z[i][j].name:float(raw_z[(i,j)]) for i in range(nP) for j in range(nJ)}
+        fixed_values.update({var.name:float(raw_y[key]) for key,var in y.items()})
+        fixed_values.update({var.name:float(raw_slack[key]) for key,var in slack.items()})
+        try:
+            extra_rows = project_additive_constraints(before_callback,after_callback,
+                allocation_variables={a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)},
+                fixed_values=fixed_values)
+        except UnsupportedModelMutation as exc:
+            mutation = str(exc)
+    assessment = assess_candidate(graph,S,C,params,candidate,native_capture=candidate,
+        policy=NumericalPolicy(enabled=mutation is None),extra_linear_constraints=extra_rows)
+    if mutation is not None and assessment.accepted is None:
+        assessment = replace(assessment,refinement=replace(assessment.refinement,reason=mutation))
+    return assessment
 
-    validation = validate_raw_solution(graph, S, C, params, candidate)
-    if not validation.valid:
+
+def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
+    """Return only a strictly validated candidate; retained public contract."""
+    from core.optimize.validation import validate_raw_solution
+    assessment = solve_milp_assessment(graph,S,C,params,extra_constraints=extra_constraints)
+    candidate = assessment.accepted
+    validation = (validate_raw_solution(graph,S,C,params,candidate) if candidate is not None
+                  else assessment.initial_validation)
+    if candidate is None or not validation.valid:
         codes = ",".join(sorted({issue.code for issue in validation.issues}))
         raise RuntimeError(
-            f"MILP returned an invalid incumbent candidate (status={status}; "
-            f"independent_validation_failed:{codes})"
+            f"MILP returned an invalid incumbent candidate (status={assessment.validation_candidate.status}; "
+            f"independent_validation_failed:{codes}; {assessment.refinement.reason})"
         )
     return candidate
 

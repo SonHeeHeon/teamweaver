@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; img-src data:; font-src data:; media-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>C1 서비스 연결과 C0 회귀 해결</title>
+<style>body{margin:0;font:18px/1.8 system-ui;background:#f5f6fa;color:#142239}main{max-width:1040px;margin:auto;padding:30px}section{background:white;padding:24px;border-radius:14px;margin:18px 0}h1,h2{line-height:1.4}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd5df;padding:12px;text-align:left}.note{padding:16px;background:#fff1d8;border-left:5px solid #b36200}code{overflow-wrap:anywhere}</style>
+</head>
+<body>
+<main>
+<h1>안전 검사는 유지하면서 기본 부팅을 되살렸습니다</h1>
+<p>C1 서비스 연결 · C0 회귀 해결 · G3 체크포인트 · 2026-10-05</p>
+<section>
+<h2>먼저, 무엇이 문제였나요?</h2>
+<p>C0는 솔버가 만든 추천을 별도 검사 없이 밖으로 보내지 못하게 한 안전 관문입니다. 그런데 엄격하게 검사하자 기존 CBC 결과에 예산이 약 0.0000025만큼 초과하는 사례가 드러났습니다. 매우 작더라도 검사 기준 0.000001을 넘으므로 그대로 반환하면 안 됩니다. 기존 테스트 6개와 기본 서비스 시작이 막혔습니다.</p>
+<p>이번 C1은 검사 기준을 완화하지 않았습니다. 적격한 경우에만 같은 인원 구성 안에서 투입률을 극미세하게 다시 맞춘 뒤 똑같은 검사로 재확인합니다.</p>
+</section>
+<section>
+<h2>실제 연결 방식</h2>
+<table>
+<tr>
+<th>단계</th>
+<th>무슨 뜻인가요?</th>
+</tr>
+<tr>
+<td>원본 보존</td>
+<td>CBC가 준 인원 선택·투입률·목적점수를 보관합니다. 원본 검사 실패를 지우지 않습니다.</td>
+</tr>
+<tr>
+<td>적격 확인</td>
+<td>예산만 조금 넘었는지, 인원 선택이 정확한 0 또는 1인지 확인합니다. 큰 위반·분수 인원·다른 위반은 거절합니다.</td>
+</tr>
+<tr>
+<td>고정팀 미세 보정</td>
+<td>사람을 바꾸지 않습니다. 각 투입률 변화는 원본에서 최대 0.0000001, 보정 계산 예산은 최대 2초입니다.</td>
+</tr>
+<tr>
+<td>최종 관문</td>
+<td>원래 목적식과 제약을 재검사하고, 공개 함수의 반환 직전에도 다시 독립 검사합니다.</td>
+</tr>
+</table>
+<p>목적식은 좋은 기술 적합도·협업 점수를 더하고, 과숙련과 미충원 부담을 빼는 기존 4항 그대로입니다. 기존 공개 함수와 화면용 계획 형식도 유지합니다.</p>
+</section>
+<section>
+<h2>대안 구성 규칙도 지켜지나요?</h2>
+<p>대안은 앞선 계획과 다른 구성을 요구하는 추가 조건이 붙습니다. 보정 때문에 이 조건이 사라지면 안 됩니다. 조건을 추가하기 전후의 수학 모델을 찍고, 추가된 선형 조건과 원래 조건을 투입률 보정에 넘깁니다. 변수 범위나 목적식을 바꾸는 미지원 변경은 보정하지 않습니다.</p>
+<p>테스트에서는 추가 조건 전달을 일부러 제거했습니다. 그러자 두 테스트가 실제로 실패했습니다. 단순히 “테스트가 통과했다”보다, 보호 장치가 없어지면 문제를 잡는지 확인한 것입니다. 대안 품질 판단도 원본 점수가 아닌 최종 재계산 점수를 사용하는 경계 사례로 검사했습니다.</p>
+</section>
+<section>
+<h2>실제 확인한 결과</h2>
+<table>
+<tr>
+<th>검사</th>
+<th>기록된 결과</th>
+</tr>
+<tr>
+<td>기존 회귀</td>
+<td>문제가 된 6개 기존 테스트는 수정·제외하지 않고 통과했습니다.</td>
+</tr>
+<tr>
+<td>전체 테스트</td>
+<td>최종 616 passed, 실패 0, 10 deselected, 약 74.24초. 기존 선택 정책으로 빠진 slow 테스트를 모두 실행한 것은 아닙니다.</td>
+</tr>
+<tr>
+<td>Phase 0</td>
+<td>정답 대조·단조성·쌍 범위·소형 호환성 총 11개 PASS, 약 1.063초. 새 파일로 저장했습니다.</td>
+</tr>
+<tr>
+<td>실제 서비스 시작</td>
+<td>API의 실제 lifespan을 실행했습니다. 사전 계산을 건너뛰지 않고 약 26.331초에 기본 A/B/C/D 네 계획을 캐시에 만들었습니다.</td>
+</tr>
+</table>
+<p>기본 네 계획 중 A/C의 원본은 예산 검사에 실패했고, 보정 후 네 계획 모두 최종 검사에 통과했습니다. A/C의 최대 투입률 변화는 약 0.000000003333, 보정 시간은 약 0.05135초/0.09446초입니다. 이는 이 합성 데모에서 측정한 값이지, 큰 입력의 시간 보장이나 현실 인력 성과가 아닙니다.</p>
+</section>
+<section>
+<h2>검증의 한계와 정직한 구분</h2>
+<p class="note">사업 효과는 계속 NOT_CALIBRATED입니다. 인력 구성의 현실 성공을 입증하지 않았습니다. 미충원·필수 기술·표시 반올림 같은 다른 감사 과제도 이번 C1로 전부 해결된 것은 아닙니다.</p>
+<p>보정에 쓰는 2초는 소프트 계산 예산입니다. 서비스의 기존 솔버 제한시간에 추가될 수 있으며 강제 종료 시간 보장은 아닙니다. 벤치마크는 별도 부모 프로세스가 전체 마감을 강제합니다. 상한이 없는 CBC 결과는 최적이 증명됐다고 말하지 않습니다.</p>
+<p>독립 최고 역량 리뷰에서 처음에는 테스트 검출력이 부족하다는 의견을 받았습니다. 추가 제약 결함 주입과 실제 품질 경계 테스트로 보강했고 최종 G3 판정은 PASS입니다. 독립 관련 테스트 41개가 통과했고 전체 실행·정답 대조·부팅 증거를 함께 확인했습니다. HTML은 정적 검사 대상이며 로컬 브라우저 파일 접근 제한으로 화면 검수는 하지 않았습니다.</p>
+</section>
+<section>
+<h2>기술 선택과 비용</h2>
+<p>후보 A는 허용오차를 늘리는 방법이라 생산 기준으로 채택하지 않았습니다. 후보 B는 CBC 출력 정밀도 옵션을 실제 적용해 봤지만 두 재현 사례의 잔차가 사라지지 않았습니다. 후보 C는 기존 SciPy/HiGHS로 고정팀 투입률만 미세 보정하는 방식이며 엄격한 재검증을 통과해 채택했습니다. 새 상용 라이선스와 새 패키지 비용은 0입니다. 추가 계산·유지보수·리뷰 비용은 있습니다. 실제 호스팅 단가나 총 운영비는 아직 측정하지 않았습니다.</p>
+</section>
+<section>
+<h2>다음 단계와 파일</h2>
+<p>소스·설정·합성 입력을 동결한 새 실행에서 3솔버를 비교합니다. 옛 357건 결과를 보정 성공으로 다시 쓰지 않습니다. 이번 체크포인트는 로컬 기능 브랜치에만 커밋하며 main 병합과 원격 push는 별도 승인 전 수행하지 않습니다.</p>
+<p>재현: <code>python -m experiments.phase1.service_smoke outputs/phase1-c1-service-smoke.json</code>. 기록은 <code>outputs/phase0-c1-revalidation.json</code>, <code>outputs/phase1-c1-service-smoke.json</code>, <code>docs/superpowers/reviews/2026-10-05-c1-g3-review.md</code>에 있습니다. 원격 주소는 있지만 아직 원격 다운로드 가능 상태는 아닙니다.</p>
+</section>
+</main>
+</body>
+</html>
