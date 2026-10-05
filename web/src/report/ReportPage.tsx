@@ -78,6 +78,7 @@ export function ReportPage() {
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params
           ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
+            + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
             + `반복 협업 기준 ${data.milp_params.clique_threshold_months}개월 · `
             + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
           : "서버 모델 기본값(배치 설정 미적용)"}

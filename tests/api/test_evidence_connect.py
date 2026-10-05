@@ -48,23 +48,31 @@ def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatc
     seen = {}
     real_ctx = w.swap_context
 
-    def ctx(conn, out_id, in_id, evidence=None):
+    def ctx(conn, out_id, in_id, evidence=None, project_id=None):
         seen["ctx"] = evidence
-        return real_ctx(conn, out_id, in_id, evidence=evidence)
+        seen["project_id"] = project_id
+        return real_ctx(conn, out_id, in_id, evidence=evidence, project_id=project_id)
 
-    def brief(client_, model, c, out_id, in_id, evidence=None):
+    def brief(client_, model, c, out_id, in_id, evidence=None, score_change=None):
         seen["brief"] = evidence
+        seen["score_change"] = score_change
         return {"rationale": "r", "risks": [], "alternatives": [], "evidence": []}
 
     monkeypatch.setattr(w, "swap_context", ctx)
     monkeypatch.setattr(w, "generate_briefing", brief)
     app.dependency_overrides[get_openai_client_or_none] = lambda: object()
     try:
-        assert client.post("/api/whatif", json=SWAP).status_code == 200
+        res = client.post("/api/whatif", json=SWAP)
+        assert res.status_code == 200
+        body = res.json()
     finally:
         app.dependency_overrides.pop(get_openai_client_or_none, None)
     assert seen["ctx"] is client.app.state.dataset.evidence
     assert seen["brief"] is seen["ctx"]
+    # claude-a 요청: 교체 대상 프로젝트와 점수 변화(전체 = objective_delta)를 설명 재료로 넘긴다.
+    assert seen["project_id"] == SWAP["swap"]["project_id"]
+    assert set(seen["score_change"]) == {"skill", "synergy", "overfamiliarity", "unfilled", "total"}
+    assert seen["score_change"]["total"] == pytest.approx(body["objective_delta"])
 
 
 def test_llm_quote_round_trips_from_whatif_to_report(client, monkeypatch, tmp_path):

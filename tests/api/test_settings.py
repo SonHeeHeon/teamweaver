@@ -322,3 +322,23 @@ def test_warmup_is_skipped_when_stored_gap_is_small(monkeypatch, settings_path):
     with TestClient(main.app):
         pass
     assert seen == []
+
+
+def test_max_concurrent_projects_setting_reaches_the_solver(small_graph_client, monkeypatch):
+    """C6: 동시 프로젝트 상한은 관리자 설정(1~6, 기본 3)이며 최적화까지 전달된다."""
+    from api.settings import PlacementSettings
+    assert PlacementSettings().max_concurrent_projects == 3
+    assert PlacementSettings.bounds()["max_concurrent_projects"] == {"min": 1, "max": 6}
+    assert PlacementSettings(max_concurrent_projects=1).to_milp_params().max_concurrent_projects == 1
+    seen = []
+
+    def fake(graph, S, C, params, n, outcome=None):
+        seen.append(params)
+        return iter(())
+
+    monkeypatch.setattr("api.routes.optimize.generate_plans_streaming", fake)
+    monkeypatch.setattr("api.routes.optimize._skill_relaxation_upper_bound", lambda graph, S, params: 1.0)
+    with small_graph_client.stream("POST", "/api/optimize", json={
+            "weights": {}, "milp_params": {"max_concurrent_projects": 1}, "n_alternatives": 0}) as res:
+        list(res.iter_lines())
+    assert seen[0].max_concurrent_projects == 1

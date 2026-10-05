@@ -167,6 +167,17 @@ def _build_model(
                 problem += (
                     pulp.lpSum(a[(i, j)] for j in active_projects) <= availability
                 )
+    # C6: 같은 달 동시 프로젝트 수 상한 -- 서비스 milp.py와 같은 식.
+    for i, person in enumerate(people):
+        for month in range(len(person.availability)):
+            active_projects = [
+                j for j, project in enumerate(projects) if month in project.months
+            ]
+            if len(active_projects) > params.max_concurrent_projects:
+                problem += (
+                    pulp.lpSum(z[(i, j)] for j in active_projects)
+                    <= params.max_concurrent_projects
+                )
     for j, project in enumerate(projects):
         for grade, required in project.grade_headcount.items():
             matching_people = [

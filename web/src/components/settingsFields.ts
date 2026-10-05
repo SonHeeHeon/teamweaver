@@ -8,6 +8,8 @@ export const FIELDS: { key: Key; label: string; unit: string; percent?: boolean;
                        integer?: boolean; help: string }[] = [
   { key: "min_alloc", label: "최소 투입률", unit: "%", percent: true,
     help: "한 사람을 한 프로젝트에 배치할 때 최소한 써야 하는 근무 비율. 실데이터 답변 기준 30%." },
+  { key: "max_concurrent_projects", label: "동시 프로젝트 최대", unit: "개", integer: true,
+    help: "한 사람이 같은 달에 맡을 수 있는 프로젝트 수. 실데이터 답변 기준 최대 3개(보통 1개)." },
   { key: "clique_threshold_months", label: "반복 협업 기준", unit: "개월", integer: true,
     help: "이 기간 이상 함께 일한 두 사람이 또 같은 프로젝트에 배치되면 감점한다." },
   { key: "lam", label: "협업 시너지 가중", unit: "",

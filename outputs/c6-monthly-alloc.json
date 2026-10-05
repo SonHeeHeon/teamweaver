@@ -1,0 +1,99 @@
+{
+  "experiment": "c6-monthly-allocation",
+  "business_validity": "NOT_CALIBRATED",
+  "params": {
+    "lam": 0.3,
+    "mu": 0.2,
+    "min_alloc": 0.3,
+    "clique_threshold_months": 6,
+    "pair_keep_ratio": 0.15,
+    "slack_penalty": 100.0,
+    "time_limit": 120,
+    "gap": 0.01,
+    "max_pairs": 5000,
+    "max_concurrent_projects": 3
+  },
+  "solver": "CBC (PuLP), threads=1",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "rows": [
+    {
+      "people": 25,
+      "projects": 5,
+      "seed": 2,
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 5.42490476190476,
+        "seconds": 0.3148622920271009,
+        "variables": 501,
+        "constraints": 1201,
+        "assignments": 20
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 6.017404761904766,
+        "seconds": 0.17817500000819564,
+        "variables": 826,
+        "constraints": 1864,
+        "assignments_with_varying_alloc": 5,
+        "assignments": 20
+      },
+      "objective_gain_ratio": 0.10921850723734558,
+      "time_ratio": 0.56588230639209
+    },
+    {
+      "people": 50,
+      "projects": 10,
+      "seed": 42,
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 16.602461124503968,
+        "seconds": 0.9260671669617295,
+        "variables": 2861,
+        "constraints": 7131,
+        "assignments": 52
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 18.68649915936507,
+        "seconds": 2.324912666808814,
+        "variables": 4211,
+        "constraints": 9858,
+        "assignments_with_varying_alloc": 27,
+        "assignments": 51
+      },
+      "objective_gain_ratio": 0.12552584940465367,
+      "time_ratio": 2.510522724217144
+    },
+    {
+      "people": 100,
+      "projects": 20,
+      "seed": 42,
+      "fixed": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 40.56698472055555,
+        "seconds": 8.974125083070248,
+        "variables": 18901,
+        "constraints": 49801,
+        "assignments": 107
+      },
+      "monthly": {
+        "status": "Optimal",
+        "time_limited": false,
+        "objective": 45.42009098038595,
+        "seconds": 14.949125583050773,
+        "variables": 24301,
+        "constraints": 60655,
+        "assignments_with_varying_alloc": 48,
+        "assignments": 102
+      },
+      "objective_gain_ratio": 0.11963191973130055,
+      "time_ratio": 1.6658031222734353
+    }
+  ],
+  "note": "합성 데이터. 목적값은 현행 모델 점수이지 현실 성과가 아니다. gap 내 해라 작은 차이는 잡음일 수 있다."
+}

@@ -48,6 +48,8 @@ class MilpParams(BaseModel):
     time_limit: int = 120
     gap: float = 0.05
     max_pairs: int = 5000
+    # 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6, 사용자 답변: 최대 3개·보통 1개).
+    max_concurrent_projects: int = 3
 
 
 def pruned_pairs(C: np.ndarray, keep_ratio: float,
@@ -157,6 +159,11 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             active = [j for j, pj in enumerate(projects) if m in pj.months]
             if active:
                 prob += pulp.lpSum(a[i][j] for j in active) <= person.availability[m]
+    for i in range(nP):                                     # 제약 1b: 같은 달 동시 프로젝트 수(C6)
+        for m in range(len(people[i].availability)):
+            active = [j for j, pj in enumerate(projects) if m in pj.months]
+            if len(active) > params.max_concurrent_projects:
+                prob += pulp.lpSum(z[i][j] for j in active) <= params.max_concurrent_projects
     for j, pj in enumerate(projects):                       # 제약 2: 등급 정원 + slack
         for g, need in pj.grade_headcount.items():
             members = [i for i, pe in enumerate(people) if pe.grade == g]

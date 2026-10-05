@@ -89,7 +89,13 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
                       if s.missing > old_missing.get((s.project_id, s.grade), 0)]
 
     # 근거 색인은 두 곳에 같이 넘긴다(K5): 문맥에만 넘기면 브리핑의 인용 검증이 꺼진다.
-    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence)
+    # 교체 대상 프로젝트의 요구 기술과 점수 변화를 넘긴다(claude-a 요청 2026-10-05): 없으면 LLM이
+    # "정보 부족으로 단정 어렵다"를 반복했다.
+    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence,
+                       project_id=req.swap.project_id)
+    score_change = {k: getattr(after.objective, k) - getattr(before.objective, k)
+                    for k in ("skill", "synergy", "overfamiliarity", "unfilled")}
+    score_change["total"] = after.objective.total - before.objective.total
     fallback_used = False
     if client is None:
         briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
@@ -98,7 +104,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         try:
             model = load_pricing()["briefing_model"]
             briefing = generate_briefing(client, model, ctx, req.swap.out_person_id,
-                                         req.swap.in_person_id, evidence=evidence)
+                                         req.swap.in_person_id, evidence=evidence,
+                                         score_change=score_change)
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
             briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
             fallback_used = True

@@ -122,6 +122,7 @@ class MilpParamsIn(BaseModel):
     time_limit: int | None = Field(default=None, ge=1, le=3600)
     gap: float | None = Field(default=None, ge=0.0, le=1.0)
     max_pairs: int | None = Field(default=None, ge=1)
+    max_concurrent_projects: int | None = Field(default=None, ge=1, le=20)
 
     def to_milp_params(self) -> MilpParams:
         return MilpParams(**self.model_dump(exclude_none=True))
