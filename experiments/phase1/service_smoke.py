@@ -29,7 +29,9 @@ async def run():
     start = time.monotonic()
     try:
         async with lifespan(app):
-            plans = app.state.cache.get(ResultCache.key({}, {}, 3))
+            # main 통합(K8·K9) 뒤 캐시 키는 저장된 배치 설정과 활성 데이터셋 버전을 포함한다.
+            warm_params = app.state.settings_store.current().settings.to_milp_params()
+            plans = app.state.cache.get(ResultCache.key({}, warm_params, 3, app.state.dataset.info.version))
             if not plans or not captures:
                 raise RuntimeError("actual default warm-up did not populate cache")
             return {"status":"PASS","actual_lifespan":True,"skip_warm":False,

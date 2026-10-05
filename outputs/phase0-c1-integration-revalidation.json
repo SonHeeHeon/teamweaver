@@ -1,0 +1,288 @@
+{
+ "environment": {
+  "python": "3.12.13",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "cpu_model": "Apple M4",
+  "ram": "16.0 GiB",
+  "cbc": "Version: 2.10.3",
+  "neo4j_server": "unavailable (ModuleNotFoundError)",
+  "packages": {
+   "numpy": "2.5.1",
+   "scipy": "1.18.0",
+   "pulp": "3.3.2",
+   "neo4j": "not installed",
+   "tiktoken": "0.13.0",
+   "openai": "2.52.0",
+   "pandas": "3.0.5"
+  }
+ },
+ "generated_at_note": "타임스탬프는 커밋 시각으로 갈음한다(재현성 유지)",
+ "data": {
+  "phase": "phase0_model_validation",
+  "data_boundary": "All current inputs are synthetic; no project outcome is inferred.",
+  "business_validity": "NOT_CALIBRATED",
+  "solver": "CBC",
+  "available_pulp_solvers": [
+   "PULP_CBC_CMD",
+   "SCIP_PY",
+   "HiGHS"
+  ],
+  "cases": [
+   {
+    "name": "one_slot",
+    "data_source": "synthetic_handcrafted",
+    "cbc_status": "Optimal",
+    "cbc_objective": 0.9,
+    "oracle_objective": 0.9,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 4,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 0.9,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0,
+     "total": 0.9
+    },
+    "model_size": {
+     "variables": 5,
+     "constraints": 8
+    },
+    "timings_seconds": {
+     "build": 0.0001652080100029707,
+     "solve": 0.017035792116075754,
+     "validate": 4.7584064304828644e-05,
+     "total": 0.019650875125080347
+    },
+    "passed": true
+   },
+   {
+    "name": "budget_shortfall",
+    "data_source": "synthetic_handcrafted",
+    "cbc_status": "Optimal",
+    "cbc_objective": -99.685,
+    "oracle_objective": -99.685,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 4,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 0.315,
+     "synergy": 0.0,
+     "overfamiliarity": -0.0,
+     "unfilled": -100.0,
+     "total": -99.685
+    },
+    "model_size": {
+     "variables": 5,
+     "constraints": 8
+    },
+    "timings_seconds": {
+     "build": 0.0002597079146653414,
+     "solve": 0.016689958982169628,
+     "validate": 4.791701212525368e-05,
+     "total": 0.019231125013902783
+    },
+    "passed": true
+   },
+   {
+    "name": "all_objective_terms",
+    "data_source": "synthetic_handcrafted",
+    "cbc_status": "Optimal",
+    "cbc_objective": -98.38,
+    "oracle_objective": -98.38,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 4,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 1.7000000000000002,
+     "synergy": 0.12,
+     "overfamiliarity": -0.2,
+     "unfilled": -100.0,
+     "total": -98.38
+    },
+    "model_size": {
+     "variables": 6,
+     "constraints": 11
+    },
+    "timings_seconds": {
+     "build": 0.0002804580144584179,
+     "solve": 0.014572208980098367,
+     "validate": 4.5625027269124985e-05,
+     "total": 0.017195167019963264
+    },
+    "passed": true
+   },
+   {
+    "name": "generated_seed_7",
+    "data_source": "synthetic_seeded",
+    "cbc_status": "Optimal",
+    "cbc_objective": 1.4529955048041736,
+    "oracle_objective": 1.4529955048041736,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 8,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 1.2802897977306156,
+     "synergy": 0.17270570707355803,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0,
+     "total": 1.4529955048041736
+    },
+    "model_size": {
+     "variables": 10,
+     "constraints": 23
+    },
+    "timings_seconds": {
+     "build": 0.0009964159689843655,
+     "solve": 0.014810999855399132,
+     "validate": 7.066596299409866e-05,
+     "total": 0.019509792095050216
+    },
+    "passed": true
+   },
+   {
+    "name": "generated_seed_11",
+    "data_source": "synthetic_seeded",
+    "cbc_status": "Optimal",
+    "cbc_objective": 1.3275523379403764,
+    "oracle_objective": 1.3275523379403764,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 8,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 1.207102830653369,
+     "synergy": 0.12044950728700723,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0,
+     "total": 1.3275523379403764
+    },
+    "model_size": {
+     "variables": 10,
+     "constraints": 23
+    },
+    "timings_seconds": {
+     "build": 0.0003245419356971979,
+     "solve": 0.01410141703672707,
+     "validate": 6.512482650578022e-05,
+     "total": 0.017985749989748
+    },
+    "passed": true
+   },
+   {
+    "name": "generated_seed_19",
+    "data_source": "synthetic_seeded",
+    "cbc_status": "Optimal",
+    "cbc_objective": 1.201436199940964,
+    "oracle_objective": 1.201436199940964,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 8,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 0.9836753964959528,
+     "synergy": 0.21776080344501111,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0,
+     "total": 1.201436199940964
+    },
+    "model_size": {
+     "variables": 10,
+     "constraints": 23
+    },
+    "timings_seconds": {
+     "build": 0.0003103341441601515,
+     "solve": 0.013054374838247895,
+     "validate": 6.104190833866596e-05,
+     "total": 0.016899832990020514
+    },
+    "passed": true
+   },
+   {
+    "name": "generated_seed_11_partial_pruning",
+    "data_source": "synthetic_seeded",
+    "cbc_status": "Optimal",
+    "cbc_objective": 1.3275523379403764,
+    "oracle_objective": 1.3275523379403764,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 8,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 1.207102830653369,
+     "synergy": 0.12044950728700723,
+     "overfamiliarity": -0.0,
+     "unfilled": -0.0,
+     "total": 1.3275523379403764
+    },
+    "model_size": {
+     "variables": 8,
+     "constraints": 17
+    },
+    "timings_seconds": {
+     "build": 0.0003368749748915434,
+     "solve": 0.013977834023535252,
+     "validate": 7.00000673532486e-05,
+     "total": 0.01805345807224512
+    },
+    "passed": true
+   }
+  ],
+  "invariants": [
+   {
+    "name": "budget_increase",
+    "base_objective": -99.685,
+    "raised_objective": 1.6,
+    "passed": true
+   },
+   {
+    "name": "availability_increase",
+    "base_objective": 1.0250000000000001,
+    "raised_objective": 1.7000000000000002,
+    "passed": true
+   }
+  ],
+  "pair_cap": {
+   "data_source": "synthetic_current_generator",
+   "full_reward_pairs": 190,
+   "capped_reward_pairs": 5,
+   "full_objective": -95.12933333333334,
+   "capped_solver_objective": -95.13933333333334,
+   "capped_evaluated_under_full_objective": -95.13933333333333,
+   "objective_delta": 0.009999999999990905,
+   "relative_loss_pct": 0.010512004709368548,
+   "validation_valid": true,
+   "passed": true
+  },
+  "smoke": {
+   "name": "cbc_50x10_seed42",
+   "data_source": "synthetic_current_generator",
+   "people": 50,
+   "projects": 10,
+   "parsed_reviews": 137,
+   "status": "Optimal",
+   "objective": 16.785188155615085,
+   "validation_valid": true,
+   "validation_issues": [],
+   "model_size": {
+    "variables": 2861,
+    "constraints": 6831
+   },
+   "timings_seconds": {
+    "solve": 0.7277595000341535,
+    "total": 0.738884000107646
+   },
+   "passed": true
+  },
+  "failures": [],
+  "completed_cases": 11,
+  "elapsed_seconds": 1.2560791249852628,
+  "calculation_status": "PASS"
+ }
+}
