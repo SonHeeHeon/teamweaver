@@ -67,3 +67,24 @@ def test_benchmark_formulation_has_the_same_limit():
                          _PulpFactory())
     built.problem.solve(pulp.PULP_CBC_CMD(msg=0))
     assert sum(round(v.value()) for v in built.z.values()) == 3
+
+
+def test_rows_are_skipped_only_when_availability_already_prevents_the_violation():
+    """상한+1곳에 최소 투입률로 못 들어가는 사람은 가용률 제약이 막는다 -- 행을 넣지 않아도 같은 해(리뷰 S3).
+    가용률 1.0·최소 0.3이면 4곳 = 1.2 > 1.0이라 K=3 행은 묶이지 않는다."""
+    graph, S, C = _four_overlapping_projects()
+    skipped = solve_milp_diagnostic(graph, S, C, MilpParams(pair_keep_ratio=0.0, min_alloc=0.3, max_concurrent_projects=3))
+    binding = solve_milp_diagnostic(graph, S, C, MilpParams(pair_keep_ratio=0.0, min_alloc=0.2, max_concurrent_projects=3))
+    assert _max_concurrent(graph, skipped.plan.entries) == 3
+    # 같은 규모인데 min_alloc 0.3이면 상한 행(2개월)이 빠지고, 0.2면(4×0.2 ≤ 1.0) 들어간다.
+    assert binding.constraint_count - skipped.constraint_count == 2
+
+
+def test_phase0_oracle_knows_the_limit():
+    """독립 오라클(전수 탐색)도 같은 규칙을 지킨다 -- 아니면 MILP와 목적값이 어긋난다(리뷰 S5)."""
+    from experiments.phase0.oracle import solve_tiny_oracle
+    graph, S, C = _four_overlapping_projects()
+    params = MilpParams(pair_keep_ratio=0.0, max_concurrent_projects=2, gap=0.0)
+    oracle = solve_tiny_oracle(graph, S, C, params)
+    milp = solve_milp_diagnostic(graph, S, C, params)
+    assert abs(oracle.objective - milp.objective) < 1e-6

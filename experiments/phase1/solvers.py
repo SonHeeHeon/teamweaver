@@ -173,7 +173,11 @@ def _build_model(
             active_projects = [
                 j for j, project in enumerate(projects) if month in project.months
             ]
-            if len(active_projects) > params.max_concurrent_projects:
+            if (
+                len(active_projects) > params.max_concurrent_projects
+                and (params.max_concurrent_projects + 1) * params.min_alloc
+                <= person.availability[month] + 1e-6
+            ):
                 problem += (
                     pulp.lpSum(z[(i, j)] for j in active_projects)
                     <= params.max_concurrent_projects

@@ -71,7 +71,8 @@ def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatc
     assert seen["brief"] is seen["ctx"]
     # claude-a 요청: 교체 대상 프로젝트와 점수 변화(전체 = objective_delta)를 설명 재료로 넘긴다.
     assert seen["project_id"] == SWAP["swap"]["project_id"]
-    assert set(seen["score_change"]) == {"skill", "synergy", "overfamiliarity", "unfilled", "total"}
+    assert {"skill", "synergy", "overfamiliarity", "unfilled", "total", "feasible"} <= set(seen["score_change"])
+    assert seen["score_change"]["feasible"] is body["feasible"]           # 점수만 보고 권고하지 않게(C6 리뷰 S4)
     assert seen["score_change"]["total"] == pytest.approx(body["objective_delta"])
 
 

@@ -100,6 +100,14 @@ def solve_tiny_oracle(
                 break
         if not grade_feasible:
             continue
+        # C6: 한 사람이 같은 달에 맡는 프로젝트 수 상한 -- 서비스·벤치 MILP와 같은 규칙.
+        if any(
+            sum(z[(i, j)] for j, project in enumerate(projects) if month in project.months)
+            > params.max_concurrent_projects
+            for i, person in enumerate(people)
+            for month in range(len(person.availability))
+        ):
+            continue
 
         a_ub: list[list[float]] = []
         b_ub: list[float] = []

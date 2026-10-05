@@ -10,6 +10,7 @@
 - 협업·반복 협업·미충원 항과 정원·동시 프로젝트 제약은 z(배치 여부)에만 걸려 그대로다.
 - 가용률: 달마다 Σ_j a_ijm ≤ 가용률_im. 예산: 달마다 Σ_i 단가_i × a_ijm ≤ 월 예산_j.
 - 최소 투입률: 배치되면 진행 달마다 a_ijm ≥ min_alloc.
+- 고정판도 같은 코드로 만든다(a_ijm을 한 변수 a_ij로 묶음) -- 서비스 MILP와 같은 식이다.
 
 실행: uv run --group benchmark python -m experiments.c6.monthly_alloc outputs/c6-monthly-alloc.json
 결과는 합성 데이터 기준이며 사업 효과는 NOT_CALIBRATED다."""
@@ -24,17 +25,23 @@ import pulp
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs, solve_milp_diagnostic
+from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs
 from core.scoring.engine import ScoringEngine
 
 
-def solve_monthly(graph, S, C, params: MilpParams) -> dict:
+def solve_model(graph, S, C, params: MilpParams, *, monthly: bool, solver: str = "highs") -> dict:
+    """monthly=False면 한 (사람, 프로젝트)에 투입률 하나(서비스와 같은 고정판). 두 판을 같은 코드·같은
+    솔버·1스레드로 풀고 풀이 시간만 잰다(리뷰 S2: 이전엔 서비스 경로의 검증·보정 시간까지 섞였다)."""
     people, projects = graph.people, graph.projects
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver_monthly", pulp.LpMaximize)
     z = {(i, j): pulp.LpVariable(f"z_{i}_{j}", cat="Binary") for i in range(nP) for j in range(nJ)}
-    a = {(i, j, m): pulp.LpVariable(f"a_{i}_{j}_{m}", 0.0, 1.0)
-         for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
+    if monthly:
+        a = {(i, j, m): pulp.LpVariable(f"a_{i}_{j}_{m}", 0.0, 1.0)
+             for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
+    else:
+        shared = {(i, j): pulp.LpVariable(f"a_{i}_{j}", 0.0, 1.0) for i in range(nP) for j in range(nJ)}
+        a = {(i, j, m): shared[(i, j)] for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)
     pairs = sorted(set(pruned) | overfam)
@@ -47,7 +54,8 @@ def solve_monthly(graph, S, C, params: MilpParams) -> dict:
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
         - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
         - params.slack_penalty * pulp.lpSum(slack.values()))
-    for (i, j, m), v in a.items():
+    for v_key in (a if monthly else {(i, j, projects[j].months[0]) for i in range(nP) for j in range(nJ)}):
+        v, (i, j) = a[v_key], v_key[:2]
         prob += v <= z[(i, j)]
         prob += v >= params.min_alloc * z[(i, j)]
     for (p, q) in pairs:
@@ -60,7 +68,8 @@ def solve_monthly(graph, S, C, params: MilpParams) -> dict:
             active = [j for j, pj in enumerate(projects) if m in pj.months]
             if active:
                 prob += pulp.lpSum(a[(i, j, m)] for j in active) <= person.availability[m]
-            if len(active) > params.max_concurrent_projects:
+            if (len(active) > params.max_concurrent_projects
+                    and (params.max_concurrent_projects + 1) * params.min_alloc <= person.availability[m] + 1e-6):
                 prob += pulp.lpSum(z[(i, j)] for j in active) <= params.max_concurrent_projects
     for j, pj in enumerate(projects):
         for g, need in pj.grade_headcount.items():
@@ -68,7 +77,9 @@ def solve_monthly(graph, S, C, params: MilpParams) -> dict:
         for m in pj.months:
             prob += pulp.lpSum(people[i].monthly_rate * a[(i, j, m)] for i in range(nP)) <= pj.monthly_budget
     t = time.monotonic()
-    prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap, threads=1))
+    cmd = (pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap, threads=1) if solver == "cbc"
+           else pulp.HiGHS(msg=False, timeLimit=params.time_limit, gapRel=params.gap, threads=1))
+    prob.solve(cmd)
     elapsed = time.monotonic() - t
     status = pulp.LpStatus[prob.status]
     obj = pulp.value(prob.objective)
@@ -76,22 +87,13 @@ def solve_monthly(graph, S, C, params: MilpParams) -> dict:
     for i in range(nP):
         for j, pj in enumerate(projects):
             if (z[(i, j)].value() or 0) > 0.5:
-                vals = [a[(i, j, m)].value() for m in pj.months]
+                vals = [a[(i, j, m)].value() or 0.0 for m in pj.months]
                 if max(vals) - min(vals) > 1e-4:
                     varying += 1
     return {"status": status, "time_limited": prob.sol_status == pulp.LpSolutionIntegerFeasible,
             "objective": obj, "seconds": elapsed, "variables": len(prob.variables()),
             "constraints": len(prob.constraints), "assignments_with_varying_alloc": varying,
             "assignments": sum(1 for v in z.values() if (v.value() or 0) > 0.5)}
-
-
-def solve_fixed(graph, S, C, params: MilpParams) -> dict:
-    t = time.monotonic()
-    raw = solve_milp_diagnostic(graph, S, C, params)
-    elapsed = time.monotonic() - t
-    return {"status": raw.status, "time_limited": raw.evidence.termination_reason == "time_limit_incumbent",
-            "objective": raw.objective, "seconds": elapsed, "variables": raw.variable_count,
-            "constraints": raw.constraint_count, "assignments": len(raw.plan.entries)}
 
 
 SIZES = [(25, 5, 2), (50, 10, 42), (100, 20, 42)]
@@ -102,6 +104,7 @@ def main() -> None:
     ap.add_argument("output", type=Path)
     ap.add_argument("--time-limit", type=int, default=120)
     ap.add_argument("--gap", type=float, default=0.01)
+    ap.add_argument("--solvers", default="highs,cbc")
     args = ap.parse_args()
     params = MilpParams(min_alloc=0.3, time_limit=args.time_limit, gap=args.gap)
     rows = []
@@ -110,20 +113,22 @@ def main() -> None:
         g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
         eng = ScoringEngine(g)
         S, C = eng.skill_matrix({}), eng.synergy_matrix()
-        fixed = solve_fixed(g, S, C, params)
-        monthly = solve_monthly(g, S, C, params)
-        gain = (monthly["objective"] - fixed["objective"]) / abs(fixed["objective"]) if fixed["objective"] else None
-        rows.append({"people": n, "projects": j, "seed": seed, "fixed": fixed, "monthly": monthly,
-                     "objective_gain_ratio": gain,
-                     "time_ratio": monthly["seconds"] / fixed["seconds"] if fixed["seconds"] else None})
-        print(f"{n}/{j} seed{seed}: fixed {fixed['objective']:.3f} ({fixed['seconds']:.1f}s, "
-              f"{fixed['variables']} vars) | monthly {monthly['objective']:.3f} ({monthly['seconds']:.1f}s, "
-              f"{monthly['variables']} vars, 월별로 달라진 배치 {monthly['assignments_with_varying_alloc']}"
-              f"/{monthly['assignments']}) | gain {gain:+.2%}", flush=True)
+        for solver in args.solvers.split(","):
+            fixed = solve_model(g, S, C, params, monthly=False, solver=solver)
+            monthly = solve_model(g, S, C, params, monthly=True, solver=solver)
+            gain = (monthly["objective"] - fixed["objective"]) / abs(fixed["objective"])
+            rows.append({"people": n, "projects": j, "seed": seed, "solver": solver, "fixed": fixed,
+                         "monthly": monthly, "objective_gain_ratio": gain,
+                         "time_ratio": monthly["seconds"] / fixed["seconds"] if fixed["seconds"] else None})
+            print(f"{n}/{j} {solver}: fixed {fixed['objective']:.3f} ({fixed['seconds']:.1f}s, {fixed['variables']} vars"
+                  f"{', 시간한도' if fixed['time_limited'] else ''}) | monthly {monthly['objective']:.3f} "
+                  f"({monthly['seconds']:.1f}s, {monthly['variables']} vars{', 시간한도' if monthly['time_limited'] else ''}, "
+                  f"월별로 달라진 배치 {monthly['assignments_with_varying_alloc']}/{monthly['assignments']}) | gain {gain:+.2%}",
+                  flush=True)
     out = {"experiment": "c6-monthly-allocation", "business_validity": "NOT_CALIBRATED",
-           "params": params.model_dump(), "solver": "CBC (PuLP), threads=1",
+           "params": params.model_dump(), "timing": "같은 모델 코드·같은 솔버·threads=1, prob.solve만 측정",
            "platform": platform.platform(), "rows": rows,
-           "note": "합성 데이터. 목적값은 현행 모델 점수이지 현실 성과가 아니다. gap 내 해라 작은 차이는 잡음일 수 있다."}
+           "note": "합성 데이터. 목적값은 현행 모델 점수이지 현실 성과가 아니다. gap 1% 안의 작은 차이는 잡음일 수 있다."}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
 

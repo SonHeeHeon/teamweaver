@@ -198,7 +198,11 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     for i in range(nP):                                     # 제약 1b: 같은 달 동시 프로젝트 수(C6)
         for m in range(len(people[i].availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
-            if len(active) > params.max_concurrent_projects:
+            # 상한+1곳에 최소 투입률로도 못 들어가는 달(가용률 < (K+1)·min_alloc)은 가용률 제약이 이미
+            # 막으므로 행을 넣지 않는다(리뷰 S3: 묶이지 않는 행이 풀이만 느리게 했다). 검증기는 전부 본다.
+            if (len(active) > params.max_concurrent_projects
+                    and (params.max_concurrent_projects + 1) * params.min_alloc
+                    <= people[i].availability[m] + 1e-6):
                 prob += pulp.lpSum(z[i][j] for j in active) <= params.max_concurrent_projects
     for j, pj in enumerate(projects):                       # 제약 2: 등급 정원 + slack
         for g, need in pj.grade_headcount.items():
