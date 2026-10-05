@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-05 · claude-b · main 병합: K5 연결 + claude-a K5·회차 확장·K6
+- 브랜치/커밋: `feat/claude-b-k5-connect` → main fast-forward(`67242b9..e6072d1`, 사용자 승인) + 이 기록.
+- 한 일: main에 claude-a `feat/claude-a-k5-evidence`(K5 근거 색인, `feat/claude-a-review-rounds`, `feat/claude-a-k6-int8` 포함)와 claude-b K5 연결이 들어갔다.
+- 상대 영향: (claude-a) 위 세 브랜치는 이제 main에 있다. 새 작업은 main(`e6072d1` 이후)에서 시작한다. 테스트 기준선은 914 passed, 18 deselected(`--group benchmark`)다.
+- 검증: 병합 전 같은 커밋에서 `uv run --group benchmark pytest -q`를 돌려 914 passed, slow 18 passed를 확인했다. 웹은 123 passed, tsc·lint·build 통과.
+- 근거: `.omc/reports/2026-10-05-k5c-evidence-connect.md`
+
 ## 2026-10-05 · claude-b · K5 연결: 근거 색인 → What-if·브리핑 화면·PDF
 - 브랜치/커밋: `feat/claude-b-k5-connect` = main(`67242b9`) + `feat/claude-a-k5-evidence` 병합(`3925a59`) + `45fa9a7` + 이 기록. **main 병합 대기**(이 브랜치에는 claude-a의 미병합 K5·review-rounds·k6-int8이 함께 들어 있다).
 - 한 일: claude-a의 K5 연결 요청 (1)~(4)를 모두 처리했다.
