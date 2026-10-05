@@ -43,6 +43,11 @@ export function PlanCards({ plans, selected, onSelect }: Props) {
               <dd className="tabular-nums">{p.entries.length}건</dd>
             </div>
           </dl>
+          {p.time_limited && (
+            <p className="mt-2 text-xs text-amber-600" title="계산 시간 한도에 걸려 멈춘 답이다. 더 좋은 답이 있을 수 있다.">
+              시간 한도 도달(최선 증명 전)
+            </p>
+          )}
           {p.unfilled.length > 0 && (
             <p className="mt-2 text-xs text-amber-500">
               미충원 {p.unfilled.length}건

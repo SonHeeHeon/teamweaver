@@ -5,9 +5,9 @@ import type { SettingsResponse } from "../api/types";
 
 const DATA: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },
@@ -143,5 +143,23 @@ describe("SettingsTab — 투입률 방식(월별 투입률)", () => {
     fireEvent.click(screen.getByRole("button", { name: /저장/ }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0].allocation_mode).toBe("monthly");
+  });
+});
+
+
+describe("SettingsTab — 계산 시간 자동(claude-a 요청)", () => {
+  it("자동이면 권장값을 보여 주고 입력을 잠그며, 끄면 수동값으로 저장한다", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    const hint = { n_people: 100, per_solve_s: 30, worst_case_total_s: 120, measured: true, basis: "측정" };
+    render(<SettingsTab data={{ ...DATA, settings: { ...DATA.settings, time_limit_auto: true },
+                                recommended_time: hint }} onSave={onSave} />);
+    const input = screen.getByLabelText(/계산 시간 한도/) as HTMLInputElement;
+    expect(input.disabled).toBe(true);
+    expect(input.value).toBe("30");
+    fireEvent.click(screen.getByLabelText("자동(인원 기준)"));
+    expect(input.disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /저장/ }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0]).toMatchObject({ time_limit_auto: false, time_limit: 120 });
   });
 });

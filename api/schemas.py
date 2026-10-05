@@ -125,9 +125,13 @@ class MilpParamsIn(BaseModel):
     max_pairs: int | None = Field(default=None, ge=1)
     max_concurrent_projects: int | None = Field(default=None, ge=1, le=6)
     allocation_mode: Literal["fixed", "monthly"] | None = None
+    # 관리자 설정의 "자동(인원 기준)" 표시. 계산에는 쓰지 않는다(화면이 실제 시간을 time_limit으로 보낸다).
+    # 받기만 하고 계산에는 쓰지 않는다. 자동 시간은 GET /api/settings의 effective_time_limit을
+    # time_limit으로 보내야 적용된다 -- 이 칸만 true로 보내면 time_limit 기본값(120초)이 쓰인다.
+    time_limit_auto: bool | None = None
 
     def to_milp_params(self) -> MilpParams:
-        return MilpParams(**self.model_dump(exclude_none=True))
+        return MilpParams(**self.model_dump(exclude_none=True, exclude={"time_limit_auto"}))
 
 
 class SettingsUpdate(BaseModel):
@@ -148,6 +152,7 @@ class SettingsBody(BaseModel):
     load_error: str | None
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
+    effective_time_limit: int | None = None
 
 
 class PlanEvaluationOut(BaseModel):
@@ -288,7 +293,9 @@ class ReportRequest(BaseModel):
         if self.applied_swaps and self.base_entries is None:
             raise ValueError("applied_swaps가 있으면 base_entries(원 플랜 명단)가 필요하다")
         if self.milp_params is not None:
-            missing = set(PlacementSettings.model_fields) - self.milp_params.model_fields_set
+            # time_limit_auto는 계산에 쓰지 않는 표시용 칸이라 요구하지 않는다(이전 화면 호환, 리뷰 S4).
+            missing = (set(PlacementSettings.model_fields) - {"time_limit_auto"}
+                       - self.milp_params.model_fields_set)
             if missing:
                 raise ValueError(f"milp_params에 빠진 필드: {sorted(missing)}")
         return self

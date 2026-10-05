@@ -157,7 +157,9 @@ async def reset_dataset(request: Request) -> dict:
             _activate(request, fixture)
             await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
-            request.app.state.dataset_restore_error = None
-            return {**fixture.info.to_dict(), "restore_error": None}
+            # 시연 묶음을 못 읽어 예전 fixture로 되돌아갔으면 그 이유를 알린다(claude-a 요청 -- 조용히 바뀌지 않게).
+            err = getattr(request.app.state, "demo_bundle_error", None)
+            request.app.state.dataset_restore_error = err
+            return {**fixture.info.to_dict(), "restore_error": err}
     finally:
         state.dataset_switching = False

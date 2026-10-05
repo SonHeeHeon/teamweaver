@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-06 · claude-b · claude-a 요청 처리: 데이터 탭 표시·자동 계산 시간·시간 한도 배지
+- 브랜치/커밋: `feat/claude-b-data-settings` (main 병합)
+- 한 일:
+  - 데이터 탭: `source="demo-bundle"`를 "시연 데이터(실제 형식)"로 표시. 서버 오류 문장을 그대로 보여 준다. 기본 데이터로 되돌릴 때 시연 묶음이 실패하면 이유(`restore_error`)를 돌려준다. 선택 파일 2개에는 "(선택 · 계산에 쓰지 않음)" 표시.
+  - 설정: `time_limit_auto`(새 설치 기본 켬)는 인원 기준 `time_budget.recommend`로 계산 시간을 정한다. GET `/api/settings`가 `effective_time_limit`을 주고, 웹은 이 숫자를 `milp_params.time_limit`으로 보낸다. 부팅 사전계산도 같은 값을 써서 캐시가 맞는다. `time_limit` 상한은 600에서 900으로 올렸다. 실행 안내에 A~D 최악 대기 시간을 보인다.
+  - 시간 한도에서 멈춘 해: `PlanAssignment.time_limited`(`alternatives._solve`가 `termination_reason == "time_limit_incumbent"`이면 True) → SSE `time_limited` → 플랜 카드 배지 "시간 한도 도달(최선 증명 전)".
+- 상대 영향:
+  - `core/optimize/types.py`·`alternatives.py`(Codex 영역)를 임시 위임 범위에서 고쳤다. 새 칸은 기본값 False라 기존 호출은 그대로 동작한다.
+  - 기존 `settings.json`(칸 없음)은 수동으로 읽는다. 관리자가 정한 시간은 바뀌지 않는다.
+  - 기본 설정의 계산 시간은 100명 기준 120초에서 30초가 된다(자동). 시간 한도 해는 캐시하지 않는다.
+- 검증: `uv run --group benchmark pytest -q` → 1221 passed, 19 deselected. `-m slow` → 19 passed. `npx vitest run` → 142 passed. `npx tsc -b`·oxlint·build 통과. Opus 폴백 리뷰(Codex 쿼터 소진): MUST 1(소유 영역 절차, work-split에 기록), SHOULD 4 반영.
+- 근거: `.omc/reports/2026-10-06-data-settings.md`
+
 ## 2026-10-06 · claude-a · 실제 같은 시연 데이터: 긴 동료 평가·과거 성과·10년 조회 창·시연 부팅
 - 브랜치/커밋: `feat/claude-a-demo-data` `b3456a6..7cc9c6e` → main 병합(사용자 결정 2026-10-06: 병합하되 `run_poc.sh` 기본값은 예전 고정 데이터, 실제 형식 데이터는 `TEAMWEAVER_DEMO_BUNDLE`로 켬)
 - 한 일:

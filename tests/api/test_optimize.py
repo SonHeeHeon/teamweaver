@@ -77,7 +77,9 @@ def test_default_scenario_is_warmed_at_startup(monkeypatch):
     monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
     with TestClient(app) as warmed_client:
         import time
-        params = warmed_client.get("/api/settings").json()["settings"]
+        body = warmed_client.get("/api/settings").json()
+        # 화면처럼: 자동 계산 시간이면 서버가 정한 실제 값(effective_time_limit)을 보낸다(web effectiveSettings).
+        params = {**body["settings"], "time_limit": body["effective_time_limit"]}
         start = time.monotonic()
         with warmed_client.stream(
                 "POST", "/api/optimize",

@@ -91,3 +91,14 @@ describe("DatasetTab — 저장(K13)", () => {
     expect(await screen.findByText(/재기동하면 기본 데이터로 돌아간다/)).toBeInTheDocument();
   });
 });
+
+
+describe("DatasetTab — 시연 데이터·오류 문구(claude-a 요청)", () => {
+  it("시연 묶음은 '시연 데이터(실제 형식)'로, 서버가 준 오류 문장은 그대로 보인다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, source: "demo-bundle",
+      restore_error: "시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x" } as any} onSwitched={vi.fn()} />);
+    expect(screen.getByText(/시연 데이터\(실제 형식\)/)).toBeInTheDocument();
+    expect(screen.getByText("시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x")).toBeInTheDocument();
+    expect(screen.queryByText(/저장된 업로드 데이터를 복원하지 못해/)).not.toBeInTheDocument();
+  });
+});

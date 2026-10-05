@@ -31,6 +31,7 @@ export function SettingsTab({ data, onSave }: Props) {
     Object.fromEntries(FIELDS.map((f) => [f.key, toInput(f, s[f.key])])) as Record<Key, string>;
   const [form, setForm] = useState<Record<Key, string>>(() => fromSettings(data.settings));
   const [mode, setMode] = useState<Mode>(data.settings.allocation_mode ?? "fixed");
+  const [auto, setAuto] = useState<boolean>(data.settings.time_limit_auto !== false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // 서버 값이 바뀌면(다른 사람 저장·실행 시 재조회·내 저장) 폼을 새 값으로 다시 채운다.
@@ -41,6 +42,7 @@ export function SettingsTab({ data, onSave }: Props) {
     setSeenUpdatedAt(data.updated_at);
     setForm(fromSettings(data.settings));
     setMode(data.settings.allocation_mode ?? "fixed");
+    setAuto(data.settings.time_limit_auto !== false);
   }
 
   const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time) : data.recommended_time;
@@ -48,9 +50,11 @@ export function SettingsTab({ data, onSave }: Props) {
   const errors = Object.fromEntries(parsed.filter(([, v]) => typeof v === "string"));
   const valid = Object.keys(errors).length === 0;
   const next = valid
-    ? ({ ...Object.fromEntries(parsed), allocation_mode: mode } as unknown as PlacementSettings) : null;
+    ? ({ ...Object.fromEntries(parsed), allocation_mode: mode, time_limit_auto: auto } as unknown as PlacementSettings)
+    : null;
   const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
-                                  || mode !== (data.settings.allocation_mode ?? "fixed"));
+                                  || mode !== (data.settings.allocation_mode ?? "fixed")
+                                  || auto !== (data.settings.time_limit_auto !== false));
 
   async function save() {
     if (!next) return;
@@ -111,7 +115,8 @@ export function SettingsTab({ data, onSave }: Props) {
               <input
                 id={`set-${f.key}`}
                 inputMode="decimal"
-                value={form[f.key]}
+                disabled={f.key === "time_limit" && auto}
+                value={f.key === "time_limit" && auto && hint ? String(hint.per_solve_s) : form[f.key]}
                 onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
                 aria-invalid={f.key in errors}
                 aria-describedby={`set-${f.key}-help${f.key in errors ? ` set-${f.key}-err` : ""}`}
@@ -119,6 +124,12 @@ export function SettingsTab({ data, onSave }: Props) {
                   f.key in errors ? "border-red-400" : "border-slate-300"}`}
               />
               <span className="text-sm text-slate-500">{f.unit}</span>
+              {f.key === "time_limit" && (
+                <label className="ml-2 flex items-center gap-1 text-sm text-slate-700">
+                  <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
+                  자동(인원 기준)
+                </label>
+              )}
             </div>
             {f.key in errors && (
               <p id={`set-${f.key}-err`} className="mt-1 text-xs text-red-600">

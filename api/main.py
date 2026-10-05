@@ -86,7 +86,8 @@ async def lifespan(app: FastAPI):
         # 어떤 이유로 실패해도(로더 계약 변경으로 옛 묶음이 새 코드에서 터지는 경우 포함) 서버는
         # 기본 데이터로 뜬다 -- 저장본이 남아 있어 재기동마다 죽는 일을 막는다(Opus 리뷰 S4).
         log.error("업로드 데이터 복원 실패, 기본 데이터로 시작한다: %s", exc)
-        app.state.dataset_restore_error = str(exc)
+        # 화면은 이 문장을 그대로 보여 준다(원인 문구를 서버가 정한다 -- 시연 묶음 실패와 구분).
+        app.state.dataset_restore_error = f"저장된 업로드 데이터를 복원하지 못해 기본 데이터로 시작했다: {exc}"
     app.state.dataset = restored or build_fixture_dataset()
     if restored is None and app.state.dataset_restore_error is None:
         app.state.dataset_restore_error = app.state.demo_bundle_error
@@ -100,8 +101,8 @@ async def lifespan(app: FastAPI):
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = SettingsStore(default_settings_path())
     app.state.settings_store = store
-    warm_params = store.current().settings.to_milp_params()
-    # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 600초 × Plan A·대안 4회)
+    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people))
+    # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 900초 × Plan A·대안 4회)
     # gap이 작으면(실측: gap 0·120초에서 부팅 377초) 재기동이 오래 멈춘다 -- 기본값
     # 수준(120초 이하, gap 5% 이상)일 때만 한다(기본 설정 실측 ~34초).
     warm_ok = (warm_params.time_limit <= WARM_TIME_LIMIT_MAX

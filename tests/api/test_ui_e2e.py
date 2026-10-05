@@ -275,7 +275,7 @@ def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
                 expect(page.get_by_role("button", name="관리자 로그인")).to_be_visible()
                 status = page.request.put(base + "/api/settings", data={
                     "settings": {"min_alloc": 0.4, "clique_threshold_months": 6, "lam": 0.3,
-                                 "mu": 0.2, "time_limit": 120, "gap": 0.05, "max_concurrent_projects": 3, "allocation_mode": "fixed"},
+                                 "mu": 0.2, "time_limit": 120, "gap": 0.05, "max_concurrent_projects": 3, "allocation_mode": "fixed", "time_limit_auto": False},
                     "based_on": None}).status
                 assert status == 401
         finally:

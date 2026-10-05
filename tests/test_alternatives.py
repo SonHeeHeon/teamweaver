@@ -319,3 +319,14 @@ def test_generate_plans_still_returns_a_list_backward_compatible():
     plans = generate_plans(g, eng.skill_matrix({}), eng.synergy_matrix(),
                            MilpParams(time_limit=60), n_alternatives=2)
     assert isinstance(plans, list) and plans[0].label == "A"
+
+
+@pytest.mark.parametrize("reason,flag", [("time_limit_incumbent", True), ("optimal", False)])
+def test_solve_marks_plans_stopped_at_the_time_limit(monkeypatch, reason, flag):
+    # 화면 배지 "시간 한도 도달"의 근거: 솔버 종료 사유가 시간 한도면 플랜에 표시한다(리뷰 S3).
+    from core.optimize import alternatives
+    plan = PlanAssignment(entries=[], objective=1.0, unfilled=[], violations=[])
+    raw = SimpleNamespace(plan=plan, evidence=SimpleNamespace(termination_reason=reason))
+    monkeypatch.setattr(alternatives, "solve_milp_diagnostic", lambda *a, **k: raw)
+    out, got = alternatives._solve(None, None, None, None)
+    assert got == reason and out.time_limited is flag

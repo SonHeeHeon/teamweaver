@@ -59,6 +59,15 @@ export interface PlanEvent {
   dataset_version?: string;
   /** 서버가 이 플랜을 계산했다는 서명(K10). PDF가 원 플랜을 검증하는 데 쓴다. */
   plan_token?: string;
+  /** 솔버가 시간 한도에서 멈춘 해(최선임을 증명하기 전). */
+  time_limited?: boolean;
+}
+
+/** 계산에 실제로 쓸 설정: 자동 계산 시간이면 서버가 정한 값으로 바꿔 넣는다. */
+export function effectiveSettings(resp: SettingsResponse): PlacementSettings {
+  const s = resp.settings;
+  return s.time_limit_auto !== false && resp.effective_time_limit
+    ? { ...s, time_limit: resp.effective_time_limit } : s;
 }
 
 /** 브리핑 근거 하나(K5). quote = 원문 그대로(검증됨), summary = 파서가 바꿔 쓴 문장,
@@ -205,6 +214,8 @@ export interface PlacementSettings {
   max_concurrent_projects: number;
   /** 투입률 방식: fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
   allocation_mode: "fixed" | "monthly";
+  /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
+  time_limit_auto?: boolean;
 }
 
 export interface TimeHint {
@@ -223,13 +234,15 @@ export interface SettingsResponse {
   recommended_time?: TimeHint | null;
   /** 월별 투입률 기준 권장 시간(더 길다). */
   recommended_time_monthly?: TimeHint | null;
+  /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
+  effective_time_limit?: number | null;
 }
 
 /** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */
 export interface DatasetInfo {
   dataset_id: string;
   version: string;
-  source: "fixture" | "upload";
+  source: "fixture" | "upload" | "demo-bundle";
   synthetic: boolean | null;
   people: number;
   projects: number;

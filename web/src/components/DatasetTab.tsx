@@ -2,6 +2,16 @@ import { useState } from "react";
 import { AdminLoginRequiredError, resetDataset, uploadDataset } from "../api/client";
 import type { DatasetInfo, IngestIssue, UploadResult } from "../api/types";
 
+const SOURCE_LABEL: Record<string, string> = {
+  fixture: "기본 데이터", upload: "업로드", "demo-bundle": "시연 데이터(실제 형식)",
+};
+
+/** 계산에 쓰지 않는 선택 파일(claude-a 요청) -- 목록에서 무엇인지 알 수 있게. */
+const OPTIONAL_FILES: Record<string, string> = {
+  "project_outcomes.csv": "과거 성과(선택 · 계산에 쓰지 않음)",
+  "replacements.csv": "교체 이력(선택 · 계산에 쓰지 않음)",
+};
+
 interface Props {
   active: DatasetInfo | null;
   /** 서버의 활성 데이터셋이 바뀌었다(업로드 전환·되돌리기). App이 meta와 결과를 새로 고친다. */
@@ -85,7 +95,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
 
       {active?.restore_error && (
         <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          저장된 업로드 데이터를 복원하지 못해 기본 데이터로 시작했다: {active.restore_error}
+          {active.restore_error}
         </p>
       )}
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
@@ -93,7 +103,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
         {active ? (
           <p className="mt-1 text-slate-900">
             <span className="font-medium">{active.dataset_id}</span>
-            {" · "}{active.source === "fixture" ? "기본 데이터" : "업로드"}
+            {" · "}{SOURCE_LABEL[active.source] ?? active.source}
             {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
             {" · "}{active.people}명 · 프로젝트 {active.projects}건
             <span className="ml-2 font-mono text-xs text-slate-400">{active.version.slice(0, 12)}</span>
@@ -156,7 +166,8 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
                   </thead>
                   <tbody>
                     {Object.entries(report.row_counts).map(([f, n]) => (
-                      <tr key={f}><td className="pr-6 font-mono text-xs">{f}</td>
+                      <tr key={f}><td className="pr-6 font-mono text-xs">{f}
+                        {OPTIONAL_FILES[f] && <span className="ml-2 font-sans text-slate-500">{OPTIONAL_FILES[f]}</span>}</td>
                         <td className="tabular-nums">{n}</td></tr>
                     ))}
                   </tbody>
