@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Iterator
 
@@ -5,6 +6,8 @@ import pulp
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.milp import MilpParams, solve_milp
 from core.optimize.types import PlanAssignment
+
+log = logging.getLogger(__name__)
 
 _LABELS = "ABCDEFG"
 _QUALITY_FLOOR = 0.95
@@ -77,7 +80,14 @@ def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
     for _ in range(n_alternatives):
         prev_sets = [p.pairs() for p in plans]
         cut = _diversity_cut(prev_sets, pdx, jdx)
-        alt = solve_milp(graph, S, C, params, extra_constraints=cut)
+        try:
+            alt = solve_milp(graph, S, C, params, extra_constraints=cut)
+        except RuntimeError as exc:
+            # 대안 하나가 독립 검증에 거절되거나(C0) 풀리지 않으면 그 앞까지의 유효한 플랜만
+            # 돌려준다. 예외를 올리면 이미 낸 A~C까지 묶음 전체가 실패하고, 부팅 사전계산이면
+            # 서버가 뜨지 않는다(통합 리뷰 MUST). 뒤의 대안은 컷이 더 많아 같은 처지이므로 멈춘다.
+            log.warning("대안 %s 생성을 멈춤(앞선 %d개만 반환): %s", _LABELS[len(plans)], len(plans), exc)
+            break
         if not meets_quality_floor(alt.objective, plan_a.objective):
             break
         alt.label = _LABELS[len(plans)]

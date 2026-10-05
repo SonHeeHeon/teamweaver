@@ -218,7 +218,7 @@ main{{width:min(1200px,calc(100% - 28px));margin:auto;padding:42px 0 70px}} h1{{
 <section><h2>케이스별 L / U / Gap / 검증</h2><p class="note">L은 찾은 배치의 점수, U는 솔버가 제공한 최고 가능 상한입니다. U가 없으면 Gap도 계산하지 않고 BOUND_UNKNOWN으로 남깁니다.</p>
 <div class="tablewrap"><table><thead><tr><th>케이스</th><th>단계</th><th>솔버</th><th>실행 상태</th><th>품질 상태</th><th>L</th><th>U</th><th>Gap</th><th>독립 검증</th><th>원본 상태</th><th>초</th><th>오류·검증 이슈</th></tr></thead><tbody>{_case_table(rows)}</tbody></table></div></section>
 <section><h2>해석 제한</h2><p>이 보고서는 실행 기록의 투명성을 높이지만, 가상 데이터가 실제 조직을 대표한다고 보장하지 않습니다. 솔버 간 속도 비교도 같은 장비·같은 입력·같은 제한에서 기록된 케이스 범위 안에서만 해석해야 합니다.</p></section>
-<section><h2>Native와 최종 파이프라인 분리</h2><p>native_strict_pass는 정규화 전 원본 검증, normalization_pass는 원본 실패·경계 정규화 후 통과, refined_pass는 미세 LP 후 최종 통과입니다. pipeline_pass는 전체 완료·검증 통과입니다. 과거 기록의 native 수치는 미측정이며 0이 실패율을 뜻하지 않습니다. 보조 엔진은 SciPy/HiGHS입니다.</p><pre>{_json(stages)}</pre></section>
+<section><h2>Native와 최종 파이프라인 분리</h2><p>native_strict_pass는 정규화 전 원본 검증, normalization_pass는 원본 실패·경계 정규화 후 통과, refined_pass는 미세 LP 후 최종 통과입니다. pipeline_pass는 전체 완료·검증 통과입니다. 과거 기록의 native 수치는 미측정이며 0이 실패율을 뜻하지 않습니다. 서비스는 ±1e-6 경계 정규화를 하지 않으므로, 서비스 동작과 비교할 수 있는 것은 native_strict_pass와 refined_pass뿐입니다(normalization_pass 해는 서비스에서는 거절됩니다). 보조 엔진은 SciPy/HiGHS입니다.</p><pre>{_json(stages)}</pre></section>
 </main></body></html>"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")

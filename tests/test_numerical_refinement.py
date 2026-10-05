@@ -195,3 +195,50 @@ def test_actual_pulp_extra_row_is_projected():
     rows = module.project_additive_constraints(before,module.capture_model_contract(prob),allocation_variables={a.name:(0,0)},fixed_values={z.name:1.})
     assert rows[0].coefficients == {(0,0):1.}
     assert rows[0].rhs == pytest.approx(.3)
+
+
+# --- C0·C1 통합 리뷰(SHOULD): 정책 가드마다 회귀 보호 -------------------------------------
+
+def test_budget_residual_just_over_admission_is_not_refined():
+    """잔차 상대값 ~1.4e-7(> 1e-7)은 보정 대상이 아니다. 문턱을 넓히면 이 테스트가 잡는다."""
+    *_, raw = _fixture(.35 + 5e-8)
+    result = _assess(raw)
+    assert result.accepted is None
+    assert result.refinement.reason == "BUDGET_RESIDUAL_TOO_LARGE"
+
+
+def test_native_with_non_budget_issue_is_not_refined():
+    """정리 뒤 후보는 예산만 어긋나도, 원본(native)에 다른 위반이 있으면 보정하지 않는다."""
+    *_, raw = _fixture()
+    native = replace(raw, a={(0,0): .3500000025, (1,0): -5e-7})
+    result = _assess(raw, native=native)
+    assert result.accepted is None
+    assert result.refinement.reason == "INELIGIBLE_CONSTRAINT_OR_DOMAIN"
+
+
+def test_lp_move_beyond_policy_delta_is_rejected(monkeypatch):
+    """LP가 정책 한도(1e-7)보다 크게 움직인 해는 검증을 통과해도 버린다."""
+    module = _module()
+    monkeypatch.setattr(module, "_allocation_lp", lambda *a, **k: {(0,0): .3499, (1,0): 0.})
+    result = _assess()
+    assert result.accepted is None
+    assert result.refinement.reason == "ALLOCATION_DELTA_EXCEEDED"
+
+
+def test_refinement_lp_never_raises_an_allocation():
+    """보정은 예산 초과를 줄이는 것이지 투입률을 올리는 것이 아니다(목적이 max S·a라 상한이
+    a+δ면 예산이 남는 배정을 올렸다). 상한은 원본 값이다."""
+    module = _module()
+    graph,S,C,params,raw = _fixture(.3)                       # 예산(350) 안 -- 묶이지 않은 배정
+    out = module._allocation_lp(graph,S,params,raw,(),1.,1e-7)
+    assert out[(0,0)] <= .3
+
+
+def test_already_valid_candidate_must_also_satisfy_extra_constraints():
+    """다양성 컷 같은 추가 조건은 보정 경로만이 아니라 원래부터 유효한 후보에도 확인한다."""
+    module = _module()
+    *_, raw = _fixture(.35)
+    cut = module.LinearAllocationConstraint({(0,0): 1.}, "LE", .3)   # 0.35는 이 조건을 어긴다
+    result = _assess(raw, extra=(cut,))
+    assert result.accepted is None
+    assert result.refinement.reason == "EXTRA_CONSTRAINT_VIOLATED"

@@ -80,8 +80,8 @@ def test_stream_does_not_emit_invalid_alternative_after_valid_plan_a(monkeypatch
     plan_a = next(stream)
     assert plan_a.label == "A"
     assert [(e.person_id, e.alloc) for e in plan_a.entries] == [("p0", 0.35)]
-    with pytest.raises(RuntimeError, match="binary_domain"):
-        next(stream)
+    # 거절된 대안은 내보내지 않고, 묶음은 앞선 유효 플랜(A)까지로 끝난다(예외로 A까지 잃지 않는다).
+    assert list(stream) == []
 
 
 def test_service_rejects_tiny_budget_residual_without_widening_tolerance(monkeypatch):

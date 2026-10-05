@@ -146,10 +146,14 @@ def _linear_feasible(rows, allocations):
 
 
 def _allocation_lp(graph, S, params, native, extra, seconds, delta):
+    """고정팀 투입률 LP. 가용률·예산 행을 직접 쓴다 -- milp.py의 a 관련 제약이 바뀌면 여기(와
+    validation.py)도 함께 고친다(MILP 정식 동기화 대상, CLAUDE.md "함정")."""
     keys = sorted(native.a)
     index = {key:i for i,key in enumerate(keys)}
+    # 상한은 원본 값이다: 보정은 예산 초과를 줄이는 것이지, 목적(max S·a)을 따라 예산이 남는 배정을
+    # 올리는 것이 아니다(통합 리뷰 SHOULD -- 올리면 벤치에서 목적값이 bound를 넘을 수 있었다).
     bounds = [(max(params.min_alloc*native.z[key],native.a[key]-delta),
-               min(native.z[key],native.a[key]+delta)) if native.z[key] else (0.,0.) for key in keys]
+               min(native.z[key],native.a[key])) if native.z[key] else (0.,0.) for key in keys]
     if any(lo > hi for lo,hi in bounds):
         raise ValueError("inconsistent allocation bounds")
     rows = []
@@ -201,6 +205,9 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
                                       accepted.objective if accepted else None,before,after)
         return CandidateAssessment(native_capture,native_validation,candidate,initial,accepted,final,evidence)
     if initial.valid:
+        # 독립 검증기는 기본 모델만 본다. 추가 조건(다양성 컷)은 여기서 확인한다(통합 리뷰 SHOULD).
+        if not _linear_feasible(extra_linear_constraints,candidate.a):
+            return finish("EXTRA_CONSTRAINT_VIOLATED")
         return finish("ALREADY_VALID",accepted=candidate,final=initial)
     if not policy.enabled:
         return finish("POLICY_DISABLED")
