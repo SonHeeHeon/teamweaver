@@ -55,10 +55,13 @@ def test_raw_contract_rejects_values_just_outside_their_domains(field, key, valu
 def test_cbc_diagnostics_include_evidence_without_an_invented_bound():
     graph, skill, synergy, params, raw = all_terms_fixture()
 
-    assert raw.evidence.solver_name == "CBC"
+    assert raw.evidence.solver_name == "CBC"          # hand-built fixture value
     assert raw.evidence.best_bound is None
 
-    diagnostic = solve_milp_diagnostic(graph, skill, synergy, params)
+    # the service solver is HiGHS since 2026-10-05; CBC stays selectable for comparison runs
+    assert solve_milp_diagnostic(graph, skill, synergy, params).evidence.solver_name == "HiGHS"
+
+    diagnostic = solve_milp_diagnostic(graph, skill, synergy, params.model_copy(update={"solver": "cbc"}))
 
     assert diagnostic.evidence.solver_name == "CBC"
     assert diagnostic.evidence.best_bound is None

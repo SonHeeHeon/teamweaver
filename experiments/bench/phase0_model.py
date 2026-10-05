@@ -97,7 +97,7 @@ def _one_slot_case() -> tuple[MemoryGraph, np.ndarray, np.ndarray, MilpParams]:
         monthly_budget=5_000,
     )
     return _graph(people, [project]), np.array([[0.9], [0.4]]), np.zeros((2, 2)), MilpParams(
-        pair_keep_ratio=0.0, time_limit=30
+        pair_keep_ratio=0.0, time_limit=30, gap=0.0     # oracle cases need the proven optimum, not a 5% stop
     )
 
 
@@ -110,7 +110,7 @@ def _budget_shortfall_case() -> tuple[MemoryGraph, np.ndarray, np.ndarray, MilpP
         monthly_budget=350,
     )
     return _graph(people, [project]), np.array([[0.9], [0.7]]), np.zeros((2, 2)), MilpParams(
-        pair_keep_ratio=0.0, time_limit=30
+        pair_keep_ratio=0.0, time_limit=30, gap=0.0     # oracle cases need the proven optimum, not a 5% stop
     )
 
 
@@ -131,7 +131,7 @@ def _all_terms_case() -> tuple[MemoryGraph, np.ndarray, np.ndarray, MilpParams]:
     synergy = np.array([[0.0, 0.4], [0.4, 0.0]])
     return graph, np.array([[0.9], [0.8]]), synergy, MilpParams(
         lam=0.3, mu=0.2, pair_keep_ratio=1.0, clique_threshold_months=6,
-        slack_penalty=100.0, time_limit=30,
+        slack_penalty=100.0, time_limit=30, gap=0.0,
     )
 
 
@@ -151,7 +151,7 @@ def _generated_tiny_case(seed: int) -> tuple[MemoryGraph, np.ndarray, np.ndarray
     synergy[0, 2] = synergy[2, 0] = values[1]
     synergy[1, 2] = synergy[2, 1] = values[2]
     return _graph(people, [project]), rng.uniform(0.2, 0.95, size=(3, 1)), synergy, MilpParams(
-        pair_keep_ratio=1.0, time_limit=30
+        pair_keep_ratio=1.0, time_limit=30, gap=0.0
     )
 
 

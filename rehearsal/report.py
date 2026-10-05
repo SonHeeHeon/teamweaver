@@ -66,7 +66,18 @@ def build() -> Path:
     sizes = [s for s in (100, 200, 300) if (RESULTS / f"n{s}").exists()]
     pipe = {s: _load(s, "pipeline") for s in sizes}
     sweep = {s: _load(s, "sweep") for s in sizes}
-    rows_pipe, rows_plans, rows_rec, curves = [], [], [], []
+    rows_pipe, rows_plans, rows_rec, curves, rows_switch = [], [], [], [], []
+    for s in sizes:
+        before, after = _load(s, "pipeline-cbc"), pipe[s]
+        if before and after:
+            def best(p):
+                return max(p.get("plans", []), key=lambda x: x["objective"], default=None)
+            b, a = best(before), best(after)
+            rows_switch.append(
+                f"<tr><td>{s}명</td><td>{_fmt(before['steps'].get('optimize_s'), 1, '초')} → {_fmt(after['steps'].get('optimize_s'), 1, '초')}</td>"
+                f"<td>{len(before.get('plans', []))} → {len(after.get('plans', []))}</td>"
+                f"<td>{_fmt(b and b['objective'], 1)} → {_fmt(a and a['objective'], 1)}</td>"
+                f"<td>{len(b['unfilled']) if b else '—'} → {len(a['unfilled']) if a else '—'}</td></tr>")
     for s in sizes:
         p = pipe[s]
         if p:
@@ -102,7 +113,11 @@ th{{color:var(--muted)}}.wrap{{overflow-x:auto}}figure{{margin:1em 0}}figcaption
 </style></head><body><main>
 <h1>규모별 리허설 비교 (100·200·300명)</h1>
 <p class="sub">가상 조직 데이터(core/ingest/org_profile.py) · 사업 효과 NOT_CALIBRATED · 수치는 rehearsal/results의 원본 그대로</p>
-<h2>전 과정 소요 시간 (실제 서버, 관리자 기본 설정)</h2><div class="wrap"><table>
+<h2>솔버 전환 전후 (CBC → HiGHS, 같은 데이터·같은 설정)</h2><div class="wrap"><table>
+<tr><th>규모</th><th>배치 A~D 시간</th><th>나온 안 수</th><th>가장 좋은 안 목적값</th><th>그 안의 미충원</th></tr>
+{''.join(rows_switch) or '<tr><td colspan=5>비교 자료 없음</td></tr>'}</table></div>
+<p class="sub">CBC 결과는 전환 전 리허설 실행(rehearsal/results/n*/pipeline-cbc.json)이다. 목적값은 클수록 좋다.</p>
+<h2>전 과정 소요 시간 (실제 서버, 관리자 기본 설정, HiGHS)</h2><div class="wrap"><table>
 <tr><th>규모</th><th>구성</th><th>업로드</th><th>배치 A~D</th><th>교체 검토(LLM)</th><th>PDF</th><th>나온 안(종료 사유)</th></tr>
 {''.join(rows_pipe) or '<tr><td colspan=7>미실행</td></tr>'}</table></div>
 <h2>안별 결과</h2><div class="wrap"><table>

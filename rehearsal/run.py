@@ -6,8 +6,8 @@ pipeline  The real API path on a real uvicorn server (a subprocess on a free loc
           times and the Playwright PDF behave as in production): upload the zip bundle -> /api/optimize (A..D, admin
           defaults) -> /api/whatif (real LLM unless --no-llm) -> /api/plans/apply-swap -> /api/report (PDF).
           Every step is timed; plan quality and the stream's stop reason are recorded.
-sweep     Plan A alone at several time limits with CBC (the service solver) and HiGHS (the provisional default
-          from Phase 1). HiGHS is swapped in only inside this process -- the service code is untouched. The
+sweep     Plan A alone at several time limits with HiGHS (the service solver since 2026-10-05) and CBC (the
+          previous one, kept as MilpParams.solver="cbc" for comparison only). The
           reference for "quality" is the best objective found at that size by any run.
 
 Results go to rehearsal/results/n{size}/{pipeline,sweep}.json. Data is synthetic (core/ingest/org_profile.py)
@@ -225,19 +225,6 @@ def run_pipeline(size: int, llm: bool, pdf: bool) -> dict:
     return out
 
 
-@contextlib.contextmanager
-def _solver(name: str):
-    import pulp
-    original = pulp.PULP_CBC_CMD
-    if name == "highs":
-        pulp.PULP_CBC_CMD = lambda msg=0, timeLimit=None, gapRel=None: pulp.HiGHS(
-            msg=False, timeLimit=timeLimit, gapRel=gapRel, threads=1)
-    try:
-        yield
-    finally:
-        pulp.PULP_CBC_CMD = original
-
-
 def run_sweep(size: int, limits: list[int]) -> dict:
     from api.settings import PlacementSettings
     from core.graph.memory_graph import MemoryGraph
@@ -256,12 +243,11 @@ def run_sweep(size: int, limits: list[int]) -> dict:
     for k, limit in enumerate(limits):
         # alternate the order so the process's first-solve start-up cost does not always land on the same solver
         for solver in (("cbc", "highs") if k % 2 == 0 else ("highs", "cbc")):
-            params = base.model_copy(update={"time_limit": limit})
+            params = base.model_copy(update={"time_limit": limit, "solver": solver})
             t = time.perf_counter()
             row = {"solver": solver, "time_limit": limit, "gap": params.gap}
             try:
-                with _solver(solver):
-                    assessment = solve_milp_assessment(graph, S, C, params)
+                assessment = solve_milp_assessment(graph, S, C, params)
                 cand = assessment.accepted
                 native = assessment.native_capture
                 ev = getattr(native, "evidence", None)

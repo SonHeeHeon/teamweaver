@@ -407,3 +407,47 @@ def test_pruned_pairs_boundary_k_total():
     # With a cap smaller than total, should return exactly the cap count
     pairs_capped = pruned_pairs(C, 1.0, max_pairs=5)
     assert len(pairs_capped) == 5
+
+
+def test_service_solver_is_highs_and_cbc_stays_selectable():
+    ds, g, S, C = _setup(seed=2)
+    from core.optimize.milp import solve_milp_diagnostic
+    assert MilpParams().solver == "highs"
+    raw = solve_milp_diagnostic(g, S, C, MilpParams(time_limit=60))
+    assert raw.evidence.solver_name == "HiGHS"
+    assert solve_milp_diagnostic(g, S, C, MilpParams(time_limit=60, solver="cbc")).evidence.solver_name == "CBC"
+
+
+def test_epsilon_bound_residues_are_snapped_and_counted():
+    from core.optimize.milp import BOUND_SNAP_EPS, _snap_bounds
+    vals = {"a": 1.0000000000000007, "b": -1e-12, "c": 0.5, "d": 1 + 1e-6, "e": 0.9999999999}
+    out, n = _snap_bounds(vals, 0.0, 1.0, integral=True)
+    assert out["a"] == 1.0 and out["b"] == 0.0 and out["e"] == 1.0
+    assert out["c"] == 0.5 and out["d"] == 1 + 1e-6          # beyond the epsilon -> left for the validator to reject
+    assert n == 3 and BOUND_SNAP_EPS == 1e-9
+
+
+def test_highs_without_any_solution_is_reported_as_no_incumbent():
+    """HiGHS fills all variables with 0.0 when it finds nothing; that must not pass as a plan or as a
+    validation rejection (review SHOULD-2)."""
+    from core.optimize.milp import solve_milp_assessment
+    ds = generate_dataset(120, 24, seed=5)
+    g = MemoryGraph.build(ds, parse_reviews_rule_based(ds.reviews))
+    e = ScoringEngine(g)
+    with pytest.raises(RuntimeError, match="no incumbent"):
+        solve_milp_assessment(g, e.skill_matrix({}), e.synergy_matrix(), MilpParams(time_limit=0))
+
+
+def test_snapped_candidate_is_what_the_assessment_judges():
+    """The assessment (C1 eligibility and refinement) must see the snapped values, and the evidence must
+    say how many values were moved (review SHOULD-1)."""
+    from core.optimize.milp import solve_milp_assessment
+    ds, g, S, C = _setup(seed=2)
+    a = solve_milp_assessment(g, S, C, MilpParams(time_limit=60))
+    assert a.native_capture is a.validation_candidate or a.native_capture == a.validation_candidate
+    snapped = a.validation_candidate.evidence.options.get("snapped_to_bounds", 0)
+    assert snapped >= 0
+    if snapped:
+        assert 0 < a.validation_candidate.evidence.options["max_snap"] <= 1e-9
+    assert all(v in (0.0, 1.0) for v in a.validation_candidate.z.values())
+    assert a.accepted is not None
