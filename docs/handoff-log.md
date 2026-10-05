@@ -22,6 +22,33 @@
 
 ---
 
+## 2026-10-05 · claude-b · K13 Codex 3차 반영 + K14 관리자 로그인
+- 브랜치/커밋: `feat/claude-b-admin-login` = `feat/claude-b-persistence`(`ddbaba7`·`6df92b5` 반영) + `058e76c`(K14) + 이 기록. **main 병합 대기**(사용자 확인).
+- K13 Codex 3차 리뷰(needs-attention, high 5)를 반영했다.
+  - reset과 겹친 저장 재기록: 저장 직전 버전 확인과 쓰기를 데이터셋 잠금 안에서 한다.
+  - 서버 관리 revision CAS(`expected_revision`, 409 `edits_changed`): 클라이언트 시각을 믿지 않는다.
+  - 플랜별 변경 세대: 늦은 복원을 버린다. 복원이 진행 중 검토·적용을 무효화하고, 적용 전에 검토 기준 명단을 확인한다.
+  - 키 파일은 완성 후 `os.link`로 게시한다(하드 링크 미지원 FS는 O_EXCL로 대체).
+  - 이어진 Opus 확인 리뷰의 MUST(revision이 라벨 기준이라 재실행 뒤 섞임)를 고쳤다. 이제 plan_token 기준이다.
+  - 같은 리뷰의 SHOULD도 고쳤다: 충돌 뒤 줄 선 저장을 버리고, 업로드·되돌리기는 전환 표시만 본다.
+- K14 관리자 로그인:
+  - `POST /api/admin/login`·`logout`, `GET /api/admin`.
+  - 비밀번호는 `TEAMWEAVER_ADMIN_PASSWORD_HASH`(scrypt, `scripts/hash_admin_password.py`) 또는 `TEAMWEAVER_ADMIN_PASSWORD`.
+  - 세션: 8시간 HttpOnly·SameSite=Strict 쿠키, 서명에 비밀번호 지문·세대를 넣는다. 로그아웃은 서버에서 무효화한다.
+  - 잠금: 주소별 동시 1건, 5회 실패 시 60초.
+  - 웹: 설정·데이터 탭 로그인 화면, 머리글 로그인/로그아웃, 편집 중 만료돼도 입력을 보존한다.
+- 상대 영향:
+  - **claude-a**: 관리자 보호 대상은 `PUT /api/settings`, `POST /api/datasets`, `POST /api/datasets/reset`이다. `/api/admin` 응답 형식이 바뀌었다(`login_required`·`protected`·`logged_in`·`expires_at`·`token_required`).
+  - CORS `allow_credentials=True`(dev origin 2개). 데이터 폴더에 `session_secret`·`session_epoch`가 생긴다.
+- 검증:
+  - `uv run --group benchmark pytest -q` → **844 passed, 17 deselected**. slow 17 passed(관리자 로그인 실브라우저 E2E 포함). 웹 vitest 117, tsc·lint·build 통과.
+  - 결함 주입: K13 3차 반영 T1~T7·V1~V3(T7은 이중 방어), K14 L1~L7·M1~M5 모두 검출.
+- 리뷰:
+  - K13: Codex 3차(10:00) 반영 → Claude Opus 확인 2회(Codex 쿼터 10/10까지 소진). 마지막은 MUST 없음.
+  - K14: Codex 2회 모두 쿼터 소진 → Claude Opus 2라운드, MUST 없음.
+- 남은 것: 409 직후 강제 복원 전에 새로 적용하는 좁은 경합(기존부터 있던 SHOULD), 직원별 계정·SSO는 범위 밖.
+- 근거: `.omc/reports/2026-10-05-k14-admin-login.md`, `.omc/reports/2026-10-05-k13-persistence.md`
+
 ## 2026-10-05 · claude-b · main 병합(K4·K8·K9·K10 통합) + K13 영속화
 - **main 병합**: 사용자 지시("완료되고 문제 없으면 main 병합")로 `feat/claude-b-integration`(`6a36137`)을 main에 **fast-forward**했다(`f10e710` → `6a36137`).
   - 근거: Codex 리뷰 2라운드(통합 2라운드 approve), claude-a 교차 리뷰 MUST 없음.
