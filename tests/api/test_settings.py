@@ -264,7 +264,8 @@ def test_milp_params_in_mirrors_every_model_field():
     from api.schemas import MilpParamsIn
     # solver는 일부러 HTTP 계약 밖에 둔다: 서비스 솔버는 HiGHS로 고정(사용자 결정 2026-10-05), "cbc"는 측정용.
     # seat_fit_weight도 HTTP 밖: 로드맵 3번 실험에서 기각된 측정용 항(기본 0)이라 클라이언트가 켤 수 없게 한다.
-    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields) - {"solver", "seat_fit_weight"}
+    # solver_seeds도 HTTP 밖(2026-10-06 claude-a): 동시에 쓰는 CPU 코어 수라 요청마다 정하지 않고 서버 설정이 정한다.
+    assert set(MilpParamsIn.model_fields) == set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds"}
     with pytest.raises(Exception):
         MilpParamsIn(solver="cbc")
     with pytest.raises(Exception):

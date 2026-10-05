@@ -5,7 +5,7 @@ from typing import Literal
 
 import numpy as np
 import pulp
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.audit_types import RawMilpSolution, SolverEvidence
 from core.optimize.types import AssignEntry, PlanAssignment
@@ -113,6 +113,11 @@ class MilpParams(BaseModel):
     # monthly가 더 낮을 수 있다: 300명 측정 −1.6%). 모델 기본값은 fixed(이전과 같음),
     # 서비스 기본은 관리자 설정(api/settings.py)이 정한다.
     allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # HiGHS 시드 포트폴리오(2026-10-06, `core/optimize/highs_portfolio.py`): 같은 모델을 시드 k개로 동시에 풀어 최선을
+    # 고른다. 조밀한 10년 이력에서 시간 한도에 걸린 해의 품질이 시드에 따라 27.7~33.1로 흔들려서 넣었다(100명 60초,
+    # 시드 4개 동시 최선 32.8 = 20분 풀이 33.9의 97%). 1이면 이전과 같다(기본, 시험 속도·결과 유지). 서비스 값은
+    # 관리자 설정(api/settings.py)이 정한다. CBC는 무시한다.
+    solver_seeds: int = Field(default=1, ge=1, le=16)
 
 
 BOUND_SNAP_EPS = 1e-9
@@ -142,7 +147,34 @@ def _solver_cmd(params: "MilpParams"):
     """PuLP 솔버 객체. 둘 다 1스레드(Phase 1과 같은 조건, 동시 요청이 코어를 나눠 쓰게)."""
     if params.solver == "cbc":
         return pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap)
-    return pulp.HiGHS(msg=False, timeLimit=params.time_limit, gapRel=params.gap, threads=1)
+    from core.optimize.highs_portfolio import HighsPortfolio
+    return HighsPortfolio(seeds=params.solver_seeds, msg=False, timeLimit=params.time_limit, gapRel=params.gap,
+                          threads=1)
+
+
+def _highs_best_bound(prob: pulp.LpProblem, solver=None) -> float | None:
+    """HiGHS가 증명한 상한(최대화 방향). 모르면 None.
+
+    PuLP는 최대화를 부호를 뒤집은 최소화로 HiGHS에 넘기므로 원래 방향으로 되돌린다(벤치
+    `experiments/phase1/solvers.py::_native_evidence`와 같은 처리). 시간 한도에 걸린 해의 품질을
+    "상한 대비 최대 몇 %"로 말하려면 이 값이 필요하다 -- 조밀한 10년 이력(2026-10-06)에서 100명 안 A가
+    60초에 해 29.5 / 상한 43.7로 멈추는 것을 이것으로 쟀다. CBC는 PuLP가 상한을 주지 않아 None.
+    시드 포트폴리오면 시드들 중 가장 단단한 상한을 쓴다."""
+    portfolio = getattr(solver, "portfolio", None)
+    if portfolio is not None:
+        return portfolio.get("best_bound")
+    model = getattr(prob, "solverModel", None)
+    if model is None:
+        return None
+    try:
+        info = model.getInfo()
+    except Exception:                                   # noqa: BLE001 -- 진단값일 뿐, 풀이 결과를 막지 않는다
+        return None
+    bound = getattr(info, "mip_dual_bound", None) if getattr(info, "valid", False) else None
+    if bound is None or not math.isfinite(bound) or abs(bound) >= 1e20:      # kHighsInf = 1e20 이상은 "없음"
+        return None
+    const = float(prob.objective.constant) if prob.objective is not None else 0.0   # PuLP는 상수를 HiGHS에 넘기지 않는다
+    return (-bound if prob.sense == pulp.LpMaximize else bound) + const
 
 
 def pruned_pairs(C: np.ndarray, keep_ratio: float,
@@ -292,7 +324,8 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         extra_constraints(prob, z)
     after_callback = capture_model_contract(prob) if extra_constraints else None
 
-    prob.solve(_solver_cmd(params))
+    solver = _solver_cmd(params)
+    prob.solve(solver)
     status = pulp.LpStatus[prob.status]
     if status not in ("Optimal", "Not Solved"):
         raise RuntimeError(f"MILP failed: {status}")
@@ -319,16 +352,20 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         termination_reason=("time_limit_incumbent"
                             if prob.sol_status == pulp.LpSolutionIntegerFeasible else status),
         has_incumbent=has_incumbent,
-        best_bound=None,
-        options={"time_limit": params.time_limit, "gap": params.gap},
+        best_bound=_highs_best_bound(prob, solver) if params.solver == "highs" else None,
+        options={"time_limit": params.time_limit, "gap": params.gap,
+                 **({"seeds": params.solver_seeds, "chosen_seed": solver.portfolio["chosen_seed"]}
+                    if getattr(solver, "portfolio", None) else {})},
     )
     if not has_incumbent or pulp.value(prob.objective) is None:
         # Finite values alone are only an extractable candidate: CBC may expose
         # a fractional relaxation on timeout. Independent validation below must
         # establish integer feasibility before anything can leave this function.
+        seed_errors = (getattr(solver, "portfolio", None) or {}).get("errors")
         raise RuntimeError(
             f"MILP found no incumbent solution within time_limit={params.time_limit}s "
-            f"(status={status}) — cannot extract a plan")
+            f"(status={status}) — cannot extract a plan"
+            + (f" [seed errors: {seed_errors}]" if seed_errors else ""))
 
     # floor (not nearest-round) so reported alloc never exceeds the true solved value (display_alloc, C3).
     entries = plan_entries(graph, params, raw_z, raw_a, raw_am)

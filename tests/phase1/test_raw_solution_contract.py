@@ -109,3 +109,13 @@ def test_raw_contract_does_not_accept_nonfinite_constraint_limits(constraint):
     report = validate_raw_solution(graph, skill, synergy, params, raw)
     assert not report.valid
     assert constraint in {issue.code for issue in report.issues}
+
+
+def test_highs_diagnostics_carry_the_proven_bound_in_the_maximize_direction():
+    """2026-10-06: HiGHS's dual bound is reported so time-limited plans can say how far from proven best they
+    may be. PuLP negates maximization for HiGHS, so the bound must come back flipped (>= the objective)."""
+    graph, skill, synergy, params, _ = all_terms_fixture()
+    exact = solve_milp_diagnostic(graph, skill, synergy, params.model_copy(update={"solver": "highs", "gap": 0.0}))
+    assert exact.evidence.best_bound is not None
+    assert exact.evidence.best_bound >= exact.objective - 1e-6
+    assert exact.evidence.best_bound == pytest.approx(exact.objective, abs=1e-5)
