@@ -169,3 +169,25 @@ def test_milp_solution_has_no_violations_and_matches_objective():
     raw_skill = sum(S[i, j] * a for (i, j), a in raw.a.items())
     non_skill = ev.objective.synergy + ev.objective.overfamiliarity + ev.objective.unfilled
     assert non_skill == pytest.approx(plan.objective - raw_skill, abs=1e-6)
+
+
+def _multi_project_graph(n_projects):
+    people = [_person("p0", availability=[1.0] * 6)]
+    projects = [Project(id=f"j{k}", name=f"J{k}", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+                        start_month=0, end_month=1, grade_headcount={Grade.MID: 1},
+                        requirements=[SkillRequirement(skill="Python", min_level=1, headcount=1)],
+                        monthly_budget=10_000) for k in range(n_projects)]
+    ds = Dataset(people=people, projects=projects, coworks=[], reviews=[])
+    return MemoryGraph.build(ds, parsed=[])
+
+
+@pytest.mark.parametrize("n, expect", [(3, 0), (4, 2)])
+def test_concurrent_projects_over_the_limit_is_a_violation(n, expect):
+    """C6: one person on more than max_concurrent_projects projects in the same month (claude-b request)."""
+    g = _multi_project_graph(n)
+    entries = [AssignEntry(person_id="p0", project_id=f"j{k}", alloc=0.25) for k in range(n)]
+    ev = evaluate_plan(g, np.full((1, n), 0.5), np.zeros((1, 1)), MilpParams(min_alloc=0.2), entries)
+    found = [v for v in ev.violations if v.code == "concurrent_projects"]
+    assert len(found) == expect                      # months 0 and 1 when over the limit
+    if expect:
+        assert found[0].actual == 4.0 and found[0].limit == 3.0 and "상한 3개를 초과" in found[0].message

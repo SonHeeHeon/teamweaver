@@ -102,6 +102,19 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
                     f"{person.id}의 계획 {month + 1}번째 달 투입 합 {load:.2f}가 "
                     f"가용률 {available:.2f}를 초과"))
 
+    # C6 동시 프로젝트 상한(사용자 답변: 최대 3개·보통 1개). 서비스 MILP 제약과 같은 규칙으로, 교체 검토·적용·PDF가
+    # 상한을 넘는 명단을 "위반 없음"으로 보이지 않게 한다(claude-b 요청, 2026-10-05).
+    limit = params.max_concurrent_projects
+    concurrent: dict[tuple[int, int], int] = {}
+    for (i, j) in alloc:
+        for month in projects[j].months:
+            concurrent[(i, month)] = concurrent.get((i, month), 0) + 1
+    for (i, month), n in sorted(concurrent.items()):
+        if n > limit:
+            violations.append(PlanViolation(
+                "concurrent_projects", f"{people[i].id}:month{month}", float(n), float(limit),
+                f"{people[i].id}의 계획 {month + 1}번째 달 동시 프로젝트 {n}개가 상한 {limit}개를 초과"))
+
     for (i, j), a in alloc.items():
         if a < params.min_alloc - TOL or a > 1.0 + TOL:
             violations.append(PlanViolation(

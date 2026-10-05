@@ -32,6 +32,9 @@ _BASE = (
     " 문맥에 있는 사실만 쓰고 지어내지 마라."
     " project가 있으면 두 사람을 그 요구 기술 기준으로 비교해 결론을 내라(정보 부족이라고 얼버무리지 마라)."
     " score_change가 있으면 그 방향과 어긋나는 결론을 쓰지 말고 total 값을 한 번 언급하라."
+    " score_change.new_violations가 있으면(이 교체로 가용률·예산·정원 등 제약 위반이 새로 생김) total과 상관없이"
+    " 교체를 권고하지 말고 결론을 '보류'로 하며, 그 위반을 risks의 첫 항목으로 써라."
+    " feasible이 false인데 new_violations가 없으면 교체 전부터 있던 위반이니, 그 사실을 risks에 적고 권고 여부는 점수로 판단하라."
     " 형식: rationale은 결론(교체 권고/조건부/보류)을 첫 문장에 두고 2~3문장, risks는 최대 3개,"
     " alternatives는 최대 2개, 각 항목은 한 문장."
 )
@@ -152,6 +155,19 @@ def _check_inline_quotes(text: str, allowed: dict, evidence: EvidenceIndex) -> N
             raise BriefingRejected("inline_quote_not_verbatim", f"본문의 따옴표 인용이 원문에 없다: {inline[:40]!r}")
 
 
+def _check_infeasible_conclusion(out: dict, score_change: dict | None) -> None:
+    """A swap that breaks a rule must not be recommended, whatever the score says (claude-b request,
+    2026-10-05). The prompt asks for it; this guard makes it hold even when the model ignores the prompt."""
+    # only violations this swap creates force a hold; violations that were already there before the swap
+    # (feasible False with no new ones) must not block a swap that may even reduce them (review SHOULD)
+    if not score_change or not score_change.get("new_violations"):
+        return
+    first = re.split(r"(?<=[.!?。])\s", out["rationale"].strip(), maxsplit=1)[0]
+    if "보류" not in first:
+        raise BriefingRejected("recommends_infeasible",
+                               "교체 후 제약 위반이 있는데 첫 문장 결론이 '보류'가 아니다")
+
+
 def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
                       evidence: EvidenceIndex | None = None, score_change: dict | None = None,
                       reasoning_effort: str | None = None) -> dict:
@@ -181,6 +197,7 @@ def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
         out = json.loads(resp.choices[0].message.content)
         briefing = BriefingOut(rationale=out["rationale"], risks=out["risks"],
                                alternatives=out["alternatives"]).model_dump()
+        _check_infeasible_conclusion(briefing, score_change)
         briefing["evidence"] = [] if evidence is None else _verified_citations(out, ctx, evidence)
         return briefing
     except (json.JSONDecodeError, KeyError, TypeError, ValidationError, ValueError) as exc:

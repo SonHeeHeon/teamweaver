@@ -22,6 +22,12 @@
 
 ---
 
+## 2026-10-05 · claude-a · claude-b 요청 2건: 동시 프로젝트 위반(plan_eval) + 위반 교체는 '보류'
+- 브랜치/커밋: `feat/claude-a-scale-rehearsal` → main.
+- 한 일: `core/evaluate/plan_eval.py`가 `concurrent_projects` 위반을 낸다(MILP·검증기와 같은 규칙). 교체 설명은 이 교체로 새 위반이 생기면 결론을 '보류'로 하고 위반을 위험 1순위로 쓰며, 지키지 않은 LLM 답은 규칙 기반으로 전환(사유 `recommends_infeasible`). 교체 전부터 있던 위반만 있으면 보류를 강제하지 않는다.
+- 상대 영향: **claude-b** — `api/routes/whatif.py::_with_concurrency_check`는 평가기가 같은 코드를 내므로 이제 실행되지 않는다(정리 가능). 테스트 기준선 1134 passed.
+- 검증: 전체 1134 passed. luna 실호출 3/3 '보류'+위반 1순위. 리뷰 Opus 폴백 1R(SHOULD 1 반영: 판정을 new_violations 기준으로).
+
 ## 2026-10-05 · claude-a · 규모 리허설 결과: 보상 쌍 상한 200 + 인원별 권장 시간 + 모델 실험실
 - 브랜치/커밋: `feat/claude-a-scale-rehearsal`(`a7bf67d` 쌍 상한, `55c59a4` 모델 실험실, 이 항목 커밋) → main 병합.
 - 한 일:

@@ -306,3 +306,31 @@ def test_prompts_carry_the_length_limits_and_project_rule():
     for p in (_SYSTEM, _SYSTEM_SOURCED, _SYSTEM_HIDDEN):
         assert "risks는 최대 3개" in p and "alternatives는 최대 2개" in p and "project가 있으면" in p
     assert "citations는 항상 빈 배열" in _SYSTEM_HIDDEN
+
+
+@pytest.mark.parametrize("rationale, ok", [
+    ("교체는 보류합니다. 가용률을 넘는다.", True),
+    ("교체를 권고합니다. 점수가 오른다.", False),
+    ("조건부 교체를 권고한다. 보류할 이유도 있다.", False),     # '보류' only outside the first sentence
+])
+def test_infeasible_swap_must_conclude_with_hold(rationale, ok):
+    sc = {"total": 0.4, "feasible": False, "new_violations": ["p001의 계획 1번째 달 투입 합 1.20가 가용률 1.00를 초과"]}
+    payload = {"rationale": rationale, "risks": ["위반"], "alternatives": ["유지"]}
+    if ok:
+        assert generate_briefing(_client(payload), "m", _CTX, "p000", "p001", score_change=sc)["rationale"] == rationale
+    else:
+        with pytest.raises(ValueError):
+            generate_briefing(_client(payload), "m", _CTX, "p000", "p001", score_change=sc)
+
+
+@pytest.mark.parametrize("sc", [{"total": 0.4, "feasible": True},
+                                {"total": 0.4, "feasible": False}])      # violations that existed before the swap
+def test_swap_without_new_violations_is_not_forced_to_hold(sc):
+    payload = {"rationale": "교체를 권고합니다.", "risks": ["없음"], "alternatives": ["유지"]}
+    assert generate_briefing(_client(payload), "m", _CTX, "p000", "p001", score_change=sc)["rationale"].startswith("교체")
+
+
+def test_prompt_tells_the_model_not_to_recommend_an_infeasible_swap():
+    from api.rag.briefing import _SYSTEM, _SYSTEM_HIDDEN, _SYSTEM_SOURCED
+    for p in (_SYSTEM, _SYSTEM_SOURCED, _SYSTEM_HIDDEN):
+        assert "new_violations가 있으면" in p and "'보류'" in p and "교체 전부터 있던 위반" in p
