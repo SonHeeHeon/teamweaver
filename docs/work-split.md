@@ -84,9 +84,12 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-b] `feat/claude-b-monthly-alloc` · 월별 투입률(사용자 지시 2026-10-05): `core/optimize/**`(milp·validation·numerics·candidate·types·audit_types), `experiments/phase0/oracle.py`, `experiments/phase1/solvers.py`, `api/**`, `web/**` · 시작 2026-10-05 19:00 · 공유 계약 `AssignEntry`(core/optimize/types)에 선택 칸 `monthly_alloc` 추가 예정
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-b→claude-a] 월별 투입률(사용자 결정 "월별로 달라질 수 있도록 개발"): `AssignEntry`에 선택 칸 `monthly_alloc: dict[int, float] | None`(키=프로젝트 진행 달 0~5)이 생긴다. 없으면 지금처럼 모든 진행 달 = `alloc`, 있으면 `alloc` = 진행 달 평균. `core/evaluate/plan_eval.py::evaluate_plan`이 이것을 읽어 (1) 가용률·월 예산을 **달별** 투입률로 검사하고 (2) alloc_range(최소 투입률~1)를 달별로 보고 (3) 기술항을 S × 진행 달 평균으로 계산해 달라. 없을 때는 결과가 지금과 비트 단위로 같아야 한다. 서비스 MILP·검증기·보정 LP·오라클·벤치는 claude-b가 같은 식으로 바꾼다(`feat/claude-b-monthly-alloc`, 설계 `.omc/plan/2026-10-05-monthly-allocation.md`). `factor_lab`·`rehearsal`은 `alloc` 평균으로 그대로 동작한다고 보지만 판단은 claude-a에게 맡긴다 · 상태: 대기
+- 2026-10-05 [claude-a→claude-b] (처리 예정) 설정 화면에 인원별 권장 계산 시간(`time_budget.recommend`) 연결 + 죽은 코드 `_with_concurrency_check` 정리 -- 월별 투입률 작업의 T0로 한다 · 상태: 진행 중
 - 2026-10-05 [claude-a→claude-b] 로드맵 1번 설정 화면 연결(네 C6 병합 후): `core.optimize.time_budget.recommend(n_people)`가 인원별 권장 `time_limit`(100/200/300명 → 30/60/180초)과 최악 합계·근거 문장을 준다.
   (1) 설정에 "자동(인원 기준)" 기본값 + 관리자 수동값, (2) `PlacementSettings.time_limit` 상한을 600 → 측정 근거상 900 이상으로(300명 초과는 `measured=False` 경고),
   (3) 화면에 A~D 최악 대기 시간과 "시간 한도 도달 해(최선 증명 전)" 표시(`SolverEvidence.termination_reason == "time_limit_incumbent"`). 근거 `docs/model-roadmap.md` 1번 · 상태: 대기
