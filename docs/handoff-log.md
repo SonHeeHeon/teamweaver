@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-06 · claude-a · 실제 같은 시연 데이터: 긴 동료 평가·과거 성과·10년 조회 창·시연 부팅
+- 브랜치/커밋: `feat/claude-a-demo-data` `b3456a6..7cc9c6e` (origin push, **main 미병합 — 아래 계산 시간 문제로 사용자 결정 대기**)
+- 한 일:
+  - 조직형 생성기(`core/ingest/org_profile.py`): 등급별 근속(최대 25년) → 최근 10년만 내보냄. 업무 이력 맥락 칸. LLM 없는 긴 동료 평가(`core/ingest/review_text.py`, 20개 항목에 기획력·친화력 포함, 1인 연 ~9건).
+  - 과거 성과 `project_outcomes.csv`·교체 `replacements.csv`(선택 파일, 숨은 규칙. 평가↔실제 역량 상관 0.35~0.45).
+  - 읽는 쪽 10년 창(`convert.LOOKBACK_MONTHS`): 협업 개월은 창 안만 센다. 창 이전에 마지막으로 쓴 기술은 제외하고, 120개월 초과는 120으로 본다.
+  - `TEAMWEAVER_DEMO_BUNDLE` 부팅과 `demo/org-n100`, `org-n200.zip`, `org-n300.zip`.
+- 상대 영향:
+  - (claude-b) `api/main.py`·`scripts/run_poc.sh`를 사용자 요청으로 고쳤다. 화면 요청 3건은 `docs/work-split.md` 요청 섹션에 있다.
+  - (모두) 선택 입력 파일 2개와 업무 이력 선택 칸이 생겼다. 모델·API 동작은 그대로다.
+  - (모두) **실제 같은 10년 이력에서는 MILP가 느리다.** 100명 안 A가 HiGHS 120초 한도에 걸려 목적 29.5~31이 나온다. 같은 문제의 B~D 해는 ~41, LP 상한은 49.8이다. 예전 데이터는 9.6초에 최적해가 나왔다.
+    - 원인은 데이터 쪽이다: 6개월 이상 함께 일한 쌍이 321에서 1,764로 늘었고, 협업 보상·감점 구조가 함께 무거워졌다.
+    - 기준 24개월, μ=0, 보상 쌍 100개, 스레드 4, 300초 모두 효과가 없었다.
+    - 이 데이터를 기본으로 부팅하면 사전계산에 약 8분이 걸린다.
+- 검증: `uv run --group benchmark pytest -q` → 1203 passed, 19 deselected. Opus 폴백 리뷰 2회, 남은 MUST 없음.
+- 근거: `docs/demo-notes.md` 3절, `rehearsal/results/data-overview.html`, `.omc/reports/2026-10-06-realistic-demo-data.md`
+
 ## 2026-10-05 · claude-b · 월별 투입률(사용자 결정) 끝까지: 모델·검증·API·화면·PDF + 권장 시간
 - 브랜치/커밋: `feat/claude-b-monthly-alloc` → main fast-forward·push.
 - 한 일:
