@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-05 · claude-b · Jev(판단 전용 AI) 대체 가능성 실험 장치 + 기준선
+- 브랜치/커밋: `feat/claude-b-jev-experiment` `ddd8d4f` → main fast-forward·push(사용자 요청: 실험 과정·결과를 시연용으로 남김).
+- 한 일: Jev가 대체할 수 있는 영역을 세 자리로 나눠 시험하는 장치를 만들었다(`experiments/jev/`, 보고서 `outputs/jev-experiment.html`).
+  - E1 솔버 대신: 자리마다 Jev가 고르기(Choice)로 사람을 뽑는다. 숫자 조건은 코드가 지킨다.
+  - E2 모델 재료 대신: 리뷰 글 → 극성(Score). 기준선은 LLM 파서다.
+  - E3 판단 보조: 교체 후보 중 최선을 고른다.
+  - Jev 응답은 cassette로 기록해 키 없이 재생한다. 기준선은 측정을 마쳤고, Jev 행은 키를 받은 뒤 채운다.
+- 기준선(합성 데이터, NOT_CALIBRATED):
+  - E1(100명): 솔버 40.58 / 기술 1등 규칙 30.11 / 무작위 11.41
+  - E2: 정답 상관 gpt-6-luna 0.85(2.6초/건), 기록된 gpt-5-nano 0.56
+  - E3(37건, 후보 4명): 기술 1등 81% [66,91], 무작위 기댓값 43%(동점 17건)
+- 상대 영향: 없음. 서비스 코드 변경 없음. 의존성 추가 없음(httpx로 HTTP 직접 호출). `experiments/jev/cassettes/e2_luna.json`은 OpenAI 판정 결과 기록이다(키 미포함).
+- 검증: `pytest tests/jev` 8 passed, 전체 1108 passed. 리뷰 Opus 2라운드: 1차 MUST 3(E3 동점, E2 지시문 동등성, 척도 가정)을 반영했고 2차는 승인이었다.
+- 근거: `.omc/reports/2026-10-05-jev-experiment.md`(Jev 결과 후 작성), `outputs/jev-experiment.json`
+
 ## 2026-10-05 · claude-b · C6 배치 규칙(동시 프로젝트 상한) + 월별 투입률 측정 + whatif 재료 연결
 - 브랜치/커밋: `feat/claude-b-c6-rules` (main `0a15c4f`에서 시작, main `d5d23cc`(K3 HiGHS) 병합 `cd19450`, C6 `ce225d1`) → main fast-forward·push.
 - 한 일:
