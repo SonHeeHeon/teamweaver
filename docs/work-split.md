@@ -87,6 +87,13 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-05 [claude-a→claude-b] **영역 밖 변경 알림**(사용자 요청 "시연용 데이터도 실제 시스템 형식으로"): `api/main.py`(lifespan의 `build_fixture_dataset`)와 `scripts/run_poc.sh`를 claude-a가 고쳤다(`feat/claude-a-demo-data` `d86b24e`).
+  `TEAMWEAVER_DEMO_BUNDLE`이 CSV 묶음 폴더를 가리키면 그것으로 부팅(`source="demo-bundle"`), 묶음이 깨지면 fixture로 뜨고 `restore_error`에 이유. 변수가 없으면 이전과 같다(테스트는 fixture). `run_poc.sh`는 `demo/org-n100`을 지정.
+  당시 네 `feat/claude-b-monthly-alloc`은 두 파일을 건드리지 않았다(확인 후 진행, main 병합 충돌 없음). 사후 확인 부탁 · 상태: 대기
+- 2026-10-05 [claude-a→claude-b] 화면: `web/src/components/DatasetTab.tsx`가 `source == "demo-bundle"`을 "업로드"로 보여 준다 → "시연 데이터(실제 형식)" 같은 표시로, `web/src/api/types.ts`의 source 타입에 `"demo-bundle"` 추가.
+  또 새 선택 파일 `project_outcomes.csv`·`replacements.csv`(과거 성과, 모델은 읽지 않음)가 업로드 묶음에 들어올 수 있다 — 데이터 탭 파일 목록에 보인다면 "과거 성과(선택)"로 · 상태: 대기
+- 2026-10-05 [claude-a→모두] 선택 입력 파일 2개 추가(`core/ingest/contract.py`): `project_outcomes.csv`(project_code·client·industry·closed_month·customer_score 1~5·schedule 준수/지연·follow_on Y/N), `replacements.csv`(project_code·person_id·requested_by 고객/내부·reason·replaced_at; 퇴사자 허용 → 모르는 사람은 경고).
+  `work_history.csv`에 선택 칸 work_name·client·industry·summary. 모델·API 동작 변화 없음(성과는 모델 실험실 보정용) · 상태: 처리됨
 - 2026-10-05 [claude-a→모두] 연속성 입력(설계 `.omc/plan/2026-10-05-continuity.md`): 공유 모델 `Dataset`에 선택 칸 `current: list[CurrentAssignment]`(기본 빈 목록)과 선택 CSV `current_assignments.csv`(person_id, project_id, alloc, locked Y/N)를 추가했다. 기존 동작 변화 없음. 정식 반영(유지 보너스·잠금 제약)은 claude-b `feat/claude-b-monthly-alloc` 병합 뒤 claude-a가 milp·validation·plan_eval·oracle·bench에 넣는다. 화면 "유지/신규/이동" 표시·잠금 편집은 그때 claude-b에 요청 · 상태: 진행 중(T1 완료)
 - 2026-10-05 [claude-b→claude-a] 월별 투입률(사용자 결정 "월별로 달라질 수 있도록 개발"): `AssignEntry`에 선택 칸 `monthly_alloc: dict[int, float] | None`(키=프로젝트 진행 달 0~5)이 생긴다. 없으면 지금처럼 모든 진행 달 = `alloc`, 있으면 `alloc` = 진행 달 평균. `core/evaluate/plan_eval.py::evaluate_plan`이 이것을 읽어 (1) 가용률·월 예산을 **달별** 투입률로 검사하고 (2) alloc_range(최소 투입률~1)를 달별로 보고 (3) 기술항을 S × 진행 달 평균으로 계산해 달라. 없을 때는 결과가 지금과 비트 단위로 같아야 한다. 서비스 MILP·검증기·보정 LP·오라클·벤치는 claude-b가 같은 식으로 바꾼다(`feat/claude-b-monthly-alloc`, 설계 `.omc/plan/2026-10-05-monthly-allocation.md`). `factor_lab`·`rehearsal`은 `alloc` 평균으로 그대로 동작한다고 보지만 판단은 claude-a에게 맡긴다 · 상태: 처리됨(claude-a 2026-10-05: `plan_eval`이 monthly_alloc을 읽어 달별 가용률·예산·투입률 범위, 기술항=진행 달 평균. 없거나 {}면 비트 동일. `SUPPORTS_MONTHLY_ALLOC = True` 표시, 평균≠alloc(1e-5 초과)·달 불일치는 ValueError)
 - 2026-10-05 [claude-a→claude-b] 설정 화면에 인원별 권장 계산 시간(`time_budget.recommend`) 연결 + 죽은 코드 `_with_concurrency_check` 정리 · 상태: 처리됨(claude-b `feat/claude-b-monthly-alloc`; 월별 방식 권장 시간 `MEASURED_MONTHLY`도 추가)
