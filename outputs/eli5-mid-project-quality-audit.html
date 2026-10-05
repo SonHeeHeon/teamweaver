@@ -47,24 +47,24 @@
 
   <section aria-labelledby="status-1005" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:18px 0">
     <h2 id="status-1005">2026-10-05 처리 현황 (추가)</h2>
-    <p>이 검수(10-04) 뒤 하루 동안 지적 12건 중 <b>6건은 해결</b>, <b>1건은 결정</b>, <b>5건은 진행·예정</b>입니다. 아래 원래 검수 내용은 기록으로 그대로 둡니다. Codex는 이제 리뷰만 맡고, 원래 Codex 몫(C0~C4)은 claude-b가 넘겨받아 진행합니다.</p>
+    <p>이 검수(10-04) 뒤 이틀 동안 지적 12건 중 <b>11건이 해결</b>되고 <b>1건은 방향이 결정</b>됐습니다(모델 반영은 배치 규칙 작업에서). 아래 원래 검수 내용은 기록으로 그대로 둡니다. Codex는 이제 리뷰만 맡고, Codex 몫(C0~C4)은 claude-b가 넘겨받아 마쳤습니다.</p>
     <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:.92em">
-      <thead><tr><th style="text-align:left">등급</th><th style="text-align:left">지적</th><th style="text-align:left">담당</th><th style="text-align:left">상태</th></tr></thead>
+      <thead><tr><th style="text-align:left;padding:6px">등급</th><th style="text-align:left;padding:6px">지적</th><th style="text-align:left;padding:6px">담당</th><th style="text-align:left;padding:6px">상태</th></tr></thead>
       <tbody>
-<tr><td>P0</td><td>검증되지 않은 계산 결과(분수 해)를 배치로 반환</td><td>claude-b C0 (Codex 체크포인트 인계)</td><td><b style="color:var(--amber)">진행</b> · 진행 중 — 모든 반환에 독립 검사 강제, main 통합 작업 중</td></tr>
-<tr><td>P0</td><td>실험 보고서에서 검사 탈락 87건이 사라짐</td><td>claude-b C1</td><td><b style="color:var(--amber)">진행</b> · 진행 중 — 탈락 분류·분모 분리 설계 완료, 통합 중</td></tr>
-<tr><td>P1</td><td>리뷰 근거 자리에 숫자</td><td>claude-a K5 + claude-b 연결</td><td><b style="color:var(--green)">해결</b> · 해결(10-05) — 출처 ID, 직접 인용/요약/원문 비공개 구분, AI 인용을 원문과 대조</td></tr>
-<tr><td>P1</td><td>PDF 생성기가 요청 Host를 믿음</td><td>claude-b K4</td><td><b style="color:var(--green)">해결</b> · 해결(10-05) — 고정 내부 주소, 외부 요청 차단, 크기·동시성·시간 상한</td></tr>
-<tr><td>P1</td><td>대안 B·C·D가 중복·빈 팀</td><td>claude-b C2</td><td><b style="color:var(--amber)">진행</b> · 예정 — claude-b 다음 작업 목록</td></tr>
-<tr><td>P1</td><td>요구하지 않은 등급도 선발됨</td><td>사용자 결정 → C6</td><td><b style="color:var(--blue)">결정</b> · 결정됨(실데이터 답변상 '허용') — 모델에 명시 반영은 배치 규칙 작업(C6)에서</td></tr>
-<tr><td>P2</td><td>교체 점수가 전체 최적화 점수와 다름</td><td>claude-a K1</td><td><b style="color:var(--green)">해결</b> · 해결(10-04) — 전체 목적·제약으로 재평가한 '참고값', 위반·미충원 경고</td></tr>
-<tr><td>P2</td><td>투입률 0.206을 0.21로 올려 표시</td><td>claude-b C3</td><td><b style="color:var(--amber)">진행</b> · 진행 중</td></tr>
-<tr><td>P2</td><td>비교표에 서로 다른 제한 시간 섞임</td><td>claude-b C1</td><td><b style="color:var(--amber)">진행</b> · 진행 중 — 핵심 108·파일럿 3·호환성 1 분리</td></tr>
-<tr><td>P2</td><td>큰 그래프에서 협업 경로 누락(int8)</td><td>claude-a K6</td><td><b style="color:var(--green)">해결</b> · 해결(10-05) — int32, 127/128/150/256 경계 시험</td></tr>
-<tr><td>P2</td><td>wheel 패키지에 데모 파일 없음</td><td>사용자 결정</td><td><b style="color:var(--green)">해결</b> · 결정(10-05) — 소스 checkout 그대로 실행, scripts/run_poc.sh</td></tr>
-<tr><td>P2</td><td>가상 리뷰 인용 6건이 원문과 다름</td><td>claude-a K5</td><td><b style="color:var(--green)">해결</b> · 해결(10-05) — 해당 6건은 '요약'으로 표시, 인용은 원문 대조</td></tr>
+<tr><td style="padding:6px">P0</td><td style="padding:6px">검증되지 않은 계산 결과(분수 해)를 배치로 반환</td><td style="padding:6px">C0 (Codex 구현 → claude-b 통합)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 모든 반환에 독립 검사 강제, 분수·해 없음·NaN·중복 차단</td></tr>
+<tr><td style="padding:6px">P0</td><td style="padding:6px">실험 보고서에서 검사 탈락 87건이 사라짐</td><td style="padding:6px">C1 (Codex → claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 87건 집계 정정, 극미세 예산 초과만 보정 후 엄격 재검증</td></tr>
+<tr><td style="padding:6px">P1</td><td style="padding:6px">리뷰 근거 자리에 숫자</td><td style="padding:6px">K5 (claude-a + claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 출처 ID, 직접 인용/요약/원문 비공개 구분, AI 인용 원문 대조</td></tr>
+<tr><td style="padding:6px">P1</td><td style="padding:6px">PDF 생성기가 요청 Host를 믿음</td><td style="padding:6px">K4 (claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 고정 내부 주소, 외부 요청 차단, 크기·동시성·시간 상한</td></tr>
+<tr><td style="padding:6px">P1</td><td style="padding:6px">대안 B·C·D가 중복·빈 팀</td><td style="padding:6px">C2 (claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 빈 팀·중복·품질 미달 제외, 모자라면 '대안 없음' 표시</td></tr>
+<tr><td style="padding:6px">P1</td><td style="padding:6px">요구하지 않은 등급도 선발됨</td><td style="padding:6px">사용자 결정 → C6</td><td style="padding:6px"><b style="color:var(--blue)">결정</b> · 결정됨(실데이터 답변상 '허용') — 모델 명시 반영은 배치 규칙 작업(C6)</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">교체 점수가 전체 최적화 점수와 다름</td><td style="padding:6px">K1 (claude-a)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-04) — 전체 목적·제약 재평가 '참고값', 위반·미충원 경고</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">투입률 0.206을 0.21로 올려 표시</td><td style="padding:6px">C3 (claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 표시 투입률이 해 값·가용률을 넘지 않음</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">비교표에 서로 다른 제한 시간 섞임</td><td style="padding:6px">C1 (claude-b)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 핵심 108·파일럿 3·호환성 1 분모 분리</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">큰 그래프에서 협업 경로 누락(int8)</td><td style="padding:6px">K6 (claude-a)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — int32, 127/128/150/256 경계 시험</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">wheel 패키지에 데모 파일 없음</td><td style="padding:6px">사용자 결정</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 결정·해결(10-05) — 소스 checkout 실행, scripts/run_poc.sh</td></tr>
+<tr><td style="padding:6px">P2</td><td style="padding:6px">가상 리뷰 인용 6건이 원문과 다름</td><td style="padding:6px">K5 (claude-a)</td><td style="padding:6px"><b style="color:var(--green)">해결</b> · 해결(10-05) — 해당 6건은 '요약'으로 표시, 인용은 원문 대조</td></tr>
       </tbody></table></div>
-    <p style="color:var(--muted);font-size:.9em">근거: <code>docs/work-split.md</code>(작업 목록), <code>docs/handoff-log.md</code>(완료 기록). 시험 기준선은 검수 당시 497에서 10-05 main 914로 늘었습니다.</p>
+    <p style="color:var(--muted);font-size:.9em">근거: <code>docs/work-split.md</code>(작업 목록), <code>docs/handoff-log.md</code>(완료 기록). 시험 기준선은 검수 당시 497에서 10-05 main 1044로 늘었습니다.</p>
   </section>
   <section aria-labelledby="findings">
     <h2 id="findings">먼저 고칠 발견 사항</h2>

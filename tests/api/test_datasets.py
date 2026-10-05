@@ -226,7 +226,7 @@ def test_optimize_after_switch_does_not_reuse_fixture_cache(client, bundle_zip, 
     """같은 weights·params라도 데이터셋이 바뀌면 이전 결과를 돌려주지 않는다."""
     calls = []
 
-    def fake_stream(graph, S, C, params, n):
+    def fake_stream(graph, S, C, params, n, outcome=None):
         calls.append(len(graph.people))
         return iter(())
 

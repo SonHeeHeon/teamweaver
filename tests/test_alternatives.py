@@ -114,11 +114,11 @@ def test_generate_plans_still_finds_alternatives_when_planA_objective_is_negativ
     canned = [plan_a, alt_b, alt_c_rejected]
     calls = []
 
-    def fake_solve_milp(g, S, C, params, extra_constraints=None):
+    def fake_solve(g, S, C, params, extra_constraints=None):
         calls.append(extra_constraints)
-        return canned[len(calls) - 1]
+        return canned[len(calls) - 1], "Optimal"
 
-    monkeypatch.setattr("core.optimize.alternatives.solve_milp", fake_solve_milp)
+    monkeypatch.setattr("core.optimize.alternatives._solve", fake_solve)
 
     plans = generate_plans(graph, None, None, MilpParams(), n_alternatives=2)
 

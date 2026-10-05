@@ -448,9 +448,9 @@ def test_short_heartbeat_persists_running_reservation(tmp_path):
 
 
 def test_real_oracle_worker_produces_validated_evidence(tmp_path):
-    from experiments.phase1.runner import worker_command
+    from experiments.phase1.runner import worker_command, numerical_policy_metadata
     oracle = SweepCase(1, "tiny-cbc", "oracle", "oracle-one_slot", "cbc", 1, 30, oracle_name="one_slot")
-    create_or_load_run(tmp_path, {})
+    create_or_load_run(tmp_path, numerical_policy_metadata())
     result = run_case_subprocess(oracle, tmp_path, 30, worker_command)
     assert result.status == "DONE", result
     assert result.payload["validation"]["valid"] is True

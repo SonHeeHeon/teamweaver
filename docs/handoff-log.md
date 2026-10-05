@@ -37,6 +37,32 @@
 - 검증: 전체 922 passed. 실제 API(fixture): 튜닝 전 설명 14초·위험 4~5개·결론 회피 → 튜닝 후 16/16 채택, 4~6초(project·score_change 넣은 조건), 위험 ≤3·대안 ≤2. 리뷰 분석 gpt-5.5 인용 60/60 원문 일치. 생성 6건 어색한 표현 0.
   리뷰: Codex 주간 한도 소진 → Claude Opus 폴백 1라운드, MUST 0·SHOULD 2·nit 3 반영.
 - 근거: `.omc/reports/2026-10-05-llm-tiers.md`
+## 2026-10-05 · claude-b · Codex 영역 임시 인계: C0·C1 main 통합, C2, C3, C4
+- 브랜치/커밋: `feat/claude-b-c1-integrate` = Codex `feat/phase1-solver-benchmark`(`60bfc47`) + G4 산출물 + main 병합(`6f1b1c1`) + 리뷰 반영·C3·C2·C4. main fast-forward와 origin push(사용자 지시).
+- 배경: Codex 주간 쿼터가 10-10 13:16까지 소진됐다. 사용자 지시로 claude-b가 C*를 이어받았다. Codex worktree·브랜치는 수정하지 않았다.
+- 한 일:
+  - C1 마무리: Codex가 커밋하지 못한 G4 결과(`outputs/phase1-c1-g4-*`, completion ELI5)를 그대로 커밋했다(증거 tarball 해시 `57e6111…` 일치). 원시 캡처는 아카이브로 보냈다.
+  - 최종 리뷰(Opus, Codex G4 리뷰 대신) REVISE → 반영:
+    - (MUST) 대안 하나가 검증에 거절되면 A~C까지 묶음 전체와 부팅 사전계산이 실패하던 것을 고쳤다. 이제 앞선 유효 플랜을 유지하고, 사전계산이 실패해도 서버가 뜬다.
+    - 보정 LP 상한을 원본 값으로 했다(투입률을 올리지 않는다).
+    - 다양성 컷을 이미 유효한 후보에도 확인한다.
+    - 가드 회귀 테스트를 추가했다.
+  - main 병합: 코드 충돌은 없었다(문서 2개만 충돌). `service_smoke`의 캐시 키를 K8/K9 키로 고쳤다.
+  - C3: `display_alloc`이 해 값보다 크게 만들지 않는다(최소 투입률 0.205일 때 0.206이 0.21로 나오던 문제). 검증기 사본, greedy(내림), 벤치 추출, 웹 % 표시(0.1% 내림)를 함께 맞췄다.
+  - C2:
+    - 빈 팀, 중복 구성, A의 95% 미만, A보다 미충원이 많은 대안을 제외한다. 필요할 때는 미충원 상한을 모델 제약으로도 넣는다.
+    - 대안 solve 실패를 분류한다.
+    - 시간 한도에 걸린 해(PuLP가 "Optimal"로 보고 → `sol_status`로 구분)와 실패로 끊긴 묶음은 캐시하지 않는다.
+    - done SSE에 `requested_alternatives`·`stop_reason`을 넣고, 화면에 "조건을 만족하는 대안 없음"을 표시한다.
+  - C4: `experiments/results/phase1/`(2,788파일, 577MB)를 `~/Dev/teamweaver-archive/`에 48MB 압축으로 보관했다. 파일별 해시를 확인했다.
+- 상대 영향:
+  - (claude-a) `core/evaluate/plan_eval.py`는 바뀌지 않았다. 반환 alloc이 6자리일 수 있다(최소 투입률이 2자리보다 정밀할 때만). `plan_eval`은 자릿수를 가정하지 않는다.
+  - (모두) `generate_plans(_streaming)`에 `outcome` 인자가 생겼다. 이를 monkeypatch하는 테스트는 `outcome=None`을 받아야 한다.
+  - (모두) `SolverEvidence.termination_reason`이 시간 한도 해일 때 `time_limit_incumbent`다(서비스 경로만).
+  - (Codex) 위 "요청" 두 건.
+  - 테스트 기준선: **1044 passed, 19 deselected**(`--group benchmark`), slow 19, vitest 129.
+- 검증: 전체 1044 passed. slow 19 passed. 실제 lifespan(사전계산 포함) 4플랜 35.2초로 네 플랜 모두 보정 후 엄격 검증을 통과했다. Phase 0 재검증 PASS(11). vitest 129, tsc·oxlint·build 통과. C3·C2·리뷰 반영 테스트는 수정 전 실패를 확인했다.
+- 근거: `.omc/reports/2026-10-05-codex-takeover-c1-c4.md`, `outputs/phase1-c1-integration-service-smoke.json`, `outputs/phase0-c1-integration-revalidation.json`, `~/Dev/teamweaver-archive/README.md`
 
 ## 2026-10-05 · claude-b · 정리: 실행 스크립트, 409 뒤 적용 경합 수정, 결정 기록
 - 브랜치/커밋: `feat/claude-b-cleanup`(main `b48d5c8` 위). 이 기록을 포함한 브랜치를 main에 fast-forward하고 origin에 push한다(사용자 지시).
@@ -360,6 +386,48 @@
   - 추출 폴더 원자적 교체·롤백·소유 표시
 - 근거: `docs/data-schema/README.md`
 
+## 2026-10-05 · Codex · C1 G3 서비스 연결 / C0 회귀 해결
+- 브랜치: `feat/phase1-solver-benchmark`, main 미병합/push 없음. G3 최고역량 독립gpt-6-astra PASS.
+- 한 일: service native assessment→제한 고정팀 LP→strict finalgate 연결. callback 전후 모델 계약·추가 선형 조건 투영, unsupported변형은 복구 거절. 기존6실패 테스트 수정/제외 없음.
+- 상대 영향: C0의 기본warm-up budget회귀가 해결됐다. API·목적식4항·쌍 함수 시그니처/의미는 그대로. 최종main통합은 G4/최종리뷰 및 사용자승인 전 보류.
+- 검증: 전체616passed/0failed/10deselected74.24s; 독립41passed; projection누락 결함주입2FAIL. Phase0새경로11PASS1.063s. 실제APIlifespan skip없이4plans26.331s, A/C nativebudgetFAIL→maxdelta3.333e-9/strictfinalPASS.
+- 근거: `outputs/phase1-c1-g3-eli5.html`, `outputs/phase0-c1-revalidation.json`, `outputs/phase1-c1-service-smoke.json`, `docs/superpowers/reviews/2026-10-05-c1-g3-review.md`. NOT_CALIBRATED. HTML화면QA미수행/정적검사PASS.
+
+## 2026-10-04 · Codex · C1 G1 진단·비활성 복구 체크포인트
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `98ba47f` (main 미병합 / push 없음).
+- 한 일: 기존 CBC 출력·원시값을 보존해 A(문턱 완화)/B(outputFormat6)/C(고정팀 미세LP)를 비교. 제품 service는 연결하지 않은 상태에서 복구 정책·callback 변형 거절·최종 재검증을 구현했다.
+- 상대 영향: 목적식/쌍 함수/공유 도메인/API 변경 없음. B는 옵션 적용을 실제 로그로 확인했지만 예산 잔차가 그대로였다. C는 두 재현 입력 strictPASS, tol1e-6 유지.
+- 검증: probe5/refinement25 총30 passed. 독립gpt-6-astra G1 REVISE→시간초과 후success2회귀 RED/GREEN 및B증거보완→PASS. C delta≤1e-7, 추가시간약0.00413/0.05233초. 서비스미변경 상태 전체581 pass/6 기존회귀 fail/10 deselected(마지막2회귀 추가 전).
+- 근거: `outputs/phase1-c1-g1-eli5.html`, `outputs/phase1-c1-numerical-probe.json`, `docs/superpowers/reviews/2026-10-04-c1-g1-review.md`. G1 PASS는 main통합/사업효과 승인이 아님.
+
+## 2026-10-04 · Codex · C1 G0 보고서 정정 체크포인트
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `8a3f7d7` (main 미병합 / push 없음).
+- 한 일: payload.error·exact legacy token·structured 충돌을 분류하고 core/pilot/compatibility/oracle 분모를 분리했다. 원본을 수정하지 않고 새 정정 HTML·전후 지표·ELI5를 작성했다.
+- 상대 영향: 제품 코드·공유 모델 계약 변경 없음. C0 6개 budget 회귀와 기본 warm-up 거절은 아직 미해결.
+- 검증: 새 테스트11 RED→13 GREEN, 리뷰 회귀3 RED→관련16 GREEN. 최고 역량 독립gpt-6-astra G0 PASS. 357건 terminal 해시 일치, core108각각/DONE21·76·72, 검증 거절0→87. 거절87 raw 부재. 기준 전체539 passed/6 failed/10 deselected 재확인. 시각QA 미수행.
+- 근거: `outputs/phase1-c1-g0-eli5.html`, `outputs/phase1-c1-evidence-correction.html`, `outputs/phase1-c1-evidence-metrics.json`, `docs/superpowers/reviews/2026-10-04-c1-g0-review.md`.
+
+## 2026-10-04 · Codex · C1 설계·구현 계획 — 독립 리뷰 PASS, 구현 전
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `d814c7d` (**main 미병합**, push 미실행). main `f87309c`를 반영한 `703bf4a`에서 문서 작업했다.
+- 한 일: 과거 실패 증거·핵심 분모 정정과 미래 수치 복구를 분리했다. 5-task TDD 계획: 보고서 정정 → 원인/기술 후보 비교 → 비활성 미세 LP 검증 → 3솔버 증거 연결 → 서비스 회귀·제한 재비교.
+  최종 tol=1e-6 유지, native/정규화/최종 후보 분리, 고정팀/native a±1e-7 복구, callback 모델 변형 fail closed, 시간 초과 거절, 전체 정책 manifest 결속을 설계했다. G1 실패면 서비스 연결하지 않는다.
+- 상대 영향: **제품 코드·공유 계약·목적식·쌍 함수 변경 없음.** C0의 6개 회귀/기본 warm-up 거절은 여전히 미해결이며 main 병합 보류 유지. 실제 API lifespan smoke는 구현 G3에서 Claude에 요청할 계획이다.
+- 검증: 작성자·독립 reviewer 모두 v2 `_load_run`으로 **357건 terminal 해시 결속 통과**, core DONE **CBC21/HiGHS76/SCIP72(분모108)**, legacy 거절 **CBC budget85+binary1, HiGHS budget1**, 해당 **87건 raw 부재** 확인.
+  최고 역량 독립 `gpt-6-astra` 설계 리뷰 REVISE→지적4건 수정→PASS, 최종 인계 재확인 PASS. HTML 정적 검사 **3026 visible units / budget3300 PASS**, `git diff --cached --check` 통과. 시각 렌더링 QA/솔버 재실험/전체 테스트는 이번 문서 작업에서 실행하지 않았다.
+- 근거: `docs/superpowers/specs/2026-10-04-c1-numerical-evidence-design.md`, `docs/superpowers/plans/2026-10-04-c1-numerical-evidence.md`, `docs/superpowers/reviews/2026-10-04-c1-design-review.md`, `outputs/phase1-c1-design-eli5.html`.
+- 다음: 사용자 계획 승인 후 Task1(G0)부터 구현. 원본 423MB 결과와 private 데이터는 stage하지 않았으며 원격 다운로드 가능 상태라고 주장하지 않는다.
+
+## 2026-10-04 · Codex · C0 안전 관문 구현 체크포인트 — 통합은 C1까지 보류
+- 브랜치/커밋: `feat/phase1-solver-benchmark` `2edd3f7` (**main 미병합**, push 미실행). 작업 중 main `f87309c`의 K7 문서도 merge(`9b7a8a0`)해 반영했다.
+- 한 일: `solve_milp_diagnostic`의 반환 직전에 독립 검증을 강제했다. 서비스 wrapper와 모든 대안 solve가 이를 공유한다.
+  검증기는 NaN/무한대 공개값, 중복 plan entry, 비유한 재계산·제약 기준을 거절한다. 실제 CBC 0초/1초와 실패 주입 회귀 테스트 24개를 추가했다.
+- 상대 영향: **기본 fixture Plan A가 budget 잔차 2~2.5e-6(tol=1e-6)로 거절되므로 정상 API warm-up 부팅이 실패한다.**
+  API 코드는 수정하지 않았다. C1 수치 정책 분석 및 Claude warm-up 정책 확인이 필요하며, 해결 전 main에 통합하면 안 된다.
+  `pruned_pairs`/`_overfamiliar_pairs`의 시그니처·의미·목적식 4항은 유지돼 K1 평가기 계약 변화는 없다.
+- 검증: 관련 4파일 **64 passed**. 전체 `uv run --offline --group benchmark pytest -q --tb=short --disable-warnings` → **539 passed, 6 failed, 10 deselected**(6건 모두 budget 거절; 기존 테스트 기대 유지).
+  최고 역량 독립 `gpt-6-astra` 최종 리뷰: safety PASS / local checkpoint ACCEPTABLE / main merge NOT_READY. HTML 정적 검사 통과; 브라우저 파일 정책으로 렌더링 QA 미수행.
+- 근거: `docs/superpowers/reviews/2026-10-04-c0-independent-review.md`, `outputs/phase0-c0-eli5.html`, `docs/work-split.md` 요청 절.
+
 ## 2026-10-04 · Claude · K7 main 병합
 - 브랜치/커밋: `feat/claude-schema-intake`(`30c08ae` `2dacab6` `edf5bbf` + 이 기록)를 사용자 승인으로 **main에 fast-forward 병합**.
 - 한 일: 스키마 입력 양식의 불러오기를 엄격하게 바꿨다(Stop 훅 지적 2건 반영). 답 하나라도 형식이 틀리면 파일 전체를 거부하고 초안과 자동저장을 보존한다.
@@ -436,3 +504,8 @@
 - 브랜치/커밋: main (`5d91490` ~ `c799f75`)
 - 한 일: 코어(도메인·datagen·점수·Greedy/MILP·대안), 실험 1~5와 Neo4j 제거 결정, FastAPI(SSE·What-if·XAI·PDF), React 웹을 만들었다.
 - 근거: 루트 `.omc/plan/`, `.omc/reports/` (로컬), 요약은 `docs/project-context.md` 4~5절
+# 2026-10-04 Codex · C1 G2 benchmark evidence checkpoint
+
+- G2 highest independent gpt-6-astra review PASS after3Important+1Minor RED→GREEN. Phase1 222passed; related61passed. Service remains unchanged; 6C0 regressions are next Task5.
+- Native/validation/final files persisted and hash/path-bound; policy full fields frozen; rejected timings preserved; final worker validator authoritative. Invalid bound retained as BOUND_INVALID, never quality PASS. Payload2/checkpoint1 compatibility preserved.
+- ELI5 `outputs/phase1-c1-g2-eli5.html`; review `docs/superpowers/reviews/2026-10-04-c1-g2-review.md`. No API/objective/pair-function change. No main merge/push. NOT_CALIBRATED.

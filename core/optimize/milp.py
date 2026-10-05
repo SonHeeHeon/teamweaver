@@ -1,5 +1,6 @@
 import logging
 import math
+from dataclasses import replace
 import numpy as np
 import pulp
 from pydantic import BaseModel
@@ -21,6 +22,20 @@ def _floor2(v: float) -> float:
     rounding for display.
     """
     return math.floor(v * 100 + 1e-9) / 100
+
+
+def display_alloc(value: float, min_alloc: float) -> float:
+    """반환·표시용 투입률. 해 값보다 크게 만들지 않는다(C3 [A-P2]).
+
+    보통은 소수 둘째 자리 내림이다. min_alloc이 그보다 정밀해(예 0.205) 내림이 최소값 아래로
+    떨어지면, 끌어올린 뒤 반올림하던 예전 규칙은 해 값 0.206을 0.21로 돌려줘 가용률을 넘겼다.
+    그때는 해 값을 6자리 내림으로 그대로 둔다. 솔버가 최소값 바로 아래(허용오차 1e-6 안)에 둔
+    값만 최소값으로 올린다 -- 호출부가 value >= min_alloc - 1e-6일 때만 부른다."""
+    two = _floor2(value)
+    if two >= min_alloc - 1e-12:
+        return two
+    fine = math.floor(value * 1e6 + 1e-9) / 1e6
+    return max(fine, min_alloc)
 
 
 class MilpParams(BaseModel):
@@ -94,8 +109,13 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, in
     return result
 
 
-def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
+def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+                          params: MilpParams, extra_constraints=None):
+    """Capture native evidence and assess it without weakening the final gate."""
+    from core.optimize.numerics import (
+        NumericalPolicy, assess_candidate, capture_model_contract,
+        project_additive_constraints, UnsupportedModelMutation,
+    )
     people, projects = graph.people, graph.projects
     nP, nJ = len(people), len(projects)
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
@@ -144,8 +164,10 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     for j, pj in enumerate(projects):                       # 제약 3: 월 예산
         prob += pulp.lpSum(people[i].monthly_rate * a[i][j] for i in range(nP)) \
                 <= pj.monthly_budget
+    before_callback = capture_model_contract(prob) if extra_constraints else None
     if extra_constraints:
         extra_constraints(prob, z)
+    after_callback = capture_model_contract(prob) if extra_constraints else None
 
     prob.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap))
     status = pulp.LpStatus[prob.status]
@@ -162,17 +184,18 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     evidence = SolverEvidence(
         solver_name="CBC",
         native_status=status,
-        termination_reason=status,
+        # PuLP는 CBC가 시간 한도에서 멈춰도 해가 있으면 status를 "Optimal"로 바꿔 준다 -- 그 경우
+        # sol_status만 IntegerFeasible이다. 시간 한도에 걸린 해는 부하에 따라 달라지므로 구분해 둔다.
+        termination_reason=("time_limit_incumbent"
+                            if prob.sol_status == pulp.LpSolutionIntegerFeasible else status),
         has_incumbent=has_incumbent,
         best_bound=None,
         options={"time_limit": params.time_limit, "gap": params.gap},
     )
     if not has_incumbent or pulp.value(prob.objective) is None:
-        # "Not Solved" can mean either "time limit hit with a valid incumbent"
-        # (fine — a time-limited but real solution) or "time limit hit with NO
-        # incumbent at all" (every variable's .value() is None). The latter
-        # must not silently fall through to an empty/partial PlanAssignment
-        # that looks like a legitimate answer.
+        # Finite values alone are only an extractable candidate: CBC may expose
+        # a fractional relaxation on timeout. Independent validation below must
+        # establish integer feasibility before anything can leave this function.
         raise RuntimeError(
             f"MILP found no incumbent solution within time_limit={params.time_limit}s "
             f"(status={status}) — cannot extract a plan")
@@ -183,17 +206,15 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             zval, aval = z[i][j].value(), a[i][j].value()
             if zval and zval > 0.5 and aval is not None and aval >= params.min_alloc - 1e-6:
                 # floor (not nearest-round) so reported alloc never exceeds the
-                # true solved value; clamp up to min_alloc for the rare case CBC's
-                # value sits an epsilon below it (see _floor2 docstring above).
-                alloc = max(params.min_alloc, _floor2(aval))
+                # true solved value (display_alloc, C3).
                 entries.append(AssignEntry(person_id=people[i].id, project_id=projects[j].id,
-                                           alloc=round(alloc, 2)))
+                                           alloc=display_alloc(aval, params.min_alloc)))
     unfilled = [f"{projects[j].id}:{g.value}:{int(round(v.value()))}명 미충원"
                 for (j, g), v in slack.items() if v.value() and v.value() > 0.5]
     objective = float(pulp.value(prob.objective))
     plan = PlanAssignment(entries=entries, objective=objective,
                           unfilled=unfilled, violations=[], label="A")
-    return RawMilpSolution(
+    candidate = RawMilpSolution(
         plan=plan,
         status=status,
         objective=objective,
@@ -207,6 +228,39 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         constraint_count=len(prob.constraints),
         evidence=evidence,
     )
+    extra_rows, mutation = (), None
+    if before_callback is not None:
+        fixed_values = {z[i][j].name:float(raw_z[(i,j)]) for i in range(nP) for j in range(nJ)}
+        fixed_values.update({var.name:float(raw_y[key]) for key,var in y.items()})
+        fixed_values.update({var.name:float(raw_slack[key]) for key,var in slack.items()})
+        try:
+            extra_rows = project_additive_constraints(before_callback,after_callback,
+                allocation_variables={a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)},
+                fixed_values=fixed_values)
+        except UnsupportedModelMutation as exc:
+            mutation = str(exc)
+    assessment = assess_candidate(graph,S,C,params,candidate,native_capture=candidate,
+        policy=NumericalPolicy(enabled=mutation is None),extra_linear_constraints=extra_rows)
+    if mutation is not None and assessment.accepted is None:
+        assessment = replace(assessment,refinement=replace(assessment.refinement,reason=mutation))
+    return assessment
+
+
+def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
+                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
+    """Return only a strictly validated candidate; retained public contract."""
+    from core.optimize.validation import validate_raw_solution
+    assessment = solve_milp_assessment(graph,S,C,params,extra_constraints=extra_constraints)
+    candidate = assessment.accepted
+    validation = (validate_raw_solution(graph,S,C,params,candidate) if candidate is not None
+                  else assessment.initial_validation)
+    if candidate is None or not validation.valid:
+        codes = ",".join(sorted({issue.code for issue in validation.issues}))
+        raise RuntimeError(
+            f"MILP returned an invalid incumbent candidate (status={assessment.validation_candidate.status}; "
+            f"independent_validation_failed:{codes}; {assessment.refinement.reason})"
+        )
+    return candidate
 
 
 def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,

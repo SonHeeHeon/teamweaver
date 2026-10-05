@@ -48,13 +48,15 @@
 순서는 제안이며 사용자가 바꿀 수 있다.
 
 ### Codex (모델·솔버 축) — 제안 순서
-- **C0** [A-P0] 모든 솔버 반환 경로가 독립 검증기를 통과하게 강제한다. 분수·무incumbent 해는 반환하지 않는다.
-  (`core/optimize/milp.py`; 0초·초단기 time limit 재현 테스트)
-- **C1** [A-P0] Phase 1 보고서가 `payload.error`의 거절 87건(CBC 예산 85, CBC 이진 1, HiGHS 예산 1)을 집계하고 분류하게 한다.
-  예산 허용오차·단위·반올림을 분석한다. 분모를 핵심 108·파일럿 3·호환성 1로 분리한다([A-P2]).
-- **C2** [A-P1] 대안 생성: 구성 서명으로 중복을 제거하고, 빈 계획을 제외하고, 최소 품질·미충원 한도를 두고, 부족하면 "대안 없음"을 반환한다(`core/optimize/alternatives.py`).
-- **C3** [A-P2] 표시 투입률 반올림: `max(min_alloc, floor)`가 가용률 위로 올리는 경로를 막는다(`milp.py`, `greedy.py`).
-- **C4** Phase 1 원시 증거(`experiments/results/phase1/`, 약 423MB) 보존: 아카이브, 해시, 재현 명령. 보관 경로는 사용자가 정한다.
+- **C0** ✅ [A-P0] 서비스 솔버 반환에 독립 검증 강제(분수·무incumbent·NaN·중복 차단). Codex 구현, 2026-10-05 claude-b가 C1과 함께 main 통합.
+- **C1** ✅ [A-P0] 수치 정책: 예산 극미세 초과(상대 1e-7 이하)만 고정팀 미세 LP로 보정 후 엄격 재검증, 과거 87건 거절 집계 정정, G4 소형 비교 9/9.
+  Codex G0~G3 구현 + G4 실행. claude-b가 G4 산출물 커밋·최종 리뷰(Opus)·main 통합(2026-10-05). 리뷰 반영: 대안 하나가 거절돼도 앞선 플랜 유지,
+  부팅 사전계산 실패해도 서버 기동, 보정 LP는 투입률을 올리지 않음, 다양성 컷을 이미 유효한 후보에도 확인.
+  근거: `outputs/phase1-c1-completion-eli5.html`, `outputs/phase1-c1-integration-service-smoke.json`, `outputs/phase0-c1-integration-revalidation.json`.
+- **C2** ✅ [A-P1] (claude-b 임시 인계, 2026-10-05) 대안: 빈 팀·중복 구성·A의 95% 미만·A보다 미충원 많은 후보 제외, 모자라면 화면에 "조건을 만족하는 대안 없음".
+  시간 한도에 걸린 해·실패로 끊긴 묶음은 캐시하지 않는다.
+- **C3** ✅ [A-P2] (claude-b 임시 인계, 2026-10-05) 반환 투입률이 해 값·가용률 위로 올라가지 않는다(`display_alloc`, 검증기 독립 사본, greedy 내림, 벤치 추출 동기화).
+- **C4** ✅ (claude-b, 2026-10-05) 원자료를 로컬 `~/Dev/teamweaver-archive/`에 압축·해시 보관(사용자 결정). `docs/phase1-checkpoint.md` 끝 절.
 - **C5** Gurobi 어댑터 계약과 mock 테스트. 평가판을 확보하면 같은 동결 입력으로 비교한다.
 - **C6** (배치 규칙 확정 후 — 사용자 답변 `private/schema-intake.json`의 `parts.rules.answers.*.answer`가 입력)
   필수 기술·등급 정책 반영([A-P1] 미기재 등급 선발 포함) → 두 MILP 정식 동기화
@@ -88,6 +90,8 @@
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
 - 2026-10-05 [claude-a→claude-b] 교체 설명 재료 연결(`api/routes/whatif.py`, 2곳): `swap_context(..., project_id=req.swap.project_id)`와 `generate_briefing(..., score_change={항목: after-before, "total": objective_delta})`.
   둘 다 선택 인자라 지금도 동작은 같다. 넘기면 LLM이 프로젝트 요구 기술·점수 변화로 결론을 낸다(실측: 넘기지 않으면 "정보 부족으로 단정 어려움"이 반복). claude-a 쪽은 `feat/claude-a-llm-tiers`에 완료 · 상태: 대기
+- 2026-10-05 [claude-b→모두] `CLAUDE.md` "함정"에 추가 제안: MILP 정식 동기화 대상이 이제 세 곳이다 -- 서비스 `milp.py`, 벤치 `experiments/phase1/solvers.py`, 그리고 C1 보정 LP `core/optimize/numerics.py::_allocation_lp`(가용률·예산 행을 직접 씀)와 검증기 `validation.py`. a에 걸리는 제약을 바꾸면 넷 다 확인한다 · 상태: 대기(사용자 확인)
+- 2026-10-05 [claude-b→codex] Codex 영역(C0~C4)을 쿼터 소진 기간에 claude-b가 임시로 맡아 main에 넣었다(사용자 지시). 복귀하면 `docs/handoff-log.md`의 C1 통합·C2·C3 항목을 보고, 가능하면 Codex로 통합 결과를 한 번 다시 리뷰해 달라. Codex worktree(`.worktrees/phase1-solver-benchmark`)와 브랜치는 건드리지 않았다(미커밋 G4 산출물은 복사만 했다) · 상태: 대기
 - 2026-10-05 [claude-a→claude-b] K5 연결(설계 `.omc/plan/2026-10-05-k5-evidence-provenance.md` 5절, claude-a 쪽은 `feat/claude-a-k5-evidence`에 완료):
   (1) `api/datasets.py::build_active` — `ActiveDataset`에 `evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))`(`api.rag.evidence`). 실데이터(synthetic이 true가 아님)는 원문을 색인에도 두지 않는다(사용자 결정).
   (2) `api/routes/whatif.py` — **같은 색인을 두 곳에**: `swap_context(..., evidence=dataset.evidence)`와 `generate_briefing(..., evidence=dataset.evidence)`. 앞의 것만 넘기면 `generate_briefing`이 ValueError(code `missing_index`)로 규칙 기반 전환한다.
@@ -99,3 +103,8 @@
 - 2026-10-05 [claude-a→공유] 리뷰 회차: 사용자 요청("예전 회차도 쓸 수 있게")으로 claude-a가 `core/graph/memory_graph.py`를 고쳤다. 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 평균한다(자주 쓰는 쪽이 쌍 점수를 좌우하지 않게). 리뷰 목록과 parsed의 순서·길이가 다르면 경고 로그를 남기고 기존(방향당 마지막 1건) 방식을 쓴다. 방향당 1건인 기존 fixture·datagen·Phase 1 시나리오는 결과가 비트 단위로 같다(테스트로 고정). SQLite review 표에 회차 칸이 없어 `rehydrate.from_sqlite`와 LLM checkpoint(`core/datagen/llm_checkpoint.py`)는 여러 회차 데이터를 **명시적 오류로 거부**한다. 회차 칸 추가(스키마 변경)가 필요하면 Codex와 합의한다 · 상태: 처리됨(회차 칸 추가는 대기)
 - 2026-10-05 [claude-a→codex] 참고: `python -m core.ingest generate --people 40 --projects 8 --seed 7`로 만든 가상 묶음에서 CBC 원시 해가 예산을 ~1.5e-6 넘어 `validate_raw_solution`이 거절했다(컨설팅 단가처럼 끝자리가 둥글지 않을 때). C1 허용오차 분석의 재현 사례로 쓸 수 있다 · 상태: 정보
 - 2026-10-05 [claude(채팅 세션)→모두] 3인 체제 문서화: 이 문서에 "에이전트와 작업 위치"를 추가하고 Claude 영역을 claude-a·claude-b로 나눴다. `CLAUDE.md`·`AGENTS.md`의 "두 에이전트" 문구도 고쳤다. 코드 변경 없음 · 상태: 처리됨(2026-10-05 사용자 확정, claude-a가 커밋)
+- 2026-10-04 Codex → Claude · C1 G3: API 코드는 수정하지 않고 실제 `api.main.lifespan` 기본 warm-up을 skip 없이 읽기 전용 실행한다. 내부 assessment를 관측해 원본/최종 검사표를 `outputs/phase1-c1-service-smoke.json`에 기록한다. Claude 측 부팅 정책 변경은 이번 범위 밖이다. · 상태: 처리됨(G3 smoke 완료)
+- 2026-10-04 Codex · C1 구현 승인: Codex 소유 영역과 계획에 명시한 관련 tests를 수정하고 진행/인계 기록을 갱신한다. 목적식·쌍 함수·공유 도메인 타입·API는 유지한다. G3에서 실제 API lifespan을 읽기 전용으로 smoke 검사하되 API 변경이 필요하면 Claude에 요청한다. · 상태: 처리됨
+- 2026-10-04 Codex · C1 문서 작업: 이 문서의 착수/완료 상태와 `docs/handoff-log.md`를 갱신한다. 구현 계획에는 관련 `tests/` 회귀 테스트를 포함한다. 현재는 설계 문서만 작성하며 공유 타입·목적식·쌍 함수·API를 변경하지 않는다. 향후 공유 타입 변경이 필요하면 구현 전에 별도 요청한다. · 상태: 처리됨
+- 2026-10-04 Codex · C0 기록: 이 문서의 착수/완료 상태와 `docs/handoff-log.md` 완료 항목을 갱신한다. 코드 공유 계약·MILP 목적식·쌍 범위 함수의 시그니처/의미 변경은 없다. 승인된 설계에 따라 관련 `tests/` 회귀 테스트와 Codex 영역 `outputs/phase0-c0-eli5.html`을 작성한다. · 상태: 처리됨
+- 2026-10-04 Codex → Claude · C0 통합 영향: 기본 동결 fixture의 CBC Plan A가 예산 잔차 2~2.5e-6로 독립 검증(tol=1e-6)에 거절되어 `api/main.py` warm-up이 실패한다. C1에서 수치 정책을 해결하기 전 C0를 main에 통합하면 정상 부팅이 막힌다. API warm-up 오류 처리 정책은 Claude 영역이므로 수정하지 않았으며 상대 확인을 요청한다. · 상태: 처리됨(C1 G3에서 해결, main 통합 2026-10-05 claude-b)

@@ -1,4 +1,5 @@
 import type { AssignEntry, Person, Project } from "../api/types";
+import { formatAlloc } from "./allocFormat";
 
 interface Props {
   entries: AssignEntry[];
@@ -34,7 +35,7 @@ export function AssignmentTable({ entries, people, projects }: Props) {
                     <span className="ml-2 text-xs text-slate-500">{p?.grade}</span>
                   </span>
                   <span className="tabular-nums text-slate-600">
-                    {(e.alloc * 100).toFixed(0)}%
+                    {formatAlloc(e.alloc)}
                   </span>
                 </li>
               );

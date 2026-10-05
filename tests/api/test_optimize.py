@@ -117,3 +117,38 @@ def test_cors_headers_allow_the_vite_dev_server(client):
     """Vite dev 서버(:5173)가 API(:8000)를 부를 수 있어야 한다."""
     res = client.get("/api/meta", headers={"Origin": "http://localhost:5173"})
     assert res.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_done_event_reports_requested_alternatives(small_graph_client):
+    """C2: 조건을 만족하는 대안이 모자라면 서버는 덜 내고, done에 요청 수를 실어 화면이 알릴 수 있게 한다."""
+    with small_graph_client.stream(
+            "POST", "/api/optimize", json={"weights": {}, "n_alternatives": 2}) as res:
+        events = [json.loads(line[len("data:"):].strip()) for line in res.iter_lines()
+                  if line.startswith("data:")]
+    done = events[-1]
+    assert done["requested_alternatives"] == 2
+    assert done["count"] == sum(1 for e in events if "label" in e)
+
+
+def test_alternatives_cut_short_by_solver_failure_are_not_cached(small_graph_client, monkeypatch):
+    """시간 초과처럼 부하에 따라 달라지는 결과(대안 solve 실패, 시간 한도에 걸린 해)는 캐시하지
+    않는다(통합 리뷰 N2·SHOULD-2). 끝까지 푼 해가 조건(품질·미충원 등)으로 덜 나온 묶음은 캐시한다."""
+    import api.routes.optimize as route
+    from core.optimize.types import AssignEntry, PlanAssignment
+    plan_a = PlanAssignment(entries=[AssignEntry(person_id="p000", project_id="j00", alloc=0.5)],
+                            objective=1.0, unfilled=[], violations=[], label="A")
+
+    def fake(graph, S, C, params, n, outcome=None):
+        yield plan_a
+        outcome.update(state)
+
+    monkeypatch.setattr(route, "generate_plans_streaming", fake)
+    cache = small_graph_client.app.state.cache
+    for state, cached in (({"stop_reason": "solver_failed"}, False),
+                          ({"stop_reason": "quality", "time_limited": True}, False),
+                          ({"stop_reason": "quality"}, True)):
+        cache._store.clear()
+        with small_graph_client.stream("POST", "/api/optimize",
+                                        json={"weights": {"Python": 2}, "n_alternatives": 3}) as res:
+            list(res.iter_lines())
+        assert (len(cache._store) == 1) is cached, state

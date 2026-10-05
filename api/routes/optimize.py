@@ -12,7 +12,7 @@ from api.plan_token import sign_plan
 from api.schemas import MilpParamsIn
 from api.sse import sse_event, stream_sync_generator
 from core.graph.memory_graph import MemoryGraph
-from core.optimize.alternatives import generate_plans_streaming
+from core.optimize.alternatives import cacheable, generate_plans_streaming
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
 from core.scoring.engine import ScoringEngine
 
@@ -63,6 +63,7 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
     async def event_stream():
         cached = cache.get(key)
         count = 0
+        outcome: dict = {}
         try:
             # UB는 (graph, S, params)에만 의존하고 플랜별로 달라지지 않는다 --
             # 요청당 1회만 푼다. 플랜마다 풀면 그 배수만큼 낭비다.
@@ -78,12 +79,20 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             else:
                 collected = []
                 async for plan in stream_sync_generator(
-                        generate_plans_streaming, graph, S, C, params, req.n_alternatives):
+                        generate_plans_streaming, graph, S, C, params, req.n_alternatives, outcome):
                     count += 1
                     collected.append(plan)
                     yield sse_event("plan", _plan_payload(plan, count, False, ub))
-                cache.put(key, collected)
-            yield sse_event("done", {"count": count})
+                # 시간 한도·검증 거절처럼 부하에 따라 달라질 수 있는 결과는 캐시하지 않는다 -- 한 번
+                # 짧게 끊긴 묶음이 같은 요청에 계속 쓰이지 않게(통합 리뷰 N2, C2 리뷰).
+                if cacheable(outcome):
+                    cache.put(key, collected)
+            # 요청한 대안 수도 싣는다: 조건(품질·미충원·중복·빈 팀, C2)을 만족하는 대안이 모자라면
+            # 서버는 억지로 채우지 않고 덜 낸다 -- 화면이 "대안 없음"을 알릴 수 있게.
+            done = {"count": count, "requested_alternatives": req.n_alternatives}
+            if cached is None and outcome.get("stop_reason"):
+                done["stop_reason"] = outcome["stop_reason"]   # 화면이 시간 초과를 조건 미충족과 구분한다
+            yield sse_event("done", done)
         except Exception as exc:                        # noqa: BLE001
             yield sse_event("error", {"message": str(exc)})
 

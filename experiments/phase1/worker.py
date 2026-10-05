@@ -12,10 +12,20 @@ import time
 
 from experiments.phase1.checkpoint import (
     CheckpointCorrupt, ManifestMismatch, atomic_write_json, read_bound_checkpoint, safe_component,
+    fingerprint,
 )
 
 
 def _verify_runtime(manifest):
+    from core.optimize.numerics import NumericalPolicy
+    policy = manifest.get("numerical_policy")
+    if (not isinstance(policy,dict) or set(policy) != set(asdict(NumericalPolicy()))
+            or fingerprint(policy) != manifest.get("numerical_policy_sha256")):
+        raise ManifestMismatch("numerical policy missing or changed")
+    try:
+        NumericalPolicy(**policy)
+    except (ValueError,TypeError) as exc:
+        raise ManifestMismatch("unsupported numerical policy") from exc
     import importlib.metadata
     root = Path(__file__).resolve().parents[2]
     for name, expected in manifest.get("source_sha256", {}).items():
@@ -50,6 +60,58 @@ def _json_solution(raw) -> dict:
                for name in ("z", "a", "y", "slack")}}
 
 
+def _safe_numeric_json(value):
+    if isinstance(value,float) and not math.isfinite(value):
+        return {"invalid_numeric":str(value)}
+    if isinstance(value,dict): return {str(k):_safe_numeric_json(v) for k,v in value.items()}
+    if isinstance(value,(tuple,list)): return [_safe_numeric_json(v) for v in value]
+    return value
+
+
+def _assessment_fields(assessment):
+    return {"native_validation":asdict(assessment.native_validation) if assessment.native_validation else None,
+            "initial_validation":asdict(assessment.initial_validation),
+            "final_validation":asdict(assessment.final_validation) if assessment.final_validation else None,
+            "validation":asdict(assessment.final_validation if assessment.accepted else assessment.initial_validation),
+            "refinement":asdict(assessment.refinement),"pipeline_pass":assessment.accepted is not None}
+
+
+def persist_candidate_evidence(attempt_dir,assessment,*,native_fragment=None):
+    artifacts = {}
+    def write(name,data):
+        data = _safe_numeric_json(data)
+        atomic_write_json(Path(attempt_dir)/name,data)
+        artifacts[name] = {"path":name,"sha256":fingerprint(data)}
+    if assessment is not None:
+        if assessment.native_capture is not None:
+            write("native-candidate.json",_json_solution(assessment.native_capture))
+        write("validation-candidate.json",_json_solution(assessment.validation_candidate))
+        write("candidate-assessment.json",_assessment_fields(assessment))
+        if assessment.accepted is not None:
+            write("raw-solution.json",_json_solution(assessment.accepted))
+    elif native_fragment is not None:
+        write("native-candidate.json",{**{name:[{"key":list(key),"value":value} for key,value in native_fragment.get(name,{}).items()]
+                for name in ("z","a","y","slack")},"objective":native_fragment.get("objective"),"extractable":False})
+    return artifacts
+
+
+def quality_metrics(raw,validation,*,refined=False):
+    upper,lower = raw.evidence.best_bound,raw.objective
+    gap,status = None,"BOUND_UNKNOWN"
+    tolerance = 1e-6+1e-8*max(1,abs(lower))
+    if upper is not None:
+        if not math.isfinite(upper) or upper < lower-tolerance:
+            status = "BOUND_INVALID"
+        else:
+            gap = max(0.,upper-lower)/max(1.,abs(upper),abs(lower))
+            status = "QUALITY_PASS" if validation.valid and gap <= .05 else "QUALITY_FAIL"
+    return {"quality_status":status,"normalized_gap":gap,
+            "quality_pass":status == "QUALITY_PASS",
+            "proven_optimal":bool(not refined and validation.valid and upper is not None
+                and status != "BOUND_INVALID" and abs(upper-lower) <= tolerance
+                and raw.evidence.native_status.lower() == "optimal")}
+
+
 def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
     # Heavy imports, reading, graph/scoring reconstruction, validation and persistence
     # all happen under the absolute parent monotonic deadline.
@@ -59,7 +121,8 @@ def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
     _verify_runtime(manifest)
     from core.optimize.validation import validate_raw_solution
     from experiments.phase1.scenarios import FrozenBenchmarkInput
-    from experiments.phase1.solvers import solve_case
+    from experiments.phase1.solvers import solve_case_diagnostic
+    from core.optimize.numerics import NumericalPolicy
     from experiments.phase1.types import BenchmarkProblem, SolverOptions
     start = time.monotonic()
     hashes = None
@@ -85,8 +148,20 @@ def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
     if remaining <= 0:
         raise TimeoutError("no solver time remains after validation/persistence guard")
     solve_started = time.monotonic()
-    raw = solve_case(problem, case.solver_name, SolverOptions(time_limit_seconds=remaining))
+    assessment = solve_case_diagnostic(problem, case.solver_name, SolverOptions(time_limit_seconds=remaining),
+        numerical_policy=NumericalPolicy(**manifest["numerical_policy"]),deadline=deadline-8.)
     solve_seconds = time.monotonic() - solve_started
+    artifacts = persist_candidate_evidence(attempt_dir,assessment)
+    fields = _safe_numeric_json(_assessment_fields(assessment))
+    timings = {"input":input_seconds,"solve_and_extract":solve_seconds,
+               "refinement":assessment.refinement.elapsed_seconds if assessment.refinement.attempted else 0.,
+               "native_solve_extract_validate":max(0.,solve_seconds-assessment.refinement.elapsed_seconds)}
+    if assessment.accepted is None:
+        return {"schema_version":2,"status":"NO_VALID_INCUMBENT","quality_pass":False,
+                "evidence":asdict(assessment.validation_candidate.evidence),"artifacts":artifacts,
+                "error":assessment.refinement.reason,"business_validity":"NOT_CALIBRATED",
+                "timings_seconds":{**timings,"validate_and_oracle":0.},**fields}
+    raw = assessment.accepted
     validation_started = time.monotonic()
     validation = validate_raw_solution(problem.graph, problem.S, problem.C, problem.params, raw)
     oracle_objective = None
@@ -99,37 +174,25 @@ def execute_case(case, attempt_dir: Path, deadline: float) -> dict:
         parity = abs(raw.objective - oracle.objective) <= 1e-6
     upper = raw.evidence.best_bound
     lower = raw.objective
-    gap = None
-    quality_status = "BOUND_UNKNOWN"
-    tolerance = 1e-6 + 1e-8 * max(1, abs(lower))
-    if upper is not None:
-        if not math.isfinite(upper) or upper < lower - tolerance:
-            quality_status = "BOUND_INVALID"
-        else:
-            gap = max(0.0, upper - lower) / max(1.0, abs(upper), abs(lower))
-            quality_status = "QUALITY_PASS" if validation.valid and gap <= 0.05 else "QUALITY_FAIL"
+    quality = quality_metrics(raw,validation,refined=assessment.refinement.attempted)
     status = "DONE"
     if not validation.valid:
         status = "VALIDATION_ERROR"
     elif parity is False:
         status = "ORACLE_MISMATCH"
-    payload = {"schema_version": 1, "case_id": case.case_id, "status": status,
+    fields.update(validation=asdict(validation), final_validation=asdict(validation),pipeline_pass=status == "DONE")
+    payload = {"schema_version": 2, "case_id": case.case_id, "status": status,
                "solver_name": case.solver_name, "input_id": case.input_id,
-               "objective": lower, "best_bound": upper, "normalized_gap": gap,
-               "quality_status": quality_status,
-               "quality_pass": quality_status == "QUALITY_PASS" and status == "DONE",
-               "proven_optimal": bool(validation.valid and upper is not None
-                    and quality_status != "BOUND_INVALID" and abs(upper - lower) <= tolerance
-                    and raw.evidence.native_status.lower() == "optimal"),
+               "objective": lower, "best_bound": upper, **quality,
+               "quality_pass": quality["quality_pass"] and status == "DONE",
                "oracle_objective": oracle_objective, "oracle_parity": parity,
                "validation": asdict(validation), "evidence": asdict(raw.evidence),
                "hashes": hashes, "variable_count": raw.variable_count,
                "constraint_count": raw.constraint_count,
                "reward_pair_count": len(raw.reward_pairs), "penalty_pair_count": len(raw.penalty_pairs),
-               "timings_seconds": {"input": input_seconds, "solve_and_extract": solve_seconds,
+               "timings_seconds": {**timings,
                                     "validate_and_oracle": time.monotonic() - validation_started},
-               "business_validity": "NOT_CALIBRATED"}
-    atomic_write_json(attempt_dir / "raw-solution.json", _json_solution(raw))
+               "business_validity": "NOT_CALIBRATED","artifacts":artifacts,**fields}
     if time.monotonic() >= deadline:
         raise TimeoutError("deadline exceeded during validation or persistence")
     return payload
@@ -161,14 +224,21 @@ def main() -> None:
     except SolverUnavailableError as exc:
         payload = {"status": "UNAVAILABLE", "availability": asdict(exc.availability), "error": str(exc)}
     except SolverSolveError as exc:
-        payload = {"status": "NO_VALID_INCUMBENT", "evidence": asdict(exc.evidence), "error": str(exc)}
+        try:
+            artifacts = persist_candidate_evidence(attempt_dir,exc.assessment,native_fragment=exc.native_fragment)
+            payload = {"status":"NO_VALID_INCUMBENT","evidence":asdict(exc.evidence),"error":str(exc),"artifacts":artifacts}
+            if exc.assessment is not None: payload.update(_safe_numeric_json(_assessment_fields(exc.assessment)))
+        except OSError as write_error:
+            payload = {"status":"EVIDENCE_WRITE_ERROR","error":str(write_error),"quality_pass":False}
     except (CheckpointCorrupt, ManifestMismatch, SnapshotIntegrityError, KeyError, FileNotFoundError) as exc:
         payload = {"status": "INPUT_MISMATCH", "error": f"{type(exc).__name__}: {exc}"}
     except TimeoutError as exc:
         payload = {"status": "DEADLINE_EXCEEDED", "error": str(exc)}
+    except OSError as exc:
+        payload = {"status":"EVIDENCE_WRITE_ERROR","error":str(exc),"quality_pass":False}
     except Exception as exc:
         payload = {"status": "VALIDATION_ERROR", "error": f"{type(exc).__name__}: {exc}"}
-    payload.update({"case_id": case.case_id, "schema_version": 1,
+    payload.update({"case_id": case.case_id, "schema_version": 2,
                     "solver_name": case.solver_name, "input_id": case.input_id,
                     "stage": case.stage, "repeat": case.repeat})
     atomic_write_json(attempt_dir / "worker-result.json", payload)

@@ -4,6 +4,7 @@ import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
+import { formatAlloc } from "../components/allocFormat";
 
 declare global {
   interface Window {
@@ -193,7 +194,7 @@ export function ReportPage() {
                 <td className="py-1">{byId.get(e.person_id)?.name ?? e.person_id}</td>
                 <td className="py-1 text-slate-600">{byId.get(e.person_id)?.grade ?? "-"}</td>
                 <td className="py-1 text-slate-600">{jName.get(e.project_id) ?? e.project_id}</td>
-                <td className="py-1 text-right tabular-nums">{(e.alloc * 100).toFixed(0)}%</td>
+                <td className="py-1 text-right tabular-nums">{formatAlloc(e.alloc)}</td>
               </tr>
             ))}
           </tbody>

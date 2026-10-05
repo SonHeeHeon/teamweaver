@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import replace
 
 import pytest
@@ -61,3 +62,47 @@ def test_cbc_diagnostics_include_evidence_without_an_invented_bound():
 
     assert diagnostic.evidence.solver_name == "CBC"
     assert diagnostic.evidence.best_bound is None
+
+
+@pytest.mark.parametrize("field", ["objective", "plan_objective", "plan_allocation"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+def test_raw_contract_rejects_nonfinite_public_values(field, value):
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    bad = deepcopy(raw)
+    if field == "objective":
+        bad = replace(bad, objective=value)
+    elif field == "plan_objective":
+        bad.plan.objective = value
+    else:
+        bad.plan.entries[0].alloc = value
+    report = validate_raw_solution(graph, skill, synergy, params, bad)
+    assert not report.valid
+    assert "nonfinite_value" in {issue.code for issue in report.issues}
+
+
+def test_raw_contract_rejects_duplicate_display_assignments():
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    raw.plan.entries.append(deepcopy(raw.plan.entries[0]))
+    report = validate_raw_solution(graph, skill, synergy, params, raw)
+    assert not report.valid
+    assert "duplicate_plan_entry" in {issue.code for issue in report.issues}
+
+
+def test_raw_contract_rejects_nonfinite_recomputed_objective():
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    skill[0, 0] = float("nan")
+    report = validate_raw_solution(graph, skill, synergy, params, raw)
+    assert not report.valid
+    assert "objective" in {issue.code for issue in report.issues}
+
+
+@pytest.mark.parametrize("constraint", ["availability", "allocation_lower"])
+def test_raw_contract_does_not_accept_nonfinite_constraint_limits(constraint):
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    if constraint == "availability":
+        graph.people[0].availability[0] = float("nan")
+    else:
+        params.min_alloc = float("nan")
+    report = validate_raw_solution(graph, skill, synergy, params, raw)
+    assert not report.valid
+    assert constraint in {issue.code for issue in report.issues}

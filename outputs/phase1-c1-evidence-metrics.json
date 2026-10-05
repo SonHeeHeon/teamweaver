@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "run_id": "phase1-long-sweep-v2",
+  "manifest_sha256": "812d2c4ec223b8551fee137297ead908133d1019b5a30d487b885d6e07fdb90e",
+  "business_validity": "NOT_CALIBRATED",
+  "original_results_unchanged": true,
+  "terminal_results_hash_checked": 357,
+  "validation_failures_before": 0,
+  "validation_failures_after": 87,
+  "rejection_reasons": {"cbc": {"budget": 85, "binary_domain": 1}, "highs": {"budget": 1}},
+  "rejected_raw_files_missing": 87,
+  "raw_status_counts": {"DONE": 197, "NO_VALID_INCUMBENT": 87, "DEADLINE_EXCEEDED": 68, "ORPHANED_ACKNOWLEDGED": 5},
+  "core": {
+    "cbc": {"planned": 108, "done": 21, "validation_failures": 83, "deadline": 0, "orphan": 4, "quality_pass": 0},
+    "highs": {"planned": 108, "done": 76, "validation_failures": 1, "deadline": 30, "orphan": 1, "quality_pass": 76},
+    "scip": {"planned": 108, "done": 72, "validation_failures": 0, "deadline": 36, "orphan": 0, "quality_pass": 72}
+  },
+  "limits": ["historical raw rejection magnitudes cannot be recovered", "DONE differs from quality proof", "no new solver execution", "repeated inputs are not independent customer outcomes"]
+}

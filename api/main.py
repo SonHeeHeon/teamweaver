@@ -21,7 +21,7 @@ from api.storage import data_dir
 from api.settings import SettingsStore, default_settings_path
 from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
-from core.optimize.alternatives import generate_plans
+from core.optimize.alternatives import cacheable, generate_plans
 from core.scoring.engine import ScoringEngine
 from api.routes import admin, datasets, meta, optimize, plans, report, settings, whatif
 
@@ -98,10 +98,18 @@ async def lifespan(app: FastAPI):
                     WARM_TIME_LIMIT_MAX, WARM_GAP_MIN)
     elif os.environ.get("TEAMWEAVER_SKIP_WARM") != "1":
         eng = ScoringEngine(graph)
-        default_plans = generate_plans(graph, eng.skill_matrix({}), eng.synergy_matrix(),
-                                       warm_params, n_alternatives=3)
-        cache.put(ResultCache.key({}, warm_params, 3, app.state.dataset.info.version),
-                  default_plans)
+        warm_outcome: dict = {}
+        try:
+            default_plans = generate_plans(graph, eng.skill_matrix({}), eng.synergy_matrix(),
+                                           warm_params, n_alternatives=3, outcome=warm_outcome)
+        except Exception:                                   # noqa: BLE001
+            # Plan A가 검증에 거절되는 설정·데이터(C0)라도 서버는 떠야 한다 -- 설정과 업로드는
+            # 저장되므로, 여기서 예외를 올리면 재기동할 때마다 같은 이유로 부팅이 막힌다.
+            log.warning("부팅 사전계산 실패 -- 캐시 없이 시작한다", exc_info=True)
+        else:
+            if cacheable(warm_outcome):
+                cache.put(ResultCache.key({}, warm_params, 3, app.state.dataset.info.version),
+                          default_plans)
 
     yield
 

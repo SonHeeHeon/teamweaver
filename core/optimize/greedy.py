@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.types import AssignEntry, PlanAssignment
@@ -19,7 +21,8 @@ def solve_greedy(graph: MemoryGraph, S: np.ndarray) -> PlanAssignment:
                 free = min(remaining[p.id][m] for m in proj.months)
                 if free < 0.2:
                     continue
-                alloc = round(min(1.0, free), 2)
+                # 내림: 반올림하면 남은 가용률 0.206을 0.21로 올려 가용률을 넘긴다(C3).
+                alloc = math.floor(min(1.0, free) * 100 + 1e-9) / 100
                 for m in proj.months:
                     remaining[p.id][m] -= alloc
                 entries.append(AssignEntry(person_id=p.id, project_id=proj.id, alloc=alloc))

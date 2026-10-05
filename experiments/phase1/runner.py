@@ -39,6 +39,8 @@ def freeze_scheduled_inputs(schedule, run_dir, manifest, deadline):
     run_dir = Path(run_dir)
     inputs = dict(manifest.get("inputs", {}))
     sealed = "inputs" in manifest
+    if not sealed and "numerical_policy" not in manifest:
+        manifest = {**manifest,**numerical_policy_metadata()}
     seen = {}
     for case in schedule:
         if case.stage == "oracle":
@@ -461,6 +463,13 @@ def run_schedule(schedule, run_dir, manifest, max_active_seconds,
         return state
 
 
+def numerical_policy_metadata():
+    from core.optimize.numerics import NumericalPolicy
+    from experiments.phase1.checkpoint import fingerprint
+    policy = asdict(NumericalPolicy(enabled=True))
+    return {"numerical_policy":policy,"numerical_policy_sha256":fingerprint(policy)}
+
+
 def build_manifest(schedule) -> dict:
     import importlib.metadata
     import platform
@@ -478,7 +487,7 @@ def build_manifest(schedule) -> dict:
             dependencies[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             dependencies[name] = None
-    return {"schema_version": 1, "schedule": [asdict(case) for case in schedule],
+    return {"schema_version": 1, "schedule": [asdict(case) for case in schedule],**numerical_policy_metadata(),
             "source_commit": source_commit, "dependency_versions": dependencies,
             "dependency_lock_sha256": hashlib.sha256((root / "uv.lock").read_bytes()).hexdigest(),
             "solvers": {name: asdict(record) for name, record in available_solvers().items()},

@@ -258,3 +258,12 @@ TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache uv run --group benchma
 “같은 수학 모델과 가상 입력에서 어떤 오픈소스 솔버가 제한 시간 안에 유효한 해와 상한을
 얼마나 안정적으로 남기는가”뿐이다. 실제 고객 평가·인력 교체·후속 과제 같은 결과 데이터가
 없으므로 서비스 효과는 계속 `NOT_CALIBRATED`다.
+
+## 원자료 보관 (C4, 2026-10-05 claude-b)
+
+`experiments/results/phase1/`(git 밖, run 6개, 파일 2,788개, 약 577MB)를 사용자 결정에 따라 **로컬**
+`~/Dev/teamweaver-archive/phase1-results-20261005.tar.gz`(48MB)로 보관했다.
+- 압축 파일 SHA-256: `99a65cd5cf17e6cb40a1813faec57f1df72a08f381d6ac627060bb809003eb38`
+- 파일별 SHA-256 목록: `phase1-results-20261005.files.sha256`. 보관 직후 시험 해제해 2,788개 모두 일치를 확인했다.
+- 무결성 확인·풀기·보고서 재생성 명령은 보관 폴더의 `README.md`에 있다.
+- 원래 폴더(Codex worktree)는 지우지 않았다. 이 압축본은 그 폴더가 사라져도 남는 사본이다. 외부(클라우드) 백업은 하지 않았다.

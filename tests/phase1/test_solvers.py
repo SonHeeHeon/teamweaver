@@ -343,7 +343,7 @@ def test_highs_invalid_native_info_does_not_supply_a_bound(monkeypatch):
     assert solution.evidence.best_bound is None
 
 
-def test_highs_bound_below_validated_maximization_incumbent_is_discarded(
+def test_highs_bound_below_incumbent_is_preserved_for_invalid_quality_reporting(
     monkeypatch,
 ):
     native_model = SimpleNamespace(
@@ -369,4 +369,4 @@ def test_highs_bound_below_validated_maximization_incumbent_is_discarded(
 
     assert solution.objective == pytest.approx(-98.38, abs=1e-6)
     assert solution.evidence.has_incumbent is True
-    assert solution.evidence.best_bound is None
+    assert solution.evidence.best_bound == -100.0

@@ -149,7 +149,7 @@ def test_optimize_uses_sent_min_alloc(small_graph_client, monkeypatch):
     """보낸 milp_params가 실제로 솔버까지 전달된다(설정 → 계산 연결)."""
     seen = []
 
-    def fake(graph, S, C, params, n):
+    def fake(graph, S, C, params, n, outcome=None):
         seen.append(params)
         return iter(())
 
@@ -172,7 +172,7 @@ def test_warmup_uses_stored_settings(monkeypatch, settings_path):
     seen = []
     monkeypatch.delenv("TEAMWEAVER_SKIP_WARM", raising=False)
     monkeypatch.setattr(main, "generate_plans",
-                        lambda graph, S, C, params, n_alternatives: seen.append(params) or [])
+                        lambda graph, S, C, params, n_alternatives, outcome=None: seen.append(params) or [])
     with TestClient(main.app) as c:
         cache = c.app.state.cache
         key = ResultCache.key({}, PlacementSettings(min_alloc=0.45).to_milp_params(), 3,
