@@ -43,12 +43,19 @@ def _independent_reward_pairs(
 def _independent_penalty_pairs(
     graph: MemoryGraph, params: MilpParams
 ) -> tuple[tuple[int, int], ...]:
-    """Derive every over-familiar pair by scanning graph data directly."""
+    """Derive every over-familiar pair by scanning graph data directly (recent window when the data has months)."""
+    window = getattr(params, "clique_window_months", None)
+    months_ago = getattr(graph, "cowork_months_ago", {}) or {}
+
+    def together(p: int, q: int) -> float:
+        if window is not None and (p, q) in months_ago:
+            return float(sum(1 for m in months_ago[(p, q)] if m <= window))
+        return float(graph.cowork_months[p, q])
     return tuple(
         (p, q)
         for p in range(len(graph.people))
         for q in range(p + 1, len(graph.people))
-        if float(graph.cowork_months[p, q]) >= params.clique_threshold_months
+        if together(p, q) >= params.clique_threshold_months
     )
 
 

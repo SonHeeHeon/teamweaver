@@ -118,6 +118,8 @@ class MilpParamsIn(BaseModel):
     mu: float | None = Field(default=None, ge=0.0, le=10.0)
     min_alloc: float | None = Field(default=None, gt=0.0, le=1.0)
     clique_threshold_months: int | None = Field(default=None, ge=1, le=120)
+    # 익숙한 쌍을 셀 최근 기간(개월). 빠지면 모델 기본값(None = 전체 기간). 서비스 기본은 관리자 설정(36개월).
+    clique_window_months: int | None = Field(default=None, ge=1, le=120)
     pair_keep_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
     slack_penalty: float | None = Field(default=None, ge=0.0)
     time_limit: int | None = Field(default=None, ge=1, le=3600)

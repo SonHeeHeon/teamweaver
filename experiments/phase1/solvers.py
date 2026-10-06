@@ -118,7 +118,7 @@ def _build_model(
         pruned_pairs(synergy, params.pair_keep_ratio, params.max_pairs)
     )
     penalty_pairs = tuple(
-        sorted(_overfamiliar_pairs(graph, params.clique_threshold_months))
+        sorted(_overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None)))
     )
     model_pairs = tuple(sorted(set(reward_pairs) | set(penalty_pairs)))
     y = {

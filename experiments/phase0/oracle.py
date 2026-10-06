@@ -48,11 +48,18 @@ def _reward_pairs(synergy: np.ndarray, params: MilpParams) -> tuple[tuple[int, i
 
 
 def _penalty_pairs(graph: MemoryGraph, params: MilpParams) -> tuple[tuple[int, int], ...]:
+    window = getattr(params, "clique_window_months", None)
+    months_ago = getattr(graph, "cowork_months_ago", {}) or {}
+
+    def together(i: int, j: int) -> float:
+        if window is not None and (i, j) in months_ago:
+            return float(sum(1 for m in months_ago[(i, j)] if m <= window))
+        return float(graph.cowork_months[i, j])
     return tuple(
         (i, j)
         for i in range(len(graph.people))
         for j in range(i + 1, len(graph.people))
-        if float(graph.cowork_months[i, j]) >= params.clique_threshold_months
+        if together(i, j) >= params.clique_threshold_months
     )
 
 

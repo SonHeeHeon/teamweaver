@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { PlacementSettings, SettingsResponse } from "../api/types";
-import { FIELDS, JUDGE_LABEL, MODE_LABEL, toInput, type NumKey } from "./settingsFields";
+import { FIELDS, JUDGE_LABEL, MODE_LABEL, WINDOW_OPTIONS, toInput, type NumKey } from "./settingsFields";
 
 type Key = NumKey;
 type Mode = PlacementSettings["allocation_mode"];
@@ -35,6 +35,8 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
     Object.fromEntries(FIELDS.map((f) => [f.key, toInput(f, s[f.key])])) as Record<Key, string>;
   const [form, setForm] = useState<Record<Key, string>>(() => fromSettings(data.settings));
   const [mode, setMode] = useState<Mode>(data.settings.allocation_mode ?? "fixed");
+  const savedWindow = data.settings.clique_window_months ?? null;
+  const [windowMonths, setWindowMonths] = useState<number | null>(savedWindow);
   const [auto, setAuto] = useState<boolean>(data.settings.time_limit_auto !== false);
   const savedJudge: Judge = data.settings.review_judge ?? "rule";
   const [judge, setJudge] = useState<Judge>(savedJudge);
@@ -48,6 +50,7 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
     setSeenUpdatedAt(data.updated_at);
     setForm(fromSettings(data.settings));
     setMode(data.settings.allocation_mode ?? "fixed");
+    setWindowMonths(data.settings.clique_window_months ?? null);
     setAuto(data.settings.time_limit_auto !== false);
     setJudge(data.settings.review_judge ?? "rule");
   }
@@ -58,10 +61,11 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
   const valid = Object.keys(errors).length === 0;
   const next = valid
     ? ({ ...Object.fromEntries(parsed), allocation_mode: mode, time_limit_auto: auto,
-        review_judge: judge } as unknown as PlacementSettings)
+        review_judge: judge, clique_window_months: windowMonths } as unknown as PlacementSettings)
     : null;
   const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
                                   || mode !== (data.settings.allocation_mode ?? "fixed")
+                                  || windowMonths !== savedWindow
                                   || auto !== (data.settings.time_limit_auto !== false)
                                   || judge !== savedJudge);
   const judgeChanging = judge !== savedJudge;
@@ -119,6 +123,26 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
             달마다 따로: 다른 프로젝트가 끝나 한가해진 달에 더 많이 배치할 수 있다. 가상 조직 데이터 측정(Plan A)에서 끝까지
             풀면 100명 +20.5%, 200명 +15.4%, 300명 +15.0%였지만 시간이 2~4배 더 든다(300명 약 5분). 시간이 모자라면 오히려
             낮을 수 있으니(300명 180초: −1.6%) 아래 계산 시간을 권장값 이상으로 둔다. 교체 검토·PDF는 가용률·예산을 달별로 확인한다.
+          </p>
+        </fieldset>
+        <fieldset>
+          <legend className="block text-sm font-medium text-slate-800">반복 협업 조회 기간</legend>
+          <div className="mt-1 flex flex-wrap gap-4 text-sm">
+            {[...WINDOW_OPTIONS,
+              ...(WINDOW_OPTIONS.some((o) => o.value === savedWindow) ? []
+                  : [{ value: savedWindow, label: `최근 ${savedWindow}개월(저장값)` }])].map((o) => (
+              <label key={String(o.value)} className="flex items-center gap-1.5">
+                <input type="radio" name="clique_window_months" value={String(o.value)}
+                       checked={windowMonths === o.value} onChange={() => setWindowMonths(o.value)} />
+                {o.label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            이 기간 안에서 아래 '반복 협업 기준' 개월 이상 함께 일한 두 사람을 같은 프로젝트에 넣으면 감점한다. 협업 점수(시너지)는
+            이 값과 상관없이 최근 10년 이력을 쓴다. 가상 조직 데이터 비교(현행 10년 중 6개월 · 5년 중 12개월 · 3년 중 12개월)에서
+            '최근 3년 중 12개월'만 100·200·300명 모두 같은 시간 안에 빈자리 없이 안정적으로 풀렸다(2026-10-06 결정).
+            함께 일한 달 정보가 없는 데이터(예전 고정 데모 데이터)는 기간을 적용할 수 없어 전체 이력으로 센다.
           </p>
         </fieldset>
         <fieldset>

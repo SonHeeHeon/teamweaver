@@ -43,7 +43,7 @@ def solve_model(graph, S, C, params: MilpParams, *, monthly: bool, solver: str =
         shared = {(i, j): pulp.LpVariable(f"a_{i}_{j}", 0.0, 1.0) for i in range(nP) for j in range(nJ)}
         a = {(i, j, m): shared[(i, j)] for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)
-    overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)
+    overfam = _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))
     pairs = sorted(set(pruned) | overfam)
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0) for (p, q) in pairs for j in range(nJ)}
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)

@@ -98,7 +98,7 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
                 for (i, j), a in alloc.items()) \
         + params.seat_fit_weight * sum(float(S[i, j]) for (i, j) in alloc)      # per-seat fit, same as the MILP
     reward = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)
-    penalty = _overfamiliar_pairs(graph, params.clique_threshold_months)
+    penalty = _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))
     synergy = params.lam * sum(float(C[p, q]) for p, q in reward
                                for j in members if together(p, q, j))
     overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j))

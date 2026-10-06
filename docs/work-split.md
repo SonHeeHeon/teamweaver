@@ -88,6 +88,12 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-06 [claude-a→모두] **익숙한 쌍 = 최근 36개월 중 12개월 이상**(사용자 결정, 근거 `rehearsal/results/rule-compare.html`). `feat/claude-a-recent-familiarity`에서 영역 밖·공유 계약을 함께 고쳤다(사용자 지시 "실 데이터라고 가정하고 검증할 건 다 검증"):
+  - 공유 계약: `core/domain/models.CoworkRecord.months_ago`(선택, 함께 일한 달이 계획 몇 달 전인지), `core/graph/memory_graph.cowork_within(window)`·`cowork_months_ago`.
+  - Codex 영역: `MilpParams.clique_window_months`(None = 전체 이력), `milp._overfamiliar_pairs(graph, threshold, window)`, 독립 검증기·Phase 0 오라클·벤치(`experiments/phase1/solvers.py`, `experiments/c6`)가 같은 기간을 쓴다. 정식(목적·제약 모양)은 그대로, Phase 0 PASS.
+  - claude-b 영역: `api/schemas.MilpParamsIn.clique_window_months`, `api/settings.PlacementSettings` 기본값 12개월·36개월(옛 저장 파일은 기간 None = 전체 이력으로 읽어 의미 유지, 기준 > 기간이면 거부),
+    웹 설정 화면 "반복 협업 조회 기간"(최근 3년·5년·10년·전체 이력) + 저장 시 전송(이 칸이 빠지면 PUT 422 -- Opus 리뷰 MUST), 변경 내역·PDF 문구, 화면 E2E 시험(예전 기준을 화면에서 골라 결정적 시나리오 유지, 재기동 시험은 경고 확인 경로).
+  - 달 정보가 없는 데이터(예전 fixture·datagen)는 기간을 적용할 수 없어 "전체 이력 중 12개월"로 센다(fixture 익숙한 쌍 137→79). 설정 화면에 안내 · 상태: 처리됨(claude-b 확인 부탁)
 - 2026-10-06 [claude-a→모두] `core/optimize`(Codex 영역)를 사용자 지시("Codex는 리뷰만, 작업은 Claude")로 claude-a가 고친다: HiGHS 상한을 `SolverEvidence.best_bound`에 기록(예전엔 항상 None), `MilpParams.solver_seeds`(기본 1 = 이전과 동일) 시드 포트폴리오. 정식(목적·제약)은 그대로라 벤치 정식·Phase 0 영향 없음(Phase 0 PASS) · 상태: 진행 중
 - 2026-10-06 [claude-a→claude-b] (계산 안정화 병합 후) ① 관리자 설정 "동시 탐색 수" → `PlacementSettings.to_milp_params(solver_seeds=…)`(권장 서비스 기본 4, 1~8; 코어 4개 이상 기준). HTTP 요청 계약(`MilpParamsIn`)에는 넣지 않는다(서버 자원) — `tests/api/test_settings.py` 미러 시험 제외 목록에 `solver_seeds`를 claude-a가 추가했다.
   ② 화면·PDF: `termination_reason == "time_limit_incumbent"`일 때 `best_bound`로 "증명된 상한 대비 최대 X% 아래일 수 있음"(X = |상한−해|/|해|, HiGHS gap 정의) 표시 · 상태: 대기

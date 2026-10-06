@@ -19,7 +19,7 @@ from pathlib import Path
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from api.storage import data_dir
 from core.optimize.milp import MilpParams
@@ -41,7 +41,18 @@ class PlacementSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     min_alloc: float = Field(default=0.30, ge=0.05, le=1.0)
-    clique_threshold_months: int = Field(default=6, ge=1, le=24)
+    # 익숙한 쌍(감점) 기준: 최근 clique_window_months 개월 중 clique_threshold_months 개월 이상 같은 사업(2026-10-06 사용자
+    # 결정 "최근 3년 중 12개월", claude-a 측정 rehearsal/results/rule-compare.html -- 예전 "전체 이력 중 6개월"은 10년
+    # 이력에서 전체 쌍의 1/3을 걸어 200·300명 배치가 빈자리 79~95석으로 무너졌다). None = 전체 기간(예전 의미).
+    clique_threshold_months: int = Field(default=12, ge=1, le=24)
+    clique_window_months: int | None = Field(default=36, ge=6, le=120)
+
+    @model_validator(mode="after")
+    def _threshold_fits_window(self):
+        # 기간보다 긴 기준이면 아무도 걸리지 않아 감점이 조용히 꺼진다(Opus 리뷰 nit)
+        if self.clique_window_months is not None and self.clique_threshold_months > self.clique_window_months:
+            raise ValueError("반복 협업 기준 개월이 조회 기간보다 길다")
+        return self
     lam: float = Field(default=0.3, ge=0.0, le=1.0)
     mu: float = Field(default=0.2, ge=0.0, le=1.0)
     # 계산 시간 상한 900초(claude-a 리허설: 300명 월별 309초, 고정 권장 180초 × 여유).
@@ -124,6 +135,9 @@ class SettingsStore:
             # 자동 계산 시간(2026-10-06) 이전에 저장된 파일에는 이 칸이 없다. 파일이 있다는 것은
             # 관리자가 값을 정해 저장했다는 뜻이므로 수동으로 읽는다 -- 정한 시간이 몰래 바뀌지 않게(리뷰 S1).
             saved = {"time_limit_auto": False, **raw["settings"]}
+            # 익숙한 쌍 조회 기간(2026-10-06) 이전 파일: 관리자가 정한 기준 개월은 "전체 이력 중"이라는 뜻이었다 --
+            # 같은 뜻을 지키도록 기간을 전체(None)로 읽는다(위와 같은 원칙). 새 기준은 설정 화면에서 고른다.
+            saved.setdefault("clique_window_months", None)
             settings = PlacementSettings(**saved)
             updated_at = raw.get("updated_at")
             if updated_at is not None and not isinstance(updated_at, str):

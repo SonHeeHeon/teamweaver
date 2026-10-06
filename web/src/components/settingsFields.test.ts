@@ -11,4 +11,9 @@ describe("describeChanges", () => {
       .toEqual(["최소 투입률 30%→30.01%"]);
     expect(describeChanges(BASE, BASE)).toEqual([]);
   });
+
+  it("반복 협업 조회 기간 변경도 나열한다(없음 = 전체 이력)", () => {
+    expect(describeChanges({ ...BASE, clique_window_months: null }, { ...BASE, clique_window_months: 36 }))
+      .toEqual(["반복 협업 조회 기간 전체 이력→최근 3년"]);
+  });
 });

@@ -4,9 +4,9 @@ import { SettingsTab } from "./SettingsTab";
 import type { PlacementSettings, SettingsResponse } from "../api/types";
 
 const DATA: SettingsResponse = {
-  settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
+  settings: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
               time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
-  defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
+  defaults: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
               time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
@@ -26,6 +26,27 @@ describe("SettingsTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith({ ...DATA.settings, min_alloc: 0.25 }));
     expect(await screen.findByText(/다음 '최적화 실행'부터/)).toBeInTheDocument();
+  });
+
+  it("반복 협업 조회 기간을 고르면 저장 대상이 되고 그 값을 보낸다(2026-10-06 결정: 최근 3년)", async () => {
+    const onSave = vi.fn(async () => {});
+    render(<SettingsTab data={DATA} onSave={onSave} />);
+    expect((screen.getByLabelText("최근 3년(권장)") as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText("최근 5년"));
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith({ ...DATA.settings, clique_window_months: 60 }));
+  });
+
+  it("옛 저장본(조회 기간 없음 = 전체 이력)은 전체 이력으로 보이고 그대로 저장된다", async () => {
+    const onSave = vi.fn(async () => {});
+    const old = { ...DATA, settings: { ...DATA.settings, clique_window_months: null } };
+    render(<SettingsTab data={old} onSave={onSave} />);
+    expect((screen.getByLabelText("전체 이력(예전 방식)") as HTMLInputElement).checked).toBe(true);
+    fireEvent.change(screen.getByLabelText(/최소 투입률/), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(
+      { ...DATA.settings, clique_window_months: null, min_alloc: 0.25 }));
   });
 
   it("서버 범위 밖·정수 아님·빈 값은 저장을 막고 이유를 보여 준다", () => {

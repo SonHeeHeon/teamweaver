@@ -118,6 +118,10 @@ class MilpParams(BaseModel):
     # 시드 4개 동시 최선 32.8 = 20분 풀이 33.9의 97%). 1이면 이전과 같다(기본, 시험 속도·결과 유지). 서비스 값은
     # 관리자 설정(api/settings.py)이 정한다. CBC는 무시한다.
     solver_seeds: int = Field(default=1, ge=1, le=16)
+    # 익숙한 쌍을 셀 조회 기간(개월). None = 데이터 전체(이전과 같음). 2026-10-06 사용자 결정: 서비스는 최근 36개월 중
+    # 12개월 이상(관리자 설정 api/settings.py) -- 10년 이력의 "6개월 이상"은 전체 쌍의 1/3을 걸어 200·300명 배치가
+    # 무너졌다(rehearsal/results/rule-compare.html). 협업 점수(C)는 이 값과 상관없이 전체 조회 기간을 쓴다.
+    clique_window_months: int | None = Field(default=None, ge=1, le=120)
 
 
 BOUND_SNAP_EPS = 1e-9
@@ -214,7 +218,8 @@ def pruned_pairs(C: np.ndarray, keep_ratio: float,
     return [(int(iu[0][t]), int(iu[1][t])) for t in top_indices]
 
 
-def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, int]]:
+def _overfamiliar_pairs(graph: MemoryGraph, threshold: int,
+                        window_months: int | None = None) -> set[tuple[int, int]]:
     """All (p, q), p < q, whose cowork history meets the over-familiarity
     threshold — scanned over ALL pairs, independent of |C| pruning.
 
@@ -226,7 +231,7 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int) -> set[tuple[int, in
     guarantee. So this is computed independently and unioned into the y
     variable set by the caller.
     """
-    cw = graph.cowork_months
+    cw = graph.cowork_within(window_months) if hasattr(graph, "cowork_within") else graph.cowork_months
     rows, cols = cw.nonzero() if hasattr(cw, "nonzero") else np.nonzero(cw)
     result = set()
     for r, c in zip(rows, cols):
@@ -268,7 +273,8 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     precap_count = min(int(params.pair_keep_ratio * total_pairs), total_pairs)
     if precap_count > params.max_pairs:
         logger.info(f"Synergy pair pruning: cap applied (limited to {params.max_pairs}/{total_pairs} total pairs)")
-    overfam = _overfamiliar_pairs(graph, params.clique_threshold_months)  # ALL over-familiar pairs -> penalty term
+    overfam = _overfamiliar_pairs(graph, params.clique_threshold_months,
+                                  params.clique_window_months)          # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
          for (p, q) in pairs for j in range(nJ)}

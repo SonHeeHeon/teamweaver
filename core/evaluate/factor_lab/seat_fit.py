@@ -48,7 +48,7 @@ def run(size: int, betas, time_limit: int, seed: int = 2026) -> dict:
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
     F = compute_factors(graph, bundle)
     base = PlacementSettings().to_milp_params().model_copy(update={"time_limit": time_limit})
-    overfam = {tuple(sorted(p)) for p in _overfamiliar_pairs(graph, base.clique_threshold_months)}
+    overfam = {tuple(sorted(p)) for p in _overfamiliar_pairs(graph, base.clique_threshold_months, base.clique_window_months)}
     held = [s for s in SCENARIOS if s.name in ("T1", "T6", "T7")]
     rows = []
     for beta in betas:

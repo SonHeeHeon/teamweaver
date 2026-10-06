@@ -72,6 +72,18 @@ class CoworkRecord(BaseModel):
     a_id: str; b_id: str
     co_months: int = Field(ge=1)
     project_count: int = Field(ge=1)
+    # 함께 일한 각 달이 계획 시작 몇 달 전인지(1 = 계획 직전 달). 있으면 "최근 N개월 중 M개월 이상"으로 익숙한 쌍을
+    # 가린다(2026-10-06 사용자 결정: 최근 3년 중 12개월, `rehearsal/results/rule-compare.html`). 원천이 합계만
+    # 주면(예전 fixture·datagen) None -- 그때는 전체 개월로 판단한다.
+    months_ago: list[int] | None = None
+
+    @model_validator(mode="after")
+    def _months_match(self):
+        if self.months_ago is not None and (len(self.months_ago) != self.co_months
+                                            or len(set(self.months_ago)) != self.co_months
+                                            or any(m < 1 for m in self.months_ago)):
+            raise ValueError("months_ago must list co_months distinct months, each >= 1")
+        return self
 
 class CurrentAssignment(BaseModel):
     """Someone already on a planned project when the plan is made (continuity). locked = must be kept."""

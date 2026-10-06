@@ -1,7 +1,19 @@
 import type { PlacementSettings } from "../api/types";
 
 /** 숫자 칸만(투입률 방식은 SettingsTab이 따로 고른다). */
-export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode" | "time_limit_auto" | "review_judge">;
+export type NumKey = Exclude<keyof PlacementSettings,
+  "allocation_mode" | "time_limit_auto" | "review_judge" | "clique_window_months">;
+
+/** 반복 협업(익숙한 쌍)을 셀 최근 기간. 2026-10-06 사용자 결정: 최근 3년 중 12개월(근거 rehearsal/results/rule-compare.html). */
+export const WINDOW_OPTIONS: { value: number | null; label: string }[] = [
+  { value: 36, label: "최근 3년(권장)" }, { value: 60, label: "최근 5년" },
+  { value: 120, label: "최근 10년" }, { value: null, label: "전체 이력(예전 방식)" },
+];
+
+export function windowLabel(v: number | null | undefined): string {
+  if (v === null || v === undefined) return "전체 이력";
+  return WINDOW_OPTIONS.find((o) => o.value === v)?.label.replace("(권장)", "") ?? `최근 ${v}개월`;
+}
 
 export const JUDGE_LABEL: Record<"rule" | "jev", string> = {
   rule: "규칙 기반(외부 전송 없음)", jev: "Jev(글을 읽고 판정 · 외부 전송)",
@@ -17,7 +29,7 @@ export const FIELDS: { key: Key; label: string; unit: string; percent?: boolean;
   { key: "max_concurrent_projects", label: "동시 프로젝트 최대", unit: "개", integer: true,
     help: "한 사람이 같은 달에 맡을 수 있는 프로젝트 수. 실데이터 답변 기준 최대 3개(보통 1개)." },
   { key: "clique_threshold_months", label: "반복 협업 기준", unit: "개월", integer: true,
-    help: "이 기간 이상 함께 일한 두 사람이 또 같은 프로젝트에 배치되면 감점한다." },
+    help: "아래 '반복 협업 조회 기간' 안에서 이 개월 이상 함께 일한 두 사람이 또 같은 프로젝트에 배치되면 감점한다." },
   { key: "lam", label: "협업 시너지 가중", unit: "",
     help: "협업 점수를 배치 점수에 얼마나 반영할지. 설계값이며 실제 성과로 보정되지 않았다." },
   { key: "mu", label: "반복 협업 감점", unit: "",
@@ -51,6 +63,8 @@ export function describeChanges(before: PlacementSettings, now: PlacementSetting
     .map((f) => `${f.label} ${formatValue(f, before[f.key])}→${formatValue(f, now[f.key])}`);
   const b = before.allocation_mode ?? "fixed", n = now.allocation_mode ?? "fixed";
   if (b !== n) out.push(`투입률 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
+  const wb = before.clique_window_months ?? null, wn = now.clique_window_months ?? null;
+  if (wb !== wn) out.push(`반복 협업 조회 기간 ${windowLabel(wb)}→${windowLabel(wn)}`);
   const ab = before.time_limit_auto !== false, an = now.time_limit_auto !== false;
   if (ab !== an) out.push(`계산 시간 ${ab ? "자동" : "수동"}→${an ? "자동" : "수동"}`);
   return out;

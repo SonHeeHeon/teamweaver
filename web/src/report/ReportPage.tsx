@@ -80,7 +80,8 @@ export function ReportPage() {
           ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
             + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
             + `투입률 ${data.milp_params.allocation_mode === "monthly" ? "달마다 따로" : "기간 내내 한 비율"} · `
-            + `반복 협업 기준 ${data.milp_params.clique_threshold_months}개월 · `
+            + `반복 협업 기준 ${data.milp_params.clique_window_months ? `최근 ${data.milp_params.clique_window_months}개월 중 ` : "전체 이력 중 "}`
+            + `${data.milp_params.clique_threshold_months}개월 이상 · `
             + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
           : "서버 모델 기본값(배치 설정 미적용)"}
       </p>

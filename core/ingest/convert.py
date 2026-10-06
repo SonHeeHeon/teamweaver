@@ -63,7 +63,11 @@ def _coworks(work: list[dict], cutoff: dt.date, since: dt.date | None = None) ->
             if overlap:
                 shared_months[(a, b)] |= overlap
                 shared_codes[(a, b)] += 1
-    return [CoworkRecord(a_id=a, b_id=b, co_months=len(ms), project_count=shared_codes[(a, b)])
+    # 계획 시작 달 = cutoff 다음 날의 달. 함께 일한 달마다 "몇 달 전"인지 남겨 최근 기간 기준을 쓸 수 있게 한다.
+    first = cutoff + dt.timedelta(days=1)
+    base = first.year * 12 + first.month
+    return [CoworkRecord(a_id=a, b_id=b, co_months=len(ms), project_count=shared_codes[(a, b)],
+                         months_ago=sorted(base - (y * 12 + m) for y, m in ms))
             for (a, b), ms in sorted(shared_months.items())]
 
 

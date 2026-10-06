@@ -206,6 +206,8 @@ export interface ApplySwapResponse {
 export interface PlacementSettings {
   min_alloc: number;
   clique_threshold_months: number;
+  /** 익숙한 쌍을 셀 최근 기간(개월). null = 전체 이력(예전 의미). 서버 기본 36(2026-10-06 사용자 결정). */
+  clique_window_months?: number | null;
   lam: number;
   mu: number;
   time_limit: number;

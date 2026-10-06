@@ -47,8 +47,8 @@ def _use_rule(pairs: set[tuple[int, int]]) -> None:
     import core.evaluate.plan_eval as plan_eval
     import core.optimize.milp as milp
     import core.optimize.validation as validation
-    milp._overfamiliar_pairs = lambda graph, threshold: set(pairs)
-    plan_eval._overfamiliar_pairs = lambda graph, threshold: set(pairs)
+    milp._overfamiliar_pairs = lambda graph, threshold, window_months=None: set(pairs)
+    plan_eval._overfamiliar_pairs = lambda graph, threshold, window_months=None: set(pairs)
     validation._independent_penalty_pairs = lambda graph, params: tuple(sorted(pairs))
 
 

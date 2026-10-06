@@ -37,7 +37,7 @@ def probe(size: int, limits: list[int], configs: list[dict]) -> dict:
         for limit in limits:
             params = base.model_copy(update={"time_limit": limit, **cfg})
             row = {"config": cfg, "time_limit": limit,
-                   "overfamiliar_pairs": len(_overfamiliar_pairs(graph, params.clique_threshold_months))}
+                   "overfamiliar_pairs": len(_overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None)))}
             t = time.perf_counter()
             try:
                 a = solve_milp_assessment(graph, S, C, params)

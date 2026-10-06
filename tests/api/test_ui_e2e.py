@@ -119,9 +119,13 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             page.goto(base + "/")
             expect(page.get_by_role("heading", name="TeamWeaver")).to_be_visible()
 
-            # 1) 배치 설정: 최소 투입률 25%로 저장(K8)
+            # 1) 배치 설정: 최소 투입률 25%로 저장(K8). 반복 협업은 예전 기준(전체 이력 중 6개월)을 화면에서 골라
+            #    저장한다 -- 아래 4)의 "첫 교체는 경고가 없다"는 결정적 시나리오가 그 기준에서 만들어졌고, 새 조회 기간
+            #    칸을 포함한 저장이 실제 브라우저에서 통과하는지도 본다(2026-10-06: 이 칸이 빠져 저장이 422였다, Opus 리뷰 MUST).
             page.get_by_role("button", name="배치 설정").click()
             page.get_by_label(re.compile("최소 투입률")).fill("25")
+            page.get_by_label("전체 이력(예전 방식)").check()
+            page.get_by_label(re.compile("반복 협업 기준")).fill("6")
             page.get_by_role("button", name="저장").click()
             expect(page.get_by_text("다음 '최적화 실행'부터")).to_be_visible()
 
@@ -215,7 +219,13 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
                 page.get_by_role("button", name=re.compile("브리핑 생성")).click()
                 with page.expect_response(lambda r: "/api/plans/edits/" in r.url
                                           and r.request.method == "PUT") as saved:
-                    page.get_by_role("button", name="이 교체 적용").click()
+                    # 서버 기본 기준(최근 3년 중 12개월)에서는 이 교체에 경고가 붙을 수 있다 -- 경고를 확인하고 적용한다
+                    apply_btn = page.get_by_role("button", name=re.compile("^이 교체 적용"))
+                    expect(apply_btn).to_be_visible(timeout=60_000)
+                    risky = "경고" in apply_btn.inner_text()
+                    apply_btn.click()
+                    if risky:
+                        page.get_by_role("button", name="위반을 알고 적용").click()
                 assert saved.value.ok
                 expect(page.get_by_text(re.compile("교체 1건 적용"))).to_be_visible()
                 page.close()

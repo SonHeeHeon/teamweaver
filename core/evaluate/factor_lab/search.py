@@ -81,7 +81,7 @@ def evaluate(graph: MemoryGraph, F: dict[str, np.ndarray], cands, params: MilpPa
              scenarios: tuple[Scenario, ...] = SCENARIOS, seeds=(1, 2, 3), log=print) -> list[CandidateResult]:
     eng = ScoringEngine(graph)
     C = eng.synergy_matrix()
-    overfam = {tuple(sorted(p)) for p in _overfamiliar_pairs(graph, params.clique_threshold_months)}
+    overfam = {tuple(sorted(p)) for p in _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))}
     out = []
     for name, w in cands:
         t = time.perf_counter()

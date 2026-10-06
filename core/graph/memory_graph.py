@@ -23,6 +23,9 @@ class MemoryGraph:
     pair_review_score: dict[tuple[int, int], float]
     pair_evidence: dict[tuple[int, int], list[tuple[str, str]]] = field(default_factory=dict)
     node_polarity: dict[int, float] = field(default_factory=dict)
+    # (i, j) i<j -> 함께 일한 달들이 계획 몇 달 전인지. 원천이 달 정보를 주면만 채운다(CoworkRecord.months_ago).
+    cowork_months_ago: dict[tuple[int, int], tuple[int, ...]] = field(default_factory=dict)
+    _within_cache: dict = field(default_factory=dict, repr=False, compare=False)
 
     @classmethod
     def build(cls, ds: Dataset, parsed: list[ParsedReview]) -> "MemoryGraph":
@@ -41,6 +44,8 @@ class MemoryGraph:
             i, j = pid[c.a_id], pid[c.b_id]
             rows += [i, j]; cols += [j, i]; vals += [c.co_months, c.co_months]
         cw = csr_matrix((vals, (rows, cols)), shape=(n, n))
+        months_ago = {(min(pid[c.a_id], pid[c.b_id]), max(pid[c.a_id], pid[c.b_id])): tuple(sorted(c.months_ago))
+                      for c in ds.coworks if c.months_ago is not None}
 
         ev: dict[tuple[int, int], list[tuple[str, str]]] = defaultdict(list)
         # parsed[i] belongs to ds.reviews[i] when both lists line up (every parser keeps order); then all
@@ -75,7 +80,25 @@ class MemoryGraph:
         for p_ in parsed:
             pol_acc[pid[p_.reviewee_id]].append(p_.text_polarity)
         node_pol = {k: float(np.mean(v)) for k, v in pol_acc.items()}
-        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev), node_pol)
+        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev), node_pol, months_ago)
+
+    def cowork_within(self, window_months: int | None) -> csr_matrix:
+        """최근 window_months 개월 안에 함께 일한 개월 수(대칭 행렬).
+
+        익숙한 쌍(감점) 판단 전용이다 -- 협업 점수(C)는 전체 조회 기간(cowork_months)을 그대로 쓴다. window가 None이거나
+        그 쌍의 달 정보가 없으면 전체 개월을 쓴다(예전 fixture는 합계만 있다)."""
+        if window_months is None or not self.cowork_months_ago:
+            return self.cowork_months
+        if window_months not in self._within_cache:
+            m = self.cowork_months.tolil(copy=True)
+            for (i, j), ago in self.cowork_months_ago.items():
+                v = sum(1 for a in ago if a <= window_months)
+                m[i, j] = v
+                m[j, i] = v
+            out = m.tocsr()
+            out.eliminate_zeros()
+            self._within_cache[window_months] = out
+        return self._within_cache[window_months]
 
     def synergy_context_memory(self, person_ids: list[str],
                                hops: int) -> list[tuple[str, str, float | None]]:
