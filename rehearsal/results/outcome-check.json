@@ -1,0 +1,593 @@
+{
+ "env": {
+  "commit": "0aecd0b",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-06T01:10:22+00:00"
+ },
+ "started_at": "2026-10-06T01:10:22+00:00",
+ "seed": 2026,
+ "by_size": {
+  "100": {
+   "projects": 104,
+   "customer_score": {
+    "prior_cowork": {
+     "rho": 0.371,
+     "ci95": [
+      0.198,
+      0.53
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "cowork_strength": {
+     "rho": 0.375,
+     "ci95": [
+      0.198,
+      0.538
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "familiar_new": {
+     "rho": 0.27,
+     "ci95": [
+      0.072,
+      0.446
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "familiar_old": {
+     "rho": 0.388,
+     "ci95": [
+      0.209,
+      0.548
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "industry_exp": {
+     "rho": 0.345,
+     "ci95": [
+      0.148,
+      0.523
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "team_size": {
+     "rho": 0.184,
+     "ci95": [
+      -0.015,
+      0.364
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "churn": {
+     "rho": -0.241,
+     "ci95": [
+      -0.433,
+      -0.05
+     ],
+     "planning_time": false,
+     "n": 104
+    }
+   },
+   "follow_on": {
+    "prior_cowork": {
+     "rho": 0.169,
+     "ci95": [
+      -0.024,
+      0.348
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "cowork_strength": {
+     "rho": 0.158,
+     "ci95": [
+      -0.026,
+      0.346
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "familiar_new": {
+     "rho": 0.112,
+     "ci95": [
+      -0.084,
+      0.288
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "familiar_old": {
+     "rho": 0.166,
+     "ci95": [
+      -0.02,
+      0.34
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "industry_exp": {
+     "rho": 0.123,
+     "ci95": [
+      -0.077,
+      0.308
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "team_size": {
+     "rho": -0.024,
+     "ci95": [
+      -0.219,
+      0.166
+     ],
+     "planning_time": true,
+     "n": 104
+    },
+    "churn": {
+     "rho": -0.14,
+     "ci95": [
+      -0.335,
+      0.047
+     ],
+     "planning_time": false,
+     "n": 104
+    }
+   },
+   "regression": {
+    "cowork_strength": {
+     "coef_per_sd": 0.478,
+     "ci95": [
+      0.165,
+      0.772
+     ]
+    },
+    "familiar_new": {
+     "coef_per_sd": -0.215,
+     "ci95": [
+      -0.438,
+      0.057
+     ]
+    },
+    "industry_exp": {
+     "coef_per_sd": 0.127,
+     "ci95": [
+      -0.179,
+      0.44
+     ]
+    }
+   },
+   "verdicts": {
+    "collaboration_reward (lambda > 0)": "supported",
+    "over_familiarity_penalty (mu > 0)": "not shown",
+    "industry_experience": "not shown"
+   },
+   "observed_36": {
+    "projects": 60,
+    "regression": {
+     "cowork_strength": {
+      "coef_per_sd": 0.501,
+      "ci95": [
+       0.1,
+       0.835
+      ]
+     },
+     "familiar_new": {
+      "coef_per_sd": -0.297,
+      "ci95": [
+       -0.585,
+       0.024
+      ]
+     },
+     "industry_exp": {
+      "coef_per_sd": 0.202,
+      "ci95": [
+       -0.159,
+       0.604
+      ]
+     }
+    },
+    "verdicts": {
+     "collaboration_reward (lambda > 0)": "supported",
+     "over_familiarity_penalty (mu > 0)": "not shown",
+     "industry_experience": "not shown"
+    }
+   },
+   "mean_score": 3.019
+  },
+  "200": {
+   "projects": 142,
+   "customer_score": {
+    "prior_cowork": {
+     "rho": 0.273,
+     "ci95": [
+      0.094,
+      0.433
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "cowork_strength": {
+     "rho": 0.27,
+     "ci95": [
+      0.112,
+      0.432
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "familiar_new": {
+     "rho": 0.29,
+     "ci95": [
+      0.12,
+      0.435
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "familiar_old": {
+     "rho": 0.294,
+     "ci95": [
+      0.134,
+      0.45
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "industry_exp": {
+     "rho": 0.23,
+     "ci95": [
+      0.073,
+      0.394
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "team_size": {
+     "rho": 0.079,
+     "ci95": [
+      -0.083,
+      0.232
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "churn": {
+     "rho": -0.191,
+     "ci95": [
+      -0.341,
+      -0.028
+     ],
+     "planning_time": false,
+     "n": 142
+    }
+   },
+   "follow_on": {
+    "prior_cowork": {
+     "rho": 0.166,
+     "ci95": [
+      0.006,
+      0.324
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "cowork_strength": {
+     "rho": 0.114,
+     "ci95": [
+      -0.058,
+      0.29
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "familiar_new": {
+     "rho": 0.114,
+     "ci95": [
+      -0.056,
+      0.271
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "familiar_old": {
+     "rho": 0.09,
+     "ci95": [
+      -0.074,
+      0.255
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "industry_exp": {
+     "rho": 0.192,
+     "ci95": [
+      0.037,
+      0.354
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "team_size": {
+     "rho": 0.045,
+     "ci95": [
+      -0.12,
+      0.215
+     ],
+     "planning_time": true,
+     "n": 142
+    },
+    "churn": {
+     "rho": -0.019,
+     "ci95": [
+      -0.175,
+      0.155
+     ],
+     "planning_time": false,
+     "n": 142
+    }
+   },
+   "regression": {
+    "cowork_strength": {
+     "coef_per_sd": 0.196,
+     "ci95": [
+      -0.093,
+      0.553
+     ]
+    },
+    "familiar_new": {
+     "coef_per_sd": 0.073,
+     "ci95": [
+      -0.135,
+      0.238
+     ]
+    },
+    "industry_exp": {
+     "coef_per_sd": 0.085,
+     "ci95": [
+      -0.217,
+      0.398
+     ]
+    }
+   },
+   "verdicts": {
+    "collaboration_reward (lambda > 0)": "not shown",
+    "over_familiarity_penalty (mu > 0)": "not shown",
+    "industry_experience": "not shown"
+   },
+   "observed_36": {
+    "projects": 90,
+    "regression": {
+     "cowork_strength": {
+      "coef_per_sd": -0.058,
+      "ci95": [
+       -0.275,
+       0.277
+      ]
+     },
+     "familiar_new": {
+      "coef_per_sd": 0.023,
+      "ci95": [
+       -0.196,
+       0.17
+      ]
+     },
+     "industry_exp": {
+      "coef_per_sd": -0.003,
+      "ci95": [
+       -0.344,
+       0.268
+      ]
+     }
+    },
+    "verdicts": {
+     "collaboration_reward (lambda > 0)": "not shown",
+     "over_familiarity_penalty (mu > 0)": "not shown",
+     "industry_experience": "not shown"
+    }
+   },
+   "mean_score": 3.014
+  },
+  "300": {
+   "projects": 223,
+   "customer_score": {
+    "prior_cowork": {
+     "rho": 0.258,
+     "ci95": [
+      0.132,
+      0.374
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "cowork_strength": {
+     "rho": 0.268,
+     "ci95": [
+      0.146,
+      0.388
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "familiar_new": {
+     "rho": 0.235,
+     "ci95": [
+      0.107,
+      0.365
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "familiar_old": {
+     "rho": 0.261,
+     "ci95": [
+      0.14,
+      0.375
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "industry_exp": {
+     "rho": 0.258,
+     "ci95": [
+      0.14,
+      0.365
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "team_size": {
+     "rho": 0.0,
+     "ci95": [
+      -0.13,
+      0.134
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "churn": {
+     "rho": -0.149,
+     "ci95": [
+      -0.276,
+      -0.036
+     ],
+     "planning_time": false,
+     "n": 223
+    }
+   },
+   "follow_on": {
+    "prior_cowork": {
+     "rho": 0.195,
+     "ci95": [
+      0.074,
+      0.327
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "cowork_strength": {
+     "rho": 0.171,
+     "ci95": [
+      0.034,
+      0.304
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "familiar_new": {
+     "rho": 0.131,
+     "ci95": [
+      -0.002,
+      0.267
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "familiar_old": {
+     "rho": 0.147,
+     "ci95": [
+      0.011,
+      0.281
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "industry_exp": {
+     "rho": 0.113,
+     "ci95": [
+      -0.024,
+      0.237
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "team_size": {
+     "rho": 0.022,
+     "ci95": [
+      -0.119,
+      0.147
+     ],
+     "planning_time": true,
+     "n": 223
+    },
+    "churn": {
+     "rho": -0.07,
+     "ci95": [
+      -0.195,
+      0.06
+     ],
+     "planning_time": false,
+     "n": 223
+    }
+   },
+   "regression": {
+    "cowork_strength": {
+     "coef_per_sd": 0.249,
+     "ci95": [
+      0.014,
+      0.461
+     ]
+    },
+    "familiar_new": {
+     "coef_per_sd": 0.027,
+     "ci95": [
+      -0.13,
+      0.228
+     ]
+    },
+    "industry_exp": {
+     "coef_per_sd": 0.073,
+     "ci95": [
+      -0.086,
+      0.235
+     ]
+    }
+   },
+   "verdicts": {
+    "collaboration_reward (lambda > 0)": "supported",
+    "over_familiarity_penalty (mu > 0)": "not shown",
+    "industry_experience": "not shown"
+   },
+   "observed_36": {
+    "projects": 139,
+    "regression": {
+     "cowork_strength": {
+      "coef_per_sd": 0.199,
+      "ci95": [
+       -0.05,
+       0.403
+      ]
+     },
+     "familiar_new": {
+      "coef_per_sd": 0.082,
+      "ci95": [
+       -0.07,
+       0.358
+      ]
+     },
+     "industry_exp": {
+      "coef_per_sd": 0.065,
+      "ci95": [
+       -0.059,
+       0.231
+      ]
+     }
+    },
+    "verdicts": {
+     "collaboration_reward (lambda > 0)": "not shown",
+     "over_familiarity_penalty (mu > 0)": "not shown",
+     "industry_experience": "not shown"
+    }
+   },
+   "mean_score": 3.009
+  }
+ },
+ "finished_at": "2026-10-06T01:10:28+00:00"
+}
