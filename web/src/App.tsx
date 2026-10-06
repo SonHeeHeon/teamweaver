@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
-  fetchSettings, postWhatif, saveSettings, SettingsConflictError,
+  fetchSettings, postBaseline, postWhatif, saveSettings, SettingsConflictError,
   streamOptimize,
 } from "./api/client";
 import type {
@@ -27,9 +27,11 @@ import { AdminLogin } from "./components/AdminLogin";
 import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
+import { BaselineCard } from "./components/BaselineCard";
+import { OperatingTab } from "./components/OperatingTab";
 import { effectiveSettings, stepBody } from "./api/types";
 
-type Tab = "req" | "whatif" | "settings" | "data";
+type Tab = "req" | "whatif" | "operating" | "settings" | "data";
 
 
 
@@ -558,8 +560,8 @@ export default function App() {
       </header>
 
       <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
-        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["settings", "배치 설정"],
-           ["data", "데이터"]] as const)
+        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["operating", "운영 중 편성"],
+           ["settings", "배치 설정"], ["data", "데이터"]] as const)
           .map(([id, label]) => (
           <button
             key={id}
@@ -576,6 +578,12 @@ export default function App() {
       </nav>
 
       <main className="p-8">
+        {/* 운영 중 편성 탭은 다른 탭에 가도 사라지지 않게 늘 띄워 두고 숨긴다 -- 35초짜리 비교 결과를 잃지 않게(리뷰) */}
+        {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
+        <div className={tab === "operating" ? "" : "hidden"}>
+          <OperatingTab meta={meta} params={settings ? effectiveSettings(settings) : null}
+                        onDatasetChanged={() => { void externalSwitch(); }} />
+        </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
         )}
@@ -626,7 +634,7 @@ export default function App() {
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
             </p>
           )
-        ) : tab === "req" ? (
+        ) : tab === "operating" ? null : tab === "req" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} />
         ) : (
@@ -700,6 +708,13 @@ export default function App() {
             )}
             {notice && (
               <p role="status" className="rounded-md bg-indigo-50 px-4 py-2 text-sm text-indigo-900">{notice}</p>
+            )}
+            {current && (
+              <BaselineCard key={`${current.label}-${edit?.history.length ?? 0}`} entries={current.entries}
+                            onDatasetChanged={() => { void externalSwitch(); }}
+                            load={(e) => postBaseline({ dataset_version: meta.dataset_version,
+                                                        milp_params: planBasis?.params ?? null }, e,
+                                                      planBasis?.weights ?? weights)} />
             )}
             {current && edit && (
               <AppliedPanel label={current.label} history={edit.history}

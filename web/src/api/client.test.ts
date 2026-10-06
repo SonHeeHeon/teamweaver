@@ -142,3 +142,17 @@ describe("applySwap", () => {
                                  dataset_version: "v".repeat(64) });
   });
 });
+
+
+describe("postBaseline — 같은 조건(가중치)으로 채점", () => {
+  it("플랜을 계산한 가중치를 함께 보낸다", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ rule: "", optimized: {}, baseline: {},
+      difference: {}, note: "" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { postBaseline } = await import("./client");
+    await postBaseline({ dataset_version: "v", milp_params: null }, [], { Java: 5 });
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    expect(body.weights).toEqual({ Java: 5 });
+    vi.unstubAllGlobals();
+  });
+});

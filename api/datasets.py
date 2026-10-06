@@ -78,8 +78,12 @@ class ActiveDataset:
     (deps.get_dataset이 acquire/release). 쓰는 요청이 없으면 retire 때 바로 닫는다."""
 
     def __init__(self, graph: MemoryGraph, sqlite_conn: sqlite3.Connection, info: DatasetInfo,
-                 evidence=None):
+                 evidence=None, current: list | None = None, scenario: dict | None = None):
         self.graph = graph
+        # 운영 중 편성(2026-10-06, claude-a core.evaluate.operating·staffing_sim): 지금 진행 중인 배치(Dataset.current)와
+        # 시나리오 정보(manifest의 scenario·bench·proposals). 처음부터 짜는 데이터면 빈 목록·빈 사전.
+        self.current = list(current or [])
+        self.scenario = dict(scenario or {})
         self.sqlite_conn = sqlite_conn
         self.info = info
         # 리뷰 근거 색인(K5, api.rag.evidence). 가상 데이터만 원문을 담고 실데이터는 항목 라벨만.
@@ -137,9 +141,21 @@ def judge_cache_path(synthetic: bool = False) -> Path:
     return data_dir() / ("review_judgments_synthetic.json" if synthetic else "review_judgments.json")
 
 
+def scenario_of(manifest: dict | None) -> dict:
+    """manifest에서 운영 중 시나리오 정보만(scenario·bench·proposals). 형식이 다르면 버린다."""
+    m = manifest or {}
+    out: dict = {}
+    if isinstance(m.get("scenario"), str):
+        out["scenario"] = m["scenario"]
+    for key in ("bench", "proposals"):
+        if isinstance(m.get(key), list) and all(isinstance(x, str) for x in m[key]):
+            out[key] = list(m[key])
+    return out
+
+
 def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
                  source: str, synthetic: bool | None, judge: bool = True,
-                 judge_cache: Path | None = None) -> ActiveDataset:
+                 judge_cache: Path | None = None, manifest: dict | None = None) -> ActiveDataset:
     """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다."""
     content_version, judge_error = version, None
     meta: dict = {"review_judge": "fixture"}
@@ -185,7 +201,8 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index
     evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
-    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence)
+    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence,
+                         current=ds.current, scenario=scenario_of(manifest))
 
 
 def _strip_common_folder(names: list[PurePosixPath]) -> list[PurePosixPath]:

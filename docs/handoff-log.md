@@ -22,6 +22,35 @@
 
 ---
 
+## 2026-10-06 · claude-b · 운영 중 편성·사업 보강 API와 화면 + 단순 규칙 대비 카드 + 계산 신뢰도 배지 + 시연 데이터 고르기
+- 브랜치/커밋: `feat/claude-b-operating-ui` (기준 claude-a `feat/claude-a-operating-staffing`. main 미병합 — claude-a 브랜치와 함께 사용자 승인 후)
+- 한 일(claude-a 요청 `docs/requests/2026-10-06-operating-staffing-ui.md`):
+  - API `api/routes/operating.py`
+    - `GET /api/operating/state`, `POST /api/operating/compare`(SSE: start→progress→row→done).
+    - `POST /api/staffing/{candidates,simulate,best}`, `POST /api/baseline`.
+    - 비교는 서버 전체에서 한 번에 하나다(바쁘면 429). 슬롯은 계산 스레드가 끝날 때 풀린다.
+    - 운영 경로 time_limit은 600초 이하, K는 0~3, 입력 길이에 상한을 둔다.
+  - 데이터: `ActiveDataset.current·scenario`(manifest의 scenario·bench·proposals).
+    - `GET /api/datasets/demos`, `POST /api/datasets/demo`(관리자, 허용 목록만, 먼저 빌드하고 실패하면 422로 아무것도 바꾸지 않음, 성공하면 선택을 기억하고 업로드 보관본을 지움).
+    - 되돌리기는 선택을 잊는다.
+  - 신뢰도: `PlanAssignment.termination·best_bound·gap_used`(Codex 영역 임시 위임 범위). 플랜 카드·K 행·최선 n명에 배지(독립 검증 통과, 허용 차이 안 최선 증명, 시간 한도 시 "최적값이 이 해보다 최대 X% 높을 수 있음").
+  - 웹
+    - "운영 중 편성" 탭: K별 비교(빈자리와 배치 품질 분리, 이동 그림, 사업별 변화), 보강(후보표, 넣어 보기/빼 보기, 재평가, 최선 n명, 등급 선택).
+    - What-if 화면: "단순 규칙 대비" 카드.
+    - 데이터 탭: 시연 데이터 고르기(2단계 확인).
+- 상대 영향:
+  - (claude-a) K별 실시간 송출을 위해 `compare_move_budgets(on_row=)`를 요청했다(work-split).
+  - 단순 규칙 대비 카드는 운영 화면에 두지 않았다. 시연 데이터 실측에서 K=0 품질 69.2 대 백지 단순 규칙 76.3으로, 같은 조건 비교가 아니었다.
+  - `core/optimize/types.py`·`alternatives._solve` 칸을 추가했다(기본값이 있어 호환된다).
+- 실측(`demo/org-n100-operating`, 100명):
+  - compare 35초. K=0..3이 0.5/1.1/9/25초이고, 빈자리 2→1→0→0, 품질 69.19→69.90→69.68→70.39, 모두 최적 증명.
+  - candidates 0.5초(빼 오기 1.9초), best 0.3~0.7초.
+- 검증: `uv run --group benchmark pytest -q` → 1341 passed, 19 deselected. `-m slow` → 19 passed. 웹 165 passed. tsc·oxlint(0)·build 통과. Opus 적대적 리뷰 2라운드(1차 MUST 3·SHOULD 8, 2차 MUST 1·SHOULD 2), 모두 반영.
+- 미결: simulate의 AI 설명 재사용, 운영 결과를 기준 배치로 이어 쓰기, PDF에 운영 결과 넣기.
+- 근거: `.omc/reports/2026-10-06-operating-staffing-ui.md`
+
+---
+
 ## 2026-10-06 · claude-a · 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 시뮬레이터·단순 규칙 대비·시연 장면 D
 - 브랜치/커밋: `feat/claude-a-operating-staffing` `9087ffa..5b5693c` (push, main 병합은 사용자 승인 후. 기준 = `feat/claude-a-familiarity-literature`)
 - 한 일:

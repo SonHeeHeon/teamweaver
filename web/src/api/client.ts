@@ -1,4 +1,5 @@
 import type {
+  BaselineResult, BestResult, Candidate, DemoBundle, OperatingEvent, OperatingState, SimulateResult,
   Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
   SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange,
 } from "./types";
@@ -349,6 +350,104 @@ export async function resetDataset(adminToken: string | null = null): Promise<Da
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(`되돌리기 실패(${res.status}): ${detail.detail ?? ""}`);
+  }
+  return (await res.json()) as DatasetInfo;
+}
+
+
+// --- 운영 중 편성·진행 사업 보강·단순 규칙 대비 ---
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`${path} 실패(${res.status}): ${typeof detail.detail === "string" ? detail.detail : ""}`);
+  }
+  return (await res.json()) as T;
+}
+
+export async function fetchOperatingState(): Promise<OperatingState> {
+  const res = await fetch(`${API_BASE}/api/operating/state`);
+  if (!res.ok) throw new Error(`GET /api/operating/state 실패: ${res.status}`);
+  return (await res.json()) as OperatingState;
+}
+
+export async function* streamOperatingCompare(body: {
+  dataset_version: string | null; milp_params: PlacementSettings | null; ks: number[];
+}): AsyncGenerator<OperatingEvent> {
+  const res = await fetch(`${API_BASE}/api/operating/compare`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, milp_params: body.milp_params ?? {} }),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok || !res.body) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`운영 편성 비교 실패(${res.status}): ${typeof detail.detail === "string" ? detail.detail : ""}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const { events, rest } = parseFrames(buf);
+      buf = rest;
+      for (const ev of events) yield ev as unknown as OperatingEvent;
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+}
+
+type Common = { dataset_version: string | null; milp_params: PlacementSettings | null };
+const common = (c: Common) => ({ dataset_version: c.dataset_version, milp_params: c.milp_params ?? {} });
+
+export async function postStaffingCandidates(c: Common, req: {
+  project_id: string; include_pull: boolean; budget_add: number | null; top: number;
+}): Promise<{ candidates: Candidate[]; note: string }> {
+  return postJson("/api/staffing/candidates", { ...common(c), ...req });
+}
+
+export async function postStaffingSimulate(c: Common, req: {
+  project_id: string; adds: { person_id: string; project_id: string; alloc: number }[];
+  removes: [string, string][]; extra_seats: Record<string, number>; budget_add: number;
+}): Promise<SimulateResult & { note: string }> {
+  return postJson("/api/staffing/simulate", { ...common(c), ...req });
+}
+
+export async function postStaffingBest(c: Common, req: {
+  project_id: string; n: number; grade: string | null; pull_budget: number; budget_add: number | null;
+}): Promise<BestResult & { note: string }> {
+  return postJson("/api/staffing/best", { ...common(c), ...req });
+}
+
+/** weights: 플랜을 계산한 요건 가중치 -- 같은 S로 채점해야 "같은 조건" 비교다(리뷰 M3). */
+export async function postBaseline(c: Common, entries: AssignEntry[],
+                                   weights: Record<string, number> = {}): Promise<BaselineResult> {
+  return postJson("/api/baseline", { ...common(c), entries, weights });
+}
+
+export async function fetchDemos(): Promise<DemoBundle[]> {
+  const res = await fetch(`${API_BASE}/api/datasets/demos`);
+  if (!res.ok) throw new Error(`GET /api/datasets/demos 실패: ${res.status}`);
+  return (await res.json()) as DemoBundle[];
+}
+
+export async function chooseDemo(name: string, adminToken: string | null = null): Promise<DatasetInfo> {
+  const res = await fetch(`${API_BASE}/api/datasets/demo`, {
+    method: "POST", credentials: WITH_COOKIE,
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
+    body: JSON.stringify({ name }),
+  });
+  throwIfLoginRequired(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`시연 데이터 전환 실패(${res.status}): ${detail.detail ?? ""}`);
   }
   return (await res.json()) as DatasetInfo;
 }

@@ -17,6 +17,7 @@ from pathlib import Path
 import anyio
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
 
 from api.admin import require_admin
 from api.datasets import (ActiveDataset, BundleArchiveError, build_active, bundle_version,
@@ -78,7 +79,8 @@ def validate_and_build(data: bytes) -> tuple[ActiveDataset | None, dict | None, 
         manifest = bundle.manifest
         synthetic = manifest.get("synthetic") if isinstance(manifest.get("synthetic"), bool) else None
         active = build_active(ds, parsed, dataset_id=str(manifest["dataset_id"]),
-                              version=bundle_version(root), source="upload", synthetic=synthetic)
+                              version=bundle_version(root), source="upload", synthetic=synthetic,
+                              manifest=manifest)
         return active, _report_dict(report), None
 
 
@@ -188,6 +190,10 @@ async def reset_dataset(request: Request) -> dict:
         raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
     state.dataset_switching = True
     try:
+        # "기본 데이터로 되돌리기"는 고른 시연 묶음도 잊는다(서버 기본 = TEAMWEAVER_DEMO_BUNDLE 또는 고정 fixture).
+        from api.demos import clear_choice
+        from api.storage import data_dir
+        await anyio.to_thread.run_sync(clear_choice, data_dir())
         fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)   # 잠금 밖(시연 묶음은 LLM 판정)
         async with state.dataset_lock:
             _activate(request, fixture)
@@ -223,5 +229,53 @@ async def rejudge_dataset(request: Request) -> dict:
                 # 시연 묶음을 못 읽어 예전 fixture가 됐으면 조용히 바뀌지 않게 이유를 알린다(리뷰 S6).
                 state.dataset_restore_error = getattr(state, "demo_bundle_error", None)
             return _info(new, restore_error=getattr(state, "dataset_restore_error", None))
+    finally:
+        state.dataset_switching = False
+
+
+@router.get("/api/datasets/demos")
+def list_demo_datasets() -> list[dict]:
+    """데이터 탭에서 고를 수 있는 시연 묶음(demo/ 아래 manifest가 있는 폴더). 운영 중 시나리오는 scenario="operating"."""
+    from api.demos import list_demos
+    return list_demos()
+
+
+class DemoChoice(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str
+
+
+@router.post("/api/datasets/demo", dependencies=[Depends(require_admin)])
+async def choose_demo_dataset(body: DemoChoice, request: Request) -> dict:
+    """시연 묶음으로 전환한다. 저장된 업로드 보관본은 지운다("기본 데이터로 되돌리기"와 같은 정리). 고른 이름은 기억해
+    재기동해도 그 묶음으로 뜬다. 이름은 목록(api.demos.list_demos)에 있는 것만 받는다."""
+    from api.demos import demo_root, save_choice
+    from api.storage import data_dir
+    root = demo_root(body.name)
+    if root is None:
+        raise HTTPException(status_code=404, detail=f"시연 데이터 묶음 {body.name!r}이 없다.")
+    state = request.app.state
+    if state.dataset_switching:
+        raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
+    state.dataset_switching = True
+    try:
+        # 고른 묶음을 먼저 만든다(잠금 밖, 리뷰 글 판정). 실패하면 아무것도 바꾸지 않는다 -- 업로드 보관본·선택 기록은
+        # 그대로다(리뷰 S3: 예전에는 고정 fixture로 대체하고도 보관본을 지우고 실패한 선택을 기억했다).
+        try:
+            new = await anyio.to_thread.run_sync(state.build_demo_dataset, root)
+        except Exception as exc:                                   # noqa: BLE001 -- 검증 실패 등 이유를 그대로 알린다
+            raise HTTPException(status_code=422, detail=f"시연 데이터 묶음을 읽지 못했다: {str(exc)[:300]}") from exc
+        try:
+            await anyio.to_thread.run_sync(save_choice, data_dir(), body.name)
+        except OSError as exc:
+            new.retire()                                           # 만든 데이터셋(메모리 SQLite)을 닫고 아무것도 바꾸지 않는다
+            raise HTTPException(status_code=500, detail=f"시연 데이터 선택을 저장하지 못했다: {exc}") from exc
+        async with state.dataset_lock:
+            _activate(request, new)
+            await anyio.to_thread.run_sync(state.dataset_store.clear)
+            await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
+            state.demo_bundle_error = None
+            state.dataset_restore_error = None
+            return _info(new, restore_error=None)
     finally:
         state.dataset_switching = False

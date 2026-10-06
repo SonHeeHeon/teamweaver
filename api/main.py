@@ -25,7 +25,7 @@ from core.ingest.convert import to_dataset
 from core.ingest.loader import load_bundle
 from core.optimize.alternatives import cacheable, generate_plans
 from core.scoring.engine import ScoringEngine
-from api.routes import admin, datasets, meta, optimize, plans, report, settings, whatif
+from api.routes import admin, datasets, meta, operating, optimize, plans, report, settings, whatif
 
 
 log = logging.getLogger(__name__)
@@ -44,20 +44,30 @@ async def lifespan(app: FastAPI):
     app.state.settings_store = settings_store
 
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
+    def build_demo_dataset(root: Path) -> ActiveDataset:
+        """시연 묶음 하나로 만든다. 실패하면 예외(대체하지 않는다) -- 데이터 탭의 시연 데이터 고르기가 먼저 확인한다."""
+        bundle, report = load_bundle(root)
+        ds, parsed = to_dataset(bundle, report)          # ValueError with the report if it does not validate
+        return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
+                            version=bundle_version(root), source="demo-bundle",
+                            synthetic=bundle.manifest.get("synthetic") is True, manifest=bundle.manifest)
+
+    app.state.build_demo_dataset = build_demo_dataset
+
     def build_fixture_dataset() -> ActiveDataset:
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
-        bundle_dir = os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
+        # 데이터 탭에서 고른 시연 묶음(api.demos)이 있으면 그것이 먼저다.
+        from api.demos import demo_root, load_choice
+        chosen = load_choice(data_dir())
+        chosen_root = demo_root(chosen) if chosen else None
+        bundle_dir = str(chosen_root) if chosen_root else os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
         app.state.demo_bundle_error = None
         if bundle_dir:
             root = Path(bundle_dir).expanduser()
             try:
-                bundle, report = load_bundle(root)
-                ds, parsed = to_dataset(bundle, report)      # ValueError with the report if it does not validate
-                return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
-                                    version=bundle_version(root), source="demo-bundle",
-                                    synthetic=bundle.manifest.get("synthetic") is True)
+                return build_demo_dataset(root)
             except Exception as exc:                    # noqa: BLE001
                 log.error("시연 데이터 묶음(%s)을 읽지 못해 기본 데이터로 시작한다: %s", root, exc)
                 app.state.demo_bundle_error = f"시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: {exc}"
@@ -167,6 +177,7 @@ app.include_router(settings.router)
 app.include_router(datasets.router)
 app.include_router(admin.router)
 app.include_router(plans.router)
+app.include_router(operating.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

@@ -113,7 +113,9 @@ def _solve(graph, S, C, params, extra_constraints=None) -> tuple[PlanAssignment,
     """플랜과 종료 사유. "time_limit_incumbent"면 시간 한도에서 멈춘 해다(milp.py)."""
     raw = solve_milp_diagnostic(graph, S, C, params, extra_constraints=extra_constraints)
     reason = raw.evidence.termination_reason
-    return raw.plan.model_copy(update={"time_limited": reason == "time_limit_incumbent"}), reason
+    bound = getattr(raw.evidence, "best_bound", None)
+    return raw.plan.model_copy(update={"time_limited": reason == "time_limit_incumbent", "termination": reason,
+                                       "best_bound": bound, "gap_used": getattr(params, "gap", None)}), reason
 
 
 def _failure_reason(exc: RuntimeError) -> str:
