@@ -3,6 +3,8 @@
 POST /api/datasets         zip 원본 본문(application/zip) → 검증 리포트, 통과하면 전환
 GET  /api/datasets/active  지금 계산에 쓰는 데이터셋
 POST /api/datasets/reset   기본 fixture로 되돌림
+GET  /api/datasets/demos   시연 묶음 목록(연초 계획·운영 중, api/demo_presets -- 2026-10-06 claude-a)
+POST /api/datasets/demo    시연 묶음 하나로 전환({"id": ...})
 
 업로드는 multipart가 아니라 원본 본문이다 -- multipart는 python-multipart 의존성이
 필요한데 pyproject/uv.lock은 공유 계약이다. 업로드 데이터는 영속하지 않는다:
@@ -17,6 +19,7 @@ from pathlib import Path
 import anyio
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from api.admin import require_admin
 from api.datasets import (ActiveDataset, BundleArchiveError, build_active, bundle_version,
@@ -89,7 +92,9 @@ def rebuild_active(app) -> tuple[ActiveDataset | None, str | None]:
     (None, 이유)를 돌려주고 지금 데이터를 그대로 둔다."""
     info = app.state.dataset.info
     if info.source != "upload":
-        return app.state.build_fixture_dataset(), None
+        # 시연 묶음 목록에서 고른 묶음이면 그 묶음을 다시 만든다(기본 묶음으로 바뀌지 않게)
+        path = getattr(app.state, "demo_active_path", None) if info.source == "demo-bundle" else None
+        return app.state.build_fixture_dataset(path), None
     try:
         saved = app.state.dataset_store.load()
     except ValueError as exc:
@@ -150,6 +155,8 @@ async def upload_dataset(request: Request):
                 "activated": False, "detail": "검증 오류가 있어 전환하지 않았다.", "report": report})
         async with state.dataset_lock:
             _activate(request, active)
+            from api.demo_precomputed import install
+            install(request.app, None)                  # 미리 계산은 시연 묶음만
             # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
             # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
@@ -170,10 +177,68 @@ async def upload_dataset(request: Request):
 
 @router.get("/api/datasets/active")
 def active_dataset(request: Request) -> dict:
-    """restore_error: 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유."""
+    """restore_error: 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유.
+    demo_preset: 지금 데이터가 시연 묶음이면 그 id(GET /api/datasets/demos의 id), 아니면 None."""
+    from api.demo_presets import active_preset_id
     # judge_endpoint: 다음에 올릴 묶음의 평가 사유(글)를 어디로 보내 판정하는가(화면 업로드 안내용)
+    # precomputed: 시연 묶음의 미리 계산 결과를 쓰는지(쓰지 않은 부분은 skipped에 이유) -- 시연 전 점검용
     return _info(request.app.state.dataset,
-                 restore_error=getattr(request.app.state, "dataset_restore_error", None))
+                 restore_error=getattr(request.app.state, "dataset_restore_error", None),
+                 demo_preset=active_preset_id(request.app),
+                 precomputed=getattr(request.app.state, "precomputed_status", None))
+
+
+@router.get("/api/datasets/demos")
+def demo_presets(request: Request) -> dict:
+    """시연 묶음 목록. scenario: "planning"(연초 계획, 전원 배치) | "operating"(운영 중, 대기 인력으로 신규 제안 편성)."""
+    from api.demo_presets import active_preset_id, default_preset_id, describe, list_presets
+    presets = list_presets()
+    return {"presets": [describe(p) for p in presets], "active": active_preset_id(request.app, presets),
+            "default": default_preset_id(presets)}
+
+
+class DemoSwitchBody(BaseModel):
+    id: str = Field(min_length=1, max_length=200)
+
+
+@router.post("/api/datasets/demo", dependencies=[Depends(require_admin)])
+async def switch_demo(request: Request) -> dict:
+    """시연 묶음 하나로 전환한다. 되돌리기와 같이 저장된 업로드 데이터·이전 데이터의 교체 기록을 지운다."""
+    from api.demo_precomputed import install, prepare_for
+    from api.demo_presets import build_demo_active, describe, find_preset
+    ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if ctype != "application/json":      # 본문 없는 교차 사이트 폼 POST를 막는다(되돌리기와 같은 이유)
+        raise HTTPException(status_code=415, detail="시연 데이터 전환은 JSON 요청으로 보낸다(Content-Type: application/json).")
+    try:
+        body = DemoSwitchBody.model_validate_json(await request.body())
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"요청 형식이 맞지 않다: {exc}") from exc
+    preset = find_preset(body.id)
+    if preset is None:
+        raise HTTPException(status_code=404, detail=f"시연 데이터 '{body.id}'가 없다.")
+    state = request.app.state
+    if state.dataset_switching:
+        raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
+    state.dataset_switching = True
+    try:
+        try:                                            # 잠금 밖(검증·변환·리뷰 글 LLM 판정)
+            new = await anyio.to_thread.run_sync(build_demo_active, preset.path)
+        except Exception as exc:                        # noqa: BLE001 -- 지금 데이터는 그대로 둔다
+            log.error("시연 데이터 %s 전환 실패: %s", preset.id, exc)
+            raise HTTPException(status_code=422, detail=f"시연 데이터 '{preset.id}'를 읽지 못해 전환하지 않았다: "
+                                                        f"{str(exc)[:500]}") from exc
+        pre = await anyio.to_thread.run_sync(prepare_for, request.app, new, preset.path)
+        async with state.dataset_lock:
+            _activate(request, new)
+            install(request.app, pre)
+            state.demo_active_path = preset.path
+            await anyio.to_thread.run_sync(state.dataset_store.clear)
+            await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
+            state.dataset_restore_error = None
+            return _info(new, restore_error=None, demo_preset=preset.id, demo=describe(preset),
+                         precomputed=state.precomputed_status)
+    finally:
+        state.dataset_switching = False
 
 
 @router.post("/api/datasets/reset", dependencies=[Depends(require_admin)])
@@ -189,14 +254,20 @@ async def reset_dataset(request: Request) -> dict:
     state.dataset_switching = True
     try:
         fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)   # 잠금 밖(시연 묶음은 LLM 판정)
+        from api.demo_precomputed import install, prepare_for
+        from api.demo_presets import default_bundle_path
+        pre = await anyio.to_thread.run_sync(prepare_for, request.app, fixture, default_bundle_path())
         async with state.dataset_lock:
             _activate(request, fixture)
+            install(request.app, pre)
+            state.demo_active_path = None             # 기본 시연 묶음으로
             await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
             # 시연 묶음을 못 읽어 예전 fixture로 되돌아갔으면 그 이유를 알린다(claude-a 요청 -- 조용히 바뀌지 않게).
             err = getattr(request.app.state, "demo_bundle_error", None)
             request.app.state.dataset_restore_error = err
-            return _info(fixture, restore_error=err)
+            from api.demo_presets import active_preset_id
+            return _info(fixture, restore_error=err, demo_preset=active_preset_id(request.app))
     finally:
         state.dataset_switching = False
 
@@ -215,13 +286,22 @@ async def rejudge_dataset(request: Request) -> dict:
         new, err = await anyio.to_thread.run_sync(rebuild_active, request.app)              # 잠금 밖(LLM 판정)
         if new is None:
             raise HTTPException(status_code=409, detail=err)
+        from api.demo_precomputed import install, prepare_for
+        from api.demo_presets import default_bundle_path
+        path = getattr(state, "demo_active_path", None) or default_bundle_path()
+        pre = await anyio.to_thread.run_sync(prepare_for, request.app, new, path)
         async with state.dataset_lock:
             _activate(request, new)
+            install(request.app, pre)
+            if new.info.source != "demo-bundle":      # 시연 묶음을 못 읽어 예전 fixture가 됐다 -- 고른 묶음 표시를 지운다(리뷰 S1)
+                state.demo_active_path = None
             # 판정이 성공하면 버전이 바뀐다 -- 옛 버전의 교체 기록(사번·명단)을 남기지 않는다(리뷰 S6).
             await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
             if new.info.source != "upload":
                 # 시연 묶음을 못 읽어 예전 fixture가 됐으면 조용히 바뀌지 않게 이유를 알린다(리뷰 S6).
                 state.dataset_restore_error = getattr(state, "demo_bundle_error", None)
-            return _info(new, restore_error=getattr(state, "dataset_restore_error", None))
+            from api.demo_presets import active_preset_id
+            return _info(new, restore_error=getattr(state, "dataset_restore_error", None),
+                         demo_preset=active_preset_id(request.app))
     finally:
         state.dataset_switching = False

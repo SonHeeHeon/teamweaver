@@ -40,6 +40,9 @@ echo "TeamWeaver: http://$HOST:$PORT"
 # 계산 안정화 뒤 전환(2026-10-06): 익숙한 쌍 = 최근 3년 중 12개월(사용자 결정), 시드 4개 동시 풀이로 100명 안 A~D가
 # 약 2분(30초 x 4)에 빈자리 없이 나온다(rehearsal/results/n100/pipeline-real.json).
 export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$PWD/demo/org-n100}"
+# 시연 묶음 목록(2026-10-06, 데이터 탭에서 고름): 연초 계획(전원 배치)과 운영 중(대기 인력으로 신규 제안 편성), 100/200/300명.
+# demo/precomputed/에 같은 데이터·같은 설정으로 미리 계산한 결과가 있으면 "미리 계산"으로 바로 보인다(python -m rehearsal.precompute_demo).
+export TEAMWEAVER_DEMO_DIR="${TEAMWEAVER_DEMO_DIR-$PWD/demo}"
 # 동시 탐색 수(이 기기 CPU 코어에 맞춘 값). 1이면 안 B 이후가 품질 하한에 걸려 안 A 하나만 나올 수 있다(실측).
 export TEAMWEAVER_SOLVER_SEEDS="${TEAMWEAVER_SOLVER_SEEDS-4}"
 # 시연 데이터는 시간 한도 안에서 최선 증명까지 가지 않아 결과를 캐시하지 않는다 -- 부팅 사전계산은 기동만 ~2분 늦추고

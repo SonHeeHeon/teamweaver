@@ -1,7 +1,7 @@
 from typing import Annotated
 
 import anyio
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -25,10 +25,12 @@ class OptimizeRequest(BaseModel):
     n_alternatives: int = Field(default=3, ge=0, le=6)
     # 화면이 본 데이터셋(meta.dataset_version). 다르면 409 -- api/deps.check_dataset_version
     dataset_version: str | None = None
+    # 캐시(부팅 사전계산·시연 묶음의 미리 계산 결과 포함)를 쓰지 않고 다시 푼다 -- 화면의 "다시 계산"(2026-10-06)
+    fresh: bool = False
 
 
 @router.post("/api/optimize")
-async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph),
+async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = Depends(get_graph),
                    dataset: ActiveDataset = Depends(get_dataset),
                    cache: ResultCache = Depends(get_cache)):
     eng = ScoringEngine(graph)
@@ -40,7 +42,9 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
     params = req.milp_params.to_milp_params()
     key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version)
 
-    def _plan_payload(plan, index: int, cached: bool, ub: float) -> dict:
+    from api.demo_precomputed import forget, precomputed_at, precomputed_stop_reason
+
+    def _plan_payload(plan, index: int, cached: bool, ub: float, pre_at: str | None = None) -> dict:
         """캐시 히트/미스 두 경로가 같은 모양을 내도록 조립을 한 곳에 모은다."""
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc
@@ -54,6 +58,8 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             "optimization_ratio": (skill_term / ub) if ub > 0 else 0.0,
             "index": index,
             "cached": cached,
+            # 시연 묶음의 미리 계산 결과면 그 계산 시각(같은 데이터·같은 설정, api/demo_precomputed) -- 화면 표시용
+            "precomputed_at": pre_at,
             # 솔버가 시간 한도에서 멈춘 해(최선 증명 전) -- 화면 배지(claude-a 요청)
             "time_limited": bool(getattr(plan, "time_limited", False)),
             "dataset_version": dataset.info.version,
@@ -63,7 +69,8 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
         }
 
     async def event_stream():
-        cached = cache.get(key)
+        cached = None if req.fresh else cache.get(key)
+        pre_at = precomputed_at(request.app, key) if cached is not None else None
         count = 0
         outcome: dict = {}
         try:
@@ -77,7 +84,7 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
             if cached is not None:
                 for plan in cached:
                     count += 1
-                    yield sse_event("plan", _plan_payload(plan, count, True, ub))
+                    yield sse_event("plan", _plan_payload(plan, count, True, ub, pre_at))
             else:
                 collected = []
                 async for plan in stream_sync_generator(
@@ -89,11 +96,14 @@ async def optimize(req: OptimizeRequest, graph: MemoryGraph = Depends(get_graph)
                 # 짧게 끊긴 묶음이 같은 요청에 계속 쓰이지 않게(통합 리뷰 N2, C2 리뷰).
                 if cacheable(outcome):
                     cache.put(key, collected)
+                    forget(request.app, key)
             # 요청한 대안 수도 싣는다: 조건(품질·미충원·중복·빈 팀, C2)을 만족하는 대안이 모자라면
             # 서버는 억지로 채우지 않고 덜 낸다 -- 화면이 "대안 없음"을 알릴 수 있게.
-            done = {"count": count, "requested_alternatives": req.n_alternatives}
+            done = {"count": count, "requested_alternatives": req.n_alternatives, "precomputed_at": pre_at}
             if cached is None and outcome.get("stop_reason"):
                 done["stop_reason"] = outcome["stop_reason"]   # 화면이 시간 초과를 조건 미충족과 구분한다
+            elif pre_at and precomputed_stop_reason(request.app, key):
+                done["stop_reason"] = precomputed_stop_reason(request.app, key)   # 미리 계산 때의 이유
             yield sse_event("done", done)
         except Exception as exc:                        # noqa: BLE001
             yield sse_event("error", {"message": str(exc)})

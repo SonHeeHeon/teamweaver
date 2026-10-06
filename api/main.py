@@ -14,15 +14,14 @@ from fastapi.staticfiles import StaticFiles
 
 from api.admin import warn_if_unprotected
 from api.cache import ResultCache
-from api.datasets import ActiveDataset, DatasetStore, build_active, bundle_version, dir_version
+from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
+from api.demo_presets import build_demo_active
 from api.routes.datasets import validate_and_build
 from api.plan_edits import PlanEditStore
 from api.storage import data_dir
 from api.settings import SettingsStore, default_settings_path
 from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
-from core.ingest.convert import to_dataset
-from core.ingest.loader import load_bundle
 from core.optimize.alternatives import cacheable, generate_plans
 from core.scoring.engine import ScoringEngine
 from api.routes import admin, datasets, meta, optimize, plans, report, settings, whatif
@@ -44,20 +43,17 @@ async def lifespan(app: FastAPI):
     app.state.settings_store = settings_store
 
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
-    def build_fixture_dataset() -> ActiveDataset:
+    def build_fixture_dataset(bundle_path: Path | None = None) -> ActiveDataset:
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
-        bundle_dir = os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
+        # bundle_path: 시연 묶음 목록에서 고른 묶음(폴더·zip, api/demo_presets) -- "다시 판정"이 지금 묶음을 다시 만들 때.
+        bundle_dir = str(bundle_path) if bundle_path else os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
         app.state.demo_bundle_error = None
         if bundle_dir:
             root = Path(bundle_dir).expanduser()
             try:
-                bundle, report = load_bundle(root)
-                ds, parsed = to_dataset(bundle, report)      # ValueError with the report if it does not validate
-                return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
-                                    version=bundle_version(root), source="demo-bundle",
-                                    synthetic=bundle.manifest.get("synthetic") is True)
+                return build_demo_active(root)
             except Exception as exc:                    # noqa: BLE001
                 log.error("시연 데이터 묶음(%s)을 읽지 못해 기본 데이터로 시작한다: %s", root, exc)
                 app.state.demo_bundle_error = f"시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: {exc}"
@@ -67,6 +63,7 @@ async def lifespan(app: FastAPI):
                             source="fixture", synthetic=True, judge=False)
 
     app.state.build_fixture_dataset = build_fixture_dataset
+    app.state.demo_active_path = None           # 시연 묶음 목록에서 고른 묶음(None = 기본 묶음, api/demo_presets)
     # 없앤 Jev 판정(2026-10-06 하루)의 캐시가 남아 있으면 지운다(글 해시·판정값).
     from api.review_judge import clear_cache
     clear_cache(data_dir() / "jev_judgments.json")
@@ -103,6 +100,10 @@ async def lifespan(app: FastAPI):
 
     cache = ResultCache()
     app.state.cache = cache
+    # 시연 묶음이면 같은 데이터·같은 설정으로 미리 계산한 결과를 검증해 캐시에 넣는다(시연 확장 E, api/demo_precomputed).
+    from api.demo_precomputed import install, prepare_for
+    from api.demo_presets import default_bundle_path
+    install(app, prepare_for(app, app.state.dataset, default_bundle_path()))
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = settings_store
@@ -134,8 +135,10 @@ async def lifespan(app: FastAPI):
             log.warning("부팅 사전계산 실패 -- 캐시 없이 시작한다", exc_info=True)
         else:
             if cacheable(warm_outcome):
-                cache.put(ResultCache.key({}, warm_params, 3, app.state.dataset.info.version),
-                          default_plans)
+                warm_key = ResultCache.key({}, warm_params, 3, app.state.dataset.info.version)
+                cache.put(warm_key, default_plans)
+                from api.demo_precomputed import forget
+                forget(app, warm_key)                   # 실시간으로 다시 푼 결과다 -- "미리 계산"으로 보이지 않게
 
     yield
 

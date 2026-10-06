@@ -78,8 +78,10 @@ class ActiveDataset:
     (deps.get_dataset이 acquire/release). 쓰는 요청이 없으면 retire 때 바로 닫는다."""
 
     def __init__(self, graph: MemoryGraph, sqlite_conn: sqlite3.Connection, info: DatasetInfo,
-                 evidence=None):
+                 evidence=None, current=None):
         self.graph = graph
+        # 현재 배치(current_assignments.csv, Dataset.current) -- 운영 중 편성(core.evaluate.operating)의 출발점
+        self.current = list(current or [])
         self.sqlite_conn = sqlite_conn
         self.info = info
         # 리뷰 근거 색인(K5, api.rag.evidence). 가상 데이터만 원문을 담고 실데이터는 항목 라벨만.
@@ -185,7 +187,7 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index
     evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
-    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence)
+    return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence, current=ds.current)
 
 
 def _strip_common_folder(names: list[PurePosixPath]) -> list[PurePosixPath]:
