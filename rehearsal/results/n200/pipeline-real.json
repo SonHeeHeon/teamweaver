@@ -1,0 +1,156 @@
+{
+ "size": 200,
+ "env": {
+  "commit": "c770789",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-06T01:25:01+00:00"
+ },
+ "llm": true,
+ "as_real": true,
+ "steps": {
+  "generate_s": 0.19,
+  "upload_s": 0.3,
+  "optimize_s": 247.81,
+  "whatif_s": 5.28,
+  "apply_s": 0.48,
+  "pdf_s": 1.33
+ },
+ "bundle": {
+  "dataset_id": "org-n200-s2026",
+  "schema_version": 1,
+  "horizon_start": "2026-10",
+  "horizon_months": 6,
+  "cost_unit": "가상비용점(월)",
+  "synthetic": false,
+  "seed": 2026,
+  "generator": "core.ingest.org_profile v1",
+  "groups": {
+   "DP": 100,
+   "AI": 100
+  },
+  "flagship_project": "J001",
+  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
+  "peak_demand_ratio": 0.8459
+ },
+ "upload": {
+  "status": 200,
+  "activated": true,
+  "errors": 0,
+  "warnings": 0,
+  "notes": [
+   "리뷰: 모든 회차 2641건을 썼다(평가자→피평가자 2482쌍, 그중 154쌍은 여러 회차). 협업 점수는 같은 평가자→피평가자의 회차들을 먼저 평균하고, 그 두 방향을 반반 평균한다.",
+   "숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다(경계 (12, 36, 60, 96)개월 → 1~5). 요구 경력도 같은 구간을 쓴다.",
+   "협업: 같은 project_code에 같은 날 함께 투입된 기간이 걸친 달을 셌다(상태 무관, 2026-09-30까지만 — 진행 중·미래 종료일은 거기서 자름). 같은 달은 여러 프로젝트에서 겹쳐도 1개월이다.",
+   "업무 이력: 최근 10년(2016-10~)만 봤다 — 모든 행이 이 기간 안에 있다.",
+   "현재 투입 29건(잠금 4건)을 연속성 입력으로 넘겼다."
+  ]
+ },
+ "settings": {
+  "min_alloc": 0.3,
+  "clique_threshold_months": 12,
+  "clique_window_months": 36,
+  "lam": 0.3,
+  "mu": 0.2,
+  "time_limit": 60,
+  "time_limit_auto": true,
+  "gap": 0.05,
+  "max_concurrent_projects": 3,
+  "allocation_mode": "fixed",
+  "review_judge": "rule"
+ },
+ "active": {
+  "dataset_id": "org-n200-s2026",
+  "version": "0df1fbb9ff4e73c95010dffe3c3befd962310a473f392c55b3cea8f92217c1bb",
+  "source": "upload",
+  "synthetic": false,
+  "people": 200,
+  "projects": 40,
+  "activated_at": "2026-10-06T01:25:02+00:00",
+  "content_version": "0df1fbb9ff4e73c95010dffe3c3befd962310a473f392c55b3cea8f92217c1bb",
+  "review_judge": "rule",
+  "judge_error": null,
+  "restore_error": null
+ },
+ "optimize_done": {
+  "event": "done",
+  "count": 4,
+  "requested_alternatives": 3
+ },
+ "picked_plan": "A",
+ "swap": {
+  "out_person_id": "DP0022",
+  "in_person_id": "AI0081",
+  "project_id": "J001"
+ },
+ "whatif": {
+  "status": 200,
+  "objective_delta": -0.49777777777778454,
+  "feasible": true,
+  "fallback_used": false,
+  "evidence": 1,
+  "evidence_kinds": [
+   "label"
+  ],
+  "rationale": "교체를 권고하지 않습니다. 프로젝트 요구 기준에서 DP0022는 ETL 1, 금융 업무 2, 메타데이터 관리 4로 ETL·금융 업무 최소 레벨에 못 미치지만, AI0081도 금융 업무 2와 메타데이터 관리 1로 금융 업무 기준을 충족하지 못하며 ETL 역량은 확인되지 않습니다. 교체 시 총 배치 점수가 0.4978 하락하고, AI0081의 메타데이터 관리 레벨도 요구치에 미달합니다."
+ },
+ "apply": {
+  "status": 200,
+  "feasible": true,
+  "objective": 109.13945833333332,
+  "warnings": []
+ },
+ "pdf": {
+  "status": 200,
+  "bytes": 491851,
+  "detail": null
+ },
+ "plans": [
+  {
+   "label": "A",
+   "arrived_s": 62.16,
+   "objective": 109.7203782437756,
+   "fulfillment": 0.5020028935185186,
+   "optimization_ratio": 0.7871890260305393,
+   "entries": 247,
+   "unfilled": [],
+   "people": 142,
+   "time_limited": true
+  },
+  {
+   "label": "B",
+   "arrived_s": 124.08,
+   "objective": 109.01264978308721,
+   "fulfillment": 0.5070960648148148,
+   "optimization_ratio": 0.7907100400076001,
+   "entries": 236,
+   "unfilled": [],
+   "people": 144,
+   "time_limited": false
+  },
+  {
+   "label": "C",
+   "arrived_s": 185.96,
+   "objective": 109.01539625744597,
+   "fulfillment": 0.49856037808641956,
+   "optimization_ratio": 0.7788875528480025,
+   "entries": 248,
+   "unfilled": [],
+   "people": 139,
+   "time_limited": false
+  },
+  {
+   "label": "D",
+   "arrived_s": 247.81,
+   "objective": 108.63252883320365,
+   "fulfillment": 0.5059687499999999,
+   "optimization_ratio": 0.7859210669280545,
+   "entries": 240,
+   "unfilled": [],
+   "people": 140,
+   "time_limited": true
+  }
+ ],
+ "finished_at": "2026-10-06T01:29:17+00:00"
+}
