@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-07 · claude-a · 시연 데이터 두 장면 전환·미리 계산(E)·시연 대본·구조도(F)·감점 재설계 측정(G)
+- 브랜치/커밋: `feat/claude-a-demo-presets` `479b3b3..` (push, main 병합은 사용자 승인 후)
+- 한 일:
+  - 시연 묶음 목록·전환 API(연초 계획/운영 중 × 100·200·300명). 화면은 claude-b(사용자 결정).
+  - 미리 계산 결과 6개(`demo/precomputed/`). 서버가 버전·설정·재채점을 확인해 "미리 계산(시각)"으로 보여 준다. `fresh`로 다시 계산.
+  - 시연 대본 `docs/demo-script.md`, 한 장 구조도 `docs/architecture.html`.
+  - 실험 G: 파트너 다양성 하한(기본 꺼짐). 측정상 SI 팀 크기에서는 거의 걸리지 않고 200명 풀이를 망쳐 **채택 보류 권장**(사용자 결정 대기).
+- 상대 영향:
+  - **claude-b 영역 `api/`를 사용자 지시로 고쳤다**(`docs/work-split.md` 요청 2026-10-07). 화면 계약: `docs/requests/2026-10-06-operating-staffing-ui.md` 끝 절.
+  - `MilpParams`에 `partner_floor`·`partner_floor_weight`(기본 0, HTTP 계약 밖). 결과 캐시 키(`params.model_dump`)에 들어가지만 기본값이라 같은 요청은 같은 키다.
+  - 테스트 기준선 **1343 passed, 19 deselected**.
+- 검증: `uv run --group benchmark pytest -q` → 1343 passed · Phase 0 PASS · 실제 서버로 6개 묶음 전환 시 미리 계산 모두 수용(skipped 없음) · Opus 대체 리뷰 2건 각 MUST 1 수정 후 재확인 MUST 0.
+- 근거: `rehearsal/results/partner-compare.html`, `demo/precomputed/*.json`, `.omc/reports/2026-10-07-demo-both-and-remaining.md`(claude-a 로컬)
+
 ## 2026-10-06 · claude-a · 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 시뮬레이터·단순 규칙 대비·시연 장면 D
 - 브랜치/커밋: `feat/claude-a-operating-staffing` `9087ffa..5b5693c` (push, main 병합은 사용자 승인 후. 기준 = `feat/claude-a-familiarity-literature`)
 - 한 일:
