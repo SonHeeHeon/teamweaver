@@ -136,11 +136,24 @@ def test_hidden_mode_forbids_any_quote_and_sends_no_text():
     idx = _index(reveal=False)
     client = _client(_llm(citations=[]))
     out = generate_briefing(client, "m", _ctx(idx), "p000", "p001", evidence=idx)
-    assert out["evidence"] == []
+    # the text points at both sources: their item labels are listed, never review text
+    assert [e["kind"] for e in out["evidence"]] == ["label", "label"]
+    assert _POS not in repr(out) and _NEG not in repr(out)
     sent = client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
     assert _POS not in sent and _NEG not in sent
     with pytest.raises(ValueError):
         generate_briefing(_client(_llm()), "m", _ctx(idx), "p000", "p001", evidence=idx)
+
+
+def test_hidden_mode_lists_the_labels_the_text_points_at():
+    """2026-10-06 real-data rehearsal: the briefing cited [rv:...] labels but returned no evidence, so the screen and
+    the PDF showed nothing. The labels the text points at are listed (kind label, no review text)."""
+    idx = _index(reveal=False)
+    out = generate_briefing(_client(_llm(rationale=f"교체를 권고한다. 좋은 점이 프로젝트와 맞는다 [{_SID_POS}].",
+                                         risks=["일정 위험"], citations=[])),
+                            "m", _ctx(idx), "p000", "p001", evidence=idx)
+    assert [(e["source_id"], e["kind"]) for e in out["evidence"]] == [(_SID_POS, "label")]
+    assert _POS not in repr(out)
 
 
 def test_without_an_index_citations_are_ignored_like_before():
@@ -258,7 +271,7 @@ def test_hidden_mode_allows_quoting_a_label_item():
     idx = _index(reveal=False)
     payload = _llm(citations=[], rationale="p001은 ‘소통’ 라벨이 있다 [rv:p097>p001#1:pos].", risks=["“문서화” 보완 필요."])
     out = generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
-    assert out["evidence"] == []
+    assert [(e["source_id"], e["kind"], e["text"]) for e in out["evidence"]] == [("rv:p097>p001#1:pos", "label", "좋은 점: 적극성·소통")]
 
 
 def test_hidden_mode_ignores_citations_that_only_echo_labels():
@@ -267,7 +280,7 @@ def test_hidden_mode_ignores_citations_that_only_echo_labels():
                    citations=[{"source_id": _SID_POS, "quote": "좋은 점: 적극성·소통"},
                               {"source_id": _SID_NEG, "quote": "문서화"}])
     out = generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
-    assert out["evidence"] == []
+    assert [(e["source_id"], e["kind"], e["text"]) for e in out["evidence"]] == [("rv:p097>p001#1:pos", "label", "좋은 점: 적극성·소통")]
     bad = _llm(rationale="검토.", risks=["없음"], citations=[{"source_id": _SID_POS, "quote": "회의를 잘 이끌었다"}])
     with pytest.raises(ValueError):
         generate_briefing(_client(bad), "m", _ctx(idx), "p000", "p001", evidence=idx)
@@ -298,7 +311,8 @@ def test_effort_comes_from_the_model_entry_and_is_omitted_otherwise():
 def test_hidden_mode_allows_quoting_the_whole_label_text():
     idx = _index(reveal=False)
     payload = _llm(citations=[], rationale="라벨은 \u201c좋은 점: 적극성·소통\u201d이다 [rv:p097>p001#1:pos].", risks=["없음"])
-    assert generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)["evidence"] == []
+    ev = generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)["evidence"]
+    assert [(e["source_id"], e["kind"], e["text"]) for e in ev] == [("rv:p097>p001#1:pos", "label", "좋은 점: 적극성·소통")]
 
 
 def test_prompts_carry_the_length_limits_and_project_rule():

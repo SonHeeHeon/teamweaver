@@ -54,7 +54,9 @@ _SYSTEM_SOURCED = (
 _SYSTEM_HIDDEN = (
     _BASE +
     " 리뷰 원문은 비공개이고 evidence에는 리뷰 항목 라벨(예: 좋은 점: 소통·협업)만 있다."
-    " 리뷰 문장을 지어내지 마라. 라벨을 근거로 쓸 때는 문장 끝에 [source_id]만 붙여라."
+    " 리뷰 문장을 지어내지 마라. 두 사람의 라벨 중 교체 판단과 관련 있는 것(이 프로젝트에 필요한 역량과 닿는"
+    " 좋은 점·아쉬운 점)이 있으면 1~2개를 근거나 위험으로 들고 그 문장 끝에 [source_id]만 붙여라"
+    " -- 실데이터 시연에서 근거가 비지 않게(2026-10-06 실측: 지시가 선택이라 3회 모두 라벨을 안 썼다)."
     " citations는 항상 빈 배열 []로 둔다. 본문에 따옴표를 쓰지 마라."
     ' JSON {"rationale": str, "risks": list[str], "alternatives": list[str], "citations": []}만 출력.'
 )
@@ -114,6 +116,13 @@ def _verified_citations(out: dict, ctx: dict, evidence: EvidenceIndex) -> list[d
             # 숨김 모드는 인용이 없으므로 문맥의 출처(항목 라벨)를 가리키는 것만 허용한다.
             if evidence.reveal_text and sid not in cited:
                 raise BriefingRejected("uncited_marker", f"본문의 출처 표시에 대응하는 검증된 인용이 없다: {sid}")
+            # 숨김 모드: 본문이 가리킨 출처의 항목 라벨을 근거로 싣는다 -- 화면·PDF가 "원문 비공개 + 라벨"을 보여 주게
+            # (K5 설계, 규칙 기반 설명과 같은 모양). 2026-10-06 실데이터 리허설: 본문에 [rv:…]가 있는데 근거가 0건이었다.
+            if not evidence.reveal_text and sid not in cited and allowed[sid].get("kind") == "label":
+                row = allowed[sid]
+                verified.append({"source_id": sid, "reviewer_id": row["reviewer_id"], "kind": "label",
+                                 "text": row["text"]})
+                cited.add(sid)
         _check_inline_quotes(text, allowed, evidence)
     return verified
 
