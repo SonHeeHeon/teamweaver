@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-operating-staffing` · 운영 중 편성·보강 시뮬레이터(사용자 요청 2026-10-06): `core/ingest/org_profile.py`(scenario="operating"), 새 `core/optimize/incremental.py`, `core/optimize/milp.py`(추가 제약 훅이 투입률 변수를 받음), `core/optimize/greedy.py`(min_alloc 인자, 기본 그대로), 새 `core/evaluate/{operating,staffing_sim,baseline}.py`, `rehearsal/{operating_check,make_demo,make_broken_demo,guard_demo}.py`, `demo/*-operating*`, `demo/org-n100-broken.zip` · 시작 2026-10-06 13:00
 - [claude-a] `feat/claude-a-solve-stability` · 계산 안정화(사용자 선택 2026-10-06): `core/optimize/milp.py`(HiGHS 상한 기록, `solver_seeds`), 새 `core/optimize/highs_portfolio.py`, `rehearsal/solve_probe.py`, `tests/api/test_settings.py`(HTTP 미러 시험 제외 목록 1줄) · 시작 2026-10-06 01:30
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
