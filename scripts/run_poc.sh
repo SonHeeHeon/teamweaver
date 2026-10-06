@@ -36,8 +36,15 @@ if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" \
 fi
 
 echo "TeamWeaver: http://$HOST:$PORT"
-# 시연 데이터: 실제 시스템 형식의 조직형 100명은 TEAMWEAVER_DEMO_BUNDLE="$PWD/demo/org-n100" 으로 켠다.
-# 기본은 예전 고정 데이터다(2026-10-06 사용자 결정) -- 10년 이력 데이터에서 계산이 느려(100명 안 A가 120초 한도,
-# 부팅 사전계산 ~8분) 계산 안정화 작업이 끝나면 기본값을 demo/org-n100으로 바꾼다.
-export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-}"
+# 시연 데이터(기본): 실제 시스템 형식의 조직형 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.
+# 계산 안정화 뒤 전환(2026-10-06): 익숙한 쌍 = 최근 3년 중 12개월(사용자 결정), 시드 4개 동시 풀이로 100명 안 A~D가
+# 약 2분(30초 x 4)에 빈자리 없이 나온다(rehearsal/results/n100/pipeline-real.json).
+export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$PWD/demo/org-n100}"
+# 동시 탐색 수(이 기기 CPU 코어에 맞춘 값). 1이면 안 B 이후가 품질 하한에 걸려 안 A 하나만 나올 수 있다(실측).
+export TEAMWEAVER_SOLVER_SEEDS="${TEAMWEAVER_SOLVER_SEEDS-4}"
+# 시연 데이터는 시간 한도 안에서 최선 증명까지 가지 않아 결과를 캐시하지 않는다 -- 부팅 사전계산은 기동만 ~2분 늦추고
+# 얻는 것이 없으니 끈다(예전 고정 데이터로 뜰 때는 그대로 사전계산).
+if [[ -n "$TEAMWEAVER_DEMO_BUNDLE" ]]; then
+  export TEAMWEAVER_SKIP_WARM="${TEAMWEAVER_SKIP_WARM-1}"
+fi
 exec uv run uvicorn api.main:app --host "$HOST" --port "$PORT"

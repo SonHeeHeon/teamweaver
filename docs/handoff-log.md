@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-06 · claude-a · 실데이터 가정 전체 검증: 기준 정식 반영·시드 운영화·실데이터 경로 리허설·과거 성과 검증·시연 기본값 전환
+- 브랜치/커밋: `feat/claude-a-recent-familiarity` `e021de8..` (push, main 병합은 사용자 승인 후)
+- 한 일:
+  - **익숙한 쌍 = 최근 36개월 중 12개월**(사용자 결정)을 정식으로 반영했다. 데이터 계약 `CoworkRecord.months_ago`, 그래프 `cowork_within`, `MilpParams.clique_window_months`를 추가했고, 검증기·오라클·평가기·벤치·설정·웹 "반복 협업 조회 기간"·E2E를 함께 바꿨다.
+  - **시드 포트폴리오 운영화**: 큰 모델을 시작 인자로 넘기면 자식이 죽을 때 부모가 영원히 멈추던 문제를 고쳤다. 모든 시드가 실패하면 한 번 단일 풀이로 계획을 낸다. 시드 수는 `TEAMWEAVER_SOLVER_SEEDS`로 정한다(시연 4). 1시드면 대안이 품질 하한에 걸려 안 A 하나만 나왔다.
+  - **실데이터 경로 리허설**(`rehearsal.run --as-real`): 100/200/300명 모두 업로드 오류 0, 안 A~D, 빈자리 0, 교체 검토·적용·PDF 정상. 실데이터 모드 AI 설명의 근거가 늘 비던 문제도 고쳤다(본문이 가리킨 라벨을 근거로 싣는다).
+  - **과거 성과 검증** `core/evaluate/outcome_check.py`: 협업 방향은 단순 비교에서 일관되나 다변량에서는 견고하지 않다. 익숙함 감점 μ는 검정력이 부족해 판단할 수 없다. μ는 사용자 결정으로 남긴다.
+  - **시연 기본 데이터를 `demo/org-n100`으로 전환**했다(`run_poc.sh`, 시드 4, 시연 데이터일 때 부팅 사전계산 생략).
+- 상대 영향:
+  - (claude-b) `api/settings.py`·`api/schemas.py`·`web/` 설정 화면·`tests/api/test_ui_e2e.py`·`scripts/run_poc.sh`를 바꿨다. 상세는 `docs/work-split.md` 요청에 있다.
+  - 서비스 기본 익숙한 쌍 기준이 바뀌어 fixture 결과도 달라진다(137→79쌍).
+  - 화면 E2E는 예전 기준을 화면에서 골라 결정적 시나리오를 유지한다.
+  - 기준선: 1288 passed, slow 19 passed, 웹 153.
+- 검증: 위 기준선, Phase 0 PASS. Opus 폴백 리뷰는 단계마다 받았고, MUST(웹 저장 422, 과장된 μ 결론, churn 오염)는 모두 반영했다.
+- 근거: `.omc/reports/2026-10-06-validate-as-real.md`, `rehearsal/results/{rule-compare,outcome-check}.html`, `rehearsal/results/n*/pipeline-real.json`, `docs/demo-notes.md` 4~6절
+
 ## 2026-10-06 · claude-a · '익숙한 쌍' 기준 비교(최종 보고서 근거) — 사용자 결정 대기
 - 브랜치/커밋: `feat/claude-a-familiarity-rule` `0d155d6` (push, main 미병합)
 - 한 일: `rehearsal/rule_compare.py`로 현행(10년·6개월), 최근 5년·12개월, 최근 3년·12개월을 비교했다. 100/200/300명 × 1·4시드, 안 A, 자동 시간 조건이다. 보고서는 `rehearsal/results/rule-compare.html`이고 해석은 `rule-compare-analysis.json`에 있다.
