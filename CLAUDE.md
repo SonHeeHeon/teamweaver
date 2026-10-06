@@ -64,6 +64,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **시드 포트폴리오**: `TEAMWEAVER_SOLVER_SEEDS`(기본 1, 시연 `run_poc.sh` 4)개 spawn 프로세스가 같은 모델을 시드만 바꿔 푼다.
   조밀한 데이터에서 1시드면 대안이 품질 하한에 걸려 안 A만 나올 수 있다(실측). 모델은 시작 뒤 전용 파이프로 넘긴다 --
   시작 인자로 넘기면 자식이 시작 중 죽을 때 부모가 영원히 멈춘다(main 가드 없는 스크립트에서 실측). HiGHS 증명 상한은 `SolverEvidence.best_bound`.
+- **운영 중 편성은 갭 0으로 푼다**(`core/evaluate/operating.exact`, 2026-10-06): 빈자리 감점(자리당 100)이 섞인 목적에서 5% 갭은
+  1~2명 이동의 개선(1~2점)을 통째로 가린다(실측: 빼 오기 허용이 더 나쁜 모순). 변경 예산 제약은 `core/optimize/incremental.py` --
+  옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
+  시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -78,7 +82,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-06 **1288 passed, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 153)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-06 **1318 passed, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 153)
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

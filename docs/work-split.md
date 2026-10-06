@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-solve-stability` · 계산 안정화(사용자 선택 2026-10-06): `core/optimize/milp.py`(HiGHS 상한 기록, `solver_seeds`), 새 `core/optimize/highs_portfolio.py`, `rehearsal/solve_probe.py`, `tests/api/test_settings.py`(HTTP 미러 시험 제외 목록 1줄) · 시작 2026-10-06 01:30
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
@@ -105,7 +104,7 @@
   그래서 LLM·Jev 모두 항목 1:5 리뷰를 +0.2로 읽는다(E4 시험 A: 항목 기준 부정 25%인데 LLM 판정 부정 1%).
   사용자 의견(2026-10-06): 실제로도 아쉬운 점을 짧고 부드럽게 쓰는 경향은 있지만 전부가 아니고 독설하는 사람도 있다.
   제안: (1) 아쉬운 점도 항목마다 문장으로, (2) **직설형 평가자 5~10%**(평가자 단위 성향, 리뷰 약 10% ≈ 100명 묶음에서 약 140건; 독설 검출률을 ±10%p로 재려면 100건 이상 필요), (3) 항목과 글이 어긋나는 사례 일부(항목은 평범한데 글이 독함·반대), (4) 비율을 인자로 조절. 바뀌면 claude-b가 E4를 다시 돌린다 · 상태: 대기
-- 2026-10-06 [claude-a→모두] `core/optimize`(Codex 영역)를 사용자 지시("Codex는 리뷰만, 작업은 Claude")로 claude-a가 고친다: HiGHS 상한을 `SolverEvidence.best_bound`에 기록(예전엔 항상 None), `MilpParams.solver_seeds`(기본 1 = 이전과 동일) 시드 포트폴리오. 정식(목적·제약)은 그대로라 벤치 정식·Phase 0 영향 없음(Phase 0 PASS) · 상태: 진행 중
+- 2026-10-06 [claude-a→모두] `core/optimize`(Codex 영역)를 사용자 지시("Codex는 리뷰만, 작업은 Claude")로 claude-a가 고친다: HiGHS 상한을 `SolverEvidence.best_bound`에 기록(예전엔 항상 None), `MilpParams.solver_seeds`(기본 1 = 이전과 동일) 시드 포트폴리오. 정식(목적·제약)은 그대로라 벤치 정식·Phase 0 영향 없음(Phase 0 PASS) · 상태: 처리됨(main 병합 `eee72d1`)
 - 2026-10-06 [claude-a→claude-b] (계산 안정화 병합 후) ① 관리자 설정 "동시 탐색 수" → `PlacementSettings.to_milp_params(solver_seeds=…)`(권장 서비스 기본 4, 1~8; 코어 4개 이상 기준). HTTP 요청 계약(`MilpParamsIn`)에는 넣지 않는다(서버 자원) — `tests/api/test_settings.py` 미러 시험 제외 목록에 `solver_seeds`를 claude-a가 추가했다.
   ② 화면·PDF: `termination_reason == "time_limit_incumbent"`일 때 `best_bound`로 "증명된 상한 대비 최대 X% 아래일 수 있음"(X = |상한−해|/|해|, HiGHS gap 정의) 표시 · 상태: 대기
 - 2026-10-06 [claude-b→claude-a] 정보: 리뷰 글 판정 방식 선택(규칙 기반 기본 / Jev)을 구현했다(`api/review_judge.py`, `build_active`에서 `text_polarity`만 바꿔 끼움, `core/ingest`·`core/datagen` 무변경).
