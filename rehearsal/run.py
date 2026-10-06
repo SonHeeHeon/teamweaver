@@ -134,15 +134,21 @@ def _server(work: Path, llm: bool):
         log.close()
 
 
-def run_pipeline(size: int, llm: bool, pdf: bool) -> dict:
+def run_pipeline(size: int, llm: bool, pdf: bool, as_real: bool = False) -> dict:
+    """as_real: 묶음을 실데이터로 표시해(manifest synthetic=false) 올린다 -- 평가 원문 비공개 근거, AI 설명 비공개
+    모드, PDF 근거 재확인까지 실데이터 경로를 그대로 탄다(2026-10-06 사용자: "이걸 실 데이터라고 가정하고 검증")."""
     import httpx
     from core.graph.memory_graph import MemoryGraph
     from core.ingest.convert import to_dataset
     from core.ingest.loader import load_bundle
     work = Path(tempfile.mkdtemp(prefix=f"rehearsal-n{size}-"))
-    out = {"size": size, "env": _env_info(), "llm": llm, "steps": {}}
+    out = {"size": size, "env": _env_info(), "llm": llm, "as_real": as_real, "steps": {}}
     t0 = time.perf_counter()
     root = _bundle(size, work)
+    if as_real:
+        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+        manifest["synthetic"] = False                    # 파일 해시는 manifest 밖이라 그대로 맞는다
+        (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     data = _zip(root)
     out["steps"]["generate_s"] = round(time.perf_counter() - t0, 2)
     out["bundle"] = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
@@ -166,8 +172,12 @@ def run_pipeline(size: int, llm: bool, pdf: bool) -> dict:
             out["error"] = body
             return out
         meta = c.get("/api/meta").json()
-        settings = c.get("/api/settings").json()["settings"]
+        sresp = c.get("/api/settings").json()
+        settings = dict(sresp["settings"])
+        # 화면과 같게: 자동 계산 시간이면 서버가 정한 실제 값을 보낸다(web effectiveSettings)
+        settings["time_limit"] = sresp.get("effective_time_limit", settings["time_limit"])
         out["settings"] = settings
+        out["active"] = c.get("/api/datasets/active").json()
         req = {"weights": {}, "milp_params": settings, "n_alternatives": 3, "dataset_version": meta["dataset_version"]}
         plans, done = [], None
         t = time.perf_counter()
@@ -179,6 +189,7 @@ def run_pipeline(size: int, llm: bool, pdf: bool) -> dict:
                                   "optimization_ratio": payload["optimization_ratio"],
                                   "entries": len(payload["entries"]), "unfilled": payload["unfilled"],
                                   "people": len({e["person_id"] for e in payload["entries"]}),
+                                  "time_limited": payload.get("time_limited"),
                                   "_payload": payload})
                 elif ev in ("done", "error"):
                     done = {"event": ev, **payload}
@@ -199,6 +210,7 @@ def run_pipeline(size: int, llm: bool, pdf: bool) -> dict:
                 out["whatif"] = {"status": w.status_code, "objective_delta": wj.get("objective_delta"),
                                  "feasible": wj.get("feasible"), "fallback_used": wj.get("fallback_used"),
                                  "evidence": len((wj.get("briefing") or {}).get("evidence", [])),
+                                 "evidence_kinds": sorted({e.get("kind") for e in (wj.get("briefing") or {}).get("evidence", [])}),
                                  "rationale": (wj.get("briefing") or {}).get("rationale")}
                 t = time.perf_counter()
                 ap = c.post("/api/plans/apply-swap", json=wreq)
@@ -309,8 +321,8 @@ def run_pairs(size: int, time_limit: int = 120, caps=PAIR_CAPS) -> dict:
         params = full.model_copy(update=upd)
         n_pairs = len(pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)) if cap != 0 else 0
         row = {"cap": "default" if cap is None else cap, "reward_pairs": n_pairs,
-               "overfamiliar_pairs": len(_overfamiliar_pairs(graph, params.clique_threshold_months)),
-               "y_vars_approx": (n_pairs + len(_overfamiliar_pairs(graph, params.clique_threshold_months))) * len(graph.projects)}
+               "overfamiliar_pairs": len(_overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))),
+               "y_vars_approx": (n_pairs + len(_overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None)))) * len(graph.projects)}
         t = time.perf_counter()
         try:
             a = solve_milp_assessment(graph, S, C, params)
@@ -338,14 +350,16 @@ def main() -> None:
     ap.add_argument("--size", type=int, required=True, choices=sorted(SWEEP_LIMITS))
     ap.add_argument("--stage", choices=("pipeline", "sweep", "pairs", "all"), default="all")
     ap.add_argument("--no-llm", action="store_true")
+    ap.add_argument("--as-real", action="store_true", help="upload the bundle marked as real data (synthetic=false)")
     ap.add_argument("--no-pdf", action="store_true")
     ap.add_argument("--limits", type=int, nargs="*", help="override the sweep time limits (seconds)")
     args = ap.parse_args()
     outdir = RESULTS / f"n{args.size}"
     outdir.mkdir(parents=True, exist_ok=True)
     if args.stage in ("pipeline", "all"):
-        res = run_pipeline(args.size, llm=not args.no_llm, pdf=not args.no_pdf)
-        (outdir / "pipeline.json").write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        res = run_pipeline(args.size, llm=not args.no_llm, pdf=not args.no_pdf, as_real=args.as_real)
+        name = "pipeline-real.json" if args.as_real else "pipeline.json"
+        (outdir / name).write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         print(f"[pipeline n{args.size}] steps={res.get('steps')} plans={[(p['label'], p['arrived_s']) for p in res.get('plans', [])]}",
               flush=True)
     if args.stage == "pairs":
