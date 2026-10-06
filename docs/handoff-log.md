@@ -22,6 +22,30 @@
 
 ---
 
+## 2026-10-06 · claude-b · 리뷰 글 판정을 LLM으로 통일 + 판정기 비교 실험 E4(정확도·비용·시간)
+- 브랜치/커밋: `feat/claude-b-llm-judge` (main 병합)
+- 한 일:
+  - 사용자 결정("선택권 없이 llm으로 통일"): 직전 커밋의 규칙 기반/Jev 선택 설정과 화면을 걷어냈다. 이전 settings.json·이전 화면의 `review_judge`는 버린다.
+  - CSV 묶음(업로드·시연 묶음)의 평가 사유를 `api/review_judge.py`가 OpenAI 호환 API로 판정해 `text_polarity`를 다시 매긴다.
+    - 주소 `TEAMWEAVER_REVIEW_BASE_URL`(OPENAI_BASE_URL과 분리), 모델 `TEAMWEAVER_REVIEW_MODEL`, 사내 키 `TEAMWEAVER_REVIEW_API_KEY`.
+    - 병렬 16, 429 대기·재시도, 리뷰 수에 비례한 한도, 캐시 0600(실데이터는 지금 데이터만, 가상 데이터는 따로 쌓음).
+    - fixture는 생성 때 LLM 값을 그대로 쓴다. 실패하면 항목 점수(`items`) + `POST /api/datasets/rejudge`로 남은 건만 다시 판정한다.
+    - **실데이터를 사내로 확인되지 않은 곳(OpenAI 포함)으로 보내려면 `TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1`이 필요하다.** 없으면 `blocked`로 항목 점수를 쓴다(리뷰 지적, 사용자 확인 대기).
+  - 데이터 탭: 판정 정보, 보내는 곳(외부 OpenAI/사내/확인 안 됨), 동의 상태, 판정 다시 시도.
+  - 판정·전환은 잠금 밖에서 만들고 바꿔 끼우기만 잠금 안에서 한다(적용 교체 저장이 수 분 멈추지 않게).
+  - 실험 E4(`experiments/jev/e4_judges.py`, 결과 `experiments/jev/results/e4_*.json`, 보고서 `outputs/review-judge-comparison.html`).
+    - 충실한 글 300건: 부정 검출 LLM 92% 대 Jev 17%, 부호 일치 84% 대 60%.
+    - 시연 원문 1,372건: LLM 201초·$0.118 대 Jev 17초·$0.030.
+- 상대 영향:
+  - **K5 결정 변경**(work-split 요청 항목): 실데이터 평가 사유가 점수 판정용으로 LLM에 간다(동의 플래그 또는 사내 주소일 때만).
+  - CSV 묶음의 `dataset_version`이 판정값을 담아 바뀐다(`content_version`이 원천 해시, 업로드 저장 파일 이름). 시연 묶음 첫 기동은 판정 때문에 약 3분 늦다(이후 캐시).
+  - 시연 생성기 글 수정 요청(직설형 평가자 5~10% 등)을 work-split에 남겼다.
+  - 테스트는 `tests/api/conftest.py` autouse가 판정을 가짜로 바꾸고 주소를 막는다.
+- 검증: `uv run --group benchmark pytest -q` → 1283 passed, 19 deselected. `-m slow` → 19 passed. `npx vitest run` → 149 passed. tsc·oxlint·build 통과. 실제 OpenAI로 서비스 경로 스모크(병렬 16: 1,372건 196초, 캐시 0.1초; 병렬 32는 429). Opus 폴백 리뷰 2라운드(1차 MUST 1·SHOULD 9, 2차 MUST 0·SHOULD 3), 모두 반영.
+- 근거: `.omc/reports/2026-10-06-llm-review-judge.md`
+
+---
+
 ## 2026-10-06 · claude-a · '익숙한 쌍' 기준 비교(최종 보고서 근거) — 사용자 결정 대기
 - 브랜치/커밋: `feat/claude-a-familiarity-rule` `0d155d6` (push, main 미병합)
 - 한 일: `rehearsal/rule_compare.py`로 현행(10년·6개월), 최근 5년·12개월, 최근 3년·12개월을 비교했다. 100/200/300명 × 1·4시드, 안 A, 자동 시간 조건이다. 보고서는 `rehearsal/results/rule-compare.html`이고 해석은 `rule-compare-analysis.json`에 있다.

@@ -19,7 +19,7 @@ from pathlib import Path
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from api.storage import data_dir
 from core.optimize.milp import MilpParams
@@ -29,8 +29,11 @@ log = logging.getLogger(__name__)
 SETTINGS_PATH_ENV = "TEAMWEAVER_SETTINGS_PATH"
 
 
-# 설정이지만 MILP 파라미터가 아닌 칸: 자동 시간 표시, 리뷰 판정 방식(데이터셋을 만드는 방식).
-NON_SOLVER_FIELDS = frozenset({"time_limit_auto", "review_judge"})
+# 설정이지만 MILP 파라미터가 아닌 칸: 자동 시간 표시.
+NON_SOLVER_FIELDS = frozenset({"time_limit_auto"})
+# 없앤 칸: 리뷰 글 판정 방식 선택(2026-10-06 하루 동안 있었다 -- 사용자 결정으로 LLM 통일, 선택지 없음).
+# 그때 저장한 settings.json이나 이전 화면이 보내는 값은 조용히 버린다(읽기 실패로 기본값이 되지 않게).
+_REMOVED_FIELDS = ("review_judge",)
 
 
 class PlacementSettings(BaseModel):
@@ -56,10 +59,13 @@ class PlacementSettings(BaseModel):
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
     allocation_mode: Literal["fixed", "monthly"] = "fixed"
-    # 리뷰 글 판정 방식(사용자 결정 2026-10-06). "rule": 좋은 점·아쉬운 점 항목 수(외부 전송 없음, 기본).
-    # "jev": 리뷰 원문을 TypeSafe Jev API로 보내 글을 읽고 판정(외부 전송이 허용된 조직만). 계산 파라미터가
-    # 아니라 데이터셋을 만드는 방식이다 -- 바꾸면 서버가 활성 데이터셋을 다시 만든다(api/routes/settings.py).
-    review_judge: Literal["rule", "jev"] = "rule"
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_removed_fields(cls, data):
+        if isinstance(data, dict) and any(k in data for k in _REMOVED_FIELDS):
+            data = {k: v for k, v in data.items() if k not in _REMOVED_FIELDS}
+        return data
 
     def to_milp_params(self, n_people: int | None = None) -> MilpParams:
         """n_people을 주고 자동이 켜져 있으면 권장 시간으로 바꿔 쓴다(부팅 사전계산). 화면 요청은 이미 실제

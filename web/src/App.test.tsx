@@ -48,9 +48,9 @@ import type { SettingsResponse } from "./api/types";
 
 const SETTINGS: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, review_judge: "rule" as const },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },
@@ -192,7 +192,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
     fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
-    await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null, null, false));
+    await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null, null));
 
     // 결과 화면에는 "이전 설정으로 계산됨" 안내가 뜬다.
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
@@ -1085,62 +1085,5 @@ describe("App — 관리자 로그인(K14)", () => {
                                                                  protected: false });
     render(<App />);
     expect(await screen.findByText(/관리자 비밀번호 미설정/)).toBeInTheDocument();
-  });
-});
-
-
-describe("App — 리뷰 판정 방식을 바꾸면 데이터셋 전환처럼 처리한다", () => {
-  it("저장 응답에 새 데이터셋이 오면 계산 결과를 비우고 메타를 다시 읽는다", async () => {
-    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
-    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
-      yield { event: "plan" as const, data: PLAN_A };
-    })());
-    const jevInfo = { dataset_id: "fixture-demo-100x20", version: "j".repeat(64), source: "fixture" as const,
-                      synthetic: true, people: 3, projects: 1, activated_at: "2026-10-06T00:00:00+00:00",
-                      review_judge: "jev" as const };
-    vi.mocked(fetchMeta).mockResolvedValueOnce(META).mockResolvedValue({ ...META, dataset_version: jevInfo.version });
-    vi.mocked(fetchSettings).mockReset().mockResolvedValue({ ...SETTINGS, jev_available: true });
-    vi.mocked(saveSettings).mockReset().mockResolvedValue({
-      ...SETTINGS, jev_available: true, settings: { ...SETTINGS.settings, review_judge: "jev" },
-      updated_at: "2026-10-06T00:00:00+00:00", dataset: jevInfo });
-
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
-    await screen.findByText("Plan A");
-    fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
-    fireEvent.click(await screen.findByLabelText(/Jev\(글을 읽고 판정/));
-    fireEvent.click(screen.getByRole("button", { name: "저장" }));
-    await waitFor(() => expect(saveSettings).toHaveBeenCalled());
-    expect(vi.mocked(saveSettings).mock.calls[0][0]).toMatchObject({ review_judge: "jev" });
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
-    await waitFor(() => expect(screen.queryByText("Plan A")).not.toBeInTheDocument());
-  });
-});
-
-
-describe("App — Jev 판정이 실패해 데이터가 그대로면 계산 결과를 지우지 않는다", () => {
-  it("저장 응답의 데이터 버전이 지금과 같으면 플랜을 남긴다", async () => {
-    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
-    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
-      yield { event: "plan" as const, data: PLAN_A };
-    })());
-    const same = { dataset_id: "fixture-demo-100x20", version: "v".repeat(64), source: "fixture" as const,
-                   synthetic: true, people: 3, projects: 1, activated_at: "2026-10-06T00:00:00+00:00",
-                   review_judge: "rule" as const, judge_error: "Jev 판정에 실패해 규칙 기반으로 판정했다: x" };
-    vi.mocked(fetchActiveDataset).mockReset().mockResolvedValue({ ...same, judge_error: null });
-    vi.mocked(fetchSettings).mockReset().mockResolvedValue({ ...SETTINGS, jev_available: true });
-    vi.mocked(saveSettings).mockReset().mockResolvedValue({
-      ...SETTINGS, jev_available: true, settings: { ...SETTINGS.settings, review_judge: "jev" },
-      updated_at: "2026-10-06T00:00:00+00:00", dataset: same });
-
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
-    await screen.findByText("Plan A");
-    fireEvent.click(screen.getByRole("button", { name: "배치 설정" }));
-    fireEvent.click(await screen.findByLabelText(/Jev\(글을 읽고 판정/));
-    fireEvent.click(screen.getByRole("button", { name: "저장" }));
-    expect(await screen.findByText(/설정은 저장했지만/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
-    expect(screen.getByText("Plan A")).toBeInTheDocument();
   });
 });

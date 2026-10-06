@@ -100,9 +100,10 @@ def small_graph_client(tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def _no_real_jev_calls(monkeypatch):
-    """lifespan의 load_env가 .env의 실제 TYPESAFE_API_KEY를 올려도 테스트가 실제 Jev API로 리뷰 글을
-    보내지 않게 주소를 닿지 않는 곳으로 돌린다(리뷰 지적: 가짜를 빠뜨린 새 테스트의 외부 전송 방지).
-    httpx.MockTransport를 쓰는 테스트는 주소와 무관하게 동작한다."""
+def _no_real_llm_judging(monkeypatch):
+    """CSV 묶음으로 데이터셋을 만들면 리뷰 글을 LLM이 판정한다(api.review_judge). 테스트는 실제 LLM을 부르지 않는다:
+    판정을 '글 극성 = 받은 값 그대로'인 가짜로 바꾸고, 주소도 닿지 않는 곳으로 돌린다(lifespan의 load_env가
+    .env의 실제 키를 올려도 외부 전송이 없게). 판정기 자체 시험은 원래 함수를 import해 MockTransport로 부른다."""
     import api.review_judge as rj
-    monkeypatch.setattr(rj, "URL", "http://jev.invalid/v1/systemone")
+    monkeypatch.setenv(rj.BASE_URL_ENV, "http://llm.invalid/v1")
+    monkeypatch.setattr(rj, "judge_reviews", lambda ds, parsed, **kw: list(parsed))

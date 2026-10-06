@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { AdminLoginRequiredError, resetDataset, uploadDataset } from "../api/client";
+import { AdminLoginRequiredError, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
 import type { DatasetInfo, IngestIssue, UploadResult } from "../api/types";
+
+/** 평가 사유(글)를 보내는 곳 -- 사내로 확인되지 않은 주소를 "사내"라고 단정하지 않는다. */
+function placeLabel(location: string | null | undefined, host: string | null | undefined): string {
+  if (location === "openai") return "외부(OpenAI)";
+  if (location === "onprem") return `사내 LLM ${host ?? ""}`.trim();
+  return `사내인지 확인되지 않은 주소 ${host ?? ""}`.trim();
+}
 
 const SOURCE_LABEL: Record<string, string> = {
   fixture: "기본 데이터", upload: "업로드", "demo-bundle": "시연 데이터(실제 형식)",
@@ -20,8 +27,6 @@ interface Props {
   adminToken?: string | null;
   /** 관리자 동작이 401을 받았다(K14) -- App이 로그인 화면으로 보낸다. */
   onLoginRequired?: () => void;
-  /** 설정의 리뷰 글 판정 방식. jev면 업로드한 평가 원문이 외부로 전송된다고 알린다. */
-  reviewJudge?: "rule" | "jev";
 }
 
 function where(i: IngestIssue): string {
@@ -45,7 +50,7 @@ function IssueList({ title, items, tone }: { title: string; items: IngestIssue[]
   );
 }
 
-export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired, reviewJudge }: Props) {
+export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -82,6 +87,23 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
     }
   }
 
+  async function rejudge() {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const next = await rejudgeDataset(adminToken);
+      // 다시 실패해 데이터가 그대로면(같은 버전) 계산 결과를 비우지 않고 이유만 알린다.
+      if (active && next.version === active.version) setError(next.judge_error ?? "다시 판정했지만 결과가 같다.");
+      else onSwitched(next);
+    } catch (e) {
+      if (e instanceof AdminLoginRequiredError) onLoginRequired?.();
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const report = result?.report ?? null;
   return (
     <section className="max-w-3xl space-y-4">
@@ -95,7 +117,20 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
         </p>
       </div>
 
-      {active?.judge_error && (
+      {active?.review_judge === "items" && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-amber-400 bg-amber-50
+                                     px-3 py-2 text-sm text-amber-800">
+          <span className="flex-1">{active.judge_error ?? "LLM 판정에 실패해 평가 사유 대신 항목 점수를 썼다."}</span>
+          <button onClick={rejudge} disabled={busy}
+                  title="성공하면 데이터 버전이 바뀌어 이 데이터에 저장된 교체 기록은 지워진다"
+                  className="rounded-md border border-amber-500 bg-white px-3 py-1 text-xs font-medium
+                             hover:bg-amber-100 disabled:opacity-50">
+            {busy ? "판정 중…" : "판정 다시 시도"}
+          </button>
+          <span className="basis-full text-xs">성공하면 판정이 바뀌어 이 데이터에 저장된 교체 기록은 지워진다.</span>
+        </div>
+      )}
+      {active?.review_judge === "blocked" && (
         <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {active.judge_error}
         </p>
@@ -113,18 +148,31 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
             {" · "}{SOURCE_LABEL[active.source] ?? active.source}
             {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
             {" · "}{active.people}명 · 프로젝트 {active.projects}건
-            {" · 리뷰 판정 "}{active.review_judge === "jev" ? "Jev" : "규칙 기반"}
             <span className="ml-2 font-mono text-xs text-slate-400">{active.version.slice(0, 12)}</span>
+          </p>
+        ) : null}
+        {active ? (
+          <p className="mt-1 text-xs text-slate-500">
+            평가 사유(글) 판정:{" "}
+            {active.review_judge === "fixture" ? "가상 데이터 생성 때 LLM이 매긴 값"
+              : active.review_judge === "items" ? "LLM 실패 — 항목 점수로 대신함"
+              : active.review_judge === "blocked" ? "외부 전송이 허용되지 않아 판정하지 않음 — 항목 점수로 대신함"
+              : `LLM ${active.judge_model ?? ""} · ${placeLabel(active.judge_location, active.judge_host)}`}
           </p>
         ) : (
           <p className="mt-1 text-slate-500">불러오는 중…</p>
         )}
       </div>
 
-      {reviewJudge === "jev" && (
-        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          지금 리뷰 글 판정 방식이 <b>Jev</b>다. 묶음을 올리면 그 안의 동료 평가 원문이 외부(TypeSafe Jev API)로 전송된다.
-          보낼 수 없는 자료라면 먼저 배치 설정에서 규칙 기반으로 바꾼다.
+      {active?.judge_endpoint && (
+        <p className={`rounded-md border px-3 py-2 text-sm ${active.judge_endpoint.external
+          ? "border-amber-400 bg-amber-50 text-amber-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+          올린 묶음의 평가 사유(좋은점·나쁜점 글)는 LLM이 읽어 협업 점수에 반영한다. 보내는 곳:{" "}
+          <b>{placeLabel(active.judge_endpoint.location, active.judge_endpoint.host)}</b>
+          {" · "}모델 {active.judge_endpoint.model}. 처음 판정은 100명(평가 약 1,400건) 기준 2~4분 걸리고, 이후엔 저장된 판정을 쓴다.
+          {active.judge_endpoint.external && (active.judge_endpoint.external_allowed
+            ? <b> 이 서버는 실데이터의 평가 원문도 이곳으로 보내도록 허용돼 있다(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1).</b>
+            : " 실데이터(가상이 아닌 묶음)는 서버가 외부 전송을 허용(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1)하지 않으면 보내지 않고 항목 점수를 쓴다. 사내 LLM은 서버의 TEAMWEAVER_REVIEW_BASE_URL로 지정한다.")}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-3">
