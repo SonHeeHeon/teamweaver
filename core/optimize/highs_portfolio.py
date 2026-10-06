@@ -31,9 +31,13 @@ import math
 import multiprocessing
 import time
 
+import logging
+
 import numpy as np
 import pulp
 from pulp import constants
+
+log = logging.getLogger(__name__)
 
 _FEASIBLE = 2                     # HiGHS SolutionStatus kSolutionStatusFeasible
 _OPTIONS = ("time_limit", "mip_rel_gap", "mip_abs_gap", "threads", "output_flag")
@@ -102,11 +106,18 @@ def _solve_exported(model: dict, seed: int) -> dict:
                 "objective": None, "dual_bound": None, "col_value": None}
 
 
-def _seed_worker(model: dict, seed: int, conn) -> None:
+def _seed_worker(seed: int, model_conn, out_conn) -> None:
+    """모델은 시작 인자가 아니라 시작 뒤 전용 파이프로 받는다(아래 _run_seeds 설명)."""
     try:
-        conn.send(_solve_exported(model, seed))
+        try:
+            model = model_conn.recv()
+        finally:
+            model_conn.close()
+        out_conn.send(_solve_exported(model, seed))
+    except (EOFError, OSError):
+        pass                                            # 부모가 사라졌거나 모델을 못 받았다 -- 조용히 끝낸다
     finally:
-        conn.close()
+        out_conn.close()
 
 
 def _error_run(seed: int, message: str) -> dict:
@@ -118,25 +129,40 @@ def _run_seeds(model: dict, seeds: int, optimal_status: int, deadline_s: float |
     """시드마다 spawn 프로세스와 전용 파이프. (결과들, 증명한 가장 낮은 시드 또는 None)을 돌려준다.
 
     전용 파이프인 이유: 공유 큐는 결과를 쓰는 도중에 끝낸 프로세스가 통로를 깨뜨릴 수 있다. 결과 없이 죽은 프로세스는
-    파이프 EOF로 바로 드러난다(Pool처럼 영원히 기다리지 않는다)."""
+    파이프 EOF로 바로 드러난다(Pool처럼 영원히 기다리지 않는다).
+    모델을 시작 인자로 넘기지 않는 이유(2026-10-06 실측 멈춤): spawn의 start()는 인자를 자식 시작 파이프에 다 쓸 때까지
+    그 파이프의 읽기 끝을 부모도 쥐고 있어, 자식이 시작 중에 죽으면 64KB를 넘는 쓰기가 영원히 막힌다(main 가드 없는
+    스크립트에서 재현). 그래서 시작 인자는 작게 두고, 모델은 시작 뒤 전용 파이프로 보낸다 -- 부모가 자식 쪽 끝을 닫아 두므로
+    자식이 죽으면 보내기가 BrokenPipe로 바로 끝난다."""
     from multiprocessing.connection import wait
     ctx = multiprocessing.get_context("spawn")
     procs, readers = {}, {}
     runs: dict[int, dict] = {}
     proven_at: int | None = None
     try:
+        senders = {}
         for s in range(seeds):                          # try 안: 중간 시드가 못 뜨면 앞서 띄운 시드도 정리한다(3차 리뷰)
+            model_r, model_w = ctx.Pipe(duplex=False)
             reader, writer = ctx.Pipe(duplex=False)
             readers[s] = reader
-            p = ctx.Process(target=_seed_worker, args=(model, s, writer), daemon=True)
+            p = ctx.Process(target=_seed_worker, args=(s, model_r, writer), daemon=True)
             p.start()
+            model_r.close()                             # 자식 쪽 끝은 닫는다: 자식이 죽으면 보내기가 BrokenPipe로 끝난다
             writer.close()                              # 부모 쪽 쓰기 끝을 닫아야 자식이 죽으면 EOF가 온다
-            procs[s] = p
+            procs[s], senders[s] = p, model_w
+        for s, conn in senders.items():
+            try:
+                conn.send(model)
+            except (BrokenPipeError, ConnectionResetError, OSError) as exc:
+                runs[s] = _error_run(s, f"could not hand the model to the worker ({type(exc).__name__})")
+            finally:
+                conn.close()
         end = None if deadline_s is None else time.monotonic() + deadline_s
         while True:
             needed = [s for s in procs if s not in runs and (proven_at is None or s < proven_at)]
             if not needed:
                 break
+            # (모델을 못 넘긴 시드는 이미 runs에 오류로 들어 있다)
             by_conn = {readers[s]: s for s in needed}
             for conn in wait(list(by_conn), timeout=0.2):
                 seed = by_conn[conn]
@@ -208,8 +234,14 @@ class HighsPortfolio(pulp.HiGHS):
             "chosen_seed": None,
         }
         if not feasible and runs and all(r.get("error") for r in runs):
-            raise RuntimeError("HiGHS seed portfolio: every seed failed -- "
-                               + "; ".join(f"seed {k}: {v}" for k, v in self.portfolio["errors"].items()))
+            # 동시 풀이 자체가 실패했다(작업 프로세스를 못 띄움·모두 죽음). 계획을 못 내는 대신 보통 방식(한 프로세스,
+            # 시드 0)으로 한 번 풀고, 실패 사실은 portfolio에 남긴다(증거 options에 실린다) -- 숨기지 않는다.
+            log.warning("HiGHS seed portfolio failed for every seed, solving once in-process: %s", self.portfolio["errors"])
+            errors = self.portfolio["errors"]
+            status = super().actualSolve(lp)
+            self.portfolio = {"seeds": self.seeds, "objectives": {}, "errors": errors, "best_bound": None,
+                              "chosen_seed": None, "fallback": "single_in_process"}
+            return status
         if not feasible:
             infeasible = {int(highspy.HighsModelStatus.kInfeasible), int(highspy.HighsModelStatus.kUnboundedOrInfeasible)}
             if any(r["model_status"] in infeasible for r in runs):

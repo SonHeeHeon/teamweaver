@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 from dataclasses import replace
 from typing import Literal
 
@@ -152,8 +153,29 @@ def _solver_cmd(params: "MilpParams"):
     if params.solver == "cbc":
         return pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap)
     from core.optimize.highs_portfolio import HighsPortfolio
-    return HighsPortfolio(seeds=params.solver_seeds, msg=False, timeLimit=params.time_limit, gapRel=params.gap,
+    return HighsPortfolio(seeds=effective_seeds(params), msg=False, timeLimit=params.time_limit, gapRel=params.gap,
                           threads=1)
+
+
+SEEDS_ENV = "TEAMWEAVER_SOLVER_SEEDS"
+
+
+def effective_seeds(params: "MilpParams") -> int:
+    """시드 수: 호출이 명시하면 그 값, 아니면 배포 환경 변수 TEAMWEAVER_SOLVER_SEEDS(기본 1).
+
+    동시에 쓰는 CPU 코어 수라 요청마다 정할 값이 아니라 기기에 맞춰 정한다(scripts/run_poc.sh가 4로 켠다).
+    실측(2026-10-06, 실제 같은 100명, 30초): 1시드면 안 B가 품질 하한(A의 95%)에 못 미쳐 안 A 하나만 나왔고,
+    4시드면 안 A~D가 모두 나왔다(58.19 / 57.55 / 57.81 / 58.07)."""
+    if "solver_seeds" in params.model_fields_set:
+        return params.solver_seeds
+    raw = os.environ.get(SEEDS_ENV, "").strip()
+    if not raw:
+        return 1
+    try:
+        return max(1, min(16, int(raw)))
+    except ValueError:
+        logger.warning("%s=%r is not an integer; using 1 seed", SEEDS_ENV, raw)
+        return 1
 
 
 def _highs_best_bound(prob: pulp.LpProblem, solver=None) -> float | None:
@@ -165,7 +187,7 @@ def _highs_best_bound(prob: pulp.LpProblem, solver=None) -> float | None:
     60초에 해 29.5 / 상한 43.7로 멈추는 것을 이것으로 쟀다. CBC는 PuLP가 상한을 주지 않아 None.
     시드 포트폴리오면 시드들 중 가장 단단한 상한을 쓴다."""
     portfolio = getattr(solver, "portfolio", None)
-    if portfolio is not None:
+    if portfolio is not None and not portfolio.get("fallback"):
         return portfolio.get("best_bound")
     model = getattr(prob, "solverModel", None)
     if model is None:
@@ -360,7 +382,9 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         has_incumbent=has_incumbent,
         best_bound=_highs_best_bound(prob, solver) if params.solver == "highs" else None,
         options={"time_limit": params.time_limit, "gap": params.gap,
-                 **({"seeds": params.solver_seeds, "chosen_seed": solver.portfolio["chosen_seed"]}
+                 **({"seeds": solver.seeds, "chosen_seed": solver.portfolio["chosen_seed"],
+                     **({"seed_errors": len(solver.portfolio["errors"])} if solver.portfolio.get("errors") else {}),
+                     **({"fallback": solver.portfolio["fallback"]} if solver.portfolio.get("fallback") else {})}
                     if getattr(solver, "portfolio", None) else {})},
     )
     if not has_incumbent or pulp.value(prob.objective) is None:

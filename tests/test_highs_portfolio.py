@@ -131,14 +131,19 @@ def test_service_milp_with_seeds_matches_the_single_seed_optimum():
     assert many.evidence.best_bound == pytest.approx(one.evidence.best_bound, abs=1e-5)
 
 
-def test_every_seed_failing_raises_with_the_reasons(monkeypatch):
-    """2nd review SHOULD: failures must not be disguised as "no incumbent"."""
-    prob, _ = _knapsack()
+def test_every_seed_failing_falls_back_to_one_in_process_solve_and_keeps_the_reasons(monkeypatch):
+    """2nd review SHOULD: failures must not be disguised -- and a portfolio failure must not cost the plan."""
+    a, xa = _knapsack()
+    a.solve(pulp.HiGHS(msg=False, threads=1, gapRel=0.0))
+    prob, x = _knapsack()
     n = len(prob.variables())
     runs = [dict(_fake_run(s, None, n), error=f"boom {s}", model_status=-1) for s in range(2)]
     monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, None))
-    with pytest.raises(RuntimeError, match="every seed failed.*boom 0.*boom 1"):
-        prob.solve(HighsPortfolio(seeds=2, msg=False, threads=1))
+    solver = HighsPortfolio(seeds=2, msg=False, threads=1, gapRel=0.0)
+    prob.solve(solver)
+    assert pulp.value(prob.objective) == pulp.value(a.objective)
+    assert solver.portfolio["fallback"] == "single_in_process"
+    assert solver.portfolio["errors"] == {"0": "boom 0", "1": "boom 1"}
 
 
 def test_a_proof_restricts_the_choice_to_seeds_at_or_below_it(monkeypatch):
@@ -154,15 +159,21 @@ def test_a_proof_restricts_the_choice_to_seeds_at_or_below_it(monkeypatch):
     assert solver.portfolio["chosen_seed"] == 0 and prob.sol_status == pulp.LpSolutionOptimal
 
 
-def _die(model, seed, conn):          # stands in for a worker killed by the OS (OOM, segfault)
+def _die(seed, model_conn, out_conn):          # stands in for a worker killed by the OS (OOM, segfault)
     import os
     if seed == 0:
         os._exit(9)
-    hp._seed_worker(model, seed, conn)
+    hp._seed_worker(seed, model_conn, out_conn)
 
 
-def _hang(model, seed, conn):
+def _die_before_reading(seed, model_conn, out_conn):   # dies during start-up, before taking the (large) model
+    import os
+    os._exit(3)
+
+
+def _hang(seed, model_conn, out_conn):
     import time
+    model_conn.recv()
     time.sleep(60)
 
 
@@ -189,3 +200,33 @@ def test_a_hung_worker_is_cut_off_at_the_deadline(monkeypatch):
     runs, proven = hp._run_seeds(model, 1, int(highspy.HighsModelStatus.kOptimal), deadline_s=1.0)
     assert __import__("time").perf_counter() - t < 15
     assert proven is None and "no result within 1s" in runs[0]["error"]
+
+
+def test_workers_dying_at_start_up_never_block_the_parent(monkeypatch):
+    """2026-10-06 measured hang: passing a multi-MB model as a spawn argument blocked start() forever when the child
+    died during start-up. The model now goes through a pipe after start; a dead child -> BrokenPipe/EOF -> error."""
+    prob, _ = _knapsack()
+    builder = HighsPortfolio(seeds=1, msg=False, threads=1)
+    builder.createAndConfigureSolver(prob)
+    builder.buildSolverModel(prob)
+    model = hp._export(prob.solverModel, {})
+    model["padding"] = np.zeros(2_000_000)                       # ~16 MB, far above a pipe buffer
+    monkeypatch.setattr(hp, "_seed_worker", _die_before_reading)
+    t = __import__("time").perf_counter()
+    import highspy
+    runs, proven = hp._run_seeds(model, 2, int(highspy.HighsModelStatus.kOptimal), deadline_s=30.0)
+    assert __import__("time").perf_counter() - t < 15
+    assert proven is None and all(r["error"] for r in runs) and len(runs) == 2
+
+
+def test_seed_count_comes_from_the_call_or_the_deployment_environment(monkeypatch):
+    from core.optimize.milp import MilpParams, effective_seeds
+    monkeypatch.delenv("TEAMWEAVER_SOLVER_SEEDS", raising=False)
+    assert effective_seeds(MilpParams()) == 1                          # tests and old behaviour
+    monkeypatch.setenv("TEAMWEAVER_SOLVER_SEEDS", "4")
+    assert effective_seeds(MilpParams()) == 4                          # run_poc.sh
+    assert effective_seeds(MilpParams(solver_seeds=1)) == 1            # an explicit value wins
+    monkeypatch.setenv("TEAMWEAVER_SOLVER_SEEDS", "lots")
+    assert effective_seeds(MilpParams()) == 1
+    monkeypatch.setenv("TEAMWEAVER_SOLVER_SEEDS", "99")
+    assert effective_seeds(MilpParams()) == 16
