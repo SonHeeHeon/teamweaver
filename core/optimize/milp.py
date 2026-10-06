@@ -1,3 +1,4 @@
+import inspect
 import logging
 import math
 import os
@@ -349,7 +350,13 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
                     <= pj.monthly_budget
     before_callback = capture_model_contract(prob) if extra_constraints else None
     if extra_constraints:
-        extra_constraints(prob, z)
+        # 투입률까지 다루는 제약(운영 중 편성: 유지되는 사람의 투입률 고정, 2026-10-06)은 alloc_vars를 받는다.
+        # alloc_vars(i, j) = 그 배치의 투입률 변수들(fixed는 1개, monthly는 진행 달마다). 예전 콜백(prob, z)은 그대로.
+        if "alloc_vars" in inspect.signature(extra_constraints).parameters:
+            extra_constraints(prob, z, alloc_vars=lambda i, j: [aget(i, j, m) for m in
+                                                                 (projects[j].months if monthly else projects[j].months[:1])])
+        else:
+            extra_constraints(prob, z)
     after_callback = capture_model_contract(prob) if extra_constraints else None
 
     solver = _solver_cmd(params)
