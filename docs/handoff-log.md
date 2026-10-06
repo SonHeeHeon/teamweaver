@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-06 · claude-a · '익숙한 쌍' 기준 비교(최종 보고서 근거) — 사용자 결정 대기
+- 브랜치/커밋: `feat/claude-a-familiarity-rule` `0d155d6` (push, main 미병합)
+- 한 일: `rehearsal/rule_compare.py`로 현행(10년·6개월), 최근 5년·12개월, 최근 3년·12개월을 비교했다. 100/200/300명 × 1·4시드, 안 A, 자동 시간 조건이다. 보고서는 `rehearsal/results/rule-compare.html`이고 해석은 `rule-compare-analysis.json`에 있다.
+- 결과:
+  - 현행: 200·300명이 붕괴한다(빈자리 79 / 91~95).
+  - 5년: 300명 갭 3~7%로 좋지만 200명은 갭 37~40%다.
+  - 3년: 모든 규모에서 갭 4~11%, 빈자리 0이고 협업 보상이 가장 크다. 대신 오래 함께 일한 쌍이 한 팀에 더 들어간다.
+  - 권장은 3년 기본 + 관리자 설정이다.
+- 상대 영향: 없음(측정 도구). 결정되면 감점용 조회 기간을 데이터 계약·convert·graph에 추가한다. 이때 공유 계약이 바뀌므로 "요청"에 먼저 적는다. milp·validation·plan_eval·bench도 함께 바꾼다.
+- 검증: 1272 passed, 19 deselected. Opus 폴백 리뷰 MUST 1건(표시 문구)을 반영했다.
+- 근거: `.omc/reports/2026-10-06-familiarity-rule-compare.md`
+
 ## 2026-10-06 · claude-a · 계산 안정화(1차): HiGHS 상한 기록·시드 포트폴리오·진단 — 규칙 정의는 사용자 결정 대기
 - 브랜치/커밋: `feat/claude-a-solve-stability` `d6b7c4f..b56f290` (push, main 미병합)
 - 한 일:
