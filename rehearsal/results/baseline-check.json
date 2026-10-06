@@ -1,0 +1,136 @@
+{
+ "env": {
+  "commit": "a6fdbdc",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-06T13:15:11+00:00"
+ },
+ "finished_at": "2026-10-06T13:15:11+00:00",
+ "runs": [
+  {
+   "size": 100,
+   "dataset": "demo/org-n100",
+   "solve_s": 30.54,
+   "termination": "time_limit_incumbent",
+   "rule": "사업 시작 순서대로, 등급 자리마다 기술 적합이 가장 높은 사람부터 넣는다(협업·익숙한 쌍·예산은 보지 않음)",
+   "optimized": {
+    "total": 58.1585,
+    "quality": 58.1585,
+    "skill": 38.3814,
+    "synergy": 19.7771,
+    "overfamiliarity": -0.0,
+    "unfilled_seats": 0,
+    "avg_seat_fit": 0.6359,
+    "assignments": 118,
+    "people": 69,
+    "violations": {}
+   },
+   "baseline": {
+    "total": -68.4028,
+    "quality": 31.5972,
+    "skill": 30.8382,
+    "synergy": 0.959,
+    "overfamiliarity": -0.2,
+    "unfilled_seats": 1,
+    "avg_seat_fit": 0.763,
+    "assignments": 72,
+    "people": 51,
+    "violations": {}
+   },
+   "difference": {
+    "total": 126.5613,
+    "quality": 26.5613,
+    "skill": 7.5432,
+    "synergy": 18.8181,
+    "overfamiliarity": 0.2,
+    "unfilled_seats": -1,
+    "violations": 0
+   }
+  },
+  {
+   "size": 200,
+   "dataset": "demo/org-n200",
+   "solve_s": 61.4,
+   "termination": "Optimal",
+   "rule": "사업 시작 순서대로, 등급 자리마다 기술 적합이 가장 높은 사람부터 넣는다(협업·익숙한 쌍·예산은 보지 않음)",
+   "optimized": {
+    "total": 109.6372,
+    "quality": 109.6372,
+    "skill": 89.8912,
+    "synergy": 20.946,
+    "overfamiliarity": -1.2,
+    "unfilled_seats": 0,
+    "avg_seat_fit": 0.6968,
+    "assignments": 247,
+    "people": 142,
+    "violations": {}
+   },
+   "baseline": {
+    "total": -33.9647,
+    "quality": 66.0353,
+    "skill": 67.5693,
+    "synergy": 0.666,
+    "overfamiliarity": -2.2,
+    "unfilled_seats": 1,
+    "avg_seat_fit": 0.7696,
+    "assignments": 149,
+    "people": 119,
+    "violations": {
+     "budget": 1
+    }
+   },
+   "difference": {
+    "total": 143.6019,
+    "quality": 43.6019,
+    "skill": 22.3219,
+    "synergy": 20.28,
+    "overfamiliarity": 1.0,
+    "unfilled_seats": -1,
+    "violations": -1
+   }
+  },
+  {
+   "size": 300,
+   "dataset": "demo/org-n300",
+   "solve_s": 183.27,
+   "termination": "time_limit_incumbent",
+   "rule": "사업 시작 순서대로, 등급 자리마다 기술 적합이 가장 높은 사람부터 넣는다(협업·익숙한 쌍·예산은 보지 않음)",
+   "optimized": {
+    "total": 163.9937,
+    "quality": 163.9937,
+    "skill": 137.5896,
+    "synergy": 27.4041,
+    "overfamiliarity": -1.0,
+    "unfilled_seats": 0,
+    "avg_seat_fit": 0.6827,
+    "assignments": 357,
+    "people": 210,
+    "violations": {}
+   },
+   "baseline": {
+    "total": -186.4719,
+    "quality": 113.5281,
+    "skill": 115.0471,
+    "synergy": 0.681,
+    "overfamiliarity": -2.2,
+    "unfilled_seats": 3,
+    "avg_seat_fit": 0.8007,
+    "assignments": 226,
+    "people": 172,
+    "violations": {
+     "budget": 2
+    }
+   },
+   "difference": {
+    "total": 350.4656,
+    "quality": 50.4656,
+    "skill": 22.5425,
+    "synergy": 26.7231,
+    "overfamiliarity": 1.2,
+    "unfilled_seats": -3,
+    "violations": -2
+   }
+  }
+ ]
+}

@@ -1,0 +1,4764 @@
+{
+ "env": {
+  "commit": "a6fdbdc",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-06T13:15:32+00:00"
+ },
+ "started_at": "2026-10-06T13:15:32+00:00",
+ "seed": 2026,
+ "runs": [
+  {
+   "size": 100,
+   "dataset": "org-n100-s2026-operating",
+   "bench": 10,
+   "proposals": [
+    "J014",
+    "J015"
+   ],
+   "current": 90,
+   "time_limit": 30,
+   "s1": [
+    {
+     "objective": -130.8123,
+     "quality": 69.1877,
+     "unfilled_seats": 2,
+     "parts": {
+      "skill": 66.4292,
+      "synergy": 3.3586,
+      "overfamiliarity": -0.6,
+      "unfilled": -200.0
+     },
+     "violations": [],
+     "unfilled": [
+      "J014:초급:1명 미충원",
+      "J015:초급:1명 미충원"
+     ],
+     "diff": {
+      "kept": 90,
+      "moved": [],
+      "joined": [
+       {
+        "person_id": "DP0026",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0031",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J015",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 7.5,
+       "synergy": 0.664,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 7.964
+      },
+      "J002": {
+       "skill": 6.625,
+       "synergy": 0.2,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 6.825
+      },
+      "J003": {
+       "skill": 7.0833,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 7.0833
+      },
+      "J004": {
+       "skill": 4.5833,
+       "synergy": 0.39,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.9733
+      },
+      "J005": {
+       "skill": 5.0833,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 5.0833
+      },
+      "J006": {
+       "skill": 2.125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.125
+      },
+      "J007": {
+       "skill": 4.75,
+       "synergy": 0.219,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.969
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.986,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.486
+      },
+      "J009": {
+       "skill": 3.8667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8667
+      },
+      "J010": {
+       "skill": 4.5625,
+       "synergy": 0.45,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.0125
+      },
+      "J011": {
+       "skill": 2.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.25
+      },
+      "J012": {
+       "skill": 7.1944,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 6.9944
+      },
+      "J013": {
+       "skill": 1.4722,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.4722
+      },
+      "J014": {
+       "skill": 2.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 3,
+       "total": 2.3333
+      },
+      "J015": {
+       "skill": 2.5,
+       "synergy": 0.4496,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 2.7496
+      }
+     },
+     "k": 0,
+     "elapsed_s": 0.54,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": -130.8122619047619,
+     "gain_vs_k0": 0.0,
+     "quality_gain_vs_k0": 0.0,
+     "quality_gain_pct_vs_k0": 0.0,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {}
+    },
+    {
+     "objective": -30.0998,
+     "quality": 69.9002,
+     "unfilled_seats": 1,
+     "parts": {
+      "skill": 67.1417,
+      "synergy": 3.3586,
+      "overfamiliarity": -0.6,
+      "unfilled": -100.0
+     },
+     "violations": [],
+     "unfilled": [
+      "J005:초급:1명 미충원"
+     ],
+     "diff": {
+      "kept": 89,
+      "moved": [
+       {
+        "person_id": "DP0013",
+        "from": "J005",
+        "to": [
+         "J014",
+         "J015"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "DP0026",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0031",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0088",
+        "project_id": "J005",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J015",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 7.5,
+       "synergy": 0.664,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 7.964
+      },
+      "J002": {
+       "skill": 6.625,
+       "synergy": 0.2,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 6.825
+      },
+      "J003": {
+       "skill": 7.0833,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 7.0833
+      },
+      "J004": {
+       "skill": 4.5833,
+       "synergy": 0.39,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.9733
+      },
+      "J005": {
+       "skill": 5.4167,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 5.4167
+      },
+      "J006": {
+       "skill": 2.125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.125
+      },
+      "J007": {
+       "skill": 4.75,
+       "synergy": 0.219,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.969
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.986,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.486
+      },
+      "J009": {
+       "skill": 3.8667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8667
+      },
+      "J010": {
+       "skill": 4.5625,
+       "synergy": 0.45,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.0125
+      },
+      "J011": {
+       "skill": 2.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.25
+      },
+      "J012": {
+       "skill": 7.1944,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 6.9944
+      },
+      "J013": {
+       "skill": 1.4722,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.4722
+      },
+      "J014": {
+       "skill": 2.7125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7125
+      },
+      "J015": {
+       "skill": 2.5,
+       "synergy": 0.4496,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.7496
+      }
+     },
+     "k": 1,
+     "elapsed_s": 1.23,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": -30.099761904763,
+     "gain_vs_k0": 100.7125,
+     "quality_gain_vs_k0": 0.7125,
+     "quality_gain_pct_vs_k0": 1.03,
+     "unfilled_change_vs_k0": -1,
+     "project_change_vs_k0": {
+      "J005": 0.3334,
+      "J014": 0.3792
+     }
+    },
+    {
+     "objective": 69.679,
+     "quality": 69.679,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 66.9233,
+      "synergy": 3.5557,
+      "overfamiliarity": -0.8,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 88,
+      "moved": [
+       {
+        "person_id": "DP0036",
+        "from": "J005",
+        "to": [
+         "J013"
+        ]
+       },
+       {
+        "person_id": "DP0095",
+        "from": "J013",
+        "to": [
+         "J005",
+         "J014",
+         "J015"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "DP0026",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0031",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J015",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 7.5,
+       "synergy": 0.664,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 7.964
+      },
+      "J002": {
+       "skill": 6.625,
+       "synergy": 0.2,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 6.825
+      },
+      "J003": {
+       "skill": 7.0833,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 7.0833
+      },
+      "J004": {
+       "skill": 4.5833,
+       "synergy": 0.39,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.9733
+      },
+      "J005": {
+       "skill": 4.7833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 4.5833
+      },
+      "J006": {
+       "skill": 2.125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.125
+      },
+      "J007": {
+       "skill": 4.75,
+       "synergy": 0.219,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.969
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.986,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.486
+      },
+      "J009": {
+       "skill": 3.8667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8667
+      },
+      "J010": {
+       "skill": 4.5625,
+       "synergy": 0.45,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.0125
+      },
+      "J011": {
+       "skill": 2.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.25
+      },
+      "J012": {
+       "skill": 7.1944,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 6.9944
+      },
+      "J013": {
+       "skill": 2.1389,
+       "synergy": 0.1971,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.336
+      },
+      "J014": {
+       "skill": 2.4458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.4458
+      },
+      "J015": {
+       "skill": 2.515,
+       "synergy": 0.4496,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.7646
+      }
+     },
+     "k": 2,
+     "elapsed_s": 10.87,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 69.67904761904767,
+     "gain_vs_k0": 200.4913,
+     "quality_gain_vs_k0": 0.4913,
+     "quality_gain_pct_vs_k0": 0.71,
+     "unfilled_change_vs_k0": -2,
+     "project_change_vs_k0": {
+      "J005": -0.5,
+      "J013": 0.8638,
+      "J014": 0.1125,
+      "J015": 0.015
+     }
+    },
+    {
+     "objective": 70.3902,
+     "quality": 70.3902,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 67.0233,
+      "synergy": 4.1669,
+      "overfamiliarity": -0.8,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 87,
+      "moved": [
+       {
+        "person_id": "DP0023",
+        "from": "J007",
+        "to": [
+         "J015"
+        ]
+       },
+       {
+        "person_id": "DP0036",
+        "from": "J005",
+        "to": [
+         "J013"
+        ]
+       },
+       {
+        "person_id": "DP0095",
+        "from": "J013",
+        "to": [
+         "J005",
+         "J014",
+         "J015"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "DP0026",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0031",
+        "project_id": "J015",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J007",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J014",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J015",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 7.5,
+       "synergy": 0.664,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 7.964
+      },
+      "J002": {
+       "skill": 6.625,
+       "synergy": 0.2,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 6.825
+      },
+      "J003": {
+       "skill": 7.0833,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 7.0833
+      },
+      "J004": {
+       "skill": 4.5833,
+       "synergy": 0.39,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.9733
+      },
+      "J005": {
+       "skill": 4.7833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 4.5833
+      },
+      "J006": {
+       "skill": 2.125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.125
+      },
+      "J007": {
+       "skill": 4.7,
+       "synergy": 0.8301,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 5.5301
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.986,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.486
+      },
+      "J009": {
+       "skill": 3.8667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8667
+      },
+      "J010": {
+       "skill": 4.5625,
+       "synergy": 0.45,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.0125
+      },
+      "J011": {
+       "skill": 2.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.25
+      },
+      "J012": {
+       "skill": 7.1944,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 6.9944
+      },
+      "J013": {
+       "skill": 2.1389,
+       "synergy": 0.1971,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.336
+      },
+      "J014": {
+       "skill": 2.4458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.4458
+      },
+      "J015": {
+       "skill": 2.665,
+       "synergy": 0.4496,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.9146
+      }
+     },
+     "k": 3,
+     "elapsed_s": 27.59,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 70.39019047619072,
+     "gain_vs_k0": 201.2025,
+     "quality_gain_vs_k0": 1.2025,
+     "quality_gain_pct_vs_k0": 1.74,
+     "unfilled_change_vs_k0": -2,
+     "project_change_vs_k0": {
+      "J005": -0.5,
+      "J007": 0.5611,
+      "J013": 0.8638,
+      "J014": 0.1125,
+      "J015": 0.165
+     }
+    }
+   ],
+   "s1_elapsed_s": 40.3,
+   "s2": {
+    "project": "J007",
+    "team_size": 9,
+    "ranked": [
+     {
+      "person_id": "DP0046",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 1.0611,
+      "delta": {
+       "total": 1.0611,
+       "skill": 0.65,
+       "synergy": 0.6111,
+       "overfamiliarity": -0.2,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.65,
+      "team_synergy": 3.5371,
+      "project_total_after": 6.0301,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "DP0032",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 1.04,
+      "delta": {
+       "total": 1.04,
+       "skill": 0.8,
+       "synergy": 0.24,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.8,
+      "team_synergy": 3.4,
+      "project_total_after": 6.009,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "DP0026",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.8,
+      "delta": {
+       "total": 0.8,
+       "skill": 0.8,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.8,
+      "team_synergy": 1.8333,
+      "project_total_after": 5.769,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "DP0078",
+      "grade": "고급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.75,
+      "delta": {
+       "total": 0.75,
+       "skill": 0.75,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.75,
+      "team_synergy": 3.0933,
+      "project_total_after": 5.719,
+      "monthly_cost": 1300.0,
+      "budget_added": 1300,
+      "new_violations": []
+     },
+     {
+      "person_id": "DP0079",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.71,
+      "delta": {
+       "total": 0.71,
+       "skill": 0.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.5,
+      "team_synergy": 3.1667,
+      "project_total_after": 5.679,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     }
+    ],
+    "rank_elapsed_s": 2.01,
+    "best_two": {
+     "0": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2000.0,
+      "diff": {
+       "kept": 90,
+       "moved": [],
+       "joined": [
+        {
+         "person_id": "DP0032",
+         "project_id": "J007",
+         "from_bench": true
+        },
+        {
+         "person_id": "DP0046",
+         "project_id": "J007",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -835.8951666666667,
+       "skill": 61.59583333333333,
+       "synergy": 2.9090000000000003,
+       "overfamiliarity": -0.4,
+       "unfilled": -900.0
+      },
+      "after": {
+       "total": -833.7940238095238,
+       "skill": 63.045833333333334,
+       "synergy": 3.760142857142857,
+       "overfamiliarity": -0.6000000000000001,
+       "unfilled": -900.0
+      },
+      "delta": {
+       "total": 2.101142857142918,
+       "skill": 1.4500000000000028,
+       "synergy": 0.8511428571428565,
+       "overfamiliarity": -0.20000000000000007,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 0.46
+     },
+     "1": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2000.0,
+      "diff": {
+       "kept": 89,
+       "moved": [
+        {
+         "person_id": "DP0074",
+         "from": "J010",
+         "to": [
+          "J007"
+         ]
+        }
+       ],
+       "joined": [
+        {
+         "person_id": "DP0026",
+         "project_id": "J010",
+         "from_bench": true
+        },
+        {
+         "person_id": "DP0046",
+         "project_id": "J007",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -835.8951666666667,
+       "skill": 61.59583333333333,
+       "synergy": 2.9090000000000003,
+       "overfamiliarity": -0.4,
+       "unfilled": -900.0
+      },
+      "after": {
+       "total": -833.2840238095238,
+       "skill": 63.37083333333333,
+       "synergy": 3.945142857142857,
+       "overfamiliarity": -0.6000000000000001,
+       "unfilled": -900.0
+      },
+      "delta": {
+       "total": 2.6111428571429087,
+       "skill": 1.7749999999999986,
+       "synergy": 1.0361428571428566,
+       "overfamiliarity": -0.20000000000000007,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 0.81
+     }
+    }
+   }
+  },
+  {
+   "size": 200,
+   "dataset": "org-n200-s2026-operating",
+   "bench": 20,
+   "proposals": [
+    "J026",
+    "J027",
+    "J028"
+   ],
+   "current": 180,
+   "time_limit": 60,
+   "s1": [
+    {
+     "objective": 114.0122,
+     "quality": 114.0122,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 114.2782,
+      "synergy": 3.134,
+      "overfamiliarity": -3.4,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 180,
+      "moved": [],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0035",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0088",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J028",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.7963,
+       "synergy": 0.9,
+       "overfamiliarity": -1.6,
+       "people": 28,
+       "total": 16.0963
+      },
+      "J002": {
+       "skill": 4.5,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.728
+      },
+      "J003": {
+       "skill": 4.375,
+       "synergy": 0.234,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.409
+      },
+      "J004": {
+       "skill": 4.0208,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 4.0488
+      },
+      "J005": {
+       "skill": 4.5556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.5556
+      },
+      "J006": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 5.0
+      },
+      "J007": {
+       "skill": 4.6833,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.7113
+      },
+      "J008": {
+       "skill": 2.3,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.3
+      },
+      "J009": {
+       "skill": 3.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.9667
+      },
+      "J010": {
+       "skill": 4.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.71
+      },
+      "J011": {
+       "skill": 2.8542,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.0642
+      },
+      "J012": {
+       "skill": 2.75,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 2.768
+      },
+      "J013": {
+       "skill": 4.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.3333
+      },
+      "J014": {
+       "skill": 3.35,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.35
+      },
+      "J015": {
+       "skill": 6.4375,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 6.4775
+      },
+      "J016": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8333
+      },
+      "J017": {
+       "skill": 6.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.5
+      },
+      "J018": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J019": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.1667
+      },
+      "J020": {
+       "skill": 3.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 3.3
+      },
+      "J021": {
+       "skill": 2.6458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.6458
+      },
+      "J022": {
+       "skill": 0.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 0.71
+      },
+      "J023": {
+       "skill": 2.1333,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 2.3613
+      },
+      "J024": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.8333
+      },
+      "J025": {
+       "skill": 1.95,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 8,
+       "total": 1.55
+      },
+      "J026": {
+       "skill": 2.525,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.525
+      },
+      "J027": {
+       "skill": 3.625,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.625
+      },
+      "J028": {
+       "skill": 2.2556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 2.2556
+      }
+     },
+     "k": 0,
+     "elapsed_s": 1.19,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 114.01224074074074,
+     "gain_vs_k0": 0.0,
+     "quality_gain_vs_k0": 0.0,
+     "quality_gain_pct_vs_k0": 0.0,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {}
+    },
+    {
+     "objective": 115.0282,
+     "quality": 115.0282,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 114.4542,
+      "synergy": 3.574,
+      "overfamiliarity": -3.0,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 179,
+      "moved": [
+       {
+        "person_id": "AI0082",
+        "from": "J001",
+        "to": [
+         "J027"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0035",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0088",
+        "project_id": "J001",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J028",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.7778,
+       "synergy": 1.11,
+       "overfamiliarity": -1.2,
+       "people": 28,
+       "total": 16.6878
+      },
+      "J002": {
+       "skill": 4.5,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.728
+      },
+      "J003": {
+       "skill": 4.375,
+       "synergy": 0.234,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.409
+      },
+      "J004": {
+       "skill": 4.0208,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 4.0488
+      },
+      "J005": {
+       "skill": 4.5556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.5556
+      },
+      "J006": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 5.0
+      },
+      "J007": {
+       "skill": 4.6833,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.7113
+      },
+      "J008": {
+       "skill": 2.3,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.3
+      },
+      "J009": {
+       "skill": 3.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.9667
+      },
+      "J010": {
+       "skill": 4.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.71
+      },
+      "J011": {
+       "skill": 2.8542,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.0642
+      },
+      "J012": {
+       "skill": 2.75,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 2.768
+      },
+      "J013": {
+       "skill": 4.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.3333
+      },
+      "J014": {
+       "skill": 3.35,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.35
+      },
+      "J015": {
+       "skill": 6.4375,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 6.4775
+      },
+      "J016": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8333
+      },
+      "J017": {
+       "skill": 6.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.5
+      },
+      "J018": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J019": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.1667
+      },
+      "J020": {
+       "skill": 3.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 3.3
+      },
+      "J021": {
+       "skill": 2.6458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.6458
+      },
+      "J022": {
+       "skill": 0.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 0.71
+      },
+      "J023": {
+       "skill": 2.1333,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 2.3613
+      },
+      "J024": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.8333
+      },
+      "J025": {
+       "skill": 1.95,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 8,
+       "total": 1.55
+      },
+      "J026": {
+       "skill": 2.075,
+       "synergy": 0.23,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.305
+      },
+      "J027": {
+       "skill": 4.125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 4.125
+      },
+      "J028": {
+       "skill": 2.4,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 2.4
+      }
+     },
+     "k": 1,
+     "elapsed_s": 14.09,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 115.02816666666666,
+     "gain_vs_k0": 1.016,
+     "quality_gain_vs_k0": 1.016,
+     "quality_gain_pct_vs_k0": 0.89,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J001": 0.5915,
+      "J026": -0.22,
+      "J027": 0.5,
+      "J028": 0.1444
+     }
+    },
+    {
+     "objective": 115.9137,
+     "quality": 115.9137,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 114.3477,
+      "synergy": 4.766,
+      "overfamiliarity": -3.2,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 178,
+      "moved": [
+       {
+        "person_id": "AI0093",
+        "from": "J001",
+        "to": [
+         "J027"
+        ]
+       },
+       {
+        "person_id": "DP0092",
+        "from": "J007",
+        "to": [
+         "J026",
+         "J028"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0035",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J007",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J001",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0088",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J028",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.7407,
+       "synergy": 1.128,
+       "overfamiliarity": -1.4,
+       "people": 28,
+       "total": 16.4687
+      },
+      "J002": {
+       "skill": 4.5,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.728
+      },
+      "J003": {
+       "skill": 4.375,
+       "synergy": 0.234,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.409
+      },
+      "J004": {
+       "skill": 4.0208,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 4.0488
+      },
+      "J005": {
+       "skill": 4.5556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.5556
+      },
+      "J006": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 5.0
+      },
+      "J007": {
+       "skill": 4.5,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.528
+      },
+      "J008": {
+       "skill": 2.3,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.3
+      },
+      "J009": {
+       "skill": 3.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.9667
+      },
+      "J010": {
+       "skill": 4.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.71
+      },
+      "J011": {
+       "skill": 2.8542,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.0642
+      },
+      "J012": {
+       "skill": 2.75,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 2.768
+      },
+      "J013": {
+       "skill": 4.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.3333
+      },
+      "J014": {
+       "skill": 3.35,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.35
+      },
+      "J015": {
+       "skill": 6.4375,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 6.4775
+      },
+      "J016": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8333
+      },
+      "J017": {
+       "skill": 6.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.5
+      },
+      "J018": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J019": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.1667
+      },
+      "J020": {
+       "skill": 3.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 3.3
+      },
+      "J021": {
+       "skill": 2.6458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.6458
+      },
+      "J022": {
+       "skill": 0.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 0.71
+      },
+      "J023": {
+       "skill": 2.1333,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 2.3613
+      },
+      "J024": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.8333
+      },
+      "J025": {
+       "skill": 1.95,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 8,
+       "total": 1.55
+      },
+      "J026": {
+       "skill": 2.5083,
+       "synergy": 0.468,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.9763
+      },
+      "J027": {
+       "skill": 4.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 4.228
+      },
+      "J028": {
+       "skill": 2.2056,
+       "synergy": 0.708,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 2.9136
+      }
+     },
+     "k": 2,
+     "elapsed_s": 32.75,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 115.91368518518519,
+     "gain_vs_k0": 1.9015,
+     "quality_gain_vs_k0": 1.9015,
+     "quality_gain_pct_vs_k0": 1.67,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J001": 0.3724,
+      "J007": -0.1833,
+      "J026": 0.4513,
+      "J027": 0.603,
+      "J028": 0.658
+     }
+    },
+    {
+     "objective": 116.7748,
+     "quality": 116.7748,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 114.7188,
+      "synergy": 5.456,
+      "overfamiliarity": -3.4,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 177,
+      "moved": [
+       {
+        "person_id": "AI0004",
+        "from": "J023",
+        "to": [
+         "J007",
+         "J028"
+        ]
+       },
+       {
+        "person_id": "AI0093",
+        "from": "J001",
+        "to": [
+         "J027"
+        ]
+       },
+       {
+        "person_id": "DP0092",
+        "from": "J007",
+        "to": [
+         "J026",
+         "J028"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J023",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0035",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J027",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J001",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0088",
+        "project_id": "J028",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J026",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J028",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.7407,
+       "synergy": 1.128,
+       "overfamiliarity": -1.4,
+       "people": 28,
+       "total": 16.4687
+      },
+      "J002": {
+       "skill": 4.5,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.728
+      },
+      "J003": {
+       "skill": 4.375,
+       "synergy": 0.234,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.409
+      },
+      "J004": {
+       "skill": 4.0208,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 4.0488
+      },
+      "J005": {
+       "skill": 4.5556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.5556
+      },
+      "J006": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 5.0
+      },
+      "J007": {
+       "skill": 4.21,
+       "synergy": 0.438,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.448
+      },
+      "J008": {
+       "skill": 2.3,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.3
+      },
+      "J009": {
+       "skill": 3.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 2.9667
+      },
+      "J010": {
+       "skill": 4.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 4.71
+      },
+      "J011": {
+       "skill": 2.8542,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.0642
+      },
+      "J012": {
+       "skill": 2.75,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 2.768
+      },
+      "J013": {
+       "skill": 4.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 4.3333
+      },
+      "J014": {
+       "skill": 3.35,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.35
+      },
+      "J015": {
+       "skill": 6.4375,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 6.4775
+      },
+      "J016": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.8333
+      },
+      "J017": {
+       "skill": 6.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.5
+      },
+      "J018": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J019": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 5.1667
+      },
+      "J020": {
+       "skill": 3.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 5,
+       "total": 3.3
+      },
+      "J021": {
+       "skill": 2.6458,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 2.6458
+      },
+      "J022": {
+       "skill": 0.5,
+       "synergy": 0.21,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 0.71
+      },
+      "J023": {
+       "skill": 2.4333,
+       "synergy": 0.708,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 2.9413
+      },
+      "J024": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.8333
+      },
+      "J025": {
+       "skill": 1.95,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 8,
+       "total": 1.55
+      },
+      "J026": {
+       "skill": 2.6583,
+       "synergy": 0.468,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.1263
+      },
+      "J027": {
+       "skill": 4.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 4.228
+      },
+      "J028": {
+       "skill": 2.4167,
+       "synergy": 0.708,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 3.1247
+      }
+     },
+     "k": 3,
+     "elapsed_s": 45.0,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 116.7747962962963,
+     "gain_vs_k0": 2.7626,
+     "quality_gain_vs_k0": 2.7626,
+     "quality_gain_pct_vs_k0": 2.42,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J001": 0.3724,
+      "J007": -0.2633,
+      "J023": 0.58,
+      "J026": 0.6013,
+      "J027": 0.603,
+      "J028": 0.8691
+     }
+    }
+   ],
+   "s1_elapsed_s": 93.3,
+   "s2": {
+    "project": "J017",
+    "team_size": 9,
+    "ranked": [
+     {
+      "person_id": "AI0047",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 1.0,
+      "delta": {
+       "total": 1.0,
+       "skill": 1.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 1.0,
+      "team_synergy": 1.3667,
+      "project_total_after": 7.5,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0042",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.728,
+      "delta": {
+       "total": 0.728,
+       "skill": 0.7,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.7,
+      "team_synergy": 2.1267,
+      "project_total_after": 7.228,
+      "monthly_cost": 1100.0,
+      "budget_added": 1100,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0008",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6,
+      "delta": {
+       "total": 0.6,
+       "skill": 0.6,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6,
+      "team_synergy": 1.9333,
+      "project_total_after": 7.1,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0010",
+      "grade": "고급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6,
+      "delta": {
+       "total": 0.6,
+       "skill": 0.6,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6,
+      "team_synergy": 3.3667,
+      "project_total_after": 7.1,
+      "monthly_cost": 1430.0,
+      "budget_added": 1430,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0018",
+      "grade": "고급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6,
+      "delta": {
+       "total": 0.6,
+       "skill": 0.6,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6,
+      "team_synergy": 1.2524,
+      "project_total_after": 7.1,
+      "monthly_cost": 1430.0,
+      "budget_added": 1430,
+      "new_violations": []
+     }
+    ],
+    "rank_elapsed_s": 5.7,
+    "best_two": {
+     "0": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2100.0,
+      "diff": {
+       "kept": 180,
+       "moved": [],
+       "joined": [
+        {
+         "person_id": "AI0042",
+         "project_id": "J017",
+         "from_bench": true
+        },
+        {
+         "person_id": "AI0047",
+         "project_id": "J017",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -1794.3933148148149,
+       "skill": 105.87268518518519,
+       "synergy": 3.134,
+       "overfamiliarity": -3.4000000000000004,
+       "unfilled": -1900.0
+      },
+      "after": {
+       "total": -1792.6653148148148,
+       "skill": 107.57268518518518,
+       "synergy": 3.362,
+       "overfamiliarity": -3.6,
+       "unfilled": -1900.0
+      },
+      "delta": {
+       "total": 1.7280000000000655,
+       "skill": 1.6999999999999886,
+       "synergy": 0.2280000000000002,
+       "overfamiliarity": -0.19999999999999973,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 1.33
+     },
+     "1": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2300.0,
+      "diff": {
+       "kept": 179,
+       "moved": [
+        {
+         "person_id": "AI0082",
+         "from": "J001",
+         "to": [
+          "J017"
+         ]
+        }
+       ],
+       "joined": [
+        {
+         "person_id": "AI0047",
+         "project_id": "J017",
+         "from_bench": true
+        },
+        {
+         "person_id": "DP0088",
+         "project_id": "J001",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -1794.3933148148149,
+       "skill": 105.87268518518519,
+       "synergy": 3.134,
+       "overfamiliarity": -3.4000000000000004,
+       "unfilled": -1900.0
+      },
+      "after": {
+       "total": -1791.7738333333334,
+       "skill": 107.85416666666667,
+       "synergy": 3.5719999999999996,
+       "overfamiliarity": -3.2,
+       "unfilled": -1900.0
+      },
+      "delta": {
+       "total": 2.6194814814814436,
+       "skill": 1.981481481481481,
+       "synergy": 0.4379999999999997,
+       "overfamiliarity": 0.20000000000000018,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 4.45
+     }
+    }
+   }
+  },
+  {
+   "size": 300,
+   "dataset": "org-n300-s2026-operating",
+   "bench": 30,
+   "proposals": [
+    "J041",
+    "J042",
+    "J043"
+   ],
+   "current": 270,
+   "time_limit": 180,
+   "s1": [
+    {
+     "objective": 187.1352,
+     "quality": 187.1352,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 189.0986,
+      "synergy": 4.0366,
+      "overfamiliarity": -6.0,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 270,
+      "moved": [],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0011",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0011",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0023",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0029",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0064",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0076",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0093",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0094",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0097",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J043",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.8333,
+       "synergy": 1.1426,
+       "overfamiliarity": -0.8,
+       "people": 28,
+       "total": 17.1759
+      },
+      "J002": {
+       "skill": 5.7778,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 5.5778
+      },
+      "J003": {
+       "skill": 4.0556,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 3.8556
+      },
+      "J004": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 4.0
+      },
+      "J005": {
+       "skill": 5.0833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 8,
+       "total": 4.6833
+      },
+      "J006": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.9667
+      },
+      "J007": {
+       "skill": 2.6458,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 2.6858
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 4.5
+      },
+      "J009": {
+       "skill": 1.25,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 1.05
+      },
+      "J010": {
+       "skill": 2.9444,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.9444
+      },
+      "J011": {
+       "skill": 7.3125,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 7.3305
+      },
+      "J012": {
+       "skill": 3.2222,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2222
+      },
+      "J013": {
+       "skill": 3.3667,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.5947
+      },
+      "J014": {
+       "skill": 2.5625,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.5625
+      },
+      "J015": {
+       "skill": 2.5833,
+       "synergy": 0.666,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 3.0493
+      },
+      "J016": {
+       "skill": 3.75,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 3.75
+      },
+      "J017": {
+       "skill": 9.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 9,
+       "total": 8.6
+      },
+      "J018": {
+       "skill": 8.9333,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 8.7333
+      },
+      "J019": {
+       "skill": 2.7333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7333
+      },
+      "J020": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.8,
+       "people": 5,
+       "total": 4.2
+      },
+      "J021": {
+       "skill": 3.5833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.6,
+       "people": 9,
+       "total": 2.9833
+      },
+      "J022": {
+       "skill": 1.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 1.3
+      },
+      "J023": {
+       "skill": 0.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 0.3333
+      },
+      "J024": {
+       "skill": 1.3889,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 7,
+       "total": 0.9889
+      },
+      "J025": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 10,
+       "total": 3.8
+      },
+      "J026": {
+       "skill": 3.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.25
+      },
+      "J027": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.8333
+      },
+      "J028": {
+       "skill": 4.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.1667
+      },
+      "J029": {
+       "skill": 2.7083,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7083
+      },
+      "J030": {
+       "skill": 6.0556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 6.0556
+      },
+      "J031": {
+       "skill": 2.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.5
+      },
+      "J032": {
+       "skill": 5.75,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 5.55
+      },
+      "J033": {
+       "skill": 6.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.6667
+      },
+      "J034": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.8333
+      },
+      "J035": {
+       "skill": 5.1458,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.9458
+      },
+      "J036": {
+       "skill": 9.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 9.228
+      },
+      "J037": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J038": {
+       "skill": 3.8125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.8125
+      },
+      "J039": {
+       "skill": 4.9167,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.7167
+      },
+      "J040": {
+       "skill": 1.875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.875
+      },
+      "J041": {
+       "skill": 4.65,
+       "synergy": 0.438,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 5.088
+      },
+      "J042": {
+       "skill": 4.0625,
+       "synergy": 0.438,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.5005
+      },
+      "J043": {
+       "skill": 3.1583,
+       "synergy": 0.438,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 3.5963
+      }
+     },
+     "k": 0,
+     "elapsed_s": 2.53,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 187.13518253968255,
+     "gain_vs_k0": 0.0,
+     "quality_gain_vs_k0": 0.0,
+     "quality_gain_pct_vs_k0": 0.0,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {}
+    },
+    {
+     "objective": 188.3597,
+     "quality": 188.3597,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 189.2111,
+      "synergy": 4.9486,
+      "overfamiliarity": -5.8,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 269,
+      "moved": [
+       {
+        "person_id": "DP0048",
+        "from": "J005",
+        "to": [
+         "J041",
+         "J042",
+         "J043"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0011",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0023",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0029",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0064",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0076",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0093",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0094",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0097",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J005",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J043",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.8333,
+       "synergy": 1.1426,
+       "overfamiliarity": -0.8,
+       "people": 28,
+       "total": 17.1759
+      },
+      "J002": {
+       "skill": 5.7778,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 5.5778
+      },
+      "J003": {
+       "skill": 4.0556,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 3.8556
+      },
+      "J004": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 4.0
+      },
+      "J005": {
+       "skill": 5.5,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 5.528
+      },
+      "J006": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.9667
+      },
+      "J007": {
+       "skill": 2.6458,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 2.6858
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 4.5
+      },
+      "J009": {
+       "skill": 1.25,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 1.05
+      },
+      "J010": {
+       "skill": 2.9444,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.9444
+      },
+      "J011": {
+       "skill": 7.3125,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 7.3305
+      },
+      "J012": {
+       "skill": 3.2222,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2222
+      },
+      "J013": {
+       "skill": 3.3667,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.5947
+      },
+      "J014": {
+       "skill": 2.5625,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.5625
+      },
+      "J015": {
+       "skill": 2.5833,
+       "synergy": 0.666,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 3.0493
+      },
+      "J016": {
+       "skill": 3.75,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 3.75
+      },
+      "J017": {
+       "skill": 9.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 9,
+       "total": 8.6
+      },
+      "J018": {
+       "skill": 8.9333,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 8.7333
+      },
+      "J019": {
+       "skill": 2.7333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7333
+      },
+      "J020": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.8,
+       "people": 5,
+       "total": 4.2
+      },
+      "J021": {
+       "skill": 3.5833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.6,
+       "people": 9,
+       "total": 2.9833
+      },
+      "J022": {
+       "skill": 1.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 1.3
+      },
+      "J023": {
+       "skill": 0.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 0.3333
+      },
+      "J024": {
+       "skill": 1.3889,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 7,
+       "total": 0.9889
+      },
+      "J025": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 10,
+       "total": 3.8
+      },
+      "J026": {
+       "skill": 3.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.25
+      },
+      "J027": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.8333
+      },
+      "J028": {
+       "skill": 4.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.1667
+      },
+      "J029": {
+       "skill": 2.7083,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7083
+      },
+      "J030": {
+       "skill": 6.0556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 6.0556
+      },
+      "J031": {
+       "skill": 2.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.5
+      },
+      "J032": {
+       "skill": 5.75,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 5.55
+      },
+      "J033": {
+       "skill": 6.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.6667
+      },
+      "J034": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.8333
+      },
+      "J035": {
+       "skill": 5.1458,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.9458
+      },
+      "J036": {
+       "skill": 9.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 9.228
+      },
+      "J037": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J038": {
+       "skill": 3.8125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.8125
+      },
+      "J039": {
+       "skill": 4.9167,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.7167
+      },
+      "J040": {
+       "skill": 1.875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.875
+      },
+      "J041": {
+       "skill": 4.1375,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.8035
+      },
+      "J042": {
+       "skill": 4.0125,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.6785
+      },
+      "J043": {
+       "skill": 3.4167,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.0827
+      }
+     },
+     "k": 1,
+     "elapsed_s": 30.88,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 188.35968253968252,
+     "gain_vs_k0": 1.2245,
+     "quality_gain_vs_k0": 1.2245,
+     "quality_gain_pct_vs_k0": 0.65,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J005": 0.8447,
+      "J041": -0.2845,
+      "J042": 0.178,
+      "J043": 0.4864
+     }
+    },
+    {
+     "objective": 189.3263,
+     "quality": 189.3263,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 190.1778,
+      "synergy": 4.9486,
+      "overfamiliarity": -5.8,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 268,
+      "moved": [
+       {
+        "person_id": "AI0049",
+        "from": "J019",
+        "to": [
+         "J042"
+        ]
+       },
+       {
+        "person_id": "DP0048",
+        "from": "J005",
+        "to": [
+         "J041",
+         "J042",
+         "J043"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J019",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0011",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0023",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0029",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0064",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0076",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0093",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0094",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0097",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J005",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J043",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.8333,
+       "synergy": 1.1426,
+       "overfamiliarity": -0.8,
+       "people": 28,
+       "total": 17.1759
+      },
+      "J002": {
+       "skill": 5.7778,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 5.5778
+      },
+      "J003": {
+       "skill": 4.0556,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 3.8556
+      },
+      "J004": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 4.0
+      },
+      "J005": {
+       "skill": 5.5,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 5.528
+      },
+      "J006": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.9667
+      },
+      "J007": {
+       "skill": 2.6458,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 2.6858
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 4.5
+      },
+      "J009": {
+       "skill": 1.25,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 1.05
+      },
+      "J010": {
+       "skill": 2.9444,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.9444
+      },
+      "J011": {
+       "skill": 7.3125,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 7.3305
+      },
+      "J012": {
+       "skill": 3.2222,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2222
+      },
+      "J013": {
+       "skill": 3.3667,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.5947
+      },
+      "J014": {
+       "skill": 2.5625,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.5625
+      },
+      "J015": {
+       "skill": 2.5833,
+       "synergy": 0.666,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 3.0493
+      },
+      "J016": {
+       "skill": 3.75,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 3.75
+      },
+      "J017": {
+       "skill": 9.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 9,
+       "total": 8.6
+      },
+      "J018": {
+       "skill": 8.9333,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 8.7333
+      },
+      "J019": {
+       "skill": 3.2,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2
+      },
+      "J020": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.8,
+       "people": 5,
+       "total": 4.2
+      },
+      "J021": {
+       "skill": 3.5833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.6,
+       "people": 9,
+       "total": 2.9833
+      },
+      "J022": {
+       "skill": 1.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 1.3
+      },
+      "J023": {
+       "skill": 0.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 0.3333
+      },
+      "J024": {
+       "skill": 1.3889,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 7,
+       "total": 0.9889
+      },
+      "J025": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 10,
+       "total": 3.8
+      },
+      "J026": {
+       "skill": 3.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.25
+      },
+      "J027": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.8333
+      },
+      "J028": {
+       "skill": 4.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.1667
+      },
+      "J029": {
+       "skill": 2.7083,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7083
+      },
+      "J030": {
+       "skill": 6.0556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 6.0556
+      },
+      "J031": {
+       "skill": 2.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.5
+      },
+      "J032": {
+       "skill": 5.75,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 5.55
+      },
+      "J033": {
+       "skill": 6.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.6667
+      },
+      "J034": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.8333
+      },
+      "J035": {
+       "skill": 5.1458,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.9458
+      },
+      "J036": {
+       "skill": 9.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 9.228
+      },
+      "J037": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J038": {
+       "skill": 3.8125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.8125
+      },
+      "J039": {
+       "skill": 4.9167,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.7167
+      },
+      "J040": {
+       "skill": 1.875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.875
+      },
+      "J041": {
+       "skill": 4.0125,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.6785
+      },
+      "J042": {
+       "skill": 4.3875,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 5.0535
+      },
+      "J043": {
+       "skill": 3.6667,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.3327
+      }
+     },
+     "k": 2,
+     "elapsed_s": 24.73,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 189.32634920634922,
+     "gain_vs_k0": 2.1911,
+     "quality_gain_vs_k0": 2.1911,
+     "quality_gain_pct_vs_k0": 1.17,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J005": 0.8447,
+      "J019": 0.4667,
+      "J041": -0.4095,
+      "J042": 0.553,
+      "J043": 0.7364
+     }
+    },
+    {
+     "objective": 190.2263,
+     "quality": 190.2263,
+     "unfilled_seats": 0,
+     "parts": {
+      "skill": 190.6778,
+      "synergy": 4.9486,
+      "overfamiliarity": -5.4,
+      "unfilled": -0.0
+     },
+     "violations": [],
+     "unfilled": [],
+     "diff": {
+      "kept": 267,
+      "moved": [
+       {
+        "person_id": "AI0049",
+        "from": "J019",
+        "to": [
+         "J042"
+        ]
+       },
+       {
+        "person_id": "AI0089",
+        "from": "J020",
+        "to": [
+         "J042"
+        ]
+       },
+       {
+        "person_id": "DP0048",
+        "from": "J005",
+        "to": [
+         "J041",
+         "J042",
+         "J043"
+        ]
+       }
+      ],
+      "joined": [
+       {
+        "person_id": "AI0008",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0010",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0018",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0042",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0047",
+        "project_id": "J019",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0068",
+        "project_id": "J020",
+        "from_bench": true
+       },
+       {
+        "person_id": "AI0088",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0011",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0023",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0029",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0064",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0076",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0093",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0094",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "AU0097",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0026",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0032",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0046",
+        "project_id": "J005",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0078",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0079",
+        "project_id": "J043",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J041",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J042",
+        "from_bench": true
+       },
+       {
+        "person_id": "DP0100",
+        "project_id": "J043",
+        "from_bench": true
+       }
+      ]
+     },
+     "projects": {
+      "J001": {
+       "skill": 16.8333,
+       "synergy": 1.1426,
+       "overfamiliarity": -0.8,
+       "people": 28,
+       "total": 17.1759
+      },
+      "J002": {
+       "skill": 5.7778,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 5.5778
+      },
+      "J003": {
+       "skill": 4.0556,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 3.8556
+      },
+      "J004": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 4.0
+      },
+      "J005": {
+       "skill": 5.5,
+       "synergy": 0.228,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 5.528
+      },
+      "J006": {
+       "skill": 5.1667,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.9667
+      },
+      "J007": {
+       "skill": 2.6458,
+       "synergy": 0.24,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 2.6858
+      },
+      "J008": {
+       "skill": 4.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 4.5
+      },
+      "J009": {
+       "skill": 1.25,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 4,
+       "total": 1.05
+      },
+      "J010": {
+       "skill": 2.9444,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.9444
+      },
+      "J011": {
+       "skill": 7.3125,
+       "synergy": 0.218,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 7.3305
+      },
+      "J012": {
+       "skill": 3.2222,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2222
+      },
+      "J013": {
+       "skill": 3.3667,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.5947
+      },
+      "J014": {
+       "skill": 2.5625,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 2.5625
+      },
+      "J015": {
+       "skill": 2.5833,
+       "synergy": 0.666,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 3.0493
+      },
+      "J016": {
+       "skill": 3.75,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 7,
+       "total": 3.75
+      },
+      "J017": {
+       "skill": 9.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 9,
+       "total": 8.6
+      },
+      "J018": {
+       "skill": 8.9333,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 9,
+       "total": 8.7333
+      },
+      "J019": {
+       "skill": 3.2,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.2
+      },
+      "J020": {
+       "skill": 5.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 5,
+       "total": 4.6
+      },
+      "J021": {
+       "skill": 3.5833,
+       "synergy": 0.0,
+       "overfamiliarity": -0.6,
+       "people": 9,
+       "total": 2.9833
+      },
+      "J022": {
+       "skill": 1.5,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 6,
+       "total": 1.3
+      },
+      "J023": {
+       "skill": 0.3333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 0.3333
+      },
+      "J024": {
+       "skill": 1.3889,
+       "synergy": 0.0,
+       "overfamiliarity": -0.4,
+       "people": 7,
+       "total": 0.9889
+      },
+      "J025": {
+       "skill": 4.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 10,
+       "total": 3.8
+      },
+      "J026": {
+       "skill": 3.25,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 3.25
+      },
+      "J027": {
+       "skill": 2.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.8333
+      },
+      "J028": {
+       "skill": 4.1667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 4.1667
+      },
+      "J029": {
+       "skill": 2.7083,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.7083
+      },
+      "J030": {
+       "skill": 6.0556,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 8,
+       "total": 6.0556
+      },
+      "J031": {
+       "skill": 2.5,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 4,
+       "total": 2.5
+      },
+      "J032": {
+       "skill": 5.75,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 5.55
+      },
+      "J033": {
+       "skill": 6.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 6.6667
+      },
+      "J034": {
+       "skill": 3.8333,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 6,
+       "total": 3.8333
+      },
+      "J035": {
+       "skill": 5.1458,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 8,
+       "total": 4.9458
+      },
+      "J036": {
+       "skill": 9.0,
+       "synergy": 0.228,
+       "overfamiliarity": 0.0,
+       "people": 9,
+       "total": 9.228
+      },
+      "J037": {
+       "skill": 3.1875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.1875
+      },
+      "J038": {
+       "skill": 3.8125,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 3.8125
+      },
+      "J039": {
+       "skill": 4.9167,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "people": 7,
+       "total": 4.7167
+      },
+      "J040": {
+       "skill": 1.875,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "people": 5,
+       "total": 1.875
+      },
+      "J041": {
+       "skill": 4.0125,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.6785
+      },
+      "J042": {
+       "skill": 4.8875,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 5.5535
+      },
+      "J043": {
+       "skill": 3.6667,
+       "synergy": 0.666,
+       "overfamiliarity": 0.0,
+       "people": 10,
+       "total": 4.3327
+      }
+     },
+     "k": 3,
+     "elapsed_s": 23.93,
+     "accepted": true,
+     "termination": "Optimal",
+     "proven_optimal": true,
+     "best_bound": 190.22634920634923,
+     "gain_vs_k0": 3.0911,
+     "quality_gain_vs_k0": 3.0911,
+     "quality_gain_pct_vs_k0": 1.65,
+     "unfilled_change_vs_k0": 0,
+     "project_change_vs_k0": {
+      "J005": 0.8447,
+      "J019": 0.4667,
+      "J020": 0.4,
+      "J041": -0.4095,
+      "J042": 1.053,
+      "J043": 0.7364
+     }
+    }
+   ],
+   "s1_elapsed_s": 82.5,
+   "s2": {
+    "project": "J025",
+    "team_size": 10,
+    "ranked": [
+     {
+      "person_id": "AI0047",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.8,
+      "delta": {
+       "total": 0.8,
+       "skill": 1.0,
+       "synergy": 0.0,
+       "overfamiliarity": -0.2,
+       "unfilled": 0.0
+      },
+      "skill_fit": 1.0,
+      "team_synergy": 1.8667,
+      "project_total_after": 4.6,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0008",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6667,
+      "delta": {
+       "total": 0.6667,
+       "skill": 0.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6667,
+      "team_synergy": 2.3967,
+      "project_total_after": 4.4667,
+      "monthly_cost": 1000.0,
+      "budget_added": 1000,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0010",
+      "grade": "고급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6667,
+      "delta": {
+       "total": 0.6667,
+       "skill": 0.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6667,
+      "team_synergy": 1.8533,
+      "project_total_after": 4.4667,
+      "monthly_cost": 1430.0,
+      "budget_added": 1430,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0035",
+      "grade": "초급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6667,
+      "delta": {
+       "total": 0.6667,
+       "skill": 0.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6667,
+      "team_synergy": 1.4233,
+      "project_total_after": 4.4667,
+      "monthly_cost": 825.0,
+      "budget_added": 825,
+      "new_violations": []
+     },
+     {
+      "person_id": "AI0042",
+      "grade": "중급",
+      "alloc": 1.0,
+      "source": "bench",
+      "pulled_from": [],
+      "delta_total": 0.6667,
+      "delta": {
+       "total": 0.6667,
+       "skill": 0.6667,
+       "synergy": 0.0,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "skill_fit": 0.6667,
+      "team_synergy": 2.1705,
+      "project_total_after": 4.4667,
+      "monthly_cost": 1100.0,
+      "budget_added": 1100,
+      "new_violations": []
+     }
+    ],
+    "rank_elapsed_s": 8.57,
+    "best_two": {
+     "0": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2100.0,
+      "diff": {
+       "kept": 270,
+       "moved": [],
+       "joined": [
+        {
+         "person_id": "AI0042",
+         "project_id": "J025",
+         "from_bench": true
+        },
+        {
+         "person_id": "AI0047",
+         "project_id": "J025",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -2726.049650793651,
+       "skill": 177.2277777777778,
+       "synergy": 2.7225714285714284,
+       "overfamiliarity": -6.0,
+       "unfilled": -2900.0
+      },
+      "after": {
+       "total": -2724.5829841269842,
+       "skill": 178.89444444444445,
+       "synergy": 2.7225714285714284,
+       "overfamiliarity": -6.2,
+       "unfilled": -2900.0
+      },
+      "delta": {
+       "total": 1.466666666666697,
+       "skill": 1.6666666666666572,
+       "synergy": 0.0,
+       "overfamiliarity": -0.20000000000000018,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 2.76
+     },
+     "1": {
+      "accepted": true,
+      "termination": "Optimal",
+      "added_cost": 2300.0,
+      "diff": {
+       "kept": 269,
+       "moved": [
+        {
+         "person_id": "DP0084",
+         "from": "J015",
+         "to": [
+          "J025"
+         ]
+        }
+       ],
+       "joined": [
+        {
+         "person_id": "AI0047",
+         "project_id": "J025",
+         "from_bench": true
+        },
+        {
+         "person_id": "DP0078",
+         "project_id": "J015",
+         "from_bench": true
+        }
+       ]
+      },
+      "before": {
+       "total": -2726.049650793651,
+       "skill": 177.2277777777778,
+       "synergy": 2.7225714285714284,
+       "overfamiliarity": -6.0,
+       "unfilled": -2900.0
+      },
+      "after": {
+       "total": -2723.8096507936507,
+       "skill": 179.2277777777778,
+       "synergy": 2.9625714285714286,
+       "overfamiliarity": -6.0,
+       "unfilled": -2900.0
+      },
+      "delta": {
+       "total": 2.2400000000002365,
+       "skill": 2.0,
+       "synergy": 0.2400000000000002,
+       "overfamiliarity": 0.0,
+       "unfilled": 0.0
+      },
+      "violations": [],
+      "elapsed_s": 12.77
+     }
+    }
+   }
+  }
+ ],
+ "finished_at": "2026-10-06T13:19:49+00:00"
+}

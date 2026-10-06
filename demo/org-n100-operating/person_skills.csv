@@ -1,0 +1,1991 @@
+person_id,skill_name,skill_category,project_count,experience_months,last_used_month
+DP0001,AWS,Cloud,8,34,2026-08
+DP0001,Airflow,Data,11,55,2025-11
+DP0001,Data Lake & Data Catalog,Data,2,10,2026-05
+DP0001,Docker,Cloud,2,4,2026-08
+DP0001,ETL,Data,10,41,2026-08
+DP0001,FastAPI,Framework,2,9,2025-11
+DP0001,Hadoop,Data,11,53,2025-11
+DP0001,Java,Programming Language,2,13,2022-06
+DP0001,Kafka,Data,10,41,2026-08
+DP0001,Private Cloud,Cloud,1,5,2017-11
+DP0001,Python,Programming Language,11,47,2026-05
+DP0001,React,Framework,1,4,2021-10
+DP0001,SQL,Programming Language,11,58,2026-08
+DP0001,Scala,Programming Language,11,52,2026-08
+DP0001,Spark,Data,9,47,2026-08
+DP0001,검색엔진,Data,1,5,2024-03
+DP0001,공공 업무,Domain,3,14,2022-12
+DP0001,그룹사 업무,Domain,7,31,2026-08
+DP0001,금융 업무,Domain,10,50,2025-11
+DP0001,데이터 모델링,Data,1,1,2018-12
+DP0001,로우코드 플랫폼,Automation,1,4,2024-12
+DP0001,메타데이터 관리,Data,1,4,2020-09
+DP0001,비정형 문서 처리(OCR),Data,2,7,2025-05
+DP0001,프로세스 마이닝,Automation,2,9,2024-12
+DP0002,AI 에이전트 프레임워크,AI,1,7,2025-11
+DP0002,Airflow,Data,2,11,2025-11
+DP0002,ETL,Data,10,45,2026-05
+DP0002,FastAPI,Framework,2,5,2024-04
+DP0002,Kubernetes,Cloud,1,10,2023-11
+DP0002,ML Ops,AI,1,3,2021-05
+DP0002,Python,Programming Language,9,35,2026-05
+DP0002,React,Framework,1,7,2022-11
+DP0002,Scala,Programming Language,1,3,2021-05
+DP0002,Spring,Framework,1,1,2022-12
+DP0002,Text Analysis,AI,11,41,2026-09
+DP0002,검색엔진,Data,7,27,2026-09
+DP0002,공공 업무,Domain,5,17,2026-09
+DP0002,그룹사 업무,Domain,5,23,2026-05
+DP0002,금융 업무,Domain,4,15,2025-11
+DP0002,데이터 모델링,Data,1,2,2022-04
+DP0002,메타데이터 관리,Data,11,44,2026-09
+DP0002,비정형 문서 처리(OCR),Data,13,53,2026-09
+DP0002,워크플로우·BPM,Automation,1,4,2021-10
+DP0002,프로세스 마이닝,Automation,1,2,2022-04
+DP0003,AWS,Cloud,12,51,2026-09
+DP0003,Airflow,Data,14,58,2026-05
+DP0003,BI Reporting,Data,2,7,2019-11
+DP0003,Data Lake & Data Catalog,Data,1,5,2017-02
+DP0003,ETL,Data,17,58,2026-09
+DP0003,FastAPI,Framework,2,5,2018-12
+DP0003,Hadoop,Data,13,51,2026-05
+DP0003,Java,Programming Language,2,6,2026-04
+DP0003,Kafka,Data,14,45,2026-09
+DP0003,LLM 파인튜닝,AI,1,7,2024-08
+DP0003,Private Cloud,Cloud,1,4,2019-11
+DP0003,Python,Programming Language,16,66,2026-09
+DP0003,RAG·벡터DB,AI,1,5,2025-10
+DP0003,RPA,Automation,1,7,2022-12
+DP0003,React,Framework,1,7,2024-08
+DP0003,SQL,Programming Language,11,49,2025-10
+DP0003,Scala,Programming Language,15,70,2026-09
+DP0003,Spark,Data,15,65,2026-05
+DP0003,Text Analysis,AI,1,12,2024-01
+DP0003,공공 업무,Domain,3,3,2026-05
+DP0003,그룹사 업무,Domain,11,57,2026-04
+DP0003,금융 업무,Domain,11,46,2026-09
+DP0003,로우코드 플랫폼,Automation,3,9,2026-09
+DP0003,메타데이터 관리,Data,1,12,2024-01
+DP0003,비정형 문서 처리(OCR),Data,2,9,2025-05
+DP0003,워크플로우·BPM,Automation,1,1,2021-11
+DP0003,프로세스 마이닝,Automation,3,11,2025-10
+DP0003,프롬프트 엔지니어링,AI,1,5,2025-05
+DP0004,AWS,Cloud,2,7,2026-01
+DP0004,BI Reporting,Data,11,50,2026-09
+DP0004,Data Lake & Data Catalog,Data,11,48,2026-09
+DP0004,Docker,Cloud,1,7,2021-05
+DP0004,ETL,Data,1,7,2021-12
+DP0004,Hadoop,Data,1,10,2023-12
+DP0004,LLM Application,AI,2,9,2026-09
+DP0004,React,Framework,1,8,2022-08
+DP0004,SQL,Programming Language,15,76,2026-09
+DP0004,Scala,Programming Language,1,2,2026-03
+DP0004,공공 업무,Domain,2,8,2024-04
+DP0004,그룹사 업무,Domain,4,24,2026-03
+DP0004,금융 업무,Domain,9,44,2026-09
+DP0004,데이터 모델링,Data,15,76,2026-09
+DP0004,로우코드 플랫폼,Automation,1,8,2024-12
+DP0004,메타데이터 관리,Data,12,63,2026-08
+DP0004,비정형 문서 처리(OCR),Data,2,8,2026-09
+DP0004,워크플로우·BPM,Automation,1,7,2021-05
+DP0004,프로세스 마이닝,Automation,1,3,2025-08
+DP0005,AWS,Cloud,10,60,2024-12
+DP0005,Airflow,Data,1,3,2021-12
+DP0005,Data Lake & Data Catalog,Data,11,47,2026-09
+DP0005,Docker,Cloud,13,68,2026-07
+DP0005,FastAPI,Framework,2,16,2019-04
+DP0005,Hadoop,Data,8,43,2025-08
+DP0005,Java,Programming Language,1,4,2024-04
+DP0005,Kafka,Data,11,52,2026-09
+DP0005,Kubernetes,Cloud,13,64,2026-09
+DP0005,LLM 파인튜닝,AI,1,3,2023-12
+DP0005,Private Cloud,Cloud,9,50,2026-07
+DP0005,Python,Programming Language,1,4,2020-06
+DP0005,RPA,Automation,1,6,2024-12
+DP0005,SQL,Programming Language,2,16,2022-12
+DP0005,Scala,Programming Language,2,4,2026-09
+DP0005,Spring,Framework,1,3,2026-07
+DP0005,Text Analysis,AI,1,7,2025-08
+DP0005,검색엔진,Data,2,9,2020-06
+DP0005,공공 업무,Domain,5,35,2024-04
+DP0005,그룹사 업무,Domain,7,30,2026-09
+DP0005,금융 업무,Domain,7,31,2025-11
+DP0005,로우코드 플랫폼,Automation,1,7,2025-08
+DP0005,메타데이터 관리,Data,2,11,2026-07
+DP0005,워크플로우·BPM,Automation,2,8,2023-05
+DP0005,지능형 문서 처리(IDP),Automation,1,3,2025-11
+DP0005,프로세스 마이닝,Automation,1,7,2023-12
+DP0006,Airflow,Data,1,4,2017-06
+DP0006,BI Reporting,Data,15,78,2026-09
+DP0006,Data Lake & Data Catalog,Data,18,95,2026-09
+DP0006,ETL,Data,1,6,2020-10
+DP0006,FastAPI,Framework,1,5,2023-10
+DP0006,Java,Programming Language,1,10,2022-02
+DP0006,LLM 파인튜닝,AI,1,5,2024-08
+DP0006,Python,Programming Language,1,3,2026-09
+DP0006,RPA,Automation,1,8,2019-04
+DP0006,SQL,Programming Language,18,95,2026-09
+DP0006,Scala,Programming Language,1,3,2026-09
+DP0006,Spring,Framework,1,1,2017-02
+DP0006,Text Analysis,AI,1,5,2025-01
+DP0006,공공 업무,Domain,4,22,2022-11
+DP0006,그룹사 업무,Domain,8,40,2026-04
+DP0006,금융 업무,Domain,7,37,2026-09
+DP0006,데이터 모델링,Data,18,94,2026-09
+DP0006,메타데이터 관리,Data,17,87,2026-09
+DP0006,워크플로우·BPM,Automation,2,11,2022-11
+DP0006,프로세스 마이닝,Automation,3,20,2023-10
+DP0006,프롬프트 엔지니어링,AI,1,5,2024-08
+DP0007,AI 에이전트 프레임워크,AI,1,9,2025-02
+DP0007,AWS,Cloud,8,47,2026-09
+DP0007,Data Lake & Data Catalog,Data,6,35,2026-09
+DP0007,Docker,Cloud,5,31,2025-11
+DP0007,Hadoop,Data,7,38,2026-08
+DP0007,Kafka,Data,3,20,2026-03
+DP0007,Kubernetes,Cloud,6,31,2026-09
+DP0007,ML Ops,AI,1,9,2024-05
+DP0007,Private Cloud,Cloud,6,39,2026-09
+DP0007,Scala,Programming Language,1,1,2022-05
+DP0007,Spark,Data,1,9,2024-05
+DP0007,공공 업무,Domain,1,1,2022-05
+DP0007,그룹사 업무,Domain,5,40,2026-08
+DP0007,금융 업무,Domain,4,17,2026-09
+DP0007,데이터 모델링,Data,1,1,2022-05
+DP0007,메타데이터 관리,Data,1,1,2026-09
+DP0007,지능형 문서 처리(IDP),Automation,1,8,2025-11
+DP0008,AWS,Cloud,12,58,2026-05
+DP0008,Airflow,Data,11,53,2025-08
+DP0008,BI Reporting,Data,1,1,2022-05
+DP0008,Data Lake & Data Catalog,Data,2,8,2024-09
+DP0008,ETL,Data,11,39,2026-05
+DP0008,FastAPI,Framework,1,2,2022-12
+DP0008,Hadoop,Data,12,52,2026-09
+DP0008,Java,Programming Language,3,13,2026-09
+DP0008,Kafka,Data,13,42,2026-09
+DP0008,Kubernetes,Cloud,2,14,2023-04
+DP0008,LLM Application,AI,1,5,2024-09
+DP0008,Python,Programming Language,15,63,2025-12
+DP0008,RPA,Automation,3,9,2025-01
+DP0008,SQL,Programming Language,11,43,2026-05
+DP0008,Scala,Programming Language,15,56,2026-09
+DP0008,Spark,Data,9,27,2025-12
+DP0008,공공 업무,Domain,4,10,2026-05
+DP0008,그룹사 업무,Domain,9,34,2026-03
+DP0008,금융 업무,Domain,12,52,2026-09
+DP0008,데이터 모델링,Data,1,4,2023-12
+DP0008,비정형 문서 처리(OCR),Data,1,2,2024-04
+DP0008,워크플로우·BPM,Automation,2,7,2022-05
+DP0008,지능형 문서 처리(IDP),Automation,1,9,2018-11
+DP0009,AWS,Cloud,6,31,2026-09
+DP0009,Airflow,Data,3,8,2025-04
+DP0009,ETL,Data,6,29,2026-09
+DP0009,Hadoop,Data,6,24,2026-09
+DP0009,Kafka,Data,5,17,2026-05
+DP0009,Python,Programming Language,4,21,2026-03
+DP0009,RAG·벡터DB,AI,1,5,2026-03
+DP0009,RPA,Automation,1,1,2025-04
+DP0009,SQL,Programming Language,8,38,2026-09
+DP0009,Scala,Programming Language,3,11,2026-05
+DP0009,Spark,Data,5,17,2026-09
+DP0009,Text Analysis,AI,1,4,2022-04
+DP0009,공공 업무,Domain,3,11,2026-05
+DP0009,그룹사 업무,Domain,4,22,2026-09
+DP0009,금융 업무,Domain,3,10,2026-03
+DP0009,메타데이터 관리,Data,1,1,2025-04
+DP0009,워크플로우·BPM,Automation,1,3,2024-07
+DP0009,지능형 문서 처리(IDP),Automation,2,11,2024-04
+DP0009,프로세스 마이닝,Automation,3,18,2025-01
+DP0010,AWS,Cloud,1,4,2025-12
+DP0010,BI Reporting,Data,2,9,2023-04
+DP0010,ETL,Data,7,39,2026-09
+DP0010,FastAPI,Framework,1,2,2024-06
+DP0010,LLM 파인튜닝,AI,1,1,2026-01
+DP0010,Python,Programming Language,6,32,2026-09
+DP0010,Text Analysis,AI,8,40,2026-09
+DP0010,검색엔진,Data,5,25,2026-01
+DP0010,공공 업무,Domain,1,2,2024-04
+DP0010,그룹사 업무,Domain,4,16,2026-01
+DP0010,금융 업무,Domain,4,24,2026-09
+DP0010,로우코드 플랫폼,Automation,1,5,2023-04
+DP0010,메타데이터 관리,Data,7,33,2026-09
+DP0010,비정형 문서 처리(OCR),Data,5,31,2026-09
+DP0011,AI 에이전트 프레임워크,AI,1,4,2025-01
+DP0011,BI Reporting,Data,8,57,2026-07
+DP0011,Data Lake & Data Catalog,Data,7,47,2025-01
+DP0011,Docker,Cloud,1,4,2025-01
+DP0011,Hadoop,Data,1,8,2026-07
+DP0011,ML Ops,AI,2,16,2024-09
+DP0011,Private Cloud,Cloud,1,10,2025-11
+DP0011,Python,Programming Language,1,4,2021-04
+DP0011,RAG·벡터DB,AI,1,5,2024-09
+DP0011,SQL,Programming Language,7,48,2026-07
+DP0011,Scala,Programming Language,1,6,2024-04
+DP0011,Spark,Data,1,10,2025-11
+DP0011,공공 업무,Domain,1,6,2024-04
+DP0011,그룹사 업무,Domain,4,28,2026-07
+DP0011,금융 업무,Domain,5,33,2025-11
+DP0011,데이터 모델링,Data,6,36,2026-07
+DP0011,메타데이터 관리,Data,9,61,2026-07
+DP0011,워크플로우·BPM,Automation,1,11,2023-10
+DP0012,AWS,Cloud,12,59,2026-08
+DP0012,Airflow,Data,10,51,2026-09
+DP0012,Data Lake & Data Catalog,Data,2,6,2021-06
+DP0012,ETL,Data,16,60,2026-09
+DP0012,Hadoop,Data,12,54,2026-08
+DP0012,Kafka,Data,11,48,2026-09
+DP0012,LLM Application,AI,1,2,2024-09
+DP0012,ML Ops,AI,1,4,2024-06
+DP0012,Python,Programming Language,12,57,2026-09
+DP0012,SQL,Programming Language,11,56,2026-08
+DP0012,Scala,Programming Language,11,46,2026-05
+DP0012,Spark,Data,13,50,2026-08
+DP0012,Text Analysis,AI,1,3,2026-08
+DP0012,검색엔진,Data,1,1,2016-10
+DP0012,공공 업무,Domain,2,9,2022-11
+DP0012,그룹사 업무,Domain,14,64,2026-08
+DP0012,금융 업무,Domain,8,32,2026-09
+DP0012,데이터 모델링,Data,2,13,2026-05
+DP0012,로우코드 플랫폼,Automation,2,9,2021-03
+DP0012,메타데이터 관리,Data,1,2,2024-09
+DP0012,비정형 문서 처리(OCR),Data,2,7,2018-05
+DP0012,지능형 문서 처리(IDP),Automation,2,14,2026-05
+DP0013,BI Reporting,Data,5,25,2026-09
+DP0013,Docker,Cloud,1,6,2025-01
+DP0013,FastAPI,Framework,1,11,2026-01
+DP0013,LLM 파인튜닝,AI,1,1,2026-09
+DP0013,SQL,Programming Language,5,25,2026-09
+DP0013,공공 업무,Domain,1,11,2026-01
+DP0013,그룹사 업무,Domain,3,13,2026-08
+DP0013,금융 업무,Domain,1,1,2026-09
+DP0013,데이터 모델링,Data,5,25,2026-09
+DP0013,로우코드 플랫폼,Automation,1,11,2026-01
+DP0013,메타데이터 관리,Data,5,25,2026-09
+DP0013,비정형 문서 처리(OCR),Data,1,6,2025-01
+DP0013,지능형 문서 처리(IDP),Automation,1,1,2026-09
+DP0014,AWS,Cloud,5,18,2025-11
+DP0014,BI Reporting,Data,1,4,2026-05
+DP0014,Data Lake & Data Catalog,Data,5,23,2026-05
+DP0014,Docker,Cloud,3,12,2026-09
+DP0014,FastAPI,Framework,2,11,2025-03
+DP0014,Hadoop,Data,5,18,2026-05
+DP0014,Java,Programming Language,1,3,2026-09
+DP0014,Kafka,Data,5,14,2026-09
+DP0014,Kubernetes,Cloud,5,18,2026-09
+DP0014,LLM 파인튜닝,AI,1,5,2025-08
+DP0014,Private Cloud,Cloud,6,26,2026-09
+DP0014,RAG·벡터DB,AI,1,3,2024-09
+DP0014,React,Framework,1,5,2025-08
+DP0014,Spark,Data,1,3,2025-11
+DP0014,검색엔진,Data,1,5,2024-01
+DP0014,공공 업무,Domain,2,5,2026-05
+DP0014,그룹사 업무,Domain,5,22,2025-11
+DP0014,금융 업무,Domain,1,3,2026-09
+DP0014,지능형 문서 처리(IDP),Automation,1,6,2025-03
+DP0015,Airflow,Data,1,4,2022-11
+DP0015,Data Lake & Data Catalog,Data,1,7,2023-12
+DP0015,Docker,Cloud,1,8,2018-09
+DP0015,ETL,Data,13,65,2026-09
+DP0015,FastAPI,Framework,1,3,2024-08
+DP0015,Hadoop,Data,1,7,2023-12
+DP0015,Kafka,Data,1,1,2018-01
+DP0015,LLM 파인튜닝,AI,1,7,2026-09
+DP0015,ML Ops,AI,2,11,2024-08
+DP0015,Python,Programming Language,17,85,2026-09
+DP0015,RAG·벡터DB,AI,1,9,2026-01
+DP0015,Spark,Data,1,3,2023-04
+DP0015,Spring,Framework,2,9,2020-08
+DP0015,Text Analysis,AI,15,73,2026-09
+DP0015,검색엔진,Data,13,64,2026-09
+DP0015,공공 업무,Domain,1,5,2019-11
+DP0015,그룹사 업무,Domain,10,53,2026-09
+DP0015,금융 업무,Domain,9,47,2024-08
+DP0015,데이터 모델링,Data,1,1,2018-01
+DP0015,로우코드 플랫폼,Automation,1,7,2017-12
+DP0015,메타데이터 관리,Data,13,64,2025-04
+DP0015,비정형 문서 처리(OCR),Data,16,89,2026-09
+DP0015,워크플로우·BPM,Automation,1,6,2021-12
+DP0015,지능형 문서 처리(IDP),Automation,1,7,2017-12
+DP0016,AI 에이전트 프레임워크,AI,1,4,2026-09
+DP0016,AWS,Cloud,1,6,2024-12
+DP0016,Data Lake & Data Catalog,Data,2,11,2025-11
+DP0016,ETL,Data,8,37,2026-09
+DP0016,Java,Programming Language,1,5,2022-09
+DP0016,Kafka,Data,1,6,2024-12
+DP0016,Kubernetes,Cloud,1,7,2022-03
+DP0016,Python,Programming Language,10,45,2026-09
+DP0016,RAG·벡터DB,AI,1,2,2025-02
+DP0016,Spring,Framework,1,1,2026-05
+DP0016,Text Analysis,AI,10,44,2026-01
+DP0016,검색엔진,Data,10,38,2026-09
+DP0016,공공 업무,Domain,3,12,2026-09
+DP0016,그룹사 업무,Domain,6,18,2026-01
+DP0016,금융 업무,Domain,4,23,2025-11
+DP0016,데이터 모델링,Data,1,4,2026-09
+DP0016,로우코드 플랫폼,Automation,1,7,2022-03
+DP0016,메타데이터 관리,Data,9,34,2026-05
+DP0016,비정형 문서 처리(OCR),Data,8,40,2025-11
+DP0016,프로세스 마이닝,Automation,1,4,2023-12
+DP0017,AWS,Cloud,5,27,2026-07
+DP0017,Airflow,Data,4,12,2026-01
+DP0017,ETL,Data,5,23,2026-07
+DP0017,FastAPI,Framework,1,5,2022-07
+DP0017,Hadoop,Data,5,25,2026-07
+DP0017,Kafka,Data,6,24,2026-07
+DP0017,Python,Programming Language,3,9,2024-12
+DP0017,React,Framework,2,13,2026-01
+DP0017,SQL,Programming Language,4,21,2024-03
+DP0017,Scala,Programming Language,6,23,2026-01
+DP0017,Spark,Data,6,28,2026-07
+DP0017,Text Analysis,AI,1,1,2025-06
+DP0017,공공 업무,Domain,1,3,2026-01
+DP0017,그룹사 업무,Domain,9,39,2026-07
+DP0017,금융 업무,Domain,1,4,2023-12
+DP0017,비정형 문서 처리(OCR),Data,1,5,2023-02
+DP0017,워크플로우·BPM,Automation,2,10,2023-02
+DP0018,AI 에이전트 프레임워크,AI,1,5,2024-11
+DP0018,AWS,Cloud,7,48,2025-11
+DP0018,BI Reporting,Data,1,10,2025-11
+DP0018,Data Lake & Data Catalog,Data,7,27,2025-12
+DP0018,Docker,Cloud,6,18,2025-12
+DP0018,Hadoop,Data,8,39,2026-09
+DP0018,Kafka,Data,11,63,2026-09
+DP0018,Kubernetes,Cloud,10,47,2026-09
+DP0018,Private Cloud,Cloud,8,40,2025-11
+DP0018,Python,Programming Language,1,4,2020-12
+DP0018,RPA,Automation,1,3,2023-11
+DP0018,Spark,Data,1,10,2025-11
+DP0018,Text Analysis,AI,1,9,2021-09
+DP0018,검색엔진,Data,1,9,2023-02
+DP0018,공공 업무,Domain,2,9,2022-02
+DP0018,그룹사 업무,Domain,8,38,2026-09
+DP0018,금융 업무,Domain,4,29,2025-11
+DP0018,로우코드 플랫폼,Automation,1,9,2023-02
+DP0018,메타데이터 관리,Data,2,14,2022-02
+DP0019,AWS,Cloud,1,1,2018-12
+DP0019,Airflow,Data,2,17,2020-08
+DP0019,BI Reporting,Data,23,84,2026-07
+DP0019,Data Lake & Data Catalog,Data,26,90,2026-07
+DP0019,Docker,Cloud,1,1,2017-11
+DP0019,ETL,Data,1,3,2026-07
+DP0019,FastAPI,Framework,2,6,2025-03
+DP0019,Kafka,Data,2,14,2022-11
+DP0019,LLM 파인튜닝,AI,2,2,2026-01
+DP0019,Private Cloud,Cloud,1,1,2018-12
+DP0019,React,Framework,1,4,2022-11
+DP0019,SQL,Programming Language,23,82,2026-07
+DP0019,Scala,Programming Language,1,3,2020-12
+DP0019,검색엔진,Data,1,2,2021-03
+DP0019,공공 업무,Domain,3,13,2022-11
+DP0019,그룹사 업무,Domain,13,52,2026-07
+DP0019,금융 업무,Domain,12,33,2026-04
+DP0019,데이터 모델링,Data,23,82,2026-07
+DP0019,메타데이터 관리,Data,24,93,2026-07
+DP0019,비정형 문서 처리(OCR),Data,2,9,2023-04
+DP0019,지능형 문서 처리(IDP),Automation,1,4,2019-04
+DP0019,프로세스 마이닝,Automation,1,3,2026-07
+DP0020,AWS,Cloud,1,12,2025-06
+DP0020,BI Reporting,Data,16,82,2026-09
+DP0020,Data Lake & Data Catalog,Data,18,101,2026-09
+DP0020,Docker,Cloud,2,9,2018-06
+DP0020,ETL,Data,1,10,2020-08
+DP0020,Java,Programming Language,2,10,2025-11
+DP0020,Kubernetes,Cloud,1,1,2022-01
+DP0020,LLM 파인튜닝,AI,1,2,2024-04
+DP0020,Private Cloud,Cloud,1,4,2023-04
+DP0020,RPA,Automation,1,1,2016-10
+DP0020,React,Framework,1,8,2024-02
+DP0020,SQL,Programming Language,20,103,2026-09
+DP0020,Scala,Programming Language,3,18,2026-09
+DP0020,Spark,Data,1,12,2025-06
+DP0020,Text Analysis,AI,1,2,2026-05
+DP0020,공공 업무,Domain,5,22,2026-05
+DP0020,그룹사 업무,Domain,6,19,2026-03
+DP0020,금융 업무,Domain,10,70,2026-09
+DP0020,데이터 모델링,Data,18,98,2026-09
+DP0020,로우코드 플랫폼,Automation,1,3,2020-12
+DP0020,메타데이터 관리,Data,17,89,2026-09
+DP0020,비정형 문서 처리(OCR),Data,1,6,2021-12
+DP0020,프로세스 마이닝,Automation,2,10,2026-05
+DP0021,AI 에이전트 프레임워크,AI,1,8,2025-08
+DP0021,Airflow,Data,1,3,2018-11
+DP0021,ETL,Data,16,92,2026-09
+DP0021,Kafka,Data,1,1,2020-10
+DP0021,LLM 파인튜닝,AI,1,1,2023-10
+DP0021,ML Ops,AI,1,1,2018-12
+DP0021,Private Cloud,Cloud,1,9,2023-10
+DP0021,Python,Programming Language,16,86,2026-09
+DP0021,RPA,Automation,2,8,2017-05
+DP0021,React,Framework,1,11,2026-09
+DP0021,Scala,Programming Language,1,2,2021-12
+DP0021,Text Analysis,AI,17,93,2026-09
+DP0021,검색엔진,Data,14,76,2026-09
+DP0021,공공 업무,Domain,3,14,2021-10
+DP0021,그룹사 업무,Domain,7,37,2025-08
+DP0021,금융 업무,Domain,10,60,2026-09
+DP0021,데이터 모델링,Data,2,17,2024-04
+DP0021,메타데이터 관리,Data,15,90,2026-09
+DP0021,비정형 문서 처리(OCR),Data,14,72,2026-09
+DP0021,지능형 문서 처리(IDP),Automation,2,5,2021-06
+DP0021,프로세스 마이닝,Automation,2,7,2024-04
+DP0021,프롬프트 엔지니어링,AI,1,11,2026-09
+DP0022,BI Reporting,Data,10,50,2026-09
+DP0022,Data Lake & Data Catalog,Data,11,62,2026-09
+DP0022,ETL,Data,1,5,2023-04
+DP0022,Hadoop,Data,1,5,2022-09
+DP0022,Kubernetes,Cloud,1,4,2020-08
+DP0022,RPA,Automation,1,2,2026-09
+DP0022,SQL,Programming Language,12,65,2026-09
+DP0022,Text Analysis,AI,1,10,2026-01
+DP0022,공공 업무,Domain,1,5,2020-02
+DP0022,그룹사 업무,Domain,7,44,2026-07
+DP0022,금융 업무,Domain,5,22,2026-09
+DP0022,데이터 모델링,Data,10,51,2026-09
+DP0022,로우코드 플랫폼,Automation,2,14,2026-01
+DP0022,메타데이터 관리,Data,13,71,2026-09
+DP0022,프로세스 마이닝,Automation,1,5,2026-07
+DP0023,AWS,Cloud,15,59,2026-01
+DP0023,Airflow,Data,8,35,2026-01
+DP0023,BI Reporting,Data,1,9,2023-09
+DP0023,Docker,Cloud,2,4,2018-01
+DP0023,ETL,Data,11,46,2026-01
+DP0023,FastAPI,Framework,2,13,2026-09
+DP0023,Hadoop,Data,13,54,2026-09
+DP0023,Kafka,Data,11,49,2026-01
+DP0023,Kubernetes,Cloud,2,8,2024-10
+DP0023,LLM 파인튜닝,AI,2,6,2025-10
+DP0023,Private Cloud,Cloud,2,7,2024-01
+DP0023,Python,Programming Language,12,49,2026-09
+DP0023,RAG·벡터DB,AI,2,6,2025-10
+DP0023,SQL,Programming Language,11,53,2026-09
+DP0023,Scala,Programming Language,13,54,2026-01
+DP0023,Spark,Data,9,30,2024-10
+DP0023,Spring,Framework,1,4,2020-07
+DP0023,Text Analysis,AI,2,6,2024-12
+DP0023,검색엔진,Data,2,10,2021-08
+DP0023,공공 업무,Domain,2,14,2022-12
+DP0023,그룹사 업무,Domain,14,58,2026-09
+DP0023,금융 업무,Domain,6,23,2025-10
+DP0023,데이터 모델링,Data,2,5,2026-01
+DP0023,비정형 문서 처리(OCR),Data,2,7,2018-11
+DP0023,워크플로우·BPM,Automation,2,5,2024-12
+DP0023,지능형 문서 처리(IDP),Automation,2,6,2026-01
+DP0023,프로세스 마이닝,Automation,1,6,2021-08
+DP0024,AWS,Cloud,6,30,2024-12
+DP0024,Data Lake & Data Catalog,Data,6,31,2025-11
+DP0024,Docker,Cloud,7,42,2025-11
+DP0024,FastAPI,Framework,1,5,2022-04
+DP0024,Hadoop,Data,7,50,2026-09
+DP0024,Java,Programming Language,2,11,2026-09
+DP0024,Kafka,Data,10,68,2026-09
+DP0024,Kubernetes,Cloud,5,33,2025-11
+DP0024,Private Cloud,Cloud,6,49,2026-09
+DP0024,Spring,Framework,2,14,2025-11
+DP0024,검색엔진,Data,1,8,2021-06
+DP0024,그룹사 업무,Domain,5,35,2024-12
+DP0024,금융 업무,Domain,5,33,2026-09
+DP0024,로우코드 플랫폼,Automation,1,12,2023-11
+DP0024,메타데이터 관리,Data,2,9,2022-04
+DP0025,BI Reporting,Data,1,1,2025-02
+DP0025,ETL,Data,6,27,2026-09
+DP0025,FastAPI,Framework,1,1,2025-02
+DP0025,LLM 파인튜닝,AI,1,4,2026-09
+DP0025,Python,Programming Language,7,32,2025-11
+DP0025,SQL,Programming Language,1,1,2025-11
+DP0025,Text Analysis,AI,7,27,2026-09
+DP0025,검색엔진,Data,9,37,2026-09
+DP0025,공공 업무,Domain,3,16,2026-09
+DP0025,그룹사 업무,Domain,3,10,2025-02
+DP0025,금융 업무,Domain,4,18,2026-05
+DP0025,메타데이터 관리,Data,6,22,2026-09
+DP0025,비정형 문서 처리(OCR),Data,6,31,2026-05
+DP0025,워크플로우·BPM,Automation,1,4,2024-04
+DP0025,지능형 문서 처리(IDP),Automation,1,2,2024-06
+DP0026,AWS,Cloud,10,54,2026-09
+DP0026,Airflow,Data,7,37,2026-07
+DP0026,BI Reporting,Data,1,8,2019-10
+DP0026,ETL,Data,7,39,2025-12
+DP0026,FastAPI,Framework,1,2,2026-09
+DP0026,Hadoop,Data,9,47,2026-09
+DP0026,Kafka,Data,11,59,2026-09
+DP0026,ML Ops,AI,1,5,2018-12
+DP0026,Private Cloud,Cloud,1,11,2024-02
+DP0026,Python,Programming Language,8,36,2026-09
+DP0026,RAG·벡터DB,AI,1,2,2026-09
+DP0026,RPA,Automation,1,8,2020-06
+DP0026,React,Framework,1,7,2025-01
+DP0026,SQL,Programming Language,10,57,2025-12
+DP0026,Scala,Programming Language,8,32,2026-09
+DP0026,Spark,Data,11,55,2026-07
+DP0026,Spring,Framework,1,5,2018-12
+DP0026,검색엔진,Data,1,4,2018-07
+DP0026,공공 업무,Domain,2,6,2026-09
+DP0026,그룹사 업무,Domain,10,45,2026-07
+DP0026,금융 업무,Domain,7,49,2025-09
+DP0026,데이터 모델링,Data,2,19,2024-02
+DP0026,로우코드 플랫폼,Automation,1,12,2022-01
+DP0026,프로세스 마이닝,Automation,1,4,2020-10
+DP0027,AI 에이전트 프레임워크,AI,1,3,2024-09
+DP0027,BI Reporting,Data,14,70,2026-09
+DP0027,Docker,Cloud,1,10,2020-10
+DP0027,ETL,Data,1,12,2023-10
+DP0027,Java,Programming Language,1,6,2024-06
+DP0027,LLM Application,AI,1,2,2025-02
+DP0027,Private Cloud,Cloud,1,12,2023-10
+DP0027,RPA,Automation,1,8,2021-06
+DP0027,SQL,Programming Language,14,70,2026-09
+DP0027,검색엔진,Data,2,12,2026-09
+DP0027,공공 업무,Domain,1,6,2022-10
+DP0027,그룹사 업무,Domain,9,38,2026-03
+DP0027,금융 업무,Domain,5,32,2026-09
+DP0027,데이터 모델링,Data,15,76,2026-09
+DP0027,메타데이터 관리,Data,13,68,2026-03
+DP0027,비정형 문서 처리(OCR),Data,1,6,2026-01
+DP0027,워크플로우·BPM,Automation,1,6,2026-01
+DP0027,지능형 문서 처리(IDP),Automation,1,3,2024-09
+DP0028,AWS,Cloud,1,3,2023-04
+DP0028,Docker,Cloud,3,10,2020-08
+DP0028,ETL,Data,14,64,2026-09
+DP0028,FastAPI,Framework,3,12,2026-09
+DP0028,Hadoop,Data,1,3,2016-12
+DP0028,Java,Programming Language,1,6,2017-11
+DP0028,Kubernetes,Cloud,3,14,2022-12
+DP0028,ML Ops,AI,2,8,2022-11
+DP0028,Private Cloud,Cloud,2,11,2026-08
+DP0028,Python,Programming Language,12,44,2026-09
+DP0028,RPA,Automation,3,13,2026-09
+DP0028,React,Framework,1,6,2020-08
+DP0028,SQL,Programming Language,1,7,2018-07
+DP0028,Scala,Programming Language,2,5,2025-03
+DP0028,Text Analysis,AI,20,85,2026-09
+DP0028,검색엔진,Data,21,92,2026-09
+DP0028,공공 업무,Domain,3,8,2022-12
+DP0028,그룹사 업무,Domain,9,49,2026-08
+DP0028,금융 업무,Domain,11,50,2026-09
+DP0028,메타데이터 관리,Data,15,64,2026-09
+DP0028,비정형 문서 처리(OCR),Data,19,96,2026-08
+DP0029,AI 에이전트 프레임워크,AI,1,4,2025-08
+DP0029,AWS,Cloud,9,44,2025-11
+DP0029,Airflow,Data,14,64,2026-08
+DP0029,Data Lake & Data Catalog,Data,2,7,2025-08
+DP0029,ETL,Data,9,47,2025-11
+DP0029,Hadoop,Data,8,40,2026-08
+DP0029,Kafka,Data,13,59,2026-08
+DP0029,LLM Application,AI,1,3,2025-11
+DP0029,ML Ops,AI,2,6,2020-02
+DP0029,Python,Programming Language,9,57,2026-08
+DP0029,RPA,Automation,1,5,2024-02
+DP0029,SQL,Programming Language,10,51,2026-08
+DP0029,Scala,Programming Language,10,46,2025-11
+DP0029,Spark,Data,11,64,2025-04
+DP0029,Spring,Framework,2,12,2021-06
+DP0029,Text Analysis,AI,1,1,2016-10
+DP0029,공공 업무,Domain,3,14,2022-12
+DP0029,그룹사 업무,Domain,10,51,2025-11
+DP0029,금융 업무,Domain,8,44,2026-08
+DP0029,데이터 모델링,Data,2,9,2019-02
+DP0029,로우코드 플랫폼,Automation,2,15,2025-04
+DP0029,메타데이터 관리,Data,1,3,2019-05
+DP0029,비정형 문서 처리(OCR),Data,2,5,2023-04
+DP0029,지능형 문서 처리(IDP),Automation,2,13,2019-05
+DP0030,AI 에이전트 프레임워크,AI,1,4,2025-11
+DP0030,AWS,Cloud,9,42,2026-03
+DP0030,Airflow,Data,6,35,2026-09
+DP0030,BI Reporting,Data,1,9,2020-12
+DP0030,Data Lake & Data Catalog,Data,1,2,2026-03
+DP0030,Docker,Cloud,1,2,2025-07
+DP0030,ETL,Data,9,53,2026-03
+DP0030,Hadoop,Data,10,57,2026-09
+DP0030,Kafka,Data,8,51,2026-03
+DP0030,Kubernetes,Cloud,1,2,2025-07
+DP0030,LLM 파인튜닝,AI,1,6,2024-03
+DP0030,ML Ops,AI,2,9,2019-09
+DP0030,Private Cloud,Cloud,1,2,2024-11
+DP0030,Python,Programming Language,5,25,2026-03
+DP0030,RPA,Automation,1,3,2019-09
+DP0030,SQL,Programming Language,7,31,2026-09
+DP0030,Scala,Programming Language,5,31,2026-03
+DP0030,Spark,Data,8,40,2025-11
+DP0030,Text Analysis,AI,1,4,2022-04
+DP0030,공공 업무,Domain,2,11,2020-02
+DP0030,그룹사 업무,Domain,3,14,2026-03
+DP0030,금융 업무,Domain,10,55,2026-09
+DP0030,데이터 모델링,Data,1,4,2022-04
+DP0030,로우코드 플랫폼,Automation,1,9,2020-12
+DP0030,비정형 문서 처리(OCR),Data,1,1,2018-12
+DP0031,AWS,Cloud,9,59,2026-09
+DP0031,BI Reporting,Data,1,10,2024-11
+DP0031,Data Lake & Data Catalog,Data,11,73,2026-09
+DP0031,Docker,Cloud,11,60,2026-05
+DP0031,FastAPI,Framework,2,18,2021-01
+DP0031,Hadoop,Data,14,81,2026-05
+DP0031,Kafka,Data,12,73,2025-11
+DP0031,Kubernetes,Cloud,10,51,2026-09
+DP0031,ML Ops,AI,1,1,2024-12
+DP0031,Private Cloud,Cloud,17,91,2026-09
+DP0031,RAG·벡터DB,AI,1,8,2025-11
+DP0031,RPA,Automation,1,9,2021-01
+DP0031,React,Framework,1,4,2018-12
+DP0031,SQL,Programming Language,1,6,2023-12
+DP0031,공공 업무,Domain,3,18,2026-05
+DP0031,그룹사 업무,Domain,6,36,2023-12
+DP0031,금융 업무,Domain,9,47,2026-09
+DP0031,로우코드 플랫폼,Automation,1,3,2019-11
+DP0031,비정형 문서 처리(OCR),Data,2,9,2023-12
+DP0031,프로세스 마이닝,Automation,1,6,2026-05
+DP0031,프롬프트 엔지니어링,AI,1,8,2025-11
+DP0032,Airflow,Data,1,5,2025-12
+DP0032,BI Reporting,Data,19,103,2026-09
+DP0032,Data Lake & Data Catalog,Data,17,87,2026-09
+DP0032,ETL,Data,2,12,2022-04
+DP0032,Hadoop,Data,2,10,2024-06
+DP0032,Java,Programming Language,1,4,2019-08
+DP0032,LLM 파인튜닝,AI,1,3,2026-05
+DP0032,SQL,Programming Language,18,96,2026-09
+DP0032,Scala,Programming Language,1,5,2025-12
+DP0032,Spring,Framework,2,11,2020-10
+DP0032,Text Analysis,AI,1,9,2018-10
+DP0032,공공 업무,Domain,1,8,2022-04
+DP0032,그룹사 업무,Domain,7,43,2024-10
+DP0032,금융 업무,Domain,11,52,2026-09
+DP0032,데이터 모델링,Data,16,80,2026-05
+DP0032,로우코드 플랫폼,Automation,1,1,2018-01
+DP0032,메타데이터 관리,Data,13,70,2026-05
+DP0032,비정형 문서 처리(OCR),Data,1,4,2019-04
+DP0032,워크플로우·BPM,Automation,1,9,2018-10
+DP0032,지능형 문서 처리(IDP),Automation,1,1,2018-01
+DP0032,프롬프트 엔지니어링,AI,1,1,2023-10
+DP0033,Airflow,Data,1,5,2025-05
+DP0033,ETL,Data,18,79,2026-09
+DP0033,FastAPI,Framework,2,11,2025-08
+DP0033,Java,Programming Language,2,6,2018-10
+DP0033,ML Ops,AI,1,6,2026-09
+DP0033,Private Cloud,Cloud,2,12,2026-09
+DP0033,Python,Programming Language,16,75,2026-03
+DP0033,RPA,Automation,3,15,2024-12
+DP0033,SQL,Programming Language,1,7,2026-03
+DP0033,Spark,Data,1,5,2022-10
+DP0033,Spring,Framework,1,8,2019-10
+DP0033,Text Analysis,AI,20,95,2026-09
+DP0033,검색엔진,Data,14,59,2026-03
+DP0033,공공 업무,Domain,2,4,2022-12
+DP0033,그룹사 업무,Domain,11,60,2026-03
+DP0033,금융 업무,Domain,10,45,2026-09
+DP0033,데이터 모델링,Data,1,1,2016-10
+DP0033,메타데이터 관리,Data,16,89,2026-03
+DP0033,비정형 문서 처리(OCR),Data,16,83,2026-09
+DP0033,워크플로우·BPM,Automation,1,9,2021-03
+DP0033,지능형 문서 처리(IDP),Automation,3,11,2022-05
+DP0034,AWS,Cloud,6,44,2026-09
+DP0034,Airflow,Data,1,10,2026-09
+DP0034,Data Lake & Data Catalog,Data,7,48,2026-09
+DP0034,Docker,Cloud,4,27,2026-09
+DP0034,Hadoop,Data,5,25,2025-11
+DP0034,Kafka,Data,7,47,2026-09
+DP0034,Kubernetes,Cloud,7,39,2026-09
+DP0034,Private Cloud,Cloud,8,57,2026-09
+DP0034,RPA,Automation,1,1,2022-04
+DP0034,Scala,Programming Language,1,7,2023-07
+DP0034,검색엔진,Data,1,4,2021-02
+DP0034,공공 업무,Domain,2,8,2022-12
+DP0034,그룹사 업무,Domain,4,31,2026-09
+DP0034,금융 업무,Domain,4,26,2025-11
+DP0034,메타데이터 관리,Data,1,7,2023-07
+DP0034,프로세스 마이닝,Automation,1,4,2021-02
+DP0035,AWS,Cloud,1,2,2020-10
+DP0035,Data Lake & Data Catalog,Data,1,8,2021-11
+DP0035,Docker,Cloud,2,4,2023-04
+DP0035,ETL,Data,19,79,2026-09
+DP0035,LLM 파인튜닝,AI,1,3,2026-09
+DP0035,ML Ops,AI,1,3,2019-09
+DP0035,Private Cloud,Cloud,5,20,2025-03
+DP0035,Python,Programming Language,19,81,2026-09
+DP0035,RAG·벡터DB,AI,1,3,2026-09
+DP0035,React,Framework,1,1,2017-11
+DP0035,SQL,Programming Language,1,6,2024-06
+DP0035,Scala,Programming Language,2,7,2022-02
+DP0035,Spark,Data,2,12,2024-06
+DP0035,Text Analysis,AI,15,70,2026-09
+DP0035,검색엔진,Data,13,57,2026-06
+DP0035,공공 업무,Domain,1,3,2019-09
+DP0035,그룹사 업무,Domain,7,23,2024-06
+DP0035,금융 업무,Domain,13,67,2026-09
+DP0035,메타데이터 관리,Data,14,62,2026-09
+DP0035,비정형 문서 처리(OCR),Data,16,74,2026-09
+DP0035,지능형 문서 처리(IDP),Automation,1,8,2026-06
+DP0035,프롬프트 엔지니어링,AI,1,4,2025-08
+DP0036,Airflow,Data,1,4,2021-02
+DP0036,BI Reporting,Data,12,65,2026-09
+DP0036,React,Framework,2,2,2022-12
+DP0036,SQL,Programming Language,12,65,2026-09
+DP0036,Scala,Programming Language,1,4,2026-09
+DP0036,Spark,Data,1,1,2022-04
+DP0036,Spring,Framework,1,6,2022-10
+DP0036,공공 업무,Domain,2,7,2022-12
+DP0036,그룹사 업무,Domain,3,21,2025-07
+DP0036,금융 업무,Domain,7,37,2026-09
+DP0036,데이터 모델링,Data,10,54,2026-09
+DP0036,메타데이터 관리,Data,12,65,2026-09
+DP0036,프로세스 마이닝,Automation,2,14,2025-07
+DP0036,프롬프트 엔지니어링,AI,1,4,2026-09
+DP0037,Data Lake & Data Catalog,Data,1,12,2024-12
+DP0037,Docker,Cloud,1,6,2025-11
+DP0037,ETL,Data,6,21,2025-11
+DP0037,FastAPI,Framework,1,2,2025-03
+DP0037,Hadoop,Data,1,7,2023-12
+DP0037,Java,Programming Language,1,1,2021-12
+DP0037,Private Cloud,Cloud,1,6,2025-11
+DP0037,Python,Programming Language,10,56,2026-09
+DP0037,RPA,Automation,1,1,2022-12
+DP0037,React,Framework,1,1,2026-09
+DP0037,Text Analysis,AI,9,49,2026-09
+DP0037,검색엔진,Data,6,28,2025-11
+DP0037,공공 업무,Domain,1,1,2022-12
+DP0037,그룹사 업무,Domain,7,45,2026-09
+DP0037,금융 업무,Domain,3,12,2023-04
+DP0037,데이터 모델링,Data,1,1,2026-09
+DP0037,메타데이터 관리,Data,10,49,2026-09
+DP0037,비정형 문서 처리(OCR),Data,8,54,2026-09
+DP0037,워크플로우·BPM,Automation,1,1,2021-12
+DP0038,AWS,Cloud,1,8,2024-03
+DP0038,BI Reporting,Data,19,92,2026-09
+DP0038,Data Lake & Data Catalog,Data,20,98,2026-09
+DP0038,ETL,Data,1,7,2018-09
+DP0038,Java,Programming Language,2,6,2024-09
+DP0038,Kafka,Data,1,5,2021-08
+DP0038,Kubernetes,Cloud,2,13,2023-07
+DP0038,LLM Application,AI,1,3,2025-02
+DP0038,ML Ops,AI,1,2,2020-10
+DP0038,Private Cloud,Cloud,1,4,2019-06
+DP0038,Python,Programming Language,1,7,2018-09
+DP0038,RPA,Automation,2,11,2024-08
+DP0038,React,Framework,2,8,2024-09
+DP0038,SQL,Programming Language,21,102,2026-09
+DP0038,Scala,Programming Language,1,1,2026-07
+DP0038,Spark,Data,1,6,2020-08
+DP0038,Spring,Framework,1,3,2024-08
+DP0038,Text Analysis,AI,1,8,2022-10
+DP0038,공공 업무,Domain,1,4,2019-06
+DP0038,그룹사 업무,Domain,9,35,2026-07
+DP0038,금융 업무,Domain,12,65,2026-09
+DP0038,데이터 모델링,Data,19,92,2026-09
+DP0038,로우코드 플랫폼,Automation,1,8,2022-10
+DP0038,메타데이터 관리,Data,17,82,2026-07
+DP0038,지능형 문서 처리(IDP),Automation,1,2,2020-10
+DP0038,프롬프트 엔지니어링,AI,1,3,2025-02
+DP0039,AWS,Cloud,7,38,2026-06
+DP0039,Data Lake & Data Catalog,Data,7,33,2026-08
+DP0039,Docker,Cloud,8,31,2026-08
+DP0039,FastAPI,Framework,1,3,2022-02
+DP0039,Hadoop,Data,7,34,2026-08
+DP0039,Kafka,Data,7,33,2026-06
+DP0039,Kubernetes,Cloud,4,24,2024-02
+DP0039,Private Cloud,Cloud,8,35,2026-06
+DP0039,Python,Programming Language,1,5,2022-08
+DP0039,React,Framework,1,3,2021-09
+DP0039,SQL,Programming Language,1,3,2022-02
+DP0039,Scala,Programming Language,1,2,2026-08
+DP0039,Spark,Data,1,2,2025-01
+DP0039,검색엔진,Data,1,5,2022-08
+DP0039,공공 업무,Domain,1,3,2022-02
+DP0039,그룹사 업무,Domain,5,28,2026-08
+DP0039,금융 업무,Domain,5,19,2026-06
+DP0039,로우코드 플랫폼,Automation,1,2,2026-08
+DP0039,메타데이터 관리,Data,1,5,2024-09
+DP0039,프로세스 마이닝,Automation,1,8,2026-01
+DP0040,ETL,Data,2,21,2026-09
+DP0040,FastAPI,Framework,1,10,2025-10
+DP0040,Python,Programming Language,2,21,2026-09
+DP0040,Text Analysis,AI,2,21,2026-09
+DP0040,검색엔진,Data,2,21,2026-09
+DP0040,금융 업무,Domain,2,21,2026-09
+DP0040,메타데이터 관리,Data,2,21,2026-09
+DP0040,비정형 문서 처리(OCR),Data,2,21,2026-09
+DP0041,AWS,Cloud,2,4,2025-09
+DP0041,BI Reporting,Data,1,3,2017-02
+DP0041,Docker,Cloud,1,8,2021-06
+DP0041,ETL,Data,16,73,2025-09
+DP0041,FastAPI,Framework,1,2,2018-05
+DP0041,Hadoop,Data,1,1,2018-01
+DP0041,Kafka,Data,2,3,2017-05
+DP0041,Kubernetes,Cloud,1,6,2023-05
+DP0041,LLM Application,AI,1,2,2024-06
+DP0041,LLM 파인튜닝,AI,1,2,2024-06
+DP0041,ML Ops,AI,2,7,2023-05
+DP0041,Private Cloud,Cloud,1,8,2019-12
+DP0041,Python,Programming Language,18,84,2026-09
+DP0041,RPA,Automation,1,3,2017-02
+DP0041,React,Framework,2,3,2025-09
+DP0041,SQL,Programming Language,1,1,2016-10
+DP0041,Scala,Programming Language,1,3,2026-03
+DP0041,Text Analysis,AI,18,74,2026-09
+DP0041,검색엔진,Data,17,62,2026-09
+DP0041,공공 업무,Domain,3,15,2024-04
+DP0041,그룹사 업무,Domain,10,40,2026-03
+DP0041,금융 업무,Domain,10,42,2026-09
+DP0041,메타데이터 관리,Data,17,72,2026-09
+DP0041,비정형 문서 처리(OCR),Data,18,71,2026-09
+DP0041,워크플로우·BPM,Automation,1,1,2016-11
+DP0041,지능형 문서 처리(IDP),Automation,1,8,2021-06
+DP0041,프로세스 마이닝,Automation,1,1,2020-10
+DP0042,AI 에이전트 프레임워크,AI,1,4,2024-08
+DP0042,AWS,Cloud,10,45,2026-09
+DP0042,Airflow,Data,11,41,2025-02
+DP0042,Docker,Cloud,2,7,2023-06
+DP0042,ETL,Data,11,53,2026-05
+DP0042,FastAPI,Framework,1,6,2024-02
+DP0042,Hadoop,Data,11,44,2026-09
+DP0042,Kafka,Data,10,60,2026-05
+DP0042,Kubernetes,Cloud,2,7,2018-09
+DP0042,LLM 파인튜닝,AI,1,6,2025-11
+DP0042,Python,Programming Language,9,36,2026-09
+DP0042,RPA,Automation,3,12,2020-10
+DP0042,React,Framework,1,9,2020-10
+DP0042,SQL,Programming Language,12,44,2026-09
+DP0042,Scala,Programming Language,13,58,2026-09
+DP0042,Spark,Data,14,67,2026-05
+DP0042,검색엔진,Data,1,6,2026-05
+DP0042,공공 업무,Domain,4,11,2022-07
+DP0042,그룹사 업무,Domain,4,18,2026-09
+DP0042,금융 업무,Domain,13,63,2026-05
+DP0042,비정형 문서 처리(OCR),Data,4,20,2023-06
+DP0042,워크플로우·BPM,Automation,1,6,2025-11
+DP0042,프롬프트 엔지니어링,AI,1,4,2024-08
+DP0043,AI 에이전트 프레임워크,AI,1,2,2023-11
+DP0043,BI Reporting,Data,12,51,2026-09
+DP0043,Data Lake & Data Catalog,Data,11,55,2026-09
+DP0043,ETL,Data,1,6,2024-08
+DP0043,FastAPI,Framework,1,9,2021-06
+DP0043,Java,Programming Language,2,10,2022-09
+DP0043,Kafka,Data,1,4,2023-11
+DP0043,Kubernetes,Cloud,1,10,2023-07
+DP0043,LLM Application,AI,2,10,2025-07
+DP0043,ML Ops,AI,1,4,2024-12
+DP0043,RPA,Automation,1,4,2025-07
+DP0043,SQL,Programming Language,11,59,2026-05
+DP0043,Scala,Programming Language,1,4,2024-12
+DP0043,Text Analysis,AI,1,3,2025-03
+DP0043,공공 업무,Domain,3,15,2026-05
+DP0043,그룹사 업무,Domain,6,34,2025-12
+DP0043,금융 업무,Domain,5,19,2026-09
+DP0043,데이터 모델링,Data,14,68,2026-09
+DP0043,메타데이터 관리,Data,12,56,2026-05
+DP0043,지능형 문서 처리(IDP),Automation,2,8,2025-12
+DP0044,AI 에이전트 프레임워크,AI,1,6,2024-09
+DP0044,Data Lake & Data Catalog,Data,3,18,2022-10
+DP0044,ETL,Data,11,61,2026-09
+DP0044,Hadoop,Data,2,8,2025-02
+DP0044,LLM Application,AI,1,5,2025-02
+DP0044,ML Ops,AI,2,4,2025-03
+DP0044,Python,Programming Language,5,32,2025-11
+DP0044,Text Analysis,AI,9,46,2026-09
+DP0044,검색엔진,Data,10,58,2026-09
+DP0044,공공 업무,Domain,2,10,2026-09
+DP0044,그룹사 업무,Domain,7,42,2025-02
+DP0044,금융 업무,Domain,2,9,2025-11
+DP0044,데이터 모델링,Data,1,10,2023-10
+DP0044,로우코드 플랫폼,Automation,1,8,2025-11
+DP0044,메타데이터 관리,Data,7,42,2026-09
+DP0044,비정형 문서 처리(OCR),Data,9,42,2026-09
+DP0044,프롬프트 엔지니어링,AI,2,9,2025-11
+DP0045,ETL,Data,2,9,2025-07
+DP0045,Hadoop,Data,1,5,2025-07
+DP0045,Python,Programming Language,2,8,2025-11
+DP0045,Spring,Framework,1,5,2025-07
+DP0045,Text Analysis,AI,4,22,2026-09
+DP0045,검색엔진,Data,1,4,2025-02
+DP0045,공공 업무,Domain,1,5,2025-07
+DP0045,금융 업무,Domain,3,17,2026-09
+DP0045,메타데이터 관리,Data,4,22,2026-09
+DP0045,비정형 문서 처리(OCR),Data,3,17,2026-09
+DP0045,지능형 문서 처리(IDP),Automation,1,9,2026-09
+DP0046,AI 에이전트 프레임워크,AI,1,6,2024-07
+DP0046,AWS,Cloud,8,43,2026-09
+DP0046,Airflow,Data,5,23,2025-11
+DP0046,BI Reporting,Data,1,2,2026-01
+DP0046,Data Lake & Data Catalog,Data,1,1,2020-10
+DP0046,ETL,Data,7,43,2025-11
+DP0046,FastAPI,Framework,3,12,2025-01
+DP0046,Hadoop,Data,8,54,2025-11
+DP0046,Java,Programming Language,1,7,2021-05
+DP0046,Kafka,Data,6,30,2026-01
+DP0046,ML Ops,AI,1,4,2025-01
+DP0046,Python,Programming Language,12,66,2026-09
+DP0046,RAG·벡터DB,AI,1,2,2024-09
+DP0046,SQL,Programming Language,5,13,2026-01
+DP0046,Scala,Programming Language,9,43,2026-01
+DP0046,Spark,Data,9,44,2026-09
+DP0046,공공 업무,Domain,2,11,2022-11
+DP0046,그룹사 업무,Domain,8,46,2026-09
+DP0046,금융 업무,Domain,5,29,2025-11
+DP0046,비정형 문서 처리(OCR),Data,1,7,2021-12
+DP0046,워크플로우·BPM,Automation,1,6,2024-07
+DP0047,Airflow,Data,2,6,2026-05
+DP0047,BI Reporting,Data,1,3,2025-08
+DP0047,Data Lake & Data Catalog,Data,1,3,2026-09
+DP0047,ETL,Data,3,9,2026-05
+DP0047,Hadoop,Data,1,3,2026-05
+DP0047,Python,Programming Language,4,12,2026-09
+DP0047,Spring,Framework,1,3,2025-11
+DP0047,Text Analysis,AI,4,12,2026-09
+DP0047,검색엔진,Data,4,12,2026-09
+DP0047,공공 업무,Domain,1,3,2026-05
+DP0047,그룹사 업무,Domain,2,6,2026-09
+DP0047,금융 업무,Domain,2,6,2025-11
+DP0047,데이터 모델링,Data,1,3,2025-11
+DP0047,로우코드 플랫폼,Automation,1,3,2026-09
+DP0047,메타데이터 관리,Data,4,12,2026-09
+DP0047,비정형 문서 처리(OCR),Data,3,9,2026-09
+DP0048,AWS,Cloud,10,55,2026-09
+DP0048,BI Reporting,Data,1,6,2019-03
+DP0048,Data Lake & Data Catalog,Data,13,66,2026-09
+DP0048,Docker,Cloud,12,63,2026-09
+DP0048,Hadoop,Data,11,60,2026-09
+DP0048,Kafka,Data,14,74,2026-09
+DP0048,Kubernetes,Cloud,8,47,2026-07
+DP0048,LLM 파인튜닝,AI,1,1,2025-12
+DP0048,Private Cloud,Cloud,8,40,2026-09
+DP0048,RPA,Automation,2,12,2019-03
+DP0048,SQL,Programming Language,1,10,2021-05
+DP0048,Spark,Data,1,6,2023-12
+DP0048,Text Analysis,AI,1,2,2019-07
+DP0048,검색엔진,Data,1,4,2022-04
+DP0048,그룹사 업무,Domain,9,46,2026-07
+DP0048,금융 업무,Domain,8,47,2026-09
+DP0048,로우코드 플랫폼,Automation,2,8,2019-07
+DP0048,메타데이터 관리,Data,1,10,2021-05
+DP0048,비정형 문서 처리(OCR),Data,1,7,2021-12
+DP0048,워크플로우·BPM,Automation,1,8,2020-07
+DP0048,지능형 문서 처리(IDP),Automation,2,14,2023-12
+DP0049,AI 에이전트 프레임워크,AI,1,2,2026-09
+DP0049,BI Reporting,Data,9,50,2026-09
+DP0049,Kafka,Data,1,6,2022-05
+DP0049,LLM Application,AI,1,12,2024-12
+DP0049,LLM 파인튜닝,AI,1,3,2023-12
+DP0049,SQL,Programming Language,7,36,2026-09
+DP0049,Scala,Programming Language,1,12,2024-12
+DP0049,Spark,Data,1,3,2023-01
+DP0049,그룹사 업무,Domain,6,39,2026-09
+DP0049,금융 업무,Domain,3,11,2025-02
+DP0049,데이터 모델링,Data,9,50,2026-09
+DP0049,메타데이터 관리,Data,8,46,2026-09
+DP0049,비정형 문서 처리(OCR),Data,4,21,2026-09
+DP0050,AWS,Cloud,1,10,2025-08
+DP0050,Data Lake & Data Catalog,Data,1,9,2024-01
+DP0050,ETL,Data,7,35,2026-09
+DP0050,Hadoop,Data,1,8,2026-07
+DP0050,Python,Programming Language,7,38,2026-07
+DP0050,Text Analysis,AI,9,45,2026-09
+DP0050,검색엔진,Data,6,29,2026-07
+DP0050,그룹사 업무,Domain,5,20,2025-11
+DP0050,금융 업무,Domain,4,25,2026-09
+DP0050,메타데이터 관리,Data,8,40,2026-09
+DP0050,비정형 문서 처리(OCR),Data,4,19,2025-11
+DP0051,AI 에이전트 프레임워크,AI,1,6,2026-07
+DP0051,AWS,Cloud,6,24,2024-09
+DP0051,Airflow,Data,8,36,2025-02
+DP0051,BI Reporting,Data,3,12,2026-01
+DP0051,ETL,Data,10,44,2026-01
+DP0051,Hadoop,Data,8,29,2026-07
+DP0051,Kafka,Data,8,41,2026-07
+DP0051,Kubernetes,Cloud,1,4,2023-12
+DP0051,ML Ops,AI,2,8,2026-07
+DP0051,Private Cloud,Cloud,1,4,2021-12
+DP0051,Python,Programming Language,4,15,2024-09
+DP0051,RPA,Automation,1,4,2022-04
+DP0051,SQL,Programming Language,8,26,2026-07
+DP0051,Scala,Programming Language,4,20,2026-07
+DP0051,Spark,Data,7,26,2026-01
+DP0051,공공 업무,Domain,2,11,2024-04
+DP0051,그룹사 업무,Domain,6,18,2026-07
+DP0051,금융 업무,Domain,8,38,2025-11
+DP0051,메타데이터 관리,Data,2,6,2024-09
+DP0051,워크플로우·BPM,Automation,1,3,2025-02
+DP0051,프로세스 마이닝,Automation,1,8,2023-08
+DP0051,프롬프트 엔지니어링,AI,1,2,2026-01
+DP0052,AWS,Cloud,7,33,2025-11
+DP0052,Airflow,Data,1,3,2023-11
+DP0052,BI Reporting,Data,1,1,2025-11
+DP0052,Data Lake & Data Catalog,Data,8,32,2025-11
+DP0052,Docker,Cloud,9,35,2026-09
+DP0052,ETL,Data,3,16,2025-09
+DP0052,Hadoop,Data,10,51,2026-09
+DP0052,Kafka,Data,6,27,2026-09
+DP0052,Kubernetes,Cloud,8,31,2026-09
+DP0052,LLM 파인튜닝,AI,1,2,2024-02
+DP0052,Private Cloud,Cloud,8,43,2025-09
+DP0052,RPA,Automation,1,8,2023-08
+DP0052,React,Framework,1,5,2022-11
+DP0052,Spring,Framework,1,1,2025-11
+DP0052,검색엔진,Data,1,1,2025-03
+DP0052,공공 업무,Domain,2,10,2022-11
+DP0052,그룹사 업무,Domain,8,34,2026-09
+DP0052,금융 업무,Domain,3,17,2025-11
+DP0052,로우코드 플랫폼,Automation,1,3,2024-09
+DP0052,지능형 문서 처리(IDP),Automation,1,10,2026-09
+DP0053,Airflow,Data,2,13,2025-12
+DP0053,BI Reporting,Data,1,7,2022-12
+DP0053,ETL,Data,6,33,2026-09
+DP0053,FastAPI,Framework,1,1,2024-09
+DP0053,Hadoop,Data,1,3,2023-04
+DP0053,Java,Programming Language,1,1,2024-09
+DP0053,Python,Programming Language,6,36,2025-12
+DP0053,RPA,Automation,1,3,2023-04
+DP0053,SQL,Programming Language,1,8,2026-09
+DP0053,Spark,Data,1,9,2025-12
+DP0053,Text Analysis,AI,4,24,2026-09
+DP0053,검색엔진,Data,6,34,2025-12
+DP0053,공공 업무,Domain,2,16,2025-12
+DP0053,그룹사 업무,Domain,3,16,2024-06
+DP0053,금융 업무,Domain,3,13,2026-09
+DP0053,데이터 모델링,Data,1,8,2026-09
+DP0053,메타데이터 관리,Data,3,13,2024-09
+DP0053,비정형 문서 처리(OCR),Data,4,22,2026-09
+DP0054,AI 에이전트 프레임워크,AI,1,6,2025-11
+DP0054,BI Reporting,Data,7,25,2026-09
+DP0054,Docker,Cloud,1,1,2026-08
+DP0054,Hadoop,Data,1,4,2025-04
+DP0054,RPA,Automation,1,8,2026-07
+DP0054,SQL,Programming Language,7,25,2026-09
+DP0054,Spring,Framework,1,4,2025-04
+DP0054,Text Analysis,AI,1,1,2026-08
+DP0054,그룹사 업무,Domain,4,7,2026-09
+DP0054,금융 업무,Domain,3,18,2026-07
+DP0054,데이터 모델링,Data,6,24,2026-09
+DP0054,메타데이터 관리,Data,6,24,2026-09
+DP0054,프롬프트 엔지니어링,AI,1,4,2024-11
+DP0055,Airflow,Data,2,11,2026-09
+DP0055,BI Reporting,Data,1,1,2018-12
+DP0055,Docker,Cloud,1,10,2023-11
+DP0055,ETL,Data,17,99,2026-09
+DP0055,Kubernetes,Cloud,1,10,2023-11
+DP0055,ML Ops,AI,2,21,2021-11
+DP0055,Private Cloud,Cloud,2,2,2018-12
+DP0055,Python,Programming Language,14,79,2026-09
+DP0055,RPA,Automation,1,6,2018-08
+DP0055,React,Framework,1,5,2019-09
+DP0055,Spark,Data,1,3,2025-03
+DP0055,Spring,Framework,1,7,2022-12
+DP0055,Text Analysis,AI,13,69,2026-09
+DP0055,검색엔진,Data,15,92,2026-05
+DP0055,공공 업무,Domain,2,12,2022-12
+DP0055,그룹사 업무,Domain,6,41,2024-12
+DP0055,금융 업무,Domain,10,47,2026-09
+DP0055,데이터 모델링,Data,1,4,2026-09
+DP0055,메타데이터 관리,Data,15,89,2026-09
+DP0055,비정형 문서 처리(OCR),Data,14,86,2026-05
+DP0055,프로세스 마이닝,Automation,1,6,2026-05
+DP0056,AI 에이전트 프레임워크,AI,1,3,2023-12
+DP0056,AWS,Cloud,5,34,2026-04
+DP0056,Airflow,Data,8,38,2026-09
+DP0056,Docker,Cloud,1,3,2022-11
+DP0056,ETL,Data,5,18,2025-06
+DP0056,FastAPI,Framework,1,4,2025-06
+DP0056,Hadoop,Data,5,28,2026-09
+DP0056,Kafka,Data,5,26,2026-09
+DP0056,Private Cloud,Cloud,1,7,2023-12
+DP0056,Python,Programming Language,8,48,2026-04
+DP0056,SQL,Programming Language,7,41,2026-09
+DP0056,Scala,Programming Language,5,22,2024-10
+DP0056,Spark,Data,6,33,2026-04
+DP0056,Text Analysis,AI,1,4,2022-06
+DP0056,공공 업무,Domain,2,6,2022-02
+DP0056,그룹사 업무,Domain,8,47,2026-04
+DP0056,금융 업무,Domain,3,14,2026-09
+DP0056,데이터 모델링,Data,1,9,2026-04
+DP0056,메타데이터 관리,Data,1,4,2025-06
+DP0056,워크플로우·BPM,Automation,1,5,2020-07
+DP0057,AWS,Cloud,7,33,2026-09
+DP0057,Airflow,Data,4,27,2025-11
+DP0057,ETL,Data,5,24,2026-06
+DP0057,FastAPI,Framework,2,13,2026-09
+DP0057,Hadoop,Data,6,32,2026-06
+DP0057,Kafka,Data,5,33,2025-11
+DP0057,Private Cloud,Cloud,1,6,2021-02
+DP0057,Python,Programming Language,8,30,2026-09
+DP0057,RAG·벡터DB,AI,1,2,2023-11
+DP0057,RPA,Automation,1,1,2022-03
+DP0057,React,Framework,2,11,2025-02
+DP0057,SQL,Programming Language,5,20,2024-11
+DP0057,Scala,Programming Language,6,29,2025-02
+DP0057,Spark,Data,9,44,2026-09
+DP0057,Text Analysis,AI,1,10,2023-04
+DP0057,검색엔진,Data,1,4,2021-06
+DP0057,공공 업무,Domain,1,8,2022-02
+DP0057,그룹사 업무,Domain,6,32,2024-11
+DP0057,금융 업무,Domain,7,32,2026-09
+DP0057,데이터 모델링,Data,1,4,2021-06
+DP0057,비정형 문서 처리(OCR),Data,2,8,2025-02
+DP0057,워크플로우·BPM,Automation,1,3,2020-03
+DP0057,프로세스 마이닝,Automation,2,15,2025-11
+DP0057,프롬프트 엔지니어링,AI,1,3,2026-09
+DP0058,Airflow,Data,1,5,2025-11
+DP0058,Docker,Cloud,1,5,2026-04
+DP0058,ETL,Data,9,50,2026-09
+DP0058,Java,Programming Language,1,5,2023-04
+DP0058,Kafka,Data,1,8,2022-10
+DP0058,LLM 파인튜닝,AI,1,3,2023-12
+DP0058,ML Ops,AI,1,4,2024-04
+DP0058,Private Cloud,Cloud,1,8,2023-12
+DP0058,Python,Programming Language,8,42,2026-09
+DP0058,Spring,Framework,3,21,2025-11
+DP0058,Text Analysis,AI,9,53,2026-09
+DP0058,검색엔진,Data,8,38,2026-09
+DP0058,공공 업무,Domain,2,11,2024-04
+DP0058,그룹사 업무,Domain,3,15,2026-06
+DP0058,금융 업무,Domain,5,32,2026-09
+DP0058,메타데이터 관리,Data,8,41,2026-09
+DP0058,비정형 문서 처리(OCR),Data,7,50,2026-04
+DP0059,AI 에이전트 프레임워크,AI,1,1,2025-02
+DP0059,AWS,Cloud,6,34,2026-05
+DP0059,Airflow,Data,12,57,2026-09
+DP0059,ETL,Data,9,50,2026-05
+DP0059,FastAPI,Framework,2,18,2025-01
+DP0059,Hadoop,Data,10,41,2026-09
+DP0059,Kafka,Data,11,63,2026-09
+DP0059,Kubernetes,Cloud,2,9,2021-12
+DP0059,Python,Programming Language,8,42,2026-09
+DP0059,React,Framework,2,5,2026-09
+DP0059,SQL,Programming Language,14,83,2026-09
+DP0059,Scala,Programming Language,14,75,2026-09
+DP0059,Spark,Data,12,61,2025-05
+DP0059,Spring,Framework,2,14,2023-01
+DP0059,Text Analysis,AI,1,1,2020-10
+DP0059,공공 업무,Domain,2,7,2026-05
+DP0059,그룹사 업무,Domain,7,39,2025-05
+DP0059,금융 업무,Domain,12,61,2026-09
+DP0059,데이터 모델링,Data,3,15,2025-02
+DP0059,로우코드 플랫폼,Automation,1,3,2016-12
+DP0059,비정형 문서 처리(OCR),Data,2,17,2023-11
+DP0059,워크플로우·BPM,Automation,1,2,2018-10
+DP0059,지능형 문서 처리(IDP),Automation,1,8,2020-08
+DP0059,프롬프트 엔지니어링,AI,1,4,2026-09
+DP0060,AI 에이전트 프레임워크,AI,1,1,2025-06
+DP0060,Airflow,Data,1,4,2026-04
+DP0060,BI Reporting,Data,10,46,2026-09
+DP0060,Data Lake & Data Catalog,Data,9,38,2026-09
+DP0060,Docker,Cloud,1,4,2025-11
+DP0060,RAG·벡터DB,AI,1,1,2025-06
+DP0060,RPA,Automation,2,6,2022-11
+DP0060,SQL,Programming Language,9,45,2026-09
+DP0060,Scala,Programming Language,1,4,2022-08
+DP0060,Spark,Data,2,8,2026-04
+DP0060,공공 업무,Domain,1,1,2026-05
+DP0060,그룹사 업무,Domain,5,23,2025-06
+DP0060,금융 업무,Domain,5,26,2026-09
+DP0060,데이터 모델링,Data,9,41,2026-05
+DP0060,메타데이터 관리,Data,5,12,2026-05
+DP0061,AWS,Cloud,9,43,2026-04
+DP0061,Airflow,Data,8,32,2024-09
+DP0061,BI Reporting,Data,1,7,2020-12
+DP0061,ETL,Data,9,34,2025-11
+DP0061,FastAPI,Framework,1,4,2023-12
+DP0061,Hadoop,Data,9,34,2026-04
+DP0061,Java,Programming Language,1,7,2020-12
+DP0061,Kafka,Data,9,34,2026-09
+DP0061,ML Ops,AI,2,11,2022-11
+DP0061,Python,Programming Language,9,43,2026-09
+DP0061,React,Framework,1,6,2025-09
+DP0061,SQL,Programming Language,7,31,2025-11
+DP0061,Scala,Programming Language,6,23,2026-09
+DP0061,Spark,Data,7,27,2026-09
+DP0061,Text Analysis,AI,2,3,2025-11
+DP0061,공공 업무,Domain,2,7,2025-09
+DP0061,그룹사 업무,Domain,10,43,2026-09
+DP0061,금융 업무,Domain,4,18,2025-11
+DP0061,데이터 모델링,Data,1,1,2024-09
+DP0061,비정형 문서 처리(OCR),Data,1,3,2025-01
+DP0061,프로세스 마이닝,Automation,1,3,2025-01
+DP0062,AWS,Cloud,8,33,2025-12
+DP0062,Airflow,Data,6,36,2026-05
+DP0062,BI Reporting,Data,1,5,2025-03
+DP0062,Docker,Cloud,1,5,2026-05
+DP0062,ETL,Data,7,39,2026-09
+DP0062,Hadoop,Data,10,43,2026-09
+DP0062,Java,Programming Language,1,4,2020-08
+DP0062,Kafka,Data,6,33,2025-06
+DP0062,Private Cloud,Cloud,1,5,2025-12
+DP0062,Python,Programming Language,6,29,2026-05
+DP0062,RAG·벡터DB,AI,1,5,2024-02
+DP0062,RPA,Automation,1,5,2021-03
+DP0062,SQL,Programming Language,6,38,2026-09
+DP0062,Scala,Programming Language,7,30,2026-05
+DP0062,Spark,Data,6,29,2025-06
+DP0062,Spring,Framework,1,5,2026-05
+DP0062,검색엔진,Data,1,5,2021-03
+DP0062,공공 업무,Domain,2,14,2026-05
+DP0062,그룹사 업무,Domain,6,28,2025-03
+DP0062,금융 업무,Domain,6,26,2026-09
+DP0062,로우코드 플랫폼,Automation,1,9,2022-05
+DP0062,워크플로우·BPM,Automation,1,9,2023-02
+DP0062,지능형 문서 처리(IDP),Automation,2,8,2024-06
+DP0063,AWS,Cloud,3,10,2026-03
+DP0063,Data Lake & Data Catalog,Data,3,12,2026-09
+DP0063,Hadoop,Data,2,7,2026-03
+DP0063,Kafka,Data,1,4,2026-09
+DP0063,Kubernetes,Cloud,1,2,2026-03
+DP0063,Private Cloud,Cloud,3,12,2026-09
+DP0063,RPA,Automation,1,4,2026-09
+DP0063,그룹사 업무,Domain,3,11,2026-09
+DP0063,금융 업무,Domain,1,3,2025-11
+DP0063,비정형 문서 처리(OCR),Data,1,3,2025-11
+DP0063,워크플로우·BPM,Automation,1,3,2025-11
+DP0064,AWS,Cloud,1,1,2022-04
+DP0064,BI Reporting,Data,12,65,2026-09
+DP0064,Data Lake & Data Catalog,Data,12,61,2026-09
+DP0064,FastAPI,Framework,1,3,2025-03
+DP0064,Kubernetes,Cloud,1,6,2024-08
+DP0064,LLM 파인튜닝,AI,1,6,2024-08
+DP0064,Python,Programming Language,1,6,2025-09
+DP0064,SQL,Programming Language,13,61,2026-09
+DP0064,Spark,Data,1,1,2022-04
+DP0064,Spring,Framework,1,8,2020-08
+DP0064,공공 업무,Domain,1,1,2026-09
+DP0064,그룹사 업무,Domain,10,51,2026-08
+DP0064,금융 업무,Domain,4,22,2025-09
+DP0064,데이터 모델링,Data,14,66,2026-09
+DP0064,메타데이터 관리,Data,12,57,2026-09
+DP0064,워크플로우·BPM,Automation,1,8,2020-08
+DP0064,프로세스 마이닝,Automation,1,3,2020-11
+DP0065,AWS,Cloud,11,75,2026-09
+DP0065,Airflow,Data,7,44,2025-07
+DP0065,BI Reporting,Data,1,6,2024-04
+DP0065,Data Lake & Data Catalog,Data,1,7,2017-09
+DP0065,Docker,Cloud,2,4,2021-06
+DP0065,ETL,Data,8,57,2026-09
+DP0065,Hadoop,Data,9,54,2024-10
+DP0065,Kafka,Data,11,64,2026-05
+DP0065,Kubernetes,Cloud,1,6,2019-04
+DP0065,ML Ops,AI,1,9,2021-03
+DP0065,Private Cloud,Cloud,2,13,2026-09
+DP0065,Python,Programming Language,8,59,2026-09
+DP0065,React,Framework,1,5,2017-02
+DP0065,SQL,Programming Language,7,39,2023-10
+DP0065,Scala,Programming Language,9,52,2026-09
+DP0065,Spark,Data,7,43,2024-10
+DP0065,공공 업무,Domain,3,19,2024-04
+DP0065,그룹사 업무,Domain,9,60,2026-05
+DP0065,금융 업무,Domain,6,35,2026-09
+DP0065,메타데이터 관리,Data,1,8,2022-11
+DP0065,지능형 문서 처리(IDP),Automation,1,1,2018-01
+DP0066,AI 에이전트 프레임워크,AI,1,6,2025-07
+DP0066,AWS,Cloud,1,8,2022-02
+DP0066,BI Reporting,Data,16,85,2026-09
+DP0066,Data Lake & Data Catalog,Data,17,90,2026-09
+DP0066,ML Ops,AI,1,3,2023-05
+DP0066,RAG·벡터DB,AI,1,5,2025-01
+DP0066,RPA,Automation,2,14,2022-02
+DP0066,SQL,Programming Language,16,86,2026-02
+DP0066,Spark,Data,1,2,2017-08
+DP0066,검색엔진,Data,2,7,2025-10
+DP0066,공공 업무,Domain,2,10,2022-02
+DP0066,그룹사 업무,Domain,11,64,2026-02
+DP0066,금융 업무,Domain,6,24,2026-09
+DP0066,데이터 모델링,Data,15,70,2026-09
+DP0066,메타데이터 관리,Data,15,83,2026-09
+DP0066,워크플로우·BPM,Automation,2,11,2019-11
+DP0067,BI Reporting,Data,12,57,2026-09
+DP0067,ETL,Data,1,7,2024-09
+DP0067,FastAPI,Framework,1,3,2026-09
+DP0067,Java,Programming Language,2,6,2026-09
+DP0067,Kafka,Data,1,3,2024-12
+DP0067,LLM 파인튜닝,AI,1,4,2025-04
+DP0067,RPA,Automation,1,6,2025-10
+DP0067,SQL,Programming Language,11,56,2026-09
+DP0067,Scala,Programming Language,1,4,2025-04
+DP0067,Spring,Framework,1,5,2023-06
+DP0067,그룹사 업무,Domain,8,38,2026-09
+DP0067,금융 업무,Domain,4,19,2025-10
+DP0067,데이터 모델링,Data,10,47,2026-06
+DP0067,메타데이터 관리,Data,12,57,2026-09
+DP0067,워크플로우·BPM,Automation,1,7,2024-09
+DP0067,프롬프트 엔지니어링,AI,1,1,2024-02
+DP0068,AWS,Cloud,1,8,2022-10
+DP0068,Airflow,Data,1,2,2018-06
+DP0068,BI Reporting,Data,20,99,2026-09
+DP0068,Data Lake & Data Catalog,Data,19,89,2026-09
+DP0068,Docker,Cloud,1,3,2021-03
+DP0068,ETL,Data,1,5,2024-10
+DP0068,FastAPI,Framework,1,8,2022-10
+DP0068,Hadoop,Data,1,4,2020-10
+DP0068,Java,Programming Language,1,4,2020-10
+DP0068,Kafka,Data,1,7,2019-09
+DP0068,Kubernetes,Cloud,3,12,2024-04
+DP0068,Private Cloud,Cloud,1,3,2021-06
+DP0068,Python,Programming Language,1,6,2022-02
+DP0068,React,Framework,2,11,2026-02
+DP0068,SQL,Programming Language,21,103,2026-09
+DP0068,Scala,Programming Language,2,9,2026-09
+DP0068,Spring,Framework,1,3,2021-06
+DP0068,Text Analysis,AI,1,2,2018-02
+DP0068,검색엔진,Data,2,11,2023-04
+DP0068,공공 업무,Domain,1,6,2022-02
+DP0068,그룹사 업무,Domain,10,42,2026-02
+DP0068,금융 업무,Domain,10,55,2026-09
+DP0068,데이터 모델링,Data,19,87,2026-09
+DP0068,메타데이터 관리,Data,19,93,2026-09
+DP0068,비정형 문서 처리(OCR),Data,1,5,2020-04
+DP0068,지능형 문서 처리(IDP),Automation,1,11,2025-09
+DP0068,프롬프트 엔지니어링,AI,1,3,2026-02
+DP0069,AI 에이전트 프레임워크,AI,1,1,2024-04
+DP0069,AWS,Cloud,7,39,2026-03
+DP0069,Airflow,Data,13,62,2026-09
+DP0069,BI Reporting,Data,2,17,2020-06
+DP0069,Docker,Cloud,2,17,2020-06
+DP0069,ETL,Data,9,37,2026-08
+DP0069,Hadoop,Data,12,52,2026-09
+DP0069,Java,Programming Language,1,1,2026-09
+DP0069,Kafka,Data,10,43,2026-09
+DP0069,Kubernetes,Cloud,1,3,2025-03
+DP0069,Python,Programming Language,10,37,2026-09
+DP0069,SQL,Programming Language,12,58,2025-10
+DP0069,Scala,Programming Language,9,49,2026-08
+DP0069,Spark,Data,10,56,2025-10
+DP0069,Spring,Framework,2,8,2025-10
+DP0069,검색엔진,Data,1,2,2018-11
+DP0069,공공 업무,Domain,3,8,2024-04
+DP0069,그룹사 업무,Domain,10,48,2026-03
+DP0069,금융 업무,Domain,7,39,2026-09
+DP0069,로우코드 플랫폼,Automation,1,7,2022-11
+DP0069,비정형 문서 처리(OCR),Data,3,14,2021-11
+DP0069,워크플로우·BPM,Automation,2,7,2026-08
+DP0069,프로세스 마이닝,Automation,1,1,2024-04
+DP0070,Airflow,Data,1,9,2024-09
+DP0070,BI Reporting,Data,6,38,2026-08
+DP0070,FastAPI,Framework,1,5,2025-02
+DP0070,Java,Programming Language,1,9,2024-09
+DP0070,Python,Programming Language,1,5,2025-02
+DP0070,RAG·벡터DB,AI,1,6,2026-08
+DP0070,SQL,Programming Language,6,38,2026-08
+DP0070,Text Analysis,AI,1,6,2023-12
+DP0070,공공 업무,Domain,1,11,2026-02
+DP0070,그룹사 업무,Domain,5,27,2026-08
+DP0070,데이터 모델링,Data,6,38,2026-08
+DP0070,메타데이터 관리,Data,6,38,2026-08
+DP0070,워크플로우·BPM,Automation,1,6,2026-08
+DP0071,Airflow,Data,2,12,2019-08
+DP0071,Data Lake & Data Catalog,Data,1,8,2023-12
+DP0071,ETL,Data,16,69,2026-09
+DP0071,Hadoop,Data,1,3,2022-09
+DP0071,Java,Programming Language,2,3,2022-10
+DP0071,Kafka,Data,1,3,2024-09
+DP0071,LLM 파인튜닝,AI,1,3,2023-12
+DP0071,Private Cloud,Cloud,1,4,2019-12
+DP0071,Python,Programming Language,11,44,2025-01
+DP0071,RAG·벡터DB,AI,1,3,2024-05
+DP0071,Spark,Data,1,4,2019-12
+DP0071,Spring,Framework,1,5,2020-08
+DP0071,Text Analysis,AI,15,66,2026-05
+DP0071,검색엔진,Data,14,54,2026-09
+DP0071,공공 업무,Domain,5,20,2022-10
+DP0071,그룹사 업무,Domain,10,36,2026-05
+DP0071,금융 업무,Domain,7,46,2026-09
+DP0071,데이터 모델링,Data,1,11,2017-10
+DP0071,메타데이터 관리,Data,15,69,2025-10
+DP0071,비정형 문서 처리(OCR),Data,17,81,2026-09
+DP0071,워크플로우·BPM,Automation,1,4,2019-08
+DP0071,프로세스 마이닝,Automation,1,5,2020-08
+DP0072,Airflow,Data,1,6,2024-10
+DP0072,BI Reporting,Data,8,32,2026-09
+DP0072,Data Lake & Data Catalog,Data,8,39,2026-09
+DP0072,ETL,Data,1,4,2026-09
+DP0072,ML Ops,AI,1,3,2026-04
+DP0072,Python,Programming Language,1,3,2023-07
+DP0072,RAG·벡터DB,AI,1,3,2026-04
+DP0072,SQL,Programming Language,9,44,2026-09
+DP0072,그룹사 업무,Domain,5,20,2026-04
+DP0072,금융 업무,Domain,4,24,2026-09
+DP0072,데이터 모델링,Data,9,44,2026-09
+DP0072,로우코드 플랫폼,Automation,1,2,2024-02
+DP0072,메타데이터 관리,Data,8,39,2026-09
+DP0072,비정형 문서 처리(OCR),Data,1,2,2024-02
+DP0072,프로세스 마이닝,Automation,1,6,2024-10
+DP0073,AWS,Cloud,2,11,2026-09
+DP0073,Data Lake & Data Catalog,Data,3,19,2026-09
+DP0073,Docker,Cloud,2,11,2026-09
+DP0073,ETL,Data,1,5,2026-03
+DP0073,Hadoop,Data,2,13,2026-03
+DP0073,Kafka,Data,2,13,2026-03
+DP0073,Kubernetes,Cloud,2,14,2026-09
+DP0073,Private Cloud,Cloud,2,13,2026-03
+DP0073,RAG·벡터DB,AI,1,6,2026-09
+DP0073,그룹사 업무,Domain,1,5,2026-03
+DP0073,금융 업무,Domain,2,14,2026-09
+DP0074,AI 에이전트 프레임워크,AI,1,6,2025-10
+DP0074,ETL,Data,14,64,2026-09
+DP0074,FastAPI,Framework,1,8,2021-05
+DP0074,Hadoop,Data,2,9,2025-03
+DP0074,Java,Programming Language,1,4,2024-04
+DP0074,ML Ops,AI,1,5,2019-04
+DP0074,Python,Programming Language,13,64,2026-09
+DP0074,RPA,Automation,1,8,2018-09
+DP0074,Scala,Programming Language,2,13,2022-11
+DP0074,Text Analysis,AI,17,85,2026-09
+DP0074,검색엔진,Data,15,72,2025-10
+DP0074,공공 업무,Domain,3,11,2024-04
+DP0074,그룹사 업무,Domain,7,26,2024-10
+DP0074,금융 업무,Domain,11,67,2026-09
+DP0074,데이터 모델링,Data,1,6,2017-11
+DP0074,메타데이터 관리,Data,16,69,2025-03
+DP0074,비정형 문서 처리(OCR),Data,14,64,2026-09
+DP0074,워크플로우·BPM,Automation,2,8,2022-11
+DP0074,지능형 문서 처리(IDP),Automation,1,8,2021-05
+DP0074,프로세스 마이닝,Automation,2,8,2024-04
+DP0075,AWS,Cloud,8,52,2026-04
+DP0075,BI Reporting,Data,1,5,2021-09
+DP0075,Data Lake & Data Catalog,Data,9,60,2026-09
+DP0075,Docker,Cloud,9,61,2026-09
+DP0075,ETL,Data,1,10,2021-04
+DP0075,Hadoop,Data,3,27,2024-08
+DP0075,Kafka,Data,7,49,2026-09
+DP0075,Kubernetes,Cloud,10,70,2026-09
+DP0075,Private Cloud,Cloud,8,51,2026-09
+DP0075,Python,Programming Language,1,9,2024-08
+DP0075,RPA,Automation,1,3,2022-02
+DP0075,Scala,Programming Language,1,9,2024-08
+DP0075,검색엔진,Data,1,7,2025-03
+DP0075,공공 업무,Domain,1,3,2022-02
+DP0075,그룹사 업무,Domain,6,50,2026-04
+DP0075,금융 업무,Domain,4,20,2026-09
+DP0075,데이터 모델링,Data,1,7,2025-03
+DP0076,AWS,Cloud,12,46,2026-09
+DP0076,Airflow,Data,12,51,2026-09
+DP0076,Docker,Cloud,2,8,2026-03
+DP0076,ETL,Data,12,58,2026-08
+DP0076,Hadoop,Data,10,40,2026-09
+DP0076,Kafka,Data,12,60,2026-08
+DP0076,Kubernetes,Cloud,2,7,2025-12
+DP0076,ML Ops,AI,3,14,2026-08
+DP0076,Python,Programming Language,11,55,2026-08
+DP0076,RPA,Automation,2,7,2021-06
+DP0076,SQL,Programming Language,12,68,2026-09
+DP0076,Scala,Programming Language,11,48,2026-09
+DP0076,Spark,Data,11,47,2026-09
+DP0076,Spring,Framework,2,13,2026-05
+DP0076,공공 업무,Domain,3,11,2026-05
+DP0076,그룹사 업무,Domain,9,40,2026-09
+DP0076,금융 업무,Domain,10,47,2025-12
+DP0076,로우코드 플랫폼,Automation,1,1,2018-08
+DP0076,메타데이터 관리,Data,3,15,2026-09
+DP0076,비정형 문서 처리(OCR),Data,1,6,2023-12
+DP0076,워크플로우·BPM,Automation,1,4,2025-05
+DP0076,프로세스 마이닝,Automation,3,29,2025-01
+DP0077,AWS,Cloud,5,17,2026-09
+DP0077,Airflow,Data,2,8,2026-04
+DP0077,ETL,Data,3,16,2025-09
+DP0077,Hadoop,Data,4,23,2026-07
+DP0077,Kafka,Data,5,16,2026-09
+DP0077,Python,Programming Language,5,27,2026-09
+DP0077,SQL,Programming Language,2,3,2026-09
+DP0077,Scala,Programming Language,5,16,2026-09
+DP0077,Spark,Data,5,22,2026-09
+DP0077,Text Analysis,AI,1,1,2024-10
+DP0077,그룹사 업무,Domain,5,12,2026-09
+DP0077,금융 업무,Domain,2,18,2026-04
+DP0077,데이터 모델링,Data,1,11,2025-09
+DP0077,비정형 문서 처리(OCR),Data,2,5,2026-07
+DP0077,워크플로우·BPM,Automation,1,3,2026-07
+DP0077,프롬프트 엔지니어링,AI,1,2,2024-04
+DP0078,AI 에이전트 프레임워크,AI,2,6,2026-05
+DP0078,AWS,Cloud,11,39,2026-09
+DP0078,Airflow,Data,10,48,2026-05
+DP0078,BI Reporting,Data,2,5,2025-09
+DP0078,Data Lake & Data Catalog,Data,1,3,2018-11
+DP0078,Docker,Cloud,1,5,2026-05
+DP0078,ETL,Data,11,56,2025-03
+DP0078,FastAPI,Framework,1,3,2016-12
+DP0078,Hadoop,Data,16,57,2026-09
+DP0078,Java,Programming Language,1,7,2023-06
+DP0078,Kafka,Data,13,51,2026-05
+DP0078,Kubernetes,Cloud,1,4,2025-09
+DP0078,ML Ops,AI,1,9,2022-09
+DP0078,Private Cloud,Cloud,1,1,2025-12
+DP0078,Python,Programming Language,12,38,2026-09
+DP0078,SQL,Programming Language,12,50,2026-09
+DP0078,Scala,Programming Language,9,44,2024-03
+DP0078,Spark,Data,12,49,2026-05
+DP0078,검색엔진,Data,1,3,2017-04
+DP0078,공공 업무,Domain,5,18,2026-05
+DP0078,그룹사 업무,Domain,12,49,2026-09
+DP0078,금융 업무,Domain,8,38,2025-01
+DP0078,데이터 모델링,Data,1,7,2023-06
+DP0078,메타데이터 관리,Data,3,7,2022-11
+DP0078,비정형 문서 처리(OCR),Data,1,1,2024-03
+DP0078,워크플로우·BPM,Automation,1,1,2020-09
+DP0078,지능형 문서 처리(IDP),Automation,2,10,2018-08
+DP0078,프로세스 마이닝,Automation,2,8,2026-09
+DP0078,프롬프트 엔지니어링,AI,1,6,2024-10
+DP0079,AWS,Cloud,2,14,2025-11
+DP0079,BI Reporting,Data,1,4,2024-04
+DP0079,ETL,Data,9,54,2026-08
+DP0079,Hadoop,Data,1,3,2022-02
+DP0079,LLM Application,AI,1,1,2026-09
+DP0079,ML Ops,AI,1,1,2026-09
+DP0079,Python,Programming Language,11,62,2026-09
+DP0079,RPA,Automation,1,6,2025-07
+DP0079,SQL,Programming Language,3,8,2025-12
+DP0079,Spring,Framework,1,1,2025-12
+DP0079,Text Analysis,AI,10,56,2026-08
+DP0079,검색엔진,Data,8,49,2026-09
+DP0079,공공 업무,Domain,1,4,2024-04
+DP0079,그룹사 업무,Domain,5,32,2026-03
+DP0079,금융 업무,Domain,7,32,2026-09
+DP0079,데이터 모델링,Data,1,11,2023-11
+DP0079,메타데이터 관리,Data,11,61,2026-09
+DP0079,비정형 문서 처리(OCR),Data,11,56,2026-09
+DP0079,지능형 문서 처리(IDP),Automation,1,3,2022-02
+DP0079,프로세스 마이닝,Automation,2,18,2021-09
+DP0080,AWS,Cloud,15,58,2026-09
+DP0080,Airflow,Data,12,58,2026-07
+DP0080,Data Lake & Data Catalog,Data,1,3,2025-11
+DP0080,Docker,Cloud,1,6,2017-10
+DP0080,ETL,Data,8,32,2026-09
+DP0080,FastAPI,Framework,1,5,2021-09
+DP0080,Hadoop,Data,15,72,2026-07
+DP0080,Kafka,Data,5,19,2025-11
+DP0080,Kubernetes,Cloud,1,5,2022-11
+DP0080,ML Ops,AI,2,9,2018-07
+DP0080,Private Cloud,Cloud,1,6,2026-07
+DP0080,Python,Programming Language,11,43,2026-07
+DP0080,React,Framework,3,15,2024-03
+DP0080,SQL,Programming Language,8,29,2026-09
+DP0080,Scala,Programming Language,13,61,2026-07
+DP0080,Spark,Data,11,47,2026-09
+DP0080,검색엔진,Data,2,7,2018-07
+DP0080,공공 업무,Domain,5,17,2022-11
+DP0080,그룹사 업무,Domain,9,45,2024-09
+DP0080,금융 업무,Domain,7,33,2026-09
+DP0080,데이터 모델링,Data,2,10,2024-03
+DP0080,로우코드 플랫폼,Automation,1,8,2018-06
+DP0080,메타데이터 관리,Data,2,11,2026-07
+DP0080,비정형 문서 처리(OCR),Data,2,6,2022-04
+DP0080,워크플로우·BPM,Automation,1,9,2025-07
+DP0080,지능형 문서 처리(IDP),Automation,1,1,2022-04
+DP0080,프로세스 마이닝,Automation,2,6,2025-11
+DP0081,AI 에이전트 프레임워크,AI,1,6,2026-09
+DP0081,AWS,Cloud,1,4,2020-08
+DP0081,Airflow,Data,2,13,2025-03
+DP0081,BI Reporting,Data,1,8,2022-10
+DP0081,Data Lake & Data Catalog,Data,1,5,2018-06
+DP0081,Docker,Cloud,2,7,2026-09
+DP0081,ETL,Data,15,77,2026-09
+DP0081,FastAPI,Framework,1,1,2024-02
+DP0081,Kafka,Data,2,13,2025-03
+DP0081,ML Ops,AI,1,7,2022-02
+DP0081,Private Cloud,Cloud,1,6,2023-12
+DP0081,Python,Programming Language,13,75,2026-09
+DP0081,RPA,Automation,2,10,2026-03
+DP0081,SQL,Programming Language,2,12,2022-10
+DP0081,Spring,Framework,1,6,2018-01
+DP0081,Text Analysis,AI,16,83,2026-09
+DP0081,검색엔진,Data,19,102,2026-09
+DP0081,공공 업무,Domain,3,12,2022-02
+DP0081,그룹사 업무,Domain,11,55,2026-03
+DP0081,금융 업무,Domain,7,46,2026-09
+DP0081,데이터 모델링,Data,2,5,2020-04
+DP0081,로우코드 플랫폼,Automation,1,7,2022-02
+DP0081,메타데이터 관리,Data,13,70,2026-09
+DP0081,비정형 문서 처리(OCR),Data,17,98,2026-09
+DP0081,워크플로우·BPM,Automation,1,2,2020-01
+DP0082,ETL,Data,14,63,2026-02
+DP0082,Java,Programming Language,2,9,2026-02
+DP0082,ML Ops,AI,1,8,2020-02
+DP0082,Python,Programming Language,18,81,2026-09
+DP0082,RPA,Automation,2,8,2021-06
+DP0082,SQL,Programming Language,1,7,2017-10
+DP0082,Scala,Programming Language,2,8,2022-04
+DP0082,Text Analysis,AI,18,84,2026-02
+DP0082,검색엔진,Data,17,73,2026-09
+DP0082,공공 업무,Domain,3,10,2022-12
+DP0082,그룹사 업무,Domain,12,64,2026-09
+DP0082,금융 업무,Domain,8,31,2025-09
+DP0082,데이터 모델링,Data,1,6,2023-06
+DP0082,로우코드 플랫폼,Automation,1,5,2024-09
+DP0082,메타데이터 관리,Data,18,81,2026-02
+DP0082,비정형 문서 처리(OCR),Data,14,68,2026-09
+DP0082,프로세스 마이닝,Automation,1,5,2023-11
+DP0083,AI 에이전트 프레임워크,AI,1,5,2025-11
+DP0083,BI Reporting,Data,20,101,2026-09
+DP0083,Docker,Cloud,1,1,2023-01
+DP0083,FastAPI,Framework,2,8,2022-11
+DP0083,Hadoop,Data,1,5,2024-05
+DP0083,Kafka,Data,1,4,2025-02
+DP0083,LLM Application,AI,1,5,2024-05
+DP0083,ML Ops,AI,3,17,2021-12
+DP0083,Private Cloud,Cloud,1,1,2018-11
+DP0083,Python,Programming Language,1,11,2018-10
+DP0083,RPA,Automation,1,5,2025-11
+DP0083,SQL,Programming Language,19,96,2026-09
+DP0083,Spring,Framework,3,6,2025-06
+DP0083,Text Analysis,AI,1,5,2022-11
+DP0083,검색엔진,Data,1,5,2024-10
+DP0083,공공 업무,Domain,2,5,2025-06
+DP0083,그룹사 업무,Domain,9,42,2025-02
+DP0083,금융 업무,Domain,9,54,2026-09
+DP0083,데이터 모델링,Data,20,101,2026-09
+DP0083,로우코드 플랫폼,Automation,1,1,2023-01
+DP0083,메타데이터 관리,Data,17,88,2026-09
+DP0083,비정형 문서 처리(OCR),Data,1,4,2025-06
+DP0083,워크플로우·BPM,Automation,1,11,2018-10
+DP0083,프로세스 마이닝,Automation,1,5,2024-10
+DP0084,AWS,Cloud,14,62,2026-09
+DP0084,Airflow,Data,1,2,2019-02
+DP0084,Data Lake & Data Catalog,Data,16,68,2026-09
+DP0084,Docker,Cloud,16,67,2026-09
+DP0084,ETL,Data,1,2,2019-02
+DP0084,Hadoop,Data,13,55,2026-09
+DP0084,Java,Programming Language,1,10,2021-06
+DP0084,Kafka,Data,12,51,2026-09
+DP0084,Kubernetes,Cloud,8,47,2024-01
+DP0084,LLM 파인튜닝,AI,1,1,2024-01
+DP0084,ML Ops,AI,1,4,2023-04
+DP0084,Private Cloud,Cloud,15,70,2026-07
+DP0084,Python,Programming Language,2,5,2026-07
+DP0084,RPA,Automation,1,5,2017-09
+DP0084,SQL,Programming Language,1,4,2026-07
+DP0084,Spark,Data,1,5,2021-12
+DP0084,검색엔진,Data,1,4,2023-04
+DP0084,공공 업무,Domain,4,5,2026-09
+DP0084,그룹사 업무,Domain,12,55,2026-07
+DP0084,금융 업무,Domain,6,36,2025-01
+DP0084,데이터 모델링,Data,2,13,2023-12
+DP0084,로우코드 플랫폼,Automation,1,4,2020-08
+DP0084,메타데이터 관리,Data,2,13,2023-12
+DP0084,지능형 문서 처리(IDP),Automation,1,2,2019-04
+DP0084,프로세스 마이닝,Automation,1,5,2017-09
+DP0085,Airflow,Data,1,5,2023-04
+DP0085,Docker,Cloud,1,5,2025-12
+DP0085,ETL,Data,10,54,2026-09
+DP0085,Kafka,Data,1,3,2022-04
+DP0085,ML Ops,AI,1,1,2026-09
+DP0085,Python,Programming Language,9,47,2026-09
+DP0085,RPA,Automation,1,3,2022-04
+DP0085,SQL,Programming Language,1,5,2025-12
+DP0085,Scala,Programming Language,1,4,2021-06
+DP0085,Text Analysis,AI,9,46,2026-09
+DP0085,검색엔진,Data,9,46,2026-09
+DP0085,공공 업무,Domain,1,3,2022-11
+DP0085,그룹사 업무,Domain,6,34,2026-07
+DP0085,금융 업무,Domain,5,24,2026-09
+DP0085,메타데이터 관리,Data,9,42,2026-09
+DP0085,비정형 문서 처리(OCR),Data,10,50,2026-09
+DP0085,워크플로우·BPM,Automation,1,11,2024-09
+DP0085,지능형 문서 처리(IDP),Automation,2,12,2026-09
+DP0085,프롬프트 엔지니어링,AI,1,6,2026-07
+DP0086,AI 에이전트 프레임워크,AI,1,3,2026-07
+DP0086,Airflow,Data,1,4,2025-06
+DP0086,Data Lake & Data Catalog,Data,3,16,2025-06
+DP0086,ETL,Data,20,77,2026-09
+DP0086,FastAPI,Framework,2,10,2021-12
+DP0086,Hadoop,Data,1,1,2018-11
+DP0086,Java,Programming Language,1,4,2018-05
+DP0086,Kafka,Data,1,4,2018-05
+DP0086,LLM Application,AI,1,9,2024-11
+DP0086,Private Cloud,Cloud,1,1,2020-12
+DP0086,Python,Programming Language,15,49,2026-09
+DP0086,RPA,Automation,2,8,2023-02
+DP0086,React,Framework,1,2,2017-10
+DP0086,SQL,Programming Language,1,1,2020-03
+DP0086,Text Analysis,AI,17,68,2026-09
+DP0086,검색엔진,Data,18,68,2026-07
+DP0086,공공 업무,Domain,3,6,2026-09
+DP0086,그룹사 업무,Domain,9,29,2026-07
+DP0086,금융 업무,Domain,12,56,2026-04
+DP0086,데이터 모델링,Data,1,2,2023-02
+DP0086,로우코드 플랫폼,Automation,2,11,2021-06
+DP0086,메타데이터 관리,Data,16,60,2026-07
+DP0086,비정형 문서 처리(OCR),Data,14,54,2026-07
+DP0086,워크플로우·BPM,Automation,1,6,2023-12
+DP0086,지능형 문서 처리(IDP),Automation,1,2,2017-10
+DP0086,프롬프트 엔지니어링,AI,1,9,2024-11
+DP0087,AI 에이전트 프레임워크,AI,1,6,2024-09
+DP0087,Airflow,Data,1,5,2025-12
+DP0087,BI Reporting,Data,18,91,2025-12
+DP0087,Data Lake & Data Catalog,Data,17,87,2025-12
+DP0087,FastAPI,Framework,2,15,2023-11
+DP0087,Java,Programming Language,2,8,2023-04
+DP0087,Kubernetes,Cloud,2,10,2025-03
+DP0087,ML Ops,AI,1,3,2018-10
+DP0087,Python,Programming Language,2,14,2020-10
+DP0087,SQL,Programming Language,17,91,2026-09
+DP0087,Spark,Data,1,5,2020-01
+DP0087,Spring,Framework,1,10,2021-12
+DP0087,Text Analysis,AI,1,6,2024-09
+DP0087,검색엔진,Data,1,5,2025-12
+DP0087,공공 업무,Domain,2,11,2020-01
+DP0087,그룹사 업무,Domain,8,34,2025-12
+DP0087,금융 업무,Domain,10,61,2026-09
+DP0087,데이터 모델링,Data,17,93,2026-09
+DP0087,메타데이터 관리,Data,14,74,2026-09
+DP0087,워크플로우·BPM,Automation,2,14,2021-12
+DP0087,지능형 문서 처리(IDP),Automation,1,5,2023-11
+DP0087,프롬프트 엔지니어링,AI,1,6,2025-03
+DP0088,AI 에이전트 프레임워크,AI,1,6,2026-07
+DP0088,AWS,Cloud,2,20,2022-12
+DP0088,Airflow,Data,1,3,2021-08
+DP0088,BI Reporting,Data,1,5,2026-01
+DP0088,Data Lake & Data Catalog,Data,1,4,2025-08
+DP0088,Docker,Cloud,1,3,2021-08
+DP0088,ETL,Data,13,50,2026-01
+DP0088,FastAPI,Framework,1,9,2022-12
+DP0088,Kubernetes,Cloud,1,5,2020-07
+DP0088,ML Ops,AI,1,6,2021-03
+DP0088,Private Cloud,Cloud,2,9,2026-01
+DP0088,Python,Programming Language,16,75,2026-01
+DP0088,React,Framework,2,10,2025-03
+DP0088,SQL,Programming Language,2,8,2023-07
+DP0088,Scala,Programming Language,2,8,2025-03
+DP0088,Text Analysis,AI,16,71,2026-07
+DP0088,검색엔진,Data,16,76,2026-07
+DP0088,공공 업무,Domain,3,16,2022-12
+DP0088,그룹사 업무,Domain,15,77,2026-07
+DP0088,금융 업무,Domain,3,9,2024-09
+DP0088,데이터 모델링,Data,1,7,2023-07
+DP0088,로우코드 플랫폼,Automation,2,5,2024-09
+DP0088,메타데이터 관리,Data,14,72,2026-07
+DP0088,비정형 문서 처리(OCR),Data,14,65,2025-08
+DP0088,워크플로우·BPM,Automation,1,5,2020-07
+DP0088,지능형 문서 처리(IDP),Automation,1,2,2017-02
+DP0089,AWS,Cloud,1,5,2020-07
+DP0089,Airflow,Data,2,13,2026-01
+DP0089,BI Reporting,Data,20,94,2026-09
+DP0089,Docker,Cloud,2,12,2026-09
+DP0089,Hadoop,Data,1,2,2022-02
+DP0089,Java,Programming Language,3,17,2024-09
+DP0089,Kafka,Data,2,12,2026-01
+DP0089,Kubernetes,Cloud,2,8,2021-10
+DP0089,SQL,Programming Language,20,98,2026-09
+DP0089,Spark,Data,1,2,2025-05
+DP0089,Text Analysis,AI,1,3,2022-07
+DP0089,검색엔진,Data,1,6,2018-06
+DP0089,공공 업무,Domain,1,5,2019-04
+DP0089,그룹사 업무,Domain,14,65,2025-05
+DP0089,금융 업무,Domain,6,29,2026-09
+DP0089,데이터 모델링,Data,21,99,2026-09
+DP0089,메타데이터 관리,Data,20,93,2026-09
+DP0089,비정형 문서 처리(OCR),Data,3,9,2025-05
+DP0089,워크플로우·BPM,Automation,1,9,2024-09
+DP0089,프롬프트 엔지니어링,AI,1,6,2026-09
+DP0090,AI 에이전트 프레임워크,AI,2,16,2025-10
+DP0090,ETL,Data,5,20,2026-09
+DP0090,Hadoop,Data,1,1,2023-12
+DP0090,Python,Programming Language,7,31,2026-09
+DP0090,RAG·벡터DB,AI,1,1,2024-02
+DP0090,RPA,Automation,1,1,2024-02
+DP0090,Scala,Programming Language,1,7,2025-01
+DP0090,Text Analysis,AI,4,16,2026-03
+DP0090,검색엔진,Data,5,18,2026-03
+DP0090,그룹사 업무,Domain,3,13,2026-03
+DP0090,금융 업무,Domain,4,18,2026-09
+DP0090,데이터 모델링,Data,1,5,2026-03
+DP0090,메타데이터 관리,Data,4,13,2025-01
+DP0090,비정형 문서 처리(OCR),Data,7,31,2026-09
+DP0091,Airflow,Data,2,14,2025-11
+DP0091,BI Reporting,Data,1,3,2026-09
+DP0091,ETL,Data,11,57,2026-09
+DP0091,Kafka,Data,1,1,2025-12
+DP0091,Kubernetes,Cloud,2,8,2024-12
+DP0091,Python,Programming Language,8,47,2026-09
+DP0091,RPA,Automation,1,3,2024-03
+DP0091,Text Analysis,AI,10,44,2026-09
+DP0091,검색엔진,Data,9,56,2025-11
+DP0091,공공 업무,Domain,1,3,2026-09
+DP0091,그룹사 업무,Domain,8,33,2026-06
+DP0091,금융 업무,Domain,4,31,2025-11
+DP0091,데이터 모델링,Data,2,6,2025-11
+DP0091,메타데이터 관리,Data,12,64,2026-09
+DP0091,비정형 문서 처리(OCR),Data,9,53,2026-09
+DP0091,워크플로우·BPM,Automation,1,11,2023-09
+DP0091,프롬프트 엔지니어링,AI,1,3,2024-03
+DP0092,AWS,Cloud,9,45,2026-09
+DP0092,Airflow,Data,6,26,2026-09
+DP0092,Docker,Cloud,4,21,2026-09
+DP0092,ETL,Data,4,26,2024-02
+DP0092,FastAPI,Framework,1,3,2023-05
+DP0092,Hadoop,Data,7,36,2026-09
+DP0092,Java,Programming Language,2,16,2024-10
+DP0092,Kafka,Data,8,30,2025-12
+DP0092,LLM 파인튜닝,AI,1,5,2025-08
+DP0092,ML Ops,AI,1,4,2025-12
+DP0092,Python,Programming Language,8,38,2026-03
+DP0092,RPA,Automation,1,3,2023-05
+DP0092,SQL,Programming Language,4,17,2025-12
+DP0092,Scala,Programming Language,6,21,2026-03
+DP0092,Spark,Data,8,36,2026-09
+DP0092,공공 업무,Domain,1,2,2024-04
+DP0092,그룹사 업무,Domain,7,31,2026-09
+DP0092,금융 업무,Domain,6,31,2025-08
+DP0092,데이터 모델링,Data,1,10,2023-02
+DP0092,지능형 문서 처리(IDP),Automation,2,9,2026-03
+DP0093,AI 에이전트 프레임워크,AI,1,4,2026-08
+DP0093,AWS,Cloud,17,68,2026-09
+DP0093,Airflow,Data,3,12,2026-04
+DP0093,BI Reporting,Data,1,1,2022-04
+DP0093,Data Lake & Data Catalog,Data,14,66,2026-08
+DP0093,Docker,Cloud,15,75,2026-09
+DP0093,FastAPI,Framework,1,3,2019-02
+DP0093,Hadoop,Data,18,76,2026-09
+DP0093,Java,Programming Language,1,5,2019-12
+DP0093,Kafka,Data,16,62,2026-09
+DP0093,Kubernetes,Cloud,15,56,2026-09
+DP0093,ML Ops,AI,2,17,2023-12
+DP0093,Private Cloud,Cloud,16,71,2026-08
+DP0093,Python,Programming Language,1,3,2017-11
+DP0093,RPA,Automation,1,9,2024-12
+DP0093,React,Framework,3,11,2025-07
+DP0093,SQL,Programming Language,2,6,2022-04
+DP0093,Scala,Programming Language,3,14,2025-11
+DP0093,검색엔진,Data,1,1,2026-09
+DP0093,공공 업무,Domain,3,10,2026-09
+DP0093,그룹사 업무,Domain,12,45,2026-08
+DP0093,금융 업무,Domain,9,45,2025-11
+DP0093,비정형 문서 처리(OCR),Data,2,3,2026-09
+DP0093,프로세스 마이닝,Automation,1,5,2022-10
+DP0094,AWS,Cloud,1,8,2021-03
+DP0094,Airflow,Data,1,12,2024-11
+DP0094,ETL,Data,9,51,2026-09
+DP0094,FastAPI,Framework,1,5,2023-09
+DP0094,Hadoop,Data,1,8,2021-03
+DP0094,Python,Programming Language,11,65,2026-09
+DP0094,SQL,Programming Language,1,5,2020-05
+DP0094,Spring,Framework,2,13,2026-09
+DP0094,Text Analysis,AI,14,81,2026-09
+DP0094,검색엔진,Data,9,42,2025-09
+DP0094,그룹사 업무,Domain,7,41,2026-09
+DP0094,금융 업무,Domain,7,40,2025-09
+DP0094,데이터 모델링,Data,3,9,2023-01
+DP0094,메타데이터 관리,Data,10,51,2026-09
+DP0094,비정형 문서 처리(OCR),Data,9,48,2026-09
+DP0094,지능형 문서 처리(IDP),Automation,1,1,2019-12
+DP0095,AI 에이전트 프레임워크,AI,1,8,2025-08
+DP0095,ETL,Data,7,40,2026-09
+DP0095,Hadoop,Data,1,3,2024-12
+DP0095,LLM Application,AI,1,2,2026-09
+DP0095,Private Cloud,Cloud,1,2,2025-12
+DP0095,Python,Programming Language,6,37,2026-09
+DP0095,React,Framework,1,7,2026-07
+DP0095,Spring,Framework,1,5,2024-09
+DP0095,Text Analysis,AI,7,32,2026-09
+DP0095,검색엔진,Data,6,37,2026-09
+DP0095,공공 업무,Domain,1,5,2024-04
+DP0095,그룹사 업무,Domain,6,35,2026-07
+DP0095,금융 업무,Domain,1,2,2026-09
+DP0095,로우코드 플랫폼,Automation,1,3,2024-12
+DP0095,메타데이터 관리,Data,7,32,2026-09
+DP0095,비정형 문서 처리(OCR),Data,5,29,2026-09
+DP0096,AWS,Cloud,6,27,2026-09
+DP0096,Airflow,Data,3,9,2025-11
+DP0096,Data Lake & Data Catalog,Data,2,8,2025-01
+DP0096,Docker,Cloud,1,10,2026-09
+DP0096,ETL,Data,4,21,2026-09
+DP0096,Hadoop,Data,1,4,2025-01
+DP0096,Java,Programming Language,1,2,2025-11
+DP0096,Kafka,Data,3,9,2025-11
+DP0096,ML Ops,AI,1,4,2025-05
+DP0096,Python,Programming Language,3,16,2026-09
+DP0096,SQL,Programming Language,4,19,2026-09
+DP0096,Scala,Programming Language,3,10,2025-11
+DP0096,Spark,Data,3,11,2025-08
+DP0096,Spring,Framework,1,4,2025-05
+DP0096,공공 업무,Domain,1,4,2024-04
+DP0096,그룹사 업무,Domain,4,13,2025-11
+DP0096,금융 업무,Domain,2,14,2026-09
+DP0096,메타데이터 관리,Data,1,4,2024-09
+DP0096,비정형 문서 처리(OCR),Data,1,4,2024-09
+DP0096,워크플로우·BPM,Automation,1,2,2025-11
+DP0096,지능형 문서 처리(IDP),Automation,1,10,2026-09
+DP0097,AWS,Cloud,1,4,2021-06
+DP0097,BI Reporting,Data,1,3,2020-12
+DP0097,Docker,Cloud,1,2,2024-06
+DP0097,ETL,Data,13,52,2026-08
+DP0097,FastAPI,Framework,2,8,2024-02
+DP0097,Java,Programming Language,1,3,2023-12
+DP0097,Kubernetes,Cloud,1,1,2025-01
+DP0097,Python,Programming Language,14,53,2026-08
+DP0097,RPA,Automation,1,4,2025-05
+DP0097,React,Framework,1,3,2023-07
+DP0097,SQL,Programming Language,2,6,2025-01
+DP0097,Scala,Programming Language,4,20,2026-08
+DP0097,Spark,Data,1,4,2025-05
+DP0097,Text Analysis,AI,11,36,2025-11
+DP0097,검색엔진,Data,12,45,2025-11
+DP0097,공공 업무,Domain,2,13,2022-10
+DP0097,그룹사 업무,Domain,9,33,2026-08
+DP0097,금융 업무,Domain,5,15,2025-11
+DP0097,메타데이터 관리,Data,7,23,2025-05
+DP0097,비정형 문서 처리(OCR),Data,11,39,2026-08
+DP0097,프롬프트 엔지니어링,AI,1,8,2026-08
+DP0098,AWS,Cloud,2,6,2026-04
+DP0098,BI Reporting,Data,2,12,2026-09
+DP0098,Data Lake & Data Catalog,Data,2,20,2023-10
+DP0098,Docker,Cloud,3,14,2021-06
+DP0098,ETL,Data,12,84,2026-04
+DP0098,Hadoop,Data,1,3,2019-02
+DP0098,Java,Programming Language,1,2,2019-04
+DP0098,Kafka,Data,2,4,2026-09
+DP0098,Kubernetes,Cloud,2,13,2025-11
+DP0098,LLM Application,AI,1,5,2026-04
+DP0098,LLM 파인튜닝,AI,1,3,2026-07
+DP0098,ML Ops,AI,1,4,2019-08
+DP0098,Private Cloud,Cloud,1,2,2019-04
+DP0098,Python,Programming Language,19,97,2026-09
+DP0098,React,Framework,1,3,2019-02
+DP0098,Scala,Programming Language,1,7,2024-07
+DP0098,Text Analysis,AI,14,73,2026-07
+DP0098,검색엔진,Data,16,82,2026-07
+DP0098,공공 업무,Domain,2,12,2022-12
+DP0098,그룹사 업무,Domain,11,54,2026-07
+DP0098,금융 업무,Domain,8,46,2026-09
+DP0098,메타데이터 관리,Data,17,83,2026-09
+DP0098,비정형 문서 처리(OCR),Data,20,107,2026-09
+DP0098,워크플로우·BPM,Automation,1,10,2023-10
+DP0098,프로세스 마이닝,Automation,1,4,2019-08
+DP0099,Airflow,Data,1,11,2023-04
+DP0099,BI Reporting,Data,1,5,2020-06
+DP0099,Data Lake & Data Catalog,Data,1,4,2022-04
+DP0099,Docker,Cloud,2,15,2026-06
+DP0099,ETL,Data,17,84,2026-09
+DP0099,FastAPI,Framework,1,7,2025-06
+DP0099,Hadoop,Data,2,5,2026-09
+DP0099,Java,Programming Language,2,2,2020-01
+DP0099,Kafka,Data,1,8,2018-11
+DP0099,Kubernetes,Cloud,1,1,2020-01
+DP0099,LLM 파인튜닝,AI,1,3,2023-12
+DP0099,ML Ops,AI,1,1,2022-05
+DP0099,Python,Programming Language,17,78,2026-06
+DP0099,RPA,Automation,1,5,2021-12
+DP0099,React,Framework,1,6,2023-12
+DP0099,SQL,Programming Language,1,1,2026-09
+DP0099,Scala,Programming Language,1,2,2017-12
+DP0099,Spark,Data,1,7,2019-12
+DP0099,Text Analysis,AI,18,95,2026-09
+DP0099,검색엔진,Data,17,83,2026-09
+DP0099,공공 업무,Domain,2,4,2020-01
+DP0099,그룹사 업무,Domain,10,45,2026-09
+DP0099,금융 업무,Domain,10,57,2023-12
+DP0099,데이터 모델링,Data,1,8,2018-11
+DP0099,로우코드 플랫폼,Automation,1,10,2026-06
+DP0099,메타데이터 관리,Data,15,82,2026-06
+DP0099,비정형 문서 처리(OCR),Data,11,54,2026-06
+DP0099,워크플로우·BPM,Automation,2,8,2024-10
+DP0099,지능형 문서 처리(IDP),Automation,1,5,2021-12
+DP0100,AWS,Cloud,8,46,2026-01
+DP0100,Airflow,Data,3,19,2026-09
+DP0100,BI Reporting,Data,1,6,2022-12
+DP0100,Docker,Cloud,1,2,2021-06
+DP0100,ETL,Data,9,53,2026-09
+DP0100,Hadoop,Data,4,18,2023-04
+DP0100,Kafka,Data,5,24,2026-01
+DP0100,LLM 파인튜닝,AI,1,8,2026-09
+DP0100,Private Cloud,Cloud,1,9,2024-11
+DP0100,Python,Programming Language,7,36,2026-09
+DP0100,SQL,Programming Language,8,48,2026-09
+DP0100,Scala,Programming Language,4,27,2026-09
+DP0100,Spark,Data,8,45,2026-09
+DP0100,Spring,Framework,2,10,2023-12
+DP0100,검색엔진,Data,1,3,2023-04
+DP0100,공공 업무,Domain,1,6,2022-12
+DP0100,그룹사 업무,Domain,3,17,2026-01
+DP0100,금융 업무,Domain,9,48,2026-09
+DP0100,비정형 문서 처리(OCR),Data,2,8,2026-01
+DP0100,워크플로우·BPM,Automation,2,15,2026-09

@@ -219,14 +219,18 @@ def test_committed_demo_bundle_validates_and_matches_the_generator(tmp_path):
     fresh = generate_org_bundle(tmp_path / "fresh", 100, seed=SEED)
     for f in sorted(fresh.iterdir()):
         assert (demo / f.name).read_bytes() == f.read_bytes(), f"{f.name} is stale: rerun python -m rehearsal.make_demo"
+    operating = demo.parent / "org-n100-operating"
+    fresh_op = generate_org_bundle(tmp_path / "fresh-op", 100, seed=SEED, scenario="operating")
+    for f in sorted(fresh_op.iterdir()):
+        assert (operating / f.name).read_bytes() == f.read_bytes(), f"operating {f.name} is stale: rerun make_demo"
     import io
     import zipfile
-    for n in (200, 300):
-        root = generate_org_bundle(tmp_path / f"n{n}", n, seed=SEED)
-        with zipfile.ZipFile(demo.parent / f"org-n{n}.zip") as zf:
+    for n, scenario, suffix in [(n, sc, sf) for n in (200, 300) for sc, sf in (("planning", ""), ("operating", "-operating"))]:
+        root = generate_org_bundle(tmp_path / f"n{n}{suffix}", n, seed=SEED, scenario=scenario)
+        with zipfile.ZipFile(demo.parent / f"org-n{n}{suffix}.zip") as zf:
             assert sorted(zf.namelist()) == sorted(p.name for p in root.iterdir())
             for p in root.iterdir():
-                assert zf.read(p.name) == p.read_bytes(), f"org-n{n}.zip is stale: rerun python -m rehearsal.make_demo"
+                assert zf.read(p.name) == p.read_bytes(), f"org-n{n}{suffix}.zip is stale: rerun python -m rehearsal.make_demo"
 
 
 def test_senior_careers_fill_the_window_and_juniors_start_late(bundle):
@@ -244,3 +248,29 @@ def test_senior_careers_fill_the_window_and_juniors_start_late(bundle):
     assert all((d.year - window.year) * 12 + d.month - window.month <= 12 for d in seniors)
     assert all(d > window for d in juniors)                              # at most 6 years of service
     assert max(int(s["experience_months"]) for s in b.tables["person_skills.csv"]) <= 120
+
+
+
+def test_operating_scenario_matches_the_described_situation(tmp_path):
+    """User: most people are already on running projects; 2-3 new proposals are staffed from ~10 people just freed."""
+    import json
+    from core.ingest.org_profile import generate_org_bundle
+    root = generate_org_bundle(tmp_path / "op", 100, seed=7, scenario="operating")
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    b, report = load_bundle(root)
+    ds, _ = to_dataset(b, report)
+    assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 2
+    on = {c.person_id for c in ds.current}
+    assert len(on) == 90 and set(m["bench"]) == {p.id for p in ds.people} - on
+    for p in ds.projects:
+        team = [c for c in ds.current if c.project_id == p.id]
+        if p.id in m["proposals"]:
+            assert team == [] and p.start_month == 1
+        else:                                   # a running project's seats are exactly its current team
+            grades = {}
+            for c in team:
+                g = next(pp.grade for pp in ds.people if pp.id == c.person_id)
+                grades[g] = grades.get(g, 0) + 1
+            assert grades == {g: k for g, k in p.grade_headcount.items() if k}
+    plan = generate_org_bundle(tmp_path / "plan", 100, seed=7)
+    assert (root / "people.csv").read_bytes() == (plan / "people.csv").read_bytes()      # same organisation

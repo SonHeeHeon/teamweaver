@@ -159,3 +159,64 @@
   - 안 A~D까지 시간: 100명 약 2분, 200명 약 4분, 300명 약 12분.
   - 처음에는 AI 설명의 근거 칸이 늘 비어 있었다. 지시를 보강하고 라벨 근거를 목록에 싣게 고쳤다.
 - **운영 함정**: 큰 모델을 프로세스 시작 인자로 넘기면 자식이 시작 중 죽을 때 서버가 영원히 멈출 수 있었다(21분 멈춤 실측). 모델은 시작 뒤 전용 통로로 보내도록 고쳤다.
+
+---
+
+## 7. "오래 붙어 다닌 사이" 감점은 맞는가 — 증명할 수 있는 것과 없는 것, 문헌 근거 (2026-10-06)
+
+**지금 정의**: 계획 시작 전 **최근 36개월 안에, 같은 사업에 같은 달 함께 투입된 달이 12개월 이상**인 두 사람(같은 달은 사업이 여럿이어도 1개월).
+"10년 중 2년"이 아니다. 예전 정의는 "10년 이력 중 6개월 이상"이었다. 이런 두 사람이 새 계획에서 같은 사업에 들어가면 쌍마다 μ=0.2를 감점한다.
+협업 보상(λ=0.3 × 협업 점수, 함께 일한 개월은 12개월에서 포화)과 함께 있어서, 모델은 "어느 정도 함께 해 본 사이는 좋다"와
+"최근 오래 붙어 다닌 사이끼리 몰리는 것은 피한다"를 동시에 표현한다.
+
+**증명할 수 있나**
+- 우리 데이터로는 못 한다. 성과가 가상 규칙에서 나왔고, 과거 사업 104~223개로는 이 정도 크기의 효과를 가를 힘이 없다(5절).
+- 실데이터에서는 두 가지 길이 있다.
+  - **관찰 분석**: 우리가 만든 `core/evaluate/outcome_check.py`를 그대로 쓴다. 몇 년치 사업을 모아야 한다. 인과는 아니고 "관련"까지만 말할 수 있다.
+  - **시범 운영(실험)**: 일정 기간 신규 배치의 절반에만 감점을 켜고 고객 평가·일정·교체를 비교한다. 인과에 가장 가깝지만, 실제 배치를 실험 대상으로 삼아야 해서 현업 합의가 필요하다.
+- 그래서 지금 할 수 있는 가장 정직한 근거는 **문헌 + 우리 측정 + 실데이터 점검 계획**이다.
+
+**최신 근거(2020~2025, 메타분석·상위 학술지)**
+| 연구 | 대상 | 결과 | 우리 모델에 주는 뜻 |
+|---|---|---|---|
+| Gonzalez-Mulé 외 (2020), *Personnel Psychology* 73(1) — **메타분석** | 169개 연구, 효과크기 622개 | 팀이 함께한 기간은 팀 성과와 **양의 관계**(인지·동기·행동 과정을 거쳐). 메타분석 수준에서 "오래되면 꺾인다"는 곡선 관계는 확인되지 않음 | 협업 보상 λ>0을 가장 넓게 지지 |
+| Subramony 외 (2021), *Human Resource Management* | 업무 단위 근속과 노동생산성 | 양의 관계지만 **최적점을 넘으면 수익 체감** | 아주 오래 붙어 다니는 것의 이득은 줄어든다 → 감점 μ의 약한 근거 |
+| Akşin, Deo, Jónasson & Ramdas (2021), *Management Science* 67(2) | 구급대원 팀(신규 대원) | 여러 파트너와 일해 본 경험(**파트너 노출**)이 성과를 높였고, 노출을 중시한 편성이 익숙함을 중시한 편성보다 약 9.2% 나았다(반사실 분석) | "같은 사람끼리만 묶이지 않게"의 가장 직접적인 최신 근거 — 익숙함이 나빠서가 아니라 **다양한 파트너 경험이 더 좋아서** |
+| Kim, Song & Valentine (2023), *Organization Science* 34(1) | 병원 응급실 팀 | 파트너 노출의 효과가 역할에 따라 다름(어떤 역할은 +, 어떤 역할은 −) | 일률적 감점보다 역할·등급별로 다를 수 있음 |
+| "Teams in Crisis" (2025), *Organization Science* | 대형 응급실, COVID-19 초기 포함 | 익숙함은 의사결정을 빠르게 하고 위기 때 특히 도움. 다만 불확실성이 높으면 이득이 크게 줄어듦 | 익숙함의 이득은 상황 조건부 → 신규 기술·낯선 사업일수록 익숙함 의존을 경계 |
+| JAMA Surgery (2023, 7,893명 환자) | 외과의·마취의 짝 | 함께한 수술이 한 번 늘 때마다 90일 합병증 확률 약 5% 감소 | 고위험 업무에서 익숙함의 이득이 큼 → λ>0 지지 |
+
+**정리(최신 근거 기준)**: 함께 일한 경험은 성과에 좋다는 것이 메타분석 수준의 결론이다(λ>0 근거 강함).
+"오래 붙어 다니면 나쁘다"는 직접 근거는 약하다. 대신 **여러 사람과 일해 보게 하는 것(파트너 노출)이 더 좋다**는 최신 근거가 있다.
+그러니 우리 감점 μ는 "익숙함이 해롭다"가 아니라 **"편성을 섞어 파트너 노출을 늘린다"**는 원칙으로 설명하는 것이 근거에 맞다.
+
+**고전 근거**(방향이 둘로 갈린다)
+| 연구 | 대상 | 결과 | 우리 모델에 주는 뜻 |
+|---|---|---|---|
+| Huckman, Staats & Upton (2009), *Management Science* 55(1) | 인도 대형 소프트웨어 아웃소싱 회사의 3년간 전 프로젝트 | 함께 일해 본 경험(팀 친숙도)이 많을수록 예산·일정 준수와 품질이 좋았다 | SI와 가장 가까운 근거. **협업 보상 λ>0을 지지**하고, 익숙함 자체를 벌할 근거는 아니다 |
+| Espinosa, Slaughter, Kraut & Herbsleb (2007), *Organization Science* 18(4) | 분산 소프트웨어 개발 팀 | 팀 친숙도가 성과를 높이고, 과업 친숙도와 서로 보완(대체)한다 | 익숙한 팀은 낯선 과업을 더 잘 버틴다 → λ>0 지지 |
+| Katz (1982), *Administrative Science Quarterly* 27(1) | R&D 프로젝트 그룹 50개 | 구성원이 오래 함께할수록 팀 안팎의 핵심 정보원과 소통이 줄고 기술 성과가 떨어졌다 | "너무 오래 같은 팀"의 위험 → **감점 μ의 근거**(단, 수년 단위의 팀 지속 기간 이야기다) |
+| Guimerà, Uzzi, Spiro & Amaral (2005), *Science* | 브로드웨이 뮤지컬·학술 협업 팀 | 경험 많은 사람과 새 조합을 섞은 팀이 잘했고, 같은 사람끼리 반복 협업이 많은 팀은 성과가 낮았다 | "같은 사람끼리만 묶이지 않게"라는 원칙의 근거 → 감점 μ 또는 신규 조합 장려 |
+
+**고전 근거 정리**: 문헌은 "함께 일해 본 경험은 대체로 좋다(특히 소프트웨어 서비스)"와 "아주 오래 같은 사람끼리만 묶이면 정보가 막히고 성과가 떨어질 수 있다"를 함께 말한다.
+지금 모델은 이 둘을 협업 보상(λ)과 익숙함 감점(μ)으로 함께 담고 있어 방향은 문헌과 맞다.
+다만 감점이 시작되는 지점(최근 3년 중 12개월)과 크기(0.2)는 문헌에서 나온 숫자가 아니라 설계값이고, 계산 가능성 측정(4절)으로 고른 것이다.
+Katz의 "오래"는 수년 단위라, 12개월은 이른 편일 수 있다 — 실데이터 점검에서 가장 먼저 볼 지점이다.
+
+**시연·보고서에서 말할 것**
+1. 정의(최근 3년 중 12개월).
+2. 문헌 두 갈래.
+3. 우리 데이터로는 증명 불가.
+4. 실데이터가 오면 같은 점검 도구로 확인하고, 필요하면 시범 운영으로 확인한다.
+
+참고문헌
+- Gonzalez-Mulé, E., et al. (2020). Team tenure and team performance: A meta-analysis and process model. *Personnel Psychology*, 73(1), 151–198.
+- Subramony, M., et al. (2021). Too much tenure? Nonlinear effects and moderated influences of unit-level tenure and labor productivity. *Human Resource Management*.
+- Akşin, Z., Deo, S., Jónasson, J. O., & Ramdas, K. (2021). Learning from Many: Partner Exposure and Team Familiarity in Fluid Teams. *Management Science*, 67(2), 854–874.
+- Kim, S.-H., Song, H., & Valentine, M. A. (2023). Learning in Temporary Teams: The Varying Effects of Partner Exposure by Team Member Role. *Organization Science*, 34(1), 433–455.
+- Teams in Crisis: The Effect of Team Familiarity on Performance Under Conditions of Crisis and Uncertainty (2025). *Organization Science*. doi:10.1287/orsc.2025.20912
+- JAMA Surgery (2023-02-22). 외과의-마취의 협업 횟수와 90일 결과(7,893명) — Sunnybrook Health Sciences Centre 소개 기사 참조.
+- Huckman, R. S., Staats, B. R., & Upton, D. M. (2009). Team Familiarity, Role Experience, and Performance: Evidence from Indian Software Services. *Management Science*, 55(1), 85–100.
+- Espinosa, J. A., Slaughter, S. A., Kraut, R. E., & Herbsleb, J. D. (2007). Familiarity, Complexity, and Team Performance in Geographically Distributed Software Development. *Organization Science*, 18(4), 613–630.
+- Katz, R. (1982). The Effects of Group Longevity on Project Communication and Performance. *Administrative Science Quarterly*, 27(1), 81–104.
+- Guimerà, R., Uzzi, B., Spiro, J., & Amaral, L. A. N. (2005). Team Assembly Mechanisms Determine Collaboration Network Structure and Team Performance. *Science*, 308(5722), 697–702.

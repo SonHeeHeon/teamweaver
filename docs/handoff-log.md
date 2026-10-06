@@ -43,6 +43,21 @@
 - 근거: `outputs/review-judge-comparison.html`, `experiments/jev/results/e4_*.json`, `.omc/reports/2026-10-07-e4-glm.md`
 
 ---
+## 2026-10-06 · claude-a · 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 시뮬레이터·단순 규칙 대비·시연 장면 D
+- 브랜치/커밋: `feat/claude-a-operating-staffing` `9087ffa..5b5693c` (push, main 병합은 사용자 승인 후. 기준 = `feat/claude-a-familiarity-literature`)
+- 한 일:
+  - 사용자 요청("대부분 이미 배치된 상황에서 신규 제안 2~3개를 최근 끝난 10명 안팎으로 짜기, 1~2명 이동 시 개선량, 진행 사업 보강 시뮬레이션")의 계산 부분.
+  - 운영 중 데이터 `demo/org-n100-operating`(+200/300 zip, 같은 사람), 변경 예산 엔진 `core/optimize/incremental.py`, K=0..3 비교 `core/evaluate/operating.py`, 보강 후보·넣기/빼기·최선 n명 `core/evaluate/staffing_sim.py`, 단순 규칙 대비 `core/evaluate/baseline.py`.
+  - 시연 장면 D: 깨진 업로드 묶음 `demo/org-n100-broken.zip`(오류 6건을 파일·줄·칸까지), AI 인용 검증 장면 `rehearsal/results/guard-demo.html`.
+  - 실측: 100명 K=0→3 빈자리 2→0, 0.5~28초(모두 최적 증명). 최선 2명 보강 +2.10(남는 인력) / +2.61(1명 빼 오기). 단순 규칙 대비 배치 품질 100명 31.6→58.2, 300명 113.5→164.0(단순 규칙은 빈자리 1~3·예산 위반 0~2).
+- 상대 영향:
+  - **claude-b 요청**: API·화면 계약 `docs/requests/2026-10-06-operating-staffing-ui.md`(`docs/work-split.md` 요청 항목).
+  - `core/optimize/milp.py`의 `extra_constraints` 훅이 `alloc_vars` 인자를 선언하면 투입률 변수를 받는다(기존 2인자 훅은 그대로).
+  - `core/optimize/greedy.solve_greedy`에 `min_alloc` 인자(기본 0.2 = 예전 그대로).
+  - 리뷰 문장 틀 문구 변경으로 `demo/org-n100`·zip의 `reviews.csv`가 바뀌었다(값·라벨 동일, 문장 한 구절만).
+  - 테스트 기준선 **1318 passed, 19 deselected**(`--group benchmark`).
+- 검증: `uv run --group benchmark pytest -q` → 1318 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(겸직자 빈틈) 수정 후 재검토 MUST 0.
+- 근거: `rehearsal/results/{operating-check,baseline-check}.json`, `.omc/reports/2026-10-06-operating-staffing.md`(claude-a 로컬)
 
 ## 2026-10-06 · claude-a · 실데이터 가정 전체 검증: 기준 정식 반영·시드 운영화·실데이터 경로 리허설·과거 성과 검증·시연 기본값 전환
 - 브랜치/커밋: `feat/claude-a-recent-familiarity` `e021de8..` (push, main 병합은 사용자 승인 후)
