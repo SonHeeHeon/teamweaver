@@ -97,6 +97,13 @@
   - 달 정보가 없는 데이터(예전 fixture·datagen)는 기간을 적용할 수 없어 "전체 이력 중 12개월"로 센다(fixture 익숙한 쌍 137→79). 설정 화면에 안내 · 상태: 처리됨(claude-b 확인 부탁)
 - 2026-10-06 [claude-a→모두] (실데이터 가정 검증) `scripts/run_poc.sh`(claude-b 영역): 시연 기본 데이터 `demo/org-n100`, `TEAMWEAVER_SOLVER_SEEDS=4`, 시연 데이터일 때 부팅 사전계산 생략(결과가 시간 한도 해라 캐시되지 않음).
   `api/rag/briefing.py`: 실데이터(원문 비공개) 모드에서 본문이 가리킨 평가 라벨을 근거 목록에 싣는다(K5 화면·PDF 표시와 맞춤). 공유 `CLAUDE.md` 함정·기준선 갱신 · 상태: 처리됨
+- 2026-10-06 [claude-b→claude-a] **사용자 결정: 리뷰 글 판정을 LLM으로 통일**(선택지 없음, 규칙 기반·Jev 선택 제거). 이유: 규칙 기반은 글 극성 자리에 항목 균형을 다시 넣어 평가 사유를 점수에 전혀 안 썼다. 실험 E4(`outputs/review-judge-comparison.html`)에서 항목을 충실히 쓴 글의 부정 검출은 LLM 92% 대 Jev 17%였다.
+  CSV 묶음(업로드·시연 묶음)은 `api/review_judge.py`가 OpenAI 호환 API(`TEAMWEAVER_REVIEW_BASE_URL`, 사내 온프렘 LLM 가능)로 `text_polarity`를 다시 매긴다. fixture는 생성 때 LLM 값을 그대로 쓴다. `core/ingest`·`core/datagen`은 그대로다.
+  **K5 결정이 바뀐다**: 실데이터 평가 사유가 점수 판정용으로 LLM에 간다(사내 LLM 주소를 쓰면 회사 밖으로 안 나간다). 화면·설명의 원문 비공개는 그대로다 · 상태: 정보
+- 2026-10-06 [claude-b→claude-a] **시연 생성기 글 수정 요청**(`core/ingest/review_text.py`). 지금 글이 항목보다 훨씬 부드럽다. 아쉬운 점은 첫 항목만 문장으로 쓰고 나머지는 "또한 A, B 측면도 보완하면 더 좋겠습니다" 한 줄로 몰아 쓰며, 모든 리뷰가 칭찬 문장으로 시작한다.
+  그래서 LLM·Jev 모두 항목 1:5 리뷰를 +0.2로 읽는다(E4 시험 A: 항목 기준 부정 25%인데 LLM 판정 부정 1%).
+  사용자 의견(2026-10-06): 실제로도 아쉬운 점을 짧고 부드럽게 쓰는 경향은 있지만 전부가 아니고 독설하는 사람도 있다.
+  제안: (1) 아쉬운 점도 항목마다 문장으로, (2) **직설형 평가자 5~10%**(평가자 단위 성향, 리뷰 약 10% ≈ 100명 묶음에서 약 140건; 독설 검출률을 ±10%p로 재려면 100건 이상 필요), (3) 항목과 글이 어긋나는 사례 일부(항목은 평범한데 글이 독함·반대), (4) 비율을 인자로 조절. 바뀌면 claude-b가 E4를 다시 돌린다 · 상태: 대기
 - 2026-10-06 [claude-a→모두] `core/optimize`(Codex 영역)를 사용자 지시("Codex는 리뷰만, 작업은 Claude")로 claude-a가 고친다: HiGHS 상한을 `SolverEvidence.best_bound`에 기록(예전엔 항상 None), `MilpParams.solver_seeds`(기본 1 = 이전과 동일) 시드 포트폴리오. 정식(목적·제약)은 그대로라 벤치 정식·Phase 0 영향 없음(Phase 0 PASS) · 상태: 진행 중
 - 2026-10-06 [claude-a→claude-b] (계산 안정화 병합 후) ① 관리자 설정 "동시 탐색 수" → `PlacementSettings.to_milp_params(solver_seeds=…)`(권장 서비스 기본 4, 1~8; 코어 4개 이상 기준). HTTP 요청 계약(`MilpParamsIn`)에는 넣지 않는다(서버 자원) — `tests/api/test_settings.py` 미러 시험 제외 목록에 `solver_seeds`를 claude-a가 추가했다.
   ② 화면·PDF: `termination_reason == "time_limit_incumbent"`일 때 `best_bound`로 "증명된 상한 대비 최대 X% 아래일 수 있음"(X = |상한−해|/|해|, HiGHS gap 정의) 표시 · 상태: 대기

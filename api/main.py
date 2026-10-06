@@ -40,16 +40,11 @@ WARM_GAP_MIN = 0.05
 async def lifespan(app: FastAPI):
     load_env()
     warn_if_unprotected()
-    # 관리자 배치 설정(K8)을 데이터셋보다 먼저 읽는다 -- 리뷰 글 판정 방식(review_judge)이 데이터셋을 만드는 방식이다.
     settings_store = SettingsStore(default_settings_path())
     app.state.settings_store = settings_store
 
-    def current_judge() -> str:
-        return settings_store.current().settings.review_judge
-
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
-    def build_fixture_dataset(review_judge: str | None = None) -> ActiveDataset:
-        judge = review_judge or current_judge()
+    def build_fixture_dataset() -> ActiveDataset:
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
@@ -62,17 +57,19 @@ async def lifespan(app: FastAPI):
                 ds, parsed = to_dataset(bundle, report)      # ValueError with the report if it does not validate
                 return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
                                     version=bundle_version(root), source="demo-bundle",
-                                    synthetic=bundle.manifest.get("synthetic") is True,
-                                    review_judge=judge)
+                                    synthetic=bundle.manifest.get("synthetic") is True)
             except Exception as exc:                    # noqa: BLE001
                 log.error("시연 데이터 묶음(%s)을 읽지 못해 기본 데이터로 시작한다: %s", root, exc)
                 app.state.demo_bundle_error = f"시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: {exc}"
         ds, parsed = load_fixtures(FIXTURES_DIR)
         return build_active(ds, parsed, dataset_id="fixture-demo-100x20",
                             version=dir_version(FIXTURES_DIR, list(FIXTURE_DATA_FILES)),
-                            source="fixture", synthetic=True, review_judge=judge)
+                            source="fixture", synthetic=True, judge=False)
 
     app.state.build_fixture_dataset = build_fixture_dataset
+    # 없앤 Jev 판정(2026-10-06 하루)의 캐시가 남아 있으면 지운다(글 해시·판정값).
+    from api.review_judge import clear_cache
+    clear_cache(data_dir() / "jev_judgments.json")
     # 업로드해 둔 데이터가 있으면 그것으로 뜬다(K13). 같은 검증·변환을 다시 거치고, 내용
     # 해시가 저장 당시 버전과 다르면 거부한다. 실패하면 기본 데이터로 뜨고 이유를 화면에 알린다.
     store = DatasetStore(data_dir())
@@ -84,7 +81,7 @@ async def lifespan(app: FastAPI):
         saved = store.load()
         if saved is not None:
             pointer, blob = saved
-            active, report, archive_error = validate_and_build(blob, review_judge=current_judge())
+            active, report, archive_error = validate_and_build(blob)
             if active is None:
                 raise ValueError(archive_error or "저장된 묶음이 지금 검증을 통과하지 못한다: "
                                  + "; ".join(e["message"] for e in (report or {}).get("errors", [])[:3]))

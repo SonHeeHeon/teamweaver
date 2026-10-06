@@ -269,10 +269,10 @@ def test_milp_params_in_mirrors_every_model_field():
     # solver는 일부러 HTTP 계약 밖에 둔다: 서비스 솔버는 HiGHS로 고정(사용자 결정 2026-10-05), "cbc"는 측정용.
     # seat_fit_weight도 HTTP 밖: 로드맵 3번 실험에서 기각된 측정용 항(기본 0)이라 클라이언트가 켤 수 없게 한다.
     # time_limit_auto는 그 반대: 관리자 설정의 표시 칸이라 HTTP에는 있지만 모델에는 없다(계산엔 time_limit 숫자만).
-    # review_judge도 같다: 데이터셋을 만드는 방식이라 HTTP에선 받기만 한다(api.settings.NON_SOLVER_FIELDS).
+    # review_judge는 없앤 칸이다(2026-10-06 LLM 통일) -- 이전 화면이 보내도 무시하려고 HTTP에만 남긴다.
     # solver_seeds는 HTTP 밖(2026-10-06 claude-a): 동시에 쓰는 CPU 코어 수라 요청마다 정하지 않고 서버 설정이 정한다.
     from api.settings import NON_SOLVER_FIELDS
-    assert set(MilpParamsIn.model_fields) - NON_SOLVER_FIELDS == \
+    assert set(MilpParamsIn.model_fields) - NON_SOLVER_FIELDS - {"review_judge"} == \
         set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds"}
     with pytest.raises(Exception):
         MilpParamsIn(solver="cbc")

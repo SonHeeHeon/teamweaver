@@ -9,6 +9,7 @@ app.state.dataset 하나를 통째로 바꿔 끼운다 -- graph만 새것이고 
 """
 import hashlib
 import io
+import logging
 import json
 import re
 import sqlite3
@@ -30,6 +31,8 @@ from core.ingest.loader import FILE_SPECS
 if TYPE_CHECKING:
     from api.rag.evidence import EvidenceIndex
 
+log = logging.getLogger(__name__)
+
 MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024
 MAX_ENTRIES = 64
 _ALLOWED = set(FILE_SPECS) | {"manifest.json", "mapping.json"}
@@ -50,11 +53,19 @@ class DatasetInfo:
     people: int
     projects: int
     activated_at: str
-    # 리뷰 글 판정 방식(사용자 결정 2026-10-06, api/review_judge.py). version은 판정까지 반영한 계산 버전이고
-    # content_version은 원천 파일만의 해시다(업로드 저장·복원 대조용 -- 판정 방식을 바꿔도 같은 묶음이다).
+    # 리뷰 글 판정(사용자 결정 2026-10-06: LLM 통일, api/review_judge.py). version은 판정값까지 반영한 계산
+    # 버전이고, content_version은 원천 파일만의 해시다(업로드 저장·복원 대조용 -- 다시 판정해도 같은 묶음이다).
     content_version: str = ""
-    review_judge: str = "rule"
-    judge_error: str | None = None      # Jev를 골랐지만 판정에 실패해 규칙 기반으로 만든 경우 그 이유
+    # "llm"     지금 LLM이 평가 사유(글)를 읽어 매겼다(CSV 묶음: 업로드·시연 묶음)
+    # "fixture" 가상 고정 데이터가 생성 때 LLM으로 매긴 값을 그대로 쓴다(외부 호출 없음)
+    # "items"   LLM 판정에 실패해 글 점수 자리에 항목 균형을 썼다(judge_error에 이유, 데이터 탭에서 다시 시도)
+    # "blocked" 실데이터를 회사 밖일 수 있는 곳으로 보내는 것이 허용되지 않아 판정하지 않고 항목 균형을 썼다
+    review_judge: str = "llm"
+    judge_model: str | None = None
+    judge_host: str | None = None       # 글을 보낸 곳(OpenAI면 api.openai.com, 사내 LLM이면 그 호스트)
+    judge_location: str | None = None   # "openai" | "onprem" | "unknown"(사내인지 확인 안 됨)
+    judge_external: bool | None = None  # 회사 밖일 수 있는 곳(openai·unknown)으로 보냈는가
+    judge_error: str | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -120,25 +131,41 @@ def bundle_version(root: Path) -> str:
     return dir_version(root, sorted(_ALLOWED))
 
 
-def jev_cache_path() -> Path:
+def judge_cache_path(synthetic: bool = False) -> Path:
+    """실데이터 판정 캐시(지금 데이터만)와 가상 데이터 판정 캐시(쌓아 둠, 개인정보 없음)를 나눈다."""
     from api.storage import data_dir
-    return data_dir() / "jev_judgments.json"
+    return data_dir() / ("review_judgments_synthetic.json" if synthetic else "review_judgments.json")
 
 
 def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
-                 source: str, synthetic: bool | None, review_judge: str = "rule",
+                 source: str, synthetic: bool | None, judge: bool = True,
                  judge_cache: Path | None = None) -> ActiveDataset:
-    content_version, judge, judge_error = version, "rule", None
-    if review_judge == "jev":
-        from api.review_judge import JevJudgeError, judge_reviews, judged_version
-        try:
-            judged = judge_reviews(ds, parsed, cache_path=judge_cache or jev_cache_path())
-            parsed, judge, version = judged, "jev", judged_version(version, "jev", judged)
-        except JevJudgeError as exc:
-            # 판정을 못 하면 데이터를 못 쓰는 게 아니라 규칙 기반으로 쓴다 -- 이유는 화면(데이터 탭)에 보인다.
-            judge_error = f"Jev 판정에 실패해 규칙 기반으로 판정했다: {exc}"
-        except Exception as exc:                # noqa: BLE001 -- 예상 밖 오류로 부팅·전환이 죽지 않게(리뷰 M2)
-            judge_error = f"Jev 판정 중 예상하지 못한 오류로 규칙 기반으로 판정했다: {type(exc).__name__}"
+    """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다."""
+    content_version, judge_error = version, None
+    meta: dict = {"review_judge": "fixture"}
+    if judge:
+        from api import review_judge as rj
+        ep = rj.endpoint()
+        meta = {"review_judge": "items", "judge_model": ep["model"], "judge_host": ep["host"],
+                "judge_location": ep["location"], "judge_external": ep["external"]}
+        if synthetic is not True and ep["external"] and not rj.external_allowed():
+            meta["review_judge"] = "blocked"
+            # 실데이터 평가 원문을 동의 없이 회사 밖(일 수 있는 곳)으로 보내지 않는다(리뷰 S4).
+            where = "외부(OpenAI)" if ep["location"] == "openai" else f"사내로 확인되지 않은 주소 {ep['host']}"
+            judge_error = (f"실데이터의 평가 사유를 {where}로 보내지 않아 항목 점수를 썼다. 사내 LLM 주소"
+                           f"({rj.BASE_URL_ENV})를 쓰거나, 외부 전송을 허용하려면 서버에 {rj.ALLOW_EXTERNAL_ENV}=1을 둔다.")
+        else:
+            try:
+                fake = synthetic is True
+                judged = rj.judge_reviews(ds, parsed, cache_path=judge_cache or judge_cache_path(fake), trim=not fake)
+                parsed, version = judged, rj.judged_version(version, ep["model"], judged)
+                meta["review_judge"] = "llm"
+            except rj.JudgeError as exc:
+                # 판정을 못 하면 데이터를 못 쓰는 게 아니라 항목 점수로 쓴다 -- 이유는 화면(데이터 탭)에 보인다.
+                judge_error = f"LLM 판정에 실패해 평가 사유 대신 항목 점수를 썼다: {exc}"
+            except Exception as exc:            # noqa: BLE001 -- 예상 밖 오류로 부팅·전환이 죽지 않게
+                log.warning("리뷰 글 LLM 판정 중 예상하지 못한 오류(%s)", type(exc).__name__, exc_info=True)
+                judge_error = f"LLM 판정 중 예상하지 못한 오류로 평가 사유 대신 항목 점수를 썼다: {type(exc).__name__}"
     graph = MemoryGraph.build(ds, parsed)
     # build_sqlite(공유 계약 core/graph)는 파일 경로를 받는다. 임시 파일에 만든 뒤
     # 메모리 DB로 복사하고 파일은 바로 지운다 -- 이름·리뷰가 든 DB가 디스크에 남지 않게.
@@ -153,8 +180,7 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
             src.close()
     info = DatasetInfo(dataset_id=dataset_id, version=version, source=source,
                        synthetic=synthetic, people=len(ds.people), projects=len(ds.projects),
-                       activated_at=_now(), content_version=content_version, review_judge=judge,
-                       judge_error=judge_error)
+                       activated_at=_now(), content_version=content_version, judge_error=judge_error, **meta)
     # 원문 공개는 manifest가 명시적으로 가상(synthetic=true)인 경우만이다(사용자 결정: 실데이터
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index

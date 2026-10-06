@@ -87,13 +87,11 @@ export class SettingsConflictError extends Error {}
 /** basedOn은 화면이 읽은 설정의 updated_at이다 -- 그사이 다른 저장이 있으면 서버가 409로 거부한다. */
 export async function saveSettings(
   settings: PlacementSettings, basedOn: string | null, adminToken: string | null = null,
-  retryJudge = false,
 ): Promise<SettingsResponse> {
   const res = await fetch(`${API_BASE}/api/settings`, {
     method: "PUT", credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
-    body: JSON.stringify(retryJudge ? { settings, based_on: basedOn, retry_judge: true }
-                                    : { settings, based_on: basedOn }),
+    body: JSON.stringify({ settings, based_on: basedOn }),
   });
   throwIfLoginRequired(res);
   if (res.status === 409) {
@@ -321,6 +319,22 @@ export async function uploadDataset(file: Blob, adminToken: string | null = null
   if (res.status === 200 || res.status === 422) return (await res.json()) as UploadResult;
   const detail = await res.json().catch(() => ({}));
   throw new Error(`업로드 실패(${res.status}): ${detail.detail ?? ""}`);
+}
+
+/** LLM 판정에 실패해 항목 점수로 만든 데이터를 같은 원천으로 다시 만들어 판정을 다시 시도한다. */
+export async function rejudgeDataset(adminToken: string | null = null): Promise<DatasetInfo> {
+  const res = await fetch(`${API_BASE}/api/datasets/rejudge`, {
+    method: "POST",
+    credentials: WITH_COOKIE,
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
+    body: "{}",
+  });
+  throwIfLoginRequired(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(`다시 판정 실패(${res.status}): ${detail.detail ?? ""}`);
+  }
+  return (await res.json()) as DatasetInfo;
 }
 
 export async function resetDataset(adminToken: string | null = null): Promise<DatasetInfo> {

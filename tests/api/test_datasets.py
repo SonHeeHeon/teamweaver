@@ -123,7 +123,9 @@ def test_valid_bundle_switches_active_dataset(client, bundle, bundle_zip):
     manifest = json.loads((bundle / "manifest.json").read_text("utf-8"))
     assert info["dataset_id"] == manifest["dataset_id"]
     assert info["synthetic"] is True and info["source"] == "upload"
-    assert info["version"] == bundle_version(bundle) != before["version"]
+    # 원천 해시는 content_version, 계산 버전(version)은 LLM 판정값까지 담는다(2026-10-06 LLM 통일).
+    assert info["content_version"] == bundle_version(bundle) and info["version"] != before["version"]
+    assert info["review_judge"] == "llm"
 
     meta = client.get("/api/meta").json()
     assert len(meta["people"]) == 12
@@ -421,7 +423,7 @@ def test_uploaded_dataset_survives_restart(client, bundle_zip, data_dir):
     res = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()
     assert res["activated"] and res["persisted"] is True
     version = res["dataset"]["version"]
-    saved = data_dir / "datasets" / f"{version}.zip"
+    saved = data_dir / "datasets" / f"{res['dataset']['content_version']}.zip"     # 저장은 원천 해시로
     assert saved.read_bytes() == bundle_zip
     assert st.S_IMODE(saved.stat().st_mode) == 0o600                  # 실데이터 사본은 소유자만
     assert st.S_IMODE((data_dir / "datasets").stat().st_mode) == 0o700
@@ -438,7 +440,7 @@ def test_new_upload_replaces_previous_copy(client, bundle, data_dir, tmp_path):
     other = generate_bundle(tmp_path / "other", 10, 2, 9)
     second = client.post("/api/datasets", content=_zip_dir(other), headers=ZIP).json()
     zips = sorted(p.name for p in (data_dir / "datasets").glob("*.zip"))
-    assert zips == [f"{second['dataset']['version']}.zip"]              # 사본은 하나만
+    assert zips == [f"{second['dataset']['content_version']}.zip"]              # 사본은 하나만
 
 
 def test_reset_deletes_saved_copy_and_restart_uses_fixture(client, bundle_zip, data_dir):
@@ -456,7 +458,7 @@ def test_tampered_saved_copy_falls_back_to_fixture_with_reason(client, bundle_zi
     from fastapi.testclient import TestClient
 
     from api.main import app
-    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["version"]
+    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["content_version"]
     (data_dir / "datasets" / f"{version}.zip").write_bytes(b"PK broken")
     with TestClient(app) as again:
         info = again.get("/api/datasets/active").json()
@@ -488,7 +490,7 @@ def test_swapped_saved_copy_with_other_valid_bundle_is_rejected(client, bundle_z
     from fastapi.testclient import TestClient
 
     from api.main import app
-    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["version"]
+    version = client.post("/api/datasets", content=bundle_zip, headers=ZIP).json()["dataset"]["content_version"]
     other = generate_bundle(tmp_path / "other", 10, 2, 9)
     (data_dir / "datasets" / f"{version}.zip").write_bytes(_zip_dir(other))
     with TestClient(app) as again:

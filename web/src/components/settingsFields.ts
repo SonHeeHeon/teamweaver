@@ -1,8 +1,7 @@
 import type { PlacementSettings } from "../api/types";
 
 /** 숫자 칸만(투입률 방식은 SettingsTab이 따로 고른다). */
-export type NumKey = Exclude<keyof PlacementSettings,
-  "allocation_mode" | "time_limit_auto" | "review_judge" | "clique_window_months">;
+export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode" | "time_limit_auto" | "clique_window_months">;
 
 /** 반복 협업(익숙한 쌍)을 셀 최근 기간. 2026-10-06 사용자 결정: 최근 3년 중 12개월(근거 rehearsal/results/rule-compare.html). */
 export const WINDOW_OPTIONS: { value: number | null; label: string }[] = [
@@ -14,10 +13,6 @@ export function windowLabel(v: number | null | undefined): string {
   if (v === null || v === undefined) return "전체 이력";
   return WINDOW_OPTIONS.find((o) => o.value === v)?.label.replace("(권장)", "") ?? `최근 ${v}개월`;
 }
-
-export const JUDGE_LABEL: Record<"rule" | "jev", string> = {
-  rule: "규칙 기반(외부 전송 없음)", jev: "Jev(글을 읽고 판정 · 외부 전송)",
-};
 type Key = NumKey;
 
 /** 화면 표시 정보. percent=true면 0~1 값을 % 단위로 입력받는다. 범위는 서버

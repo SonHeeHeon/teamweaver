@@ -3,9 +3,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { DatasetTab } from "./DatasetTab";
 import type { DatasetInfo } from "../api/types";
 
-vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn(),
+vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn(), rejudgeDataset: vi.fn(),
                                   AdminLoginRequiredError: class extends Error {} }));
-import { resetDataset, uploadDataset } from "../api/client";
+import { rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
 
 const FIXTURE: DatasetInfo = { dataset_id: "fixture-demo-100x20", version: "f".repeat(64),
   source: "fixture", synthetic: true, people: 100, projects: 20,
@@ -104,21 +104,63 @@ describe("DatasetTab — 시연 데이터·오류 문구(claude-a 요청)", () =
 });
 
 
-describe("DatasetTab — 리뷰 판정 방식", () => {
-  it("판정 방식을 보이고, Jev 실패로 규칙 기반이 됐으면 이유를 알린다", () => {
-    render(<DatasetTab active={{ ...FIXTURE, review_judge: "rule",
-      judge_error: "Jev 판정에 실패해 규칙 기반으로 판정했다: HTTP 401" }} onSwitched={vi.fn()} />);
-    expect(screen.getByText(/리뷰 판정 규칙 기반/)).toBeInTheDocument();
-    expect(screen.getByRole("alert")).toHaveTextContent("HTTP 401");
+
+describe("DatasetTab — 평가 사유 LLM 판정(2026-10-06 LLM 통일)", () => {
+  it("판정 정보와 다음 업로드의 글이 갈 곳(외부 OpenAI)을 보인다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, source: "upload", synthetic: false, review_judge: "llm",
+      judge_model: "gpt-6-luna", judge_host: "api.openai.com", judge_location: "openai", judge_external: true,
+      judge_endpoint: { host: "api.openai.com", location: "openai", external: true, model: "gpt-6-luna" } }} onSwitched={vi.fn()} />);
+    expect(screen.getByText(/평가 사유\(글\) 판정: LLM gpt-6-luna · 외부\(OpenAI\)/)).toBeInTheDocument();
+    expect(screen.getByText(/TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1/)).toBeInTheDocument();
   });
-});
 
+  it("사내 LLM이면 호스트를 보이고 외부 경고는 없다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, review_judge: "fixture",
+      judge_endpoint: { host: "llm.corp.local", location: "onprem", external: false, model: "qwen" } }} onSwitched={vi.fn()} />);
+    expect(screen.getByText(/가상 데이터 생성 때 LLM이 매긴 값/)).toBeInTheDocument();
+    expect(screen.getByText("사내 LLM llm.corp.local")).toBeInTheDocument();
+    expect(screen.queryByText(/TEAMWEAVER_REVIEW_ALLOW_EXTERNAL/)).not.toBeInTheDocument();
+  });
 
-describe("DatasetTab — Jev 설정에서 업로드 경고", () => {
-  it("판정 방식이 Jev면 업로드한 평가 원문이 외부로 간다고 알린다", () => {
-    const { rerender } = render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} reviewJudge="rule" />);
-    expect(screen.queryByText(/외부\(TypeSafe Jev API\)로 전송된다/)).not.toBeInTheDocument();
-    rerender(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} reviewJudge="jev" />);
-    expect(screen.getByText(/외부\(TypeSafe Jev API\)로 전송된다/)).toBeInTheDocument();
+  it("사내로 확인되지 않은 주소를 사내라고 단정하지 않는다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, review_judge: "fixture",
+      judge_endpoint: { host: "my.openrouter.ai", location: "unknown", external: true, model: "x" } }} onSwitched={vi.fn()} />);
+    expect(screen.getByText("사내인지 확인되지 않은 주소 my.openrouter.ai")).toBeInTheDocument();
+  });
+
+  it("다시 판정했는데 그대로면(같은 버전) 계산 결과를 비우지 않는다", async () => {
+    const still = { ...FIXTURE, source: "upload" as const, review_judge: "items" as const, judge_error: "또 503" };
+    vi.mocked(rejudgeDataset).mockResolvedValue(still);
+    const onSwitched = vi.fn();
+    render(<DatasetTab active={{ ...still, judge_error: "503" }} onSwitched={onSwitched} />);
+    fireEvent.click(screen.getByRole("button", { name: "판정 다시 시도" }));
+    expect(await screen.findByText("또 503")).toBeInTheDocument();
+    expect(onSwitched).not.toHaveBeenCalled();
+  });
+
+  it("LLM 판정에 실패했으면 이유와 '판정 다시 시도'를 보이고, 누르면 전환을 알린다", async () => {
+    const fixed = { ...FIXTURE, source: "upload" as const, review_judge: "llm" as const, version: "n".repeat(64) };
+    vi.mocked(rejudgeDataset).mockResolvedValue(fixed);
+    const onSwitched = vi.fn();
+    render(<DatasetTab active={{ ...FIXTURE, source: "upload", review_judge: "items",
+      judge_error: "LLM 판정에 실패해 평가 사유 대신 항목 점수를 썼다: LLM API 오류(HTTP 503)" }} onSwitched={onSwitched} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("HTTP 503");
+    fireEvent.click(screen.getByRole("button", { name: "판정 다시 시도" }));
+    await waitFor(() => expect(onSwitched).toHaveBeenCalledWith(fixed));
+  });
+
+  it("서버가 실데이터 외부 전송을 허용했으면 그 사실을 보인다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, review_judge: "fixture",
+      judge_endpoint: { host: "api.openai.com", location: "openai", external: true, model: "m", external_allowed: true } }}
+      onSwitched={vi.fn()} />);
+    expect(screen.getByText(/실데이터의 평가 원문도 이곳으로 보내도록 허용돼 있다/)).toBeInTheDocument();
+  });
+
+  it("외부 전송 미허용으로 판정하지 않았으면 다시 시도 버튼 없이 이유를 보인다", () => {
+    render(<DatasetTab active={{ ...FIXTURE, source: "upload", synthetic: false, review_judge: "blocked",
+      judge_error: "실데이터의 평가 사유를 외부(OpenAI)로 보내지 않아 항목 점수를 썼다." }} onSwitched={vi.fn()} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("외부(OpenAI)로 보내지 않아");
+    expect(screen.queryByRole("button", { name: "판정 다시 시도" })).not.toBeInTheDocument();
+    expect(screen.getByText(/외부 전송이 허용되지 않아 판정하지 않음/)).toBeInTheDocument();
   });
 });

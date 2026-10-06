@@ -1,10 +1,9 @@
 import { useState } from "react";
 import type { PlacementSettings, SettingsResponse } from "../api/types";
-import { FIELDS, JUDGE_LABEL, MODE_LABEL, WINDOW_OPTIONS, toInput, type NumKey } from "./settingsFields";
+import { FIELDS, MODE_LABEL, WINDOW_OPTIONS, toInput, type NumKey } from "./settingsFields";
 
 type Key = NumKey;
 type Mode = PlacementSettings["allocation_mode"];
-type Judge = "rule" | "jev";
 
 function parseField(f: (typeof FIELDS)[number], raw: string,
                     b: { min: number; max: number } | undefined): number | string {
@@ -24,13 +23,10 @@ function parseField(f: (typeof FIELDS)[number], raw: string,
 
 interface Props {
   data: SettingsResponse;
-  /** 저장 응답을 돌려주면 판정 방식 전환 결과(Jev 실패 등)를 메시지에 반영한다. */
-  onSave: (s: PlacementSettings, opts?: { retryJudge?: boolean }) => Promise<SettingsResponse | void>;
-  /** 지금 데이터가 실제로 쓰는 판정 방식. 설정은 Jev인데 규칙 기반이면(판정 실패) "판정 다시 시도"를 보인다. */
-  activeJudge?: "rule" | "jev";
+  onSave: (s: PlacementSettings) => Promise<void>;
 }
 
-export function SettingsTab({ data, onSave, activeJudge }: Props) {
+export function SettingsTab({ data, onSave }: Props) {
   const fromSettings = (s: PlacementSettings) =>
     Object.fromEntries(FIELDS.map((f) => [f.key, toInput(f, s[f.key])])) as Record<Key, string>;
   const [form, setForm] = useState<Record<Key, string>>(() => fromSettings(data.settings));
@@ -38,8 +34,6 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
   const savedWindow = data.settings.clique_window_months ?? null;
   const [windowMonths, setWindowMonths] = useState<number | null>(savedWindow);
   const [auto, setAuto] = useState<boolean>(data.settings.time_limit_auto !== false);
-  const savedJudge: Judge = data.settings.review_judge ?? "rule";
-  const [judge, setJudge] = useState<Judge>(savedJudge);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // 서버 값이 바뀌면(다른 사람 저장·실행 시 재조회·내 저장) 폼을 새 값으로 다시 채운다.
@@ -52,7 +46,6 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
     setMode(data.settings.allocation_mode ?? "fixed");
     setWindowMonths(data.settings.clique_window_months ?? null);
     setAuto(data.settings.time_limit_auto !== false);
-    setJudge(data.settings.review_judge ?? "rule");
   }
 
   const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time) : data.recommended_time;
@@ -61,36 +54,24 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
   const valid = Object.keys(errors).length === 0;
   const next = valid
     ? ({ ...Object.fromEntries(parsed), allocation_mode: mode, time_limit_auto: auto,
-        review_judge: judge, clique_window_months: windowMonths } as unknown as PlacementSettings)
+        clique_window_months: windowMonths } as unknown as PlacementSettings)
     : null;
   const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
                                   || mode !== (data.settings.allocation_mode ?? "fixed")
                                   || windowMonths !== savedWindow
-                                  || auto !== (data.settings.time_limit_auto !== false)
-                                  || judge !== savedJudge);
-  const judgeChanging = judge !== savedJudge;
-  // 설정은 Jev인데 데이터는 규칙 기반이다(Jev 판정 실패). 저장 버튼은 바뀐 게 없으면 꺼져 있으므로 따로 둔다.
-  const judgeFallback = savedJudge === "jev" && judge === "jev" && activeJudge !== undefined && activeJudge !== "jev";
-  const [retrying, setRetrying] = useState(false);
+                                  || auto !== (data.settings.time_limit_auto !== false));
 
-  async function save(retryJudge = false) {
+  async function save() {
     if (!next) return;
     setSaving(true);
-    setRetrying(retryJudge);
     setMessage(null);
     try {
-      const saved = await (retryJudge ? onSave(next, { retryJudge: true }) : onSave(next));
-      const judgeError = saved && saved.dataset?.judge_error;
-      setMessage(judgeError
-        ? `설정은 저장했지만 ${judgeError} -- '판정 다시 시도'로 다시 판정할 수 있다.`
-        : saved && saved.dataset
-          ? "저장했다. 새 판정 방식으로 데이터를 다시 만들었다 -- 이전 계산 결과는 비웠으니 다시 실행할 것."
-          : "저장했다. 다음 '최적화 실행'부터 이 설정으로 계산한다.");
+      await onSave(next);
+      setMessage("저장했다. 다음 '최적화 실행'부터 이 설정으로 계산한다.");
     } catch (e) {
       setMessage(String(e));
     } finally {
       setSaving(false);
-      setRetrying(false);
     }
   }
 
@@ -145,35 +126,6 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
             함께 일한 달 정보가 없는 데이터(예전 고정 데모 데이터)는 기간을 적용할 수 없어 전체 이력으로 센다.
           </p>
         </fieldset>
-        <fieldset>
-          <legend className="block text-sm font-medium text-slate-800">리뷰 글 판정 방식</legend>
-          <div className="mt-1 flex flex-wrap gap-4 text-sm">
-            {(["rule", "jev"] as Judge[]).map((j) => (
-              <label key={j} className="flex items-center gap-1.5">
-                <input type="radio" name="review_judge" value={j} checked={judge === j}
-                       disabled={j === "jev" && !data.jev_available && savedJudge !== "jev"}
-                       onChange={() => setJudge(j)} />
-                {JUDGE_LABEL[j]}
-              </label>
-            ))}
-          </div>
-          <p className="mt-1 text-xs text-slate-500">
-            협업 점수의 동료 평가 부분을 무엇으로 매길지 고른다. 규칙 기반은 좋은 점·아쉬운 점 항목 수로 계산하고 아무것도
-            밖으로 보내지 않는다. Jev는 평가 글을 읽고 판정한다. 어느 평가가 더 긍정적인지의 순서는 규칙 기반과 대체로 같지만
-            (시연 데이터 100명 실측 상관 0.88), 모든 평가를 더 긍정적으로 매긴다(평균 0.56 대 0.16, 부정 판정 없음). 그래서
-            협업 점수가 전반적으로 오르고 사이가 나쁜 쌍을 피하는 힘이 약해진다. 판정 방식이 다른 계산 결과끼리 지표를
-            비교하지 않는다. 바꾸면 서버가 지금 데이터를 새 방식으로 다시 만든다(Jev 첫 판정은 100명 기준 약 20초).
-          </p>
-          {!data.jev_available && (
-            <p className="mt-1 text-xs text-slate-500">서버에 Jev 키(TYPESAFE_API_KEY)가 없어 Jev를 고를 수 없다.</p>
-          )}
-          {judge === "jev" && (
-            <p role="alert" className="mt-2 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Jev를 쓰면 <b>동료 평가 원문이 외부(TypeSafe Jev API)로 전송된다.</b> 평가 글을 회사 밖으로 보낼 수
-              있는 조직만 고른다.
-            </p>
-          )}
-        </fieldset>
         {FIELDS.map((f) => (
           <div key={f.key}>
             <label className="block text-sm font-medium text-slate-800" htmlFor={`set-${f.key}`}>
@@ -222,23 +174,13 @@ export function SettingsTab({ data, onSave, activeJudge }: Props) {
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
-          onClick={() => save()}
+          onClick={save}
           disabled={!valid || !dirty || saving}
           className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white
                      hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          {saving && !retrying ? (judgeChanging ? "데이터 다시 만드는 중…" : "저장 중…") : "저장"}
+          {saving ? "저장 중…" : "저장"}
         </button>
-        {judgeFallback && (
-          <button
-            onClick={() => save(true)}
-            disabled={!valid || saving}
-            className="rounded-md border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900
-                       hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {retrying ? "판정 다시 시도 중…" : "판정 다시 시도"}
-          </button>
-        )}
         <button
           onClick={() => setForm(fromSettings(data.defaults))}
           className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium

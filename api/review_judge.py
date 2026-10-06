@@ -1,18 +1,25 @@
-"""리뷰 글 판정 방식(사용자 결정 2026-10-06): 규칙 기반(기본) 또는 Jev.
+"""리뷰 글 판정: 평가 사유(글)를 LLM이 읽어 글 극성(text_polarity)을 매긴다(사용자 결정 2026-10-06, 선택지 없음).
 
-규칙 기반은 core.ingest/datagen이 만든 `ParsedReview.text_polarity`를 그대로 쓴다(외부 전송 없음).
-Jev는 리뷰의 좋은점·나쁜점 **원문을 TypeSafe Jev API로 보내** 글 극성을 다시 판정한다 -- 외부 전송이
-허용된 조직만 고르는 선택지다. 판정 기준·척도 변환은 실험 E2(experiments/jev/e2_reviews.py)와 같다:
-Score 5단계 → 확률 기댓값(0..4) → [-1, 1]. 항목 기반 점수·근거 문장은 건드리지 않는다.
+왜: 쌍 리뷰 점수 = 0.5×항목 점수 + 0.5×글 극성인데, 실데이터 형식(CSV 묶음)의 기존 규칙 기반 파서는 글 극성 자리에
+항목 균형을 다시 넣어 평가 사유를 점수에 전혀 쓰지 않았다. 판정기 비교 실험 E4(`experiments/jev/e4_judges.py`,
+`outputs/review-judge-comparison.html`)에서 LLM(gpt-6-luna)은 항목을 충실히 쓴 글의 부정 리뷰를 92% 잡았고
+Jev는 17%였다 -- 그래서 LLM으로 통일했다(Jev·규칙 기반 선택지는 없앴다).
 
-실측(시연 묶음 100명, 1,372건, jev-1.13.0): 첫 판정 17.4초, 캐시 0.01초. 규칙 기반과 상관 0.88이지만
-평균 0.56 대 0.16으로 전반적으로 더 긍정적이고 음수 판정이 없었다 -- 협업 점수가 일괄로 오른다(화면 안내).
+접속은 OpenAI 호환 Chat Completions API다. 주소 `TEAMWEAVER_REVIEW_BASE_URL`(없으면 OpenAI), 모델 `TEAMWEAVER_REVIEW_MODEL`
+(없으면 pricing의 parse_model). 키: OpenAI 주소면 `OPENAI_API_KEY`, 다른 주소면 `TEAMWEAVER_REVIEW_API_KEY`만 쓴다
+(OpenAI 키를 사내 서버로 보내지 않게, 리뷰 S3; 사내 LLM이 키 없이 열려 있으면 비워 둔다). 사내 온프렘 LLM(vLLM·Ollama
+등)은 주소만 바꾸면 같은 코드로 쓴다. 주소가 사내인지(localhost·사설 IP·.local/.internal 또는
+`TEAMWEAVER_REVIEW_ONPREM=1`) OpenAI인지 그 밖(확인 안 됨)인지를 화면에 알린다(리뷰 S2).
+실데이터(synthetic이 true가 아님)를 사내가 아닌 곳으로 보내려면 `TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1`이 있어야 한다 --
+없으면 판정하지 않고 항목 점수를 쓴다(리뷰 S4, 동의 없는 외부 전송 방지).
+지시문은 가상 데이터 생성 때의 LLM 파서(`core/datagen/parse_reviews._SYSTEM`)와 같다(실험 E2·E4와 같은 조건).
 
-같은 글은 다시 부르지 않도록 (모델·지시문·변환 규칙·글) 해시 → 극성을 디스크 캐시(0600)에 둔다. 캐시에는
-지금 데이터의 판정만 남긴다(다른 데이터의 해시를 쌓지 않는다). 원문·API 키는 어디에도 기록하지 않는다."""
+같은 글은 다시 부르지 않도록 (모델·주소·지시문·글) 해시 → 극성을 디스크 캐시(0600)에 둔다. 캐시에는 지금 데이터의
+판정만 남긴다. 원문·API 키는 어디에도 기록하지 않는다."""
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import logging
 import math
@@ -21,67 +28,121 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout, as_completed
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
+from core.datagen.parse_reviews import _SYSTEM as INSTRUCTION
 from core.domain.models import Dataset, ParsedReview
 
 log = logging.getLogger(__name__)
 
-URL = "https://api.typesafe.ai/v1/systemone"
-MODEL = "jev-latest"
-KEY_ENV = "TYPESAFE_API_KEY"
-INSTRUCTION = "피어리뷰 좋은점/나쁜점 서술 전체의 감성 강도"
-LEVELS = ["매우 부정적", "다소 부정적", "중립", "다소 긍정적", "매우 긍정적"]
-# 극성 변환 규칙의 판. 바꾸면 캐시 키가 달라져 이전 판정을 재사용하지 않는다.
-CONVERSION = "expected-level-v1"
-WORKERS = 16
-DEADLINE_S = 120.0                  # 데이터셋 하나를 판정하는 전체 시간 한도(재구성 잠금을 오래 쥐지 않게)
-REQUEST_TIMEOUT_S = 15.0
+DEFAULT_BASE_URL = "https://api.openai.com/v1"
+KEY_ENV = "OPENAI_API_KEY"
+OTHER_KEY_ENV = "TEAMWEAVER_REVIEW_API_KEY"   # OpenAI가 아닌 주소(사내 LLM 등)의 키
+ONPREM_ENV = "TEAMWEAVER_REVIEW_ONPREM"       # 1이면 주소를 사내로 본다(관리자 명시)
+ALLOW_EXTERNAL_ENV = "TEAMWEAVER_REVIEW_ALLOW_EXTERNAL"   # 1이면 실데이터도 사내가 아닌 곳으로 보낸다
+# 판정 전용 주소 변수다(OPENAI_BASE_URL이 아니다): openai SDK는 OPENAI_BASE_URL을 스스로 읽으므로, 그것을 바꾸면
+# 브리핑·설명 클라이언트도 OPENAI_API_KEY를 사내 서버로 보낸다(리뷰 2라운드 S-1).
+BASE_URL_ENV = "TEAMWEAVER_REVIEW_BASE_URL"
+MODEL_ENV = "TEAMWEAVER_REVIEW_MODEL"
+WORKERS_ENV = "TEAMWEAVER_REVIEW_WORKERS"
+CONVERSION = "llm-text-polarity-v1"   # 바꾸면 캐시 키가 달라져 이전 판정을 재사용하지 않는다
+WORKERS = 16                        # 실측: 32는 OpenAI 요청 한도(429)에 걸렸고 16은 1,372건을 끝냈다(E4)
+DEADLINE_S = 600.0                  # 데이터셋 하나를 판정하는 전체 한도(실측 100명 1,372건 병렬 16: 약 4분)
+REQUEST_TIMEOUT_S = 60.0
+FORMAT_ATTEMPTS = 3
+ATTEMPTS = 6                        # 요청 한도(429)는 잠깐 기다리면 풀린다 -- 서버가 알려 준 만큼 기다려 다시 보낸다
+MAX_WAIT_S = 20.0
 _RETRY_STATUS = (429, 500, 502, 503, 504)
 _cache_lock = threading.Lock()
 
 
-class JevJudgeError(RuntimeError):
-    """Jev 판정을 끝내지 못했다(키 없음·인증·네트워크·응답 형식·시간 초과). 메시지에 키·원문을 담지 않는다."""
+class JudgeError(RuntimeError):
+    """LLM 판정을 끝내지 못했다(키·주소·네트워크·응답 형식·시간 초과). 메시지에 키·원문을 담지 않는다.
+    retry=True면 같은 요청을 다시 보내 볼 만한 오류(응답 형식·일시 오류)다."""
+
+    def __init__(self, msg: str, *, retry: bool = False):
+        super().__init__(msg)
+        self.retry = retry
 
 
-def api_key() -> str | None:
-    return os.environ.get(KEY_ENV) or None
+_OPENAI_HOST = "api.openai.com"
 
 
-def _state(review) -> str:
-    return f"피어리뷰 -- 좋은점: {review.positive.text}\n나쁜점: {review.negative.text}"
+def _is_openai(url: str) -> bool:
+    return urlparse(url).hostname == _OPENAI_HOST
 
 
-def _cache_key(state: str, model: str) -> str:
-    return hashlib.sha256(json.dumps([model, INSTRUCTION, LEVELS, CONVERSION, state], ensure_ascii=False)
+def api_key(url: str | None = None) -> str | None:
+    """OpenAI 주소면 OPENAI_API_KEY, 아니면 판정 전용 키만(OpenAI 키를 다른 서버로 보내지 않는다)."""
+    url = (url or base_url()).rstrip("/")
+    return os.environ.get(KEY_ENV if _is_openai(url) else OTHER_KEY_ENV) or None
+
+
+def base_url() -> str:
+    return (os.environ.get(BASE_URL_ENV) or DEFAULT_BASE_URL).rstrip("/")
+
+
+def model() -> str:
+    if os.environ.get(MODEL_ENV):
+        return os.environ[MODEL_ENV]
+    from core.config import load_pricing
+    return load_pricing()["parse_model"]
+
+
+def _is_internal_host(host: str) -> bool:
+    if host in ("localhost",) or host.endswith((".local", ".internal", ".localhost")):
+        return True
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return ip.is_private or ip.is_loopback
+
+
+def endpoint() -> dict:
+    """화면 안내용: 글이 어디로 가는가.
+    location: "openai"(회사 밖) | "onprem"(사내로 확인: 사설 주소·관리자 명시) | "unknown"(사내인지 확인 안 됨).
+    external: 회사 밖일 수 있는가(openai·unknown)."""
+    url = base_url()
+    host = urlparse(url).hostname or url
+    if _is_openai(url):
+        location = "openai"
+    elif os.environ.get(ONPREM_ENV) == "1" or _is_internal_host(host):
+        location = "onprem"
+    else:
+        location = "unknown"
+    return {"host": host, "location": location, "external": location != "onprem", "model": model(),
+            # 실데이터도 회사 밖일 수 있는 곳으로 보내도록 서버가 허용했는가(화면이 동의 상태를 보인다, 리뷰 2라운드 S-3)
+            "external_allowed": external_allowed()}
+
+
+def external_allowed() -> bool:
+    return os.environ.get(ALLOW_EXTERNAL_ENV) == "1"
+
+
+def _workers() -> int:
+    try:
+        return max(1, int(os.environ.get(WORKERS_ENV, WORKERS)))
+    except ValueError:
+        return WORKERS
+
+
+def _cache_key(pos: str, neg: str, model_name: str, url: str) -> str:
+    return hashlib.sha256(json.dumps([model_name, url, INSTRUCTION, CONVERSION, pos, neg], ensure_ascii=False)
                           .encode("utf-8")).hexdigest()
 
 
-def to_polarity(answer: dict) -> float:
-    """Score 답 하나 → [-1, 1]. 등급별 확률("0"~"4", 합≈1)이 있으면 기댓값, 없으면 score. 척도가 이상하면 멈춘다.
-    오류 메시지에는 응답 내용을 넣지 않는다(형식이 바뀌어 원문이 섞여 와도 화면에 새지 않게)."""
-    raw = answer.get("score") if isinstance(answer, dict) else None
+def to_polarity(content: str) -> float:
+    """LLM 응답 본문(JSON) → [-1, 1]. 오류 메시지에는 응답 내용을 넣지 않는다(원문이 섞여 와도 화면에 새지 않게)."""
+    try:
+        raw = json.loads(content).get("text_polarity")
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise JudgeError("LLM 응답이 JSON 객체가 아니다", retry=True) from exc
     if isinstance(raw, bool) or not isinstance(raw, (int, float)) or not math.isfinite(raw):
-        raise JevJudgeError("Jev 응답에 숫자 score가 없다")
-    s = float(raw)
-    top = len(LEVELS) - 1
-    if not 0.0 <= s <= top:
-        raise JevJudgeError(f"Jev score가 예상 척도 0..{top} 밖이다")
-    level = s
-    probs = answer.get("probabilities")
-    if isinstance(probs, dict) and set(probs) == {str(i) for i in range(len(LEVELS))}:
-        p = [probs[str(i)] for i in range(len(LEVELS))]
-        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in p):
-            raise JevJudgeError("Jev 확률 값이 올바른 숫자가 아니다")
-        if abs(sum(p) - 1.0) > 0.02:
-            raise JevJudgeError("Jev 확률의 합이 1이 아니다")
-        expected = sum(i * v for i, v in enumerate(p))
-        if abs(expected - s) > 1.0:
-            raise JevJudgeError("Jev score와 확률 기댓값의 척도가 다르다")
-        level = expected
-    return max(-1.0, min(1.0, level / top * 2 - 1))
+        raise JudgeError("LLM 응답에 숫자 text_polarity가 없다", retry=True)
+    return max(-1.0, min(1.0, float(raw)))
 
 
 def _load_cache(path: Path) -> dict[str, float]:
@@ -101,105 +162,158 @@ def _save_cache(path: Path, cache: dict[str, float]) -> None:
     try:
         atomic_write(path, json.dumps(cache, sort_keys=True).encode("utf-8"))
     except OSError as exc:
-        log.warning("Jev 판정 캐시를 저장하지 못했다(%s): %s", path, exc)
+        log.warning("리뷰 판정 캐시를 저장하지 못했다(%s): %s", path, exc)
 
 
 def clear_cache(path: Path) -> None:
     try:
         path.unlink(missing_ok=True)
     except OSError as exc:
-        log.warning("Jev 판정 캐시를 지우지 못했다(%s): %s", path, exc)
+        log.warning("리뷰 판정 캐시를 지우지 못했다(%s): %s", path, exc)
 
 
-def _ask(http: httpx.Client, key: str, state: str, model: str, stop: threading.Event) -> float:
-    body = {"model": model, "state": state,
-            "questions": {"polarity": {"type": "score", "instructions": INSTRUCTION, "criteria": LEVELS}}}
-    res = None
-    for attempt in range(3):
-        if stop.is_set():
-            raise JevJudgeError("다른 요청이 실패해 판정을 멈췄다")
-        try:
-            res = http.post(URL, json=body, headers={"Authorization": f"Bearer {key}"})
-        except httpx.TransportError as exc:
-            if attempt == 2:
-                raise JevJudgeError(f"Jev API에 연결하지 못했다: {type(exc).__name__}") from None
-            time.sleep(2 ** attempt * 0.5)
-            continue
-        if res.status_code not in _RETRY_STATUS or attempt == 2:
-            break
-        wait = 2 ** attempt * 0.5
-        retry_after = res.headers.get("Retry-After", "")
-        if retry_after.isdigit():
-            wait = min(float(retry_after), 10.0)
-        time.sleep(wait)
-    if res.status_code in (401, 403):
-        raise JevJudgeError(f"Jev API가 키를 거절했다(HTTP {res.status_code})")
-    if res.status_code != 200:
-        raise JevJudgeError(f"Jev API 오류(HTTP {res.status_code})")
+def _retry_wait(res: httpx.Response, attempt: int) -> float:
+    """서버가 알려 준 대기 시간(retry-after-ms·Retry-After)을 따르고, 없으면 지수 대기. 최대 MAX_WAIT_S."""
+    wait = 2 ** attempt * 0.5
+    ms = res.headers.get("retry-after-ms", "")
+    sec = res.headers.get("Retry-After", "")
     try:
-        answer = res.json()["answers"]["polarity"]
-    except (ValueError, KeyError, TypeError) as exc:
-        raise JevJudgeError("Jev 응답 형식이 예상과 다르다") from exc
-    if not isinstance(answer, dict):
-        raise JevJudgeError("Jev 응답 형식이 예상과 다르다")
-    return to_polarity(answer)
+        if ms:
+            wait = float(ms) / 1000
+        elif sec:
+            wait = float(sec)
+    except ValueError:
+        pass
+    return min(max(wait, 0.1), MAX_WAIT_S)
+
+
+def _ask(http: httpx.Client, url: str, key: str | None, model_name: str, pos: str, neg: str,
+         stop: threading.Event) -> float:
+    body = {"model": model_name, "response_format": {"type": "json_object"},
+            "messages": [{"role": "system", "content": INSTRUCTION},
+                         {"role": "user", "content": json.dumps({"좋은점": pos, "나쁜점": neg}, ensure_ascii=False)}]}
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    res = None
+    for attempt in range(ATTEMPTS):
+        if stop.is_set():
+            raise JudgeError("다른 요청이 실패해 판정을 멈췄다")
+        try:
+            res = http.post(url, json=body, headers=headers)
+        except httpx.TransportError as exc:
+            if attempt == ATTEMPTS - 1:
+                raise JudgeError(f"LLM API에 연결하지 못했다: {type(exc).__name__}") from None
+            _wait(min(2 ** attempt * 0.5, MAX_WAIT_S), stop)
+            continue
+        if res.status_code not in _RETRY_STATUS or attempt == ATTEMPTS - 1:
+            break
+        _wait(_retry_wait(res, attempt), stop)
+    if res.status_code in (401, 403):
+        raise JudgeError(f"LLM API가 키를 거절했다(HTTP {res.status_code})")
+    if res.status_code != 200:
+        raise JudgeError(f"LLM API 오류(HTTP {res.status_code}{_error_code(res)})",
+                         retry=res.status_code == 400)
+    try:
+        content = res.json()["choices"][0]["message"]["content"]
+    except (ValueError, KeyError, IndexError, TypeError) as exc:
+        raise JudgeError("LLM 응답 형식이 예상과 다르다", retry=True) from exc
+    if not isinstance(content, str):
+        raise JudgeError("LLM 응답 형식이 예상과 다르다(본문 없음 -- 거절·필터 가능)", retry=True)
+    return to_polarity(content)
+
+
+def _ask_once_more(http, url, key, model_name, pos, neg, stop) -> float:
+    """응답 형식 오류·일시적 400은 같은 요청을 두 번까지 다시 보낸다 -- 한 건 때문에 데이터 전체가 실패하지 않게(리뷰 S7)."""
+    for attempt in range(FORMAT_ATTEMPTS):
+        try:
+            return _ask(http, url, key, model_name, pos, neg, stop)
+        except JudgeError as exc:
+            if not exc.retry or attempt == FORMAT_ATTEMPTS - 1 or stop.is_set():
+                raise
+    raise AssertionError("unreachable")
+
+
+def _wait(seconds: float, stop: threading.Event) -> None:
+    """기다리되 다른 요청이 실패해 멈추면 바로 깬다(남은 스레드가 오래 살지 않게)."""
+    stop.wait(seconds)
+
+
+def _error_code(res: httpx.Response) -> str:
+    """원인 진단용 오류 코드만(본문·원문은 넣지 않는다). 예: model_not_found."""
+    try:
+        err = res.json().get("error")
+        code = err.get("code") or err.get("type") if isinstance(err, dict) else None
+    except (ValueError, AttributeError):
+        return ""
+    return f", {code}" if isinstance(code, str) and code.replace("_", "").isalnum() and len(code) <= 60 else ""
 
 
 def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, key: str | None = None,
-                  model: str = MODEL, transport: httpx.BaseTransport | None = None,
-                  workers: int = WORKERS, deadline_s: float = DEADLINE_S) -> list[ParsedReview]:
-    """parsed의 text_polarity만 Jev 판정으로 바꾼 새 목록. 하나라도 실패하거나 시간 한도를 넘으면
-    JevJudgeError(부분 적용 없음). 이미 받은 판정은 캐시에 남긴다."""
-    key = key or api_key()
-    if not key:
-        raise JevJudgeError(f"{KEY_ENV}가 설정되지 않았다")
+                  url: str | None = None, model_name: str | None = None,
+                  transport: httpx.BaseTransport | None = None, workers: int | None = None,
+                  deadline_s: float | None = None, trim: bool = True) -> list[ParsedReview]:
+    """parsed의 text_polarity만 LLM 판정으로 바꾼 새 목록. 하나라도 실패하거나 시간 한도를 넘으면
+    JudgeError(부분 적용 없음). 이미 받은 판정은 캐시에 남긴다.
+    trim=True면 캐시에 지금 데이터의 판정만 남긴다(실데이터). 가상 데이터는 trim=False로 쌓아 둔다 -- 업로드 후
+    되돌려도 시연 판정을 다시 부르지 않고 값·버전이 그대로다(리뷰 2라운드 S-2)."""
+    url = (url or base_url()).rstrip("/")
+    key = key if key is not None else api_key(url)
+    model_name = model_name or model()
     if len(parsed) != len(ds.reviews) or any(
             p.reviewer_id != r.reviewer_id or p.reviewee_id != r.reviewee_id for p, r in zip(parsed, ds.reviews)):
-        raise JevJudgeError("리뷰와 파싱 결과의 순서가 맞지 않아 판정을 바꿔 끼울 수 없다")
-    states = [_state(r) for r in ds.reviews]
-    keys = [_cache_key(s, model) for s in states]
+        raise JudgeError("리뷰와 파싱 결과의 순서가 맞지 않아 판정을 바꿔 끼울 수 없다")
+    texts = [(r.positive.text, r.negative.text) for r in ds.reviews]
+    keys = [_cache_key(p, n, model_name, url) for p, n in texts]
+    current = set(keys)
     with _cache_lock:
         cache = _load_cache(cache_path)
-    todo = {k: s for k, s in zip(keys, states) if k not in cache}
+        if trim and set(cache) - current:
+            # 지금 데이터의 판정만 남긴다(이전 데이터의 글 해시를 쌓지 않는다) -- 일찍 실패하는 경로에서도.
+            cache = {k: v for k, v in cache.items() if k in current}
+            _save_cache(cache_path, cache)
+    todo = {k: t for k, t in zip(keys, texts) if k not in cache}
     fresh: dict[str, float] = {}
+    if todo and not key and _is_openai(url):
+        raise JudgeError(f"{KEY_ENV}가 설정되지 않았다(사내 LLM이면 {BASE_URL_ENV}로 주소를 지정)")
     if todo:
         stop = threading.Event()
         http = httpx.Client(transport=transport, timeout=REQUEST_TIMEOUT_S)
-        pool = ThreadPoolExecutor(max_workers=max(1, workers))
+        n_workers = workers or _workers()
+        if deadline_s is None:
+            # 리뷰 수에 비례(건당 실측 중앙값 2.2초 × 여유 2배), 최소 DEADLINE_S -- 300명(약 4,000건)도 한도에 안 걸리게.
+            deadline_s = max(DEADLINE_S, len(todo) / n_workers * 4.5)
+        pool = ThreadPoolExecutor(max_workers=n_workers)
+        futures: dict = {}
         try:
-            futures = {pool.submit(_ask, http, key, s, model, stop): k for k, s in todo.items()}
+            futures = {pool.submit(_ask_once_more, http, f"{url}/chat/completions", key, model_name, p, n, stop): k
+                       for k, (p, n) in todo.items()}
             try:
                 for f in as_completed(futures, timeout=deadline_s):
                     fresh[futures[f]] = f.result()      # 첫 실패에서 멈춘다
             except FutureTimeout:
-                raise JevJudgeError(f"Jev 판정이 {deadline_s:.0f}초 안에 끝나지 않았다"
-                                    f"({len(fresh)}/{len(todo)}건 완료)") from None
+                raise JudgeError(f"LLM 판정이 {deadline_s:.0f}초 안에 끝나지 않았다"
+                                 f"({len(fresh)}/{len(todo)}건 완료)") from None
         finally:
             stop.set()
+            # 첫 실패 뒤에 이미 끝난 요청의 결과도 모은다 -- 다시 시도할 때 덜 부른다.
+            for f, k in futures.items():
+                if k not in fresh and f.done() and not f.cancelled() and f.exception() is None:
+                    fresh[k] = f.result()
             # 아직 시작하지 않은 요청은 취소하고, 실행 중인 요청은 기다리지 않는다(잠금을 오래 쥐지 않게).
-            # 연결도 닫는다 -- 실행 중인 요청은 오류로 빨리 끝나고 그 결과는 아무도 읽지 않는다.
             pool.shutdown(wait=False, cancel_futures=True)
             http.close()
             if fresh:
                 with _cache_lock:
-                    # 지금 데이터의 판정만 남긴다 -- 이전 데이터(예: 지난 업로드)의 해시를 쌓지 않는다.
-                    current = set(keys)
-                    merged = {k: v for k, v in {**_load_cache(cache_path), **fresh}.items() if k in current}
+                    merged = {**_load_cache(cache_path), **fresh}
+                    if trim:
+                        merged = {k: v for k, v in merged.items() if k in current}
                     _save_cache(cache_path, merged)
             cache.update(fresh)
-    else:
-        with _cache_lock:
-            if set(_load_cache(cache_path)) - set(keys):
-                _save_cache(cache_path, {k: cache[k] for k in keys if k in cache})
     return [p.model_copy(update={"text_polarity": cache[k]}) for p, k in zip(parsed, keys)]
 
 
-def judged_version(version: str, judge: str, parsed: list[ParsedReview] | None = None) -> str:
-    """판정 방식이 바뀌면 협업 점수가 바뀌므로 다른 데이터로 구분한다. rule은 원래 버전 그대로(호환).
-    jev는 실제로 받은 극성 값까지 버전에 넣는다 -- 캐시가 사라져 다시 판정한 값이 다르면 다른 버전이다(리뷰 M1)."""
-    if judge == "rule":
-        return version
-    h = hashlib.sha256(f"{version}|review_judge={judge}|{CONVERSION}".encode())
-    for p in parsed or []:
+def judged_version(version: str, model_name: str, parsed: list[ParsedReview]) -> str:
+    """LLM 판정값까지 버전에 넣는다 -- 다시 판정한 값이 다르면(캐시 손실·모델 변경) 다른 데이터로 구분한다."""
+    h = hashlib.sha256(f"{version}|review_judge=llm|{model_name}|{CONVERSION}".encode())
+    for p in parsed:
         h.update(f"|{p.text_polarity!r}".encode())
     return h.hexdigest()
