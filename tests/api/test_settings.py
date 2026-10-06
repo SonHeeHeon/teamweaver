@@ -273,7 +273,9 @@ def test_milp_params_in_mirrors_every_model_field():
     # solver_seeds는 HTTP 밖(2026-10-06 claude-a): 동시에 쓰는 CPU 코어 수라 요청마다 정하지 않고 서버 설정이 정한다.
     from api.settings import NON_SOLVER_FIELDS
     assert set(MilpParamsIn.model_fields) - NON_SOLVER_FIELDS - {"review_judge"} == \
-        set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds"}
+        set(MilpParams.model_fields) - {"solver", "seat_fit_weight", "solver_seeds",
+                                        # 실험 G(파트너 다양성 하한, 2026-10-06 claude-a): 측정 단계, 채택 결정 전
+                                        "partner_floor", "partner_floor_weight"}
     with pytest.raises(Exception):
         MilpParamsIn(solver="cbc")
     with pytest.raises(Exception):

@@ -124,6 +124,26 @@ class MilpParams(BaseModel):
     # 12개월 이상(관리자 설정 api/settings.py) -- 10년 이력의 "6개월 이상"은 전체 쌍의 1/3을 걸어 200·300명 배치가
     # 무너졌다(rehearsal/results/rule-compare.html). 협업 점수(C)는 이 값과 상관없이 전체 조회 기간을 쓴다.
     clique_window_months: int | None = Field(default=None, ge=1, le=120)
+    # 파트너 다양성 하한(실험 G, 2026-10-06 -- Akşin 외 2021 "새 파트너 노출"). 0이면 꺼짐(예전 모델 그대로, 기본).
+    # 사람 i에게 "최근 파트너"(위 익숙한 쌍 기준)가 있으면, i가 들어간 사업 팀 안에 최근 파트너가 아닌 동료가
+    # partner_floor명 이상 있어야 하고 모자라는 명수마다 partner_floor_weight를 감점한다(목적의 익숙함 항에 합산).
+    # 쌍 변수 없이 선형: short_ij ≥ m·z_ij − (T_j − z_ij − Σ_{k∈P(i)} z_kj), T_j = Σ_k z_kj.
+    # 벤치 정식(experiments/phase1/solvers.py)·Phase 0 오라클에는 아직 없다 -- 채택하면 함께 반영한다.
+    partner_floor: int = Field(default=0, ge=0, le=5)
+    partner_floor_weight: float = Field(default=0.0, ge=0.0)
+
+
+def partner_map(pairs) -> dict[int, set[int]]:
+    """익숙한 쌍 → 사람별 최근 파트너 집합."""
+    out: dict[int, set[int]] = {}
+    for p, q in pairs:
+        out.setdefault(p, set()).add(q)
+        out.setdefault(q, set()).add(p)
+    return out
+
+
+def partner_floor_on(params) -> bool:
+    return getattr(params, "partner_floor", 0) > 0 and getattr(params, "partner_floor_weight", 0.0) > 0
 
 
 BOUND_SNAP_EPS = 1e-9
@@ -303,14 +323,20 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
          for (p, q) in pairs for j in range(nJ)}
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
              for j, pj in enumerate(projects) for g in pj.grade_headcount}
+    partners = partner_map(overfam) if partner_floor_on(params) else {}       # 실험 G(기본 꺼짐)
+    team_size = {j: pulp.LpVariable(f"pt_{j}", lowBound=0) for j in range(nJ)} if partners else {}
+    short = {(i, j): pulp.LpVariable(f"pf_{i}_{j}", lowBound=0) for i in sorted(partners) for j in range(nJ)}
 
-    prob += (
+    objective_expr = (
         (pulp.lpSum(S[i, j] * (1.0 / len(projects[j].months)) * am[(i, j, m)] for (i, j, m) in am) if monthly
          else pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ)))
         + params.seat_fit_weight * pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
         - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
         - params.slack_penalty * pulp.lpSum(slack.values()))
+    if short:
+        objective_expr -= params.partner_floor_weight * pulp.lpSum(short.values())
+    prob += objective_expr
 
     if monthly:
         for (i, j, m), v in am.items():
@@ -326,6 +352,11 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             prob += y[(p, q, j)] <= z[p][j]
             prob += y[(p, q, j)] <= z[q][j]
             prob += y[(p, q, j)] >= z[p][j] + z[q][j] - 1
+    for j, t in team_size.items():                          # 실험 G: 팀 인원과 새 파트너 부족분
+        prob += t == pulp.lpSum(z[i][j] for i in range(nP))
+    for (i, j), v in short.items():
+        prob += v >= params.partner_floor * z[i][j] - (team_size[j] - z[i][j]
+                                                         - pulp.lpSum(z[k][j] for k in partners[i]))
     for i, person in enumerate(people):                     # 제약 1: 월별 가동률
         for m in range(len(person.availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
@@ -409,6 +440,18 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     unfilled = [f"{projects[j].id}:{g.value}:{int(round(v.value()))}명 미충원"
                 for (j, g), v in slack.items() if v.value() and v.value() > 0.5]
     objective = float(pulp.value(prob.objective))
+    if short:
+        # 실험 G: 부족분 변수(pf)는 아래 경계만 있어, 휴리스틱(feasibility jump)이 낸 해는 꽉 맞지 않을 수 있다.
+        # 정해진 z에서 가장 작은 값(= 독립 검증기가 세는 값)으로 다시 세고 목적값을 맞춘다(리뷰 SHOULD). 기록은 evidence에.
+        zr = {(i, j): round(raw_z[(i, j)]) for i in range(nP) for j in range(nJ)}
+        sizes = {j: sum(zr[(i, j)] for i in range(nP)) for j in range(nJ)}
+        tight = sum(max(0, params.partner_floor * zr[(i, j)] - (sizes[j] - zr[(i, j)]
+                                                                 - sum(zr[(k, j)] for k in partners[i])))
+                    for (i, j) in short)
+        loose = sum(float(v.value() or 0.0) for v in short.values()) - tight
+        if loose > 1e-9:
+            objective += params.partner_floor_weight * loose
+            evidence = replace(evidence, options={**evidence.options, "partner_floor_tightened": loose})
     plan = PlanAssignment(entries=entries, objective=objective,
                           unfilled=unfilled, violations=[], label="A")
     candidate = RawMilpSolution(
@@ -450,6 +493,13 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         fixed_values = {z[i][j].name:float(validation_input.z[(i,j)]) for i in range(nP) for j in range(nJ)}
         fixed_values.update({var.name:float(validation_input.y[key]) for key,var in y.items()})
         fixed_values.update({var.name:float(validation_input.slack[key]) for key,var in slack.items()})
+        if short:       # 실험 G: z를 고정하면 팀 인원·부족분도 정해진다(행과 같은 정리된 z 값으로 다시 계산)
+            zz = validation_input.z
+            sizes = {j: float(sum(zz[(i, j)] for i in range(nP))) for j in range(nJ)}
+            fixed_values.update({t.name: sizes[j] for j, t in team_size.items()})
+            fixed_values.update({v.name: max(0.0, params.partner_floor * zz[(i, j)] - (
+                sizes[j] - zz[(i, j)] - sum(zz[(k, j)] for k in partners[i])))
+                for (i, j), v in short.items()})
         try:
             extra_rows = project_additive_constraints(before_callback,after_callback,
                 allocation_variables=({v.name: key for key, v in am.items()} if monthly

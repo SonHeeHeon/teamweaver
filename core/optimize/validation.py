@@ -59,6 +59,23 @@ def _independent_penalty_pairs(
     )
 
 
+def _independent_partner_floor(z: dict, penalty_pairs, params, n_people: int, n_projects: int) -> float:
+    """실험 G(파트너 다양성 하한)의 감점을 원자료(z)로 다시 센다. 꺼져 있으면 0."""
+    floor, weight = getattr(params, "partner_floor", 0), getattr(params, "partner_floor_weight", 0.0)
+    if floor <= 0 or weight <= 0:
+        return 0.0
+    partners: dict[int, set[int]] = {}
+    for p, q in penalty_pairs:
+        partners.setdefault(p, set()).add(q)
+        partners.setdefault(q, set()).add(p)
+    missing = 0.0
+    for j in range(n_projects):
+        team = {i for i in range(n_people) if z[(i, j)] > 0.5}
+        for i in team & set(partners):
+            missing += max(0, floor - (len(team) - 1 - len(partners[i] & team)))
+    return -weight * missing
+
+
 def validate_raw_solution(
     graph: MemoryGraph,
     skill: np.ndarray,
@@ -288,7 +305,7 @@ def validate_raw_solution(
         solution.y[(p, q, j)]
         for p, q in expected_penalty_pairs
         for j in range(n_projects)
-    )
+    ) + _independent_partner_floor(solution.z, expected_penalty_pairs, params, n_people, n_projects)
     unfilled_term = -params.slack_penalty * sum(solution.slack.values())
     total = skill_term + synergy_term + overfamiliarity_term + unfilled_term
     objective = ObjectiveBreakdown(

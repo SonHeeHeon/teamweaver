@@ -11,7 +11,7 @@ import numpy as np
 
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.audit_types import ObjectiveBreakdown
-from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs
+from core.optimize.milp import MilpParams, _overfamiliar_pairs, partner_floor_on, partner_map, pruned_pairs
 from core.optimize.types import AssignEntry
 
 TOL = 1e-6
@@ -102,6 +102,11 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
     synergy = params.lam * sum(float(C[p, q]) for p, q in reward
                                for j in members if together(p, q, j))
     overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j))
+    if partner_floor_on(params):                    # 실험 G: 팀 안에 새 파트너가 partner_floor명보다 적으면 감점
+        partners = partner_map(penalty)
+        overfam -= params.partner_floor_weight * sum(
+            max(0, params.partner_floor - (len(team) - 1 - len(partners[i] & team)))
+            for team in members.values() for i in team if i in partners)
 
     violations: list[PlanViolation] = []
     shortfalls: list[GradeShortfall] = []
