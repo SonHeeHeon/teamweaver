@@ -22,6 +22,28 @@
 
 ---
 
+## 2026-10-07 · claude-b · 판정기 비교 E4에 사내 LLM 대리(GLM 5.3) 추가 + 서비스 추론 강도 설정
+- 브랜치/커밋: `feat/claude-b-e4-glm` (main 병합)
+- 한 일:
+  - 사용자 지시("LLM 쓰는 모든 곳은 외부 AI와 사내 GLM 5.3을 항상 함께 비교"): E4를 3자 비교로 확장했다. 외부 gpt-6-luna / 사내 대리 GLM 5.3(Z.ai 공식 API, 추론 max, 가상 데이터만) / Jev.
+  - 실험 장치
+    - 한 건마다 중간 기록을 남기고, 기본은 부분 결과를 그대로 쓴다. 이어서 판정하려면 `E4_RESUME=1`.
+    - 잔액 부족·키 거절은 구조로 판별해 바로 멈춘다.
+    - 판정한 글의 지문(fingerprint)을 남겨, 데이터가 바뀌면 섞지 않고 멈춘다.
+    - McNemar·Wilson 통계를 낸다.
+  - 서비스 `TEAMWEAVER_REVIEW_REASONING_EFFORT`: 설정하면 reasoning_effort를 보낸다. 설정하지 않으면 캐시 키·데이터 버전은 예전 그대로다. 설정 시 한도·요청 시간을 늘린다.
+  - 결과(충실한 글 300건)
+    - 부정 검출: 외부 92% · 사내 GLM 84% · Jev 17%. 두 LLM의 차이는 확정되지 않는다(McNemar p≈0.07).
+    - 1,000건당 비용: $0.08 · $4.10 · $0.02. 건당 지연: 2.2초 · 10.5초 · 0.2초.
+    - 시연 원문은 GLM 480/1,372건에서 잔액이 소진돼 부분 결과다.
+- 상대 영향:
+  - **main에는 claude-a의 시연 데이터 문구 변경(9087ffa, `demo/org-n100/reviews.csv`)이 이미 들어와 있다.** 그래서 E4 보고서를 다시 만들면 지문 불일치로 멈춘다(의도한 동작이다). 지금 보고서와 기록은 9087ffa 이전 시연 데이터(이 브랜치 기준 b8e41e2) 기준이다. 새 데이터로 보려면 E4를 다시 재야 한다(GLM은 비용이 든다).
+  - Z.ai 키는 `.env`의 `ZAI_API_KEY`다(외부, 가상 데이터만 보낸다).
+- 검증: `uv run --group benchmark pytest -q` → 1305 passed, 19 deselected(병합 전). Opus 폴백 리뷰 2라운드(1차 MUST 1·SHOULD 8, 2차 MUST 0·SHOULD 2), 모두 반영.
+- 근거: `outputs/review-judge-comparison.html`, `experiments/jev/results/e4_*.json`, `.omc/reports/2026-10-07-e4-glm.md`
+
+---
+
 ## 2026-10-06 · claude-a · 실데이터 가정 전체 검증: 기준 정식 반영·시드 운영화·실데이터 경로 리허설·과거 성과 검증·시연 기본값 전환
 - 브랜치/커밋: `feat/claude-a-recent-familiarity` `e021de8..` (push, main 병합은 사용자 승인 후)
 - 한 일:
