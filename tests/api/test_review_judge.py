@@ -450,3 +450,23 @@ def test_untrimmed_cache_keeps_other_data(small, tmp_path):
     (tmp_path / "c.json").write_text(json.dumps({"other-demo-hash": 0.1}), "utf-8")
     _judge(ds, parsed, tmp_path, _transport(lambda u: 0.7, []), trim=False)
     assert "other-demo-hash" in json.loads((tmp_path / "c.json").read_text("utf-8"))
+
+
+def test_reasoning_effort_is_sent_when_configured(small, tmp_path, monkeypatch):
+    # 사내 GLM 5.3을 실험(E4, 추론 max)과 같은 조건으로 부르기 위한 설정.
+    ds, parsed = small
+    calls: list = []
+    _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, calls))
+    assert "reasoning_effort" not in calls[0]
+    monkeypatch.setenv(rj.REASONING_ENV, "max")
+    calls2: list = []
+    _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, calls2))
+    assert calls2 and calls2[0]["reasoning_effort"] == "max"          # 설정이 바뀌면 캐시도 새로 판정한다
+
+
+def test_cache_key_without_effort_is_unchanged():
+    # 추론 강도를 설정하지 않으면 예전 키와 같다 -- 쌓인 판정·데이터 버전이 배포 뒤에도 그대로(리뷰 MUST)
+    old = rj.hashlib.sha256(rj.json.dumps(["m", "u", rj.INSTRUCTION, rj.CONVERSION, "p", "n"], ensure_ascii=False)
+                            .encode("utf-8")).hexdigest()
+    assert rj._cache_key("p", "n", "m", "u") == old == rj._cache_key("p", "n", "m", "u", None)
+    assert rj._cache_key("p", "n", "m", "u", "max") != old
