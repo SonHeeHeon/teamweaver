@@ -443,6 +443,120 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
     return projects, grade_reqs, skill_reqs, peak
 
 
+BENCH_SHARE = 0.10                 # 운영 중 시나리오: 최근 사업이 끝나 남는 인력 비율(사용자 설명 "100명 중 10명 내외")
+PROPOSALS = {100: 2, 200: 3, 300: 3}
+
+
+def _rate(person: dict) -> float:
+    return BASE_RATE[person["career_grade"]] * (CONSULTING_PREMIUM if person["role_type"] == "컨설팅" else 1)
+
+
+def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str, int], horizon: list[dt.date],
+                        size: int):
+    """운영 중 시점(2026-10-06 사용자: "이미 배정돼 있는 인력이 대부분 … 신규 제안 2~3개에 투입할 인력은 최근 끝난 10명
+    내외"). 진행 중 사업은 계획 기간 내내 이어지고 정원 = 현재 명단(투입률 1.0), 남는 인력 ~10%, 신규 제안 2~3개
+    (계획 둘째 달 시작, 필요 인원 ≈ 남는 인력). 현재 명단은 기술이 대체로 맞게 꾸리되 무작위성을 둬 개선 여지가 자연스럽게
+    남는다. 신규 제안의 요구 기술은 카탈로그에서 그대로 뽑는다 -- 결과를 맞추려 남는 인력과 어긋나게 만들지 않는다."""
+    by_group = defaultdict(list)
+    for p in people:
+        by_group[p["_group"]].append(p)
+    bench = []
+    working = {}
+    for g, ps in by_group.items():
+        ps = ps[:]
+        rng.shuffle(ps)
+        k = max(1, round(BENCH_SHARE * len(ps)))
+        bench += ps[:k]
+        working[g] = ps[k:]
+    projects, grade_reqs, skill_reqs, roster = [], [], [], []
+
+    def overlap(person, skills):
+        return len(set(person["_pool"]) & set(skills)) + rng.random() * 1.5     # 대체로 맞게, 완벽하지는 않게
+
+    def add_project(pid, name, sector, phase, start, end, members, hc, skills_rows, flagship=False):
+        projects.append({"project_id": pid, "project_name": name, "sector": sector, "phase": phase,
+                         "start_month": horizon[start].strftime("%Y-%m"), "end_month": horizon[end].strftime("%Y-%m"),
+                         "_start": start, "_end": end, "_hc": hc, "_flagship": flagship})
+        skill_reqs.extend({"project_id": pid, **r} for r in skills_rows)
+        cost = sum(_rate(m) for m in members) if members else sum(BASE_RATE[g] * k for g, k in hc.items())
+        projects[-1]["monthly_budget"] = str(max(1, int(cost * rng.uniform(1.02, 1.12))))
+        grade_reqs.extend({"project_id": pid, "career_grade": g, "headcount": str(k)} for g, k in hc.items() if k > 0)
+        for m in members:
+            roster.append({"person_id": m["person_id"], "project_id": pid, "alloc": "1.0",
+                           "locked": "Y" if rng.random() < 0.10 else "N"})
+
+    def skill_rows(skills):
+        out = []
+        for skill in rng.sample(skills, rng.randint(max(2, len(skills) - 2), len(skills))):
+            cap = 24 if skill in LLM_ERA else 60
+            out.append({"skill_name": skill, "min_experience_months": str(rng.choice([m for m in (12, 24, 36, 60) if m <= cap])),
+                        "headcount": str(rng.randint(1, 2))})
+        return out
+
+    # 대표 사업(공동 수행): 그룹별 정해진 내부 정원을 기술이 맞는 사람부터 채운다
+    members, rows = [], []
+    for g in ("DP", "AI"):
+        if not groups.get(g):
+            continue
+        fskills = [s for s, _, _ in FLAGSHIP["skills"][g]]
+        pool = sorted(working[g], key=lambda p: -overlap(p, fskills))
+        for grade, k in FLAGSHIP["seats"][g].items():
+            take = [p for p in pool if p["career_grade"] == grade and p not in members][:k]
+            members += take
+        rows += [{"skill_name": s, "min_experience_months": str(m), "headcount": str(hc)} for s, hc, m in FLAGSHIP["skills"][g]]
+    for g in working:
+        working[g] = [p for p in working[g] if p not in members]
+    hc = defaultdict(int)
+    for m in members:
+        hc[m["career_grade"]] += 1
+    add_project(FLAGSHIP["project_id"], FLAGSHIP["project_name"], "대외금융", "실행", 0, HORIZON_MONTHS - 1,
+                members, dict(hc), rows, flagship=True)
+    j = 1
+    used = set()
+
+    def pick_type(g):
+        types = PROJECT_TYPES[g]
+        name, sector, clients, skills, _ = rng.choices(types, weights=[t[4] for t in types])[0]
+        client = next((c for c in rng.sample(clients, len(clients)) if (c, name) not in used), clients[0])
+        used.add((client, name))
+        return name.format(c=client), sector, skills
+
+    for g, remaining in working.items():                 # 진행 중 사업: 남은 인원을 4~9명 팀으로 모두 배치
+        remaining = remaining[:]
+        while remaining:
+            j += 1
+            name, sector, skills = pick_type(g)
+            k = rng.randint(4, 9)
+            if len(remaining) - k < 4:
+                k = len(remaining)
+            team = sorted(remaining, key=lambda p: -overlap(p, skills))[:k]
+            remaining = [p for p in remaining if p not in team]
+            hc = defaultdict(int)
+            for m in team:
+                hc[m["career_grade"]] += 1
+            add_project(f"J{j:03d}", f"[실행] {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), skill_rows(skills))
+    order = [g for g in ("DP", "AI", "AU") if groups.get(g)]
+    n_prop = PROPOSALS.get(size, 2)
+    seats_left = max(3 * n_prop, len(bench) - 1)          # 필요 인원 ≈ 남는 인력(한 명 여유)
+    proposal_ids = []
+    for k in range(n_prop):
+        j += 1
+        g = order[k % len(order)]
+        name, sector, skills = pick_type(g)
+        n = seats_left // (n_prop - k)
+        seats_left -= n
+        hc = {"고급": 1, "중급": max(1, n - 2), "초급": 1 if n >= 3 else 0}
+        add_project(f"J{j:03d}", f"[제안] {name}", sector, "제안", 1, HORIZON_MONTHS - 1, [], hc, skill_rows(skills))
+        proposal_ids.append(f"J{j:03d}")
+    availability, avail = [], defaultdict(list)
+    for p in people:
+        for m in horizon:
+            avail[p["person_id"]].append(1.0)
+            availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": "1.0"})
+    demand = sum(sum(p["_hc"].values()) for p in projects) / max(1, len(people))
+    return projects, grade_reqs, skill_reqs, roster, availability, avail, [b["person_id"] for b in bench], proposal_ids, demand
+
+
 def _current_roster(rng: random.Random, people: list[dict], projects: list[dict], avail: dict) -> list[dict]:
     """Who is already on a running execution project at the start of the plan (continuity input).
     70% of the execution projects running in month 0 (the flagship always) get 50-100% of their seats filled
@@ -472,9 +586,14 @@ def _current_roster(rng: random.Random, people: list[dict], projects: list[dict]
     return rows
 
 
-def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str = "2026-10") -> Path:
+def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str = "2026-10",
+                        scenario: str = "planning") -> Path:
+    """scenario: "planning" = 연초 계획(사업을 백지에서 배치), "operating" = 운영 중(대부분이 진행 사업에 있고 신규 제안
+    2~3개를 남는 인력으로 짠다, 2026-10-06). 같은 seed면 사람·이력·평가·과거 성과는 두 시나리오가 같다."""
     if size not in SIZES:
         raise ValueError(f"size must be one of {sorted(SIZES)}")
+    if scenario not in ("planning", "operating"):
+        raise ValueError("scenario must be 'planning' or 'operating'")
     from core.ingest.loader import _parse_month
     first = _parse_month(horizon_start)
     groups = {g: n for g, n in SIZES[size].items() if n}
@@ -494,16 +613,23 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     _describe_works(works, last)
     availability, supply = [], [0.0] * HORIZON_MONTHS
     avail = defaultdict(list)
-    for p in people:
+    for p in people if scenario == "planning" else []:
         for k, m in enumerate(horizon):
             mm = rng.choices((1.0, 0.7, 0.5, 0.3, 0.0), weights=(0.6, 0.1, 0.15, 0.05, 0.1))[0]
             avail[p["person_id"]].append(mm)
             supply[k] += mm
             availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": f"{mm:.1f}"})
-    projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon, supply)
+    extra = {}
+    if scenario == "planning":
+        projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon, supply)
+    else:
+        (projects, grade_reqs, skill_reqs, roster, availability, avail, bench, proposals,
+         peak) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size)
+        extra = {"scenario": "operating", "bench": bench, "proposals": proposals}
     reviews, review_items = _org_reviews(random.Random(seed * 1299709 + 5), works, people, _review_rounds(first))
     # separate RNG stream so adding the roster does not change any other table of an existing seed
-    roster = _current_roster(random.Random(seed * 7919 + 1), people, projects, avail)
+    if scenario == "planning":
+        roster = _current_roster(random.Random(seed * 7919 + 1), people, projects, avail)
     rate_card = [{"career_grade": g, "role_type": r,
                   "monthly_rate": str(round(BASE_RATE[g] * (CONSULTING_PREMIUM if r == "컨설팅" else 1)))}
                  for g in GRADES for r in ("개발", "컨설팅")]
@@ -516,11 +642,12 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
               "current_assignments.csv": roster,
               "project_outcomes.csv": outcomes, "replacements.csv": replacements}
     hashes = {name: _write_csv(out_dir / name, name, rows) for name, rows in tables.items()}
-    manifest = {"dataset_id": f"org-n{size}-s{seed}", "schema_version": SCHEMA_VERSION,
+    manifest = {"dataset_id": f"org-n{size}-s{seed}" + ("-operating" if scenario == "operating" else ""),
+                "schema_version": SCHEMA_VERSION,
                 "horizon_start": horizon_start, "horizon_months": HORIZON_MONTHS, "cost_unit": "가상비용점(월)",
                 "synthetic": True, "seed": seed, "generator": GENERATOR, "groups": groups,
                 "flagship_project": FLAGSHIP["project_id"],
                 "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
-                "peak_demand_ratio": round(peak, 4), "files": hashes}
+                "peak_demand_ratio": round(peak, 4), **extra, "files": hashes}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return out_dir

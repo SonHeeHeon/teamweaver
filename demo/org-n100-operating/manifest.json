@@ -1,5 +1,5 @@
 {
- "dataset_id": "org-n100-s2026",
+ "dataset_id": "org-n100-s2026-operating",
  "schema_version": 1,
  "horizon_start": "2026-10",
  "horizon_months": 6,
@@ -12,19 +12,36 @@
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.8435,
+ "peak_demand_ratio": 0.99,
+ "scenario": "operating",
+ "bench": [
+  "DP0032",
+  "DP0078",
+  "DP0088",
+  "DP0041",
+  "DP0081",
+  "DP0046",
+  "DP0079",
+  "DP0100",
+  "DP0026",
+  "DP0031"
+ ],
+ "proposals": [
+  "J014",
+  "J015"
+ ],
  "files": {
   "people.csv": "e8bc756a65c4178917fa1d733bcab2ffc36e0a3ecb520c73bb93a664fbc4e138",
   "rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
   "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
   "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
-  "availability.csv": "40a8a6a4e9ceddf7c93e68e7b012e3db0cac50ed2865089bf721db6773f710ea",
-  "projects.csv": "84cf274e4cd02cd9ed09c8eebfbdb50639672f61b00d06ec28cdcdcd5ad16f6b",
-  "project_grade_requirements.csv": "a1daf8b346f30d034c4b57fb84dcae7dba6faa91dfbecf905927f79576897921",
-  "project_skill_requirements.csv": "223c8c8c68c8e00aaedb35f94f15efab89cc76ac1f68cc649736f2bf9f38ae28",
+  "availability.csv": "67b5890b22425aadfa1aabe0fb9f50bcd443f423170b3fe9955584fb73efa7e5",
+  "projects.csv": "42579e66f5851bff809d2b2566c113d3aa5826b671cc155ae3ef84aca5addf1e",
+  "project_grade_requirements.csv": "3a76bea4a287aba6ea87d2b52d190cb443fd6884298bd458358018ca822beac3",
+  "project_skill_requirements.csv": "cccdbb206babe2d34d03c2887a4728365b6a81e3df49c1bd7c06c12b967e1bbe",
   "reviews.csv": "4434bfd644a9c93abb70d220aedcc050adba08f9f48569bc67b40834d75393a3",
   "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
-  "current_assignments.csv": "f404b86f2dc48619815cfb0cffca967c5b48019bb8f8a4a8d2fc14cffd6b6152",
+  "current_assignments.csv": "d264b6feb0d6a8f4d5a587045742d25724651a8baf6ab10d9e73ff4bc5196b74",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
  }
