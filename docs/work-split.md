@@ -88,6 +88,7 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-06 [claude-a→모두] **공유 계약 `pyproject.toml`·`uv.lock`: `highspy`를 benchmark 그룹 → 기본 의존성.** 서비스 솔버가 2026-10-05부터 HiGHS인데 benchmark에만 있어, 설치 안내대로 `uv sync`하면 지워졌다(dry-run 확인). 실제로 실행 중 누군가의 `uv sync` 뒤 시드 작업 프로세스가 `ModuleNotFoundError: highspy`로 실패했다(모델 실험실, 단일 풀이 대체로 버팀). 이제 `uv sync` 직후에도 HiGHS가 있다. SCIP(`pyscipopt`)는 benchmark 그대로 -- 그 그룹 없이 돌면 SCIP 시험 5건은 건너뛴다(`tests/phase1/test_solvers.py` 1건에 importorskip 추가) · 상태: 처리됨
 - 2026-10-06 [claude-a→모두] **익숙한 쌍 = 최근 36개월 중 12개월 이상**(사용자 결정, 근거 `rehearsal/results/rule-compare.html`). `feat/claude-a-recent-familiarity`에서 영역 밖·공유 계약을 함께 고쳤다(사용자 지시 "실 데이터라고 가정하고 검증할 건 다 검증"):
   - 공유 계약: `core/domain/models.CoworkRecord.months_ago`(선택, 함께 일한 달이 계획 몇 달 전인지), `core/graph/memory_graph.cowork_within(window)`·`cowork_months_ago`.
   - Codex 영역: `MilpParams.clique_window_months`(None = 전체 이력), `milp._overfamiliar_pairs(graph, threshold, window)`, 독립 검증기·Phase 0 오라클·벤치(`experiments/phase1/solvers.py`, `experiments/c6`)가 같은 기간을 쓴다. 정식(목적·제약 모양)은 그대로, Phase 0 PASS.

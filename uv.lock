@@ -1695,6 +1695,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "fastapi" },
+    { name = "highspy" },
     { name = "numpy" },
     { name = "openai" },
     { name = "pulp" },
@@ -1706,7 +1707,6 @@ dependencies = [
 
 [package.dev-dependencies]
 benchmark = [
-    { name = "highspy" },
     { name = "pyscipopt" },
 ]
 dev = [
@@ -1723,6 +1723,7 @@ dev = [
 requires-dist = [
     { name = "anyio", specifier = ">=4.0" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "highspy", specifier = ">=1.15.1" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "openai", specifier = ">=1.40" },
     { name = "pulp", specifier = ">=2.8,<4" },
@@ -1733,10 +1734,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-benchmark = [
-    { name = "highspy", specifier = ">=1.15.1" },
-    { name = "pyscipopt", specifier = ">=6.2.1" },
-]
+benchmark = [{ name = "pyscipopt", specifier = ">=6.2.1" }]
 dev = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "jupyter", specifier = ">=1.0" },

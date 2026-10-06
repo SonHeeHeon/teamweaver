@@ -298,6 +298,7 @@ def test_independently_valid_time_limited_cbc_candidate_is_preserved(monkeypatch
 
 
 def test_scip_infinity_sentinel_bound_is_not_recorded(monkeypatch):
+    pytest.importorskip("pyscipopt")          # SCIP는 benchmark 그룹에만 있다(서비스 솔버 HiGHS는 기본 의존성)
     native_model = SimpleNamespace(
         getStatus=lambda: "timelimit",
         getNSols=lambda: 1,

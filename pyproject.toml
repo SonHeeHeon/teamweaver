@@ -12,11 +12,12 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "anyio>=4.0",
+    # 서비스 솔버(2026-10-05부터 HiGHS). 예전엔 benchmark 그룹에만 있어 설치 안내대로 `uv sync`하면 지워졌다(2026-10-06 발견).
+    "highspy>=1.15.1",
 ]
 
 [dependency-groups]
 benchmark = [
-    "highspy>=1.15.1",
     "pyscipopt>=6.2.1",
 ]
 dev = [
