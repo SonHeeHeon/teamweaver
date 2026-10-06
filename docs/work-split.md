@@ -84,10 +84,12 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-operating-staffing` · 운영 중 편성·보강 시뮬레이터(사용자 요청 2026-10-06): `core/ingest/org_profile.py`(scenario="operating"), 새 `core/optimize/incremental.py`, `core/optimize/milp.py`(추가 제약 훅이 투입률 변수를 받음), `core/optimize/greedy.py`(min_alloc 인자, 기본 그대로), 새 `core/evaluate/{operating,staffing_sim,baseline}.py`, `rehearsal/{operating_check,make_demo,make_broken_demo,guard_demo}.py`, `demo/*-operating*`, `demo/org-n100-broken.zip` · 시작 2026-10-06 13:00
 - [claude-a] `feat/claude-a-solve-stability` · 계산 안정화(사용자 선택 2026-10-06): `core/optimize/milp.py`(HiGHS 상한 기록, `solver_seeds`), 새 `core/optimize/highs_portfolio.py`, `rehearsal/solve_probe.py`, `tests/api/test_settings.py`(HTTP 미러 시험 제외 목록 1줄) · 시작 2026-10-06 01:30
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-06 [claude-a→claude-b] **운영 중 편성·사업 보강 화면 + API** — 사용자 핵심 요청("대부분 이미 배치된 상황에서 신규 제안 2~3개를 최근 끝난 10명 안팎으로 짜기, 1~2명 이동 시 개선량, 진행 사업 보강 시뮬레이션"). 계산은 claude-a가 만들었고 계약·화면 제안은 `docs/requests/2026-10-06-operating-staffing-ui.md`. 시연 확장 A(단순 규칙 대비 카드, `core.evaluate.baseline`)·B(계산 신뢰도 배지)도 같은 문서 · 상태: 대기
 - 2026-10-06 [claude-a→모두] **공유 계약 `pyproject.toml`·`uv.lock`: `highspy`를 benchmark 그룹 → 기본 의존성.** 서비스 솔버가 2026-10-05부터 HiGHS인데 benchmark에만 있어, 설치 안내대로 `uv sync`하면 지워졌다(dry-run 확인). 실제로 실행 중 누군가의 `uv sync` 뒤 시드 작업 프로세스가 `ModuleNotFoundError: highspy`로 실패했다(모델 실험실, 단일 풀이 대체로 버팀). 이제 `uv sync` 직후에도 HiGHS가 있다. SCIP(`pyscipopt`)는 benchmark 그대로 -- 그 그룹 없이 돌면 SCIP 시험 5건은 건너뛴다(`tests/phase1/test_solvers.py` 1건에 importorskip 추가) · 상태: 처리됨
 - 2026-10-06 [claude-a→모두] **익숙한 쌍 = 최근 36개월 중 12개월 이상**(사용자 결정, 근거 `rehearsal/results/rule-compare.html`). `feat/claude-a-recent-familiarity`에서 영역 밖·공유 계약을 함께 고쳤다(사용자 지시 "실 데이터라고 가정하고 검증할 건 다 검증"):
   - 공유 계약: `core/domain/models.CoworkRecord.months_ago`(선택, 함께 일한 달이 계획 몇 달 전인지), `core/graph/memory_graph.cowork_within(window)`·`cowork_months_ago`.
