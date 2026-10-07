@@ -96,10 +96,13 @@ def test_a_solver_objective_that_differs_from_the_rescore_is_still_accepted(buil
     params = _params(active)
     plan = _plan(active.graph, params, "A", [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc)
                                              for c in active.current])
-    solver = plan.model_copy(update={"objective": plan.objective + 0.0068})
+    solver = plan.model_copy(update={"objective": plan.objective + 0.0068, "termination": "time_limit_incumbent",
+                                     "best_bound": plan.objective + 1.0, "gap_used": 0.05})
     _write(bundle, active, params, [solver], eval_objectives=[plan.objective], stop_reason="time_limit")
     pre = load_precomputed(bundle, active, params)
     assert pre.skipped == [] and pre.plans[0].objective == solver.objective and pre.stop_reason == "time_limit"
+    loaded = pre.plans[0]                      # the confidence badge fields survive (rehearsal 2026-10-07: "증명 정보 없음")
+    assert (loaded.termination, loaded.best_bound, loaded.gap_used) == ("time_limit_incumbent", plan.objective + 1.0, 0.05)
     precomputed_path(bundle).unlink()
 
 
@@ -218,3 +221,25 @@ def test_boot_skips_the_warm_up_when_the_precomputed_plans_cover_it(built, monke
         assert c.get("/api/datasets/active").json()["precomputed"]["plans"] == 1
     assert ran == []
     precomputed_path(bundle).unlink()
+
+
+def test_every_plan_field_survives_the_round_trip(built):
+    """Review SHOULD: rebuilding plans field by field dropped new fields; every PlanAssignment field must round-trip."""
+    root, actives = built
+    bundle, active = root / "org-n100", actives["org-n100"]
+    params = _params(active)
+    plan = _plan(active.graph, params, "B", [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc)
+                                             for c in active.current[:4]])
+    full = plan.model_copy(update={"termination": "Optimal", "best_bound": plan.objective + 0.5, "gap_used": 0.01,
+                                   "unfilled": ["J001:중급:1명 미충원"], "time_limited": False})
+    _write(bundle, active, params, [full])
+    loaded = load_precomputed(bundle, active, params).plans[0]
+    assert loaded.model_dump() == full.model_dump()
+    legacy = {k: v for k, v in full.model_dump().items() if k not in ("termination", "best_bound", "gap_used")}
+    path = precomputed_path(bundle)
+    data = json.loads(path.read_text("utf-8"))
+    data["optimize"]["plans"] = [{**legacy, "eval_objective": full.objective}]
+    path.write_text(json.dumps(data), "utf-8")
+    old = load_precomputed(bundle, active, params).plans[0]          # a record made before those fields existed
+    assert old.termination is None and old.best_bound is None and old.label == "B"
+    path.unlink()

@@ -4,8 +4,8 @@
  "dataset_id": "org-n100-s2026-operating",
  "dataset_version": "8eee5f07222e550e03be8a76d7256af68dde6d108483cc82e80154a93c98bea8",
  "review_judge": "llm",
- "computed_at": "2026-10-06T14:42:53+00:00",
- "commit": "d5f9bd4",
+ "computed_at": "2026-10-07T02:25:36+00:00",
+ "commit": "8f8f41b",
  "solver_seeds": 4,
  "build_s": 0.14,
  "optimize": {
@@ -26,9 +26,11 @@
    "solver": "highs",
    "allocation_mode": "fixed",
    "solver_seeds": 1,
-   "clique_window_months": 36
+   "clique_window_months": 36,
+   "partner_floor": 0,
+   "partner_floor_weight": 0.0
   },
-  "elapsed_s": 122.66,
+  "elapsed_s": 122.55,
   "stop_reason": null,
   "plans": [
    {
@@ -798,10 +800,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 112.96468636474043,
+    "gap_used": 0.01,
     "label": "A",
     "eval_objective": 93.25607063492063,
     "eval_violations": [],
-    "elapsed_s": 30.55
+    "elapsed_s": 30.39
    },
    {
     "entries": [
@@ -1565,10 +1570,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 112.83823831190492,
+    "gap_used": 0.05,
     "label": "B",
     "eval_objective": 93.95816111111111,
     "eval_violations": [],
-    "elapsed_s": 61.08
+    "elapsed_s": 61.15
    },
    {
     "entries": [
@@ -2337,10 +2345,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 112.83433674163474,
+    "gap_used": 0.05,
     "label": "C",
     "eval_objective": 94.46269444444445,
     "eval_violations": [],
-    "elapsed_s": 91.72
+    "elapsed_s": 91.8
    },
    {
     "entries": [
@@ -3119,10 +3130,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 112.76577383180572,
+    "gap_used": 0.05,
     "label": "D",
     "eval_objective": 92.81838650793651,
     "eval_violations": [],
-    "elapsed_s": 122.66
+    "elapsed_s": 122.55
    }
   ]
  },
@@ -3148,9 +3162,11 @@
    "solver": "highs",
    "allocation_mode": "fixed",
    "solver_seeds": 1,
-   "clique_window_months": 36
+   "clique_window_months": 36,
+   "partner_floor": 0,
+   "partner_floor_weight": 0.0
   },
-  "elapsed_s": 32.18,
+  "elapsed_s": 33.51,
   "rows": [
    {
     "objective": -130.955,
@@ -3803,7 +3819,7 @@
      }
     ],
     "k": 0,
-    "elapsed_s": 0.41,
+    "elapsed_s": 0.4,
     "accepted": true,
     "termination": "Optimal",
     "proven_optimal": true,
@@ -4488,7 +4504,7 @@
      }
     ],
     "k": 1,
-    "elapsed_s": 0.97,
+    "elapsed_s": 1.02,
     "accepted": true,
     "termination": "Optimal",
     "proven_optimal": true,
@@ -5177,7 +5193,7 @@
      }
     ],
     "k": 2,
-    "elapsed_s": 11.86,
+    "elapsed_s": 12.01,
     "accepted": true,
     "termination": "Optimal",
     "proven_optimal": true,
@@ -5875,7 +5891,7 @@
      }
     ],
     "k": 3,
-    "elapsed_s": 18.82,
+    "elapsed_s": 19.96,
     "accepted": true,
     "termination": "Optimal",
     "proven_optimal": true,

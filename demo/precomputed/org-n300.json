@@ -4,10 +4,10 @@
  "dataset_id": "org-n300-s2026",
  "dataset_version": "ee2faccb4a42fb3940e14435be6daf7a674980cad462be07d02b7415cdb2335d",
  "review_judge": "llm",
- "computed_at": "2026-10-06T15:15:25+00:00",
- "commit": "d5f9bd4",
+ "computed_at": "2026-10-07T02:38:05+00:00",
+ "commit": "8f8f41b",
  "solver_seeds": 4,
- "build_s": 726.96,
+ "build_s": 0.53,
  "optimize": {
   "weights": {},
   "n_alternatives": 3,
@@ -26,9 +26,11 @@
    "solver": "highs",
    "allocation_mode": "fixed",
    "solver_seeds": 1,
-   "clique_window_months": 36
+   "clique_window_months": 36,
+   "partner_floor": 0,
+   "partner_floor_weight": 0.0
   },
-  "elapsed_s": 449.49,
+  "elapsed_s": 463.48,
   "stop_reason": null,
   "plans": [
    {
@@ -1808,10 +1810,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 172.35261772903144,
+    "gap_used": 0.01,
     "label": "A",
     "eval_objective": 166.29228015873016,
     "eval_violations": [],
-    "elapsed_s": 183.11
+    "elapsed_s": 182.93
    },
    {
     "entries": [
@@ -3585,10 +3590,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": false,
+    "termination": "Optimal",
+    "best_bound": 172.42466378806589,
+    "gap_used": 0.05,
     "label": "B",
     "eval_objective": 165.54090886243384,
     "eval_violations": [],
-    "elapsed_s": 281.71
+    "elapsed_s": 287.27
    },
    {
     "entries": [
@@ -5377,10 +5385,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": false,
+    "termination": "Optimal",
+    "best_bound": 172.44036430061075,
+    "gap_used": 0.05,
     "label": "C",
     "eval_objective": 166.07597923280423,
     "eval_violations": [],
-    "elapsed_s": 369.43
+    "elapsed_s": 380.04
    },
    {
     "entries": [
@@ -7149,10 +7160,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": false,
+    "termination": "Optimal",
+    "best_bound": 172.48959665960112,
+    "gap_used": 0.05,
     "label": "D",
     "eval_objective": 165.28402645502644,
     "eval_violations": [],
-    "elapsed_s": 449.49
+    "elapsed_s": 463.48
    }
   ]
  },

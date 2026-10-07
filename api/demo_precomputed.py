@@ -115,9 +115,9 @@ def _check_plans(pre: Precomputed, opt, graph, S, C, params: MilpParams, version
         elif fparams is not None:
             plans, bad = [], None
             for raw in opt.get("plans", []):
-                plan = PlanAssignment(entries=[AssignEntry(**e) for e in raw["entries"]], objective=raw["objective"],
-                                      unfilled=list(raw.get("unfilled", [])), violations=list(raw.get("violations", [])),
-                                      time_limited=bool(raw.get("time_limited", False)), label=raw.get("label", "A"))
+                # PlanAssignment의 모든 칸을 기록 그대로 되살린다(칸을 손으로 나열하면 새 칸이 빠진다 -- 신뢰도 배지 칸이
+                # 그렇게 빠져 "증명 정보 없음"이 떴다, 리허설 2026-10-07). 기록에 없는 칸은 기본값.
+                plan = PlanAssignment.model_validate({k: raw[k] for k in PlanAssignment.model_fields if k in raw})
                 ev = evaluate_plan(graph, S, C, params, plan.entries)
                 recorded = float(raw["eval_objective"])
                 if ev.violations or not _close(ev.objective.total, recorded):

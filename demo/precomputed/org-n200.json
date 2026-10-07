@@ -4,10 +4,10 @@
  "dataset_id": "org-n200-s2026",
  "dataset_version": "61cdeebc2152eb7dc6d569641014df6ade48fa39626c2ebfd515064bd5095f90",
  "review_judge": "llm",
- "computed_at": "2026-10-06T14:53:20+00:00",
- "commit": "d5f9bd4",
+ "computed_at": "2026-10-07T02:28:12+00:00",
+ "commit": "8f8f41b",
  "solver_seeds": 4,
- "build_s": 472.65,
+ "build_s": 0.36,
  "optimize": {
   "weights": {},
   "n_alternatives": 3,
@@ -26,7 +26,9 @@
    "solver": "highs",
    "allocation_mode": "fixed",
    "solver_seeds": 1,
-   "clique_window_months": 36
+   "clique_window_months": 36,
+   "partner_floor": 0,
+   "partner_floor_weight": 0.0
   },
   "elapsed_s": 248.06,
   "stop_reason": null,
@@ -1208,10 +1210,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 115.91057950654759,
+    "gap_used": 0.01,
     "label": "A",
     "eval_objective": 108.40675582010581,
     "eval_violations": [],
-    "elapsed_s": 61.74
+    "elapsed_s": 61.86
    },
    {
     "entries": [
@@ -2400,10 +2405,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 115.64843246991185,
+    "gap_used": 0.05,
     "label": "B",
     "eval_objective": 107.3823593915344,
     "eval_violations": [],
-    "elapsed_s": 123.75
+    "elapsed_s": 123.89
    },
    {
     "entries": [
@@ -3607,10 +3615,13 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 115.80280341534747,
+    "gap_used": 0.05,
     "label": "C",
     "eval_objective": 108.11013267195767,
     "eval_violations": [],
-    "elapsed_s": 186.0
+    "elapsed_s": 186.06
    },
    {
     "entries": [
@@ -4834,6 +4845,9 @@
     "unfilled": [],
     "violations": [],
     "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 115.65105366792731,
+    "gap_used": 0.05,
     "label": "D",
     "eval_objective": 109.73066137566137,
     "eval_violations": [],
