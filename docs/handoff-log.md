@@ -22,6 +22,24 @@
 
 ---
 
+## 2026-10-08 · claude-a · 지식 그래프(그래프 하나 + 보기 둘) + 인사팀 소명 방식 실험 E7
+- 브랜치/커밋: `feat/claude-a-knowledge-graph` (push, **main 병합은 사용자 승인 대기**)
+- 한 일: 사용자 요청("지식그래프도 일단 시작하자, 용도별로 다 각각 만들어야 하나?" → 그래프 하나). `core/kg/`(새 디렉터리, claude-a 소유) — 사람·기술·현재/과거 사업·고객사·산업·평가·협업을
+  메모리 그래프로(그래프 DB 없음), 보기 `skill_map`(조직 기술 지도·제안 부족)·`project_evidence`(요구 기술 충족·산업/고객사 경험·팀 협업·평가·"왜 다른 사람이 아니었나").
+  실데이터는 이름·평가 원문·업무 요약 제외. 시안 `rehearsal/results/kg-preview.html`. E7(`rehearsal/results/justification-compare.html`): KG 템플릿·GraphRAG 둘 다 근거 오류 0·필수 요소 63/63,
+  GraphRAG 약 890자 vs 템플릿 5,200자, 일반 RAG는 비교·규칙 사실이 없어 핵심을 못 다룸 — 소명 방식은 사용자 결정 대기.
+- 상대 영향(claude-b): 화면·PDF 계약은 사용자 결정 뒤에 적는다(work-split 예고). 테스트 기준선 **1413 passed**(이 브랜치).
+- 검증: 전체 1413 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(월별 투입) 수정 후 0.
+- 근거: `.omc/reports/2026-10-07-knowledge-graph.md`(claude-a 로컬)
+
+## 2026-10-08 · claude-a · claude-b 요청 처리: 미리 계산 재생성·GLM 단가·MILP 동기화 함정
+- 브랜치/커밋: `feat/claude-a-b-requests` → main `6cfcf4a`
+- 한 일: 리뷰 판정 추론 강도 low 반영으로 무효가 된 미리 계산 6개를 main `a3efcc7` 기준으로 재생성(임시 데이터 폴더 서버에서 6개 모두 수용 확인). `fixtures/pricing.json`에 `glm-5.3`(추론 low).
+  CLAUDE.md 함정: MILP 정식을 다시 쓰는 곳 다섯(서비스·벤치·C1 보정 LP·검증기·평가기). 시연 리뷰 글 생성기 개선은 사용자 결정으로 최종 정리 때.
+- 상대 영향: 미리 계산 파일이 바뀌었다(화면 "미리 계산" 표시 대상). Z.ai 잔액 소진(E6) — GLM 비교 전 충전 필요.
+- 검증: 전체 1403 passed(병합 전) · 서버 스모크 6/6 수용.
+- 근거: `.omc/reports/2026-10-07-claude-b-requests.md`(claude-a 로컬)
+
 ## 2026-10-07 · claude-a · E6: LLM 직접 배치 vs 모델+솔버(사용자 요청 "증명해 보이자")
 - 브랜치/커밋: `feat/claude-a-llm-vs-solver` (main 병합, 사용자 승인)
 - 한 일: gpt-6-luna(추론 high)·GLM 5.3에게 같은 문제(20/50/100명)를 통째로 맡겨 서비스 평가기로 채점. luna는 20명에선 솔버의 89~94%, 100명에선 원자료 0/2(위반)·점수 제공 2/3(55%), 한 번에 4~11분.
