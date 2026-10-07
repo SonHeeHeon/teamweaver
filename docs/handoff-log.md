@@ -32,7 +32,7 @@
     원인은 claude-a의 조율 누락(서버 쪽을 맡으며 "진행 중"에 적지 않음).
   - claude-b 요청 처리: `compare_move_budgets(on_row=)`(K마다 carry 반영 행).
 - 상대 영향(claude-b): 웹은 그대로 동작한다(칸 추가만). `title·description`을 시연 데이터 카드에 쓸 수 있다. 미리 계산 배지(`precomputed_at`)·다시 계산(`fresh`)·운영 중 비교 미리 계산 연결은 요청 문서 끝 절.
-- 검증: 병합 후 전체 1369 passed(claude-b 작업 포함, 아래 claude-b E4·E5 병합 뒤 재확인) · 웹 tsc·165 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(운영 중 미리 계산이 가중치를 안 봄) 수정.
+- 검증: 병합 후 전체 **1384 passed**(claude-b 운영 중 화면·E4·E5 포함) · 웹 tsc·165 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(운영 중 미리 계산이 가중치를 안 봄) 수정.
 - 근거: `docs/demo-notes.md` 7절, `rehearsal/results/partner-compare.html`, `.omc/reports/2026-10-07-merge-demo-picker.md`(claude-a 로컬)
 
 ## 2026-10-07 · claude-a · 시연 데이터 두 장면 전환·미리 계산(E)·시연 대본·구조도(F)·감점 재설계 측정(G)
