@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-07 · claude-b · 사내 LLM = Z.ai GLM 5.3으로 가정(사용자 결정)
+- 브랜치/커밋: `feat/claude-b-inhouse-assume` (main 병합)
+- 한 일: 사용자 결정 "사내 서버로 측정은 불가하니 z.ai로 연결한게 사내 llm이라 가정하고 해야해"에 맞춰 E4·E5 보고서·라벨·docstring의 "사내 LLM 대리/대리값·사내 엔드포인트에서 다시 잰다"를 "사내 LLM(GLM 5.3·Z.ai, 사내로 가정)"으로 바꿨다. 가정은 보고서 상단·방법·한계에 밝혔다. 수치·로직 변경 없음(기록만으로 재생성).
+- 상대 영향: 앞으로 LLM 비교의 사내 열은 Z.ai GLM 5.3(low)이고, 사내 서버 재측정은 후속 과제가 아니다.
+- 검증: `tests/test_e4_judges.py` 18 passed. Opus 폴백 리뷰 MUST 0·SHOULD 2(반영).
+
+---
+
 ## 2026-10-07 · claude-a · 결정 기록 + main 병합(충돌 해결): 감점은 쌍 감점 유지, 시연 고르기는 claude-b 계약으로 통일
 - 브랜치/커밋: `feat/claude-a-demo-presets` ← main 병합(충돌 해결) → main(사용자 승인 2026-10-07)
 - 한 일:

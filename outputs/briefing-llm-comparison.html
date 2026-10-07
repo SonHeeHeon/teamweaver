@@ -9,13 +9,13 @@ th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radi
 </style></head><body><main>
 <h1>교체 설명(AI 브리핑) 비교: 외부 LLM vs 사내 LLM(GLM 5.3 low)</h1>
 <p class="muted">실험 E5 · 코드 <code>experiments/jev/e5_briefing.py</code> · 원시 결과 <code>experiments/jev/results/e5_*.json</code> ·
-모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
+모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED · 사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정(사내 서버 측정 불가)</p>
 
 <h2>1. 무엇을 비교했나</h2>
 <p>What-if 화면에서 "A 대신 B를 넣으면?"을 고르면 AI가 결론(권고/조건부/보류)·위험·대안을 쓴다(<code>api/rag/briefing.py</code>).
 같은 교체 100건을 서비스와 똑같은 재료(근거 문맥·원문 인용 색인·평가기 점수 변화·새 위반)로 두 모델에 맡겼다.
-외부는 서비스 설정 그대로(gpt-6-luna, 추론 <b>low</b>), 사내는 회사 밖이라 Z.ai 공식 API로 잰
-대리값(glm-5.3, 추론 <b>low</b>) — 양쪽 모두 low.</p>
+외부는 서비스 설정 그대로(gpt-6-luna, 추론 <b>low</b>), 사내는 Z.ai 공식 API의
+glm-5.3 모델(추론 <b>low</b>)을 사내 LLM으로 가정했다(사내 서버로는 측정할 수 없다 — 사용자 결정) — 양쪽 모두 low.</p>
 
 <h2>2. 방법과 표본 크기</h2>
 <ul>
@@ -30,7 +30,7 @@ th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radi
 
 
 <h2>3. 결과</h2>
-<table><tr><th>지표</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 low (GLM 5.3·Z.ai)</th></tr>
+<table><tr><th>지표</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM low (GLM 5.3·Z.ai)</th></tr>
 <tr><td>성공률(형식·가드 통과 — 실패하면 서비스는 규칙 기반 설명으로 대체)</td><td>100% (96~100%)</td><td>99% (95~100%)</td></tr>
 <tr><td>실패 사유</td><td>없음</td><td>quote_not_verbatim 1</td></tr>
 <tr><td>새 위반이 생긴 교체(72건)에서 &#x27;보류&#x27; 결론을 지킨 비율(읽을 수 있는 답 기준 — 지키지 않으면 서비스 가드가 버린다)</td><td>100% (95~100%) · 72건</td><td>100% (95~100%) · 72건</td></tr>
@@ -48,13 +48,13 @@ th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radi
 사내 권고 4, 보류 19, 조건부 4
 (갈린 경우 외부→사내: 권고→조건부 1, 조건부→보류 1).</p>
 
-<div class="box warn"><b>1차 측정(같은 100건·같은 low 설정, 기록 <code>results/superseded/</code>)</b><ul><li>외부 LLM (gpt-6-luna): 성공 98% — 실패 recommends_infeasible 2</li><li>사내 LLM 대리 low (GLM 5.3·Z.ai): 성공 98% — 실패 JSONDecodeError 1, KeyError 1</li></ul>같은 사례·같은 설정이라도 실행마다 실패가 ±2건 정도 달라진다(외부의 보류 규칙 위반 <code>recommends_infeasible</code>, 사내의 형식 실패). 서비스는 이런 답을 버리고 규칙 기반 설명으로 대신 보인다. 1차의 결론 분포·일치율은 결론 파서가 "권고하지 않는다"를 권고로 세는 결함이 있어 폐기하고, 결론 첫 문장을 저장하도록 고쳐 다시 쟀다(위 표).</div>
+<div class="box warn"><b>1차 측정(같은 100건·같은 low 설정, 기록 <code>results/superseded/</code>)</b><ul><li>외부 LLM (gpt-6-luna): 성공 98% — 실패 recommends_infeasible 2</li><li>사내 LLM low (GLM 5.3·Z.ai): 성공 98% — 실패 JSONDecodeError 1, KeyError 1</li></ul>같은 사례·같은 설정이라도 실행마다 실패가 ±2건 정도 달라진다(외부의 보류 규칙 위반 <code>recommends_infeasible</code>, 사내의 형식 실패). 서비스는 이런 답을 버리고 규칙 기반 설명으로 대신 보인다. 1차의 결론 분포·일치율은 결론 파서가 "권고하지 않는다"를 권고로 세는 결함이 있어 폐기하고, 결론 첫 문장을 저장하도록 고쳐 다시 쟀다(위 표).</div>
 <h2>4. 비용과 소요 시간</h2>
 <table><tr><th>모델</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰(추론)</th><th>비용</th><th>100건당</th></tr>
-<tr><td>외부 LLM (gpt-6-luna) (100건)</td><td>3.6초 / 5.1초</td><td>470,493 / 29,613 (1,924)</td><td>$0.0619</td><td>$0.0619</td></tr><tr><td>사내 LLM 대리 low (GLM 5.3·Z.ai) (100건)</td><td>7.6초 / 13.3초</td><td>519,858 / 67,611 (6,512)</td><td>$0.9577</td><td>$0.9577</td></tr>
+<tr><td>외부 LLM (gpt-6-luna) (100건)</td><td>3.6초 / 5.1초</td><td>470,493 / 29,613 (1,924)</td><td>$0.0619</td><td>$0.0619</td></tr><tr><td>사내 LLM low (GLM 5.3·Z.ai) (100건)</td><td>7.6초 / 13.3초</td><td>519,858 / 67,611 (6,512)</td><td>$0.9577</td><td>$0.9577</td></tr>
 </table>
 <p class="muted">단가(2026-10): gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시 $0.26·출력 $4.40 / 100만 토큰(추론 토큰은 출력).
-사내 온프렘에서는 토큰 비용이 아니라 GPU 처리량이 시간·비용을 정한다 — 여기의 GLM 값은 Z.ai 서비스 기준 참고값이다.</p>
+Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 = Z.ai 기준이다(실제 온프렘이면 GPU 시간이 비용이 된다).</p>
 
 <h2>5. 한계</h2>
 <div class="box warn"><ul>
@@ -66,6 +66,6 @@ th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radi
 모호한 문장이 있어 몇 건은 해석이 갈릴 수 있다(기록에 첫 문장을 남겨 다시 확인할 수 있다).</li>
 <li>지연은 재시도 대기를 포함한 건당 시간이다(E4는 시도별 시간 — 정의가 다르다).</li>
 <li>외부 모델은 서비스 설정 그대로(추론 강도 low), 사내는 low다.</li>
-<li>사내 열은 Z.ai 공식 API로 잰 대리값이다. 사내 서빙(양자화·추론 설정)이 다르면 달라질 수 있다.</li>
+<li>가정: Z.ai 공식 API의 GLM 5.3 = 사내 LLM(사용자 결정). 실제 온프렘 서빙(양자화 등)이 다르면 결과·속도가 조금 달라질 수 있다.</li>
 </ul></div>
 </main></body></html>

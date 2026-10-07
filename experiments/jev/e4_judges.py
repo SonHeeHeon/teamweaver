@@ -5,9 +5,9 @@
 현재 시연 원문 무작위 300(demo_s300). 예전 전체 시연 원문 기록(e4_*_demo*.json)은 데이터가 바뀌기 전 것이라 쓰지 않는다(이력).
 
 사용자 지시(2026-10-06): LLM을 쓰는 모든 곳은 외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상
-함께 재서 결과를 각각 낸다. 여기(회사 밖)에서는 GLM 5.3을 Z.ai 공식 API(`https://api.z.ai/api/paas/v4`, 모델
-`glm-5.3`, reasoning_effort=max -- 사용자 지정)로 재며 가상 데이터만 보낸다. 사내 배포와 같은 가중치지만 서빙
-환경(양자화·하드웨어)은 다를 수 있어 시간·비용은 참고값이다.
+함께 재서 결과를 각각 낸다. 사내 서버로는 측정할 수 없어 Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정한다(사용자 결정 2026-10-07) -- Z.ai 공식 API(`https://api.z.ai/api/paas/v4`, 모델
+`glm-5.3`)로 재며 가상 데이터만 보낸다. 주 비교는 추론 low, max는 참고 열이다. 실제 온프렘이면 서빙 환경(양자화·하드웨어)이
+달라 결과·속도가 조금 다를 수 있다. 비용은 Z.ai 요금 기준이다.
 
 왜: 규칙 기반 판정은 글 극성 자리에 항목 균형을 다시 넣어, 평가 사유(글)를 점수에 전혀 쓰지 않았다
 (쌍 리뷰 점수 = 0.5×항목 + 0.5×글 극성 → 사실상 항목 100%). 글을 읽는 판정기로 바꾸려고 두 후보를 비교했다.
@@ -33,7 +33,8 @@
 실행: `uv run --group benchmark python -m experiments.jev.e4_judges` (OPENAI_API_KEY·TYPESAFE_API_KEY·ZAI_API_KEY 필요,
 기록이 있으면 키 없이 보고서만 다시 만든다 -- 중간 기록(.partial.json)도 그대로 부분 결과로 쓴다. 이어서 판정하려면
 E4_RESUME=1). 기록마다 판정한 글의 지문(fingerprint)을 남겨, 데이터 생성기 문구가 바뀌면 섞지 않고 멈춘다.
-사내 LLM으로 다시 재기: `E4_TAG=onprem TEAMWEAVER_REVIEW_BASE_URL=<사내 주소> TEAMWEAVER_REVIEW_MODEL=<모델>
+다른 OpenAI 호환 엔드포인트로 재기(예: 나중에 사내 서버가 열리면 -- 2026-10-07 현재는 사내 측정 불가, Z.ai를 사내로 가정):
+`E4_TAG=onprem TEAMWEAVER_REVIEW_BASE_URL=<주소> TEAMWEAVER_REVIEW_MODEL=<모델>
 TEAMWEAVER_REVIEW_API_KEY=<있으면> uv run ... -m experiments.jev.e4_judges` -- 결과 파일·보고서 이름에 태그가 붙어
 기존 OpenAI 기록을 재사용하지 않는다(서비스 판정기와 같은 주소·모델·키 규칙, api/review_judge.py)."""
 from __future__ import annotations
@@ -76,11 +77,11 @@ JUDGES = ("llm_low", "glm_low", "llm", "glm", "jev")
 SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES,
               "demo_s300": ("llm_low", "glm_low", "llm", "jev")}
 N_DEMO_SAMPLE = 300           # 일치율의 95% 구간 반폭 ≤ ±5.7%p(1.96·√(0.25/300))
-# 사내 열은 회사 밖에서 Z.ai 공식 API로 잰 대리값이다 -- 표만 인용돼도 그 사실이 남게 이름에 적는다(리뷰 S8).
-# E4_TAG로 서비스 주소·모델을 바꿔 재면 첫 열 이름이 그 모델이 된다(사내 엔드포인트 재측정).
-LABEL = {"llm_low": "외부 LLM low (gpt-6-luna)", "glm_low": "사내 LLM 대리 low (GLM 5.3·Z.ai)",
+# 사내 열 = Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정(사용자 결정 2026-10-07: 사내 서버 측정 불가). 표만 인용돼도
+# 무엇을 쟀는지 남게 이름에 Z.ai를 적는다.
+LABEL = {"llm_low": "외부 LLM low (gpt-6-luna)", "glm_low": "사내 LLM low (GLM 5.3·Z.ai)",
          "llm": "외부 LLM 기본 추론·참고 (gpt-6-luna, 서비스 현재 설정)",
-         "glm": "사내 LLM 대리 max·참고 (GLM 5.3·Z.ai)", "jev": "Jev"}
+         "glm": "사내 LLM max·참고 (GLM 5.3·Z.ai)", "jev": "Jev"}
 GLM_URL = "https://api.z.ai/api/paas/v4"
 GLM_MODEL = "glm-5.3"
 GLM_REASONING = "max"                # 사용자 지정(2026-10-06). 공식 API는 추론을 끌 수 없다.
@@ -567,12 +568,13 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 
 <div class="box ok"><b>결정(사용자)</b>: 리뷰 글 판정은 선택지 없이 <b>LLM(OpenAI 호환 API)</b>으로 통일한다(2026-10-06).
 LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상 함께</b> 재고,
-<b>양쪽 모두 추론 강도 low</b>·<b>유의미한 표본 크기</b>로 잰다(2026-10-07).</div>
+<b>양쪽 모두 추론 강도 low</b>·<b>유의미한 표본 크기</b>로 잰다(2026-10-07). 사내 서버로는 측정할 수 없어
+<b>사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정</b>한다(2026-10-07).</div>
 
 <h2>1. 왜 비교했나</h2>
 <p>협업 점수의 리뷰 부분은 <code>쌍 리뷰 점수 = 0.5 × 항목 점수 + 0.5 × 글 점수</code>다. 이전 기본이던 규칙 기반은
-글 점수 자리에 항목 균형을 다시 넣어 평가 사유(글)를 점수에 쓰지 않았다. 글을 읽는 판정기로 외부 LLM, 사내 LLM(회사 밖이라
-Z.ai 공식 API로 잰 대리값), 판단 전용 모델 Jev를 같은 글로 비교했다.</p>
+글 점수 자리에 항목 균형을 다시 넣어 평가 사유(글)를 점수에 쓰지 않았다. 글을 읽는 판정기로 외부 LLM, 사내 LLM(사내 서버로는
+측정할 수 없어 Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정 — 사용자 결정), 판단 전용 모델 Jev를 같은 글로 비교했다.</p>
 
 <h2>2. 방법과 표본 크기</h2>
 <ul>
@@ -615,8 +617,8 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 <tr><th colspan="6">A. 시연 원문 무작위 {d['n']}건</th></tr>{cost_rows(d)}
 <tr><th colspan="6">B. 충실한 글 {f['n']}건</th></tr>{cost_rows(f)}</table></div>
 <p class="muted">비용 = 토큰 × 공식 단가(2026-10). gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시된 입력 $0.26·출력 $4.40
-(추론 토큰은 출력에 포함), Jev 입력 $0.042·출력 무료 / 100만 토큰. <b>사내 온프렘 GLM 5.3은 토큰 비용이 아니라 사내 GPU 처리량이
-시간과 비용을 정한다</b> — GLM 시간·비용은 Z.ai 공식 서비스 기준 참고값이다.</p>
+(추론 토큰은 출력에 포함), Jev 입력 $0.042·출력 무료 / 100만 토큰. <b>Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 =
+Z.ai 기준이다</b>(실제 온프렘이면 GPU 시간이 비용이 된다).</p>
 {_smoke(s.get("service_smoke"))}
 
 <h2>5. 해석</h2>
@@ -639,8 +641,8 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 <li><b>결정 근거(부정 검출)는 B(생성기 문장으로 다시 쓴 글)의 결과다.</b> 정답은 "항목 균형"이고 실제 협업 성과가 아니다(NOT_CALIBRATED).</li>
 <li>B의 글은 생성기의 문장 은행으로 만들었다. 실제 사람의 글(직설적인 평가 포함)과는 표현 폭이 다르다.</li>
 <li>판정값이 바뀌었을 때 <b>배치 결과(협업 점수·MILP 해)에 주는 영향은 재지 않았다.</b></li>
-<li><b>사내 열은 Z.ai 공식 API로 잰 대리값이다.</b> 같은 공개 가중치지만 사내 서빙(BF16/FP8, vLLM 버전, 추론 설정)이 다르면
-결과·속도가 달라질 수 있다. 사내 엔드포인트에서 <code>E4_TAG=onprem TEAMWEAVER_REVIEW_BASE_URL=… TEAMWEAVER_REVIEW_MODEL=…</code>로 다시 잰다.</li>
+<li><b>가정: Z.ai 공식 API의 GLM 5.3 = 사내 LLM</b>(사내 서버로는 측정할 수 없다 — 사용자 결정). 같은 공개 가중치지만 실제 온프렘
+서빙(BF16/FP8, vLLM 버전)이 다르면 결과·속도가 조금 달라질 수 있다. 비용은 Z.ai 요금으로 잡았다(온프렘이면 GPU 시간이 비용이 된다).</li>
 <li>GLM max 참고 열은 2026-10-06 측정(같은 글)이고, 시연 원문은 데이터가 바뀐 뒤라 max를 다시 재지 않았다.</li>
 <li>이전 실험 E2(가상 fixture 266건, <code>outputs/jev-experiment.html</code>)에서도 같은 방향(LLM 부호 일치 74% 대 Jev 61%)이었다.</li>
 </ul></div>

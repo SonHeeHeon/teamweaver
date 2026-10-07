@@ -1,4 +1,5 @@
-"""E5. 교체 설명(브리핑) 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM 대리(GLM 5.3·Z.ai, 추론 low) -- 같은 교체 100건.
+"""E5. 교체 설명(브리핑) 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM 5.3·Z.ai, 추론 low) -- 같은 교체 100건.
+사내 서버로는 측정할 수 없어 Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정한다(사용자 결정 2026-10-07).
 
 사용자 지시(2026-10-07): LLM을 쓰는 모든 곳은 외부 AI와 사내 GLM 5.3을 항상 함께 비교하되 전부 low로, 유의미한 표본 크기만.
 서비스 What-if(`api/routes/whatif.py`)와 같은 재료로 claude-a의 `api.rag.briefing.generate_briefing`을 그대로 부른다(import만):
@@ -42,7 +43,7 @@ N_CASES = 100
 SEED = 7
 WORKERS = 8
 MODELS = ("llm", "glm_low")
-LABEL = {"llm": "외부 LLM (gpt-6-luna)", "glm_low": "사내 LLM 대리 low (GLM 5.3·Z.ai)"}
+LABEL = {"llm": "외부 LLM (gpt-6-luna)", "glm_low": "사내 LLM low (GLM 5.3·Z.ai)"}
 
 
 # --- 사례 -----------------------------------------------------------------------------
@@ -400,13 +401,13 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 </style></head><body><main>
 <h1>교체 설명(AI 브리핑) 비교: 외부 LLM vs 사내 LLM(GLM 5.3 low)</h1>
 <p class="muted">실험 E5 · 코드 <code>experiments/jev/e5_briefing.py</code> · 원시 결과 <code>experiments/jev/results/e5_*.json</code> ·
-모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
+모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED · 사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정(사내 서버 측정 불가)</p>
 
 <h2>1. 무엇을 비교했나</h2>
 <p>What-if 화면에서 "A 대신 B를 넣으면?"을 고르면 AI가 결론(권고/조건부/보류)·위험·대안을 쓴다(<code>api/rag/briefing.py</code>).
 같은 교체 {s['n']}건을 서비스와 똑같은 재료(근거 문맥·원문 인용 색인·평가기 점수 변화·새 위반)로 두 모델에 맡겼다.
-외부는 서비스 설정 그대로({e(L['model'] or '')}, 추론 <b>{e(str(L.get('effort') or '기본'))}</b>), 사내는 회사 밖이라 Z.ai 공식 API로 잰
-대리값({e(G['model'] or '')}, 추론 <b>low</b>) — 양쪽 모두 low.</p>
+외부는 서비스 설정 그대로({e(L['model'] or '')}, 추론 <b>{e(str(L.get('effort') or '기본'))}</b>), 사내는 Z.ai 공식 API의
+{e(G['model'] or '')} 모델(추론 <b>low</b>)을 사내 LLM으로 가정했다(사내 서버로는 측정할 수 없다 — 사용자 결정) — 양쪽 모두 low.</p>
 
 <h2>2. 방법과 표본 크기</h2>
 <ul>
@@ -445,7 +446,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 {"".join(f"<tr><td>{e(LABEL[k])} ({m['n_run']}건)</td><td>{m['lat_median_s']:.1f}초 / {m['lat_p95_s']:.1f}초</td><td>{m['in_tokens']:,} / {m['out_tokens']:,} ({m['reasoning_tokens']:,})</td><td>${m['cost_usd']:.4f}</td><td>${m['per_100_usd']:.4f}</td></tr>" for k, m in s['models'].items())}
 </table>
 <p class="muted">단가(2026-10): gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시 $0.26·출력 $4.40 / 100만 토큰(추론 토큰은 출력).
-사내 온프렘에서는 토큰 비용이 아니라 GPU 처리량이 시간·비용을 정한다 — 여기의 GLM 값은 Z.ai 서비스 기준 참고값이다.</p>
+Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 = Z.ai 기준이다(실제 온프렘이면 GPU 시간이 비용이 된다).</p>
 
 <h2>5. 한계</h2>
 <div class="box warn"><ul>
@@ -457,7 +458,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 모호한 문장이 있어 몇 건은 해석이 갈릴 수 있다(기록에 첫 문장을 남겨 다시 확인할 수 있다).</li>
 <li>지연은 재시도 대기를 포함한 건당 시간이다(E4는 시도별 시간 — 정의가 다르다).</li>
 <li>외부 모델은 서비스 설정 그대로(추론 강도 {e(str(L.get('effort') or '기본'))}), 사내는 low다.</li>
-<li>사내 열은 Z.ai 공식 API로 잰 대리값이다. 사내 서빙(양자화·추론 설정)이 다르면 달라질 수 있다.</li>
+<li>가정: Z.ai 공식 API의 GLM 5.3 = 사내 LLM(사용자 결정). 실제 온프렘 서빙(양자화 등)이 다르면 결과·속도가 조금 달라질 수 있다.</li>
 </ul></div>
 </main></body></html>"""
 
