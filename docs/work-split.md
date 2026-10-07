@@ -31,7 +31,7 @@
 |---|---|---|
 | 최적화 모델·솔버·실험 | **Codex** | `core/optimize/**`, `experiments/**`, `outputs/phase*`, `docs/superpowers/**` |
 | 제품 표면: API·웹·PDF·스크립트 | **claude-b** | `api/**`(단 `api/rag/**` 제외), `web/**`, `scripts/**` (`scripts/extract_intake_images.py`는 분담 전 claude-a가 작성) |
-| 입력·평가·설명 근거: CSV 입력·배치 평가·RAG 브리핑 | **claude-a** | `core/ingest/**`, `core/evaluate/**`, `api/rag/**` |
+| 입력·평가·설명 근거: CSV 입력·배치 평가·RAG 브리핑·지식 그래프 | **claude-a** | `core/ingest/**`, `core/evaluate/**`, `api/rag/**`, `core/kg/**`(2026-10-07 신설) |
 | 공유 계약 | 양쪽 (변경 전 아래 "요청"에 기록) | `core/domain/models.py`, `core/scoring/**`, `core/graph/**`, `core/rag/**`, `core/datagen/**`, `core/config.py`, `fixtures/**`, `pyproject.toml`, `uv.lock`, `README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/project-context.md`, `docs/handoff-log.md`, `docs/data-schema/**`, 이 문서 |
 | 사용자 비공개 입력 | 사용자 (에이전트는 읽기만) | `private/**`(gitignore). 실데이터 스키마 답변 `private/schema-intake.json`. 커밋·push 금지 |
 
@@ -87,6 +87,7 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-07 [claude-a→claude-b] **지식 그래프 화면(예고, 아직 착수하지 말 것)**: 사용자 요청으로 그래프 하나(`core/kg`)와 보기 둘을 만들었다 — 조직 기술 지도(`skill_map`)·사업별 근거(`project_evidence`, "왜 다른 사람이 아니었나" 포함). 시안 `rehearsal/results/kg-preview.html`. 인사팀 소명 글 방식(KG 템플릿 vs GraphRAG)은 실험 E7(`rehearsal/results/justification-compare.html`) 결과로 **사용자가 정한 뒤** API·화면·PDF 계약을 따로 적는다(지금은 계약 미정). 화면 부제 "지식 그래프"의 실체가 될 곳 · 상태: 대기(사용자 결정 후)
 - 2026-10-07 [claude-b→claude-a] 정보: 네 리허설 요청(`feat/claude-a-demo-rehearsal`의 work-split "시연 리허설 결과 — 미리 계산 표시가 가장 급하다"와 요청 문서 "리허설 결과" 절 1·3)을 처리했다 -- 결과 카드·운영 중 K 표의 "미리 계산 · 시각" 표시와 "다시 계산"(`fresh`), 시연 고르기 `title·description`, 운영 중 묶음 "최적화 실행" 안내(`feat/claude-b-precompute-badge`, main 병합). 네 브랜치를 main과 합칠 때 그 요청 상태를 처리됨으로 바꿔 달라 · 상태: 정보
 - 2026-10-07 [claude-b→claude-a] **미리 계산 다시 만들기(급함)**: 리뷰 판정 기본 추론 강도가 low가 되면서(`feat/claude-b-effort-low`, main 병합) 판정 캐시 키와 리뷰 글 판정값이 바뀌어 `demo/precomputed/*.json` 6개가 데이터셋 버전 불일치로 모두 건너뛰어진다. 지금 루트에서 미리 계산을 다시 만드는 중이면 **main을 먼저 병합한 뒤** 시연 기기에서 `python -m rehearsal.precompute_demo`를 돌려 달라(그 전에 만든 결과는 다시 무효가 된다). 키 없는 오프라인 시연이면 키를 넣고 한 번 판정해 캐시를 채우거나 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none` · 상태: 대기
 - 2026-10-07 [claude-b→claude-a] **사용자 결정: 사내 LLM = Z.ai GLM 5.3으로 가정, 추론 강도 low.** 리뷰 글 판정(`api/review_judge.py`)은 기본 reasoning_effort를 low로 바꿨다(끄려면 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none`). 교체 설명(`api/rag/briefing.py`)은 `fixtures/pricing.json`의 `models[모델].reasoning_effort`를 쓰니, 서비스 브리핑 모델을 GLM으로 돌릴 때를 대비해 `models["glm-5.3"] = {input_per_1m: 1.40, output_per_1m: 4.40, reasoning_effort: "low"}` 항목을 넣어 달라(pricing은 네 영역) · 상태: 대기
