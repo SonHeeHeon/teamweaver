@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-07 · claude-b · 사내 LLM 추론 강도 low 확정 → 리뷰 판정 기본 reasoning_effort=low
+- 브랜치/커밋: `feat/claude-b-effort-low` (main 병합)
+- 한 일: 사용자 결정 "Low로 하자"(사내 LLM 추론 강도). `api/review_judge.py` 기본 추론 강도를 low로 바꿨다(대소문자·공백 정리). 칸을 받지 않는 모델이면 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none`(또는 off)으로 끈다 -- 400 오류 메시지에도 이 안내를 붙였다. 요청 타임아웃 3배는 high·xhigh·max에만 둔다. 전체 한도의 건당 18초는 강한 추론이거나 OpenAI가 아닌 주소(사내)에 추론을 켤 때만이다(GLM low 300건 333초 실측, 요청 한도 대기 포함). OpenAI low는 예전처럼 2.25초. 비었거나 공백뿐인 설정은 low로 본다.
+- 성능 근거(E4, 정답 있는 300건): 외부 gpt-6-luna는 low여도 부정 검출이 기본과 비슷하다(89% 대 92%). **사내 GLM 5.3 low는 69%로 max(84%)보다 확실히 덜 잡는다**(p≈0.019) -- 비용(1,000건 $0.78 대 $4.10)을 보고 사용자가 low를 골랐다.
+- 상대 영향:
+  - **미리 계산 결과 6개(`demo/precomputed/*.json`)가 모두 무효가 된다.** 판정 캐시 키에 "low"가 들어가 시연 묶음마다 처음 켤 때 다시 판정하고(100명 묶음 1,372건 약 3분·약 $0.12, 300명은 약 4,000건이라 약 9분·약 $0.33, 6개 묶음 각각), 판정값이 바뀌면 데이터셋 버전도 바뀌어 `load_precomputed`가 건너뛴다 -- 그러면 300명 안 A~D가 다시 실시간 계산(10분 이상)이다. **claude-a: main 병합 뒤 시연 기기에서 `python -m rehearsal.precompute_demo`로 다시 만들어 달라**(work-split 요청).
+  - 키 없이 캐시만으로 돌던 오프라인 시연 PC는 캐시가 맞지 않아 판정이 실패하고 항목 점수로 돌아간다. 시연 PC에서 키를 넣고 한 번 판정하거나, 예전 동작이 필요하면 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none`.
+  - 시연 묶음의 저장된 교체 기록은 데이터 버전이 달라져 이어지지 않는다.
+  - (claude-a) pricing에 glm-5.3 low 항목 요청(work-split).
+- 검증: `uv run --group benchmark pytest -q` 전체(리포트·커밋 메시지 참고). E4 보고서는 라벨만 바꿔 기록으로 다시 만들었다("서비스 현재 설정" → "10-07 이전 서비스 설정").
+- 미결: 미리 계산 재생성(claude-a), 사내 실제 엔드포인트가 생기면 low 재측정.
+
+---
+
 ## 2026-10-07 · claude-b · 사내 LLM = Z.ai GLM 5.3으로 가정(사용자 결정)
 - 브랜치/커밋: `feat/claude-b-inhouse-assume` (main 병합)
 - 한 일: 사용자 결정 "사내 서버로 측정은 불가하니 z.ai로 연결한게 사내 llm이라 가정하고 해야해"에 맞춰 E4·E5 보고서·라벨·docstring의 "사내 LLM 대리/대리값·사내 엔드포인트에서 다시 잰다"를 "사내 LLM(GLM 5.3·Z.ai, 사내로 가정)"으로 바꿨다. 가정은 보고서 상단·방법·한계에 밝혔다. 수치·로직 변경 없음(기록만으로 재생성).

@@ -106,4 +106,5 @@ def _no_real_llm_judging(monkeypatch):
     .env의 실제 키를 올려도 외부 전송이 없게). 판정기 자체 시험은 원래 함수를 import해 MockTransport로 부른다."""
     import api.review_judge as rj
     monkeypatch.setenv(rj.BASE_URL_ENV, "http://llm.invalid/v1")
+    monkeypatch.delenv(rj.REASONING_ENV, raising=False)   # 개발자 셸의 추론 강도가 요청 본문·캐시 키를 바꾸지 않게
     monkeypatch.setattr(rj, "judge_reviews", lambda ds, parsed, **kw: list(parsed))
