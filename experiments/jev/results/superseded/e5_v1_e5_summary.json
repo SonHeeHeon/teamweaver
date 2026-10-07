@@ -1,0 +1,89 @@
+{
+ "n": 100,
+ "n_total": 100,
+ "n_new_violation_cases": 72,
+ "models": {
+  "llm": {
+   "model": "gpt-6-luna",
+   "effort": null,
+   "partial": false,
+   "n_run": 100,
+   "success": 0.98,
+   "success_ci": [
+    0.9299868370580062,
+    0.9944981477650318
+   ],
+   "fail_codes": {
+    "recommends_infeasible": 2
+   },
+   "hold_compliance": 0.9722222222222222,
+   "hold_ci": [
+    0.9042564183109327,
+    0.9923491385338595
+   ],
+   "hold_n": 72,
+   "citations_mean": 0.6020408163265306,
+   "quote_share": 1.0,
+   "chars_mean": 459.57142857142856,
+   "conclusions": {
+    "권고": 23,
+    "보류": 70,
+    "조건부": 5
+   },
+   "lat_median_s": 3.4833281664177775,
+   "lat_p95_s": 4.783234318858012,
+   "in_tokens": 470493,
+   "out_tokens": 30344,
+   "reasoning_tokens": 1546,
+   "cost_usd": 0.0622213,
+   "per_100_usd": 0.06222130000000001,
+   "wall_s": 46.28462695889175,
+   "stop_reason": null
+  },
+  "glm_low": {
+   "model": "glm-5.3",
+   "effort": "low",
+   "partial": false,
+   "n_run": 100,
+   "success": 0.98,
+   "success_ci": [
+    0.9299868370580062,
+    0.9944981477650318
+   ],
+   "fail_codes": {
+    "KeyError": 1,
+    "JSONDecodeError": 1
+   },
+   "hold_compliance": 1.0,
+   "hold_ci": [
+    0.9479751251327164,
+    0.9999999999999998
+   ],
+   "hold_n": 70,
+   "citations_mean": 1.8877551020408163,
+   "quote_share": 1.0,
+   "chars_mean": 634.1632653061224,
+   "conclusions": {
+    "보류": 82,
+    "권고": 11,
+    "조건부": 5
+   },
+   "lat_median_s": 9.099590312922373,
+   "lat_p95_s": 13.761443329392932,
+   "in_tokens": 519858,
+   "out_tokens": 66932,
+   "reasoning_tokens": 6717,
+   "cost_usd": 0.95459512,
+   "per_100_usd": 0.95459512,
+   "wall_s": 123.5818572905846,
+   "stop_reason": null
+  }
+ },
+ "success_only": {
+  "llm": 2,
+  "glm_low": 2
+ },
+ "success_p": 1.0,
+ "conclusion_agree": 0.8645833333333334,
+ "n_both_ok": 96
+}

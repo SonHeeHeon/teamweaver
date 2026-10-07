@@ -1,0 +1,71 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>교체 설명 LLM 비교</title>
+<style>
+body{font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:#fafaf7;color:#1f2328;margin:0;line-height:1.7}
+main{max-width:900px;margin:0 auto;padding:32px 16px 64px} h1{font-size:1.6rem} h2{font-size:1.2rem;margin-top:2rem;border-left:4px solid #2563eb;padding-left:.6rem}
+table{border-collapse:collapse;width:100%;font-size:.93rem;margin:10px 0;background:#fff} td,th{border:1px solid #e5e7eb;padding:6px 8px;text-align:left}
+th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin:12px 0}
+.warn{background:#fffbeb;border-color:#fcd34d} .muted{color:#6b7280;font-size:.88rem}
+</style></head><body><main>
+<h1>교체 설명(AI 브리핑) 비교: 외부 LLM vs 사내 LLM(GLM 5.3 low)</h1>
+<p class="muted">실험 E5 · 코드 <code>experiments/jev/e5_briefing.py</code> · 원시 결과 <code>experiments/jev/results/e5_*.json</code> ·
+모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
+
+<h2>1. 무엇을 비교했나</h2>
+<p>What-if 화면에서 "A 대신 B를 넣으면?"을 고르면 AI가 결론(권고/조건부/보류)·위험·대안을 쓴다(<code>api/rag/briefing.py</code>).
+같은 교체 100건을 서비스와 똑같은 재료(근거 문맥·원문 인용 색인·평가기 점수 변화·새 위반)로 두 모델에 맡겼다.
+외부는 서비스 설정 그대로(gpt-6-luna, 추론 <b>low</b>), 사내는 회사 밖이라 Z.ai 공식 API로 잰
+대리값(glm-5.3, 추론 <b>low</b>) — 양쪽 모두 low.</p>
+
+<h2>2. 방법과 표본 크기</h2>
+<ul>
+<li>사례: 운영 중 시연 묶음(100명)의 현재 배치에서 seed 7로 100건(빼는 사람 = 배치된 사람). 넣는 사람은 절반이
+대기 인력(빈 사람), 절반이 그 사업 밖 아무나 — 무작위로만 뽑으면 이미 꽉 찬 사람이 들어가 대부분 위반이 생긴다.
+그중 <b>새 위반이 생기는 교체 72건</b>은 규칙상 결론이 '보류'여야 한다.</li>
+<li>표본 100건 → 성공률 95% 구간 반폭 ≤ ±9.8%p(준수율은 분모가 70건 안팎이라 최대 ±12%p). 건당 문맥이 길어 비용이
+크므로 차이를 가늠할 최소 크기로 잡았다. 인프라 실패(API 4회 실패) 0건은 비교에서 뺐다.</li>
+<li>채점은 다른 AI에게 맡기지 않는다(비용·채점자 편향). 서비스의 검증기가 판정하는 것만 센다: 형식·가드 통과, 인용 원문 대조.</li>
+<li>짝지은 성공 차이는 McNemar 정확검정. 비율 구간은 Wilson 95%.</li>
+</ul>
+
+
+<h2>3. 결과</h2>
+<table><tr><th>지표</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 low (GLM 5.3·Z.ai)</th></tr>
+<tr><td>성공률(형식·가드 통과 — 실패하면 서비스는 규칙 기반 설명으로 대체)</td><td>100% (96~100%)</td><td>99% (95~100%)</td></tr>
+<tr><td>실패 사유</td><td>없음</td><td>quote_not_verbatim 1</td></tr>
+<tr><td>새 위반이 생긴 교체(72건)에서 &#x27;보류&#x27; 결론을 지킨 비율(읽을 수 있는 답 기준 — 지키지 않으면 서비스 가드가 버린다)</td><td>100% (95~100%) · 72건</td><td>100% (95~100%) · 72건</td></tr>
+<tr><td>성공한 설명의 검증된 인용 수(평균)</td><td>0.5개</td><td>1.9개</td></tr>
+<tr><td>설명 길이(글자, 평균)</td><td>450</td><td>647</td></tr>
+<tr><td>결론 분포(성공한 설명)</td><td>권고 5, 보류 91, 조건부 4</td><td>권고 4, 보류 91, 조건부 4</td></tr>
+</table>
+<p><b>성공 여부 차이는 이 표본에서 통계적으로 확정되지 않는다</b>: 한쪽만 성공한 건 외부 1건 · 사내 0건(McNemar p≈1.00).
+'보류' 준수도 짝지어 보면(둘 다 결론을 알 수 있는 72건) 한쪽만 지킨 건 0건 대
+0건(p≈1.00).</p>
+<p><b>결론 일치는 둘로 나눠 봐야 한다.</b> 새 위반이 생긴 교체(72건)는 가드 때문에 성공한 답이 모두 '보류'라 일치
+100%가 강제된 값이다. <b>위반이 없어 자유롭게 판단한 교체 27건의 일치율은
+93%</b>(표본이 작다 — 95% 구간  (77~98%)).
+자유 판단의 결론 분포: 외부 권고 5, 보류 18, 조건부 4 ·
+사내 권고 4, 보류 19, 조건부 4
+(갈린 경우 외부→사내: 권고→조건부 1, 조건부→보류 1).</p>
+
+<div class="box warn"><b>1차 측정(같은 100건·같은 low 설정, 기록 <code>results/superseded/</code>)</b><ul><li>외부 LLM (gpt-6-luna): 성공 98% — 실패 recommends_infeasible 2</li><li>사내 LLM 대리 low (GLM 5.3·Z.ai): 성공 98% — 실패 JSONDecodeError 1, KeyError 1</li></ul>같은 사례·같은 설정이라도 실행마다 실패가 ±2건 정도 달라진다(외부의 보류 규칙 위반 <code>recommends_infeasible</code>, 사내의 형식 실패). 서비스는 이런 답을 버리고 규칙 기반 설명으로 대신 보인다. 1차의 결론 분포·일치율은 결론 파서가 "권고하지 않는다"를 권고로 세는 결함이 있어 폐기하고, 결론 첫 문장을 저장하도록 고쳐 다시 쟀다(위 표).</div>
+<h2>4. 비용과 소요 시간</h2>
+<table><tr><th>모델</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰(추론)</th><th>비용</th><th>100건당</th></tr>
+<tr><td>외부 LLM (gpt-6-luna) (100건)</td><td>3.6초 / 5.1초</td><td>470,493 / 29,613 (1,924)</td><td>$0.0619</td><td>$0.0619</td></tr><tr><td>사내 LLM 대리 low (GLM 5.3·Z.ai) (100건)</td><td>7.6초 / 13.3초</td><td>519,858 / 67,611 (6,512)</td><td>$0.9577</td><td>$0.9577</td></tr>
+</table>
+<p class="muted">단가(2026-10): gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시 $0.26·출력 $4.40 / 100만 토큰(추론 토큰은 출력).
+사내 온프렘에서는 토큰 비용이 아니라 GPU 처리량이 시간·비용을 정한다 — 여기의 GLM 값은 Z.ai 서비스 기준 참고값이다.</p>
+
+<h2>5. 한계</h2>
+<div class="box warn"><ul>
+<li>설명의 <b>내용 품질</b>(설득력·정확한 판단)은 채점하지 않았다. 서비스가 기계적으로 검증하는 것(형식·보류 규칙·인용 원문 대조)만 비교했다.</li>
+<li>사례는 절반이 대기 인력 투입·절반이 무작위 교체라 실제 사용자가 고르는 교체와 위반 비율이 다를 수 있다. 결론 분포·일치율은
+이 혼합 비율에 좌우된다(두 모델 비교 자체는 같은 사례로 짝지어 공정하다).</li>
+<li>근거 인용은 원문 공개 모드(가상 데이터)라 검증된 인용은 모두 직접 인용이다 — 인용 수만 비교했다.</li>
+<li>결론은 첫 문장에서 '보류'·'권고하지 않/비권고'(→보류)·'조건부'·'권고'를 찾아 분류한다. "조건부 판단으로 … 권고하기 어렵다"처럼
+모호한 문장이 있어 몇 건은 해석이 갈릴 수 있다(기록에 첫 문장을 남겨 다시 확인할 수 있다).</li>
+<li>지연은 재시도 대기를 포함한 건당 시간이다(E4는 시도별 시간 — 정의가 다르다).</li>
+<li>외부 모델은 서비스 설정 그대로(추론 강도 low), 사내는 low다.</li>
+<li>사내 열은 Z.ai 공식 API로 잰 대리값이다. 사내 서빙(양자화·추론 설정)이 다르면 달라질 수 있다.</li>
+</ul></div>
+</main></body></html>

@@ -22,6 +22,27 @@
 
 ---
 
+## 2026-10-07 · claude-b · 외부·사내 LLM 비교를 low·유의미한 표본으로: E4 갱신 + E5 교체 설명 비교(신규)
+- 브랜치/커밋: `feat/claude-b-llm-low` (main 병합)
+- 한 일(사용자 지시 "llm을 사용하는 모든 외부 사내 비교에서 비교가 유의미한 샘플 사이즈정도만, 전부 low"):
+  - **E4 리뷰 판정**(`experiments/jev/e4_judges.py`)
+    - 주 비교는 외부 gpt-6-luna low 대 사내 대리 GLM 5.3 low(Z.ai)다. 외부 기본 추론(서비스 현재 설정)·사내 max는 참고 열이다.
+    - 시험은 충실한 글 300(기존 글, 지문 일치)과 현재 시연 원문 무작위 300이다.
+    - 결과: 부정 검출 외부 low 89% · 사내 low 69%(McNemar p<0.001) · 사내 max 84% · Jev 17%. 1,000건당 $0.08 · $0.78 · $4.10.
+  - **E5 교체 설명**(`experiments/jev/e5_briefing.py`, 신규)
+    - claude-a `generate_briefing`을 그대로 부른다. 운영 중 시연 묶음에서 교체 100건(절반은 대기 인력 투입), 양쪽 모두 low.
+    - 결과(2차): 성공 100% · 99%, 새 위반 교체의 '보류' 준수 100% · 100%, 자유 판단 결론 일치 93%(25/27), 인용 0.5 · 1.9개, 100건당 $0.06 · $0.96, 지연 3.6 · 7.6초.
+    - 1차 측정(같은 100건)의 가드 기반 결과는 보고서 이력에 남겼다: 성공 98% · 98%, 외부 보류 위반 2, 사내 형식 실패 2. 1차 결론 분포는 파서 결함으로 폐기했다(`results/superseded/`).
+  - 보고서: `outputs/review-judge-comparison.html`(E4), `outputs/briefing-llm-comparison.html`(E5).
+- 상대 영향:
+  - (claude-a) 교체 설명 프롬프트·가드는 그대로다. 결과상 사내 GLM low로도 교체 설명은 외부와 같은 수준이다.
+  - 리뷰 판정은 사내 low가 부정을 덜 잡는다 → 사내 배포의 추론 강도 결정 근거로 쓴다.
+  - 가상 데이터 생성(core/datagen)은 서비스 기능이 아니라 비교에서 뺐다.
+- 검증: `uv run --group benchmark pytest -q` → 1361 passed, 19 deselected(오프라인 시험 18개 포함). 보고서는 기록만으로 다시 만들어진다. Opus 폴백 리뷰 2라운드(1차 MUST 2·SHOULD 5, 2차 MUST 1·SHOULD 2), 모두 반영.
+- 근거: `.omc/reports/2026-10-07-llm-low-comparisons.md`
+
+---
+
 ## 2026-10-07 · claude-b · 판정기 비교 E4에 사내 LLM 대리(GLM 5.3) 추가 + 서비스 추론 강도 설정
 - 브랜치/커밋: `feat/claude-b-e4-glm` (main 병합)
 - 한 일:
