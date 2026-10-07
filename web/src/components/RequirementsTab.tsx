@@ -9,9 +9,12 @@ interface Props {
   onWeightsChange: (w: Record<string, number>) => void;
   onRun: () => void;
   running: boolean;
+  /** 운영 중 시연 묶음이면 '전부 다시 짜기'의 한계를 안내한다(claude-a 리허설 요청 2026-10-07). */
+  operating?: boolean;
+  onOpenOperating?: () => void;
 }
 
-export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running }: Props) {
+export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running, operating, onOpenOperating }: Props) {
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <section>
@@ -37,6 +40,17 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
         >
           {running ? "최적화 중…" : "최적화 실행"}
         </button>
+        {operating && (
+          <p role="note" className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            지금은 <b>운영 중</b> 데이터다(대부분이 진행 사업에 배치돼 있다). "최적화 실행"은 모두를 처음부터 다시 짠다 —
+            사업 정원·예산이 지금 명단에 맞춰져 있어 200·300명은 계산 시간 안에 빈자리가 남을 수 있다.
+            신규 제안 편성·사업 보강은{" "}
+            {onOpenOperating
+              ? <button onClick={onOpenOperating} className="font-medium underline">운영 중 편성 탭</button>
+              : "운영 중 편성 탭"}
+            에서 본다.
+          </p>
+        )}
       </section>
 
       <section>

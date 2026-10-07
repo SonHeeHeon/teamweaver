@@ -2,7 +2,8 @@ import type { PlanEvent } from "./types";
 
 export type SseEvent =
   | { event: "plan"; data: PlanEvent }
-  | { event: "done"; data: { count: number; requested_alternatives?: number; stop_reason?: string } }
+  | { event: "done"; data: { count: number; requested_alternatives?: number; stop_reason?: string;
+                             precomputed_at?: string | null } }
   | { event: "error"; data: { message: string } };
 
 /** 버퍼에서 완성된 SSE 프레임(빈 줄로 구분)만 뽑고 나머지는 돌려준다.

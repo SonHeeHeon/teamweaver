@@ -184,4 +184,31 @@ describe("DatasetTab — 시연 데이터 고르기", () => {
     await waitFor(() => expect(onSwitched).toHaveBeenCalledWith(next));
     expect(vi.mocked(chooseDemo).mock.calls[0][0]).toBe("org-n100-operating");
   });
+
+  it("목록은 장면 제목으로 보이고, 고른 묶음의 설명을 보인다", async () => {
+    vi.mocked(fetchDemos).mockResolvedValue([
+      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true,
+        title: "연초 계획 · 100명 전체 배치", description: "사업 13개를 처음부터 편성한다." },
+      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true,
+        title: "운영 중 · 90명 배치 중, 대기 10명", description: "막 일이 끝난 10명으로 신규 제안 2개를 편성한다." }]);
+    render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} />);
+    const select = await screen.findByLabelText("시연 데이터");
+    expect(screen.getByRole("option", { name: /운영 중 · 90명 배치 중, 대기 10명 · 사업 15건 \(org-n100-operating\)/ }))
+      .toBeInTheDocument();
+    expect(screen.getByText("사업 13개를 처음부터 편성한다.")).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "org-n100-operating" } });
+    expect(screen.getByText("막 일이 끝난 10명으로 신규 제안 2개를 편성한다.")).toBeInTheDocument();
+  });
+
+  it("처음 고른 항목은 지금 켜진 시연 묶음이다", async () => {
+    vi.mocked(fetchDemos).mockResolvedValue([
+      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true,
+        title: "연초 계획", description: "처음부터 편성." },
+      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true,
+        title: "운영 중", description: "신규 제안 편성." }]);
+    render(<DatasetTab active={{ ...FIXTURE, source: "demo-bundle", demo_name: "org-n100-operating" }} onSwitched={vi.fn()} />);
+    expect(await screen.findByText("신규 제안 편성.")).toBeInTheDocument();
+    expect(screen.getByLabelText("시연 데이터")).toHaveValue("org-n100-operating");
+  });
 });
+

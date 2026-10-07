@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-07 · claude-b · 시연 정직성: 미리 계산 표시 + 시연 고르기 다듬기(claude-a 리허설 요청)
+- 브랜치/커밋: `feat/claude-b-precompute-badge` (main 병합)
+- 한 일:
+  - 결과 카드: 미리 계산 결과면 "미리 계산 · 시각" 배지(화면에서 교체·조정하면 "미리 계산 원안 + 변경 n건"), 일반 캐시는 "저장된 결과". 카드 위 안내줄 + "다시 계산"(`fresh: true`).
+  - 미리 계산 때 대안이 모자랐으면 "다시 실행"이 아니라 "다시 계산"을 안내한다(미리 계산 결과는 다시 실행해도 같다).
+  - 운영 중 K 표: 미리 계산 행의 시간 칸에 "(미리 계산 때)", 표 위 안내줄 + "다시 계산"(`fresh`).
+  - 시연 고르기: 목록에 `title`, 고른 묶음의 `description`, 처음 고른 항목은 지금 켜진 묶음.
+  - 운영 중 묶음이면 요건 설정 "최적화 실행" 아래에 "전부 다시 짜기는 200·300명에서 빈자리가 남을 수 있다 → 운영 중 편성 탭" 안내. 이를 위해 데이터셋 정보(`/api/datasets/active` 등 `_info` 다섯 경로)에 `scenario`("operating"|"planning") 칸 추가.
+- 상대 영향(claude-a): 서버 계약 변화는 `scenario` 칸 추가뿐. 미리 계산 파일에 `computed_at`이 비면 화면은 "시각 미상"으로 보인다. **미리 계산 6개는 main(추론 강도 low) 기준으로 다시 만들어야 화면에 "미리 계산"으로 나온다**(앞 항목 요청).
+- 검증: 웹 vitest 173 passed · `npx tsc -b` · lint · build, 백엔드 `pytest -q` 1402 passed, 실서버 스모크(두 번째 요청 cached, `fresh`면 다시 계산, `scenario=planning`).
+
+---
+
 ## 2026-10-07 · claude-b · 사내 LLM 추론 강도 low 확정 → 리뷰 판정 기본 reasoning_effort=low
 - 브랜치/커밋: `feat/claude-b-effort-low` (main 병합)
 - 한 일: 사용자 결정 "Low로 하자"(사내 LLM 추론 강도). `api/review_judge.py` 기본 추론 강도를 low로 바꿨다(대소문자·공백 정리). 칸을 받지 않는 모델이면 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none`(또는 off)으로 끈다 -- 400 오류 메시지에도 이 안내를 붙였다. 요청 타임아웃 3배는 high·xhigh·max에만 둔다. 전체 한도의 건당 18초는 강한 추론이거나 OpenAI가 아닌 주소(사내)에 추론을 켤 때만이다(GLM low 300건 333초 실측, 요청 한도 대기 포함). OpenAI low는 예전처럼 2.25초. 비었거나 공백뿐인 설정은 low로 본다.

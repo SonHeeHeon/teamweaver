@@ -108,6 +108,7 @@ def test_active_dataset_starts_as_fixture(client):
     assert info["source"] == "fixture"
     assert info["people"] == 100 and info["projects"] == 20
     assert len(info["version"]) == 64
+    assert info["scenario"] == "planning"
 
 
 def test_valid_bundle_switches_active_dataset(client, bundle, bundle_zip):

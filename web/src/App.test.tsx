@@ -1096,3 +1096,35 @@ describe("App — 관리자 로그인(K14)", () => {
     expect(await screen.findByText(/관리자 비밀번호 미설정/)).toBeInTheDocument();
   });
 });
+
+
+describe("App — 미리 계산 결과 표시", () => {
+  it("미리 계산 결과면 그렇다고 밝히고, 다시 계산은 fresh로 다시 푼다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockImplementation(() => (async function* () {
+      yield { event: "plan" as const, data: { ...PLAN_A, cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" } };
+      yield { event: "done" as const, data: { count: 1, precomputed_at: "2026-10-06T14:40:50+00:00" } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    expect(await screen.findByText(/해 둔 것이다\(방금 계산한 것이 아니다\)/)).toBeInTheDocument();
+    expect(vi.mocked(streamOptimize).mock.calls[0][0].fresh).toBeUndefined();     // 버튼 이벤트로 켜지지 않는다
+    fireEvent.click(screen.getByRole("button", { name: "다시 계산" }));
+    await waitFor(() => expect(streamOptimize).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(streamOptimize).mock.calls[1][0].fresh).toBe(true);
+  });
+
+  it("미리 계산 때 대안이 모자랐으면 '다시 실행'이 아니라 '다시 계산'을 안내한다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    vi.mocked(streamOptimize).mockReset().mockImplementation(() => (async function* () {
+      yield { event: "plan" as const, data: { ...PLAN_A, cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" } };
+      yield { event: "done" as const, data: { count: 1, requested_alternatives: 3, stop_reason: "time_limit",
+                                              precomputed_at: "2026-10-06T14:40:50+00:00" } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    expect(await screen.findByText(/미리 계산 때 대안 계산이 시간 안에 끝나지 않아 0개만 냈다/)).toBeInTheDocument();
+    expect(screen.queryByText(/다시 실행하면 더 나올 수 있다/)).not.toBeInTheDocument();
+  });
+});
+

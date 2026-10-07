@@ -133,4 +133,23 @@ describe("OperatingTab — 리뷰 반영", () => {
     expect(await screen.findByText(/K=2 시간 한도로 더 나은 해를 찾지 못함 · K=1 해 유지/)).toBeInTheDocument();
     expect(screen.queryByText("최선 증명")).not.toBeInTheDocument();
   });
+
+  it("미리 계산 행이면 시간 칸을 '미리 계산 때'로 밝히고, 다시 계산은 fresh로 다시 푼다", async () => {
+    const row = { k: 0, elapsed_s: 0.4, accepted: true, termination: "Optimal", objective: 5, best_bound: 5,
+      quality: 5, unfilled_seats: 0, diff: { kept: 2, moved: [], joined: [] }, project_change_vs_k0: {}, violations: [],
+      entries: [], precomputed_at: "2026-10-06T14:40:50+00:00" };
+    vi.mocked(streamOperatingCompare).mockReset().mockImplementation(() => (async function* (): AsyncGenerator<OperatingEvent> {
+      yield { event: "start", data: { ks: [0], n_people: 3, expected_s_100: {}, note: "", precomputed_at: row.precomputed_at } };
+      yield { event: "row", data: row };
+      yield { event: "done", data: { elapsed_s: 0, count: 1, precomputed_at: row.precomputed_at } };
+    })());
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "K별 비교 실행" }));
+    expect(await screen.findByText("(미리 계산 때)")).toBeInTheDocument();
+    expect(screen.getAllByRole("status").some((el) => /미리 계산.*해 둔 것이다/.test(el.textContent ?? ""))).toBe(true);
+    expect(vi.mocked(streamOperatingCompare).mock.calls[0][0].fresh).toBeUndefined();   // 버튼 이벤트로 켜지지 않는다
+    fireEvent.click(screen.getByRole("button", { name: "다시 계산" }));
+    await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(streamOperatingCompare).mock.calls[1][0].fresh).toBe(true);
+  });
 });

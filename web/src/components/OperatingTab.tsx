@@ -8,6 +8,7 @@ import type {
   SimulateResult,
 } from "../api/types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
+import { PrecomputedNotice } from "./PrecomputedNotice";
 
 /** 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 화면(claude-a 요청 2026-10-06, 계산 core.evaluate).
  *  총점에는 빈자리 감점(자리당 큰 값)이 섞여 있어 **배치 품질(기술+협업−익숙함)과 빈자리를 나눠** 보인다.
@@ -97,17 +98,23 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [pick, setPick] = useState<number | null>(null);
+  // 미리 계산 결과(시연 묶음)면 그 계산 시각 -- 시간 칸이 방금 푼 시간처럼 보이지 않게 밝힌다(claude-a 리허설 요청)
+  const [preAt, setPreAt] = useState<string | null>(null);
   const expected = ks.reduce((a, k) => a + (state.expected_s_100[String(k)] ?? 0), 0);
+  const expectedS = Math.ceil(expected * Math.max(1, state.n_people / 100));
 
-  async function run() {
+  /** fresh: 미리 계산 행을 쓰지 않고 다시 푼다. 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다. */
+  async function run(fresh?: unknown) {
     setRunning(true);
     setRows([]);
     setPick(null);
+    setPreAt(null);
     setElapsed(0);
     fail(null);
     try {
-      for await (const ev of streamOperatingCompare({ ...common, ks })) {
-        if (ev.event === "progress") setElapsed(ev.data.elapsed_s);
+      for await (const ev of streamOperatingCompare({ ...common, ks, ...(fresh === true ? { fresh: true } : {}) })) {
+        if (ev.event === "start") setPreAt(ev.data.precomputed_at ?? null);
+        else if (ev.event === "progress") setElapsed(ev.data.elapsed_s);
         else if (ev.event === "row") setRows((r) => [...r, ev.data]);
         else if (ev.event === "done") setElapsed(ev.data.elapsed_s);
         else if (ev.event === "error") throw new Error(ev.data.message);
@@ -140,9 +147,13 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
         </button>
         <span className="text-xs text-slate-500">
           {running && elapsed != null ? `${elapsed.toFixed(0)}초 경과 · ` : ""}
-          예상 약 {Math.ceil(expected * Math.max(1, state.n_people / 100))}초(100명 실측 기준, 최선까지 푼다)
+          예상 약 {expectedS}초(100명 실측 기준, 최선까지 푼다)
         </span>
       </div>
+      {!running && preAt != null && rows.length > 0 && (
+        <PrecomputedNotice at={preAt} onRecompute={() => void run(true)}
+                           hint={`처음부터 다시 푼다 — 예상 약 ${expectedS}초. 표의 시간 칸은 미리 계산 때 걸린 시간이다.`} />
+      )}
       {rows.length > 0 && (
         <table className="w-full max-w-4xl text-sm">
           <thead className="text-left text-xs text-slate-500">
@@ -162,7 +173,14 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
                       {signed(r.quality_gain_vs_k0)}
                       {r.quality_gain_pct_vs_k0 != null && ` (${signed(r.quality_gain_pct_vs_k0, 1)}%)`}
                     </td>
-                    <td className="tabular-nums">{r.elapsed_s.toFixed(1)}초</td>
+                    <td className="tabular-nums">
+                      {r.elapsed_s.toFixed(1)}초
+                      {r.precomputed_at != null && (
+                        <span className="ml-1 text-[11px] text-sky-700" title="미리 계산 때 걸린 풀이 시간(방금 계산한 시간이 아니다)">
+                          (미리 계산 때)
+                        </span>
+                      )}
+                    </td>
                     <td>
                       {r.carried_from_k != null ? (
                         // 직전 K의 해를 유지한 행: 이 K에서는 최선을 증명하지 못했다 -- 물려받은 "최선 증명"을 띄우지 않는다(리뷰 M2)

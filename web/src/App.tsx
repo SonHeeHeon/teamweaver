@@ -17,6 +17,7 @@ interface PlanEdit {
 }
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
+import { PrecomputedNotice } from "./components/PrecomputedNotice";
 import { AssignmentTable } from "./components/AssignmentTable";
 import { NetworkGraph } from "./components/NetworkGraph";
 import { SwapControl } from "./components/SwapControl";
@@ -131,7 +132,7 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   // 요청한 대안 중 조건을 만족해 나온 수(C2). 모자라면 "대안 없음" 안내를 플랜 카드 아래에 둔다.
   const [altShortfall, setAltShortfall] =
-    useState<{ found: number; requested: number; solverFailed: boolean } | null>(null);
+    useState<{ found: number; requested: number; solverFailed: boolean; precomputed: boolean } | null>(null);
   // 적용 요청의 세대. 플랜 전환·재실행·되돌리기·선택 변경이면 올려, 늦게 온 응답(성공·409
   // 모두)을 버리고 버튼 잠금도 바로 푼다 -- 늦은 409가 더 최신 실행의 플랜을 지우지 않게.
   const applyGen = useRef(0);
@@ -207,7 +208,9 @@ export default function App() {
     }
   }
 
-  async function run() {
+  /** fresh: 캐시·미리 계산 결과를 쓰지 않고 다시 푼다("다시 계산"). 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다. */
+  async function run(fresh?: unknown) {
+    const recompute = fresh === true;
     const gen = ++runGen.current;
     swapGen.current += 1;          // 재실행 -- 진행 중이던 what-if 응답도 무효화
     cancelApply();
@@ -241,7 +244,7 @@ export default function App() {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
       for await (const ev of streamOptimize(
-          { weights, dataset_version: datasetVersion,
+          { weights, dataset_version: datasetVersion, ...(recompute ? { fresh: true } : {}),
             ...(params ? { milp_params: { ...params } } : {}) })) {
         if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
         if (ev.event === "plan") {
@@ -253,7 +256,8 @@ export default function App() {
           const requested = ev.data.requested_alternatives;
           const found = Math.max(0, ev.data.count - 1);
           if (requested !== undefined && found < requested)
-            setAltShortfall({ found, requested, solverFailed: ev.data.stop_reason === "time_limit" });
+            setAltShortfall({ found, requested, solverFailed: ev.data.stop_reason === "time_limit",
+                              precomputed: ev.data.precomputed_at != null });
         } else if (ev.event === "error") {
           setError(ev.data.message);
         }
@@ -636,7 +640,8 @@ export default function App() {
           )
         ) : tab === "operating" ? null : tab === "req" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
-                           onRun={run} running={running} />
+                           onRun={run} running={running} operating={dataset?.scenario === "operating"}
+                           onOpenOperating={() => setTab("operating")} />
         ) : (
           <div className="space-y-6">
             {plans.length > 0 && planBasis && settings && (
@@ -652,11 +657,19 @@ export default function App() {
                 교체 검토와 PDF는 계산 당시 기준을 그대로 쓴다.
               </p>
             )}
-            <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan} />
+            {!running && plans.some((p) => p.cached) && (
+              <PrecomputedNotice at={plans.find((p) => p.precomputed_at != null)?.precomputed_at ?? null}
+                                 onRecompute={() => void run(true)} />
+            )}
+            <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan}
+                       editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))} />
             {altShortfall && (
               <p className="mt-2 text-xs text-slate-500">
                 {altShortfall.solverFailed
-                  ? `대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 다시 실행하면 더 나올 수 있다.`
+                  ? altShortfall.precomputed
+                    // 미리 계산 결과는 다시 실행해도 같은 결과가 나온다 -- "다시 계산"만 새로 푼다(리뷰 S1)
+                    ? `미리 계산 때 대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 위의 '다시 계산'으로 새로 풀면 더 나올 수 있다.`
+                    : `대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 다시 실행하면 더 나올 수 있다.`
                   : <>
                       {altShortfall.found === 0
                         ? "조건을 만족하는 대안 없음"
