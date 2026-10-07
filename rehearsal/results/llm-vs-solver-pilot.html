@@ -1,0 +1,13 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM 직접 배치 vs 솔버</title><style>
+:root{--bg:#fbfaf7;--fg:#222;--muted:#666;--acc:#2f5f8a;--line:#ddd;--hi:#eef5f2}
+@media (prefers-color-scheme:dark){:root{--bg:#1a1c1e;--fg:#e7e6e3;--muted:#aaa;--acc:#8ab8e0;--line:#3a3a3a;--hi:#24302c}}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Apple SD Gothic Neo",sans-serif;margin:0;padding:24px 16px}
+main{max-width:1000px;margin:auto}h2{color:var(--acc)}.w{overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;vertical-align:top}th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600}tr.solver{background:var(--hi)}small{color:var(--muted)}</style></head><body><main>
+<h1>LLM에게 배치를 통째로 맡기면? — 모델+솔버와 같은 채점으로 비교</h1>
+<p>같은 문제·같은 규칙·같은 목적을 LLM에게 설명하고 JSON 배치를 받았다. 채점은 서비스 평가기(위반·빈자리·목적). "원자료"는 적합도 계산까지 LLM이,
+"우리 점수 제공"은 기술 적합(S)·협업(C) 숫자를 주어 최적화만 맡긴 조건(LLM에게 가장 유리). 위반이 있으면 목록을 돌려주고 1회 수정하게 했다.
+배치 품질 = 기술 + 협업 − 익숙한 쌍(빈자리 감점 제외). <b>위반이 1건이라도 있으면 그대로 쓸 수 없는 배치</b>다. 데이터는 가상, 사업 효과는 NOT_CALIBRATED.
+총비용 $0.35.</p><h2>demo-100x20</h2><div class='w'><table><tr><th>방법</th><th>위반</th><th>빈자리</th><th>배치 품질</th><th>솔버 대비</th><th>시간</th><th>비용</th></tr><tr class='solver'><td>모델+솔버(MILP 안 A)</td><td>0</td><td>0</td><td>58.16</td><td>100%</td><td>31.0초</td><td>$0</td></tr><tr><td>단순 규칙(기술 1등 우선)</td><td>0</td><td>1</td><td>31.60</td><td>54%</td><td>0.016초</td><td>$0</td></tr><tr><td>외부 gpt-6-luna(추론 high) · 우리 점수 제공 · 회차 1</td><td>0<br><small></small></td><td>0</td><td>32.17</td><td>55%</td><td>330.1초</td><td>$0.021</td></tr><tr><td>사내 대리 GLM 5.3(추론 max) · 우리 점수 제공 · 회차 1 (JSON 오류)</td><td>0<br><small></small></td><td>73</td><td>0.00</td><td>0%</td><td>883.9초</td><td>$0.327</td></tr></table></div><p>원자료: rehearsal/results/llm-vs-solver.json · 도구: rehearsal/llm_vs_solver.py</p></main></body></html>

@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-07 · claude-a · E6: LLM 직접 배치 vs 모델+솔버(사용자 요청 "증명해 보이자")
+- 브랜치/커밋: `feat/claude-a-llm-vs-solver` (main 병합, 사용자 승인)
+- 한 일: gpt-6-luna(추론 high)·GLM 5.3에게 같은 문제(20/50/100명)를 통째로 맡겨 서비스 평가기로 채점. luna는 20명에선 솔버의 89~94%, 100명에선 원자료 0/2(위반)·점수 제공 2/3(55%), 한 번에 4~11분.
+  GLM은 쓸 수 있는 배치 0(출력 한도를 추론에 소진·위반 1), 실험 중 **Z.ai 잔액 소진**으로 50·100명은 미실행. 결과 `rehearsal/results/llm-vs-solver.html`, 해설 `docs/demo-notes.md` 8절, 대본 장면 3-1.
+- 상대 영향(claude-b): **Z.ai(GLM) 잔액이 바닥났다** — GLM 비교(E4·E5 후속 등)를 돌리기 전에 충전 필요(사용자). 코드 영향 없음.
+- 검증: 기록에서 다시 그리기(`--render-only`) · Opus 대체 리뷰 MUST 1(요약표 분모·시범 강도) 수정 후 0. 비용 ≥ $1.44(성공 호출 기준 하한).
+- 근거: `.omc/plan/2026-10-07-llm-vs-solver.md`, `.omc/reports/2026-10-07-llm-vs-solver.md`(claude-a 로컬)
+
 ## 2026-10-07 · claude-b · 시연 정직성: 미리 계산 표시 + 시연 고르기 다듬기(claude-a 리허설 요청)
 - 브랜치/커밋: `feat/claude-b-precompute-badge` (main 병합)
 - 한 일:
