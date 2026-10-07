@@ -229,3 +229,25 @@ Katz의 "오래"는 수년 단위라, 12개월은 이른 편일 수 있다 — �
 - Espinosa, J. A., Slaughter, S. A., Kraut, R. E., & Herbsleb, J. D. (2007). Familiarity, Complexity, and Team Performance in Geographically Distributed Software Development. *Organization Science*, 18(4), 613–630.
 - Katz, R. (1982). The Effects of Group Longevity on Project Communication and Performance. *Administrative Science Quarterly*, 27(1), 81–104.
 - Guimerà, R., Uzzi, B., Spiro, J., & Amaral, L. A. N. (2005). Team Assembly Mechanisms Determine Collaboration Network Structure and Team Performance. *Science*, 308(5722), 697–702.
+
+## 8. "그냥 GPT에게 배치를 시키면 안 되나?" — LLM 직접 배치 vs 모델+솔버 (2026-10-07, E6)
+
+**질문**: LLM 시대에 왜 수학 최적화를 따로 쓰나. 사용자 지시 "LLM(gpt)에게 직접 배치 시켜서 최적화는 모델과 솔버로 하는 게 더 낫다는 걸 증명해 보이자"
+(`rehearsal/llm_vs_solver.py` → `rehearsal/results/llm-vs-solver.html`).
+
+**방법**: 같은 문제·규칙·목적을 LLM에게 설명하고 JSON 배치를 받아 서비스 평가기로 채점. 조건 A "원자료"(적합도 계산부터 LLM), 조건 B "우리 점수 제공"
+(S·C 숫자를 주고 최적화만, 위반이 있으면 1회 수정 — LLM에게 가장 유리). 외부 gpt-6-luna(추론 high), 사내 대리 GLM 5.3. 20/50/100명, 칸당 2~3회.
+
+**결과**(쓸 수 있는 배치 = 위반 0·빈자리가 솔버보다 많지 않음, 품질 = 솔버 대비 최고):
+| 문제(솔버 시간) | luna 원자료 | luna 점수 제공(+수정) | GLM |
+|---|---|---|---|
+| 20명(0.3초) | 2/2, 89% | 2/2, 94% | 0/3(답 없음 2·위반 1), 미실행 1 |
+| 50명(0.9초) | 0/2(위반) | 2/2, 70% | 미실행(잔액 소진) |
+| 100명(31초) | 0/2(위반) | 2/3, 55% | 시범(추론 max) 답 없음, 나머지 미실행 |
+LLM 한 번에 4~11분, 비용은 luna 1회 $0.01~0.04(싸다 — 문제는 비용이 아니라 품질·규칙·시간).
+
+**해석**: 작은 문제는 LLM도 꽤 한다. 규모가 커지면 규칙을 어기기 시작하고(원자료 조건 0/4), 점수를 다 줘도 품질이 솔버의 절반 수준으로 떨어지며 시간은 10~30배.
+그래서 이 서비스는 **LLM은 글 읽기(리뷰 판정)·설명(근거 인용)에, 규칙이 많은 결정은 모델+솔버에** 쓴다. 표본이 작고(칸당 2~3회),
+100명 솔버 해도 시간 한도 해라 LLM 대비 %는 보수적이다. GLM은 이 설정(max_tokens 미지정)에서 추론에 출력 한도를 다 써 답을 못 낸 경우가 많았고,
+실험 중 Z.ai 잔액이 바닥나 큰 문제는 재지 못했다 — "GLM이 못한다"가 아니라 "이번 설정·잔액으로는 못 쟀다"로 말한다.
+
