@@ -75,7 +75,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   데이터·설정·목적식이 바뀌면 `python -m rehearsal.precompute_demo`를 시연 기기에서 다시 돌린다(약 40분). 맞지 않으면 조용히 실시간 계산.
 - **실험 G 파트너 다양성 하한**(`MilpParams.partner_floor`, 기본 0 = 꺼짐): 서비스 MILP·독립 검증기·평가기·예산 보정에만 있고
   벤치 정식·Phase 0 오라클·HTTP 계약·운영 중 기여 분해에는 없다. 측정(`rehearsal/results/partner-compare.html`)상 SI 팀 크기에서는 거의 걸리지 않고
-  200명에서 풀이를 망쳐 채택 보류 -- 켜려면 위 빠진 곳을 모두 맞춘다.
+  200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과

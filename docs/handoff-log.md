@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-07 · claude-a · 결정 기록 + main 병합: 감점은 쌍 감점 유지, `feat/claude-a-demo-presets` 병합
+- 브랜치/커밋: `feat/claude-a-demo-presets` → main fast-forward(사용자 승인 2026-10-07)
+- 한 일: 사용자 결정 — 실험 G 파트너 다양성 하한은 채택하지 않고 지금 쌍 감점(μ=0.2, 최근 3년 중 12개월) 유지, 하한 코드는 꺼진 실험 옵션으로 둔다. 바로 아래 항목의 작업을 main에 병합.
+- 상대 영향: claude-b는 화면(D4·시연 데이터 카드·미리 계산 배지)을 main 기준으로 시작할 수 있다. 테스트 기준선 1343.
+- 검증: 병합 전 전체 1343 passed · Phase 0 PASS.
+- 근거: `docs/demo-notes.md` 7절, `rehearsal/results/partner-compare.html`
+
 ## 2026-10-07 · claude-a · 시연 데이터 두 장면 전환·미리 계산(E)·시연 대본·구조도(F)·감점 재설계 측정(G)
 - 브랜치/커밋: `feat/claude-a-demo-presets` `479b3b3..` (push, main 병합은 사용자 승인 후)
 - 한 일:
