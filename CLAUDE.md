@@ -46,8 +46,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 코드만 봐서는 모르는 함정
 
-- **MILP 정식이 두 벌이다**: `core/optimize/milp.py::solve_milp_diagnostic`(서비스, HiGHS)와
-  `experiments/phase1/solvers.py::_build_model`(벤치, 3솔버 공용). 목적식·제약을 바꾸면 둘 다
+- **MILP 정식이 두 벌이고, 같은 식을 다시 쓰는 곳이 셋 더 있다**(claude-b 제안 2026-10-05): `core/optimize/milp.py::solve_milp_diagnostic`(서비스, HiGHS)와
+  `experiments/phase1/solvers.py::_build_model`(벤치, 3솔버 공용), 그리고 C1 보정 LP `core/optimize/numerics.py::_allocation_lp`(가용률·예산 행)와
+  독립 검증기 `core/optimize/validation.py`(목적값 재계산), 평가기 `core/evaluate/plan_eval.py`. 목적식·제약을 바꾸면 모두
   고치고 Phase 0 검증(`uv run --group benchmark python -m experiments.bench.phase0_model`)을 다시 돌려야 한다.
 - **HiGHS 경계 잔차**: HiGHS는 z=1.0000000000000007 같은 값을 돌려주고, 독립 검증기(C0)는 범위를 조금이라도
   넘으면 거절한다. `milp._snap_bounds`가 1e-9 안쪽 잔차만 경계로 옮긴다(원본은 native_capture에 보존).
