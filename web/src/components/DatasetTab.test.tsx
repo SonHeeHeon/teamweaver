@@ -4,8 +4,9 @@ import { DatasetTab } from "./DatasetTab";
 import type { DatasetInfo } from "../api/types";
 
 vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn(), rejudgeDataset: vi.fn(),
+                                  fetchDemos: vi.fn(async () => []), chooseDemo: vi.fn(),
                                   AdminLoginRequiredError: class extends Error {} }));
-import { rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
+import { chooseDemo, fetchDemos, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
 
 const FIXTURE: DatasetInfo = { dataset_id: "fixture-demo-100x20", version: "f".repeat(64),
   source: "fixture", synthetic: true, people: 100, projects: 20,
@@ -162,5 +163,25 @@ describe("DatasetTab — 평가 사유 LLM 판정(2026-10-06 LLM 통일)", () =>
     expect(screen.getByRole("alert")).toHaveTextContent("외부(OpenAI)로 보내지 않아");
     expect(screen.queryByRole("button", { name: "판정 다시 시도" })).not.toBeInTheDocument();
     expect(screen.getByText(/외부 전송이 허용되지 않아 판정하지 않음/)).toBeInTheDocument();
+  });
+});
+
+
+describe("DatasetTab — 시연 데이터 고르기", () => {
+  it("운영 중 시연 데이터를 골라 전환한다", async () => {
+    vi.mocked(fetchDemos).mockResolvedValue([
+      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true },
+      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true }]);
+    const next = { ...FIXTURE, source: "demo-bundle" as const, version: "d".repeat(64) };
+    vi.mocked(chooseDemo).mockResolvedValue(next);
+    const onSwitched = vi.fn();
+    render(<DatasetTab active={FIXTURE} onSwitched={onSwitched} />);
+    fireEvent.change(await screen.findByLabelText("시연 데이터"), { target: { value: "org-n100-operating" } });
+    expect(screen.getByText(/운영 중\(대부분 배치됨\) · 100명 · 사업 15건/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "이 시연 데이터로 전환" }));
+    expect(chooseDemo).not.toHaveBeenCalled();                       // 업로드 보관본을 지우므로 한 번 더 확인
+    fireEvent.click(screen.getByRole("button", { name: "전환 확인" }));
+    await waitFor(() => expect(onSwitched).toHaveBeenCalledWith(next));
+    expect(vi.mocked(chooseDemo).mock.calls[0][0]).toBe("org-n100-operating");
   });
 });

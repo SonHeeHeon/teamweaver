@@ -266,3 +266,13 @@ def test_numeric_budget_fits_the_allocation_and_screening_still_matches(tmp_path
     assert [(r["person_id"], r["alloc"]) for r in fast] == [(r["person_id"], r["alloc"]) for r in full]
     assert any(r["alloc"] < 1.0 for r in full)                    # allocations were fitted to the small budget
     assert all(not any(code == "budget" for code, _ in r["new_violations"]) for r in full)
+
+
+def test_on_row_gets_each_finished_row_in_order():
+    """claude-b request: the comparison hands each K row (gains vs K=0 included) as soon as it is done."""
+    graph, S, C, params = _case()
+    seen = []
+    rows = compare_move_budgets(graph, S, C, params, CURRENT, ks=(0, 1, 2), on_row=lambda r: seen.append(dict(r)))
+    assert [r["k"] for r in seen] == [0, 1, 2]
+    assert [r["quality_gain_vs_k0"] for r in seen] == [r["quality_gain_vs_k0"] for r in rows]
+    assert seen[0]["gain_vs_k0"] == 0.0

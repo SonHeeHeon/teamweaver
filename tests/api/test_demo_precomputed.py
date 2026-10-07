@@ -41,14 +41,14 @@ def _write(bundle, active, params, plans, *, version=None, operating=None, eval_
 def built(tmp_path_factory):
     """A planning and an operating bundle, built the way the server builds them (LLM judging stubbed)."""
     import api.review_judge as rj
-    from api.demo_presets import build_demo_active
+    from api.demos import build_demo
     root = tmp_path_factory.mktemp("demo")
     plan_b = generate_org_bundle(root / "org-n100", 100, seed=11)
     op_b = generate_org_bundle(root / "org-n100-operating", 100, seed=11, scenario="operating")
     mp = pytest.MonkeyPatch()
     mp.setattr(rj, "judge_reviews", lambda ds, parsed, **kw: list(parsed))
     try:
-        actives = {b.name: build_demo_active(b) for b in (plan_b, op_b)}
+        actives = {b.name: build_demo(b) for b in (plan_b, op_b)}
     finally:
         mp.undo()
     return root, actives
@@ -164,3 +164,57 @@ def _sse(res):
         elif line.startswith("data:"):
             out.append((event, json.loads(line.split(":", 1)[1])))
     return out
+
+
+def test_operating_compare_serves_precomputed_rows_and_fresh_recomputes(built, monkeypatch):
+    """/api/operating/compare (claude-b's route) streams the validated precomputed K rows; fresh=true solves again."""
+    from core.evaluate.operating import _row
+    root, actives = built
+    bundle, active = root / "org-n100-operating", actives["org-n100-operating"]
+    params = _params(active)
+    eng = ScoringEngine(active.graph)
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in active.current]
+    rows = [{**_row(active.graph, S, C, params, active.current, entries, []), "k": k, "accepted": True} for k in (0, 1, 2, 3)]
+    _write(bundle, active, params, [], operating={"ks": [0, 1, 2, 3], "milp_params": params.model_dump(), "rows": rows})
+    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
+    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
+    import core.evaluate.operating as op
+    calls = []
+    monkeypatch.setattr(op, "compare_move_budgets", lambda *a, **kw: calls.append(1) or [rows[0]])
+    from api.main import app
+    with TestClient(app) as c:
+        info = c.get("/api/datasets/active").json()
+        assert info["precomputed"]["operating"] is True
+        s = c.get("/api/settings").json()
+        body = {"milp_params": {**s["settings"], "time_limit": s["effective_time_limit"]},
+                "dataset_version": info["version"], "ks": [0, 1, 2, 3]}
+        got = [d for e, d in _sse(c.post("/api/operating/compare", json=body)) if e == "row"]
+        assert [r["k"] for r in got] == [0, 1, 2, 3] and all(r["precomputed_at"] for r in got) and calls == []
+        got = [d for e, d in _sse(c.post("/api/operating/compare", json={**body, "fresh": True})) if e == "row"]
+        assert calls == [1] and "precomputed_at" not in got[0]
+        skill = next(iter(active.graph.people[0].skills))          # review MUST: rows were made with weights {}
+        got = [d for e, d in _sse(c.post("/api/operating/compare", json={**body, "weights": {skill: 3}})) if e == "row"]
+        assert calls == [1, 1] and "precomputed_at" not in got[0]
+    precomputed_path(bundle).unlink()
+
+
+
+def test_boot_skips_the_warm_up_when_the_precomputed_plans_cover_it(built, monkeypatch):
+    """Review SHOULD: with a validated precomputed entry under the warm-up key the boot does not solve again."""
+    root, actives = built
+    bundle, active = root / "org-n100", actives["org-n100"]
+    params = _params(active)
+    plan = _plan(active.graph, params, "A", [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc)
+                                              for c in active.current])
+    _write(bundle, active, params, [plan])
+    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
+    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
+    monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "0")
+    import api.main as main_mod
+    ran = []
+    monkeypatch.setattr(main_mod, "generate_plans", lambda *a, **kw: ran.append(1) or [])   # boot swallows errors: count
+    with TestClient(main_mod.app) as c:
+        assert c.get("/api/datasets/active").json()["precomputed"]["plans"] == 1
+    assert ran == []
+    precomputed_path(bundle).unlink()

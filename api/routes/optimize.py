@@ -62,6 +62,11 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             "precomputed_at": pre_at,
             # 솔버가 시간 한도에서 멈춘 해(최선 증명 전) -- 화면 배지(claude-a 요청)
             "time_limited": bool(getattr(plan, "time_limited", False)),
+            # 계산 신뢰도 배지: 서비스가 내는 해는 모두 독립 검증(C0)을 통과한 해다. 종료 사유·증명 상한·허용 차이.
+            "termination": getattr(plan, "termination", None),
+            "best_bound": getattr(plan, "best_bound", None),
+            "gap_allowed": getattr(plan, "gap_used", None) if getattr(plan, "gap_used", None) is not None
+                           else params.gap,
             "dataset_version": dataset.info.version,
             # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
             "plan_token": sign_plan(dataset.info.version, plan.label,

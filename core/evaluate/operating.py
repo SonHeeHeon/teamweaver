@@ -55,12 +55,27 @@ def exact(params: MilpParams) -> MilpParams:
     return params.model_copy(update={"gap": EXACT_GAP})
 
 
-def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, ks=(0, 1, 2, 3)) -> list[dict]:
+def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, ks=(0, 1, 2, 3),
+                         on_row=None) -> list[dict]:
     """K마다 최선 편성. 시간 한도에 걸려 K가 커졌는데 더 나쁜 해가 나오면(K−1의 해는 K에서도 가능하므로) 직전 해를 유지하고
     carried_from_k로 표시한다(그 행의 termination·proven_optimal도 유지한 해의 것). 한 K의 풀이가 실패해도 직전 해가 있으면
-    그것을 유지하고(solve_failed), 없으면 실패 행만 남긴 채 나머지 K를 계속한다. 개선량은 K=0 행 기준(K=0이 실패하면 None)."""
+    그것을 유지하고(solve_failed), 없으면 실패 행만 남긴 채 나머지 K를 계속한다. 개선량은 K=0 행 기준(K=0이 실패하면 None).
+
+    on_row(row): K 하나가 끝날 때마다 완성된 행(이전 해 유지·K=0 대비 개선량까지 반영)을 넘긴다 -- API가 K별로 바로
+    흘릴 수 있게(claude-b 요청 2026-10-06). K는 오름차순으로 풀므로 K=0 행이 늘 먼저다."""
     params = exact(params)
-    rows, best_so_far = [], None
+    rows, best_so_far, base = [], None, None
+
+    def push(row: dict) -> None:
+        nonlocal base
+        if row.get("accepted"):
+            if row["k"] == 0 and base is None:
+                base = row
+            _gains(row, base)
+        rows.append(row)
+        if on_row is not None:
+            on_row(row)
+
     carry_fields = ("objective", "quality", "unfilled_seats", "parts", "violations", "unfilled", "diff", "projects",
                     "entries", "termination", "proven_optimal", "best_bound")
 
@@ -83,9 +98,9 @@ def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, 
         if failure is not None:
             row = {"k": k, "elapsed_s": elapsed, **failure}
             if best_so_far is None:
-                rows.append({**row, "accepted": False})
+                push({**row, "accepted": False})
             else:                               # K−1의 해는 K에서도 가능한 해다
-                rows.append(carried({**row, "accepted": True, "solve_failed": True, "own": failure}))
+                push(carried({**row, "accepted": True, "solve_failed": True, "own": failure}))
             continue
         row = _row(graph, S, C, params, current, list(a.accepted.plan.entries), list(a.accepted.plan.unfilled))
         row.update({"k": k, "elapsed_s": elapsed, "accepted": True,
@@ -97,25 +112,25 @@ def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, 
             carried(row)
         if best_so_far is None or row["objective"] >= best_so_far["objective"] - 1e-9:
             best_so_far = row
-        rows.append(row)
-    base = next((r for r in rows if r["k"] == 0 and r.get("accepted")), None)
-    for row in rows:
-        if not row.get("accepted"):
-            continue
-        if base is None:
-            row["gain_vs_k0"] = row["quality_gain_vs_k0"] = row["quality_gain_pct_vs_k0"] = None
-            row["unfilled_change_vs_k0"] = None
-            row["project_change_vs_k0"] = {}
-            continue
-        row["gain_vs_k0"] = round(row["objective"] - base["objective"], 4)
-        row["quality_gain_vs_k0"] = round(row["quality"] - base["quality"], 4)
-        row["quality_gain_pct_vs_k0"] = (round(100 * row["quality_gain_vs_k0"] / abs(base["quality"]), 2)
-                                         if abs(base["quality"]) > 1e-9 else None)
-        row["unfilled_change_vs_k0"] = row["unfilled_seats"] - base["unfilled_seats"]
-        row["project_change_vs_k0"] = {p: round(r["total"] - base["projects"].get(p, {}).get("total", 0.0), 4)
-                                       for p, r in row["projects"].items()
-                                       if abs(r["total"] - base["projects"].get(p, {}).get("total", 0.0)) > 1e-6}
+        push(row)
     return rows
+
+
+def _gains(row: dict, base: dict | None) -> None:
+    """K=0 행 대비 개선량(K=0이 없거나 실패했으면 None)."""
+    if base is None:
+        row["gain_vs_k0"] = row["quality_gain_vs_k0"] = row["quality_gain_pct_vs_k0"] = None
+        row["unfilled_change_vs_k0"] = None
+        row["project_change_vs_k0"] = {}
+        return
+    row["gain_vs_k0"] = round(row["objective"] - base["objective"], 4)
+    row["quality_gain_vs_k0"] = round(row["quality"] - base["quality"], 4)
+    row["quality_gain_pct_vs_k0"] = (round(100 * row["quality_gain_vs_k0"] / abs(base["quality"]), 2)
+                                     if abs(base["quality"]) > 1e-9 else None)
+    row["unfilled_change_vs_k0"] = row["unfilled_seats"] - base["unfilled_seats"]
+    row["project_change_vs_k0"] = {p: round(r["total"] - base["projects"].get(p, {}).get("total", 0.0), 4)
+                                   for p, r in row["projects"].items()
+                                   if abs(r["total"] - base["projects"].get(p, {}).get("total", 0.0)) > 1e-6}
 
 
 def _row(graph, S, C, params, current, entries, unfilled) -> dict:

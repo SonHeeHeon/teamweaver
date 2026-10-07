@@ -46,6 +46,10 @@ ALLOW_EXTERNAL_ENV = "TEAMWEAVER_REVIEW_ALLOW_EXTERNAL"   # 1이면 실데이터
 # 브리핑·설명 클라이언트도 OPENAI_API_KEY를 사내 서버로 보낸다(리뷰 2라운드 S-1).
 BASE_URL_ENV = "TEAMWEAVER_REVIEW_BASE_URL"
 MODEL_ENV = "TEAMWEAVER_REVIEW_MODEL"
+# 추론 강도(예: Z.ai GLM 5.3은 low|high|max). 비우면 보내지 않는다(gpt-6-luna 기본). 허용값은 서버마다 다르다 --
+# vLLM·SGLang은 대개 low|medium|high만 받고, 추론 모델이 아닌 OpenAI 모델은 이 칸 자체를 거절(400)한다. 사내 배포가
+# 받는 값으로 둔다. 추론을 켜면 건당 10초 안팎(E4 실측 GLM max)이라 전체 한도도 그만큼 늘린다(아래 deadline).
+REASONING_ENV = "TEAMWEAVER_REVIEW_REASONING_EFFORT"
 WORKERS_ENV = "TEAMWEAVER_REVIEW_WORKERS"
 CONVERSION = "llm-text-polarity-v1"   # 바꾸면 캐시 키가 달라져 이전 판정을 재사용하지 않는다
 WORKERS = 16                        # 실측: 32는 OpenAI 요청 한도(429)에 걸렸고 16은 1,372건을 끝냈다(E4)
@@ -101,6 +105,10 @@ def _is_internal_host(host: str) -> bool:
     return ip.is_private or ip.is_loopback
 
 
+def reasoning_effort() -> str | None:
+    return os.environ.get(REASONING_ENV) or None
+
+
 def endpoint() -> dict:
     """화면 안내용: 글이 어디로 가는가.
     location: "openai"(회사 밖) | "onprem"(사내로 확인: 사설 주소·관리자 명시) | "unknown"(사내인지 확인 안 됨).
@@ -129,9 +137,10 @@ def _workers() -> int:
         return WORKERS
 
 
-def _cache_key(pos: str, neg: str, model_name: str, url: str) -> str:
-    return hashlib.sha256(json.dumps([model_name, url, INSTRUCTION, CONVERSION, pos, neg], ensure_ascii=False)
-                          .encode("utf-8")).hexdigest()
+def _cache_key(pos: str, neg: str, model_name: str, url: str, effort: str | None = None) -> str:
+    # 추론 강도는 설정했을 때만 키에 넣는다 -- 설정하지 않은 기본 경로의 키(와 쌓인 판정·데이터 버전)는 예전 그대로(리뷰 MUST)
+    parts = [model_name, url, INSTRUCTION, CONVERSION] + ([effort] if effort else []) + [pos, neg]
+    return hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
 def to_polarity(content: str) -> float:
@@ -188,10 +197,12 @@ def _retry_wait(res: httpx.Response, attempt: int) -> float:
 
 
 def _ask(http: httpx.Client, url: str, key: str | None, model_name: str, pos: str, neg: str,
-         stop: threading.Event) -> float:
+         stop: threading.Event, effort: str | None = None) -> float:
     body = {"model": model_name, "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": INSTRUCTION},
                          {"role": "user", "content": json.dumps({"좋은점": pos, "나쁜점": neg}, ensure_ascii=False)}]}
+    if effort:
+        body["reasoning_effort"] = effort
     headers = {"Authorization": f"Bearer {key}"} if key else {}
     res = None
     for attempt in range(ATTEMPTS):
@@ -221,11 +232,11 @@ def _ask(http: httpx.Client, url: str, key: str | None, model_name: str, pos: st
     return to_polarity(content)
 
 
-def _ask_once_more(http, url, key, model_name, pos, neg, stop) -> float:
+def _ask_once_more(http, url, key, model_name, pos, neg, stop, effort=None) -> float:
     """응답 형식 오류·일시적 400은 같은 요청을 두 번까지 다시 보낸다 -- 한 건 때문에 데이터 전체가 실패하지 않게(리뷰 S7)."""
     for attempt in range(FORMAT_ATTEMPTS):
         try:
-            return _ask(http, url, key, model_name, pos, neg, stop)
+            return _ask(http, url, key, model_name, pos, neg, stop, effort)
         except JudgeError as exc:
             if not exc.retry or attempt == FORMAT_ATTEMPTS - 1 or stop.is_set():
                 raise
@@ -258,11 +269,12 @@ def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, 
     url = (url or base_url()).rstrip("/")
     key = key if key is not None else api_key(url)
     model_name = model_name or model()
+    effort = reasoning_effort()
     if len(parsed) != len(ds.reviews) or any(
             p.reviewer_id != r.reviewer_id or p.reviewee_id != r.reviewee_id for p, r in zip(parsed, ds.reviews)):
         raise JudgeError("리뷰와 파싱 결과의 순서가 맞지 않아 판정을 바꿔 끼울 수 없다")
     texts = [(r.positive.text, r.negative.text) for r in ds.reviews]
-    keys = [_cache_key(p, n, model_name, url) for p, n in texts]
+    keys = [_cache_key(p, n, model_name, url, effort) for p, n in texts]
     current = set(keys)
     with _cache_lock:
         cache = _load_cache(cache_path)
@@ -276,15 +288,18 @@ def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, 
         raise JudgeError(f"{KEY_ENV}가 설정되지 않았다(사내 LLM이면 {BASE_URL_ENV}로 주소를 지정)")
     if todo:
         stop = threading.Event()
-        http = httpx.Client(transport=transport, timeout=REQUEST_TIMEOUT_S)
+        # 추론을 켜면 건당 지연이 길다(E4 GLM max 실측 최대 약 70초) -- 시간 초과로 같은 요청을 두 번 내지 않게 늘린다
+        http = httpx.Client(transport=transport, timeout=REQUEST_TIMEOUT_S * (3 if effort else 1))
         n_workers = workers or _workers()
         if deadline_s is None:
-            # 리뷰 수에 비례(건당 실측 중앙값 2.2초 × 여유 2배), 최소 DEADLINE_S -- 300명(약 4,000건)도 한도에 안 걸리게.
-            deadline_s = max(DEADLINE_S, len(todo) / n_workers * 4.5)
+            # 리뷰 수에 비례(건당 실측 중앙값 × 여유 2배), 최소 DEADLINE_S. 추론 강도를 켜면 건당 약 10초(E4 GLM max 실측),
+            # 아니면 2.2초(gpt-6-luna) -- 300명(약 4,000건)도 한도에 안 걸리게.
+            per_review_s = 11.0 if effort else 2.25
+            deadline_s = max(DEADLINE_S, len(todo) / n_workers * per_review_s * 2)
         pool = ThreadPoolExecutor(max_workers=n_workers)
         futures: dict = {}
         try:
-            futures = {pool.submit(_ask_once_more, http, f"{url}/chat/completions", key, model_name, p, n, stop): k
+            futures = {pool.submit(_ask_once_more, http, f"{url}/chat/completions", key, model_name, p, n, stop, effort): k
                        for k, (p, n) in todo.items()}
             try:
                 for f in as_completed(futures, timeout=deadline_s):

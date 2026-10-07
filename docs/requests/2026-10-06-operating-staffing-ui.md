@@ -52,27 +52,24 @@
   안에서 더 넣어 총 기여를 늘리는 모델 특성) — 숨기지 말고 함께 표시.
 - 시연 확장 B(계산 신뢰도): 이미 요청한 "상한 대비 최대 X%·독립 검증 통과·시간 한도" 배지(`docs/work-split.md`).
 
-## 추가(2026-10-06 오후): 시연 데이터 두 가지 + 미리 계산 결과 — 서버는 claude-a가 만들었다(`feat/claude-a-demo-presets`)
+## 추가(2026-10-07): 시연 데이터 고르기 통일 + 미리 계산 결과 — 서버는 claude-a(`feat/claude-a-demo-presets`)
 사용자 결정: "시연 기본 데이터로 둘 다 하자(연초 계획 = 인력 전체, 운영 중 = 종료 인력 몇 명을 신규 프로젝트에)", 화면은 claude-b.
+고르기가 두 벌 구현돼 있어 **claude-b 계약(`api/demos.py`, `{name}`)으로 통일**했다(사용자 결정 2026-10-07). claude-a 쪽 목록·전환은 지웠다.
 
-**서버 계약(이미 있음)**
-- `GET /api/datasets/demos` → `{presets: [{id, dataset_id, scenario: "planning"|"operating", title, description, people, projects,
-  current, bench, proposals, synthetic}], active: id|null, default: id|null}`. 목록은 `TEAMWEAVER_DEMO_DIR`(run_poc: `demo/`)의
-  폴더·zip(이름에 `-broken`은 빠짐). 순서: 인원 → 연초 계획 → 운영 중.
-- `POST /api/datasets/demo` `{id}`(관리자, `Content-Type: application/json`) → 전환. 응답 = `/api/datasets/active` 모양 + `demo`(목록 항목).
-  오류: 404(없는 id), 409(다른 전환 중), 415(JSON 아님), 422(묶음 검증 실패 — 지금 데이터 그대로). **저장된 업로드 데이터를 지운다**(되돌리기와 같음)
-  → 업로드 데이터가 켜져 있을 때는 확인 대화상자를 띄워 달라.
-- `/api/datasets/active`·되돌리기·다시 판정 응답에 `demo_preset`(지금 시연 묶음 id 또는 null)과 `precomputed`
-  (`{preset, computed_at, plans, operating, skipped[]}` 또는 null).
-- `/api/optimize`: 요청 `fresh: true`면 캐시를 무시하고 다시 푼다. 응답 plan·done 프레임에 `precomputed_at`(미리 계산 결과면 계산 시각, 아니면 null).
-- 운영 중 비교 미리 계산: `api.demo_precomputed.operating_rows(app, params, ks, dataset_version)` → `(rows, computed_at)` 또는 None
-  — `/api/operating/compare`가 먼저 이것을 보고 있으면 그 행을 흘리고(`precomputed_at` 표시), 없거나 `fresh`면 계산한다.
-- 현재 배치는 `ActiveDataset.current`(list[CurrentAssignment])로 넣어 두었다 → `compare_move_budgets(graph, S, C, params, dataset.current, ks)`.
+**서버 계약(웹은 그대로 동작 — 칸만 추가)**
+- `GET /api/datasets/demos` → 배열. 기존 칸 `name, dataset_id, people, projects, scenario, synthetic` 그대로 +
+  `title`("연초 계획 · 100명 전체 배치" / "운영 중 · 90명 배치 중, 대기 10명"), `description`(한 줄), `current`, `bench`, `proposals`.
+  **zip 묶음도 나온다**(200·300명: `org-n200`, `org-n200-operating`, `org-n300`, `org-n300-operating`). `-broken`(업로드 검증 시연용)은 빠진다.
+  순서: 인원 → 연초 계획 → 운영 중.
+- `POST /api/datasets/demo {name}` 그대로. 응답에 `demo_name`, `precomputed` 추가.
+- `/api/datasets/active`에 `demo_name`(지금 시연 묶음 이름 또는 null)과 `precomputed`(`{preset, computed_at, plans, operating, skipped[]}` 또는 null).
+- `/api/optimize`: 요청 `fresh: true`면 캐시를 무시하고 다시 푼다. plan·done 프레임에 `precomputed_at`(미리 계산 결과면 계산 시각, 아니면 null).
+- `/api/operating/compare`: 요청 `fresh`(기본 false). 미리 계산 행이 맞으면 계산 없이 start·row·done에 `precomputed_at`을 싣고 흘린다
+  (claude-a가 네 라우트에 분기를 넣었다). `compare_move_budgets(on_row=)`도 넣었다 — K별 실시간 송출은 네가 바꾸기로 한 대로.
 
 **화면 제안**
-1. 데이터 탭 "시연 데이터" 카드: 목록을 장면별로 — "연초 계획 · 100명 전체 배치" / "운영 중 · 90명 배치 중, 대기 10명"(200·300명은 펼침).
-   지금 켜진 묶음 표시, "이 데이터로 바꾸기" 버튼, 설명 한 줄(description).
-2. 운영 중 편성 탭: 지금 데이터가 연초 계획 묶음이면 "운영 중 시연 데이터로 바꾸기" 바로가기(같은 인원의 operating 묶음).
-3. 결과 카드: `precomputed_at`이 있으면 "미리 계산한 결과 · 2026-10-06 21:10(같은 데이터·같은 설정)" 배지 + "다시 계산" 버튼(`fresh: true`).
+1. 데이터 탭 시연 데이터 고르기에 `title`·`description`을 쓰면 장면이 바로 읽힌다(200·300명 zip 묶음도 목록에 나온다).
+2. 결과 카드·운영 중 비교: `precomputed_at`이 있으면 "미리 계산한 결과 · 시각(같은 데이터·같은 설정)" 배지 + "다시 계산"(`fresh: true`).
    `time_limited` 배지는 그대로 함께 보인다. **미리 계산을 실시간 계산처럼 보이게 하지 않는다**(시연 정직성).
-4. 데이터 탭(관리자): `precomputed.skipped`가 있으면 "미리 계산 결과를 쓰지 않음: <이유>"(시연 전 점검용).
+3. 데이터 탭(관리자): `precomputed.skipped`가 있으면 "미리 계산 결과를 쓰지 않음: <이유>"(시연 전 점검용).
+4. 운영 중 묶음에서 "계산 시작"(전원 다시 짜기)을 누르면 200·300명은 시간 한도 안에 빈자리가 남는다 — 안내 문구를 붙이면 좋다.

@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { AdminLoginRequiredError, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
-import type { DatasetInfo, IngestIssue, UploadResult } from "../api/types";
+import { useEffect, useState } from "react";
+import { AdminLoginRequiredError, chooseDemo, fetchDemos, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
+import type { DatasetInfo, DemoBundle, IngestIssue, UploadResult } from "../api/types";
+
+const SCENARIO_LABEL: Record<string, string> = { operating: "운영 중(대부분 배치됨)", planning: "연초 계획(백지 배치)" };
 
 /** 평가 사유(글)를 보내는 곳 -- 사내로 확인되지 않은 주소를 "사내"라고 단정하지 않는다. */
 function placeLabel(location: string | null | undefined, host: string | null | undefined): string {
@@ -55,6 +57,32 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [demos, setDemos] = useState<DemoBundle[]>([]);
+  const [demo, setDemo] = useState("");
+  const [confirmDemo, setConfirmDemo] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetchDemos().then((d) => { if (alive) { setDemos(d); setDemo((cur) => cur || d[0]?.name || ""); } })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  async function switchDemo() {
+    if (!demo) return;
+    setConfirmDemo(false);
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      onSwitched(await chooseDemo(demo, adminToken));
+    } catch (e) {
+      if (e instanceof AdminLoginRequiredError) onLoginRequired?.();
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function upload() {
     if (!file) return;
@@ -174,6 +202,42 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
             ? <b> 이 서버는 실데이터의 평가 원문도 이곳으로 보내도록 허용돼 있다(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1).</b>
             : " 실데이터(가상이 아닌 묶음)는 서버가 외부 전송을 허용(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1)하지 않으면 보내지 않고 항목 점수를 쓴다. 사내 LLM은 서버의 TEAMWEAVER_REVIEW_BASE_URL로 지정한다.")}
         </p>
+      )}
+      {demos.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+          <p className="text-xs font-medium text-slate-500">시연 데이터 고르기(가상)</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <select aria-label="시연 데이터" value={demo} onChange={(e) => { setDemo(e.target.value); setConfirmDemo(false); }}
+                    className="rounded-md border border-slate-300 px-2 py-1">
+              {demos.map((d) => (
+                <option key={d.name} value={d.name}>
+                  {d.name} · {SCENARIO_LABEL[d.scenario] ?? d.scenario} · {d.people ?? "?"}명 · 사업 {d.projects ?? "?"}건
+                </option>
+              ))}
+            </select>
+            {/* 업로드 보관본을 지우는 동작이라 한 번 더 확인한다(브라우저 확인 창 대신 두 단계 버튼) */}
+            {!confirmDemo ? (
+              <button onClick={() => setConfirmDemo(true)} disabled={!demo || busy}
+                      className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
+                                 text-slate-700 hover:bg-slate-50 disabled:text-slate-400">
+                이 시연 데이터로 전환
+              </button>
+            ) : (
+              <>
+                <button onClick={switchDemo} disabled={busy}
+                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700">
+                  {busy ? "전환 중…" : "전환 확인"}
+                </button>
+                <button onClick={() => setConfirmDemo(false)} className="text-sm text-slate-600 underline">취소</button>
+              </>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            "운영 중" 데이터는 대부분이 이미 진행 사업에 있고 신규 제안 2~3개를 남는 인력으로 짜는 장면이다(운영 중 편성 탭).
+            전환하면 서버에 보관된 업로드 데이터는 지워지고, 이전 계산 결과는 비워진다. 리뷰 글을 처음 LLM으로 판정하는
+            묶음이면 전환에 몇 분 걸릴 수 있다(이후 같은 글은 저장된 판정을 쓴다).
+          </p>
+        </div>
       )}
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-sm text-slate-700">

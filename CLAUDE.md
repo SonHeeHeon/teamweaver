@@ -69,7 +69,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
   시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
   운영 중 묶음을 "전부 다시 짜기"(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남는다(정원·예산이 현재 명단에 맞춰짐) -- K 비교로 쓴다.
-- **시연 묶음 전환·미리 계산**(2026-10-06, `api/demo_presets.py`·`api/demo_precomputed.py`): `TEAMWEAVER_DEMO_DIR`의 묶음을 `/api/datasets/demo`로 바꾼다.
+- **시연 묶음 고르기·미리 계산**(claude-b `api/demos.py` + claude-a `api/demo_precomputed.py`, 2026-10-07 통일): `TEAMWEAVER_DEMO_DIR`의 폴더·zip 묶음을 `POST /api/datasets/demo {name}`으로 고르고 재기동해도 기억한다.
   `demo/precomputed/*.json`은 데이터셋 버전(리뷰 글 LLM 판정값 포함)·서버 설정·평가기 재채점이 모두 맞을 때만 캐시에 들어간다 --
   재채점은 솔버 목적값이 아니라 미리 계산 때 기록한 평가기 점수(`eval_objective`)와 대조한다(솔버는 내림 전 투입률, 평가기는 내림한 투입률).
   데이터·설정·목적식이 바뀌면 `python -m rehearsal.precompute_demo`를 시연 기기에서 다시 돌린다(약 40분). 맞지 않으면 조용히 실시간 계산.
@@ -90,7 +90,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-07 **1343 passed, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 153)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-07 **1369 passed, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 165)
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

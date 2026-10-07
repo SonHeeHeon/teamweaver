@@ -147,8 +147,11 @@ def _check_operating(pre: Precomputed, op, graph, S, C, params: MilpParams, vers
         elif fparams is not None:
             bad = None
             for row in op.get("rows", []):
-                if not row.get("accepted") or not row.get("entries"):
+                if not row.get("accepted"):
                     continue
+                if not row.get("entries"):              # 채택 행인데 배치가 없으면 확인할 수 없다 -- 버린다(리뷰 nit)
+                    bad = f"운영 중 비교 K={row.get('k')}: 배치 기록이 없다"
+                    break
                 entries = [AssignEntry(**e) for e in row["entries"]]
                 ev = evaluate_plan(graph, S, C, params, entries)
                 if (sorted(v.code for v in ev.violations) != sorted(row.get("violations", []))

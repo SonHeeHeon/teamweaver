@@ -61,6 +61,10 @@ export interface PlanEvent {
   plan_token?: string;
   /** 솔버가 시간 한도에서 멈춘 해(최선임을 증명하기 전). */
   time_limited?: boolean;
+  /** 계산 신뢰도 배지: 솔버 종료 사유("Optimal"·"time_limit_incumbent" 등), HiGHS가 증명한 상한, 허용 차이(gap). */
+  termination?: string | null;
+  best_bound?: number | null;
+  gap_allowed?: number;
 }
 
 /** 계산에 실제로 쓸 설정: 자동 계산 시간이면 서버가 정한 값으로 바꿔 넣는다. */
@@ -303,3 +307,115 @@ export interface SavedPlanEdits {
   /** 서버가 매긴 저장 번호(0 = 저장 없음). 다음 저장 때 expected_revision으로 보낸다. */
   revision: number;
 }
+
+
+// --- 운영 중 편성·진행 사업 보강·단순 규칙 대비(2026-10-06, claude-a 계산 core.evaluate) ---
+
+export interface CurrentAssignment { person_id: string; project_id: string; alloc: number; locked: boolean }
+
+export interface OperatingState {
+  dataset_version: string;
+  available: boolean;
+  scenario: string | null;
+  bench: string[];
+  proposals: string[];
+  current: CurrentAssignment[];
+  projects: { id: string; name: string; grade_headcount: Record<string, number>; monthly_budget: number;
+              start_month: number; end_month: number }[];
+  expected_s_100: Record<string, number>;
+  n_people: number;
+  note: string;
+  hint: string | null;
+}
+
+export interface OperatingDiff {
+  kept: number;
+  moved: { person_id: string; from: string; to: string[] }[];
+  joined: { person_id: string; project_id: string; from_bench: boolean }[];
+}
+
+export interface OperatingRow {
+  k: number;
+  elapsed_s: number;
+  accepted: boolean;
+  termination?: string | null;
+  proven_optimal?: boolean;
+  best_bound?: number | null;
+  objective?: number;
+  quality?: number;
+  unfilled_seats?: number;
+  parts?: Record<string, number>;
+  quality_gain_vs_k0?: number | null;
+  quality_gain_pct_vs_k0?: number | null;
+  unfilled_change_vs_k0?: number | null;
+  diff?: OperatingDiff;
+  project_change_vs_k0?: Record<string, number>;
+  violations?: string[];
+  entries?: AssignEntry[];
+  carried_from_k?: number;
+  solve_failed?: boolean;
+  /** carried 행에서 이 K 자신의 결과(시간 한도로 더 나쁜 해의 termination·objective, 또는 실패 사유). */
+  own?: { termination?: string | null; objective?: number; error?: string };
+  error?: string;
+}
+
+export type OperatingEvent =
+  | { event: "start"; data: { ks: number[]; n_people: number; expected_s_100: Record<string, number | null>; note: string } }
+  | { event: "progress"; data: { elapsed_s: number } }
+  | { event: "row"; data: OperatingRow }
+  | { event: "done"; data: { elapsed_s: number; count: number } }
+  | { event: "error"; data: { message: string } };
+
+export interface Parts { total: number; skill: number; synergy: number; overfamiliarity: number; unfilled: number }
+
+export interface Candidate {
+  person_id: string;
+  grade: string;
+  alloc: number;
+  source: "bench" | "partly_free" | "pull";
+  pulled_from: string[];
+  delta_total: number;
+  delta: Parts;
+  skill_fit: number;
+  team_synergy: number;
+  project_total_after: number;
+  monthly_cost: number;
+  budget_added: number;
+  /** 빈자리 변화(자리 수). 빼 오면 원래 사업에 생기는 빈자리. */
+  unfilled_seats_delta?: number;
+  new_violations: [string, string][];
+}
+
+export interface SimulateResult {
+  before: Parts; after: Parts; delta: Parts;
+  violations: { code: string; location: string }[];
+  new_violations: [string, string][];
+  entries: AssignEntry[];
+}
+
+export interface BestResult {
+  accepted: boolean;
+  termination?: string | null;
+  added_cost?: number;
+  diff?: OperatingDiff;
+  before?: Parts; after?: Parts; delta?: Parts;
+  violations?: { code: string; location: string }[];
+  entries?: AssignEntry[];
+}
+
+export interface BaselineSummary {
+  total: number; quality: number; skill: number; synergy: number; overfamiliarity: number;
+  unfilled_seats: number; avg_seat_fit: number | null; assignments: number; people: number;
+  violations: Record<string, number>;
+}
+
+export interface BaselineResult {
+  rule: string;
+  optimized: BaselineSummary;
+  baseline: BaselineSummary;
+  difference: Record<string, number>;
+  note: string;
+}
+
+export interface DemoBundle { name: string; dataset_id: string; people: number | null; projects: number | null;
+                              scenario: string; synthetic: boolean }

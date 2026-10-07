@@ -2,87 +2,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>리뷰 판정기 비교</title>
 <style>
 body{font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:#fafaf7;color:#1f2328;margin:0;line-height:1.7}
-main{max-width:860px;margin:0 auto;padding:32px 16px 64px} h1{font-size:1.6rem} h2{font-size:1.2rem;margin-top:2rem;border-left:4px solid #2563eb;padding-left:.6rem}
+main{max-width:960px;margin:0 auto;padding:32px 16px 64px} h1{font-size:1.6rem} h2{font-size:1.2rem;margin-top:2rem;border-left:4px solid #2563eb;padding-left:.6rem}
 table{border-collapse:collapse;width:100%;font-size:.93rem;margin:10px 0;background:#fff} td,th{border:1px solid #e5e7eb;padding:6px 8px;text-align:left}
 th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin:12px 0}
 .warn{background:#fffbeb;border-color:#fcd34d} .ok{background:#ecfdf5;border-color:#6ee7b7} .muted{color:#6b7280;font-size:.88rem}
+.wrap{overflow-x:auto}
 </style></head><body><main>
-<h1>리뷰 글 판정기 비교: LLM vs Jev</h1>
-<p class="muted">실험 E4 · 기록 2026-10-06 · 코드 <code>experiments/jev/e4_judges.py</code> ·
-원시 결과 <code>experiments/jev/results/e4_*.json</code> · 모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
+<h1>리뷰 글 판정기 비교: 외부 LLM · 사내 LLM · Jev</h1>
+<p class="muted">실험 E4 · 코드 <code>experiments/jev/e4_judges.py</code> · 원시 결과 <code>experiments/jev/results/e4_*.json</code> ·
+모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
 
 <div class="box ok"><b>결정(사용자, 2026-10-06)</b>: 리뷰 글 판정은 선택지 없이 <b>LLM(OpenAI 호환 API)</b>으로 통일한다.
-사내 온프렘 LLM은 주소(<code>TEAMWEAVER_REVIEW_BASE_URL</code>)만 바꿔 같은 방식으로 쓴다. 규칙 기반·Jev 선택지는 없앤다.</div>
+사내 온프렘 LLM은 주소(<code>TEAMWEAVER_REVIEW_BASE_URL</code>)·모델(<code>TEAMWEAVER_REVIEW_MODEL</code>)만 바꿔 같은 방식으로 쓴다.
+LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상 함께</b> 잰다.</div>
 
 <h2>1. 왜 비교했나</h2>
-<p>협업 점수의 리뷰 부분은 <code>쌍 리뷰 점수 = 0.5 × 항목 점수 + 0.5 × 글 점수</code>다. 지금까지 기본이던 규칙 기반은
-글 점수 자리에 항목 균형을 다시 넣어, 평가 사유(글)를 점수에 전혀 쓰지 않았다. 항목을 두 번 쓴 셈이다.
-글을 실제로 읽는 판정기 두 후보(LLM, 판단 전용 모델 Jev)를 같은 글로 비교했다.</p>
+<p>협업 점수의 리뷰 부분은 <code>쌍 리뷰 점수 = 0.5 × 항목 점수 + 0.5 × 글 점수</code>다. 이전 기본이던 규칙 기반은
+글 점수 자리에 항목 균형을 다시 넣어, 평가 사유(글)를 점수에 전혀 쓰지 않았다(항목을 두 번 씀). 글을 읽는 판정기
+후보로 외부 LLM(gpt-6-luna), 사내 LLM(GLM 5.3), 판단 전용 모델 Jev를 같은 글로 비교했다.</p>
 
 <h2>2. 방법</h2>
 <ul>
-<li><b>A. 시연 원문</b> — 시연 묶음 100명의 리뷰 1,372건. 생성기가 아쉬운 점을 한 줄로 몰아 쓰고 부드럽게 써서,
+<li><b>A. 시연 원문</b> — 시연 묶음 100명의 리뷰 1,372건 중 모든 판정기가 판정한 480건(파일 앞쪽에서 판정된 것 — 무작위 표본 아님, API 잔액 소진으로 중단). 생성기가 아쉬운 점을 한 줄로 몰아 쓰고 부드럽게 써서,
 글이 항목만큼 부정적이지 않다. 정답이 없으므로 분포만 본다.</li>
 <li><b>B. 충실한 글</b> — 같은 리뷰에서 300건을 뽑아, 고른 항목을 빠짐없이 한 문장씩 다시 쓴 글. 글이 항목을 그대로 담으므로
 <b>정답 = 항목 균형</b>((좋은 점 수 − 아쉬운 점 수) ÷ 전체 항목 수).</li>
 <li><b>대조 문장</b> — 명백한 부정·긍정 등 4건으로 척도(−1~+1)가 살아 있는지 확인.</li>
-<li>LLM 지시문은 서비스 파서와 같다("서술 전체의 감성 강도", −1~1 JSON). Jev는 5단계 점수(0=매우 부정 … 4=매우 긍정)의
-확률 기댓값을 −1~1로 옮겼다. 부호 판정의 중립 구간은 ±0.1.</li>
+<li>두 LLM은 같은 지시문(서비스 파서, "서술 전체의 감성 강도", −1~1 JSON)을 받는다. GLM 5.3은 회사 밖인 여기서
+<b>Z.ai 공식 API</b>(<code>glm-5.3</code>, 추론 강도 <b>max</b> — 사용자 지정)로 쟀다. Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다.
+부호 판정의 중립 구간은 ±0.1. 모두 병렬 16건 동시 호출.</li>
 </ul>
 
+<div class="box warn"><b>부분 결과</b><ul><li>시연 원문: 사내 LLM 대리 (GLM 5.3·Z.ai) 480/1,372건만 판정(API 잔액 소진) — 정확도 표는 모든 판정기가 판정한 같은 480건끼리 비교, 비용·시간 표는 각 판정기가 실제로 판정한 건수 기준</li></ul></div>
 <h2>3. 결과</h2>
 <h3>B. 충실한 글 300건 (정답 있음)</h3>
-<table><tr><th>지표</th><th>LLM (gpt-6-luna)</th><th>Jev</th></tr>
-<tr><td>정답과 상관(피어슨)</td><td>+0.94</td><td>+0.94</td></tr><tr><td>정답과 순위 상관(스피어만)</td><td>+0.96</td><td>+0.95</td></tr>
-<tr><td>정답과 평균 절대 차이(작을수록 좋음)</td><td>+0.20</td><td>+0.27</td></tr><tr><td>긍정·중립·부정 일치율</td><td>84%</td><td>60%</td></tr>
-<tr><td>실제 부정 리뷰를 부정으로 잡은 비율</td><td>92%</td><td>17%</td></tr><tr><td>평균 판정값 (정답 평균 +0.13)</td><td>+0.32</td><td>+0.40</td></tr>
-</table>
-<table><tr><th>정답(항목) 구간</th><th>건수</th><th>LLM (gpt-6-luna) 평균</th><th>Jev 평균</th></tr><tr><td>많이 부정 (−1 ~ −0.4)</td><td>26</td><td>-0.48</td><td>-0.11</td></tr><tr><td>조금 부정 (−0.4 ~ 0)</td><td>57</td><td>-0.25</td><td>+0.14</td></tr><tr><td>중립 (0)</td><td>50</td><td>+0.27</td><td>+0.35</td></tr><tr><td>조금 긍정 (0 ~ +0.4)</td><td>88</td><td>+0.58</td><td>+0.49</td></tr><tr><td>많이 긍정 (+0.4 ~ +1)</td><td>79</td><td>+0.72</td><td>+0.67</td></tr></table>
+<div class="wrap"><table><tr><th>지표</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 (GLM 5.3·Z.ai)</th><th>Jev</th></tr>
+<tr><td>정답과 상관(피어슨)</td><td>0.94</td><td>0.94</td><td>0.94</td></tr><tr><td>정답과 순위 상관(스피어만)</td><td>0.96</td><td>0.95</td><td>0.95</td></tr>
+<tr><td>정답과 평균 절대 차이(작을수록 좋음)</td><td>0.20</td><td>0.20</td><td>0.27</td></tr><tr><td>긍정·중립·부정 일치율</td><td>84%</td><td>82%</td><td>60%</td></tr>
+<tr><td>실제 부정 리뷰를 부정으로 잡은 비율</td><td>92%</td><td>84%</td><td>17%</td></tr><tr><td>평균 판정값 (정답 평균 +0.13)</td><td>+0.32</td><td>+0.32</td><td>+0.40</td></tr>
+</table></div>
+<div class="wrap"><table><tr><th>정답(항목) 구간</th><th>건수</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 (GLM 5.3·Z.ai)</th><th>Jev</th></tr><tr><td>많이 부정 (−1 ~ −0.4)</td><td>26</td><td>-0.48</td><td>-0.41</td><td>-0.11</td></tr><tr><td>조금 부정 (−0.4 ~ 0)</td><td>57</td><td>-0.25</td><td>-0.20</td><td>+0.14</td></tr><tr><td>중립 (0)</td><td>50</td><td>+0.27</td><td>+0.28</td><td>+0.35</td></tr><tr><td>조금 긍정 (0 ~ +0.4)</td><td>88</td><td>+0.58</td><td>+0.54</td><td>+0.49</td></tr><tr><td>많이 긍정 (+0.4 ~ +1)</td><td>79</td><td>+0.72</td><td>+0.72</td><td>+0.67</td></tr></table></div>
 
-<h3>A. 시연 원문 1,372건 (정답 없음)</h3>
-<table><tr><th>지표</th><th>LLM (gpt-6-luna)</th><th>Jev</th></tr>
-<tr><td>평균 판정값 (항목 균형 평균 +0.16)</td><td>+0.58</td><td>+0.56</td></tr>
-<tr><td>부정(−0.1 미만)으로 판정한 비율 (항목 기준 25%)</td><td>1%</td><td>0%</td></tr>
-<tr><td>항목 균형과 상관</td><td>+0.84</td><td>+0.88</td></tr>
-<tr><td>두 판정기끼리 상관</td><td colspan="2">0.83</td></tr></table>
+<h3>A. 시연 원문 480건 (정답 없음)</h3>
+<div class="wrap"><table><tr><th>지표</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 (GLM 5.3·Z.ai)</th><th>Jev</th></tr>
+<tr><td>평균 판정값 (항목 균형 평균 +0.15)</td><td>+0.59</td><td>+0.58</td><td>+0.56</td></tr>
+<tr><td>부정(−0.1 미만)으로 판정한 비율 (항목 기준 24%)</td><td>1%</td><td>1%</td><td>0%</td></tr>
+<tr><td>항목 균형과 상관</td><td>0.86</td><td>0.86</td><td>0.89</td></tr><tr><td>항목 기준 부정 리뷰를 부정으로 잡은 비율</td><td>3%</td><td>4%</td><td>0%</td></tr>
+</table></div>
+<table><tr><th>판정기끼리 상관 (A)</th><th>피어슨</th></tr><tr><td>외부 LLM (gpt-6-luna) ↔ 사내 LLM 대리 (GLM 5.3·Z.ai)</td><td>0.86</td></tr><tr><td>외부 LLM (gpt-6-luna) ↔ Jev</td><td>0.85</td></tr><tr><td>사내 LLM 대리 (GLM 5.3·Z.ai) ↔ Jev</td><td>0.82</td></tr></table>
 
 <h3>대조 문장</h3>
-<table><tr><th>글</th><th>LLM (gpt-6-luna)</th><th>Jev</th></tr><tr><td>명백한 부정</td><td>-0.90</td><td>-1.00</td></tr><tr><td>명백한 긍정</td><td>+0.90</td><td>+1.00</td></tr><tr><td>시연 원문(항목 1:5)</td><td>-0.20</td><td>+0.23</td></tr><tr><td>같은 항목을 문장으로(1:5)</td><td>-0.75</td><td>-0.63</td></tr></table>
+<div class="wrap"><table><tr><th>글</th><th>외부 LLM (gpt-6-luna)</th><th>사내 LLM 대리 (GLM 5.3·Z.ai)</th><th>Jev</th></tr><tr><td>명백한 부정</td><td>-0.90</td><td>-0.95</td><td>-1.00</td></tr><tr><td>명백한 긍정</td><td>+0.90</td><td>+0.95</td><td>+1.00</td></tr><tr><td>시연 원문(항목 1:5)</td><td>-0.20</td><td>+0.10</td><td>+0.23</td></tr><tr><td>같은 항목을 문장으로(1:5)</td><td>-0.75</td><td>-0.65</td><td>-0.63</td></tr></table></div>
 
 <h2>4. 비용과 소요 시간</h2>
-<table><tr><th>판정기</th><th>총 소요 시간</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰</th><th>비용</th><th>1,000건당</th></tr>
-<tr><th colspan="6">A. 시연 원문 1,372건</th></tr><tr><td>LLM (gpt-6-luna)</td><td>201초 (병렬 16)</td><td>2.24초 / 3.11초</td><td>301,098 / 175,956</td><td>$0.1181</td><td>$0.0861</td></tr><tr><td>Jev</td><td>17초 (병렬 16)</td><td>0.19초 / 0.25초</td><td>715,707 / 0</td><td>$0.0301</td><td>$0.0219</td></tr>
-<tr><th colspan="6">B. 충실한 글 300건</th></tr><tr><td>LLM (gpt-6-luna)</td><td>45초 (병렬 16)</td><td>2.15초 / 2.92초</td><td>61,321 / 38,218</td><td>$0.0252</td><td>$0.0841</td></tr><tr><td>Jev</td><td>4초 (병렬 16)</td><td>0.20초 / 0.26초</td><td>150,236 / 0</td><td>$0.0063</td><td>$0.0210</td></tr></table>
-<p class="muted">비용 = 토큰 × 공식 단가(gpt-6-luna 입력 $0.10·출력 $0.50 / 100만 토큰, Jev 입력 $0.042 / 100만 토큰·출력 무료,
-2026-10 기준). 시간은 병렬 16건 동시 호출 기준이며 서비스는 한 번 판정한 글을 저장해 두 번째부터는 즉시다.
-사내 온프렘 LLM은 토큰 비용 대신 사내 GPU 처리량이 시간을 정한다.</p>
+<div class="wrap"><table><tr><th>판정기</th><th>총 소요 시간</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰</th><th>비용</th><th>1,000건당</th></tr>
+<tr><th colspan="6">A. 시연 원문 (판정기별 실제 판정 건수 기준)</th></tr><tr><td>외부 LLM (gpt-6-luna) <span class='muted'>(1,372건)</span></td><td>201초 (병렬 16)</td><td>2.24초 / 3.11초</td><td>301,098 / 175,956</td><td>$0.1181</td><td>$0.0861</td></tr><tr><td>사내 LLM 대리 (GLM 5.3·Z.ai) <span class='muted'>(480건)</span></td><td>– (부분 결과·이어 실행 합이라 비교 불가)</td><td>10.01초 / 21.25초</td><td>168,081 / 378,164 (추론 315,441)</td><td>$1.8298</td><td>$3.8120</td></tr><tr><td>Jev <span class='muted'>(1,372건)</span></td><td>17초 (병렬 16)</td><td>0.19초 / 0.25초</td><td>715,707 / 0</td><td>$0.0301</td><td>$0.0219</td></tr>
+<tr><th colspan="6">B. 충실한 글 300건</th></tr><tr><td>외부 LLM (gpt-6-luna) <span class='muted'>(300건)</span></td><td>45초 (병렬 16)</td><td>2.15초 / 2.92초</td><td>61,321 / 38,218</td><td>$0.0252</td><td>$0.0841</td></tr><tr><td>사내 LLM 대리 (GLM 5.3·Z.ai) <span class='muted'>(300건)</span></td><td>265초 (병렬 16)</td><td>10.52초 / 25.87초</td><td>98,196 / 257,142 (추론 217,452)</td><td>$1.2297</td><td>$4.0991</td></tr><tr><td>Jev <span class='muted'>(300건)</span></td><td>4초 (병렬 16)</td><td>0.20초 / 0.26초</td><td>150,236 / 0</td><td>$0.0063</td><td>$0.0210</td></tr></table></div>
+<p class="muted">비용 = 토큰 × 공식 단가(2026-10). gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시된 입력 $0.26·출력 $4.40
+(추론 토큰은 출력에 포함), Jev 입력 $0.042·출력 무료 / 100만 토큰. <b>사내 온프렘 GLM 5.3은 토큰 비용이 아니라 사내 GPU 처리량이
+시간과 비용을 정한다</b> — 여기의 GLM 시간·비용은 Z.ai 공식 서비스 기준 참고값이다. 서비스는 한 번 판정한 글을 저장해 두 번째부터는 즉시다.</p>
 <div class="box"><b>서비스 경로 실측(2026-10-06, <code>api/review_judge.py</code>, 시연 묶음 demo/org-n100, 리뷰 1,372건) — 수동 실측(스크래치 스크립트로 build_active를 실제 OpenAI에 대해 실행, 판정값은 기록하지 않음)</b><ul><li>병렬 32(초기 설정): OpenAI 요청 한도(HTTP 429)에 걸려 84.9초 만에 실패 → 항목 점수로 대체(설계대로 동작). 받은 판정만 캐시에 남았다.</li><li>그래서 기본 병렬을 16으로 내리고, 429는 서버가 알려 준 시간(retry-after-ms·Retry-After, 최대 20초)만큼 기다려 최대 6번 다시 보내게 고쳤다.</li><li>병렬 16(고친 뒤): 첫 판정 195.8초, 모든 리뷰 LLM 판정 성공. 저장된 판정으로 다시 만들 때 0.1초. 비용은 시험 A와 같은 규모(약 $0.12, 토큰은 따로 재지 않음).</li><li>시연 묶음으로 서버를 처음 켜면 이 판정 때문에 기동이 약 3분 늦어진다. 판정은 데이터 폴더에 저장되어 다음 기동부터는 즉시다.</li></ul></div>
 
 <h2>5. 해석</h2>
 <ul>
-<li><b>순위는 둘 다 잘 맞힌다</b>(B에서 상관 0.94 안팎). 차이는 <b>부정 검출</b>이다. LLM은 실제 부정 리뷰의
-92%를 부정으로 읽었고, Jev는 17%였다.
-Jev는 "조금 아쉬웠습니다"처럼 부드럽게 쓴 지적을 긍정으로 읽는다(명백한 부정 문장은 −1로 잘 잡는다).
-아쉬운 점을 부드럽게 쓰는 조직일수록 이 차이가 크다.</li>
-<li><b>A에서는 두 판정기 모두 긍정으로 쏠렸다.</b> 판정기 문제가 아니라 시연 생성기의 글이 항목보다 부드럽기 때문이다
+<li><b>순위는 셋 다 잘 맞힌다</b>(B 상관: 외부 +0.94, 사내 +0.94, Jev +0.94). 차이는 <b>부정 검출</b>이다:
+외부 LLM 92%, 사내 GLM 84%, Jev 17%.
+Jev는 "조금 아쉬웠습니다"처럼 부드럽게 쓴 지적을 긍정으로 읽는다.</li>
+<li><b>외부 AI 대 사내 AI</b>: 부호 일치 84% 대 82%, 평균 절대 차이 0.20 대 0.20,
+건당 지연 중앙값 2.1초 대 10.5초(GLM은 추론 max라 답 전에 생각 토큰을 쓴다).
+<br><b>두 LLM의 차이는 이 표본에서 통계적으로 확정되지 않는다</b>: 실제 부정 리뷰 83건 중 한쪽만 맞힌 건이 외부 7건·사내 1건(McNemar 정확검정 p≈0.07), 부정 검출 95% 구간 외부 84~96%·사내 75~91%가 겹친다. 부호 일치도 한쪽만 맞힌 건 10건 대 5건(p≈0.30). Jev와의 차이는 뚜렷하다.</li>
+<li><b>A에서는 모든 판정기가 긍정으로 쏠렸다.</b> 판정기 문제가 아니라 시연 생성기의 글이 항목보다 부드럽기 때문이다
 (아쉬운 점을 한 줄로 몰아 쓰고, 모든 리뷰가 칭찬 문장으로 시작). 생성기 수정은 데이터 담당(claude-a)에 요청했다.</li>
-<li><b>Jev는 약 12배 빠르고 더 싸다.</b> 하지만 판정은 데이터를 올릴 때 한 번이고
-결과를 저장하므로, 시간보다 부정 검출이 중요하다고 판단했다.</li>
-<li>두 판정기 모두 중립 리뷰를 약간 긍정으로 읽는 경향이 있다(B 중립 구간 평균이 +0.3 안팎).</li>
 </ul>
 
 <h2>6. 한계</h2>
 <div class="box warn"><ul>
-<li><b>결정 근거(부정 검출 92% 대 17%)는 B(생성기 문장으로 다시 쓴 글)의 결과다.</b> 서비스가 지금 실제로 판정할
-시연 원문(A)에서는 두 판정기 모두 부정을 거의 못 잡았다(부정 검출 LLM 5%·
-Jev 0%, 부호 일치 58%·
-57%). 그래서 이번 전환은 지금 시연 데이터의 리뷰 점수를 크게 긍정 쪽으로 옮긴다
-(평균 판정값 +0.58 대 항목 균형 +0.16). 이것이 배치 결과에 주는 영향은
-재지 않았다 — 시연 생성기 글이 고쳐지면(claude-a 요청) A를 다시 재야 한다.</li>
+<li><b>결정 근거(부정 검출)는 B(생성기 문장으로 다시 쓴 글)의 결과다.</b> 시연 원문(A)에서는 모든 판정기가 부정을 거의 못 잡았다
+(외부 3% · 사내 4% · Jev 0%).
+그래서 LLM 판정은 지금 시연 데이터의 리뷰 점수를 긍정 쪽으로 옮긴다(평균 외부 +0.59 · 사내 +0.58
+대 항목 균형 +0.15). 배치 결과에 주는 영향은 재지 않았다.</li>
 <li>정답은 "항목 균형"이다. 이것은 글을 만든 의도이지 실제 협업 성과가 아니다(NOT_CALIBRATED).</li>
 <li>B의 글은 생성기의 문장 은행으로 만들었다. 실제 사람의 글(직설적인 평가 포함)과는 표현 폭이 다르다.</li>
-<li>LLM 결과는 OpenAI gpt-6-luna 기준이다. 사내 온프렘 모델은 같은 시험으로 다시 재야 한다 —
-<code>E4_TAG=onprem TEAMWEAVER_REVIEW_BASE_URL=… TEAMWEAVER_REVIEW_MODEL=…</code>로 돌리면 기존 기록을 재사용하지 않고 새로 잰다.</li>
+<li><b>사내 GLM 5.3 결과는 Z.ai 공식 API로 잰 대리값이다.</b> 같은 공개 가중치지만 사내 서빙(BF16/FP8, vLLM 버전, 추론 설정)이
+다르면 결과·속도가 달라질 수 있다. 사내 엔드포인트에서 <code>E4_TAG=onprem TEAMWEAVER_REVIEW_BASE_URL=… TEAMWEAVER_REVIEW_MODEL=…</code>로
+다시 재면 실제 값이 나온다.</li>
 <li>이전 실험 E2(가상 fixture 266건, <code>outputs/jev-experiment.html</code>)에서도 같은 방향(LLM 부호 일치 74% 대 Jev 61%)이었다.</li>
 </ul></div>
 </main></body></html>

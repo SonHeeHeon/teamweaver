@@ -15,7 +15,6 @@ from fastapi.staticfiles import StaticFiles
 from api.admin import warn_if_unprotected
 from api.cache import ResultCache
 from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
-from api.demo_presets import build_demo_active
 from api.routes.datasets import validate_and_build
 from api.plan_edits import PlanEditStore
 from api.storage import data_dir
@@ -24,7 +23,7 @@ from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
 from core.optimize.alternatives import cacheable, generate_plans
 from core.scoring.engine import ScoringEngine
-from api.routes import admin, datasets, meta, optimize, plans, report, settings, whatif
+from api.routes import admin, datasets, meta, operating, optimize, plans, report, settings, whatif
 
 
 log = logging.getLogger(__name__)
@@ -43,17 +42,28 @@ async def lifespan(app: FastAPI):
     app.state.settings_store = settings_store
 
     # 활성 데이터셋(K9): graph·SQLite(메모리)·식별 정보를 한 객체로 두고 업로드 때 통째로 바꾼다.
-    def build_fixture_dataset(bundle_path: Path | None = None) -> ActiveDataset:
+    def build_demo_dataset(root: Path) -> ActiveDataset:
+        """시연 묶음 하나로 만든다. 실패하면 예외(대체하지 않는다) -- 데이터 탭의 시연 데이터 고르기가 먼저 확인한다.
+        폴더·zip 모두(200·300명 묶음은 zip, 2026-10-07 claude-a) -- 미리 계산(rehearsal/precompute_demo)과 같은 빌더."""
+        from api.demos import build_demo
+        return build_demo(root)
+
+    app.state.build_demo_dataset = build_demo_dataset
+
+    def build_fixture_dataset() -> ActiveDataset:
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
-        # bundle_path: 시연 묶음 목록에서 고른 묶음(폴더·zip, api/demo_presets) -- "다시 판정"이 지금 묶음을 다시 만들 때.
-        bundle_dir = str(bundle_path) if bundle_path else os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
+        # 데이터 탭에서 고른 시연 묶음(api.demos)이 있으면 그것이 먼저다.
+        from api.demos import demo_root, load_choice
+        chosen = load_choice(data_dir())
+        chosen_root = demo_root(chosen) if chosen else None
+        bundle_dir = str(chosen_root) if chosen_root else os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
         app.state.demo_bundle_error = None
         if bundle_dir:
             root = Path(bundle_dir).expanduser()
             try:
-                return build_demo_active(root)
+                return build_demo_dataset(root)
             except Exception as exc:                    # noqa: BLE001
                 log.error("시연 데이터 묶음(%s)을 읽지 못해 기본 데이터로 시작한다: %s", root, exc)
                 app.state.demo_bundle_error = f"시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: {exc}"
@@ -63,7 +73,6 @@ async def lifespan(app: FastAPI):
                             source="fixture", synthetic=True, judge=False)
 
     app.state.build_fixture_dataset = build_fixture_dataset
-    app.state.demo_active_path = None           # 시연 묶음 목록에서 고른 묶음(None = 기본 묶음, api/demo_presets)
     # 없앤 Jev 판정(2026-10-06 하루)의 캐시가 남아 있으면 지운다(글 해시·판정값).
     from api.review_judge import clear_cache
     clear_cache(data_dir() / "jev_judgments.json")
@@ -102,8 +111,9 @@ async def lifespan(app: FastAPI):
     app.state.cache = cache
     # 시연 묶음이면 같은 데이터·같은 설정으로 미리 계산한 결과를 검증해 캐시에 넣는다(시연 확장 E, api/demo_precomputed).
     from api.demo_precomputed import install, prepare_for
-    from api.demo_presets import default_bundle_path
-    install(app, prepare_for(app, app.state.dataset, default_bundle_path()))
+    from api.demos import current_demo_root
+    app.state.demo_active_root = (current_demo_root() if app.state.dataset.info.source == "demo-bundle" else None)
+    install(app, prepare_for(app, app.state.dataset, app.state.demo_active_root))
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = settings_store
@@ -119,7 +129,12 @@ async def lifespan(app: FastAPI):
     # TestClient(app)를 만들 때마다 이 비용을 내지 않도록 환경변수로 끌 수 있게
     # 한다 -- tests/api/conftest.py의 `_skip_warm` autouse 픽스처가 기본으로
     # 이 값을 "1"로 세팅하고, Task 5의 slow-marked 테스트만 명시적으로 해제한다.
-    if os.environ.get("TEAMWEAVER_SKIP_WARM") != "1" and not warm_ok:
+    # 같은 키의 미리 계산 결과가 이미 검증돼 들어가 있으면 사전계산을 하지 않는다(시연 묶음, 리뷰 SHOULD -- 200·300명은
+    # 사전계산이 부팅을 수 분 막는다).
+    warm_key = ResultCache.key({}, warm_params, 3, app.state.dataset.info.version)
+    if warm_key in (getattr(app.state, "precomputed_keys", None) or {}):
+        log.info("미리 계산 결과가 있어 부팅 사전계산을 생략한다")
+    elif os.environ.get("TEAMWEAVER_SKIP_WARM") != "1" and not warm_ok:
         log.warning("배치 설정(time_limit=%ss, gap=%s)이 사전계산 한도(%ss 이하, gap %s 이상)"
                     "를 벗어나 부팅 사전계산을 생략한다", warm_params.time_limit, warm_params.gap,
                     WARM_TIME_LIMIT_MAX, WARM_GAP_MIN)
@@ -135,7 +150,6 @@ async def lifespan(app: FastAPI):
             log.warning("부팅 사전계산 실패 -- 캐시 없이 시작한다", exc_info=True)
         else:
             if cacheable(warm_outcome):
-                warm_key = ResultCache.key({}, warm_params, 3, app.state.dataset.info.version)
                 cache.put(warm_key, default_plans)
                 from api.demo_precomputed import forget
                 forget(app, warm_key)                   # 실시간으로 다시 푼 결과다 -- "미리 계산"으로 보이지 않게
@@ -170,6 +184,7 @@ app.include_router(settings.router)
 app.include_router(datasets.router)
 app.include_router(admin.router)
 app.include_router(plans.router)
+app.include_router(operating.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

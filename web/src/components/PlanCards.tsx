@@ -1,4 +1,5 @@
 import type { PlanEvent } from "../api/types";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 
 interface Props {
   plans: PlanEvent[];
@@ -43,7 +44,14 @@ export function PlanCards({ plans, selected, onSelect }: Props) {
               <dd className="tabular-nums">{p.entries.length}건</dd>
             </div>
           </dl>
-          {p.time_limited && (
+          {p.termination !== undefined && (
+            <div className="mt-2">
+              <ConfidenceBadge termination={p.termination} timeLimited={p.time_limited} objective={p.objective}
+                               bestBound={p.best_bound} gapAllowed={p.gap_allowed}
+                               within={p.label !== "A" ? "다양성 조건" : undefined} />
+            </div>
+          )}
+          {p.time_limited && p.termination === undefined && (
             <p className="mt-2 text-xs text-amber-600" title="계산 시간 한도에 걸려 멈춘 답이다. 더 좋은 답이 있을 수 있다.">
               시간 한도 도달(최선 증명 전)
             </p>

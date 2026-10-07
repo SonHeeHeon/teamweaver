@@ -30,10 +30,11 @@ def _commit() -> str:
         return "unknown"
 
 
-def run(preset) -> dict:
+def run(preset: dict, root: Path) -> dict:
+    """preset: api.demos.list_demos()의 한 항목, root: 그 묶음(폴더·zip)."""
     from api.demo_precomputed import FORMAT
     from core.evaluate.plan_eval import evaluate_plan
-    from api.demo_presets import build_demo_active
+    from api.demos import build_demo
     from api.settings import SettingsStore, default_settings_path
     from core.evaluate.operating import compare_move_budgets
     from core.optimize.alternatives import generate_plans_streaming
@@ -41,12 +42,12 @@ def run(preset) -> dict:
     from core.scoring.engine import ScoringEngine
 
     t0 = time.perf_counter()
-    active = build_demo_active(preset.path)
+    active = build_demo(root)
     graph = active.graph
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
     params = SettingsStore(default_settings_path()).current().settings.to_milp_params(n_people=len(graph.people))
-    out = {"format": FORMAT, "preset": preset.id, "dataset_id": active.info.dataset_id,
+    out = {"format": FORMAT, "preset": preset["name"], "dataset_id": active.info.dataset_id,
            "dataset_version": active.info.version, "review_judge": active.info.review_judge,
            "computed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "commit": _commit(),
            "solver_seeds": effective_seeds(params), "build_s": round(time.perf_counter() - t0, 2)}
@@ -57,17 +58,17 @@ def run(preset) -> dict:
         plans.append({**plan.model_dump(), "eval_objective": ev.objective.total,
                       "eval_violations": [v.code for v in ev.violations],
                       "elapsed_s": round(time.perf_counter() - t, 2)})
-        print(f"  {preset.id} 안 {plan.label}: {plans[-1]['elapsed_s']}초 · 목적 {plan.objective:.2f} · "
+        print(f"  {preset['name']} 안 {plan.label}: {plans[-1]['elapsed_s']}초 · 목적 {plan.objective:.2f} · "
               f"미충원 항목 {len(plan.unfilled)} · 시간 한도 {plan.time_limited}", flush=True)
     out["optimize"] = {"weights": {}, "n_alternatives": 3, "milp_params": params.model_dump(),
                        "elapsed_s": round(time.perf_counter() - t, 2), "stop_reason": outcome.get("stop_reason"),
                        "plans": plans}
-    if preset.manifest.get("scenario") == "operating":
+    if preset["scenario"] == "operating":
         t = time.perf_counter()
         rows = compare_move_budgets(graph, S, C, params, active.current, ks=(0, 1, 2, 3))
         out["operating"] = {"ks": [0, 1, 2, 3], "milp_params": params.model_dump(),
                             "elapsed_s": round(time.perf_counter() - t, 2), "rows": rows}
-        print(f"  {preset.id} 운영 중 비교: {out['operating']['elapsed_s']}초 · "
+        print(f"  {preset['name']} 운영 중 비교: {out['operating']['elapsed_s']}초 · "
               + ", ".join(f"K={r['k']} 품질 {r.get('quality')} 빈자리 {r.get('unfilled_seats')}" for r in rows), flush=True)
     else:
         out["operating"] = None
@@ -82,13 +83,14 @@ def main() -> None:
     args = ap.parse_args()
     load_env()
     os.environ.setdefault("TEAMWEAVER_DEMO_DIR", str(DEMO))
-    from api.demo_presets import list_presets
-    presets = [p for p in list_presets() if not args.only or p.id in args.only]
+    from api.demos import demo_root, list_demos
+    presets = [p for p in list_demos() if not args.only or p["name"] in args.only]
     from api.demo_precomputed import precomputed_path
     for preset in presets:
-        print(f"{preset.id} ...", flush=True)
-        data = run(preset)
-        path = precomputed_path(preset.path)            # 서버가 찾는 곳(묶음 폴더 옆 precomputed/)
+        print(f"{preset['name']} ...", flush=True)
+        root = demo_root(preset["name"])
+        data = run(preset, root)
+        path = precomputed_path(root)                   # 서버가 찾는 곳(묶음 폴더 옆 precomputed/)
         path.parent.mkdir(exist_ok=True)
         path.write_text(json.dumps(data, ensure_ascii=False, indent=1), "utf-8")
         print(f"written {path}", flush=True)

@@ -35,6 +35,11 @@ class PlanAssignment(BaseModel):
     violations: list[str]
     # 솔버가 시간 한도에서 멈춘 해(최선임을 증명하기 전)인지. 화면이 "시간 한도 도달" 배지를 단다(claude-a 요청).
     time_limited: bool = False
+    # 계산 신뢰도 배지(claude-a 요청 2026-10-06): 솔버 종료 사유와 HiGHS가 증명한 상한(최대화 목적의 상한).
+    # 화면이 "허용 차이 안에서 최선 증명" 또는 "증명된 상한 대비 최대 X% 아래일 수 있음"을 보인다.
+    termination: str | None = None
+    best_bound: float | None = None
+    gap_used: float | None = None       # 이 플랜을 푼 실제 허용 차이(Plan A는 min(설정, 1%), 대안은 설정값)
     label: str = "A"
 
     def pairs(self) -> set[tuple[str, str]]:

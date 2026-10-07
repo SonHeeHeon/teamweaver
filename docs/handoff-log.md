@@ -22,12 +22,18 @@
 
 ---
 
-## 2026-10-07 · claude-a · 결정 기록 + main 병합: 감점은 쌍 감점 유지, `feat/claude-a-demo-presets` 병합
-- 브랜치/커밋: `feat/claude-a-demo-presets` → main fast-forward(사용자 승인 2026-10-07)
-- 한 일: 사용자 결정 — 실험 G 파트너 다양성 하한은 채택하지 않고 지금 쌍 감점(μ=0.2, 최근 3년 중 12개월) 유지, 하한 코드는 꺼진 실험 옵션으로 둔다. 바로 아래 항목의 작업을 main에 병합.
-- 상대 영향: claude-b는 화면(D4·시연 데이터 카드·미리 계산 배지)을 main 기준으로 시작할 수 있다. 테스트 기준선 1343.
-- 검증: 병합 전 전체 1343 passed · Phase 0 PASS.
-- 근거: `docs/demo-notes.md` 7절, `rehearsal/results/partner-compare.html`
+## 2026-10-07 · claude-a · 결정 기록 + main 병합(충돌 해결): 감점은 쌍 감점 유지, 시연 고르기는 claude-b 계약으로 통일
+- 브랜치/커밋: `feat/claude-a-demo-presets` ← main 병합(충돌 해결) → main(사용자 승인 2026-10-07)
+- 한 일:
+  - 사용자 결정 — 실험 G 파트너 다양성 하한은 채택하지 않고 지금 쌍 감점(μ=0.2, 최근 3년 중 12개월) 유지. 하한 코드는 꺼진 실험 옵션.
+  - **시연 데이터 고르기가 두 벌 구현돼 있었다**(claude-a `api/demo_presets.py` vs claude-b `api/demos.py`, 같은 경로·다른 계약). 사용자 결정 "claude-b 기준"으로
+    claude-a 쪽 목록·전환을 지우고, claude-b 모듈 위에 claude-a 기능을 얹었다: zip 묶음(200·300명), `-broken` 제외, 목록 칸 `title·description·current·bench·proposals`(기존 칸 유지),
+    공용 빌더 `api.demos.build_demo`, 미리 계산 연결(고르기·되돌리기·다시 판정·부팅), `/api/datasets/active`의 `demo_name`·`precomputed`.
+    원인은 claude-a의 조율 누락(서버 쪽을 맡으며 "진행 중"에 적지 않음).
+  - claude-b 요청 처리: `compare_move_budgets(on_row=)`(K마다 carry 반영 행).
+- 상대 영향(claude-b): 웹은 그대로 동작한다(칸 추가만). `title·description`을 시연 데이터 카드에 쓸 수 있다. 미리 계산 배지(`precomputed_at`)·다시 계산(`fresh`)·운영 중 비교 미리 계산 연결은 요청 문서 끝 절.
+- 검증: 병합 후 전체 시험·웹 시험(아래 리포트), Phase 0.
+- 근거: `docs/demo-notes.md` 7절, `rehearsal/results/partner-compare.html`, `.omc/reports/2026-10-07-merge-demo-picker.md`(claude-a 로컬)
 
 ## 2026-10-07 · claude-a · 시연 데이터 두 장면 전환·미리 계산(E)·시연 대본·구조도(F)·감점 재설계 측정(G)
 - 브랜치/커밋: `feat/claude-a-demo-presets` `479b3b3..` (push, main 병합은 사용자 승인 후)
@@ -42,6 +48,56 @@
   - 테스트 기준선 **1343 passed, 19 deselected**.
 - 검증: `uv run --group benchmark pytest -q` → 1343 passed · Phase 0 PASS · 실제 서버로 6개 묶음 전환 시 미리 계산 모두 수용(skipped 없음) · Opus 대체 리뷰 2건 각 MUST 1 수정 후 재확인 MUST 0.
 - 근거: `rehearsal/results/partner-compare.html`, `demo/precomputed/*.json`, `.omc/reports/2026-10-07-demo-both-and-remaining.md`(claude-a 로컬)
+
+## 2026-10-07 · claude-b · 판정기 비교 E4에 사내 LLM 대리(GLM 5.3) 추가 + 서비스 추론 강도 설정
+- 브랜치/커밋: `feat/claude-b-e4-glm` (main 병합)
+- 한 일:
+  - 사용자 지시("LLM 쓰는 모든 곳은 외부 AI와 사내 GLM 5.3을 항상 함께 비교"): E4를 3자 비교로 확장했다. 외부 gpt-6-luna / 사내 대리 GLM 5.3(Z.ai 공식 API, 추론 max, 가상 데이터만) / Jev.
+  - 실험 장치
+    - 한 건마다 중간 기록을 남기고, 기본은 부분 결과를 그대로 쓴다. 이어서 판정하려면 `E4_RESUME=1`.
+    - 잔액 부족·키 거절은 구조로 판별해 바로 멈춘다.
+    - 판정한 글의 지문(fingerprint)을 남겨, 데이터가 바뀌면 섞지 않고 멈춘다.
+    - McNemar·Wilson 통계를 낸다.
+  - 서비스 `TEAMWEAVER_REVIEW_REASONING_EFFORT`: 설정하면 reasoning_effort를 보낸다. 설정하지 않으면 캐시 키·데이터 버전은 예전 그대로다. 설정 시 한도·요청 시간을 늘린다.
+  - 결과(충실한 글 300건)
+    - 부정 검출: 외부 92% · 사내 GLM 84% · Jev 17%. 두 LLM의 차이는 확정되지 않는다(McNemar p≈0.07).
+    - 1,000건당 비용: $0.08 · $4.10 · $0.02. 건당 지연: 2.2초 · 10.5초 · 0.2초.
+    - 시연 원문은 GLM 480/1,372건에서 잔액이 소진돼 부분 결과다.
+- 상대 영향:
+  - **main에는 claude-a의 시연 데이터 문구 변경(9087ffa, `demo/org-n100/reviews.csv`)이 이미 들어와 있다.** 그래서 E4 보고서를 다시 만들면 지문 불일치로 멈춘다(의도한 동작이다). 지금 보고서와 기록은 9087ffa 이전 시연 데이터(이 브랜치 기준 b8e41e2) 기준이다. 새 데이터로 보려면 E4를 다시 재야 한다(GLM은 비용이 든다).
+  - Z.ai 키는 `.env`의 `ZAI_API_KEY`다(외부, 가상 데이터만 보낸다).
+- 검증: `uv run --group benchmark pytest -q` → 1305 passed, 19 deselected(병합 전). Opus 폴백 리뷰 2라운드(1차 MUST 1·SHOULD 8, 2차 MUST 0·SHOULD 2), 모두 반영.
+- 근거: `outputs/review-judge-comparison.html`, `experiments/jev/results/e4_*.json`, `.omc/reports/2026-10-07-e4-glm.md`
+
+---
+## 2026-10-06 · claude-b · 운영 중 편성·사업 보강 API와 화면 + 단순 규칙 대비 카드 + 계산 신뢰도 배지 + 시연 데이터 고르기
+- 브랜치/커밋: `feat/claude-b-operating-ui` (기준 claude-a `feat/claude-a-operating-staffing`. main 미병합 — claude-a 브랜치와 함께 사용자 승인 후)
+- 한 일(claude-a 요청 `docs/requests/2026-10-06-operating-staffing-ui.md`):
+  - API `api/routes/operating.py`
+    - `GET /api/operating/state`, `POST /api/operating/compare`(SSE: start→progress→row→done).
+    - `POST /api/staffing/{candidates,simulate,best}`, `POST /api/baseline`.
+    - 비교는 서버 전체에서 한 번에 하나다(바쁘면 429). 슬롯은 계산 스레드가 끝날 때 풀린다.
+    - 운영 경로 time_limit은 600초 이하, K는 0~3, 입력 길이에 상한을 둔다.
+  - 데이터: `ActiveDataset.current·scenario`(manifest의 scenario·bench·proposals).
+    - `GET /api/datasets/demos`, `POST /api/datasets/demo`(관리자, 허용 목록만, 먼저 빌드하고 실패하면 422로 아무것도 바꾸지 않음, 성공하면 선택을 기억하고 업로드 보관본을 지움).
+    - 되돌리기는 선택을 잊는다.
+  - 신뢰도: `PlanAssignment.termination·best_bound·gap_used`(Codex 영역 임시 위임 범위). 플랜 카드·K 행·최선 n명에 배지(독립 검증 통과, 허용 차이 안 최선 증명, 시간 한도 시 "최적값이 이 해보다 최대 X% 높을 수 있음").
+  - 웹
+    - "운영 중 편성" 탭: K별 비교(빈자리와 배치 품질 분리, 이동 그림, 사업별 변화), 보강(후보표, 넣어 보기/빼 보기, 재평가, 최선 n명, 등급 선택).
+    - What-if 화면: "단순 규칙 대비" 카드.
+    - 데이터 탭: 시연 데이터 고르기(2단계 확인).
+- 상대 영향:
+  - (claude-a) K별 실시간 송출을 위해 `compare_move_budgets(on_row=)`를 요청했다(work-split).
+  - 단순 규칙 대비 카드는 운영 화면에 두지 않았다. 시연 데이터 실측에서 K=0 품질 69.2 대 백지 단순 규칙 76.3으로, 같은 조건 비교가 아니었다.
+  - `core/optimize/types.py`·`alternatives._solve` 칸을 추가했다(기본값이 있어 호환된다).
+- 실측(`demo/org-n100-operating`, 100명):
+  - compare 35초. K=0..3이 0.5/1.1/9/25초이고, 빈자리 2→1→0→0, 품질 69.19→69.90→69.68→70.39, 모두 최적 증명.
+  - candidates 0.5초(빼 오기 1.9초), best 0.3~0.7초.
+- 검증: `uv run --group benchmark pytest -q` → 1341 passed, 19 deselected. `-m slow` → 19 passed. 웹 165 passed. tsc·oxlint(0)·build 통과. Opus 적대적 리뷰 2라운드(1차 MUST 3·SHOULD 8, 2차 MUST 1·SHOULD 2), 모두 반영.
+- 미결: simulate의 AI 설명 재사용, 운영 결과를 기준 배치로 이어 쓰기, PDF에 운영 결과 넣기.
+- 근거: `.omc/reports/2026-10-06-operating-staffing-ui.md`
+
+---
 
 ## 2026-10-06 · claude-a · 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 시뮬레이터·단순 규칙 대비·시연 장면 D
 - 브랜치/커밋: `feat/claude-a-operating-staffing` `9087ffa..5b5693c` (push, main 병합은 사용자 승인 후. 기준 = `feat/claude-a-familiarity-literature`)
