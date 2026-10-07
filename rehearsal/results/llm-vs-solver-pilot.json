@@ -1,0 +1,139 @@
+{
+ "env": {
+  "commit": "8c6bc7c",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-07T12:37:30+00:00"
+ },
+ "started_at": "2026-10-07T12:37:30+00:00",
+ "cost_cap_usd": 10.0,
+ "models": {
+  "luna": {
+   "label": "외부 gpt-6-luna(추론 high)",
+   "model": "gpt-6-luna",
+   "effort": "high",
+   "price": {
+    "input": 0.1,
+    "output": 0.5
+   }
+  },
+  "glm": {
+   "label": "사내 대리 GLM 5.3(추론 max)",
+   "model": "glm-5.3",
+   "effort": "max",
+   "price": {
+    "input": 1.4,
+    "output": 4.4,
+    "cached": 0.26
+   }
+  },
+  "gpt55": {
+   "label": "외부 상위 gpt-5.5(추론 high)",
+   "model": "gpt-5.5",
+   "effort": "high",
+   "price": {
+    "input": 5.0,
+    "output": 30.0
+   }
+  }
+ },
+ "problems": [
+  {
+   "name": "demo-100x20",
+   "people": 100,
+   "projects": 20,
+   "baselines": {
+    "milp": {
+     "objective": 58.1585,
+     "quality": 58.1585,
+     "skill": 38.3814,
+     "synergy": 19.7771,
+     "unfilled_seats": 0,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 118,
+     "seconds": 31.0,
+     "termination": "time_limit_incumbent"
+    },
+    "greedy": {
+     "objective": -68.4028,
+     "quality": 31.5972,
+     "skill": 30.8382,
+     "synergy": 0.959,
+     "unfilled_seats": 1,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 72,
+     "seconds": 0.016
+    }
+   },
+   "llm": [
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": 32.1707,
+       "quality": 32.1707,
+       "skill": 31.1107,
+       "synergy": 1.06,
+       "unfilled_seats": 0,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 73,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 330.1,
+       "in_tokens": 24585,
+       "cached_tokens": 0,
+       "out_tokens": 36181,
+       "reasoning_tokens": 34372,
+       "cost_usd": 0.02055,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.4},{\"person_id\":\"DP0033\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0016\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0086\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0025\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":0.7},{\"person_id\":\"DP0004\",\"project_id\":\"J002\",\"alloc\":1.0},{\"person_id\":\"DP0006\",\"project_id\":\"J002\",\"alloc\":1.0},{\"person_id\":\"DP0012\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0001\",\"project_id\":\"J003\",\"alloc\":0.3},{\"person_id\":\"DP0052\",\"project_id\":\"J003\",\"alloc\":1.0},{\"person_id\":\"DP0065\",\"project_id\":\"J004\",\"alloc\":1.0},{\"person_id\":\"DP0008\",\"project_id\":\"J004\",\"alloc\":1.0},{\"person_id\":\"DP0038\",\"project_id\":\"J005\",\"alloc\":0.7},{\"person_id\":\"DP0032\",\"project_id\":\"J005\",\"alloc\":1.0},{\"person_id\":\"DP0068\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J006\",\"alloc\":0.5},{\"person_id\":\"DP0084\",\"project_id\":\"J007\",\"alloc\":0.7},{\"person_id\":\"DP0005\",\"project_id\":\"J007\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J008\",\"alloc\":0.5},{\"person_id\":\"DP0026\",\"project_id\":\"J008\",\"alloc\":1.0},{\"person_id\":\"DP0030\",\"project_id\":\"J008\",\"alloc\":1.0},{\"person_id\":\"DP0099\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0022\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J009\",\"alloc\":1.0},{\"person_id\":\"DP0072\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0003\",\"project_id\":\"J010\",\"alloc\":0.5},{\"person_id\":\"DP0031\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0057\",\"project_id\":\"J010\",\"alloc\":1.0},{\"person_id\":\"DP0027\",\"project_id\":\"J010\",\"alloc\":0.5},{\"person_id\":\"DP0033\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0046\",\"project_id\":\"J011\",\"alloc\":0.7},{\"person_id\":\"DP0090\",\"project_id\":\"J011\",\"alloc\":0.7},{\"person_id\":\"DP0059\",\"project_id\":\"J012\",\"alloc\":0.7},{\"person_id\":\"DP0029\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0078\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0023\",\"project_id\":\"J012\",\"alloc\":1.0},{\"person_id\":\"DP0084\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0007\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":1.0},{\"person_id\":\"DP0075\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0038\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0051\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0061\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0094\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0020\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0091\",\"project_id\":\"J015\",\"alloc\":1.0},{\"person_id\":\"DP0013\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0054\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.7},{\"person_id\":\"DP0068\",\"project_id\":\"J016\",\"alloc\":0.4},{\"person_id\":\"DP0058\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0036\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0042\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0021\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0069\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0053\",\"project_id\":\"J017\",\"alloc\":1.0},{\"person_id\":\"DP0012\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0068\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0062\",\"project_id\":\"J018\",\"alloc\":1.0},{\"person_id\":\"DP0097\",\"project_id\":\"J018\",\"alloc\":1.0},{\"person_id\":\"DP0099\",\"project_id\":\"J019\",\"alloc\":0.4},{\"person_id\":\"DP0011\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0014\",\"project_id\":\"J019\",\"alloc\":1.0},{\"person_id\":\"DP0077\",\"project_id\":\"J019\",\"alloc\":1.0},{\"person_id\":\"DP0071\",\"project_id\":\"J020\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0079\",\"project_id\":\"J020\",\"alloc\":0.5},{\"person_id\":\"DP0037\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0010\",\"project_id\":\"J020\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": -7300.0,
+       "quality": 0.0,
+       "skill": 0.0,
+       "synergy": 0.0,
+       "unfilled_seats": 73,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 0,
+       "parse_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 883.9,
+       "in_tokens": 27307,
+       "cached_tokens": 64,
+       "out_tokens": 65536,
+       "reasoning_tokens": 65015,
+       "cost_usd": 0.32652,
+       "model": "glm-5.3",
+       "raw": ""
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "spent_usd": 0.3471,
+ "finished_at": "2026-10-07T12:58:15+00:00"
+}

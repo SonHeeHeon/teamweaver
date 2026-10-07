@@ -1,0 +1,1033 @@
+{
+ "env": {
+  "commit": "8c6bc7c",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-07T12:59:05+00:00"
+ },
+ "started_at": "2026-10-07T12:59:05+00:00",
+ "cost_cap_usd": 10.0,
+ "models": {
+  "luna": {
+   "label": "외부 gpt-6-luna(추론 high)",
+   "model": "gpt-6-luna",
+   "effort": "high",
+   "price": {
+    "input": 0.1,
+    "output": 0.5
+   }
+  },
+  "glm": {
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "model": "glm-5.3",
+   "effort": "high",
+   "price": {
+    "input": 1.4,
+    "output": 4.4,
+    "cached": 0.26
+   }
+  },
+  "gpt55": {
+   "label": "외부 상위 gpt-5.5(추론 high)",
+   "model": "gpt-5.5",
+   "effort": "high",
+   "price": {
+    "input": 5.0,
+    "output": 30.0
+   }
+  }
+ },
+ "problems": [
+  {
+   "name": "small-20x4",
+   "people": 20,
+   "projects": 4,
+   "baselines": {
+    "milp": {
+     "objective": -96.0688,
+     "quality": 3.9312,
+     "skill": 3.1892,
+     "synergy": 0.942,
+     "unfilled_seats": 1,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 14,
+     "seconds": 0.3,
+     "termination": "Optimal"
+    },
+    "greedy": {
+     "objective": -97.6412,
+     "quality": 2.3587,
+     "skill": 2.4688,
+     "synergy": 0.09,
+     "unfilled_seats": 1,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 11,
+     "seconds": 0.0
+    }
+   },
+   "llm": [
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": -96.8655,
+       "quality": 3.1345,
+       "skill": 2.9045,
+       "synergy": 0.23,
+       "unfilled_seats": 1,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 13,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 215.2,
+       "in_tokens": 2477,
+       "cached_tokens": 0,
+       "out_tokens": 20120,
+       "reasoning_tokens": 19635,
+       "cost_usd": 0.01031,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.7215384},{\"person_id\":\"p017\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p016\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":0.7},{\"person_id\":\"p008\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p016\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p010\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p002\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p012\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p019\",\"project_id\":\"j03\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -96.4997,
+       "quality": 3.5003,
+       "skill": 3.2483,
+       "synergy": 0.452,
+       "unfilled_seats": 1,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 13,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 222.1,
+       "in_tokens": 2477,
+       "cached_tokens": 2474,
+       "out_tokens": 20503,
+       "reasoning_tokens": 20011,
+       "cost_usd": 0.0105,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.7215384615},{\"person_id\":\"p005\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":0.7},{\"person_id\":\"p016\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p017\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p018\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p010\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p002\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p012\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p019\",\"project_id\":\"j03\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "error": "APIConnectionError: Connection error."
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -1200.0,
+       "quality": 0.0,
+       "skill": 0.0,
+       "synergy": 0.0,
+       "unfilled_seats": 12,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 0,
+       "parse_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 1728.2,
+       "in_tokens": 2742,
+       "cached_tokens": 0,
+       "out_tokens": 65536,
+       "reasoning_tokens": 65487,
+       "cost_usd": 0.2922,
+       "model": "glm-5.3",
+       "raw": ""
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": -96.5574,
+       "quality": 3.4426,
+       "skill": 3.2066,
+       "synergy": 0.636,
+       "unfilled_seats": 1,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 12,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 196.6,
+       "in_tokens": 2390,
+       "cached_tokens": 0,
+       "out_tokens": 18877,
+       "reasoning_tokens": 18432,
+       "cost_usd": 0.00968,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.7215},{\"person_id\":\"p012\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p010\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p018\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p002\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p008\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p016\",\"project_id\":\"j03\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -96.2985,
+       "quality": 3.7015,
+       "skill": 3.2335,
+       "synergy": 0.668,
+       "unfilled_seats": 1,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 14,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 235.6,
+       "in_tokens": 2390,
+       "cached_tokens": 2387,
+       "out_tokens": 23841,
+       "reasoning_tokens": 23297,
+       "cost_usd": 0.01216,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.3753846},{\"person_id\":\"p012\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p016\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p013\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p010\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p018\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p002\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p005\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p016\",\"project_id\":\"j03\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": 4.0103,
+       "quality": 4.0103,
+       "skill": 3.6083,
+       "synergy": 0.402,
+       "unfilled_seats": 0,
+       "violations": 1,
+       "violation_codes": {
+        "availability": 1
+       },
+       "violation_samples": [
+        "availability p004:month4: 1.0 > 0.0"
+       ],
+       "assignments": 15,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 629.4,
+       "in_tokens": 2705,
+       "cached_tokens": 64,
+       "out_tokens": 58193,
+       "reasoning_tokens": 57854,
+       "cost_usd": 0.25976,
+       "model": "glm-5.3",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.375},{\"person_id\":\"p012\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p016\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p013\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p004\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p017\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p018\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p010\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p002\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p005\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p016\",\"project_id\":\"j03\",\"alloc\":0.5}]}"
+      },
+      "repaired": {
+       "objective": 3.7603,
+       "quality": 3.7603,
+       "skill": 3.3583,
+       "synergy": 0.402,
+       "unfilled_seats": 0,
+       "violations": 1,
+       "violation_codes": {
+        "availability": 1
+       },
+       "violation_samples": [
+        "availability p010:month4: 0.8 > 0.5"
+       ],
+       "assignments": 15,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 33.6,
+       "in_tokens": 3102,
+       "cached_tokens": 0,
+       "out_tokens": 3623,
+       "reasoning_tokens": 3328,
+       "cost_usd": 0.02028,
+       "model": "glm-5.3",
+       "raw": "{\"assignments\":[{\"person_id\":\"p015\",\"project_id\":\"j00\",\"alloc\":0.375},{\"person_id\":\"p012\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p016\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p013\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p010\",\"project_id\":\"j01\",\"alloc\":0.3},{\"person_id\":\"p017\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p018\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p000\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p006\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p010\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p002\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p005\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p016\",\"project_id\":\"j03\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -1200.0,
+       "quality": 0.0,
+       "skill": 0.0,
+       "synergy": 0.0,
+       "unfilled_seats": 12,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 0,
+       "parse_error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 708.5,
+       "in_tokens": 2705,
+       "cached_tokens": 64,
+       "out_tokens": 65536,
+       "reasoning_tokens": 65455,
+       "cost_usd": 0.29207,
+       "model": "glm-5.3",
+       "raw": ""
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "medium-50x10",
+   "people": 50,
+   "projects": 10,
+   "baselines": {
+    "milp": {
+     "objective": 17.2395,
+     "quality": 17.2395,
+     "skill": 16.0085,
+     "synergy": 1.4311,
+     "unfilled_seats": 0,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 54,
+     "seconds": 0.9,
+     "termination": "Optimal"
+    },
+    "greedy": {
+     "objective": -287.9037,
+     "quality": 12.0963,
+     "skill": 12.0278,
+     "synergy": 0.2686,
+     "unfilled_seats": 3,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 38,
+     "seconds": 0.001
+    }
+   },
+   "llm": [
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": -88.6037,
+       "quality": 11.3963,
+       "skill": 11.1277,
+       "synergy": 0.4686,
+       "unfilled_seats": 1,
+       "violations": 2,
+       "violation_codes": {
+        "availability": 2
+       },
+       "violation_samples": [
+        "availability p020:month4: 1.0 > 0.5",
+        "availability p020:month5: 1.0 > 0.5"
+       ],
+       "assignments": 40,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 422.9,
+       "in_tokens": 6876,
+       "cached_tokens": 0,
+       "out_tokens": 41828,
+       "reasoning_tokens": 40603,
+       "cost_usd": 0.0216,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p027\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p001\",\"project_id\":\"j00\",\"alloc\":0.4},{\"person_id\":\"p009\",\"project_id\":\"j00\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j01\",\"alloc\":0.73875},{\"person_id\":\"p014\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p002\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p014\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p029\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p012\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p021\",\"project_id\":\"j04\",\"alloc\":1.0},{\"person_id\":\"p020\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p040\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p048\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p003\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p001\",\"project_id\":\"j05\",\"alloc\":0.3},{\"person_id\":\"p017\",\"project_id\":\"j05\",\"alloc\":0.3},{\"person_id\":\"p042\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p013\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p020\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p047\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p043\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p015\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p030\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p045\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p025\",\"project_id\":\"j08\",\"alloc\":1.0},{\"person_id\":\"p028\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p031\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p001\",\"project_id\":\"j08\",\"alloc\":0.3},{\"person_id\":\"p017\",\"project_id\":\"j08\",\"alloc\":0.3},{\"person_id\":\"p006\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p008\",\"project_id\":\"j09\",\"alloc\":1.0},{\"person_id\":\"p007\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p009\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p037\",\"project_id\":\"j09\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -189.0432,
+       "quality": 10.9568,
+       "skill": 10.5183,
+       "synergy": 0.4386,
+       "unfilled_seats": 2,
+       "violations": 2,
+       "violation_codes": {
+        "availability": 2
+       },
+       "violation_samples": [
+        "availability p011:month4: 0.7 > 0.5",
+        "availability p027:month0: 1.0 > 0.5"
+       ],
+       "assignments": 39,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 356.8,
+       "in_tokens": 6876,
+       "cached_tokens": 6873,
+       "out_tokens": 34748,
+       "reasoning_tokens": 33635,
+       "cost_usd": 0.01806,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p008\",\"project_id\":\"j00\",\"alloc\":0.7},{\"person_id\":\"p047\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p003\",\"project_id\":\"j00\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j01\",\"alloc\":0.73875},{\"person_id\":\"p027\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p047\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":0.3},{\"person_id\":\"p027\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p049\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p021\",\"project_id\":\"j03\",\"alloc\":0.3},{\"person_id\":\"p032\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p021\",\"project_id\":\"j04\",\"alloc\":0.4},{\"person_id\":\"p009\",\"project_id\":\"j04\",\"alloc\":0.3},{\"person_id\":\"p049\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p009\",\"project_id\":\"j05\",\"alloc\":0.4},{\"person_id\":\"p001\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p042\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p011\",\"project_id\":\"j06\",\"alloc\":0.7},{\"person_id\":\"p008\",\"project_id\":\"j06\",\"alloc\":0.3},{\"person_id\":\"p009\",\"project_id\":\"j06\",\"alloc\":0.3},{\"person_id\":\"p020\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p043\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p021\",\"project_id\":\"j07\",\"alloc\":0.3},{\"person_id\":\"p045\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p029\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p025\",\"project_id\":\"j08\",\"alloc\":0.7},{\"person_id\":\"p028\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p003\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p040\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j08\",\"alloc\":0.7},{\"person_id\":\"p015\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p012\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p007\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p046\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j09\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": 11.9552,
+       "quality": 11.9552,
+       "skill": 11.8895,
+       "synergy": 0.4657,
+       "unfilled_seats": 0,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 41,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 290.4,
+       "in_tokens": 7892,
+       "cached_tokens": 0,
+       "out_tokens": 29613,
+       "reasoning_tokens": 28523,
+       "cost_usd": 0.0156,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p027\",\"project_id\":\"j00\",\"alloc\":0.3},{\"person_id\":\"p009\",\"project_id\":\"j00\",\"alloc\":0.7},{\"person_id\":\"p029\",\"project_id\":\"j00\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j01\",\"alloc\":0.7387},{\"person_id\":\"p014\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p047\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p038\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p013\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p049\",\"project_id\":\"j02\",\"alloc\":0.7},{\"person_id\":\"p043\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p021\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j03\",\"alloc\":0.7},{\"person_id\":\"p027\",\"project_id\":\"j04\",\"alloc\":0.7},{\"person_id\":\"p047\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p040\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p048\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p009\",\"project_id\":\"j05\",\"alloc\":0.3},{\"person_id\":\"p032\",\"project_id\":\"j05\",\"alloc\":0.3},{\"person_id\":\"p000\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j05\",\"alloc\":0.3},{\"person_id\":\"p011\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p008\",\"project_id\":\"j06\",\"alloc\":1.0},{\"person_id\":\"p030\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p031\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j06\",\"alloc\":0.4},{\"person_id\":\"p043\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p015\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p020\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p029\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j07\",\"alloc\":0.3},{\"person_id\":\"p025\",\"project_id\":\"j08\",\"alloc\":1.0},{\"person_id\":\"p028\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p003\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p046\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j08\",\"alloc\":1.0},{\"person_id\":\"p012\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p006\",\"project_id\":\"j09\",\"alloc\":0.3},{\"person_id\":\"p049\",\"project_id\":\"j09\",\"alloc\":0.3},{\"person_id\":\"p045\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p037\",\"project_id\":\"j09\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": 12.2898,
+       "quality": 12.2898,
+       "skill": 12.0631,
+       "synergy": 0.4268,
+       "unfilled_seats": 0,
+       "violations": 1,
+       "violation_codes": {
+        "availability": 1
+       },
+       "violation_samples": [
+        "availability p027:month0: 1.0 > 0.5"
+       ],
+       "assignments": 41,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 290.6,
+       "in_tokens": 7892,
+       "cached_tokens": 7889,
+       "out_tokens": 28649,
+       "reasoning_tokens": 27550,
+       "cost_usd": 0.01511,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p009\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p029\",\"project_id\":\"j00\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p027\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p047\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p014\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p020\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p043\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p021\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p027\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p020\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p040\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p048\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p001\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p008\",\"project_id\":\"j06\",\"alloc\":1.0},{\"person_id\":\"p046\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p031\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j06\",\"alloc\":0.4},{\"person_id\":\"p034\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p013\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p030\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p049\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j07\",\"alloc\":0.3},{\"person_id\":\"p025\",\"project_id\":\"j08\",\"alloc\":1.0},{\"person_id\":\"p028\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p003\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p029\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j08\",\"alloc\":0.3},{\"person_id\":\"p027\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p012\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p045\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p047\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p037\",\"project_id\":\"j09\",\"alloc\":0.5}]}"
+      },
+      "repaired": {
+       "objective": 11.9982,
+       "quality": 11.9982,
+       "skill": 11.7714,
+       "synergy": 0.4268,
+       "unfilled_seats": 0,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 41,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 10.2,
+       "in_tokens": 8734,
+       "cached_tokens": 7889,
+       "out_tokens": 984,
+       "reasoning_tokens": 228,
+       "cost_usd": 0.00137,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"p019\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p009\",\"project_id\":\"j00\",\"alloc\":1.0},{\"person_id\":\"p029\",\"project_id\":\"j00\",\"alloc\":0.5},{\"person_id\":\"p034\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p027\",\"project_id\":\"j01\",\"alloc\":0.5},{\"person_id\":\"p047\",\"project_id\":\"j01\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p014\",\"project_id\":\"j02\",\"alloc\":1.0},{\"person_id\":\"p020\",\"project_id\":\"j02\",\"alloc\":0.5},{\"person_id\":\"p043\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p021\",\"project_id\":\"j03\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j03\",\"alloc\":0.5},{\"person_id\":\"p027\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p020\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p040\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j04\",\"alloc\":0.5},{\"person_id\":\"p048\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p001\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p032\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p000\",\"project_id\":\"j05\",\"alloc\":0.5},{\"person_id\":\"p017\",\"project_id\":\"j05\",\"alloc\":1.0},{\"person_id\":\"p011\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p008\",\"project_id\":\"j06\",\"alloc\":1.0},{\"person_id\":\"p046\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p031\",\"project_id\":\"j06\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j06\",\"alloc\":0.4},{\"person_id\":\"p034\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p013\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p030\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p049\",\"project_id\":\"j07\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j07\",\"alloc\":0.3},{\"person_id\":\"p025\",\"project_id\":\"j08\",\"alloc\":1.0},{\"person_id\":\"p028\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p003\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p029\",\"project_id\":\"j08\",\"alloc\":0.5},{\"person_id\":\"p041\",\"project_id\":\"j08\",\"alloc\":0.3},{\"person_id\":\"p027\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p012\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p045\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p047\",\"project_id\":\"j09\",\"alloc\":0.5},{\"person_id\":\"p037\",\"project_id\":\"j09\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    }
+   ]
+  },
+  {
+   "name": "demo-100x20",
+   "people": 100,
+   "projects": 20,
+   "baselines": {
+    "milp": {
+     "objective": 58.1585,
+     "quality": 58.1585,
+     "skill": 38.3814,
+     "synergy": 19.7771,
+     "unfilled_seats": 0,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 118,
+     "seconds": 30.6,
+     "termination": "time_limit_incumbent"
+    },
+    "greedy": {
+     "objective": -68.4028,
+     "quality": 31.5972,
+     "skill": 30.8382,
+     "synergy": 0.959,
+     "unfilled_seats": 1,
+     "violations": 0,
+     "violation_codes": {},
+     "violation_samples": [],
+     "assignments": 72,
+     "seconds": 0.016
+    }
+   },
+   "llm": [
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": -84.52,
+       "quality": 15.48,
+       "skill": 14.845,
+       "synergy": 0.835,
+       "unfilled_seats": 1,
+       "violations": 1,
+       "violation_codes": {
+        "availability": 1
+       },
+       "violation_samples": [
+        "availability DP0084:month3: 0.6 > 0.5"
+       ],
+       "assignments": 73,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 661.4,
+       "in_tokens": 16123,
+       "cached_tokens": 16120,
+       "out_tokens": 69676,
+       "reasoning_tokens": 67478,
+       "cost_usd": 0.03645,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0038\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0086\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0094\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0090\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":0.3},{\"person_id\":\"DP0006\",\"project_id\":\"J002\",\"alloc\":0.3},{\"person_id\":\"DP0066\",\"project_id\":\"J002\",\"alloc\":0.3},{\"person_id\":\"DP0078\",\"project_id\":\"J003\",\"alloc\":0.3},{\"person_id\":\"DP0064\",\"project_id\":\"J003\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J003\",\"alloc\":0.3},{\"person_id\":\"DP0029\",\"project_id\":\"J004\",\"alloc\":0.3},{\"person_id\":\"DP0008\",\"project_id\":\"J004\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J005\",\"alloc\":0.3},{\"person_id\":\"DP0057\",\"project_id\":\"J005\",\"alloc\":0.3},{\"person_id\":\"DP0021\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0011\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0084\",\"project_id\":\"J007\",\"alloc\":0.3},{\"person_id\":\"DP0005\",\"project_id\":\"J007\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J008\",\"alloc\":0.3},{\"person_id\":\"DP0004\",\"project_id\":\"J008\",\"alloc\":0.3},{\"person_id\":\"DP0027\",\"project_id\":\"J008\",\"alloc\":0.3},{\"person_id\":\"DP0012\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0022\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0060\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0025\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0020\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0029\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0086\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0091\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0082\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0001\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0077\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0059\",\"project_id\":\"J012\",\"alloc\":0.3},{\"person_id\":\"DP0078\",\"project_id\":\"J012\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J012\",\"alloc\":0.3},{\"person_id\":\"DP0062\",\"project_id\":\"J012\",\"alloc\":0.3},{\"person_id\":\"DP0084\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0023\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0014\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0033\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0027\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0016\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0021\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0004\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0072\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0049\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J016\",\"alloc\":0.3},{\"person_id\":\"DP0051\",\"project_id\":\"J016\",\"alloc\":0.3},{\"person_id\":\"DP0036\",\"project_id\":\"J016\",\"alloc\":0.3},{\"person_id\":\"DP0042\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0031\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0062\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0077\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0084\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0032\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0068\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0053\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0047\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0071\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0003\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0023\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0057\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0010\",\"project_id\":\"J020\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": -173.1696,
+       "quality": 26.8304,
+       "skill": 26.1524,
+       "synergy": 0.678,
+       "unfilled_seats": 2,
+       "violations": 2,
+       "violation_codes": {
+        "availability": 1,
+        "grade_over": 1
+       },
+       "violation_samples": [
+        "grade_over J020:초급: 2 > 1",
+        "availability DP0029:month3: 1.0 > 0.7"
+       ],
+       "assignments": 73,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 442.4,
+       "in_tokens": 16123,
+       "cached_tokens": 0,
+       "out_tokens": 46830,
+       "reasoning_tokens": 44900,
+       "cost_usd": 0.02503,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.333},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0078\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0086\",\"project_id\":\"J001\",\"alloc\":0.333},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0094\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0025\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":0.5},{\"person_id\":\"DP0032\",\"project_id\":\"J002\",\"alloc\":0.333},{\"person_id\":\"DP0066\",\"project_id\":\"J002\",\"alloc\":1.0},{\"person_id\":\"DP0033\",\"project_id\":\"J003\",\"alloc\":0.35},{\"person_id\":\"DP0026\",\"project_id\":\"J003\",\"alloc\":0.333},{\"person_id\":\"DP0086\",\"project_id\":\"J003\",\"alloc\":0.333},{\"person_id\":\"DP0093\",\"project_id\":\"J004\",\"alloc\":0.5},{\"person_id\":\"DP0023\",\"project_id\":\"J004\",\"alloc\":1.0},{\"person_id\":\"DP0029\",\"project_id\":\"J005\",\"alloc\":0.5},{\"person_id\":\"DP0057\",\"project_id\":\"J005\",\"alloc\":1.0},{\"person_id\":\"DP0093\",\"project_id\":\"J006\",\"alloc\":0.5},{\"person_id\":\"DP0062\",\"project_id\":\"J006\",\"alloc\":0.333},{\"person_id\":\"DP0084\",\"project_id\":\"J007\",\"alloc\":0.5},{\"person_id\":\"DP0075\",\"project_id\":\"J007\",\"alloc\":1.0},{\"person_id\":\"DP0068\",\"project_id\":\"J008\",\"alloc\":0.35},{\"person_id\":\"DP0083\",\"project_id\":\"J008\",\"alloc\":1.0},{\"person_id\":\"DP0011\",\"project_id\":\"J008\",\"alloc\":0.5},{\"person_id\":\"DP0021\",\"project_id\":\"J009\",\"alloc\":0.333},{\"person_id\":\"DP0006\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0090\",\"project_id\":\"J009\",\"alloc\":0.7},{\"person_id\":\"DP0053\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0099\",\"project_id\":\"J010\",\"alloc\":0.35},{\"person_id\":\"DP0033\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0086\",\"project_id\":\"J010\",\"alloc\":0.333},{\"person_id\":\"DP0079\",\"project_id\":\"J010\",\"alloc\":0.5},{\"person_id\":\"DP0020\",\"project_id\":\"J011\",\"alloc\":0.5},{\"person_id\":\"DP0032\",\"project_id\":\"J011\",\"alloc\":0.333},{\"person_id\":\"DP0053\",\"project_id\":\"J011\",\"alloc\":0.5},{\"person_id\":\"DP0042\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0099\",\"project_id\":\"J012\",\"alloc\":0.35},{\"person_id\":\"DP0029\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0062\",\"project_id\":\"J012\",\"alloc\":0.333},{\"person_id\":\"DP0038\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":1.0},{\"person_id\":\"DP0001\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0026\",\"project_id\":\"J013\",\"alloc\":0.333},{\"person_id\":\"DP0068\",\"project_id\":\"J014\",\"alloc\":0.35},{\"person_id\":\"DP0032\",\"project_id\":\"J014\",\"alloc\":0.333},{\"person_id\":\"DP0043\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0011\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0068\",\"project_id\":\"J015\",\"alloc\":0.35},{\"person_id\":\"DP0027\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0072\",\"project_id\":\"J015\",\"alloc\":0.7},{\"person_id\":\"DP0013\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.7},{\"person_id\":\"DP0041\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0062\",\"project_id\":\"J016\",\"alloc\":0.333},{\"person_id\":\"DP0025\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0059\",\"project_id\":\"J017\",\"alloc\":0.7},{\"person_id\":\"DP0082\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0026\",\"project_id\":\"J017\",\"alloc\":0.333},{\"person_id\":\"DP0047\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0031\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0012\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0022\",\"project_id\":\"J018\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J018\",\"alloc\":0.35},{\"person_id\":\"DP0021\",\"project_id\":\"J019\",\"alloc\":0.333},{\"person_id\":\"DP0030\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0077\",\"project_id\":\"J019\",\"alloc\":1.0},{\"person_id\":\"DP0036\",\"project_id\":\"J019\",\"alloc\":1.0},{\"person_id\":\"DP0071\",\"project_id\":\"J020\",\"alloc\":1.0},{\"person_id\":\"DP0084\",\"project_id\":\"J020\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J020\",\"alloc\":0.35},{\"person_id\":\"DP0097\",\"project_id\":\"J020\",\"alloc\":1.0},{\"person_id\":\"DP0072\",\"project_id\":\"J020\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 1,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "A",
+     "rep": 2,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "first": {
+       "objective": 29.2117,
+       "quality": 29.2117,
+       "skill": 28.5578,
+       "synergy": 1.0539,
+       "unfilled_seats": 0,
+       "violations": 5,
+       "violation_codes": {
+        "availability": 4,
+        "grade_over": 1
+       },
+       "violation_samples": [
+        "grade_over J001:고급: 4 > 3",
+        "availability DP0006:month1: 0.5 > 0.0",
+        "availability DP0081:month1: 0.5 > 0.3",
+        "availability DP0081:month4: 1.0 > 0.0",
+        "availability DP0081:month5: 0.5 > 0.0"
+       ],
+       "assignments": 74,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 347.0,
+       "in_tokens": 24585,
+       "cached_tokens": 0,
+       "out_tokens": 35938,
+       "reasoning_tokens": 34114,
+       "cost_usd": 0.02043,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.7},{\"person_id\":\"DP0033\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0084\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0086\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0046\",\"project_id\":\"J001\",\"alloc\":0.7},{\"person_id\":\"DP0025\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":0.5},{\"person_id\":\"DP0004\",\"project_id\":\"J002\",\"alloc\":0.7},{\"person_id\":\"DP0006\",\"project_id\":\"J002\",\"alloc\":0.5},{\"person_id\":\"DP0012\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0030\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0032\",\"project_id\":\"J003\",\"alloc\":0.34},{\"person_id\":\"DP0078\",\"project_id\":\"J004\",\"alloc\":0.7},{\"person_id\":\"DP0026\",\"project_id\":\"J004\",\"alloc\":0.7},{\"person_id\":\"DP0038\",\"project_id\":\"J005\",\"alloc\":0.7},{\"person_id\":\"DP0008\",\"project_id\":\"J005\",\"alloc\":1.0},{\"person_id\":\"DP0068\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J006\",\"alloc\":0.5},{\"person_id\":\"DP0084\",\"project_id\":\"J007\",\"alloc\":0.5},{\"person_id\":\"DP0005\",\"project_id\":\"J007\",\"alloc\":1.0},{\"person_id\":\"DP0099\",\"project_id\":\"J008\",\"alloc\":0.34},{\"person_id\":\"DP0030\",\"project_id\":\"J008\",\"alloc\":0.3},{\"person_id\":\"DP0032\",\"project_id\":\"J008\",\"alloc\":0.33},{\"person_id\":\"DP0082\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0022\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J009\",\"alloc\":1.0},{\"person_id\":\"DP0072\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0012\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0031\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0091\",\"project_id\":\"J010\",\"alloc\":1.0},{\"person_id\":\"DP0094\",\"project_id\":\"J010\",\"alloc\":0.5},{\"person_id\":\"DP0029\",\"project_id\":\"J011\",\"alloc\":0.5},{\"person_id\":\"DP0057\",\"project_id\":\"J011\",\"alloc\":1.0},{\"person_id\":\"DP0036\",\"project_id\":\"J011\",\"alloc\":1.0},{\"person_id\":\"DP0042\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0081\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0099\",\"project_id\":\"J012\",\"alloc\":0.33},{\"person_id\":\"DP0062\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0068\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0075\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0023\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0078\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0004\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0006\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0032\",\"project_id\":\"J014\",\"alloc\":0.33},{\"person_id\":\"DP0038\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0027\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0013\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0070\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.7},{\"person_id\":\"DP0093\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0001\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0047\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0059\",\"project_id\":\"J017\",\"alloc\":0.7},{\"person_id\":\"DP0003\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0061\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0014\",\"project_id\":\"J017\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J018\",\"alloc\":0.5},{\"person_id\":\"DP0099\",\"project_id\":\"J018\",\"alloc\":0.33},{\"person_id\":\"DP0062\",\"project_id\":\"J018\",\"alloc\":0.5},{\"person_id\":\"DP0069\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0068\",\"project_id\":\"J019\",\"alloc\":0.4},{\"person_id\":\"DP0023\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0053\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0090\",\"project_id\":\"J019\",\"alloc\":0.7},{\"person_id\":\"DP0071\",\"project_id\":\"J020\",\"alloc\":1.0},{\"person_id\":\"DP0081\",\"project_id\":\"J020\",\"alloc\":0.5},{\"person_id\":\"DP0048\",\"project_id\":\"J020\",\"alloc\":0.5},{\"person_id\":\"DP0051\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0054\",\"project_id\":\"J020\",\"alloc\":0.3}]}"
+      },
+      "repaired": {
+       "objective": 27.907,
+       "quality": 27.907,
+       "skill": 27.437,
+       "synergy": 0.87,
+       "unfilled_seats": 0,
+       "violations": 3,
+       "violation_codes": {
+        "availability": 3
+       },
+       "violation_samples": [
+        "availability DP0006:month1: 0.5 > 0.0",
+        "availability DP0012:month3: 0.6 > 0.5",
+        "availability DP0012:month4: 1.3 > 1.0"
+       ],
+       "assignments": 73,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 86.0,
+       "in_tokens": 26164,
+       "cached_tokens": 24582,
+       "out_tokens": 9055,
+       "reasoning_tokens": 7567,
+       "cost_usd": 0.00714,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.7},{\"person_id\":\"DP0033\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0086\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0046\",\"project_id\":\"J001\",\"alloc\":0.7},{\"person_id\":\"DP0025\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":0.5},{\"person_id\":\"DP0004\",\"project_id\":\"J002\",\"alloc\":0.7},{\"person_id\":\"DP0030\",\"project_id\":\"J002\",\"alloc\":0.5},{\"person_id\":\"DP0012\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0030\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0032\",\"project_id\":\"J003\",\"alloc\":0.34},{\"person_id\":\"DP0078\",\"project_id\":\"J004\",\"alloc\":0.7},{\"person_id\":\"DP0026\",\"project_id\":\"J004\",\"alloc\":0.7},{\"person_id\":\"DP0038\",\"project_id\":\"J005\",\"alloc\":0.7},{\"person_id\":\"DP0008\",\"project_id\":\"J005\",\"alloc\":1.0},{\"person_id\":\"DP0068\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J006\",\"alloc\":0.5},{\"person_id\":\"DP0088\",\"project_id\":\"J007\",\"alloc\":0.5},{\"person_id\":\"DP0005\",\"project_id\":\"J007\",\"alloc\":1.0},{\"person_id\":\"DP0099\",\"project_id\":\"J008\",\"alloc\":0.34},{\"person_id\":\"DP0030\",\"project_id\":\"J008\",\"alloc\":0.3},{\"person_id\":\"DP0032\",\"project_id\":\"J008\",\"alloc\":0.33},{\"person_id\":\"DP0082\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0022\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J009\",\"alloc\":1.0},{\"person_id\":\"DP0072\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0012\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0031\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0091\",\"project_id\":\"J010\",\"alloc\":1.0},{\"person_id\":\"DP0094\",\"project_id\":\"J010\",\"alloc\":0.5},{\"person_id\":\"DP0084\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0057\",\"project_id\":\"J011\",\"alloc\":1.0},{\"person_id\":\"DP0036\",\"project_id\":\"J011\",\"alloc\":1.0},{\"person_id\":\"DP0042\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0012\",\"project_id\":\"J012\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J012\",\"alloc\":0.33},{\"person_id\":\"DP0062\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0068\",\"project_id\":\"J013\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0075\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0023\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0078\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0004\",\"project_id\":\"J014\",\"alloc\":0.3},{\"person_id\":\"DP0006\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0032\",\"project_id\":\"J014\",\"alloc\":0.33},{\"person_id\":\"DP0038\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0027\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0013\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0070\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.7},{\"person_id\":\"DP0093\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0001\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0047\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0059\",\"project_id\":\"J017\",\"alloc\":0.7},{\"person_id\":\"DP0003\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0061\",\"project_id\":\"J017\",\"alloc\":0.5},{\"person_id\":\"DP0014\",\"project_id\":\"J017\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J018\",\"alloc\":0.5},{\"person_id\":\"DP0099\",\"project_id\":\"J018\",\"alloc\":0.33},{\"person_id\":\"DP0062\",\"project_id\":\"J018\",\"alloc\":0.5},{\"person_id\":\"DP0069\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0068\",\"project_id\":\"J019\",\"alloc\":0.4},{\"person_id\":\"DP0023\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0053\",\"project_id\":\"J019\",\"alloc\":0.5},{\"person_id\":\"DP0090\",\"project_id\":\"J019\",\"alloc\":0.7},{\"person_id\":\"DP0071\",\"project_id\":\"J020\",\"alloc\":1.0},{\"person_id\":\"DP0029\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J020\",\"alloc\":0.5},{\"person_id\":\"DP0051\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0054\",\"project_id\":\"J020\",\"alloc\":0.3}]}"
+      }
+     }
+    },
+    {
+     "model": "luna",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "first": {
+       "objective": 29.7464,
+       "quality": 29.7464,
+       "skill": 28.6714,
+       "synergy": 1.275,
+       "unfilled_seats": 0,
+       "violations": 0,
+       "violation_codes": {},
+       "violation_samples": [],
+       "assignments": 73,
+       "parse_error": null,
+       "unknown_ids": 0,
+       "invalid_entries": 0,
+       "duplicates": 0,
+       "latency_s": 458.1,
+       "in_tokens": 24585,
+       "cached_tokens": 24582,
+       "out_tokens": 48374,
+       "reasoning_tokens": 46430,
+       "cost_usd": 0.02665,
+       "model": "gpt-6-luna",
+       "raw": "{\"assignments\":[{\"person_id\":\"DP0028\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0021\",\"project_id\":\"J001\",\"alloc\":0.4},{\"person_id\":\"DP0041\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0033\",\"project_id\":\"J001\",\"alloc\":0.3},{\"person_id\":\"DP0097\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0035\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0032\",\"project_id\":\"J001\",\"alloc\":0.5},{\"person_id\":\"DP0025\",\"project_id\":\"J001\",\"alloc\":1.0},{\"person_id\":\"DP0020\",\"project_id\":\"J002\",\"alloc\":1.0},{\"person_id\":\"DP0004\",\"project_id\":\"J002\",\"alloc\":0.7},{\"person_id\":\"DP0066\",\"project_id\":\"J002\",\"alloc\":1.0},{\"person_id\":\"DP0012\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0030\",\"project_id\":\"J003\",\"alloc\":1.0},{\"person_id\":\"DP0001\",\"project_id\":\"J003\",\"alloc\":0.7},{\"person_id\":\"DP0020\",\"project_id\":\"J004\",\"alloc\":0.5},{\"person_id\":\"DP0008\",\"project_id\":\"J004\",\"alloc\":1.0},{\"person_id\":\"DP0038\",\"project_id\":\"J005\",\"alloc\":0.5},{\"person_id\":\"DP0026\",\"project_id\":\"J005\",\"alloc\":0.7},{\"person_id\":\"DP0068\",\"project_id\":\"J006\",\"alloc\":0.3},{\"person_id\":\"DP0006\",\"project_id\":\"J006\",\"alloc\":1.0},{\"person_id\":\"DP0084\",\"project_id\":\"J007\",\"alloc\":0.5},{\"person_id\":\"DP0048\",\"project_id\":\"J007\",\"alloc\":0.3},{\"person_id\":\"DP0020\",\"project_id\":\"J008\",\"alloc\":0.5},{\"person_id\":\"DP0069\",\"project_id\":\"J008\",\"alloc\":1.0},{\"person_id\":\"DP0057\",\"project_id\":\"J008\",\"alloc\":0.4},{\"person_id\":\"DP0003\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0022\",\"project_id\":\"J009\",\"alloc\":0.5},{\"person_id\":\"DP0060\",\"project_id\":\"J009\",\"alloc\":1.0},{\"person_id\":\"DP0072\",\"project_id\":\"J009\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J010\",\"alloc\":0.4},{\"person_id\":\"DP0031\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0086\",\"project_id\":\"J010\",\"alloc\":1.0},{\"person_id\":\"DP0051\",\"project_id\":\"J010\",\"alloc\":0.3},{\"person_id\":\"DP0078\",\"project_id\":\"J011\",\"alloc\":0.5},{\"person_id\":\"DP0057\",\"project_id\":\"J011\",\"alloc\":0.3},{\"person_id\":\"DP0014\",\"project_id\":\"J011\",\"alloc\":1.0},{\"person_id\":\"DP0042\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0033\",\"project_id\":\"J012\",\"alloc\":0.7},{\"person_id\":\"DP0038\",\"project_id\":\"J012\",\"alloc\":0.5},{\"person_id\":\"DP0023\",\"project_id\":\"J012\",\"alloc\":1.0},{\"person_id\":\"DP0084\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0048\",\"project_id\":\"J013\",\"alloc\":0.4},{\"person_id\":\"DP0075\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0079\",\"project_id\":\"J013\",\"alloc\":0.5},{\"person_id\":\"DP0068\",\"project_id\":\"J014\",\"alloc\":0.4},{\"person_id\":\"DP0011\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0007\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0061\",\"project_id\":\"J014\",\"alloc\":0.5},{\"person_id\":\"DP0029\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0027\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0013\",\"project_id\":\"J015\",\"alloc\":0.5},{\"person_id\":\"DP0054\",\"project_id\":\"J015\",\"alloc\":0.3},{\"person_id\":\"DP0087\",\"project_id\":\"J016\",\"alloc\":0.7},{\"person_id\":\"DP0041\",\"project_id\":\"J016\",\"alloc\":0.3},{\"person_id\":\"DP0043\",\"project_id\":\"J016\",\"alloc\":0.5},{\"person_id\":\"DP0036\",\"project_id\":\"J016\",\"alloc\":1.0},{\"person_id\":\"DP0015\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0099\",\"project_id\":\"J017\",\"alloc\":0.3},{\"person_id\":\"DP0046\",\"project_id\":\"J017\",\"alloc\":0.7},{\"person_id\":\"DP0053\",\"project_id\":\"J017\",\"alloc\":1.0},{\"person_id\":\"DP0029\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0068\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0004\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0057\",\"project_id\":\"J018\",\"alloc\":0.3},{\"person_id\":\"DP0021\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0048\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0010\",\"project_id\":\"J019\",\"alloc\":0.3},{\"person_id\":\"DP0090\",\"project_id\":\"J019\",\"alloc\":0.7},{\"person_id\":\"DP0055\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0012\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0016\",\"project_id\":\"J020\",\"alloc\":0.3},{\"person_id\":\"DP0062\",\"project_id\":\"J020\",\"alloc\":0.7},{\"person_id\":\"DP0047\",\"project_id\":\"J020\",\"alloc\":0.5}]}"
+      }
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 1,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    },
+    {
+     "model": "glm",
+     "condition": "B",
+     "rep": 2,
+     "result": {
+      "error": "RateLimitError: Error code: 429 - {'error': {'code': '1113', 'message': 'Insufficient balance or no resource package. Please recharge.'}}"
+     }
+    }
+   ]
+  }
+ ],
+ "spent_usd": 1.0944,
+ "finished_at": "2026-10-07T13:47:49+00:00",
+ "summary": [
+  {
+   "problem": "small-20x4",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "A",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 2,
+   "best_pct": 89.0,
+   "median_latency_s": 222.1,
+   "cost_usd": 0.0208,
+   "failures": [],
+   "solver_s": 0.3,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "small-20x4",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "A",
+   "attempts": 1,
+   "not_run": 1,
+   "not_run_reasons": [
+    "APIConnectionError: Connection error."
+   ],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": 1728.2,
+   "cost_usd": 0.2922,
+   "failures": [
+    "답 없음(출력 65,536토큰을 추론에 다 씀 -- max_tokens 미지정 설정의 한도)"
+   ],
+   "solver_s": 0.3,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "small-20x4",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "B",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 2,
+   "best_pct": 94.2,
+   "median_latency_s": 235.6,
+   "cost_usd": 0.0218,
+   "failures": [],
+   "solver_s": 0.3,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "small-20x4",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "B",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": 708.5,
+   "cost_usd": 0.5721,
+   "failures": [
+    "위반 1",
+    "답 없음(출력 65,536토큰을 추론에 다 씀 -- max_tokens 미지정 설정의 한도)"
+   ],
+   "solver_s": 0.3,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "medium-50x10",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "A",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": 422.9,
+   "cost_usd": 0.0397,
+   "failures": [
+    "위반 2·빈자리 1(솔버 0)",
+    "위반 2·빈자리 2(솔버 0)"
+   ],
+   "solver_s": 0.9,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "medium-50x10",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "A",
+   "attempts": 0,
+   "not_run": 2,
+   "not_run_reasons": [
+    "Z.ai 계정 잔액 소진(429·1113)"
+   ],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": null,
+   "cost_usd": 0.0,
+   "failures": [],
+   "solver_s": 0.9,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "medium-50x10",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "B",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 2,
+   "best_pct": 69.6,
+   "median_latency_s": 290.6,
+   "cost_usd": 0.0321,
+   "failures": [],
+   "solver_s": 0.9,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "medium-50x10",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "B",
+   "attempts": 0,
+   "not_run": 2,
+   "not_run_reasons": [
+    "Z.ai 계정 잔액 소진(429·1113)"
+   ],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": null,
+   "cost_usd": 0.0,
+   "failures": [],
+   "solver_s": 0.9,
+   "solver_termination": "Optimal"
+  },
+  {
+   "problem": "demo-100x20",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "A",
+   "attempts": 2,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": 661.4,
+   "cost_usd": 0.0615,
+   "failures": [
+    "위반 1·빈자리 1(솔버 0)",
+    "위반 2·빈자리 2(솔버 0)"
+   ],
+   "solver_s": 30.6,
+   "solver_termination": "time_limit_incumbent"
+  },
+  {
+   "problem": "demo-100x20",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "A",
+   "attempts": 0,
+   "not_run": 2,
+   "not_run_reasons": [
+    "Z.ai 계정 잔액 소진(429·1113)"
+   ],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": null,
+   "cost_usd": 0.0,
+   "failures": [],
+   "solver_s": 30.6,
+   "solver_termination": "time_limit_incumbent"
+  },
+  {
+   "problem": "demo-100x20",
+   "model": "luna",
+   "effort": "high",
+   "label": "외부 gpt-6-luna(추론 high)",
+   "condition": "B",
+   "attempts": 3,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 2,
+   "best_pct": 55.3,
+   "median_latency_s": 347.0,
+   "cost_usd": 0.0748,
+   "failures": [
+    "위반 3"
+   ],
+   "solver_s": 30.6,
+   "solver_termination": "time_limit_incumbent"
+  },
+  {
+   "problem": "demo-100x20",
+   "model": "glm",
+   "effort": "high",
+   "label": "사내 대리 GLM 5.3(추론 high)",
+   "condition": "B",
+   "attempts": 0,
+   "not_run": 2,
+   "not_run_reasons": [
+    "Z.ai 계정 잔액 소진(429·1113)"
+   ],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": null,
+   "cost_usd": 0.0,
+   "failures": [],
+   "solver_s": 30.6,
+   "solver_termination": "time_limit_incumbent"
+  },
+  {
+   "problem": "demo-100x20",
+   "model": "glm",
+   "effort": "max",
+   "label": "사내 대리 GLM 5.3(추론 max, 시범)",
+   "condition": "B",
+   "attempts": 1,
+   "not_run": 0,
+   "not_run_reasons": [],
+   "usable": 0,
+   "best_pct": null,
+   "median_latency_s": 883.9,
+   "cost_usd": 0.3265,
+   "failures": [
+    "답 없음(출력 65,536토큰을 추론에 다 씀 -- max_tokens 미지정 설정의 한도)"
+   ],
+   "solver_s": 30.6,
+   "solver_termination": "time_limit_incumbent"
+  }
+ ]
+}
