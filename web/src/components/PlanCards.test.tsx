@@ -44,4 +44,20 @@ describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
                       onSelect={() => {}} />);
     expect(screen.getAllByText("시간 한도 도달(최선 증명 전)")).toHaveLength(1);
   });
+
+  it("미리 계산 결과는 '미리 계산 · 시각'으로, 일반 캐시는 '저장된 결과'로 밝힌다", () => {
+    const pre = { ...plan("A", 0.9), cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" };
+    const cached = { ...plan("B", 0.9), cached: true };
+    render(<PlanCards plans={[pre, cached]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText(/^미리 계산 · \d+월 \d+일 \d\d:\d\d$/)).toBeInTheDocument();
+    expect(screen.getByText("저장된 결과")).toBeInTheDocument();
+    expect(screen.queryByText("캐시")).not.toBeInTheDocument();
+  });
+
+  it("미리 계산 원안에 화면에서 변경을 적용했으면 '원안 + 변경 n건'으로 바꾼다", () => {
+    const pre = { ...plan("A", 0.9), cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" };
+    render(<PlanCards plans={[pre]} selected="A" onSelect={() => {}} editCounts={{ A: 2 }} />);
+    expect(screen.getByText("미리 계산 원안 + 변경 2건")).toBeInTheDocument();
+  });
 });
+

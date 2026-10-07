@@ -212,6 +212,8 @@ export interface OptimizeRequest {
   milp_params?: Record<string, unknown>;
   n_alternatives?: number;
   dataset_version?: string;
+  /** 캐시·미리 계산 결과를 쓰지 않고 다시 푼다(화면의 "다시 계산"). */
+  fresh?: boolean;
 }
 
 /** 브라우저 EventSource는 GET 전용인데 /api/optimize는 POST다 -- 그래서
@@ -376,7 +378,7 @@ export async function fetchOperatingState(): Promise<OperatingState> {
 }
 
 export async function* streamOperatingCompare(body: {
-  dataset_version: string | null; milp_params: PlacementSettings | null; ks: number[];
+  dataset_version: string | null; milp_params: PlacementSettings | null; ks: number[]; fresh?: boolean;
 }): AsyncGenerator<OperatingEvent> {
   const res = await fetch(`${API_BASE}/api/operating/compare`, {
     method: "POST", headers: { "Content-Type": "application/json" },

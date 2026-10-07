@@ -46,9 +46,9 @@ ALLOW_EXTERNAL_ENV = "TEAMWEAVER_REVIEW_ALLOW_EXTERNAL"   # 1이면 실데이터
 # 브리핑·설명 클라이언트도 OPENAI_API_KEY를 사내 서버로 보낸다(리뷰 2라운드 S-1).
 BASE_URL_ENV = "TEAMWEAVER_REVIEW_BASE_URL"
 MODEL_ENV = "TEAMWEAVER_REVIEW_MODEL"
-# 추론 강도(예: Z.ai GLM 5.3은 low|high|max). 비우면 보내지 않는다(gpt-6-luna 기본). 허용값은 서버마다 다르다 --
-# vLLM·SGLang은 대개 low|medium|high만 받고, 추론 모델이 아닌 OpenAI 모델은 이 칸 자체를 거절(400)한다. 사내 배포가
-# 받는 값으로 둔다. 추론을 켜면 건당 10초 안팎(E4 실측 GLM max)이라 전체 한도도 그만큼 늘린다(아래 deadline).
+# 추론 강도(예: Z.ai GLM 5.3은 low|high|max). 기본 low(사용자 결정 2026-10-07, 아래 DEFAULT_REASONING), none|off면
+# 보내지 않는다. 허용값은 서버마다 다르다 -- vLLM·SGLang은 대개 low|medium|high만 받고, 추론 모델이 아닌 OpenAI 모델은
+# 이 칸 자체를 거절(400)한다. 사내 배포가 받는 값으로 둔다. 시간 한도는 아래 judge_reviews가 강도·주소에 맞춰 늘린다.
 REASONING_ENV = "TEAMWEAVER_REVIEW_REASONING_EFFORT"
 WORKERS_ENV = "TEAMWEAVER_REVIEW_WORKERS"
 CONVERSION = "llm-text-polarity-v1"   # 바꾸면 캐시 키가 달라져 이전 판정을 재사용하지 않는다
@@ -105,8 +105,27 @@ def _is_internal_host(host: str) -> bool:
     return ip.is_private or ip.is_loopback
 
 
+DEFAULT_REASONING = "low"           # 사용자 결정(2026-10-07): 사내 LLM(GLM 5.3) 추론 강도 low. 외부 gpt-6-luna도 low를 받는다(E4 실측)
+_SLOW_EFFORTS = ("high", "xhigh", "max")   # 건당 10초 이상(E4 GLM max 실측 중앙값 10.5초, 최대 70초)
+
+
 def reasoning_effort() -> str | None:
-    return os.environ.get(REASONING_ENV) or None
+    """기본 low. 서버가 이 칸을 받지 않는 모델이면 TEAMWEAVER_REVIEW_REASONING_EFFORT=none(또는 off)으로 끈다.
+    소문자로 맞춘다 -- 같은 강도가 대소문자로 캐시 키가 갈리지 않게. 비었거나 공백뿐이면 미설정(low)으로 본다
+    (.env의 `KEY= ` 실수로 조용히 꺼지지 않게). none은 끄는 값으로 예약해 OpenAI의 reasoning_effort="none"은 보낼 수 없다."""
+    value = (os.environ.get(REASONING_ENV) or "").strip().lower() or DEFAULT_REASONING
+    return None if value in ("none", "off") else value
+
+
+def _per_review_s(effort: str | None, url: str) -> float:
+    """전체 한도 계산용 병렬 한 줄당 건당 시간(E4 실측, 병렬 16).
+    - 강한 추론(high·xhigh·max)은 주소와 상관없이 길다: GLM max 300건 265초(한 줄당 약 14초), OpenAI 강한 추론은 미측정.
+    - 사내(OpenAI가 아닌 주소)에 추론을 켜면 GLM low도 요청 한도 대기로 300건에 213~333초(한 줄당 최대 약 17.7초).
+    둘 다 18초(× 여유 2배 = 36초). 사내 실제 서버가 생기면 다시 잰다.
+    - OpenAI low·추론 끔은 건당 약 2초(E4 중앙값 2.0·2.15초, 300건 41~45초)."""
+    if effort in _SLOW_EFFORTS or (effort and not _is_openai(url)):
+        return 18.0
+    return 2.25
 
 
 def endpoint() -> dict:
@@ -138,7 +157,8 @@ def _workers() -> int:
 
 
 def _cache_key(pos: str, neg: str, model_name: str, url: str, effort: str | None = None) -> str:
-    # 추론 강도는 설정했을 때만 키에 넣는다 -- 설정하지 않은 기본 경로의 키(와 쌓인 판정·데이터 버전)는 예전 그대로(리뷰 MUST)
+    # 추론 강도는 보낼 때만 키에 넣는다 -- none이면 effort 도입 전 키(와 쌓인 판정·데이터 버전)와 같다(리뷰 MUST).
+    # 서비스 기본이 2026-10-07부터 low라 기본 경로의 키는 그때 한 번 바뀌었다(미리 계산 결과도 다시 만든다).
     parts = [model_name, url, INSTRUCTION, CONVERSION] + ([effort] if effort else []) + [pos, neg]
     return hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode("utf-8")).hexdigest()
 
@@ -221,7 +241,9 @@ def _ask(http: httpx.Client, url: str, key: str | None, model_name: str, pos: st
     if res.status_code in (401, 403):
         raise JudgeError(f"LLM API가 키를 거절했다(HTTP {res.status_code})")
     if res.status_code != 200:
-        raise JudgeError(f"LLM API 오류(HTTP {res.status_code}{_error_code(res)})",
+        hint = (f" -- 추론 강도 칸을 받지 않는 모델이면 {REASONING_ENV}=none"
+                if effort and res.status_code == 400 else "")
+        raise JudgeError(f"LLM API 오류(HTTP {res.status_code}{_error_code(res)}){hint}",
                          retry=res.status_code == 400)
     try:
         content = res.json()["choices"][0]["message"]["content"]
@@ -288,13 +310,13 @@ def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, 
         raise JudgeError(f"{KEY_ENV}가 설정되지 않았다(사내 LLM이면 {BASE_URL_ENV}로 주소를 지정)")
     if todo:
         stop = threading.Event()
-        # 추론을 켜면 건당 지연이 길다(E4 GLM max 실측 최대 약 70초) -- 시간 초과로 같은 요청을 두 번 내지 않게 늘린다
-        http = httpx.Client(transport=transport, timeout=REQUEST_TIMEOUT_S * (3 if effort else 1))
+        # 강한 추론은 건당 지연이 길다(E4 GLM max 실측 최대 약 70초) -- 시간 초과로 같은 요청을 두 번 내지 않게 늘린다.
+        # low는 최대 약 11초(E4 GLM low)·4.4초(gpt-6-luna low)라 기본 60초로 충분하다.
+        http = httpx.Client(transport=transport, timeout=REQUEST_TIMEOUT_S * (3 if effort in _SLOW_EFFORTS else 1))
         n_workers = workers or _workers()
         if deadline_s is None:
-            # 리뷰 수에 비례(건당 실측 중앙값 × 여유 2배), 최소 DEADLINE_S. 추론 강도를 켜면 건당 약 10초(E4 GLM max 실측),
-            # 아니면 2.2초(gpt-6-luna) -- 300명(약 4,000건)도 한도에 안 걸리게.
-            per_review_s = 11.0 if effort else 2.25
+            # 리뷰 수에 비례(병렬 한 줄당 건당 시간 × 여유 2배), 최소 DEADLINE_S. 300명(약 4,000건)도 한도에 안 걸리게.
+            per_review_s = _per_review_s(effort, url)
             deadline_s = max(DEADLINE_S, len(todo) / n_workers * per_review_s * 2)
         pool = ThreadPoolExecutor(max_workers=n_workers)
         futures: dict = {}

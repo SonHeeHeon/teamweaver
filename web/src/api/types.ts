@@ -65,6 +65,8 @@ export interface PlanEvent {
   termination?: string | null;
   best_bound?: number | null;
   gap_allowed?: number;
+  /** 시연 묶음의 미리 계산 결과면 그 계산 시각(ISO, 서버 api/demo_precomputed). 화면은 "미리 계산"으로 밝힌다. */
+  precomputed_at?: string | null;
 }
 
 /** 계산에 실제로 쓸 설정: 자동 계산 시간이면 서버가 정한 값으로 바꿔 넣는다. */
@@ -255,6 +257,10 @@ export interface DatasetInfo {
   activated_at: string;
   /** 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유(K13). */
   restore_error?: string | null;
+  /** 지금 켜진 시연 묶음 이름(없으면 null). */
+  demo_name?: string | null;
+  /** "operating" = 운영 중 시연 묶음(대부분 배치 중·대기 인력·신규 제안), 그 밖은 "planning". */
+  scenario?: string;
   /** 원천 파일만의 해시(다시 판정해도 같다). version은 LLM 판정값까지 담은 계산 버전. */
   content_version?: string;
   /** 평가 사유(글) 판정: llm = 지금 LLM이 매김, fixture = 가상 데이터 생성 때 LLM 값, items = LLM 실패로 항목 점수. */
@@ -357,13 +363,16 @@ export interface OperatingRow {
   /** carried 행에서 이 K 자신의 결과(시간 한도로 더 나쁜 해의 termination·objective, 또는 실패 사유). */
   own?: { termination?: string | null; objective?: number; error?: string };
   error?: string;
+  /** 미리 계산 행이면 그 계산 시각 -- elapsed_s는 그때의 풀이 시간이다. */
+  precomputed_at?: string | null;
 }
 
 export type OperatingEvent =
-  | { event: "start"; data: { ks: number[]; n_people: number; expected_s_100: Record<string, number | null>; note: string } }
+  | { event: "start"; data: { ks: number[]; n_people: number; expected_s_100: Record<string, number | null>; note: string;
+                              precomputed_at?: string | null } }
   | { event: "progress"; data: { elapsed_s: number } }
   | { event: "row"; data: OperatingRow }
-  | { event: "done"; data: { elapsed_s: number; count: number } }
+  | { event: "done"; data: { elapsed_s: number; count: number; precomputed_at?: string | null } }
   | { event: "error"; data: { message: string } };
 
 export interface Parts { total: number; skill: number; synergy: number; overfamiliarity: number; unfilled: number }
@@ -418,4 +427,6 @@ export interface BaselineResult {
 }
 
 export interface DemoBundle { name: string; dataset_id: string; people: number | null; projects: number | null;
-                              scenario: string; synthetic: boolean }
+                              scenario: string; synthetic: boolean;
+                              /** 장면 한 줄 제목·설명(예: "운영 중 · 90명 배치 중, 대기 10명"). 예전 서버면 없다. */
+                              title?: string; description?: string }

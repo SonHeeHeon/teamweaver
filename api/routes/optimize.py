@@ -107,7 +107,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             done = {"count": count, "requested_alternatives": req.n_alternatives, "precomputed_at": pre_at}
             if cached is None and outcome.get("stop_reason"):
                 done["stop_reason"] = outcome["stop_reason"]   # 화면이 시간 초과를 조건 미충족과 구분한다
-            elif pre_at and precomputed_stop_reason(request.app, key):
+            elif pre_at is not None and precomputed_stop_reason(request.app, key):   # 시각이 빈 미리 계산도 이유를 싣는다
                 done["stop_reason"] = precomputed_stop_reason(request.app, key)   # 미리 계산 때의 이유
             yield sse_event("done", done)
         except Exception as exc:                        # noqa: BLE001

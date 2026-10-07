@@ -60,6 +60,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
   const [demos, setDemos] = useState<DemoBundle[]>([]);
   const [demo, setDemo] = useState("");
   const [confirmDemo, setConfirmDemo] = useState(false);
+  const chosenDescription = demos.find((d) => d.name === demo)?.description;
 
   useEffect(() => {
     let alive = true;
@@ -67,6 +68,10 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
       .catch(() => {});
     return () => { alive = false; };
   }, []);
+  // 고른 항목은 지금 켜진 시연 묶음을 따른다 -- 설명이 켜진 데이터와 어긋나지 않게(리뷰 NIT)
+  const activeDemo = active?.demo_name;
+  // 켜진 묶음이 바뀌면 진행 중이던 '전환 확인'도 접는다 -- 고른 것과 다른 묶음으로 전환되지 않게(2라운드 NIT)
+  useEffect(() => { if (activeDemo) { setDemo(activeDemo); setConfirmDemo(false); } }, [activeDemo]);
 
   async function switchDemo() {
     if (!demo) return;
@@ -211,7 +216,9 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
                     className="rounded-md border border-slate-300 px-2 py-1">
               {demos.map((d) => (
                 <option key={d.name} value={d.name}>
-                  {d.name} · {SCENARIO_LABEL[d.scenario] ?? d.scenario} · {d.people ?? "?"}명 · 사업 {d.projects ?? "?"}건
+                  {d.title
+                    ? `${d.title} · 사업 ${d.projects ?? "?"}건 (${d.name})`
+                    : `${d.name} · ${SCENARIO_LABEL[d.scenario] ?? d.scenario} · ${d.people ?? "?"}명 · 사업 ${d.projects ?? "?"}건`}
                 </option>
               ))}
             </select>
@@ -232,6 +239,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
               </>
             )}
           </div>
+          {chosenDescription && <p className="mt-2 text-sm text-slate-700">{chosenDescription}</p>}
           <p className="mt-1 text-xs text-slate-500">
             "운영 중" 데이터는 대부분이 이미 진행 사업에 있고 신규 제안 2~3개를 남는 인력으로 짜는 장면이다(운영 중 편성 탭).
             전환하면 서버에 보관된 업로드 데이터는 지워지고, 이전 계산 결과는 비워진다. 리뷰 글을 처음 LLM으로 판정하는

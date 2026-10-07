@@ -452,20 +452,59 @@ def test_untrimmed_cache_keeps_other_data(small, tmp_path):
     assert "other-demo-hash" in json.loads((tmp_path / "c.json").read_text("utf-8"))
 
 
-def test_reasoning_effort_is_sent_when_configured(small, tmp_path, monkeypatch):
-    # 사내 GLM 5.3을 실험(E4, 추론 max)과 같은 조건으로 부르기 위한 설정.
+def test_reasoning_effort_default_low_and_off(small, tmp_path, monkeypatch):
+    # 기본은 low(사용자 결정 2026-10-07: 사내 GLM 5.3 추론 강도), none이면 칸을 보내지 않고, 값을 주면 그대로 보낸다.
     ds, parsed = small
     calls: list = []
+    monkeypatch.delenv(rj.REASONING_ENV, raising=False)
     _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, calls))
-    assert "reasoning_effort" not in calls[0]
+    assert calls[0]["reasoning_effort"] == "low"
+    monkeypatch.setenv(rj.REASONING_ENV, "none")                    # 이 칸을 받지 않는 서버면 끈다
+    calls_off: list = []
+    _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, calls_off))
+    assert "reasoning_effort" not in calls_off[0]
     monkeypatch.setenv(rj.REASONING_ENV, "max")
     calls2: list = []
     _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, calls2))
     assert calls2 and calls2[0]["reasoning_effort"] == "max"          # 설정이 바뀌면 캐시도 새로 판정한다
 
 
+@pytest.mark.parametrize("raw, expected", [
+    (None, "low"), ("", "low"), ("low", "low"), ("LOW", "low"), (" High ", "high"), ("max", "max"),
+    ("none", None), ("off", None), (" OFF ", None), ("NONE", None), ("   ", "low"),
+])
+def test_reasoning_effort_values(monkeypatch, raw, expected):
+    # 대소문자·공백을 맞춘다 -- 같은 강도가 캐시 키를 둘로 가르지 않게. 공백뿐인 값은 미설정(low)으로 본다.
+    if raw is None:
+        monkeypatch.delenv(rj.REASONING_ENV, raising=False)
+    else:
+        monkeypatch.setenv(rj.REASONING_ENV, raw)
+    assert rj.reasoning_effort() == expected
+
+
+@pytest.mark.parametrize("effort, url, expected", [
+    ("low", rj.DEFAULT_BASE_URL, 2.25), (None, rj.DEFAULT_BASE_URL, 2.25),        # OpenAI low·끔: 건당 약 2초
+    ("max", rj.DEFAULT_BASE_URL, 18.0), ("high", rj.DEFAULT_BASE_URL, 18.0),      # 강한 추론은 주소와 상관없이 길게
+    ("low", "https://api.z.ai/api/paas/v4", 18.0), (None, "https://api.z.ai/api/paas/v4", 2.25),
+])
+def test_deadline_per_review_follows_effort_and_host(effort, url, expected):
+    assert rj._per_review_s(effort, url) == expected
+
+
+def test_http_400_with_effort_says_how_to_turn_it_off(small, tmp_path, monkeypatch):
+    # 추론 칸을 거절하는 모델(400)이면 끄는 방법을 오류에 붙인다. 끈 상태의 400에는 붙이지 않는다.
+    ds, parsed = small
+    monkeypatch.delenv(rj.REASONING_ENV, raising=False)
+    with pytest.raises(JudgeError, match=f"{rj.REASONING_ENV}=none"):
+        _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, [], status=400), workers=1)
+    monkeypatch.setenv(rj.REASONING_ENV, "none")
+    with pytest.raises(JudgeError) as err:
+        _judge(ds, parsed, tmp_path, _transport(lambda u: 0.1, [], status=400), workers=1)
+    assert rj.REASONING_ENV not in str(err.value)
+
+
 def test_cache_key_without_effort_is_unchanged():
-    # 추론 강도를 설정하지 않으면 예전 키와 같다 -- 쌓인 판정·데이터 버전이 배포 뒤에도 그대로(리뷰 MUST)
+    # 함수 수준: effort가 없으면 예전 키와 같다(리뷰 MUST). 서비스 기본은 2026-10-07부터 low라 기본 경로의 키는 한 번 바뀐다.
     old = rj.hashlib.sha256(rj.json.dumps(["m", "u", rj.INSTRUCTION, rj.CONVERSION, "p", "n"], ensure_ascii=False)
                             .encode("utf-8")).hexdigest()
     assert rj._cache_key("p", "n", "m", "u") == old == rj._cache_key("p", "n", "m", "u", None)

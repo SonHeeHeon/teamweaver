@@ -52,6 +52,7 @@ def test_a_zip_bundle_can_be_chosen_and_is_remembered_for_rejudge_and_status(dem
     res = demo_client.post("/api/datasets/demo", json={"name": "org-z100-operating"}, headers=JSON)
     assert res.status_code == 200, res.text
     assert res.json()["dataset_id"].endswith("-operating") and res.json()["demo_name"] == "org-z100-operating"
+    assert res.json()["scenario"] == "operating"          # 화면의 '전부 다시 짜기' 안내(claude-b)
     assert demo_client.get("/api/datasets/active").json()["demo_name"] == "org-z100-operating"
     again = demo_client.post("/api/datasets/rejudge", headers=JSON)
     assert again.status_code == 200 and again.json()["dataset_id"].endswith("-operating")

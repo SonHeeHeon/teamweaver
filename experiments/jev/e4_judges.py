@@ -1,7 +1,7 @@
 """E4. 리뷰 글 판정기 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM 5.3) vs Jev -- 정확도·비용·소요 시간.
 
 2026-10-07 사용자 지시: 비교는 전부 추론 low, 유의미한 표본 크기만. 그래서 주 비교는 외부 low(llm_low) 대 사내 low(glm_low)이고,
-외부 기본 추론(llm, 서비스 현재 설정)·사내 max(glm, 2026-10-06 기록)는 참고 열이다. 시험은 대조 문장 4·충실한 글 300(정답 있음)·
+외부 기본 추론(llm, 2026-10-07 low 전환 전 서비스 설정)·사내 max(glm, 2026-10-06 기록)는 참고 열이다. 시험은 대조 문장 4·충실한 글 300(정답 있음)·
 현재 시연 원문 무작위 300(demo_s300). 예전 전체 시연 원문 기록(e4_*_demo*.json)은 데이터가 바뀌기 전 것이라 쓰지 않는다(이력).
 
 사용자 지시(2026-10-06): LLM을 쓰는 모든 곳은 외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상
@@ -73,14 +73,14 @@ WORKERS = 16
 JUDGES = ("llm_low", "glm_low", "llm", "glm", "jev")
 # 시험마다 돌리는 판정기. GLM max는 비용 때문에(1,000건당 약 $4) 같은 글이 남은 시험에서만 참고 열로 쓴다
 # (2026-10-07 사용자 지시: 비교는 전부 low, 유의미한 표본 크기만).
-# 사용자 지시 "전부 low": 주 비교는 외부 low 대 사내 low. 외부 기본(서비스 현재 설정)과 사내 max는 참고 열.
+# 사용자 지시 "전부 low": 주 비교는 외부 low 대 사내 low. 외부 기본(low 전환 전 서비스 설정)과 사내 max는 참고 열.
 SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES,
               "demo_s300": ("llm_low", "glm_low", "llm", "jev")}
 N_DEMO_SAMPLE = 300           # 일치율의 95% 구간 반폭 ≤ ±5.7%p(1.96·√(0.25/300))
 # 사내 열 = Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정(사용자 결정 2026-10-07: 사내 서버 측정 불가). 표만 인용돼도
 # 무엇을 쟀는지 남게 이름에 Z.ai를 적는다.
 LABEL = {"llm_low": "외부 LLM low (gpt-6-luna)", "glm_low": "사내 LLM low (GLM 5.3·Z.ai)",
-         "llm": "외부 LLM 기본 추론·참고 (gpt-6-luna, 서비스 현재 설정)",
+         "llm": "외부 LLM 기본 추론·참고 (gpt-6-luna, 10-07 이전 서비스 설정)",
          "glm": "사내 LLM max·참고 (GLM 5.3·Z.ai)", "jev": "Jev"}
 GLM_URL = "https://api.z.ai/api/paas/v4"
 GLM_MODEL = "glm-5.3"
@@ -584,8 +584,8 @@ LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하�
 (일치율 95% 구간 반폭 ≤ ±{1.96 * (0.25 / max(d['n'], 1)) ** 0.5 * 100:.1f}%p). 정답이 없어 분포·판정기 간 일치만 본다.</li>
 <li><b>대조 문장</b> 4건 — 척도(−1~+1)가 살아 있는지.</li>
 <li>두 LLM은 같은 지시문(서비스 파서)을 받는다. <b>주 비교는 양쪽 모두 추론 강도 low</b>(사용자 지시 "전부 low"):
-외부 gpt-6-luna low, 사내 GLM 5.3 low(Z.ai 공식 API <code>glm-5.3</code>). 참고 열: 외부 기본 추론(지금 서비스 리뷰 판정 설정 —
-<code>TEAMWEAVER_REVIEW_REASONING_EFFORT</code> 미설정), 사내 max(비용 때문에 같은 글이 남은 B·대조 문장만, 2026-10-06 측정).
+외부 gpt-6-luna low, 사내 GLM 5.3 low(Z.ai 공식 API <code>glm-5.3</code>). 참고 열: 외부 기본 추론(10-07 low 전환 전 서비스 리뷰 판정 설정 —
+추론 강도 미전송, 지금은 <code>TEAMWEAVER_REVIEW_REASONING_EFFORT=none</code>과 같다), 사내 max(비용 때문에 같은 글이 남은 B·대조 문장만, 2026-10-06 측정).
 Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정의 중립 구간 ±0.1, 병렬 {WORKERS}건.</li>
 <li>짝지은 비교(같은 건에 두 판정기)는 McNemar 정확검정, 비율 구간은 Wilson 95%.</li>
 </ul>

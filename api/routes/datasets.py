@@ -107,7 +107,9 @@ def rebuild_active(app) -> tuple[ActiveDataset | None, str | None]:
 def _info(active: ActiveDataset, **extra) -> dict:
     """전환 응답의 데이터셋 정보. 다음 업로드의 글이 갈 곳(judge_endpoint)도 싣는다 -- 화면 안내가 사라지지 않게."""
     from api.review_judge import endpoint
-    return {**active.info.to_dict(), **extra, "judge_endpoint": endpoint()}
+    # scenario: 운영 중 시연 묶음("operating")인지 -- 화면이 '전부 다시 짜기'에 빈자리 안내를 붙인다(claude-a 리허설 요청)
+    return {**active.info.to_dict(), **extra, "judge_endpoint": endpoint(),
+            "scenario": active.scenario.get("scenario") or "planning"}
 
 
 def _activate(request: Request, new: ActiveDataset) -> None:
