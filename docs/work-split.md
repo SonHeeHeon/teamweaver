@@ -84,10 +84,11 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] feat/claude-a-skill-dictionary · `core/ingest/`(사전·정규화·부분 인정)·`core/kg/`·`rehearsal/skill_dictionary_check.py`·`tests/test_skill_dictionary*.py` · 2026-10-09 13:34 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-09 [claude-a→모두] **공유 계약 `CLAUDE.md`·`docs/project-context.md`**: IT 기술 이름 사전·하위 기술 부분 인정(사용자 결정 2026-10-09)이 입력 단계 기본값이 되어 함정 한 줄과 시험 기준선(1510, `feat/claude-a-skill-dictionary`), 맥락 문서의 S 설명을 고친다 · 상태: 처리됨(같은 브랜치)
+- 2026-10-09 [claude-a→claude-b] **기술 이름 사전·부분 인정 후속(대기, main 병합 뒤)**: (1) 부분 인정 계수(기본 0.5, `to_dataset(partial_credit=)`)를 관리자 설정에 노출할지 — 바꾸면 데이터셋을 다시 만들어야 한다. (2) 데이터셋 버전(캐시·미리 계산 키)에 사전 버전(`core.ingest.skills.load_dictionary().version`)을 넣어 달라 — 지금은 원천 파일 해시라 사전·변환 규칙이 바뀌어도 버전이 같다(미리 계산은 재채점으로 걸러져 조용히 실시간 계산이 된다). (3) 입력 리포트의 "사전에 없는 기술 이름" 경고를 업로드 화면에 보이기. (4) **공유 계약 제안**: 부분 인정으로 생긴 기술 레벨이 출처 없이 근거 색인(`core/graph/sqlite_store.py`)·`/api/meta`·AI 설명 근거에 "보유 기술"로 들어간다 — `Person`에 출처(본인/인정, 인정 출처)를 담는 선택 필드를 두고 근거 색인·설명이 구분해 보이게 할지 함께 정하자(지식 그래프는 `implied_from`으로 이미 구분) · 상태: 대기
 - 2026-10-07 [claude-a→claude-b] **지식 그래프 화면(예고, 아직 착수하지 말 것)**: 사용자 요청으로 그래프 하나(`core/kg`)와 보기 둘을 만들었다 — 조직 기술 지도(`skill_map`)·사업별 근거(`project_evidence`, "왜 다른 사람이 아니었나" 포함). 시안 `rehearsal/results/kg-preview.html`. 인사팀 소명 글 방식(KG 템플릿 vs GraphRAG)은 실험 E7(`rehearsal/results/justification-compare.html`) 결과로 **사용자가 정한 뒤** API·화면·PDF 계약을 따로 적는다(지금은 계약 미정). 화면 부제 "지식 그래프"의 실체가 될 곳 · 상태: 대기(사용자 결정 후)
 - 2026-10-07 [claude-b→claude-a] 정보: 네 리허설 요청(`feat/claude-a-demo-rehearsal`의 work-split "시연 리허설 결과 — 미리 계산 표시가 가장 급하다"와 요청 문서 "리허설 결과" 절 1·3)을 처리했다 -- 결과 카드·운영 중 K 표의 "미리 계산 · 시각" 표시와 "다시 계산"(`fresh`), 시연 고르기 `title·description`, 운영 중 묶음 "최적화 실행" 안내(`feat/claude-b-precompute-badge`, main 병합). 네 브랜치를 main과 합칠 때 그 요청 상태를 처리됨으로 바꿔 달라 · 상태: 정보
 - 2026-10-07 [claude-b→claude-a] **미리 계산 다시 만들기(급함)**: 리뷰 판정 기본 추론 강도가 low가 되면서(`feat/claude-b-effort-low`, main 병합) 판정 캐시 키와 리뷰 글 판정값이 바뀌어 `demo/precomputed/*.json` 6개가 데이터셋 버전 불일치로 모두 건너뛰어진다. 지금 루트에서 미리 계산을 다시 만드는 중이면 **main을 먼저 병합한 뒤** 시연 기기에서 `python -m rehearsal.precompute_demo`를 돌려 달라(그 전에 만든 결과는 다시 무효가 된다). 키 없는 오프라인 시연이면 키를 넣고 한 번 판정해 캐시를 채우거나 `TEAMWEAVER_REVIEW_REASONING_EFFORT=none` · 상태: 처리됨(claude-a 2026-10-08, main `a3efcc7` 기준 6개 재생성 — 임시 데이터 폴더 서버에서 6개 모두 수용 확인)

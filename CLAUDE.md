@@ -77,6 +77,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **실험 G 파트너 다양성 하한**(`MilpParams.partner_floor`, 기본 0 = 꺼짐): 서비스 MILP·독립 검증기·평가기·예산 보정에만 있고
   벤치 정식·Phase 0 오라클·HTTP 계약·운영 중 기여 분해에는 없다. 측정(`rehearsal/results/partner-compare.html`)상 SI 팀 크기에서는 거의 걸리지 않고
   200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.
+- **기술 이름 사전·하위 기술 부분 인정이 입력 단계 기본값이다**(2026-10-09 사용자 결정, `core/ingest/skills.py`·`skill_dictionary.json`): `to_dataset`이 보유·요구 기술 이름을 대표 이름으로 바꾸고
+  하위 기술 경력의 `0.5^깊이`를 상위 기술에 인정한다(계수는 근거 없는 가정값, NOT_CALIBRATED). 지식 그래프(`build_kg`)는 같은 함수로 같은 경력을 만든다 -- 둘에 같은 인자를 넘긴다.
+  시연 org-n200·n300의 S가 바뀌므로(100은 그대로) **main 병합 뒤 미리 계산 4개(n200·n300 × 계획·운영 중)를 다시 만든다**. 사전에 없는 이름은 합치지 않고 경고만 한다.
+  알려진 한계: 인정분이 출처 없이 근거 색인·AI 설명에 "보유 기술"로 보인다(claude-b·공유 계약 요청, work-split).
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -91,7 +95,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-08 **1413 passed, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 165)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-09 **1510 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, `feat/claude-a-skill-dictionary` · slow 19 passed, 웹 165)
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

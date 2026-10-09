@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-09 · claude-a · IT 기술 이름 사전 + 하위 기술 부분 인정 + E8b(그래프 DB·RDF 장점 실측)
+- 브랜치/커밋: `feat/claude-a-skill-dictionary` `2442c4f..` (지식 그래프 브랜치 위, main 병합은 사용자 승인 대기)
+- 한 일: 사용자 결정(사전 범위 = SI 핵심 큐레이션, 상하위 관계 = 점수에 부분 인정, KG 구현 = core/kg 유지). `core/ingest/skills.py`·`skill_dictionary.json`(228개, 한·영 별칭, 상위·관련 관계,
+  버전 표기·괄호 병기 규칙, SKOS Turtle 내보내기) → `to_dataset` 기본 적용(대표 이름, 가장 긴 경력, 하위 → 상위 `0.5^깊이` 인정, 모르는 이름은 경고만) → `build_kg`도 같은 함수(인정 간선에 `implied_from`).
+  측정: 별칭·실데이터형 변형 사본에서 S 원본과 같음(100·200·300), 사전 없이는 100명 쌍의 86% S 변화·배치 점수 49.1 vs 57.8. E8b: 3,000명에서 core/kg 조직 기술 지도 671 → 33.6 ms(색인·집계 개선, Neo4j 27.9),
+  RDF 표준 추론은 전이 147쌍 같음·가중 인정은 표현 불가. 보고서용 요약 `docs/kg-technology-decision.md`에 "두 기술의 장점은 얼마나 큰가" 절.
+- 상대 영향: **(1) 입력 단계 기본 동작 변경** -- 시연 org-n200·n300의 S가 오른다(100은 그대로). main 병합 뒤 미리 계산 4개(n200·n300 × 계획·운영 중)를 다시 만들어야 한다(그 전엔 재채점에서 걸러져 실시간 계산).
+  (2) `build_kg`의 `skill_alias` 인자 삭제(호출자 없음) → `skill_dictionary`·`partial_credit`. (3) claude-b 요청 4건(work-split): 계수 설정 노출, 데이터셋 버전에 사전 버전, 모르는 이름 경고 표시, 인정분 출처(공유 계약 제안).
+  (4) 시험 기준선 1413 → **1510**(이 브랜치). Phase 0 PASS(입력 단계 변경 후 재확인, 결과 파일은 원래대로 둠).
+- 검증: `uv run --group benchmark pytest -q` → 1510 passed, 1 skipped, 19 deselected · Phase 0 PASS · Opus 폴백 리뷰 2회(MUST 4 → 0, 재확인 MUST 2 → 0)
+- 근거: `rehearsal/results/skill-dictionary.html`, `rehearsal/results/kg-advantages.html`, `docs/kg-technology-decision.md`
+
 ## 2026-10-09 · claude-a · E8 지식 그래프 구현 기술 비교(RDF vs 그래프 DB vs networkx) — 증적
 - 브랜치/커밋: `feat/claude-a-kg-backends`(`feat/claude-a-knowledge-graph` 위) `6af8da0..` (main 병합은 지식 그래프 브랜치와 함께, 사용자 승인 대기)
 - 한 일: 사용자 요청("3가지 버전에서 지금 시스템에 어떤게 베스트인지 증적, 보고서에 쓸 근거"). 판정 규칙을 측정 전에 커밋(`rehearsal/kg_backend_decision.py`)한 뒤
