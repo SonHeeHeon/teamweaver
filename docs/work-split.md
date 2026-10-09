@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] feat/claude-a-skill-dictionary · `core/ingest/`(사전·정규화·부분 인정)·`core/kg/`·`rehearsal/skill_dictionary_check.py`·`tests/test_skill_dictionary*.py` · 2026-10-09 13:34 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`

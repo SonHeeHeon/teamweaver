@@ -1,0 +1,496 @@
+{
+ "when": "2026-10-09T13:45:02+09:00",
+ "commit": "cc9905e",
+ "dirty": true,
+ "sha256": {
+  "rehearsal/kg_advantages.py": "e734907dc4cf9086",
+  "rehearsal/kg_backends.py": "71e484ed999c04a0",
+  "core/ingest/skills.py": "ccf94c86520a1dac",
+  "core/ingest/skill_dictionary.json": "f4c3af3b678f2af0",
+  "core/ingest/convert.py": "5c3994dd989c4365"
+ },
+ "reasoning": {
+  "dictionary_version": "2026-10-09.1",
+  "concepts": 226,
+  "broader_edges": 130,
+  "b1_closure": {
+   "pairs_python": 147,
+   "same_owlrl": true,
+   "same_sparql_path": true,
+   "python_ms": 0.06,
+   "owlrl_ms": 207.7,
+   "sparql_path_ms": 5.08,
+   "owlrl_triples_before": 1518,
+   "owlrl_triples_after": 2852,
+   "note": "표준 추론은 'A는 B의 하위'(참/거짓)까지만 낸다. 몇 단계 위인지(깊이)는 나오지 않는다."
+  },
+  "b2_weighted_credit": {
+   "people": 300,
+   "max_depth": 2,
+   "credit": 0.5,
+   "credited_pairs": 984,
+   "same": true,
+   "diff_people": [],
+   "python_ms": 4.3,
+   "sparql_ms": 35.6,
+   "sparql_lines": 8,
+   "sparql": "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> PREFIX tw: <https://teamweaver.example/skill/>\nSELECT ?p ?label (MAX(?mm) AS ?months) WHERE {\n  ?p tw:has ?h .\n  { ?h tw:skill ?s ; tw:months ?mm }\n  UNION { ?h tw:skill ?y ; tw:months ?m0 . ?y skos:broader ?s . BIND(FLOOR(?m0 * 0.5) AS ?mm) }\n  UNION { ?h tw:skill ?y ; tw:months ?m0 . ?y skos:broader/skos:broader ?s . BIND(FLOOR(?m0 * 0.25) AS ?mm) }\n  FILTER(?mm > 0) ?s skos:prefLabel ?label .\n} GROUP BY ?p ?label",
+   "note": "표준 추론(OWL·RDFS)으로는 '절반만 인정' 같은 수치 가중을 표현할 수 없어 SPARQL 산술·집계로 직접 썼다. SPARQL 경로식은 경로 길이를 돌려주지 않아 깊이마다 UNION을 펼쳐야 한다(사전 깊이가 바뀌면 질의도 바뀜). 처음 작성은 UNION 바깥에서 읽은 경력을 안쪽 BIND가 못 봐(SPARQL의 아래에서 위로 평가하는 범위 규칙) 인정분이 오류 없이 빠졌다 -- 각 묶음 안에서 경력을 읽도록 고쳐 같아졌다."
+  }
+ },
+ "scale": {
+  "neo4j_server": {
+   "product": "Neo4j Kernel",
+   "version": "5.26.28",
+   "edition": "community",
+   "startup_s": 4.5
+  },
+  "neo4j_empty": {
+   "container_mem": "1.304GiB / 7.75GiB",
+   "data_dir_kb": 528056
+  },
+  "sizes": {
+   "300": {
+    "info": {
+     "people": 300,
+     "nodes": {
+      "client": 58,
+      "industry": 3,
+      "past_project": 248,
+      "person": 300,
+      "project": 60,
+      "skill": 37
+     },
+     "edges": {
+      "ASSIGNED": 230,
+      "COWORKED": 23497,
+      "CURRENT_ON": 36,
+      "FOR_CLIENT": 305,
+      "HAS_SKILL": 5869,
+      "IN_INDUSTRY": 308,
+      "REQUIRES": 212,
+      "REVIEWED": 3855,
+      "WORKED_ON": 5007
+     },
+     "n_edges": 39319,
+     "gen_s": 0.3,
+     "load_convert_s": 0.3,
+     "extract_ms": 49.9,
+     "kg_mb": 21.3,
+     "assigned": 230
+    },
+    "backends": {
+     "core_kg": {
+      "load_ms": 0.0,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 7.432,
+        "p95_ms": 10.501,
+        "max_ms": 10.776,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.231,
+        "p95_ms": 0.313,
+        "max_ms": 1.625,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 0.905,
+        "p95_ms": 3.721,
+        "max_ms": 17.791,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.31,
+        "p95_ms": 0.383,
+        "max_ms": 0.416,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 0.0
+      }
+     },
+     "networkx": {
+      "load_ms": 42.3,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 5.598,
+        "p95_ms": 6.06,
+        "max_ms": 6.306,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.188,
+        "p95_ms": 0.259,
+        "max_ms": 2.273,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 2.407,
+        "p95_ms": 3.403,
+        "max_ms": 5.068,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.562,
+        "p95_ms": 1.872,
+        "max_ms": 4.187,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 28.3
+      }
+     },
+     "neo4j": {
+      "load_ms": 2595.7,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 3.927,
+        "p95_ms": 5.662,
+        "max_ms": 7.147,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 1.427,
+        "p95_ms": 1.98,
+        "max_ms": 5.826,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 2.267,
+        "p95_ms": 4.546,
+        "max_ms": 9.649,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 5.04,
+        "p95_ms": 6.509,
+        "max_ms": 6.641,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "container_mem": "1.443GiB / 7.75GiB",
+       "data_dir_kb": 528324
+      }
+     }
+    }
+   },
+   "1000": {
+    "info": {
+     "people": 1000,
+     "nodes": {
+      "client": 62,
+      "industry": 3,
+      "past_project": 821,
+      "person": 1000,
+      "project": 200,
+      "skill": 37
+     },
+     "edges": {
+      "ASSIGNED": 769,
+      "COWORKED": 122536,
+      "CURRENT_ON": 166,
+      "FOR_CLIENT": 1020,
+      "HAS_SKILL": 19647,
+      "IN_INDUSTRY": 1021,
+      "REQUIRES": 682,
+      "REVIEWED": 12758,
+      "WORKED_ON": 17056
+     },
+     "n_edges": 175655,
+     "gen_s": 1.7,
+     "load_convert_s": 1.4,
+     "extract_ms": 320.2,
+     "kg_mb": 90.0,
+     "assigned": 769
+    },
+    "backends": {
+     "core_kg": {
+      "load_ms": 4.5,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 77.051,
+        "p95_ms": 86.497,
+        "max_ms": 91.274,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.201,
+        "p95_ms": 0.321,
+        "max_ms": 1.963,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 2.727,
+        "p95_ms": 3.279,
+        "max_ms": 10.203,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.46,
+        "p95_ms": 0.544,
+        "max_ms": 0.583,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 0.0
+      }
+     },
+     "networkx": {
+      "load_ms": 337.3,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 31.418,
+        "p95_ms": 33.287,
+        "max_ms": 33.547,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.204,
+        "p95_ms": 0.329,
+        "max_ms": 3.415,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 4.715,
+        "p95_ms": 6.459,
+        "max_ms": 20.081,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.48,
+        "p95_ms": 0.615,
+        "max_ms": 2.108,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 79.2
+      }
+     },
+     "neo4j": {
+      "load_ms": 5265.7,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 8.098,
+        "p95_ms": 9.15,
+        "max_ms": 10.331,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 1.072,
+        "p95_ms": 1.432,
+        "max_ms": 8.398,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 2.249,
+        "p95_ms": 3.786,
+        "max_ms": 11.549,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 6.484,
+        "p95_ms": 10.885,
+        "max_ms": 24.876,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "container_mem": "1.55GiB / 7.75GiB",
+       "data_dir_kb": 529340
+      }
+     }
+    }
+   },
+   "3000": {
+    "info": {
+     "people": 3000,
+     "nodes": {
+      "client": 62,
+      "industry": 3,
+      "past_project": 2365,
+      "person": 3000,
+      "project": 600,
+      "skill": 37
+     },
+     "edges": {
+      "ASSIGNED": 2288,
+      "COWORKED": 434850,
+      "CURRENT_ON": 414,
+      "FOR_CLIENT": 2964,
+      "HAS_SKILL": 59005,
+      "IN_INDUSTRY": 2965,
+      "REQUIRES": 2047,
+      "REVIEWED": 38641,
+      "WORKED_ON": 50545
+     },
+     "n_edges": 593719,
+     "gen_s": 11.4,
+     "load_convert_s": 5.1,
+     "extract_ms": 717.6,
+     "kg_mb": 300.0,
+     "assigned": 2288
+    },
+    "backends": {
+     "core_kg": {
+      "load_ms": 21.1,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 670.753,
+        "p95_ms": 689.667,
+        "max_ms": 702.951,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.26,
+        "p95_ms": 1.778,
+        "max_ms": 2.253,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 8.713,
+        "p95_ms": 9.337,
+        "max_ms": 18.346,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.556,
+        "p95_ms": 0.727,
+        "max_ms": 0.743,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 0.0
+      }
+     },
+     "networkx": {
+      "load_ms": 1312.8,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 110.538,
+        "p95_ms": 118.142,
+        "max_ms": 131.547,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.257,
+        "p95_ms": 0.413,
+        "max_ms": 3.828,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 7.252,
+        "p95_ms": 9.268,
+        "max_ms": 54.347,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 0.515,
+        "p95_ms": 0.645,
+        "max_ms": 0.696,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "py_alloc_mb": 267.5
+      }
+     },
+     "neo4j": {
+      "load_ms": 15765.2,
+      "correct": {
+       "q1_skill_map": true,
+       "q2_project_evidence": true,
+       "q3_three_hop": true,
+       "q4_ego": true
+      },
+      "latency": {
+       "q1_skill_map": {
+        "p50_ms": 23.233,
+        "p95_ms": 26.219,
+        "max_ms": 27.52,
+        "n": 20
+       },
+       "q2_project_evidence": {
+        "p50_ms": 0.913,
+        "p95_ms": 1.087,
+        "max_ms": 8.279,
+        "n": 20
+       },
+       "q3_three_hop": {
+        "p50_ms": 2.395,
+        "p95_ms": 4.379,
+        "max_ms": 14.938,
+        "n": 20
+       },
+       "q4_ego": {
+        "p50_ms": 7.287,
+        "p95_ms": 11.176,
+        "max_ms": 12.647,
+        "n": 20
+       }
+      },
+      "footprint": {
+       "container_mem": "1.642GiB / 7.75GiB",
+       "data_dir_kb": 796320
+      }
+     }
+    }
+   }
+  }
+ }
+}
