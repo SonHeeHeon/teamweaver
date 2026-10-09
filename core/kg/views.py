@@ -6,6 +6,8 @@
 """
 from __future__ import annotations
 
+from collections import Counter
+
 from core.ingest.convert import level_from_months
 from core.kg.graph import KnowledgeGraph
 
@@ -21,18 +23,21 @@ def skill_map(kg: KnowledgeGraph, *, busy: set[str] | None = None) -> list[dict]
     """기술마다 공급(실무 가능 보유자·숙련자·지금 비어 있는 보유자)과 수요(요구하는 진행·제안 사업, 필요 인원).
     busy: 지금 사업에 들어가 있는 사람 id(없으면 CURRENT_ON 간선으로 센다)."""
     if busy is None:
-        busy = {e["src"].split(":", 1)[1] for e in kg.edges if e["type"] == "CURRENT_ON"}
+        busy = {e["src"].split(":", 1)[1] for e in kg.edges_of("CURRENT_ON")}
     rows = []
     for sk in kg.nodes_of("skill"):
         holders = [e for e in kg.inc(sk["id"], "HAS_SKILL")]
         practical = [e for e in holders if (e.get("months") or 0) >= PRACTICAL_MONTHS]
         expert = [e for e in practical if e["months"] >= EXPERT_MONTHS]
         free = [e for e in practical if e["src"].split(":", 1)[1] not in busy]
+        # 레벨별 보유자 수를 기술마다 한 번만 센다(실험 E8b: 요구마다 보유자 전원의 레벨을 다시 계산했다 -- 관계 종류별 색인과 함께 고쳐
+        # 3,000명 조직 기술 지도 671 ms → 31 ms)
+        by_level = Counter(level_from_months(h["months"]) for h in holders if (h.get("months") or 0) > 0)
         demand = []
         for e in kg.inc(sk["id"], "REQUIRES"):
             pj = kg.nodes[e["src"]]
             need_lv = level_from_months(e.get("min_months") or 0)
-            qualified = sum(1 for h in holders if (h.get("months") or 0) > 0 and level_from_months(h["months"]) >= need_lv)
+            qualified = sum(c for lv, c in by_level.items() if lv >= need_lv)
             demand.append({"project_id": pj["project_id"], "project": pj["label"], "proposal": pj.get("proposal", False),
                            "headcount": e.get("headcount") or 1, "min_months": e.get("min_months"), "qualified_people": qualified})
         need = sum(d["headcount"] for d in demand)

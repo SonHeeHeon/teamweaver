@@ -1,5 +1,6 @@
 """Knowledge graph (core/kg, 2026-10-07): one graph built from the CSV bundle, several views on top."""
 import datetime as dt
+from pathlib import Path
 
 import pytest
 
@@ -9,6 +10,8 @@ from core.ingest.org_profile import generate_org_bundle
 from core.kg import build_kg, project_evidence, skill_map, with_plan
 from core.kg.views import PRACTICAL_MONTHS
 from core.optimize.types import AssignEntry
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
@@ -27,7 +30,9 @@ def test_graph_facts_match_the_source_tables(operating):
     assert st["nodes"]["person"] == len(ds.people) and st["nodes"]["project"] == len(ds.projects)
     skills = [r for r in t["person_skills.csv"] if r["experience_months"] and
               (r.get("last_used_month") is None or r["last_used_month"] >= since)]
-    assert st["edges"]["HAS_SKILL"] == len(skills)
+    has = [e for e in kg.edges if e["type"] == "HAS_SKILL"]
+    assert sum(1 for e in has if e["own_months"] > 0) == len(skills)          # 본인이 적은 경력 = 원천 행
+    assert all(e.get("implied_from") for e in has if e["own_months"] == 0)    # 나머지는 하위 기술에서 인정된 경력(출처 있음)
     assert max(e["months"] for e in kg.edges if e["type"] == "HAS_SKILL") <= LOOKBACK_MONTHS
     work = [r for r in t["work_history.csv"] if r.get("end_date") is None or r["end_date"] >= since]
     assert st["edges"]["WORKED_ON"] == len(work)
@@ -189,3 +194,67 @@ def test_alternatives_keep_the_monthly_allocation(operating):
     swapped_in = [x for batch in seen for x in batch]
     assert swapped_in and all(x.monthly_alloc == monthly for x in swapped_in)
     assert ev["alternatives"][c0.person_id]
+
+
+@pytest.mark.parametrize("name", ["org-n100", "org-n300"])
+def test_kg_skill_levels_match_the_scoring_input(name, tmp_path):
+    """지식 그래프의 기술 경력이 입력 단계(점수 S의 입력)와 같은 기준이다 -- 사전 별칭·하위 기술 부분 인정 포함(리뷰 MUST 2026-10-09).
+    예전엔 그래프가 사전을 쓰지 않아 300명에서 "S로는 충족인데 근거는 미충족"이 172건이었다."""
+    from api.datasets import extract_bundle_zip
+    from core.ingest.convert import level_from_months, to_dataset
+    from core.ingest.loader import load_bundle
+    from core.kg import build_kg
+    root = ROOT / "demo" / name
+    if not root.exists():
+        root = extract_bundle_zip((ROOT / "demo" / f"{name}.zip").read_bytes(), tmp_path / "bundle")
+    b, rep = load_bundle(root)
+    ds, parsed = to_dataset(b, rep)
+    kg = build_kg(b, ds, parsed)
+    implied = 0
+    for p in ds.people:
+        edges = kg.out(f"person:{p.id}", "HAS_SKILL")
+        assert {kg.nodes[e["dst"]]["label"]: level_from_months(e["months"]) for e in edges} == p.skills
+        implied += sum(1 for e in edges if e.get("implied_from"))
+    assert implied > 0
+    for j in ds.projects:
+        assert {(kg.nodes[e["dst"]]["label"], level_from_months(e["min_months"] or 0), e["headcount"])
+                for e in kg.out(f"project:{j.id}", "REQUIRES")} == {(r.skill, r.min_level, r.headcount) for r in j.requirements}
+
+
+@pytest.mark.parametrize("kw", [{}, {"partial_credit": 1.0}, {"skill_dictionary": False}])
+def test_kg_matches_scoring_on_a_renamed_copy(kw, tmp_path):
+    """별칭·버전 표기·괄호 병기로 기술 이름을 바꾼 사본에서도 그래프 경력·요구가 입력 단계와 같다(리뷰 SHOULD) -- 같은 설정을 둘에 넘긴다."""
+    import csv
+    import hashlib
+    import json
+    import shutil
+    from core.ingest.convert import level_from_months
+    from core.ingest.skills import load_dictionary
+    sd = load_dictionary()
+    root = tmp_path / "b"
+    shutil.copytree(ROOT / "demo" / "org-n100", root)
+    for f in ("person_skills.csv", "project_skill_requirements.csv"):
+        with open(root / f, encoding="utf-8", newline="") as fh:
+            r = csv.DictReader(fh)
+            cols, rows = r.fieldnames, list(r)
+        for i, row in enumerate(rows):
+            c = sd.lookup(row["skill_name"])
+            if i % 3 == 0 and c.get("aliases"):
+                row["skill_name"] = c["aliases"][0]
+            elif i % 3 == 1:
+                row["skill_name"] = f"{c['label']} 2" if "(" in c["label"] or not c.get("aliases") else f"{c['aliases'][0]}({c['label']})"
+        with open(root / f, "w", encoding="utf-8", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    m["files"] = {n: hashlib.sha256((root / n).read_bytes()).hexdigest() for n in m["files"]}
+    (root / "manifest.json").write_text(json.dumps(m, ensure_ascii=False), "utf-8")
+    b, rep = load_bundle(root)
+    ds, parsed = to_dataset(b, rep, **kw)
+    kg = build_kg(b, ds, parsed, **kw)
+    for p in ds.people:
+        assert {kg.nodes[e["dst"]]["label"]: level_from_months(e["months"]) for e in kg.out(f"person:{p.id}", "HAS_SKILL")} == p.skills
+    for j in ds.projects:
+        assert {(kg.nodes[e["dst"]]["label"], level_from_months(e["min_months"] or 0), e["headcount"])
+                for e in kg.out(f"project:{j.id}", "REQUIRES")} == {(r.skill, r.min_level, r.headcount) for r in j.requirements}

@@ -28,6 +28,9 @@ class KnowledgeGraph:
     edges: list[dict] = field(default_factory=list)
     _out: dict[str, list[int]] = field(default_factory=lambda: defaultdict(list))
     _in: dict[str, list[int]] = field(default_factory=lambda: defaultdict(list))
+    # 관계 종류별 색인(2026-10-09, 실험 E8b): 전체 집계가 종류 하나(예: 지금 배치 CURRENT_ON)를 찾으려고 모든 간선을 훑지 않게.
+    # 3,000명 조직 기술 지도 671 ms → 이 색인과 views.skill_map의 "레벨별 보유자 한 번 세기"를 함께 고쳐 31 ms(따로 잰 값은 없다)
+    _by_type: dict[str, list[int]] = field(default_factory=lambda: defaultdict(list))
 
     def add_node(self, nid: str, ntype: str, label: str, **props) -> str:
         if nid not in self.nodes:
@@ -39,6 +42,7 @@ class KnowledgeGraph:
         self.edges.append(e)
         self._out[src].append(len(self.edges) - 1)
         self._in[dst].append(len(self.edges) - 1)
+        self._by_type[etype].append(len(self.edges) - 1)
         return e
 
     def out(self, nid: str, etype: str | None = None) -> list[dict]:
@@ -46,6 +50,9 @@ class KnowledgeGraph:
 
     def inc(self, nid: str, etype: str | None = None) -> list[dict]:
         return [self.edges[k] for k in self._in.get(nid, []) if etype is None or self.edges[k]["type"] == etype]
+
+    def edges_of(self, etype: str) -> list[dict]:
+        return [self.edges[k] for k in self._by_type.get(etype, [])]
 
     def nodes_of(self, ntype: str) -> list[dict]:
         return [n for n in self.nodes.values() if n["type"] == ntype]
@@ -79,10 +86,12 @@ def _client_of(project_name: str, clients: list[str]) -> str | None:
     return max(hits, key=len) if hits else None
 
 
-def build_kg(bundle, dataset, parsed=None, *, skill_alias: dict[str, str] | None = None,
+def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_credit: float | None = None,
              reveal_text: bool | None = None, recent_window: int = RECENT_WINDOW_MONTHS) -> KnowledgeGraph:
     """bundle: core.ingest.loader.Bundle, dataset: core.ingest.convert.to_dataset 결과, parsed: 리뷰 판정(ParsedReview 목록).
-    skill_alias: 기술 이름 → 표준 이름(의미 레이어, 없으면 그대로).
+    skill_dictionary·partial_credit: 기술 이름 사전과 하위 기술 부분 인정(core/ingest/skills) -- **to_dataset과 같은 값을 넘긴다**(기본도 같다).
+    입력 단계와 같은 함수(person_skill_months)로 경력을 만들어 그래프 근거가 점수 S와 같은 기준이 된다(리뷰 MUST 2026-10-09).
+    인정받은 경력의 HAS_SKILL 간선에는 출처(implied_from: 하위 기술·그 경력·깊이·계수)를 단다 -- 본인이 적은 경력과 구분해 보이게.
     reveal_text: 평가 원문 문장을 간선에 넣을지. 기본은 manifest가 명시적으로 가상(synthetic=true)일 때만 -- 실데이터 평가 원문은
     화면·AI에 보내지 않는다는 결정(K5)과 같다. 실데이터는 항목 라벨(review_items: "좋은 점: 소통")만 넣고, 사람 이름(표시명)과
     과거 업무 요약(summary)도 넣지 않는다(사람은 id로만 -- 기존 근거 색인과 같다).
@@ -90,8 +99,11 @@ def build_kg(bundle, dataset, parsed=None, *, skill_alias: dict[str, str] | None
     교체 기록(replacements.csv)은 개인에게 민감할 수 있어 넣지 않는다."""
     if reveal_text is None:
         reveal_text = bundle.manifest.get("synthetic") is True
-    from core.ingest.convert import LOOKBACK_MONTHS, lookback_start
-    canon = (lambda s: skill_alias.get(s, s)) if skill_alias else (lambda s: s)
+    from core.ingest.convert import LOOKBACK_MONTHS, level_from_months, lookback_start
+    from core.ingest.skills import load_dictionary, person_skill_months
+    sd = load_dictionary() if skill_dictionary is True else (skill_dictionary or None)
+    credit = (sd.narrower_credit if partial_credit is None else partial_credit) if sd else 0.0
+    canon = sd.canonical if sd else (lambda s: s)
 
     class _Tables:                                   # Bundle.tables 키는 "people.csv" 같은 파일 이름이다
         def get(self, name, default=None):
@@ -108,6 +120,7 @@ def build_kg(bundle, dataset, parsed=None, *, skill_alias: dict[str, str] | None
         kg.add_node(f"person:{pid}", "person", (r.get("display_name") or pid) if reveal_text else pid, person_id=pid,
                     grade=r.get("career_grade"),
                     role_type=r.get("role_type"), job_family=r.get("job_family"), monthly_rate=people[pid].monthly_rate)
+    rows: dict[str, list] = defaultdict(list)
     best: dict[tuple, dict] = {}
     for r in t.get("person_skills", []):
         if f"person:{r['person_id']}" not in kg.nodes or not r.get("experience_months"):
@@ -118,12 +131,23 @@ def build_kg(bundle, dataset, parsed=None, *, skill_alias: dict[str, str] | None
         name = canon(r["skill_name"])
         kg.add_node(f"skill:{name}", "skill", name, category=r.get("skill_category"))
         months = min(int(r["experience_months"]), LOOKBACK_MONTHS)
-        key = (r["person_id"], name)                               # 별칭을 합치면 같은 (사람, 표준 기술)이 겹친다 -- 가장 긴 경력 하나
+        rows[r["person_id"]].append((r["skill_name"], months))
+        key = (r["person_id"], name)                               # 별칭을 합치면 같은 (사람, 표준 기술)이 겹친다 -- 가장 긴 경력 행의 부가 정보
         if key not in best or months > best[key]["months"]:
             best[key] = {"months": months, "project_count": r.get("project_count"), "last_used": _iso(last),
                          "raw_name": r["skill_name"]}
-    for (pid, name), props in best.items():
-        kg.add_edge("HAS_SKILL", f"person:{pid}", f"skill:{name}", **props)
+    for pid, rs in rows.items():
+        sm = person_skill_months(rs, sd, credit)                   # 입력 단계(to_dataset)와 같은 함수 -- S와 같은 경력
+        for name, months in sm.months.items():
+            props = dict(best.get((pid, name)) or {"project_count": None, "last_used": None, "raw_name": None})
+            props.update(months=months, own_months=sm.own.get(name, 0))
+            imp = sm.implied.get(name)
+            if imp and imp["months"] > sm.own.get(name, 0):
+                props["implied_from"] = {"skill": imp["from"], "months": imp["from_months"], "depth": imp["depth"], "credit": credit}
+                if f"skill:{name}" not in kg.nodes:
+                    c = sd.lookup(name) if sd else None
+                    kg.add_node(f"skill:{name}", "skill", name, category=c.get("category") if c else None)
+            kg.add_edge("HAS_SKILL", f"person:{pid}", f"skill:{name}", **props)
     clients = sorted({r.get("client") for r in t.get("work_history", []) if r.get("client")})
     industries = {r.get("industry") for r in t.get("work_history", []) if r.get("industry")}
     proposals = set(bundle.manifest.get("proposals") or [])
@@ -148,13 +172,20 @@ def build_kg(bundle, dataset, parsed=None, *, skill_alias: dict[str, str] | None
         if industry:
             kg.add_node(f"industry:{industry}", "industry", industry)
             kg.add_edge("IN_INDUSTRY", f"project:{jid}", f"industry:{industry}")
+    reqs: dict[tuple, dict] = {}
     for r in t.get("project_skill_requirements", []):
         if f"project:{r['project_id']}" not in kg.nodes:
             continue
         name = canon(r["skill_name"])
+        e = {"min_months": r.get("min_experience_months"), "headcount": r.get("headcount"), "raw_name": r["skill_name"]}
+        key = (r["project_id"], name)                              # 입력 단계와 같이: 같은 기술을 다른 이름으로 두 번 요구하면 높은 요구 하나만
+        if key in reqs:
+            old = reqs[key]
+            e = max((old, e), key=lambda x: (level_from_months(x["min_months"] or 0), x["headcount"] or 0))
+        reqs[key] = e
+    for (jid, name), e in reqs.items():
         kg.add_node(f"skill:{name}", "skill", name)
-        kg.add_edge("REQUIRES", f"project:{r['project_id']}", f"skill:{name}",
-                    min_months=r.get("min_experience_months"), headcount=r.get("headcount"), raw_name=r["skill_name"])
+        kg.add_edge("REQUIRES", f"project:{jid}", f"skill:{name}", **e)
     outcomes = {r["project_code"]: r for r in t.get("project_outcomes", []) if r.get("project_code")}
     for r in t.get("work_history", []):
         end = r.get("end_date")
