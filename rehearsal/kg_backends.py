@@ -114,8 +114,8 @@ def clean(v):
         if all(isinstance(x, (bool, int, float, str)) for x in items) and len({type(x) for x in items}) <= 1:
             return items
         return json.dumps(items, ensure_ascii=False, default=str)
-    if isinstance(v, dict):
-        return json.dumps(v, ensure_ascii=False, default=str)
+    if isinstance(v, dict):                       # 키 순서를 고정한 JSON 문자열(비교 쪽 _cv와 같은 규칙 -- 2026-10-09 implied_from)
+        return json.dumps(v, ensure_ascii=False, default=str, sort_keys=True)
     return str(v)
 
 
@@ -129,6 +129,8 @@ def q2_pack(req, months, industry, cowork, reviews) -> dict:
 
 
 def _cv(k, v, strict):
+    if isinstance(v, dict):                       # 사전형 속성(예: implied_from)은 저장소가 JSON 문자열로 담는다 -- 같은 규칙으로 맞춰 비교
+        return json.dumps(v, ensure_ascii=False, default=str, sort_keys=True)
     if k in LIST_KEYS:
         xs = [] if v is None else [nv(x) for x in (v if isinstance(v, (list, tuple)) else [v])]
         return tuple(xs) if strict else tuple(sorted(set(xs), key=str))
