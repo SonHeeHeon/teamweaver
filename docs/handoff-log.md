@@ -22,6 +22,13 @@
 
 ---
 
+## 2026-10-09 · claude-a · 사용자 결정: 인사팀 소명은 GraphRAG
+- 브랜치/커밋: `feat/claude-a-skill-dictionary`(문서만)
+- 한 일: 사용자 결정 기록 — 인사팀 소명 글은 GraphRAG(그래프 사실만 주고 AI가 근거 번호를 달아 쓰기), 지식 그래프 템플릿 글은 실패 시 대체로만. 근거는 사용성(E7: 근거 오류 0으로 같고, GraphRAG 약 890자 vs 템플릿 약 5,200자).
+- 상대 영향: claude-b — 지식 그래프 화면·소명 PDF의 계약은 claude-a가 생성·검증 모듈을 만들 때 적는다(work-split 요청 갱신).
+- 검증: 문서만(코드 변경 없음)
+- 근거: `rehearsal/results/justification-compare.html`
+
 ## 2026-10-09 · claude-a · IT 기술 이름 사전 + 하위 기술 부분 인정 + E8b(그래프 DB·RDF 장점 실측)
 - 브랜치/커밋: `feat/claude-a-skill-dictionary` `2442c4f..` (지식 그래프 브랜치 위, main 병합은 사용자 승인 대기)
 - 한 일: 사용자 결정(사전 범위 = SI 핵심 큐레이션, 상하위 관계 = 점수에 부분 인정, KG 구현 = core/kg 유지). `core/ingest/skills.py`·`skill_dictionary.json`(228개, 한·영 별칭, 상위·관련 관계,
