@@ -78,9 +78,12 @@ def project_evidence(kg: KnowledgeGraph, project_id: str, entries, *, graph=None
             # 충족 판정은 점수(S)와 같은 기준: 경력 개월을 레벨 구간(12/36/60/96)으로 바꿔 요구 레벨과 비교한다(리뷰 SHOULD --
             # 개월로 비교하면 "S는 충족인데 근거는 미달"처럼 어긋난다). 개월 숫자는 함께 보인다.
             ok = have > 0 and level_from_months(have) >= level_from_months(need)
-            coverage.append({"skill": kg.nodes[sk]["label"], "months": have, "min_months": need,
-                             "level": level_from_months(have) if have else 0, "min_level": level_from_months(need),
-                             "status": "met" if ok else ("below" if have > 0 else "missing")})
+            row = {"skill": kg.nodes[sk]["label"], "months": have, "min_months": need,
+                   "level": level_from_months(have) if have else 0, "min_level": level_from_months(need),
+                   "status": "met" if ok else ("below" if have > 0 else "missing")}
+            if skills.get(sk, {}).get("implied_from"):               # 하위 기술에서 일부 인정된 경력이면 출처를 함께(2026-10-09)
+                row["implied_from"] = skills[sk]["implied_from"]
+            coverage.append(row)
         past = [e for e in kg.out(node, "WORKED_ON")]
         same_industry = [e for e in past if pj.get("industry") and kg.nodes[e["dst"]].get("industry") == pj["industry"]]
         same_client = [e for e in past if pj.get("client") and kg.nodes[e["dst"]].get("client") == pj["client"]]

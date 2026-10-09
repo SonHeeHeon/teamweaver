@@ -1,0 +1,63 @@
+# [claude-a → claude-b] 인사팀 소명 글(GraphRAG) API·화면·PDF (2026-10-09)
+
+사용자 결정(2026-10-09): "인사팀 소명 방식은 graph rag로 하자. Knowledge graph(템플릿)는 너무 정리가 안 돼 있어. 근거는 사용자의 사용성 확대."
+— AI가 지식 그래프 사실 목록으로 글을 쓰되, **사실은 자리표시 `{F12}`로만 끼우고 서버가 그 자리를 사실 문구로 채운다**(숫자·충족/미달·다른 사람 ID를 AI가 쓸 수 없다).
+서버가 AI 원문을 검사해 통과한 글만 쓰고, 실패하면 정해진 틀의 글(템플릿)로 대신한다.
+AI가 쓸 수 있는 연결 말은 허용 목록 문법뿐이다(주어 "DP0006은", 주제 라벨 "동료 평가는", 연결어 "이며", 맺음 "입니다") — AI의 몫은 사실 고르기·순서·묶기.
+(측정 전 설계 변경 2회: 자유 문장 대조 검사 → 자리표시 + 판단어 금지 목록 → 자리표시 + 허용 목록. 앞의 두 방식은 폴백 리뷰마다 새 구멍이 나왔다.)
+계산·검증은 claude-a가 만들었다(`feat/claude-a-graphrag-justify`). API·화면·PDF를 부탁한다. 계약은 아래 함수 그대로다.
+
+## 계산(claude-a, 그대로 부르면 된다)
+```python
+from core.kg import build_kg                                   # 그래프: 원 CSV 묶음(Bundle) + Dataset + 리뷰 판정
+from core.kg.justify import justification_input                # 사업 하나의 소명 재료(사실 F1…)
+from api.rag.justification import generate_justification       # AI 글 + 검사 + 템플릿 대체
+
+kg = build_kg(bundle, dataset, parsed)                         # 데이터셋 버전마다 한 번 만들어 둔다(300명 약 0.06초, 3,000명 약 0.8초)
+inp = justification_input(kg, project_id, entries, graph=graph, S=S, C=C, params=params)
+out = generate_justification(client, load_pricing()["briefing_model"], inp)
+```
+- `entries`: 배치 **전체**(규칙 위반 수를 배치 전체로 센다). 교체를 적용했다면 적용된 명단 — `/api/report`처럼 `base_entries` + `applied_swaps`를 서버가 다시 적용해 쓰는 것을 권한다(조작 방지).
+- `graph·S·C·params`: 그 배치를 계산한 기준(가중치·배치 설정 스냅숏). "왜 다른 사람이 아니었나"(ALT 사실)를 현행 평가기로 잰다.
+- `client`: 교체 설명(`/api/whatif`)과 같은 정책 — 키가 없거나 실데이터 외부 전송이 허용되지 않으면 `None`을 넘긴다(바로 템플릿, `fallback_reason="no_client"`).
+  사실 목록에는 사람 이름·평가 원문·업무 요약이 없다(지식 그래프가 실데이터에서 뺀다, K5).
+- 지식 그래프는 **CSV 묶음 데이터에서만** 만들 수 있다(원 표가 필요). 고정 JSON 데이터셋이면 409 등으로 "묶음 데이터에서만 지원"을 알려 달라.
+
+## 출력(`generate_justification`)
+| 키 | 내용 |
+|---|---|
+| `method` | `"graphrag"`(AI 글, 검사 통과) 또는 `"template"`(대체) |
+| `text` | 보여 줄 글(서버가 자리표시를 채운 글). 채운 문구 바로 뒤에 `[F12]` 같은 근거 번호가 붙는다 |
+| `facts` | `[{id, kind, text, phrase, phrase_full, owners, skill, status, adverse}]` — `adverse`: 불리한 사실(요구 부족·기술 미달·규칙 위반·빈자리·점수가 오르는 다른 후보·부정 평가) — `text`는 한 줄 사실(목록·템플릿용), `phrase`·`phrase_full`은 글에 채운 문구. kind: PRJ 사업 · REQ 요구 기술 · MEM 팀원 · SKL 사람별 기술(부분 인정이면 "하위 기술 … 일부 인정") · IND 같은 산업 · CLI 같은 고객사 · CW 함께 일한 이력 · REV 동료 평가 · ALT 다른 후보 비교 · CON 규칙 준수 |
+| `verification` | `{ok, violations[{rule, sentence, detail}], sentences, cited[F#], coverage{요소: bool/None}, chars, adverse{available, cited}}` (AI 글이 있었을 때) |
+| `fallback_reason` | `None` 또는 `no_client` · `llm_error:<예외>` · `llm_bad_json:<예외>` · `verify_error:<예외>` · `verify:S2,S4`(걸린 규칙) · `render_check`(채운 글 확인 실패) |
+| `llm_text` | 검사 전 AI 원문(자리표시 `{F#}` 포함, 탈락한 글 포함). **화면·PDF에는 절대 보이지 말 것** — 탈락한 글은 틀린 주장이 있을 수 있다. 운영 로그·디버그용 |
+| `usage` | `{model, reasoning_effort, latency_s, in, out, cost_usd}` |
+
+검사 규칙(AI 원문 기준): S1 없는 자리표시 · S2 허용 목록(문법) 밖 연결 말·자리표시 없는 문장 · S3 주어·라벨 자리의 팀원 아닌·지어낸 ID ·
+S4 사실과 머리의 짝(사람별 사실은 주어 중 주인의 것, 라벨 뒤엔 그 라벨 종류의 사실, 요구 기술·규칙 앞엔 사람 주어 금지) · S5 사람별 사실이 없는 팀원 · S6 빈 글.
+하나라도 걸리면 글 전체를 버린다(틀린 문장만 지우지 않는다). 사람별 사실은 주어가 그 주인 한 명일 때만 짧은 문구, 그 밖에는 주인 ID를 붙여 채운다("DP0035의 …").
+주제 라벨 목록은 `core/kg/justify.LABELS`(프롬프트도 같은 목록을 쓴다). `CON` 사실은 현행 평가기로 다시 잰 규칙 위반 수·등급 정원 빈자리 수다(독립 검증기 C0 결과가 아니다).
+
+## API 제안(이름·모양은 claude-b가 정해도 된다)
+- `POST /api/justification` — 입력 `{dataset_version, project_id, base_entries, applied_swaps, weights, milp_params, plan_signature?}` → 위 출력.
+  데이터셋 버전이 다르면 409, 사업이 배치에 없으면 404. 한 사업 AI 글은 약 6~8초(측정값은 아래 결과로 갱신).
+- PDF(`/api/report`)에 "사업별 소명 포함" 선택지 — 서버가 사업마다 위 함수를 병렬로 불러(동시 6개 정도) 넣는다. 사업 수 × 약 $0.0007.
+
+## 화면 제안(사업별 근거 화면 = 지식 그래프 화면의 실체)
+- 소명 글 + **근거 번호 칩**: `[F12]`을 누르면 옆 사실 목록에서 그 사실을 강조(사실 목록은 종류별로 묶어서). 채운 문구 부분을 옅게 강조하면 "AI가 쓴 말 / 데이터" 구분이 보인다.
+- 배지: "AI 구성 · 사실은 데이터 그대로"(graphrag) / "정해진 틀(사유: …)"(template). 템플릿일 때 사유를 사람 말로(예: S2 "정해진 표현 밖의 말이 있어 AI 글을 쓰지 않았습니다",
+  S4 "사실이 다른 사람·다른 주제 아래 놓여 AI 글을 쓰지 않았습니다", S5 "빠진 팀원이 있어 …", llm_error "AI 호출이 실패해 …").
+- 불리한 사실(`facts[].adverse`: 요구 부족·기술 미달·규칙 위반·빈자리·점수가 오르는 다른 후보·부정 평가)은 AI 글에서 빠질 수 있다 —
+  사실 목록 쪽에서 눈에 띄게 표시해 달라(측정 결과의 불리한 사실 인용률을 보고 구조적 보완 여부를 사용자가 정한다).
+- "다시 쓰기"(AI 다시 호출), 부분 인정 사실은 "(하위 기술에서 일부 인정)" 표시.
+- 시안 참고: `rehearsal/results/kg-preview.html`(사업별 근거 그래프·"왜 다른 사람이 아니었나" 표).
+
+## 측정 사전 등록(E7b, 측정 전 고정 — `rehearsal/justify_scale.py` docstring·상수가 원본)
+- 대상: 시연 묶음 6개(100·200·300명 × 연초 계획 안 A·운영 중 최대 K 배치)의 배치 있는 사업 전부 × 3회, 외부 gpt-6-luna(추론 low), 비용 상한 $3.
+- G1(필수): 판별 가능한 주입 오류 100% 탐지 + 채운 글 무결성 실패 0(짧은 문구 귀속을 render와 따로 확인). 주입: M1~M9 규칙별 구조 변형 + H1~H7 보류 묶음(독립 리뷰 예문 유형).
+- G2(목표): 채택률 ≥95% 달성 · 90~95% 조건부 · <90% 미달(분모 = 계획한 호출 전부, AI 호출 오류 포함). G3(보고): 비용·지연·일관성·필수 요소·불리한 사실 인용률·길이·팀 크기별·연결 말 전부.
+- 측정 전 조율: 같은 시연 묶음 사업 일부로 60건(채택 57)을 돌려 문법·지시문을 다듬었다(라벨 변형 추가 등) — 처음 보는 데이터의 수치가 아니다.
+
+## 측정 결과(확대 검증 E7b)
+- `rehearsal/results/justify-scale.html` — (측정 뒤 채움: 채택률·오류 주입 탐지·지연·비용)
