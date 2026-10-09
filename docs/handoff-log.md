@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-09 · claude-a · E8 지식 그래프 구현 기술 비교(RDF vs 그래프 DB vs networkx) — 증적
+- 브랜치/커밋: `feat/claude-a-kg-backends`(`feat/claude-a-knowledge-graph` 위) `6af8da0..` (main 병합은 지식 그래프 브랜치와 함께, 사용자 승인 대기)
+- 한 일: 사용자 요청("3가지 버전에서 지금 시스템에 어떤게 베스트인지 증적, 보고서에 쓸 근거"). 판정 규칙을 측정 전에 커밋(`rehearsal/kg_backend_decision.py`)한 뒤
+  같은 사실·같은 질문 4개로 networkx·Oxigraph(SPARQL)·Neo4j(Docker, Cypher)·rdflib(참고)를 쟀다(`rehearsal/kg_backends.py`). 판정 **메모리 그래프(networkx)** —
+  정확성 세 후보 모두 4/4, Neo4j는 별도 서버라 후순위, networkx 11/12칸. 규칙 3을 빼도 networkx 8·Neo4j 4·RDF 0. 현재 core/kg는 networkx가 아닌 자체 메모리 그래프(10/12칸 더 빠름) —
+  유지·이전은 사용자 결정. Opus 폴백 리뷰 MUST 2(Q4 일부 속성만 비교, 메모리 과소) 고치고 처음부터 재측정, 첫 결과 `kg-backends.superseded-1.json` 보존. 보고서용 요약 `docs/kg-technology-decision.md`.
+- 상대 영향: 없음(영역 안 rehearsal·tests·docs만, 비교용 라이브러리는 `uv run --with`로만 — `pyproject.toml`·`uv.lock` 무변경). 테스트 기준선 1413 → **1423**(이 브랜치, 판정 규칙 시험 10개 추가).
+- 검증: `uv run --group benchmark pytest -q` → 1423 passed, 19 deselected · `git diff 6af8da0 -- rehearsal/kg_backend_decision.py` 비어 있음 · 최종 측정 env commit `c03eaa5` dirty=false
+- 근거: `rehearsal/results/kg-backends.html`, `docs/kg-technology-decision.md`, 다음 계획(기술 이름 사전) `.omc/plan/2026-10-09-skill-dictionary.md`(루트 로컬)
+
 ## 2026-10-08 · claude-a · 지식 그래프(그래프 하나 + 보기 둘) + 인사팀 소명 방식 실험 E7
 - 브랜치/커밋: `feat/claude-a-knowledge-graph` (push, **main 병합은 사용자 승인 대기**)
 - 한 일: 사용자 요청("지식그래프도 일단 시작하자, 용도별로 다 각각 만들어야 하나?" → 그래프 하나). `core/kg/`(새 디렉터리, claude-a 소유) — 사람·기술·현재/과거 사업·고객사·산업·평가·협업을

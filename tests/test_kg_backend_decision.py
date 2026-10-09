@@ -83,3 +83,16 @@ def test_known_gap_tie_on_wins_with_far_means_keeps_first_listed():
     rule4 = next(t for t in d["trail"] if t["rule"] == 4)
     assert rule4["cell_wins"] == {"a": 6, "b": 6}
     assert d["decision"] == "a"
+
+
+def test_sensitivity_strict_q4_branch():
+    """Q4를 엄격 비교(목록 순서·중복)로 하면 순서를 못 지키는 후보가 규칙 1에서 빠진 판정을 함께 낸다."""
+    def ms(name):
+        return lambda n, q: {"networkx": 2.0, "rdf_oxigraph": 1.0, "neo4j": 3.0}[name]
+    r = _res(networkx=_cand(ms("networkx")), rdf_oxigraph=_cand(ms("rdf_oxigraph")), neo4j=_cand(ms("neo4j"), server=True))
+    for name, v in r["candidates"].items():
+        v["q4_order_preserved"] = name != "rdf_oxigraph"
+    assert decide(r)["decision"] == "rdf_oxigraph"
+    s = sensitivity(r)
+    assert s["strict_q4_failed"] == ["rdf_oxigraph"]
+    assert s["strict_q4_decision"] == "networkx"

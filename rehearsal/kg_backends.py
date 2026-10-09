@@ -1122,9 +1122,9 @@ code{{font-family:ui-monospace,Menlo,monospace;font-size:.88em}}
 <p class="sub">"사실 추출" = CSV 묶음에서 지식 그래프 만들기(build_kg, 모든 후보 공통 — 묶음 읽기·변환은 제외). 각 칸 = 그 사실을 후보 저장소에 넣는 시간. 현재 구현은 추출 결과가 곧 그래프라 0.</p>
 <div class="w"><table><tr><th>규모</th><th>사실 추출</th>{''.join(f'<th>{e(NAMES[b])}</th>' for b in order)}</tr>{load_rows}</table></div>
 <p class="sub">메모리(참고): 파이썬 후보는 별도 프로세스에서 적재 중 파이썬 할당(tracemalloc, 위)과 적재 전후 RSS 차이(아래). 두 방법 모두 한계가 있다 —
-RSS 차이는 앞서 풀린 파이썬 힙을 다시 쓰면 작게 나오고, tracemalloc은 Rust로 할당하는 Oxigraph를 거의 못 본다(Oxigraph는 RSS 차이가 실제에 가깝다).
+RSS 차이는 앞서 풀린 메모리를 다시 쓰면 작게 나오고, tracemalloc은 Rust로 할당하는 Oxigraph를 거의 못 본다 — Oxigraph는 RSS 차이만 쓸 수 있는데 측정마다 편차가 크다(같은 300명에서 첫 측정 242 MB, 이번 160 MB, 프로브만 다시 돌리면 152~176 MB) — 하한일 수 있다.
 그래프 자체(사실 추출 결과)는 모든 후보 공통이라 빼고 잰다. Neo4j는 컨테이너 전체 사용량(이 실험이 정한 힙 1G·페이지 캐시 512M가 대부분)과 /data 크기
-(빈 DB의 기본 파일·미리 할당된 트랜잭션 로그가 대부분이고, 9회 다시 적재한 기록 포함 — 우리 데이터 자체는 수 MB 수준).</p>
+(빈 DB의 기본 파일·미리 할당된 트랜잭션 로그가 대부분 — 빈 DB 대비 증가는 300명까지 약 13 MB이고, 이 안에 9회 다시 적재한 기록이 들어 있다).</p>
 <div class="w"><table><tr><th>규모</th>{''.join(f'<th>{e(NAMES[b])}</th>' for b in order)}</tr>{mem_rows}</table></div>
 
 <h2>5. 결론이 규칙에 얼마나 기대는가(민감도, 참고)</h2>

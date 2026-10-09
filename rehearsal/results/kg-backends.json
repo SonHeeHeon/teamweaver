@@ -1,0 +1,900 @@
+{
+ "candidates": {
+  "core_kg": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 1.338,
+      "p95_ms": 1.357,
+      "max_ms": 1.474,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.154,
+      "p95_ms": 0.337,
+      "max_ms": 0.364,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.353,
+      "p95_ms": 0.538,
+      "max_ms": 0.565,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.216,
+      "p95_ms": 0.251,
+      "max_ms": 0.255,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 3.915,
+      "p95_ms": 3.967,
+      "max_ms": 4.039,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.143,
+      "p95_ms": 0.366,
+      "max_ms": 1.604,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.592,
+      "p95_ms": 1.023,
+      "max_ms": 2.512,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.31,
+      "p95_ms": 0.338,
+      "max_ms": 0.361,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 7.727,
+      "p95_ms": 7.817,
+      "max_ms": 7.9,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.21,
+      "p95_ms": 0.388,
+      "max_ms": 1.436,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.8,
+      "p95_ms": 1.155,
+      "max_ms": 2.942,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.361,
+      "p95_ms": 0.417,
+      "max_ms": 0.462,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 0.0,
+    "200": 0.0,
+    "300": 0.0
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 36,
+   "q4_order_preserved": true
+  },
+  "networkx": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 1.548,
+      "p95_ms": 1.556,
+      "max_ms": 1.57,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.278,
+      "p95_ms": 0.568,
+      "max_ms": 0.689,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.105,
+      "p95_ms": 1.19,
+      "max_ms": 1.23,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.228,
+      "p95_ms": 0.267,
+      "max_ms": 0.29,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 3.723,
+      "p95_ms": 5.108,
+      "max_ms": 5.666,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.177,
+      "p95_ms": 0.44,
+      "max_ms": 1.632,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.31,
+      "p95_ms": 2.749,
+      "max_ms": 3.609,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.323,
+      "p95_ms": 0.353,
+      "max_ms": 0.378,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 5.666,
+      "p95_ms": 5.747,
+      "max_ms": 5.916,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.244,
+      "p95_ms": 0.512,
+      "max_ms": 2.09,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.541,
+      "p95_ms": 3.38,
+      "max_ms": 5.253,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.369,
+      "p95_ms": 0.426,
+      "max_ms": 0.439,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 11.1,
+    "200": 30.1,
+    "300": 46.5
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 64,
+   "q4_order_preserved": true
+  },
+  "rdf_oxigraph": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 2.678,
+      "p95_ms": 2.693,
+      "max_ms": 2.693,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.763,
+      "p95_ms": 3.551,
+      "max_ms": 3.624,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.469,
+      "p95_ms": 2.393,
+      "max_ms": 2.448,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 4.842,
+      "p95_ms": 5.617,
+      "max_ms": 5.688,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 5.339,
+      "p95_ms": 5.417,
+      "max_ms": 6.251,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.341,
+      "p95_ms": 2.889,
+      "max_ms": 13.883,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.064,
+      "p95_ms": 3.684,
+      "max_ms": 10.073,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 7.856,
+      "p95_ms": 9.449,
+      "max_ms": 9.587,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 7.854,
+      "p95_ms": 8.062,
+      "max_ms": 8.187,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.963,
+      "p95_ms": 3.575,
+      "max_ms": 21.108,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 4.291,
+      "p95_ms": 11.154,
+      "max_ms": 12.536,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 8.953,
+      "p95_ms": 10.783,
+      "max_ms": 11.778,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 184.3,
+    "200": 467.4,
+    "300": 733.1
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 136,
+   "q4_order_preserved": false
+  },
+  "neo4j": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 3.357,
+      "p95_ms": 3.918,
+      "max_ms": 5.521,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 2.167,
+      "p95_ms": 3.211,
+      "max_ms": 7.939,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.826,
+      "p95_ms": 2.471,
+      "max_ms": 3.011,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 3.447,
+      "p95_ms": 3.96,
+      "max_ms": 5.294,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 2.636,
+      "p95_ms": 3.112,
+      "max_ms": 7.043,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.991,
+      "p95_ms": 1.796,
+      "max_ms": 7.388,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.383,
+      "p95_ms": 1.938,
+      "max_ms": 3.451,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 4.774,
+      "p95_ms": 6.281,
+      "max_ms": 6.626,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 5.062,
+      "p95_ms": 6.78,
+      "max_ms": 6.887,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.033,
+      "p95_ms": 1.308,
+      "max_ms": 6.694,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.825,
+      "p95_ms": 5.675,
+      "max_ms": 6.596,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 6.842,
+      "p95_ms": 8.111,
+      "max_ms": 9.839,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 423.7,
+    "200": 781.7,
+    "300": 1149.8
+   },
+   "server": true,
+   "disk_persist": true,
+   "loc": 67,
+   "q4_order_preserved": true
+  }
+ },
+ "reference": {
+  "rdf_rdflib": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 381.686,
+      "p95_ms": 399.167,
+      "max_ms": 399.167,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1057.85,
+      "p95_ms": 1535.686,
+      "max_ms": 1535.686,
+      "n": 5
+     },
+     "q3_three_hop": {
+      "p50_ms": 6091.375,
+      "p95_ms": 7492.59,
+      "max_ms": 7492.59,
+      "n": 5
+     },
+     "q4_ego": {
+      "p50_ms": 28.633,
+      "p95_ms": 30.968,
+      "max_ms": 30.968,
+      "n": 5
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 771.141,
+      "p95_ms": 781.72,
+      "max_ms": 781.72,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 2193.703,
+      "p95_ms": 41421.296,
+      "max_ms": 41421.296,
+      "n": 5
+     },
+     "q3_three_hop": {
+      "p50_ms": 115858.577,
+      "p95_ms": 115858.577,
+      "max_ms": 115858.577,
+      "n": 1
+     },
+     "q4_ego": {
+      "p50_ms": 36.551,
+      "p95_ms": 39.478,
+      "max_ms": 39.478,
+      "n": 5
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 1100.178,
+      "p95_ms": 1111.945,
+      "max_ms": 1111.945,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 65678.813,
+      "p95_ms": 65678.813,
+      "max_ms": 65678.813,
+      "n": 1
+     },
+     "q3_three_hop": {
+      "p50_ms": 209473.497,
+      "p95_ms": 209473.497,
+      "max_ms": 209473.497,
+      "n": 1
+     },
+     "q4_ego": {
+      "p50_ms": 41.336,
+      "p95_ms": 45.886,
+      "max_ms": 45.886,
+      "n": 5
+     }
+    }
+   },
+   "load_ms": {
+    "100": 569.2,
+    "200": 1425.8,
+    "300": 2178.7
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 116,
+   "q4_order_preserved": false
+  }
+ },
+ "data": {
+  "100": {
+   "extract_ms": 13.5,
+   "nodes": {
+    "client": 54,
+    "industry": 3,
+    "past_project": 114,
+    "person": 100,
+    "project": 20,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 118,
+    "COWORKED": 4173,
+    "CURRENT_ON": 15,
+    "FOR_CLIENT": 131,
+    "HAS_SKILL": 1990,
+    "IN_INDUSTRY": 134,
+    "REQUIRES": 70,
+    "REVIEWED": 1262,
+    "WORKED_ON": 1538
+   },
+   "triples": 81472,
+   "triples_unique": 81357,
+   "projects_with_team": 20,
+   "people": 100
+  },
+  "200": {
+   "extract_ms": 32.2,
+   "nodes": {
+    "client": 55,
+    "industry": 3,
+    "past_project": 148,
+    "person": 200,
+    "project": 40,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 239,
+    "COWORKED": 15312,
+    "CURRENT_ON": 29,
+    "FOR_CLIENT": 179,
+    "HAS_SKILL": 4014,
+    "IN_INDUSTRY": 188,
+    "REQUIRES": 144,
+    "REVIEWED": 2482,
+    "WORKED_ON": 3207
+   },
+   "triples": 210624,
+   "triples_unique": 210401,
+   "projects_with_team": 40,
+   "people": 200
+  },
+  "300": {
+   "extract_ms": 48.9,
+   "nodes": {
+    "client": 58,
+    "industry": 3,
+    "past_project": 241,
+    "person": 300,
+    "project": 60,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 354,
+    "COWORKED": 24004,
+    "CURRENT_ON": 51,
+    "FOR_CLIENT": 297,
+    "HAS_SKILL": 5773,
+    "IN_INDUSTRY": 301,
+    "REQUIRES": 220,
+    "REVIEWED": 3755,
+    "WORKED_ON": 4852
+   },
+   "triples": 322249,
+   "triples_unique": 321951,
+   "projects_with_team": 60,
+   "people": 300
+  }
+ },
+ "baseline": "core_kg",
+ "footprint": {
+  "neo4j_empty": {
+   "container_mem": "1.311GiB / 7.75GiB",
+   "data_dir_kb": 528056
+  },
+  "neo4j_100": {
+   "container_mem": "1.46GiB / 7.75GiB",
+   "data_dir_kb": 529176
+  },
+  "core_kg_100": {
+   "rss_delta_mb": 0.0,
+   "py_alloc_mb": 0.0
+  },
+  "networkx_100": {
+   "rss_delta_mb": 13.8,
+   "py_alloc_mb": 14.8
+  },
+  "rdf_oxigraph_100": {
+   "rss_delta_mb": 69.9,
+   "py_alloc_mb": 0.1
+  },
+  "rdf_rdflib_100": {
+   "rss_delta_mb": 144.8,
+   "py_alloc_mb": 92.4
+  },
+  "neo4j_200": {
+   "container_mem": "1.485GiB / 7.75GiB",
+   "data_dir_kb": 530788
+  },
+  "core_kg_200": {
+   "rss_delta_mb": 0.0,
+   "py_alloc_mb": 0.0
+  },
+  "networkx_200": {
+   "rss_delta_mb": 18.5,
+   "py_alloc_mb": 22.2
+  },
+  "rdf_oxigraph_200": {
+   "rss_delta_mb": 160.9,
+   "py_alloc_mb": 0.1
+  },
+  "rdf_rdflib_200": {
+   "rss_delta_mb": 375.9,
+   "py_alloc_mb": 227.9
+  },
+  "neo4j_300": {
+   "container_mem": "1.531GiB / 7.75GiB",
+   "data_dir_kb": 541100
+  },
+  "core_kg_300": {
+   "rss_delta_mb": 0.0,
+   "py_alloc_mb": 0.0
+  },
+  "networkx_300": {
+   "rss_delta_mb": 22.0,
+   "py_alloc_mb": 28.5
+  },
+  "rdf_oxigraph_300": {
+   "rss_delta_mb": 159.8,
+   "py_alloc_mb": 0.1
+  },
+  "rdf_rdflib_300": {
+   "rss_delta_mb": 544.5,
+   "py_alloc_mb": 354.2
+  }
+ },
+ "tuning": [
+  {
+   "backend": "rdf_oxigraph",
+   "question": "q3_three_hop",
+   "variants": [
+    {
+     "label": "한 BGP(처음 작성)",
+     "mean_ms": 782.84,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "FILTER EXISTS",
+     "mean_ms": 79869.07,
+     "calls": 2,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "직접 트리플 HAS_SKILL 먼저",
+     "mean_ms": 1243.8,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "하위 질의로 함께 일한 사람 먼저(채택)",
+     "mean_ms": 1.92,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  },
+  {
+   "backend": "rdf_oxigraph",
+   "question": "q2_project_evidence",
+   "variants": [
+    {
+     "label": "팀원 경력 OPTIONAL(처음 작성)",
+     "mean_ms": 20.11,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "안쪽 결합 + 0은 파이썬(채택)",
+     "mean_ms": 2.46,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  },
+  {
+   "backend": "neo4j",
+   "question": "q1_skill_map",
+   "variants": [
+    {
+     "label": "CALL 하위 질의(처음 작성)",
+     "mean_ms": 4.31,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "WITH 연결(채택)",
+     "mean_ms": 3.6,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  },
+  {
+   "backend": "neo4j",
+   "question": "q2_project_evidence",
+   "variants": [
+    {
+     "label": "질의 5개 = 5번 왕복(처음 작성)",
+     "mean_ms": 11.3,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "한 질의 = 1번 왕복(채택)",
+     "mean_ms": 2.31,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  },
+  {
+   "backend": "neo4j",
+   "question": "q4_ego",
+   "variants": [
+    {
+     "label": "UNION ALL(처음 작성)",
+     "mean_ms": 5.99,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "방향 없는 매치(채택)",
+     "mean_ms": 4.79,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  },
+  {
+   "backend": "networkx",
+   "question": "q3_three_hop",
+   "variants": [
+    {
+     "label": "사람마다 간선 다시 훑기(처음 작성)",
+     "mean_ms": 5.72,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "후보 중복 제거",
+     "mean_ms": 1.29,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": false
+    },
+    {
+     "label": "후보 중복 제거 + 한 번 훑기(채택)",
+     "mean_ms": 1.12,
+     "calls": 6,
+     "same_answer": true,
+     "adopted": true
+    }
+   ]
+  }
+ ],
+ "rdf_export": {
+  "ok": true,
+  "full_triples": 321951,
+  "full_roundtrip_terms": true,
+  "full_roundtrip_values": true,
+  "full_turtle_kb": 17620.5,
+  "skos_concepts": 37,
+  "skills": 37,
+  "ms": 12294.4
+ },
+ "standards_requirement": {
+  "required_now": false,
+  "basis": "입력 계약(core/domain/models.py·core/ingest 계약 CSV)과 docs/project-context.md 로드맵에 외부 표준 형식(RDF/SKOS/OWL) 교환이나 규칙 추론 요구가 없다. 기술 이름 사전(다음 단계)은 표준 구조(SKOS: 대표 이름·다른 이름·상위 개념)를 따르되 JSON으로 보관하고, 필요하면 RDF(Turtle)로 내보내는 방식으로 충족 가능한지 rdf_export에서 시험한다."
+ },
+ "env": {
+  "when": "2026-10-09T13:16:40+09:00",
+  "commit": "c03eaa5",
+  "dirty": false,
+  "script_sha256": {
+   "kg_backends.py": "99197c3dd2a6c5b6",
+   "kg_backend_decision.py": "394ea170d2d674ba"
+  },
+  "python": "3.12.13",
+  "machine": "arm64",
+  "os": "macOS-26.5.2-arm64-arm-64bit",
+  "cpu": "Apple M4",
+  "versions": {
+   "networkx": "3.7",
+   "pyoxigraph": "0.5.11",
+   "rdflib": "7.6.0",
+   "neo4j_driver": "6.4.0",
+   "neo4j_server": {
+    "product": "Neo4j Kernel",
+    "version": "5.26.28",
+    "edition": "community",
+    "startup_s": 4.5
+   }
+  },
+  "neo4j_config": {
+   "NEO4J_AUTH": "none",
+   "NEO4J_server_memory_heap_initial__size": "1G",
+   "NEO4J_server_memory_heap_max__size": "1G",
+   "NEO4J_server_memory_pagecache_size": "512M",
+   "image": "neo4j:5-community",
+   "transport": "Bolt localhost → Docker Desktop(macOS 가상 머신 포트 포워딩)"
+  },
+  "reps": 20,
+  "warm": 10,
+  "burn_in": 20,
+  "load_reps": 3,
+  "check_persons": 30,
+  "rdflib_checks": 5
+ },
+ "decision": {
+  "decision": "networkx",
+  "trail": [
+   {
+    "rule": "1-2",
+    "candidate": "networkx",
+    "result": "통과"
+   },
+   {
+    "rule": "1-2",
+    "candidate": "rdf_oxigraph",
+    "result": "통과"
+   },
+   {
+    "rule": "1-2",
+    "candidate": "neo4j",
+    "result": "통과"
+   },
+   {
+    "rule": 3,
+    "candidate": "neo4j",
+    "result": "후순위",
+    "why": "별도 서버 필요"
+   },
+   {
+    "rule": 4,
+    "result": "networkx",
+    "cell_wins": {
+     "networkx": 11,
+     "rdf_oxigraph": 1
+    },
+    "majority": true,
+    "mean_ms": {
+     "networkx": 1.5426666666666666,
+     "rdf_oxigraph": 4.201083333333333
+    }
+   },
+   {
+    "rule": 5,
+    "result": "미발동",
+    "why": "표준 연동이 지금 요구사항이 아님"
+   }
+  ]
+ },
+ "sensitivity": {
+  "all_three": {
+   "networkx": 8,
+   "rdf_oxigraph": 0,
+   "neo4j": 4
+  },
+  "all_three_leader": "networkx",
+  "all_three_majority": true,
+  "core_vs_nx": {
+   "core_kg": 10,
+   "networkx": 2
+  },
+  "strict_q4_decision": "networkx",
+  "strict_q4_failed": [
+   "rdf_oxigraph"
+  ]
+ }
+}
