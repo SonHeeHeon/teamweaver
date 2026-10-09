@@ -694,12 +694,15 @@ def tuning_variants():
 
 
 def run_tuning(backends, base, projects, people) -> list:
-    """100명에서 작성법마다 같은 입력(사업·사람 앞 6개, Q1은 6회)으로 평균 지연과 기준과 같은 답인지. 작성법당 시간 한도 TUNING_BUDGET_S(최소 1회)."""
+    """100명에서 작성법마다 같은 입력(사업·사람 앞 6개, Q1은 6회)으로 평균 지연과 기준과 같은 답인지. 작성법당 시간 한도 TUNING_BUDGET_S(최소 1회).
+    작성법마다 기록하지 않는 준비 호출 1회를 먼저 한다 -- 채택 작성법만 예열 회차에서 실행 계획이 캐시돼 있으면 다른 작성법이 불리하다(첫 재측정에서 실측:
+    Neo4j 처음 작성 질의가 컴파일 포함 29 ms로 잡힘)."""
     out = defaultdict(list)
     for bname, q, label, fn, adopted in tuning_variants():
         be = backends[bname]
         xs = [None] * 6 if q == "q1_skill_map" else (people if q == "q4_ego" else projects)[:6]
         ts, same = [], True
+        fn(be, xs[0])                                   # 준비 호출(기록 안 함)
         t_start = time.perf_counter()
         for x in xs:
             t0 = time.perf_counter()
