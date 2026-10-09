@@ -54,8 +54,14 @@ def test_llm_era_skills_never_exceed_the_era(bundle):
 
 
 def test_people_have_about_twenty_skills(bundle):
-    _, _, _, _, ds = bundle
-    avg = sum(len(p.skills) for p in ds.people) / len(ds.people)
+    """생성기가 만든 보유 기술 수(최근 10년 안에 쓴 것). 기술 이름 사전의 부분 인정으로 생기는 상위 기술(예: Spring → Java)은
+    생성기 성질이 아니라서 세지 않는다(2026-10-09) -- 원천 행으로 센다."""
+    from core.ingest.convert import lookback_start
+    _, _, b, _, ds = bundle
+    since = lookback_start(b.horizon[0])
+    own = {(r["person_id"], r["skill_name"]) for r in b.tables["person_skills.csv"]
+           if r["experience_months"] and (r.get("last_used_month") is None or r["last_used_month"] >= since)}
+    avg = len(own) / len(ds.people)
     assert 15 <= avg <= 22
 
 

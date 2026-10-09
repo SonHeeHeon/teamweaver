@@ -14,6 +14,7 @@ from core.domain.models import (CoworkRecord, CurrentAssignment, Dataset, Grade,
                                 Project, ProjectPhase, ReviewSection, Sector, SkillRequirement)
 from core.ingest.loader import Bundle
 from core.ingest.report import IngestReport
+from core.ingest.skills import SkillDictionary, load_dictionary, person_skill_months
 
 # Upper bounds (exclusive) in months for proxy levels 1..4; 96+ months is level 5.
 MONTH_BANDS = (12, 36, 60, 96)
@@ -91,16 +92,23 @@ def _all_reviews(reviews: list[dict], items: list[dict], report: IngestReport) -
             for r in rows]
 
 
-def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[ParsedReview]]:
+def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillDictionary | bool = True,
+               partial_credit: float | None = None) -> tuple[Dataset, list[ParsedReview]]:
     """Raises ValueError (with the report summary) if the bundle or the conversion has errors.
-    Appends its own warnings and notes to `report`, so pass the report from load_bundle once."""
+    Appends its own warnings and notes to `report`, so pass the report from load_bundle once.
+
+    skill_dictionary: IT 기술 이름 사전(core/ingest/skills, 2026-10-09). True = 기본 사전, False = 쓰지 않음(이름 그대로, 예전 동작).
+    사전이 있으면 보유·요구 기술 이름을 대표 이름으로 바꾸고, 하위 기술 경력을 상위 기술에 일부 인정한다(사용자 결정 2026-10-09,
+    계수 = partial_credit 또는 사전의 narrower_to_broader, 0~1). 같은 사람의 같은 기술이 다른 이름으로 여러 행이면(별칭) 가장 긴 경력을 쓴다
+    (같은 이름 중복은 loader가 이미 오류로 막는다)."""
+    sd = load_dictionary() if skill_dictionary is True else (skill_dictionary or None)
     if not report.ok:
         raise ValueError("bundle has validation errors:\n" + report.summary())
     t = bundle.tables
     month_index = {m: i for i, m in enumerate(bundle.horizon)}
     rates = {(r["career_grade"], r["role_type"]): r["monthly_rate"] for r in t["rate_card.csv"]}
 
-    skills: dict[str, dict[str, int]] = defaultdict(dict)
+    skill_rows: dict[str, list[tuple[str, int]]] = defaultdict(list)
     over, stale = [], []
     since = lookback_start(bundle.horizon[0])
     for s in t["person_skills.csv"]:
@@ -113,7 +121,7 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
             continue
         if s["experience_months"] > LOOKBACK_MONTHS:
             over.append(s)
-        skills[s["person_id"]][s["skill_name"]] = level_from_months(min(s["experience_months"], LOOKBACK_MONTHS))
+        skill_rows[s["person_id"]].append((s["skill_name"], min(s["experience_months"], LOOKBACK_MONTHS)))
     if over:
         report.warn("person_skills.csv", f"기술 경력 {len(over)}건이 최근 {LOOKBACK_MONTHS}개월을 넘어 "
                     f"{LOOKBACK_MONTHS}개월로 보았다(예: {over[0]['person_id']} {over[0]['skill_name']} "
@@ -122,6 +130,17 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
         report.warn("person_skills.csv", f"최근 {LOOKBACK_MONTHS // 12}년({since.strftime('%Y-%m')}~) 안에 쓴 적이 없는 기술 "
                     f"{len(stale)}건은 보유 기술로 보지 않았다(예: {stale[0]['person_id']} {stale[0]['skill_name']}, "
                     f"마지막 {stale[0]['last_used_month'].strftime('%Y-%m')})")
+    skills: dict[str, dict[str, int]] = defaultdict(dict)
+    renamed, merged, credited, unknown, unknown_req = set(), 0, 0, set(), set()
+    for pid, rows in skill_rows.items():
+        sm = person_skill_months(rows, sd, partial_credit)
+        skills[pid] = {name: level_from_months(m) for name, m in sm.months.items()}
+        credited += sum(1 for name, imp in sm.implied.items() if imp["months"] > sm.own.get(name, 0))
+        for name, raws in sm.raw_names.items():
+            renamed.update((r, name) for r in raws if r != name)
+            merged += len(raws) - 1 if len(raws) > 1 else 0
+            if sd and not sd.known(name):
+                unknown.add(name)
     avail: dict[str, dict[dt.date, float]] = defaultdict(dict)
     for a in t["availability.csv"]:
         if a["month"] in month_index:
@@ -148,9 +167,22 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
         grade_req[g["project_id"]][Grade(g["career_grade"])] = g["headcount"]
     skill_req = defaultdict(list)
     for s in t["project_skill_requirements.csv"]:
-        skill_req[s["project_id"]].append(SkillRequirement(
-            skill=s["skill_name"], min_level=level_from_months(s["min_experience_months"]),
-            headcount=s["headcount"]))
+        name = sd.canonical(s["skill_name"]) if sd else s["skill_name"]
+        if name != s["skill_name"]:
+            renamed.add((s["skill_name"], name))
+        if sd and not sd.known(name):
+            unknown_req.add(name)
+        req = SkillRequirement(skill=name, min_level=level_from_months(s["min_experience_months"]), headcount=s["headcount"])
+        dup = next((r for r in skill_req[s["project_id"]] if r.skill == name), None)
+        if dup is None:
+            skill_req[s["project_id"]].append(req)
+            continue
+        # 같은 사업이 같은 기술을 다른 이름으로 두 번 요구: 한 요구로 합친다(두 번 세면 S 가중이 두 배가 된다). 서로 다른 행의 레벨·인원을 섞지 않고
+        # 더 높은 레벨을 요구한 행을 그대로 쓴다(같은 레벨이면 많은 인원) -- 섞으면 원래 어느 행에도 없던 더 엄격한 요구가 생긴다(리뷰 SHOULD).
+        keep = max((dup, req), key=lambda r: (r.min_level, r.headcount))
+        skill_req[s["project_id"]][skill_req[s["project_id"]].index(dup)] = keep
+        report.warn("project_skill_requirements.csv", f"{s['project_id']}가 {name}을 두 번 요구해(이름 '{s['skill_name']}' 포함) "
+                    f"높은 요구 하나만 남겼다: 레벨 {keep.min_level} · {keep.headcount}명", row=s["__row__"], column="skill_name")
 
     first, last = bundle.horizon[0], bundle.horizon[-1]
     projects = []
@@ -186,6 +218,18 @@ def to_dataset(bundle: Bundle, report: IngestReport) -> tuple[Dataset, list[Pars
     if not report.ok:
         raise ValueError("bundle cannot be converted:\n" + report.summary())
 
+    if sd:
+        k = sd.narrower_credit if partial_credit is None else partial_credit
+        by_rule = sum(1 for a, _ in renamed if sd.resolve(a)[1] in ("version", "paren"))
+        report.notes.append(f"기술 이름 사전 {sd.version}: 별칭 {len(renamed)}종을 대표 이름으로 바꿨다"
+                            + (f"(예: {', '.join(f'{a}→{b}' for a, b in sorted(renamed)[:3])})" if renamed else "")
+                            + (f", 그중 버전 표기·괄호 병기 규칙으로 맞춘 이름 {by_rule}종" if by_rule else "")
+                            + (f", 같은 사람의 같은 기술 {merged}건은 가장 긴 경력으로 합쳤다" if merged else "")
+                            + f". 하위 기술 경력 부분 인정 {credited}건(상위 기술에 계수 {k}^깊이 × 개월 — 근거 데이터가 없는 가정값)")
+        for file, names in (("person_skills.csv", unknown), ("project_skill_requirements.csv", unknown_req)):
+            if names:
+                report.warn(file, f"사전에 없는 기술 이름 {len(names)}개는 이름 그대로 썼다(예: {', '.join(sorted(names)[:5])}) — "
+                            f"같은 기술의 다른 이름이면 core/ingest/skill_dictionary.json에 별칭을 추가해 달라")
     report.notes.append(f"숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다"
                         f"(경계 {MONTH_BANDS}개월 → 1~5). 요구 경력도 같은 구간을 쓴다.")
     cutoff = first - dt.timedelta(days=1)
