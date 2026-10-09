@@ -217,7 +217,7 @@ table{{border-collapse:collapse;width:100%;font-size:.9em}}th,td{{border-bottom:
 <p class="sub">TeamWeaver · {e(res['when'])} · 커밋 {e(res['commit'])} · 사전 {e(res['dictionary']['version'])}({res['dictionary']['concepts']}개 개념, sha256 {e(res['dictionary'].get('sha256', '?'))}) · 가상 데이터</p>
 <h2>1. 흔들린 사본 회복(기준: 사전을 쓰면 S 최대 차이 0)</h2>
 <p class="sub">시연 연초 계획 묶음의 기술 이름(보유·요구) 절반을 같은 개념의 다른 이름으로 바꿨다(seed {SEED}). <b>별칭을 사전에서 뽑았으므로 사전이 있으면 회복되는 것은
-구성상 보장된다 — 이 표는 입력 단계에 사전이 빠짐없이 연결됐는지 보는 배관 점검이다.</b> "사전 없음" 칸은 행의 절반을 무작위로 바꾼(이름 37 → 160여 개) 스트레스 시나리오의 값이다.</p>
+구성상 보장된다 — 이 표는 입력 단계에 사전이 빠짐없이 연결됐는지 보는 배관 점검이다.</b> "사전 없음" 칸은 행의 절반을 무작위로 바꾼 스트레스 시나리오의 값이다(기술 이름 수 41은 원천 이름 37개 + 부분 인정으로 생긴 상위 기술).</p>
 <div class="w"><table><tr><th>규모</th><th>바꾼 행</th><th>사전 O: S 최대 차이</th><th>사전 O: 사람별 레벨</th><th>사전 X: S가 바뀐 쌍</th><th>사전 X: S 평균 변화</th><th>사전 X: 기술 이름 수</th><th>사전 X: 아무도 없는 요구</th></tr>{rec}</table></div>
 <p>100명 안 A를 사전 없이(이름이 갈린 S로) 짜면, 그 배치를 올바른 S로 다시 잰 점수는 {br['objective_under_true_S']['total']:.2f}
 (그 S로는 {br['objective_under_wrong_S']['total']:.2f}로 보였다) — 사전으로 짠 안 A {res['plans_100']['dictionary']['objective']['total']:.2f}과 비교.</p>

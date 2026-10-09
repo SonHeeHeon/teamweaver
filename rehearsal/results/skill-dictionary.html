@@ -1,0 +1,27 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기술 이름 사전 측정</title><style>
+:root{--bg:#fbfaf7;--fg:#222;--muted:#666;--acc:#2f6f5e;--line:#ddd}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1d1c;--fg:#e8e6e1;--muted:#aaa;--acc:#7cc4ad;--line:#3a3a3a}}
+body{background:var(--bg);color:var(--fg);font:15px/1.65 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;margin:0;padding:28px 16px}
+main{max-width:1000px;margin:auto}h2{color:var(--acc);border-bottom:2px solid var(--line);padding-bottom:.2em;margin-top:2em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left}th{color:var(--muted)}
+.num{text-align:right;font-variant-numeric:tabular-nums}.sub{color:var(--muted);font-size:.85em}.w{overflow-x:auto}
+</style></head><body><main>
+<h1>기술 이름 사전 측정</h1>
+<p class="sub">TeamWeaver · 2026-10-09T16:40:25+09:00 · 커밋 b7a8a6e · 사전 2026-10-09.2(228개 개념, sha256 339b26d689589fc1) · 가상 데이터</p>
+<h2>1. 흔들린 사본 회복(기준: 사전을 쓰면 S 최대 차이 0)</h2>
+<p class="sub">시연 연초 계획 묶음의 기술 이름(보유·요구) 절반을 같은 개념의 다른 이름으로 바꿨다(seed 20261009). <b>별칭을 사전에서 뽑았으므로 사전이 있으면 회복되는 것은
+구성상 보장된다 — 이 표는 입력 단계에 사전이 빠짐없이 연결됐는지 보는 배관 점검이다.</b> "사전 없음" 칸은 행의 절반을 무작위로 바꾼 스트레스 시나리오의 값이다(기술 이름 수 41은 원천 이름 37개 + 부분 인정으로 생긴 상위 기술).</p>
+<div class="w"><table><tr><th>규모</th><th>바꾼 행</th><th>사전 O: S 최대 차이</th><th>사전 O: 사람별 레벨</th><th>사전 X: S가 바뀐 쌍</th><th>사전 X: S 평균 변화</th><th>사전 X: 기술 이름 수</th><th>사전 X: 아무도 없는 요구</th></tr><tr><td>100명</td><td class='num'>1,012</td><td class='num'>0</td><td>같음</td><td class='num'>1,714 / 2,000</td><td class='num'>-0.314 (최저 -1.00)</td><td class='num'>41 → 163</td><td class='num'>0</td></tr><tr><td>200명</td><td class='num'>2,092</td><td class='num'>0</td><td>같음</td><td class='num'>6,526 / 8,000</td><td class='num'>-0.298 (최저 -1.00)</td><td class='num'>41 → 166</td><td class='num'>0</td></tr><tr><td>300명</td><td class='num'>2,997</td><td class='num'>0</td><td>같음</td><td class='num'>14,287 / 18,000</td><td class='num'>-0.255 (최저 -1.00)</td><td class='num'>41 → 166</td><td class='num'>0</td></tr></table></div>
+<p>100명 안 A를 사전 없이(이름이 갈린 S로) 짜면, 그 배치를 올바른 S로 다시 잰 점수는 49.15
+(그 S로는 37.73로 보였다) — 사전으로 짠 안 A 57.77과 비교.</p>
+<h3>실데이터형 변형(버전 표기·괄호 병기) — 사전에 그대로 없는 이름</h3>
+<p class="sub">같은 절반의 행을 "Java 8", "Spring Boot 2.x", "Oracle v11", "스프링(Spring)" 같은 형태로 바꿨다. 사전의 버전 표기·괄호 병기 규칙이 맞춰야 한다.</p>
+<div class="w"><table><tr><th>규모</th><th>바꾼 행</th><th>S 최대 차이</th><th>사람별 레벨</th><th>"사전에 없는 이름" 경고</th></tr><tr><td>100명</td><td class='num'>1,048</td><td class='num'>0</td><td>같음</td><td>없음</td></tr><tr><td>200명</td><td class='num'>2,077</td><td class='num'>0</td><td>같음</td><td>없음</td></tr><tr><td>300명</td><td class='num'>3,001</td><td class='num'>0</td><td>같음</td><td>없음</td></tr></table></div>
+<h2>2. 부분 인정 효과(보고 — 계수 0.5는 근거 데이터 없는 가정값)</h2>
+<div class="w"><table><tr><th>규모</th><th>계수</th><th>인정 건수</th><th>S가 바뀐 쌍(계수 0 대비)</th><th>S 평균 변화</th></tr><tr><td>100명</td><td>0.0</td><td class='num'>0</td><td>—(기준)</td><td>—</td></tr><tr><td>100명</td><td>0.5</td><td class='num'>263</td><td class='num'>0 / 2,000</td><td class='num'>+0.0000 (최대 +0.000)</td></tr><tr><td>100명</td><td>1.0</td><td class='num'>313</td><td class='num'>0 / 2,000</td><td class='num'>+0.0000 (최대 +0.000)</td></tr><tr><td>200명</td><td>0.0</td><td class='num'>0</td><td>—(기준)</td><td>—</td></tr><tr><td>200명</td><td>0.5</td><td class='num'>497</td><td class='num'>680 / 8,000</td><td class='num'>+0.0126 (최대 +0.250)</td></tr><tr><td>200명</td><td>1.0</td><td class='num'>624</td><td class='num'>731 / 8,000</td><td class='num'>+0.0141 (최대 +0.500)</td></tr><tr><td>300명</td><td>0.0</td><td class='num'>0</td><td>—(기준)</td><td>—</td></tr><tr><td>300명</td><td>0.5</td><td class='num'>638</td><td class='num'>1,771 / 18,000</td><td class='num'>+0.0127 (최대 +0.333)</td></tr><tr><td>300명</td><td>1.0</td><td class='num'>793</td><td class='num'>2,028 / 18,000</td><td class='num'>+0.0157 (최대 +0.500)</td></tr></table></div>
+<p class="sub">100명 묶음은 사업 요구에 상위 기술(Java·Python 등)이 없어 인정이 생겨도 S가 그대로다. 배치 비교는 S가 바뀌는 200명에서 했다.</p>
+<h3>200명 안 A</h3>
+<div class="w"><table><tr><th>계수</th><th>목적 합계</th><th>기술</th><th>협업</th><th>빈자리 감점</th><th>풀이 초</th></tr><tr><td>계수 0.0</td><td class='num'>106.07</td><td class='num'>88.48</td><td class='num'>18.59</td><td class='num'>-0.00</td><td class='num'>61.4</td></tr><tr><td>계수 0.5</td><td class='num'>106.30</td><td class='num'>88.48</td><td class='num'>18.41</td><td class='num'>-0.00</td><td class='num'>61.7</td></tr><tr><td>계수 1.0</td><td class='num'>108.61</td><td class='num'>91.29</td><td class='num'>18.32</td><td class='num'>-0.00</td><td class='num'>61.5</td></tr></table></div>
+<p>계수 0 → 0.5에서 배치(사람@사업) 163건 같음, 0에만 77건, 0.5에만 79건. 각 계수의 목적값은 그 계수의 S로 잰 것이라 서로 직접 비교하는 값이 아니다.</p>
+</main></body></html>

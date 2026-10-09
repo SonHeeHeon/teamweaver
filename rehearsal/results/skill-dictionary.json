@@ -1,0 +1,257 @@
+{
+ "when": "2026-10-09T16:40:25+09:00",
+ "commit": "b7a8a6e",
+ "recovery": {
+  "100": {
+   "renamed_rows": 1012,
+   "with_dictionary": {
+    "max_abs_diff": 0.0,
+    "changed_pairs": 0,
+    "pairs": 2000,
+    "mean_diff": 0.0,
+    "min_diff": 0.0,
+    "max_diff": 0.0,
+    "same_person_levels": true
+   },
+   "without_dictionary": {
+    "max_abs_diff": 1.0,
+    "changed_pairs": 1714,
+    "pairs": 2000,
+    "mean_diff": -0.3142,
+    "min_diff": -1.0,
+    "max_diff": 0.0,
+    "distinct_skill_names": 163,
+    "requirements_nobody_holds": 0
+   },
+   "distinct_skill_names_original": 41
+  },
+  "200": {
+   "renamed_rows": 2092,
+   "with_dictionary": {
+    "max_abs_diff": 0.0,
+    "changed_pairs": 0,
+    "pairs": 8000,
+    "mean_diff": 0.0,
+    "min_diff": 0.0,
+    "max_diff": 0.0,
+    "same_person_levels": true
+   },
+   "without_dictionary": {
+    "max_abs_diff": 1.0,
+    "changed_pairs": 6526,
+    "pairs": 8000,
+    "mean_diff": -0.2985,
+    "min_diff": -1.0,
+    "max_diff": 0.0,
+    "distinct_skill_names": 166,
+    "requirements_nobody_holds": 0
+   },
+   "distinct_skill_names_original": 41
+  },
+  "300": {
+   "renamed_rows": 2997,
+   "with_dictionary": {
+    "max_abs_diff": 0.0,
+    "changed_pairs": 0,
+    "pairs": 18000,
+    "mean_diff": 0.0,
+    "min_diff": 0.0,
+    "max_diff": 0.0,
+    "same_person_levels": true
+   },
+   "without_dictionary": {
+    "max_abs_diff": 1.0,
+    "changed_pairs": 14287,
+    "pairs": 18000,
+    "mean_diff": -0.2549,
+    "min_diff": -1.0,
+    "max_diff": 0.0,
+    "distinct_skill_names": 166,
+    "requirements_nobody_holds": 0
+   },
+   "distinct_skill_names_original": 41
+  }
+ },
+ "credit": {
+  "100": {
+   "0.0": {
+    "credited": 0
+   },
+   "0.5": {
+    "credited": 263,
+    "max_abs_diff": 0.0,
+    "changed_pairs": 0,
+    "pairs": 2000,
+    "mean_diff": 0.0,
+    "min_diff": 0.0,
+    "max_diff": 0.0
+   },
+   "1.0": {
+    "credited": 313,
+    "max_abs_diff": 0.0,
+    "changed_pairs": 0,
+    "pairs": 2000,
+    "mean_diff": 0.0,
+    "min_diff": 0.0,
+    "max_diff": 0.0
+   }
+  },
+  "200": {
+   "0.0": {
+    "credited": 0
+   },
+   "0.5": {
+    "credited": 497,
+    "max_abs_diff": 0.25000000000000006,
+    "changed_pairs": 680,
+    "pairs": 8000,
+    "mean_diff": 0.0126,
+    "min_diff": 0.0,
+    "max_diff": 0.25
+   },
+   "1.0": {
+    "credited": 624,
+    "max_abs_diff": 0.5,
+    "changed_pairs": 731,
+    "pairs": 8000,
+    "mean_diff": 0.0141,
+    "min_diff": 0.0,
+    "max_diff": 0.5
+   }
+  },
+  "300": {
+   "0.0": {
+    "credited": 0
+   },
+   "0.5": {
+    "credited": 638,
+    "max_abs_diff": 0.33333333333333337,
+    "changed_pairs": 1771,
+    "pairs": 18000,
+    "mean_diff": 0.0127,
+    "min_diff": 0.0,
+    "max_diff": 0.3333
+   },
+   "1.0": {
+    "credited": 793,
+    "max_abs_diff": 0.5,
+    "changed_pairs": 2028,
+    "pairs": 18000,
+    "mean_diff": 0.0157,
+    "min_diff": 0.0,
+    "max_diff": 0.5
+   }
+  }
+ },
+ "plans_100": {
+  "dictionary": {
+   "secs": 30.5,
+   "objective": {
+    "total": 57.766,
+    "skill": 38.009,
+    "synergy": 19.757,
+    "overfamiliarity": -0.0,
+    "unfilled": -0.0
+   }
+  },
+  "broken_names_no_dictionary": {
+   "secs": 30.4,
+   "objective_under_wrong_S": {
+    "total": 37.727,
+    "skill": 17.924,
+    "synergy": 19.803,
+    "overfamiliarity": -0.0,
+    "unfilled": -0.0
+   },
+   "objective_under_true_S": {
+    "total": 49.147,
+    "skill": 29.344,
+    "synergy": 19.803,
+    "overfamiliarity": -0.0,
+    "unfilled": -0.0
+   }
+  }
+ },
+ "plans_200": {
+  "credit_0.0": {
+   "secs": 61.4,
+   "entries": 240,
+   "objective": {
+    "total": 106.069,
+    "skill": 88.479,
+    "synergy": 18.59,
+    "overfamiliarity": -1.0,
+    "unfilled": -0.0
+   }
+  },
+  "credit_0.5": {
+   "secs": 61.7,
+   "entries": 242,
+   "objective": {
+    "total": 106.297,
+    "skill": 88.484,
+    "synergy": 18.413,
+    "overfamiliarity": -0.6,
+    "unfilled": -0.0
+   }
+  },
+  "credit_1.0": {
+   "secs": 61.5,
+   "entries": 235,
+   "objective": {
+    "total": 108.607,
+    "skill": 91.291,
+    "synergy": 18.316,
+    "overfamiliarity": -1.0,
+    "unfilled": -0.0
+   }
+  },
+  "team_change_0_vs_0.5": {
+   "only_0": 77,
+   "only_0.5": 79,
+   "common": 163
+  }
+ },
+ "dictionary": {
+  "version": "2026-10-09.2",
+  "concepts": 228,
+  "sha256": "339b26d689589fc1",
+  "skills_py_sha256": "fd6ac0e787aea72f",
+  "convert_py_sha256": "037985e4cc60d9d8"
+ },
+ "variants": {
+  "100": {
+   "renamed_rows": 1048,
+   "max_abs_diff": 0.0,
+   "changed_pairs": 0,
+   "pairs": 2000,
+   "mean_diff": 0.0,
+   "min_diff": 0.0,
+   "max_diff": 0.0,
+   "same_person_levels": true,
+   "unknown_warnings": []
+  },
+  "200": {
+   "renamed_rows": 2077,
+   "max_abs_diff": 0.0,
+   "changed_pairs": 0,
+   "pairs": 8000,
+   "mean_diff": 0.0,
+   "min_diff": 0.0,
+   "max_diff": 0.0,
+   "same_person_levels": true,
+   "unknown_warnings": []
+  },
+  "300": {
+   "renamed_rows": 3001,
+   "max_abs_diff": 0.0,
+   "changed_pairs": 0,
+   "pairs": 18000,
+   "mean_diff": 0.0,
+   "min_diff": 0.0,
+   "max_diff": 0.0,
+   "same_person_levels": true,
+   "unknown_warnings": []
+  }
+ }
+}

@@ -1,0 +1,38 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RDF·그래프 DB 장점 실측</title><style>
+:root{--bg:#fbfaf7;--fg:#222;--muted:#666;--acc:#2f5f8a;--line:#ddd;--win:#e3f1e8;--over:#fbe3e3;--box:#edf3f9}
+@media (prefers-color-scheme:dark){:root{--bg:#1a1c1e;--fg:#e7e6e3;--muted:#a8a8a8;--acc:#8ab8e0;--line:#3a3a3a;--win:#24392c;--over:#3d2626;--box:#222b33}}
+body{background:var(--bg);color:var(--fg);font:15px/1.65 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;margin:0;padding:28px 16px}
+main{max-width:1000px;margin:auto}h2{color:var(--acc);border-bottom:2px solid var(--line);padding-bottom:.2em;margin-top:2em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left}
+th{color:var(--muted)}.num{text-align:right;font-variant-numeric:tabular-nums}.win{background:var(--win);font-weight:700}.over{background:var(--over)}
+.sub{color:var(--muted);font-size:.85em}.w{overflow-x:auto}pre{font-size:.8em;overflow-x:auto;background:var(--box);padding:8px;border-radius:8px}
+</style></head><body><main>
+<h1>RDF·그래프 DB의 장점은 이 프로젝트에서 얼마나 큰가 (E8b)</h1>
+<p class="sub">TeamWeaver · 2026-10-09T16:38:06+09:00 · 커밋 b7a8a6e · 가상 데이터 · E8(<code>kg-backends.html</code>)의 후속</p>
+<h2>A. 규모를 키우면 그래프 DB가 앞서는가</h2>
+<p class="sub">조직형 가상 묶음(seed 11) 300 → 1,000 → 3,000명, 배치는 단순 규칙. 지연 중앙값 ms(준비 10회 뒤 20회, 첫 규모 전에 버리는 예열). 초록 = 두 후보 중 빠른 쪽, 빨강 = 화면 기준 200 ms 초과.
+정확성은 질문마다 앞 10건을 현재 구현과 비교.</p>
+<div class="w"><table><tr><th>규모</th><th>질문</th><th>현재 구현(core/kg)</th><th>메모리 그래프(networkx)</th><th>그래프 DB(Neo4j)</th></tr><tr><td>300명</td><td>Q1 조직 기술 지도</td><td class='num'>2.45</td><td class='num'>7.77</td><td class='num win'>3.78</td></tr><tr><td>300명</td><td>Q2 사업별 근거</td><td class='num'>0.18</td><td class='num win'>0.23</td><td class='num'>1.20</td></tr><tr><td>300명</td><td>Q3 3단계 탐색</td><td class='num'>0.80</td><td class='num'>3.02</td><td class='num win'>2.37</td></tr><tr><td>300명</td><td>Q4 한 사람 주변</td><td class='num'>0.34</td><td class='num win'>0.35</td><td class='num'>5.79</td></tr><tr><td>1,000명</td><td>Q1 조직 기술 지도</td><td class='num'>8.41</td><td class='num'>35.04</td><td class='num win'>8.85</td></tr><tr><td>1,000명</td><td>Q2 사업별 근거</td><td class='num'>0.19</td><td class='num win'>0.23</td><td class='num'>1.24</td></tr><tr><td>1,000명</td><td>Q3 3단계 탐색</td><td class='num'>3.00</td><td class='num'>5.19</td><td class='num win'>2.29</td></tr><tr><td>1,000명</td><td>Q4 한 사람 주변</td><td class='num'>0.52</td><td class='num win'>0.51</td><td class='num'>6.71</td></tr><tr><td>3,000명</td><td>Q1 조직 기술 지도</td><td class='num'>33.59</td><td class='num'>122.69</td><td class='num win'>27.91</td></tr><tr><td>3,000명</td><td>Q2 사업별 근거</td><td class='num'>0.28</td><td class='num win'>0.27</td><td class='num'>0.99</td></tr><tr><td>3,000명</td><td>Q3 3단계 탐색</td><td class='num'>9.06</td><td class='num'>7.63</td><td class='num win'>2.36</td></tr><tr><td>3,000명</td><td>Q4 한 사람 주변</td><td class='num'>0.53</td><td class='num win'>0.56</td><td class='num'>8.41</td></tr></table></div>
+<div class="w"><table><tr><th>규모</th><th>간선</th><th>다시 만들기(읽기·변환 + 그래프)</th><th>그래프 메모리</th><th>networkx 적재·메모리</th><th>Neo4j 적재·컨테이너</th><th>정확</th></tr><tr><td>300명</td><td class='num'>39,948</td><td class='num'>0.3 s + 0.06 s</td><td class='num'>23 MB</td><td class='num'>0.04 s · 29 MB</td><td class='num'>2.7 s · 1.449GiB / 7.75GiB</td><td>✔</td></tr><tr><td>1,000명</td><td class='num'>177,740</td><td class='num'>1.4 s + 0.37 s</td><td class='num'>98 MB</td><td class='num'>0.32 s · 82 MB</td><td class='num'>5.2 s · 1.542GiB / 7.75GiB</td><td>✔</td></tr><tr><td>3,000명</td><td class='num'>600,078</td><td class='num'>5.1 s + 0.81 s</td><td class='num'>327 MB</td><td class='num'>1.29 s · 276 MB</td><td class='num'>16.3 s · 1.629GiB / 7.75GiB</td><td>✔</td></tr></table></div>
+<h3>메모리 그래프가 상쇄하는 방법: 질의 코드 개선(현재 구현 Q1, ms)</h3>
+<p class="sub">개선 전 측정은 이 스크립트의 이전 판으로 돌렸고 그때의 core/kg 파일 해시는 기록하지 않았다(원자료만 보존). 개선 전(<code>kg-advantages.before-index.json</code>)에는 (1) "지금 배치된 사람"을 찾으려고 모든 간선을 훑었고 (2) 사업 요구마다 보유자 전원의 레벨을 다시 계산했다.
+<code>core/kg</code>에 관계 종류별 색인을 더하고 레벨별 보유자 수를 기술마다 한 번만 세도록 고친 뒤 같은 조건으로 다시 쟀다. 그래프 DB는 질의 엔진이 해 주는 최적화를,
+메모리 그래프에서는 코드에서 직접 챙겨야 한다는 뜻이다. 개선 전 그래프에는 하위 기술 부분 인정 간선이 없어 간선이 1% 남짓 적었다(규모 옆 괄호).</p>
+<div class="w"><table><tr><th>규모</th><th>개선 전</th><th>개선 후</th><th>Neo4j</th></tr><tr><td>300명 <span class='sub'>(간선 39,319 → 39,948)</span></td><td class='num'>7.43</td><td class='num'>2.45</td><td class='num'>3.78</td></tr><tr><td>1,000명 <span class='sub'>(간선 175,655 → 177,740)</span></td><td class='num'>77.05</td><td class='num'>8.41</td><td class='num'>8.85</td></tr><tr><td>3,000명 <span class='sub'>(간선 593,719 → 600,078)</span></td><td class='num over'>670.75</td><td class='num'>33.59</td><td class='num'>27.91</td></tr></table></div>
+<h2>B. RDF 표준 추론이 기술 사전의 일을 대신할 수 있는가</h2>
+<p>사전 228개 개념, 상위 관계 130개(버전 2026-10-09.2).</p>
+<ul><li><b>B1 상위 관계 전이</b>(Spring Boot → Spring → Java): 파이썬 147쌍 0.06 ms ·
+OWL-RL 추론기 224.9 ms(트리플 1,531 → 2,873), 결과 같음 ·
+SPARQL 경로식 <code>skos:broader+</code> 2.46 ms, 결과 같음. 표준 추론은 &#x27;A는 B의 하위&#x27;(참/거짓)까지만 낸다. 몇 단계 위인지(깊이)는 나오지 않는다.</li>
+<li><b>B2 가중 부분 인정</b>(하위 기술 경력의 절반을 상위에, 300명 시연 데이터 300명·인정 638건): 파이썬 4.8 ms ·
+SPARQL 30.7 ms(8줄, 깊이 2까지 펼침), 결과 같음. 표준 추론(OWL·RDFS)으로는 &#x27;절반만 인정&#x27; 같은 수치 가중을 표현할 수 없어 SPARQL 산술·집계로 직접 썼다. SPARQL 경로식은 경로 길이를 돌려주지 않아 깊이마다 UNION을 펼쳐야 한다(사전 깊이가 바뀌면 질의도 바뀜). 처음 작성은 UNION 바깥에서 읽은 경력을 안쪽 BIND가 못 봐(SPARQL의 아래에서 위로 평가하는 범위 규칙) 인정분이 오류 없이 빠졌다 -- 각 묶음 안에서 경력을 읽도록 고쳐 같아졌다.</li></ul>
+<pre>PREFIX skos: &lt;http://www.w3.org/2004/02/skos/core#&gt; PREFIX tw: &lt;https://teamweaver.example/skill/&gt;
+SELECT ?p ?label (MAX(?mm) AS ?months) WHERE {
+  ?p tw:has ?h .
+  { ?h tw:skill ?s ; tw:months ?mm }
+  UNION { ?h tw:skill ?y ; tw:months ?m0 . ?y skos:broader ?s . BIND(FLOOR(?m0 * 0.5) AS ?mm) }
+  UNION { ?h tw:skill ?y ; tw:months ?m0 . ?y skos:broader/skos:broader ?s . BIND(FLOOR(?m0 * 0.25) AS ?mm) }
+  FILTER(?mm &gt; 0) ?s skos:prefLabel ?label .
+} GROUP BY ?p ?label</pre>
+</main></body></html>

@@ -263,7 +263,8 @@ def render(res: dict) -> None:
                 q1b = before[n]["backends"]["core_kg"]["latency"]["q1_skill_map"]["p50_ms"]
                 q1a = r["backends"]["core_kg"]["latency"]["q1_skill_map"]["p50_ms"]
                 q1n = r["backends"]["neo4j"]["latency"]["q1_skill_map"]["p50_ms"]
-                fix_rows += (f"<tr><td>{int(n):,}명</td><td class='num{' over' if q1b > SCREEN_MS else ''}'>{q1b:,.2f}</td>"
+                eb, ea = before[n]["info"].get("n_edges"), r["info"]["n_edges"]
+                fix_rows += (f"<tr><td>{int(n):,}명 <span class='sub'>(간선 {eb or 0:,} → {ea:,})</span></td><td class='num{' over' if q1b > SCREEN_MS else ''}'>{q1b:,.2f}</td>"
                              f"<td class='num{' over' if q1a > SCREEN_MS else ''}'>{q1a:,.2f}</td><td class='num'>{q1n:,.2f}</td></tr>")
     page = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RDF·그래프 DB 장점 실측</title><style>
@@ -285,7 +286,7 @@ th{{color:var(--muted)}}.num{{text-align:right;font-variant-numeric:tabular-nums
 <h3>메모리 그래프가 상쇄하는 방법: 질의 코드 개선(현재 구현 Q1, ms)</h3>
 <p class="sub">개선 전 측정은 이 스크립트의 이전 판으로 돌렸고 그때의 core/kg 파일 해시는 기록하지 않았다(원자료만 보존). 개선 전(<code>kg-advantages.before-index.json</code>)에는 (1) "지금 배치된 사람"을 찾으려고 모든 간선을 훑었고 (2) 사업 요구마다 보유자 전원의 레벨을 다시 계산했다.
 <code>core/kg</code>에 관계 종류별 색인을 더하고 레벨별 보유자 수를 기술마다 한 번만 세도록 고친 뒤 같은 조건으로 다시 쟀다. 그래프 DB는 질의 엔진이 해 주는 최적화를,
-메모리 그래프에서는 코드에서 직접 챙겨야 한다는 뜻이다.</p>
+메모리 그래프에서는 코드에서 직접 챙겨야 한다는 뜻이다. 개선 전 그래프에는 하위 기술 부분 인정 간선이 없어 간선이 1% 남짓 적었다(규모 옆 괄호).</p>
 <div class="w"><table><tr><th>규모</th><th>개선 전</th><th>개선 후</th><th>Neo4j</th></tr>{fix_rows}</table></div>
 <h2>B. RDF 표준 추론이 기술 사전의 일을 대신할 수 있는가</h2>
 <p>사전 {res['reasoning']['concepts']}개 개념, 상위 관계 {res['reasoning']['broader_edges']}개(버전 {e(res['reasoning']['dictionary_version'])}).</p>
