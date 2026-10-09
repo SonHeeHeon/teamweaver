@@ -1,0 +1,715 @@
+{
+ "candidates": {
+  "core_kg": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 1.357,
+      "p95_ms": 1.382,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.154,
+      "p95_ms": 0.365,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.396,
+      "p95_ms": 1.115,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.126,
+      "p95_ms": 0.172,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 4.078,
+      "p95_ms": 4.6,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.149,
+      "p95_ms": 1.553,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.585,
+      "p95_ms": 2.491,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.204,
+      "p95_ms": 0.223,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 7.835,
+      "p95_ms": 7.875,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.241,
+      "p95_ms": 1.457,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 0.8,
+      "p95_ms": 2.946,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.234,
+      "p95_ms": 0.268,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 0.0,
+    "200": 0.0,
+    "300": 0.0
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 37
+  },
+  "networkx": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 1.592,
+      "p95_ms": 1.67,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.28,
+      "p95_ms": 0.596,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.128,
+      "p95_ms": 1.269,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.138,
+      "p95_ms": 0.168,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 3.717,
+      "p95_ms": 3.804,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.181,
+      "p95_ms": 1.655,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.408,
+      "p95_ms": 3.823,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.221,
+      "p95_ms": 0.244,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 5.897,
+      "p95_ms": 8.79,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 0.25,
+      "p95_ms": 2.12,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.582,
+      "p95_ms": 5.393,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 0.253,
+      "p95_ms": 0.291,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 11.8,
+    "200": 29.7,
+    "300": 46.6
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 64
+  },
+  "rdf_oxigraph": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 2.73,
+      "p95_ms": 2.83,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.634,
+      "p95_ms": 3.561,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.387,
+      "p95_ms": 2.43,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 4.711,
+      "p95_ms": 5.511,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 5.398,
+      "p95_ms": 5.618,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.371,
+      "p95_ms": 14.884,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 2.117,
+      "p95_ms": 9.736,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 6.918,
+      "p95_ms": 8.017,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 8.065,
+      "p95_ms": 8.342,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 2.157,
+      "p95_ms": 20.772,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 3.308,
+      "p95_ms": 12.717,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 8.932,
+      "p95_ms": 13.637,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 177.2,
+    "200": 464.0,
+    "300": 732.3
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 159
+  },
+  "neo4j": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 5.595,
+      "p95_ms": 12.759,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 2.179,
+      "p95_ms": 4.096,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 3.098,
+      "p95_ms": 22.563,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 4.121,
+      "p95_ms": 5.245,
+      "n": 20
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 3.144,
+      "p95_ms": 6.756,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.064,
+      "p95_ms": 5.466,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.694,
+      "p95_ms": 5.507,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 4.864,
+      "p95_ms": 5.981,
+      "n": 20
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 5.543,
+      "p95_ms": 6.73,
+      "n": 20
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1.345,
+      "p95_ms": 7.616,
+      "n": 20
+     },
+     "q3_three_hop": {
+      "p50_ms": 1.441,
+      "p95_ms": 6.404,
+      "n": 20
+     },
+     "q4_ego": {
+      "p50_ms": 5.196,
+      "p95_ms": 7.732,
+      "n": 20
+     }
+    }
+   },
+   "load_ms": {
+    "100": 682.4,
+    "200": 798.2,
+    "300": 1263.8
+   },
+   "server": true,
+   "disk_persist": true,
+   "loc": 67
+  }
+ },
+ "reference": {
+  "rdf_rdflib": {
+   "correct": {
+    "q1_skill_map": true,
+    "q2_project_evidence": true,
+    "q3_three_hop": true,
+    "q4_ego": true
+   },
+   "mismatch": {},
+   "latency": {
+    "100": {
+     "q1_skill_map": {
+      "p50_ms": 385.078,
+      "p95_ms": 392.997,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 1051.129,
+      "p95_ms": 1580.344,
+      "n": 5
+     },
+     "q3_three_hop": {
+      "p50_ms": 6187.594,
+      "p95_ms": 7847.348,
+      "n": 5
+     },
+     "q4_ego": {
+      "p50_ms": 27.995,
+      "p95_ms": 91.339,
+      "n": 5
+     }
+    },
+    "200": {
+     "q1_skill_map": {
+      "p50_ms": 758.099,
+      "p95_ms": 778.933,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 2253.771,
+      "p95_ms": 41367.086,
+      "n": 5
+     },
+     "q3_three_hop": {
+      "p50_ms": 118712.82,
+      "p95_ms": 118712.82,
+      "n": 1
+     },
+     "q4_ego": {
+      "p50_ms": 36.458,
+      "p95_ms": 38.829,
+      "n": 5
+     }
+    },
+    "300": {
+     "q1_skill_map": {
+      "p50_ms": 1109.347,
+      "p95_ms": 1144.719,
+      "n": 5
+     },
+     "q2_project_evidence": {
+      "p50_ms": 65858.799,
+      "p95_ms": 65858.799,
+      "n": 1
+     },
+     "q3_three_hop": {
+      "p50_ms": 211814.879,
+      "p95_ms": 211814.879,
+      "n": 1
+     },
+     "q4_ego": {
+      "p50_ms": 39.546,
+      "p95_ms": 41.635,
+      "n": 5
+     }
+    }
+   },
+   "load_ms": {
+    "100": 577.9,
+    "200": 1429.2,
+    "300": 2236.0
+   },
+   "server": false,
+   "disk_persist": false,
+   "loc": 139
+  }
+ },
+ "data": {
+  "100": {
+   "extract_ms": 14.4,
+   "nodes": {
+    "client": 54,
+    "industry": 3,
+    "past_project": 114,
+    "person": 100,
+    "project": 20,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 118,
+    "COWORKED": 4173,
+    "CURRENT_ON": 15,
+    "FOR_CLIENT": 131,
+    "HAS_SKILL": 1990,
+    "IN_INDUSTRY": 134,
+    "REQUIRES": 70,
+    "REVIEWED": 1262,
+    "WORKED_ON": 1538
+   },
+   "triples": 81472,
+   "projects_with_team": 20,
+   "people": 100
+  },
+  "200": {
+   "extract_ms": 30.9,
+   "nodes": {
+    "client": 55,
+    "industry": 3,
+    "past_project": 148,
+    "person": 200,
+    "project": 40,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 239,
+    "COWORKED": 15312,
+    "CURRENT_ON": 29,
+    "FOR_CLIENT": 179,
+    "HAS_SKILL": 4014,
+    "IN_INDUSTRY": 188,
+    "REQUIRES": 144,
+    "REVIEWED": 2482,
+    "WORKED_ON": 3207
+   },
+   "triples": 210624,
+   "projects_with_team": 40,
+   "people": 200
+  },
+  "300": {
+   "extract_ms": 49.2,
+   "nodes": {
+    "client": 58,
+    "industry": 3,
+    "past_project": 241,
+    "person": 300,
+    "project": 60,
+    "skill": 37
+   },
+   "edges": {
+    "ASSIGNED": 354,
+    "COWORKED": 24004,
+    "CURRENT_ON": 51,
+    "FOR_CLIENT": 297,
+    "HAS_SKILL": 5773,
+    "IN_INDUSTRY": 301,
+    "REQUIRES": 220,
+    "REVIEWED": 3755,
+    "WORKED_ON": 4852
+   },
+   "triples": 322249,
+   "projects_with_team": 60,
+   "people": 300
+  }
+ },
+ "baseline": "core_kg",
+ "footprint": {
+  "neo4j_100": {
+   "container_mem": "1.408GiB / 7.75GiB",
+   "data_dir_kb": 528896
+  },
+  "core_kg_100": {
+   "rss_delta_mb": 0.0
+  },
+  "networkx_100": {
+   "rss_delta_mb": 5.6
+  },
+  "rdf_oxigraph_100": {
+   "rss_delta_mb": 67.3
+  },
+  "rdf_rdflib_100": {
+   "rss_delta_mb": 81.4
+  },
+  "neo4j_200": {
+   "container_mem": "1.47GiB / 7.75GiB",
+   "data_dir_kb": 530512
+  },
+  "core_kg_200": {
+   "rss_delta_mb": 0.0
+  },
+  "networkx_200": {
+   "rss_delta_mb": 6.5
+  },
+  "rdf_oxigraph_200": {
+   "rss_delta_mb": 160.7
+  },
+  "rdf_rdflib_200": {
+   "rss_delta_mb": 206.7
+  },
+  "neo4j_300": {
+   "container_mem": "1.499GiB / 7.75GiB",
+   "data_dir_kb": 533204
+  },
+  "core_kg_300": {
+   "rss_delta_mb": 0.0
+  },
+  "networkx_300": {
+   "rss_delta_mb": 7.0
+  },
+  "rdf_oxigraph_300": {
+   "rss_delta_mb": 242.2
+  },
+  "rdf_rdflib_300": {
+   "rss_delta_mb": 350.1
+  }
+ },
+ "rdf_export": {
+  "ok": true,
+  "full_triples": 321951,
+  "full_roundtrip": true,
+  "full_turtle_kb": 17620.5,
+  "skos_concepts": 37,
+  "skills": 37,
+  "ms": 10062.0
+ },
+ "standards_requirement": {
+  "required_now": false,
+  "basis": "입력 계약(core/domain/models.py·core/ingest 계약 CSV)과 docs/project-context.md 로드맵에 외부 표준 형식(RDF/SKOS/OWL) 교환이나 규칙 추론 요구가 없다. 기술 이름 사전(다음 단계)은 표준 구조(SKOS: 대표 이름·다른 이름·상위 개념)를 따르되 JSON으로 보관하고, 필요하면 RDF(Turtle)로 내보내는 방식으로 충족 가능한지 rdf_export에서 시험한다."
+ },
+ "tuning": [
+  {
+   "backend": "rdf_oxigraph",
+   "question": "q3_three_hop",
+   "variants_ms": {
+    "한 BGP(처음 작성)": 775.5,
+    "FILTER EXISTS": 65558.2,
+    "하위 질의로 함께 일한 사람 먼저(채택)": 2.5,
+    "직접 트리플 HAS_SKILL 먼저": 1245.8
+   }
+  },
+  {
+   "backend": "rdf_oxigraph",
+   "question": "q2_project_evidence(팀원 경력 부분)",
+   "variants_ms": {
+    "OPTIONAL(처음 작성)": 17.2,
+    "OPTIONAL 변형 3가지": "15.2~18.4",
+    "안쪽 결합 + 0은 파이썬(채택)": 1.2
+   }
+  },
+  {
+   "backend": "neo4j",
+   "question": "q1_skill_map",
+   "variants_ms": {
+    "CALL 하위 질의(처음 작성)": 3.64,
+    "WITH 연결(채택)": 3.36
+   }
+  },
+  {
+   "backend": "neo4j",
+   "question": "q2_project_evidence",
+   "variants_ms": {
+    "질의 6개 = 6번 왕복(처음 작성)": 6.34,
+    "한 질의 = 1번 왕복(채택)": 1.58
+   }
+  },
+  {
+   "backend": "neo4j",
+   "question": "q4_ego",
+   "variants_ms": {
+    "UNION ALL(처음 작성)": 3.39,
+    "방향 없는 매치(채택)": 3.31
+   }
+  },
+  {
+   "backend": "networkx",
+   "question": "q3_three_hop",
+   "variants_ms": {
+    "사람마다 간선 다시 훑기(처음 작성)": 4.31,
+    "후보 중복 제거": 1.26,
+    "후보 중복 제거 + 한 번 훑기(채택)": 1.11
+   }
+  }
+ ],
+ "env": {
+  "when": "2026-10-09T12:20:18+09:00",
+  "commit": "6af8da0",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "os": "macOS-26.5.2-arm64-arm-64bit",
+  "cpu": "Apple M4",
+  "versions": {
+   "networkx": "3.7",
+   "pyoxigraph": "0.5.11",
+   "rdflib": "7.6.0",
+   "neo4j_driver": "6.4.0",
+   "neo4j_server": {
+    "product": "Neo4j Kernel",
+    "version": "5.26.28",
+    "edition": "community",
+    "startup_s": 4.5
+   }
+  },
+  "neo4j_config": {
+   "NEO4J_AUTH": "none",
+   "NEO4J_server_memory_heap_initial__size": "1G",
+   "NEO4J_server_memory_heap_max__size": "1G",
+   "NEO4J_server_memory_pagecache_size": "512M",
+   "image": "neo4j:5-community",
+   "transport": "Bolt localhost, Docker Desktop"
+  },
+  "reps": 20,
+  "warm": 3,
+  "load_reps": 3,
+  "check_persons": 30
+ },
+ "decision": {
+  "decision": "networkx",
+  "trail": [
+   {
+    "rule": "1-2",
+    "candidate": "networkx",
+    "result": "통과"
+   },
+   {
+    "rule": "1-2",
+    "candidate": "rdf_oxigraph",
+    "result": "통과"
+   },
+   {
+    "rule": "1-2",
+    "candidate": "neo4j",
+    "result": "통과"
+   },
+   {
+    "rule": 3,
+    "candidate": "neo4j",
+    "result": "후순위",
+    "why": "별도 서버 필요"
+   },
+   {
+    "rule": 4,
+    "result": "networkx",
+    "cell_wins": {
+     "networkx": 11,
+     "rdf_oxigraph": 1
+    },
+    "majority": true,
+    "mean_ms": {
+     "networkx": 1.5539166666666666,
+     "rdf_oxigraph": 4.060666666666667
+    }
+   },
+   {
+    "rule": 5,
+    "result": "미발동",
+    "why": "표준 연동이 지금 요구사항이 아님"
+   }
+  ]
+ },
+ "sensitivity": {
+  "all_three": {
+   "networkx": 8,
+   "rdf_oxigraph": 0,
+   "neo4j": 4
+  },
+  "all_three_leader": "networkx",
+  "all_three_majority": true,
+  "core_vs_nx": {
+   "core_kg": 10,
+   "networkx": 2
+  }
+ }
+}
