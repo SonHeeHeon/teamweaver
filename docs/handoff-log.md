@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-10 · claude-a · 소명 글 불리한 사실 서버 덧붙임 + 지시문 개선 + E7c 재측정, Codex 사후 리뷰, 미리 계산 재생성, main 병합
+- 브랜치/커밋: `feat/claude-a-graphrag-justify` `ac8a870`(미래 이력 수정) · `4c56be4`(덧붙임·지시문) · `e3fdcb5`(E7c 사전 등록, 측정 전) · 결과·문서 커밋 · 미리 계산 커밋 → **main 빨리 감기 병합(사용자 승인 2026-10-10)**.
+  지식 그래프(E7·E8)·기술 이름 사전·소명 글 브랜치가 모두 main에 들어갔다.
+- 한 일: Codex 사후 리뷰(브랜치 전체) MUST 2건 반영 — 계획 시작 뒤에 시작하는 이력이 과거 경험으로 집계되던 것(`core/kg/graph.py`, 시연 묶음엔 해당 행 0건), 측정 G1의 종류별 하한.
+  사용자 결정 (b): AI 소명 글이 빠뜨린 불리한 사실을 서버가 마지막 문단으로 덧붙인다(`adverse_addendum`). 지시문만 개선(라벨별 허용 사실 종류 표 등, 문법·검사기 그대로).
+  **E7c**(843회, $0.69): G1 통과(13,323/13,323, 무결성 838/838), 채택 **99.4%**(E7b 94.7%), 처음 보는 데이터(새 시드 3묶음) **99.6%**. 라벨-종류 불일치 탈락 25 → 0.
+  시연 미리 계산 n200·n300 4개를 기술 사전 기준으로 다시 만들었다(시드 4, 임시 데이터 폴더) — 서버 검사로 6개 모두 받아들여짐(skipped 없음).
+- 상대 영향: **claude-b 계약 갱신** `docs/requests/2026-10-09-hr-justification.md` — 출력 `addendum`·`appended_adverse`(화면에서 "서버가 덧붙임" 구분, 28명 팀은 16~85개가 붙어 길 수 있어 접기 권장), E7c 결과 절.
+  **지식 그래프 미래 이력 규칙**: `build_kg`가 계획 시작 뒤에 시작하는 이력을 버린다(고객사·산업 이름 추정 포함). 시험 기준선 **1589**(main). 미리 계산 4개 파일이 바뀌었다.
+- 검증: `uv run --group benchmark pytest -q` → 1589 passed, 1 skipped, 19 deselected · Codex 커밋 전 리뷰 2라운드 approve · E7c `rehearsal/results/justify-scale-e7c.html` · 미리 계산 서버 검사 6/6.
+- 근거: `rehearsal/results/justify-scale-e7c.html`, `docs/requests/2026-10-09-hr-justification.md`, 로컬 `.omc/reports/2026-10-10-justification-adverse-e7c.md`
+
 ## 2026-10-09 · claude-a · 인사팀 소명 글 GraphRAG 서비스 모듈 + 확대 검증 E7b
 - 브랜치/커밋: `feat/claude-a-graphrag-justify` `be6c902`(모듈·시험·측정 스크립트, 측정 전 커밋) + 결과·문서 커밋(skill-dictionary 위, main 병합은 사용자 승인 대기)
 - 한 일: `core/kg/justify.py`(사실 F1…·템플릿·검사·채우기) + `api/rag/justification.py`(AI 호출·대체). 측정 전 설계 변경 2회(폴백 리뷰 5회): 자유 문장 대조 → 자리표시+금지 목록 →

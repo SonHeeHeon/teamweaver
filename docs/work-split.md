@@ -84,11 +84,11 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-graphrag-justify` · `core/kg/`, `api/rag/justification.py`, `rehearsal/justify_scale.py`, `demo/precomputed/`(n200·n300 재생성), main 병합(사용자 승인 2026-10-10) · 2026-10-10 16:05 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
-- 2026-10-09 [claude-a→claude-b] **인사팀 소명 글(GraphRAG) API·화면·PDF**: 계약 `docs/requests/2026-10-09-hr-justification.md`(`feat/claude-a-graphrag-justify`, main 병합 뒤 착수). 계산 함수 그대로 부르면 된다 — `justification_input` → `generate_justification`. 화면에는 `text`(근거 칩 `[F#]`)·사실 목록(`facts`, 불리한 사실 `adverse` 표시)·배지(graphrag/template+사유)를 보이고 `llm_text`는 보이지 말 것. 측정(E7b) 채택률 94.7%(조건부), AI 글 p50 약 8초 · 상태: 대기
+- 2026-10-09 [claude-a→claude-b] **인사팀 소명 글(GraphRAG) API·화면·PDF**: 계약 `docs/requests/2026-10-09-hr-justification.md`(`feat/claude-a-graphrag-justify`, main 병합 뒤 착수). 계산 함수 그대로 부르면 된다 — `justification_input` → `generate_justification`. 화면에는 `text`(근거 칩 `[F#]`)·사실 목록(`facts`, 불리한 사실 `adverse` 표시)·배지(graphrag/template+사유)를 보이고 `llm_text`는 보이지 말 것. **2026-10-10 추가**: 출력 `addendum`·`appended_adverse`(AI가 빠뜨린 불리한 사실을 서버가 마지막 문단으로 덧붙임 — 화면에서 "서버가 덧붙임"으로 구분, 28명 팀은 길 수 있어 접기 권장). 측정 E7c 채택률 99.4%·처음 보는 데이터 99.6%, AI 글 p50 약 8초 · 상태: 대기(main 병합됨, 착수 가능)
+- 2026-10-10 [claude-a→모두] **공유 계약 `CLAUDE.md`**: 소명 글 함정 줄 갱신(불리한 사실 서버 덧붙임, 재측정은 `rehearsal.justify_scale_e7c`)과 시험 기준선 1589(main) · 상태: 처리됨(main 병합)
 - 2026-10-09 [claude-a→모두] **공유 계약 `CLAUDE.md`**: 소명 글 함정 한 줄(허용 목록 문법·LABELS를 프롬프트와 검사기가 같이 씀, 사실 문구를 바꾸면 E7b를 다시 잰다)과 시험 기준선 1583(`feat/claude-a-graphrag-justify`) · 상태: 처리됨(같은 브랜치)
 - 2026-10-09 [claude-a→모두] **공유 계약 `CLAUDE.md`·`docs/project-context.md`**: IT 기술 이름 사전·하위 기술 부분 인정(사용자 결정 2026-10-09)이 입력 단계 기본값이 되어 함정 한 줄과 시험 기준선(1510, `feat/claude-a-skill-dictionary`), 맥락 문서의 S 설명을 고친다 · 상태: 처리됨(같은 브랜치)
 - 2026-10-09 [claude-a→claude-b] **기술 이름 사전·부분 인정 후속(대기, main 병합 뒤)**: (1) 부분 인정 계수(기본 0.5, `to_dataset(partial_credit=)`)를 관리자 설정에 노출할지 — 바꾸면 데이터셋을 다시 만들어야 한다. (2) 데이터셋 버전(캐시·미리 계산 키)에 사전 버전(`core.ingest.skills.load_dictionary().version`)을 넣어 달라 — 지금은 원천 파일 해시라 사전·변환 규칙이 바뀌어도 버전이 같다(미리 계산은 재채점으로 걸러져 조용히 실시간 계산이 된다). (3) 입력 리포트의 "사전에 없는 기술 이름" 경고를 업로드 화면에 보이기. (4) **공유 계약 제안**: 부분 인정으로 생긴 기술 레벨이 출처 없이 근거 색인(`core/graph/sqlite_store.py`)·`/api/meta`·AI 설명 근거에 "보유 기술"로 들어간다 — `Person`에 출처(본인/인정, 인정 출처)를 담는 선택 필드를 두고 근거 색인·설명이 구분해 보이게 할지 함께 정하자(지식 그래프는 `implied_from`으로 이미 구분) · 상태: 대기
