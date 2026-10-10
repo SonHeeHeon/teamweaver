@@ -17,7 +17,8 @@
   S4 사실과 머리의 짝: 사람별 사실은 주어(들) 중 주인의 것, 함께 일한 이력·후보 비교는 주어가 그 사실의 사람들 안, 사업 전체 사실(PRJ·REQ·CON)
      앞에는 사람 주어 금지, 라벨이 있으면 사실 종류가 라벨에 맞음, 여러 주어·"각각"의 대응 · S5 사람별 사실이 하나도 붙지 않은 팀원 · S6 빈 글·자리표시 없음.
 보장 범위: 채운 글의 숫자·상태·사람-사실 짝은 데이터 그대로다(구성상). AI가 고른 순서·묶음·라벨은 뜻을 바꾸지 않는 말로 한정했다.
-한계: 어떤 사실을 고르고 뺄지는 AI 몫이라 불리한 사실(미달·감점)을 빼고 쓸 수 있다 -- Fact.adverse로 표시해 인용률(verify의 adverse)을 보고한다.
+불리한 사실(Fact.adverse: 미달·감점·위반·빈자리·더 나은 후보·부정 평가)은 AI가 빼고 쓸 수 있다 -- 사용자 결정(2026-10-10, 선택지 b):
+AI 원문이 빠뜨린 불리한 사실을 서버가 정해진 한 문단(adverse_addendum)으로 글 끝에 덧붙인다. 검사(verify)는 AI 원문만 본다(AI 자체 인용률은 verify의 adverse).
 """
 from __future__ import annotations
 
@@ -326,6 +327,19 @@ def render(raw: str, inp: JustificationInput) -> str:
             return m.group(0)
         return f"{f.phrase if use_short else f.phrase_full}[{f.id}]"
     return SLOT.sub(fill, raw)
+
+
+ADDENDUM_LEAD = "다만 다음 사항도 함께 확인이 필요합니다: "
+
+
+def adverse_addendum(raw: str, inp: JustificationInput) -> tuple[str, list[str]]:
+    """AI 원문에 자리표시가 없는 불리한 사실을 서버가 덧붙일 한 문단(사용자 결정 2026-10-10, 선택지 b). 문구는 주인 ID가 붙은
+    phrase_full(주어 없이 놓이므로), 사실 사이는 ";"(문구 안에 ","가 있다). 반환: (문단, 사실 ID들) -- 빠진 것이 없으면 ("", [])."""
+    cited = set(SLOT.findall(raw or ""))
+    miss = [f for f in inp.facts if f.adverse and f.id not in cited]
+    if not miss:
+        return "", []
+    return ADDENDUM_LEAD + "; ".join(f"{f.phrase_full}[{f.id}]" for f in miss) + ".", [f.id for f in miss]
 
 
 def render_ok(raw: str, text: str) -> bool:

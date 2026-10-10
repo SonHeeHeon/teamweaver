@@ -27,7 +27,9 @@ out = generate_justification(client, load_pricing()["briefing_model"], inp)
 | 키 | 내용 |
 |---|---|
 | `method` | `"graphrag"`(AI 글, 검사 통과) 또는 `"template"`(대체) |
-| `text` | 보여 줄 글(서버가 자리표시를 채운 글). 채운 문구 바로 뒤에 `[F12]` 같은 근거 번호가 붙는다 |
+| `text` | 보여 줄 글(서버가 자리표시를 채운 글). 채운 문구 바로 뒤에 `[F12]` 같은 근거 번호가 붙는다. AI 글이 불리한 사실을 빠뜨렸으면 마지막 문단이 서버 덧붙임(`addendum`)이다 |
+| `addendum` | (2026-10-10 추가, 사용자 결정 b) 서버가 덧붙인 문단 또는 `None`: "다만 다음 사항도 함께 확인이 필요합니다: DP0006의 …[F19]; …[F30]." — AI 글에 빠진 불리한 사실만, 주인 ID가 붙은 문구(`phrase_full`)로, 사실 사이는 `;`. `text`의 마지막 줄과 같다. 템플릿 글에는 없다(템플릿은 사실을 다 담는다) |
+| `appended_adverse` | 덧붙인 사실 ID 목록(없으면 `[]`) |
 | `facts` | `[{id, kind, text, phrase, phrase_full, owners, skill, status, adverse}]` — `adverse`: 불리한 사실(요구 부족·기술 미달·규칙 위반·빈자리·점수가 오르는 다른 후보·부정 평가) — `text`는 한 줄 사실(목록·템플릿용), `phrase`·`phrase_full`은 글에 채운 문구. kind: PRJ 사업 · REQ 요구 기술 · MEM 팀원 · SKL 사람별 기술(부분 인정이면 "하위 기술 … 일부 인정") · IND 같은 산업 · CLI 같은 고객사 · CW 함께 일한 이력 · REV 동료 평가 · ALT 다른 후보 비교 · CON 규칙 준수 |
 | `verification` | `{ok, violations[{rule, sentence, detail}], sentences, cited[F#], coverage{요소: bool/None}, chars, adverse{available, cited}}` (AI 글이 있었을 때) |
 | `fallback_reason` | `None` 또는 `no_client` · `llm_error:<예외>` · `llm_bad_json:<예외>` · `verify_error:<예외>` · `verify:S2,S4`(걸린 규칙) · `render_check`(채운 글 확인 실패) |
@@ -48,8 +50,9 @@ S4 사실과 머리의 짝(사람별 사실은 주어 중 주인의 것, 라벨 
 - 소명 글 + **근거 번호 칩**: `[F12]`을 누르면 옆 사실 목록에서 그 사실을 강조(사실 목록은 종류별로 묶어서). 채운 문구 부분을 옅게 강조하면 "AI가 쓴 말 / 데이터" 구분이 보인다.
 - 배지: "AI 구성 · 사실은 데이터 그대로"(graphrag) / "정해진 틀(사유: …)"(template). 템플릿일 때 사유를 사람 말로(예: S2 "정해진 표현 밖의 말이 있어 AI 글을 쓰지 않았습니다",
   S4 "사실이 다른 사람·다른 주제 아래 놓여 AI 글을 쓰지 않았습니다", S5 "빠진 팀원이 있어 …", llm_error "AI 호출이 실패해 …").
-- 불리한 사실(`facts[].adverse`: 요구 부족·기술 미달·규칙 위반·빈자리·점수가 오르는 다른 후보·부정 평가)은 AI 글에서 빠질 수 있다 —
-  사실 목록 쪽에서 눈에 띄게 표시해 달라(측정 결과의 불리한 사실 인용률을 보고 구조적 보완 여부를 사용자가 정한다).
+- 불리한 사실(`facts[].adverse`: 요구 부족·기술 미달·규칙 위반·빈자리·점수가 오르는 다른 후보·부정 평가)은 사실 목록 쪽에서 눈에 띄게 표시해 달라.
+  AI 글이 빠뜨린 불리한 사실은 서버가 마지막 문단으로 덧붙인다(사용자 결정 2026-10-10, `addendum`) — 이 문단은 "서버가 덧붙임"으로 구분해 보이면 좋다
+  (AI가 쓴 문장이 아니다). PDF에는 `text` 그대로 넣으면 덧붙임까지 들어간다.
 - "다시 쓰기"(AI 다시 호출), 부분 인정 사실은 "(하위 기술에서 일부 인정)" 표시.
 - 시안 참고: `rehearsal/results/kg-preview.html`(사업별 근거 그래프·"왜 다른 사람이 아니었나" 표).
 

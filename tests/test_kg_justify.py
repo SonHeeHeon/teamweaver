@@ -198,6 +198,7 @@ def test_accepted_text_is_rendered():
     assert "P1, P2" in user and "{F4} [SKL, 사람: P1]" in user                  # 팀원 명단과 사실 종류·사람 표시를 알려 준다
     assert "'다만 {F7}입니다'" in user                                            # 지시문의 예시 중괄호가 format에 먹히지 않는다
     assert "'동료 평가'" in SYSTEM and "'규칙 준수 현황'" in SYSTEM                # 프롬프트와 검사기가 같은 라벨 목록을 쓴다
+    assert out["addendum"] is None and out["appended_adverse"] == []              # 불리한 사실이 없으면 덧붙이지 않는다
 
 
 @pytest.mark.parametrize("client, reason", [
@@ -212,6 +213,7 @@ def test_fallback_to_template(client, reason):
     out = generate_justification(client, "gpt-6-luna", _small())
     assert out["method"] == "template" and out["fallback_reason"].startswith(reason)
     assert out["text"] == template_text(_small().facts)
+    assert out["addendum"] is None and out["appended_adverse"] == []              # 템플릿 글은 사실을 다 담는다
 
 
 def test_render_check_failure_falls_back(monkeypatch):
@@ -323,3 +325,48 @@ def test_attribution_oracle_flags_the_old_short_phrase_bug():
     for bad in (f"P1과 P2는 {f['F11'].phrase}[F11]입니다.",                                # 여러 명 목록의 끝(리뷰 5회째 SHOULD-1)
                 f"P2는 {f['F7'].phrase}[F7]이며 {f['F11'].phrase}[F11]입니다."):
         assert attribution_problems(bad, s, {"P1", "P2", "P9"}), bad
+
+
+# ---------------------------------------------------------------- 불리한 사실 서버 덧붙임(사용자 결정 2026-10-10, 선택지 b)·지시문 표
+def _small_adverse():
+    s = _small()
+    for f in s.facts:
+        f.adverse = f.id in ("F5", "F8", "F10")                # 기술 미달(P1)·동료 평가(P1, 평가자 P2)·규칙 -- 사람별·사람 둘·사업 전체
+    return s
+
+
+def test_addendum_appends_only_the_adverse_facts_the_ai_left_out():
+    from api.rag.justification import generate_justification
+    from core.kg.justify import ADDENDUM_LEAD, adverse_addendum
+    from rehearsal.justify_scale import attribution_problems
+    s = _small_adverse()
+    assert adverse_addendum(GOOD, s) == ("", [])                                   # 다 넣었으면 덧붙이지 않는다
+    raw = GOOD.replace("이며, {F5}", "").replace(" 동료 평가는 {F8}입니다.", "")
+    assert verify(raw, s)["ok"] and verify(raw, s)["adverse"] == {"available": 3, "cited": 1}
+    out = generate_justification(_Client(json.dumps({"text": raw}, ensure_ascii=False)), "gpt-6-luna", s)
+    assert out["method"] == "graphrag" and out["appended_adverse"] == ["F5", "F8"]
+    f = {x.id: x for x in s.facts}
+    assert out["addendum"] == f"{ADDENDUM_LEAD}{f['F5'].phrase_full}[F5]; {f['F8'].phrase_full}[F8]."
+    assert out["addendum"].startswith(ADDENDUM_LEAD + "P1의 Spark 경력 8개월") and "P1에 대한 동료 P2의 평가" in out["addendum"]
+    assert out["text"] == render(raw, s) + "\n" + out["addendum"]                  # AI 부분은 그대로, 덧붙임은 마지막 문단
+    assert all(f"[{x}]" in out["text"] for x in ("F5", "F8", "F10"))
+    assert attribution_problems(out["text"], s, {"P1", "P2", "P9"}) == []           # 덧붙임도 주인 ID가 붙어 귀속이 맞다
+    assert out["verification"]["adverse"]["cited"] == 1                              # AI 자체 인용률은 덧붙임 전 기준
+
+
+def test_addendum_is_not_added_to_rejected_or_template_text():
+    from api.rag.justification import generate_justification
+    s = _small_adverse()
+    bad = GOOD.replace("{F11}", "{F4}").replace("이며, {F5}", "")
+    out = generate_justification(_Client(json.dumps({"text": bad}, ensure_ascii=False)), "gpt-6-luna", s)
+    assert out["method"] == "template" and out["addendum"] is None and out["appended_adverse"] == []
+    assert all(f"[{x}]" in out["text"] for x in ("F5", "F8", "F10"))
+
+
+def test_prompt_shows_every_label_with_its_fact_kinds():
+    from api.rag.justification import KIND_NAMES, SYSTEM, label_table
+    from core.kg.justify import LABELS
+    t = label_table()
+    assert all(t.count(f"'{lb}'") == 1 for lb in LABELS) and set(KIND_NAMES) >= {k for ks in LABELS.values() for k in ks}
+    assert "[SKL] '기술 근거', '기술 경력'" in t and "[IND·CLI] '관련 경험', '과거 사업 경험'" in t
+    assert t in SYSTEM and "', 다만'을 쓰지 말고" in SYSTEM and "일본어 글자" in SYSTEM   # E7b 탈락 유형(라벨-종류·', 다만'·다른 언어)
