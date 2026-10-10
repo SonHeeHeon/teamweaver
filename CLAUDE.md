@@ -81,6 +81,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   하위 기술 경력의 `0.5^깊이`를 상위 기술에 인정한다(계수는 근거 없는 가정값, NOT_CALIBRATED). 지식 그래프(`build_kg`)는 같은 함수로 같은 경력을 만든다 -- 둘에 같은 인자를 넘긴다.
   시연 org-n200·n300의 S가 바뀌므로(100은 그대로) **main 병합 뒤 미리 계산 4개(n200·n300 × 계획·운영 중)를 다시 만든다**. 사전에 없는 이름은 합치지 않고 경고만 한다.
   알려진 한계: 인정분이 출처 없이 근거 색인·AI 설명에 "보유 기술"로 보인다(claude-b·공유 계약 요청, work-split).
+- **인사팀 소명 글은 자리표시 + 연결 말 허용 목록**(2026-10-09, `core/kg/justify.py`·`api/rag/justification.py`): AI는 사실 `{F#}`를 고르고 정해진 문법(주어·`LABELS`·연결어·맺음말)으로만 엮는다.
+  숫자·충족/미달은 서버가 사실 문구로 채운다 -- 자유 문장·판단어 금지 목록은 폴백 리뷰마다 뚫렸다. 프롬프트와 검사기가 같은 `LABELS`를 쓴다.
+  사실 문구·문법·라벨을 바꾸면 `python -m rehearsal.justify_scale`(약 $0.5)을 다시 돌린다. 측정 E7b: 채택 94.7%(조건부), 글은 템플릿과 비슷한 길이.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -95,7 +98,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-09 **1510 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, `feat/claude-a-skill-dictionary` · slow 19 passed, 웹 165)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-09 **1583 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, `feat/claude-a-graphrag-justify` · slow 19 passed, 웹 165)
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

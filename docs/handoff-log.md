@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-09 · claude-a · 인사팀 소명 글 GraphRAG 서비스 모듈 + 확대 검증 E7b
+- 브랜치/커밋: `feat/claude-a-graphrag-justify` `be6c902`(모듈·시험·측정 스크립트, 측정 전 커밋) + 결과·문서 커밋(skill-dictionary 위, main 병합은 사용자 승인 대기)
+- 한 일: `core/kg/justify.py`(사실 F1…·템플릿·검사·채우기) + `api/rag/justification.py`(AI 호출·대체). 측정 전 설계 변경 2회(폴백 리뷰 5회): 자유 문장 대조 → 자리표시+금지 목록 →
+  **자리표시 + 연결 말 허용 목록 문법**(AI는 사실을 고르고·순서·묶기만, 숫자·충족/미달·사람-사실 짝은 서버가 데이터 그대로 채움). E7b(618회, $0.50): G1 통과(주입 오류 9,309/9,309, 무결성 실패 0),
+  **G2 조건부 94.7%**(탈락 대부분 주제 라벨-사실 종류 불일치·일본어 글자 섞임 → 지시문 개선 후보), 불리한 사실 인용률 92~98%, 글 길이는 템플릿과 비슷(2.3~3.0천 자 vs 2.9~4.2천 자).
+- 상대 영향: **claude-b 계약** `docs/requests/2026-10-09-hr-justification.md`(함수 호출·출력 키·`POST /api/justification` 제안·화면·PDF, `llm_text`는 화면에 보이지 말 것, `facts[].adverse` 표시).
+  `core/kg/views.project_evidence`의 요구 행에 `implied_from`(부분 인정 출처) 추가. 시험 기준선 1510 → **1583**(이 브랜치).
+- 검증: `uv run pytest -q` → 1583 passed, 1 skipped, 19 deselected · `uv run python -m rehearsal.justify_scale` → G1 pass, G2 0.9466 조건부
+- 근거: `rehearsal/results/justify-scale.html`(원자료 `.json.gz`), 사전 등록 `rehearsal/justify_scale.py` docstring
+
 ## 2026-10-09 · claude-a · 사용자 결정: 인사팀 소명은 GraphRAG
 - 브랜치/커밋: `feat/claude-a-skill-dictionary`(문서만)
 - 한 일: 사용자 결정 기록 — 인사팀 소명 글은 GraphRAG(그래프 사실만 주고 AI가 근거 번호를 달아 쓰기), 지식 그래프 템플릿 글은 실패 시 대체로만. 근거는 사용성(E7: 근거 오류 0으로 같고, GraphRAG 약 890자 vs 템플릿 약 5,200자).
