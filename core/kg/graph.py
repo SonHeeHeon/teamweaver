@@ -148,8 +148,10 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
                     c = sd.lookup(name) if sd else None
                     kg.add_node(f"skill:{name}", "skill", name, category=c.get("category") if c else None)
             kg.add_edge("HAS_SKILL", f"person:{pid}", f"skill:{name}", **props)
-    clients = sorted({r.get("client") for r in t.get("work_history", []) if r.get("client")})
-    industries = {r.get("industry") for r in t.get("work_history", []) if r.get("industry")}
+    # 계획 시작 뒤에 시작하는 이력은 과거가 아니다(입력 단계 협업 계산과 같다) -- 고객사·산업 이름 추정과 과거 사업 간선에 모두 쓰지 않는다(Codex 리뷰 2026-10-10)
+    history = [r for r in t.get("work_history", []) if r.get("start_date") is None or r["start_date"] <= cutoff]
+    clients = sorted({r.get("client") for r in history if r.get("client")})
+    industries = {r.get("industry") for r in history if r.get("industry")}
     proposals = set(bundle.manifest.get("proposals") or [])
     projects = {p.id: p for p in dataset.projects}
     for r in t.get("projects", []):
@@ -187,8 +189,8 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
         kg.add_node(f"skill:{name}", "skill", name)
         kg.add_edge("REQUIRES", f"project:{jid}", f"skill:{name}", **e)
     outcomes = {r["project_code"]: r for r in t.get("project_outcomes", []) if r.get("project_code")}
-    for r in t.get("work_history", []):
-        end = r.get("end_date")
+    for r in history:
+        start, end = r.get("start_date"), r.get("end_date")
         if f"person:{r['person_id']}" not in kg.nodes or (end is not None and end < since):
             continue                                                # 최근 10년 안에 끝난 이력만
         code = r.get("project_code") or r.get("work_id")
@@ -205,7 +207,6 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
             if r.get("industry"):
                 kg.add_node(f"industry:{r['industry']}", "industry", r["industry"])
                 kg.add_edge("IN_INDUSTRY", past, f"industry:{r['industry']}")
-        start = r.get("start_date")
         months = None
         if start and end:                                          # 10년 창과 계획 시작 전날로 자른다(입력 단계 협업 계산과 같다)
             s0, e0 = max(start, since), min(end, cutoff)

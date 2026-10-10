@@ -34,7 +34,9 @@ def test_graph_facts_match_the_source_tables(operating):
     assert sum(1 for e in has if e["own_months"] > 0) == len(skills)          # 본인이 적은 경력 = 원천 행
     assert all(e.get("implied_from") for e in has if e["own_months"] == 0)    # 나머지는 하위 기술에서 인정된 경력(출처 있음)
     assert max(e["months"] for e in kg.edges if e["type"] == "HAS_SKILL") <= LOOKBACK_MONTHS
-    work = [r for r in t["work_history.csv"] if r.get("end_date") is None or r["end_date"] >= since]
+    cutoff = bundle.horizon[0] - dt.timedelta(days=1)
+    work = [r for r in t["work_history.csv"] if (r.get("end_date") is None or r["end_date"] >= since)
+            and (r.get("start_date") is None or r["start_date"] <= cutoff)]
     assert st["edges"]["WORKED_ON"] == len(work)
     assert st["edges"]["REQUIRES"] == len(t["project_skill_requirements.csv"])
     assert st["edges"]["COWORKED"] == len(ds.coworks) and st["edges"]["CURRENT_ON"] == len(ds.current)
@@ -157,6 +159,48 @@ def test_work_history_months_are_clipped_to_the_window(operating):
     (e,) = [x for x in kg.edges if x["type"] == "WORKED_ON"]
     cutoff = bundle.horizon[0] - dt.timedelta(days=1)
     assert e["months"] == (cutoff.year - since.year) * 12 + cutoff.month - since.month + 1
+
+
+def test_future_work_is_not_past_experience(operating):
+    """Codex review MUST (2026-10-10): a row that starts after the planning cutoff is a future assignment, not history --
+    no WORKED_ON edge, so it never shows up as "같은 산업 과거 사업" or "같은 고객사 과거 사업" in the justification."""
+    import copy
+    bundle, ds, parsed, _ = operating
+    jid = ds.current[0].project_id
+    entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in ds.current if c.project_id == jid]
+    pid = entries[0].person_id
+    kg0 = build_kg(bundle, ds, parsed)
+    pj = kg0.nodes[f"project:{jid}"]
+    b2 = copy.copy(bundle)
+    b2.tables = dict(bundle.tables)
+    row = dict(next(r for r in bundle.tables["work_history.csv"] if r["person_id"] == pid))
+    row.update(project_code="FUTURE-1", work_id="FUTURE-1", work_name="FUTURE-1", client=pj.get("client") or "고객사X",
+               industry=pj.get("industry") or "산업X", start_date=bundle.horizon[0] + dt.timedelta(days=10),
+               end_date=bundle.horizon[0] + dt.timedelta(days=200))
+    b2.tables["work_history.csv"] = [*bundle.tables["work_history.csv"], row]
+    kg = build_kg(b2, ds, parsed)
+    assert "past:FUTURE-1" not in kg.nodes
+    assert [e for e in kg.out(f"person:{pid}", "WORKED_ON")] == [e for e in kg0.out(f"person:{pid}", "WORKED_ON")]
+    before, after = project_evidence(kg0, jid, entries), project_evidence(kg, jid, entries)
+    m0, m1 = (next(m for m in ev["members"] if m["person_id"] == pid) for ev in (before, after))
+    assert m1["same_industry_projects"] == m0["same_industry_projects"]
+    assert "FUTURE-1" not in m1["same_client_projects"] and m1["same_client_projects"] == m0["same_client_projects"]
+    # 미래 이력에만 있는 고객사·산업 이름은 지금 사업의 고객사·산업 추정에도 쓰지 않는다(Codex 리뷰 2회째)
+    proj = next(r for r in bundle.tables["projects.csv"] if r["project_id"] == jid)
+    only_future = dict(row, client="미래고객", project_code="FUTURE-2", work_id="FUTURE-2", work_name="FUTURE-2")
+    b3 = copy.copy(bundle)
+    b3.tables = dict(bundle.tables)
+    b3.tables["work_history.csv"] = [*bundle.tables["work_history.csv"], only_future]
+    b3.tables["projects.csv"] = [dict(r, project_name="미래고객 " + r["project_name"]) if r is proj else r for r in bundle.tables["projects.csv"]]
+    kg3 = build_kg(b3, ds, parsed)
+    assert kg3.nodes[f"project:{jid}"]["client"] == pj.get("client") and "client:미래고객" not in kg3.nodes
+    assert all((kg3.nodes[k].get("client"), kg3.nodes[k].get("industry")) == (kg0.nodes[k].get("client"), kg0.nodes[k].get("industry"))
+               for k in kg0.nodes if k.startswith("project:"))
+    ongoing = dict(row, project_code="ONGOING-1", work_id="ONGOING-1", work_name="ONGOING-1",
+                   start_date=bundle.horizon[0] - dt.timedelta(days=60))   # 계획 전에 시작해 진행 중이면 계획 시작 전날까지 센다
+    b2.tables["work_history.csv"] = [*bundle.tables["work_history.csv"], ongoing]
+    (e,) = [x for x in build_kg(b2, ds, parsed).out(f"person:{pid}", "WORKED_ON") if x["dst"] == "past:ONGOING-1"]
+    assert e["months"] >= 1
 
 
 def test_alternatives_keep_the_monthly_allocation(operating):
