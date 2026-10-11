@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-11 · claude-a · 사용자 결정 반영: 부분 인정 70%·가상 이름·평가 글 생성기 v2·인정 경력 구분·사내 AI 대기(가), 해설서 갱신
+- 브랜치/커밋: `feat/claude-a-demo-data-1011` (main 병합은 사용자 승인 대기). main `436aa9a`(E7c-F 병합, 사용자 승인) 위.
+- 한 일(claude-b 요청 "사용자 결정 3건 + 생성기" + 사용자 지시 (가)·해설서):
+  - 부분 인정 0.5 → **0.7**(사전 2026-10-11.1). `Person.skill_credit`(공유 계약)로 인정 경력을 본인 경력과 구분 → SQLite 근거 색인 `skill_credit` 표, 교체 설명 문맥 `credited_from`·지시문(괄호 표기, 따옴표 없이).
+  - **가상 이름**(`core/ingest/names.py`, ID별 고정·전체 중복 없음, 번호 순으로 채워 그룹마다 성씨 분포가 자연스럽다). **생성기 v2**: 아쉬운 점 항목마다 문장, 직설형 평가자 그룹마다 정확히 8%, 항목과 온도가 어긋난 글 5%, manifest `review_style`(리뷰별 성향).
+    고른 항목의 난수열은 그대로 — 이름·글·manifest 밖의 표는 v1과 바이트 단위로 같다(100·300명 골든 해시 시험).
+  - **사내 AI 대기(가)**: `justification_settings(model)`(pricing `justification`: luna low·40초·8초, Flash high·300초·60초) — 사용자 지시로 claude-b 파일 `api/routes/justification.py`(`ai_model`·`ai_timeout_s`, 응답 `ai_expected_s`)·`api/routes/report.py`(PDF 시간, 슬롯 잡기 전에 계산)도 고쳤다. 서비스 기본(외부)은 그대로.
+  - 시연 묶음 6개·깨진 묶음 재생성. **미리 계산은 100명 2개만**: 외부 AI(OpenAI) 크레딧 소진(429 insufficient_quota)으로 200·300명 리뷰 966·3,468건을 판정하지 못했다. 판정 동봉은 판정된 3,591건.
+  - 해설서 HTML·요약 문서·CLAUDE.md를 오늘 상태로(소명 화면 완성, Flash 결과, 외부 운영 결정, 이름·생성기·70%·미리 계산 상태).
+- 상대 영향(claude-b): work-split 요청 — `Person.skill_credit` 화면·`/api/meta` 표시, 교체 설명 ID→이름(What-if 라우트 `display_names`), 소명 화면 "약 8초" → `ai_expected_s`, E4 시연 원문 외부 재측정(`review_style` 정답 보조).
+  네 파일을 고쳤다: `api/routes/justification.py`·`api/routes/report.py`·`tests/api/test_justification.py`(조직 기술 지도 이름 단언 한 줄). `web/dist`가 10-07 빌드라 브라우저 E2E가 `solver_seeds` 422로 실패했다 — 다시 빌드하면 통과(빌드물, 추적 안 함).
+  시험 기준선 **1659**(이 브랜치). 200·300명 시연은 충전 전까지 미리 계산 없이 실시간 계산이고 판정은 항목 점수로 대신될 수 있다.
+- 검증: `uv run --group benchmark pytest -q` → 1659 passed, 1 skipped, 19 deselected · `pytest -m slow` 19 passed · 웹 189 · 빈 데이터 폴더·틀린 키 서버에서 org-n100·org-n100-operating 미리 계산 수용(skipped 없음, 판정 llm).
+  **리뷰**: Codex adversarial-review가 한도 소진으로 9초 만에 끊기며 첫 메시지의 `approve`가 결과처럼 찍혔다(무효) → Stop 훅도 한도 실패(2회) → 게이트 끄고 Claude Opus 폴백 2라운드(MUST 1·SHOULD 2·NIT 2 → 반영, 2라운드 SHOULD 1·NIT 5 → 반영·합의된 트레이드오프).
+- 근거: 로컬 `.omc/reports/2026-10-11-demo-data-requests.md`
+
 ## 2026-10-11 · claude-b · 조직 기술 지도 화면(지식 그래프 첫 번째 보기)
 - 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
 - 한 일: `GET /api/skill-map?dataset_version=`(claude-a `core.kg.views.skill_map` 그대로 + 인정 경력 구분: 하위 기술 인정분 덕분에 실무 가능(12개월+)이 된 사람만 `practical_credited`·`credited`, 가상 데이터면 이름, 화면이 본 버전과 다르면 409, 묶음 데이터 아니면 409). 화면 탭 "조직 기술 지도": 요구 있는 기술·신규 제안 부족·희소(2명 이하)·전체 필터와 검색, 행마다 실무 가능·그중 인정·숙련·비어 있음·요구 사업·필요 인원·신규 제안 부족·공급/수요, 자세히(요구 사업과 필요 레벨·조건 맞는 사람 수, 실무 가능한 사람 — 인정받은 사람은 점선). 시연 100명 계산 0.03초.
