@@ -14,6 +14,7 @@ const RULE_TEXT: Record<string, string> = {
 export function fallbackText(reason: string | null): string | null {
   if (!reason) return null;
   if (reason === "no_client") return "AI 키가 없어 정해진 틀로 썼습니다.";
+  if (reason === "busy") return "다른 AI 글이 많이 계산 중이라 정해진 틀로 썼습니다. 잠시 뒤 '다시 쓰기'를 누르세요.";
   if (reason === "external_blocked") return "실데이터라 외부 AI로 보내지 않고 정해진 틀로 썼습니다.";
   if (reason.startsWith("verify:")) {
     const why = reason.slice(7).split(",").map((r) => RULE_TEXT[r] ?? r).join(", ");

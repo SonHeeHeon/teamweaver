@@ -462,9 +462,9 @@ export async function postJustification(body: {
   dataset_version: string; project_id: string; entries: AssignEntry[]; base_entries: AssignEntry[] | null;
   applied_swaps: Step[]; weights: Record<string, number>; milp_params: PlacementSettings | null; ai: boolean;
   plan_label: string; plan_token: string;
-}): Promise<Justification> {
+}, signal?: AbortSignal): Promise<Justification> {
   const res = await fetch(`${API_BASE}/api/justification`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal,
   });
   await throwIfDatasetChanged(res);
   if (!res.ok) {

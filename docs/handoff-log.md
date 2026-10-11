@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-11 · claude-b · Claude 폴백 리뷰 후속(Codex 한도 재소진, 15:49까지): 소명 AI 동시 상한·요청 끊기, 보정 대상에 반환 명단 예산
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일: Stop 훅 Codex 리뷰가 한도 소진으로 2회 실패 → 게이트를 끄고 Claude Opus 폴백 리뷰(64e376e·4a0218f·acd8cb8, MUST 0·SHOULD 2·NIT 6). 반영:
+  - 소명 AI 동시 호출 상한 6(넘으면 템플릿·`fallback_reason: busy`), 화면은 사업·명단이 바뀌면 이전 요청을 AbortController로 끊는다.
+  - `core/optimize/numerics.py`: 수치 보정 대상에 `plan_budget`(반환 명단 예산)도 포함 -- 원해 예산 잔차에 딸려 오는 것이라 예전처럼 보정으로 살린다(폴백 리뷰가 실제 시연 100명 고정·월별 해가 새 검사에 거절되지 않음을 확인).
+  - 실험: 지문 없던 기록을 `*_ACCEPT_LEGACY=1`로 이어 재면 `accepted_legacy` 흔적을 남긴다, 비용 단가는 요청한 모델 이름 우선.
+- 상대 영향: claude-a -- 보정 대상 조건이 "budget만"에서 "budget(+plan_budget)"으로 넓어졌다.
+- 검증: `pytest -q` 1614 passed · 웹 185 · tsc · lint · Phase 0 PASS · E4 보고서 재생성 변화 없음. 게이트는 Codex 회복 뒤 다시 켠다.
+
+---
+
 ## 2026-10-11 · claude-b · 사후 Codex 리뷰(최적화·실험) 반영: 반환 명단 검증 · 실험 재개 설정 지문 · 스피어만 동점
 - 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
 - 한 일(Codex 사후 리뷰 `5e5c2a3..main`의 core/optimize·experiments/jev, MUST 3·SHOULD 4):

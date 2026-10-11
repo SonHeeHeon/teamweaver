@@ -52,6 +52,8 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const gen = useRef(0);
+  // 사업·명단이 바뀌면 이전 요청을 끊는다(화면에서 버리는 것만으로는 브라우저가 응답을 계속 기다린다 -- 폴백 리뷰 SHOULD)
+  const abort = useRef<AbortController | null>(null);
   const factRefs = useRef(new Map<string, HTMLLIElement>());
   const chosen = staffed.some((p) => p.id === project) ? project : (staffed[0]?.id ?? "");
   const reqKey = JSON.stringify([datasetVersion, chosen, entries, applied, weights, params, planLabel, planToken]);
@@ -59,23 +61,26 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
   async function load(ai: boolean) {
     if (!chosen || !planToken) return;
     const g = ++gen.current;
+    abort.current?.abort();
+    const ctl = new AbortController();
+    abort.current = ctl;
     const body = { dataset_version: datasetVersion, project_id: chosen, entries, base_entries: applied?.base ?? null,
                    applied_swaps: applied?.steps ?? [], weights, milp_params: params, ai,
                    plan_label: planLabel, plan_token: planToken };
     setError(null);
     if (ai) setAiBusy(true);
     try {
-      const first = ai ? null : await postJustification(body);
+      const first = ai ? null : await postJustification(body, ctl.signal);
       if (g !== gen.current) return;                          // 그사이 사업·명단이 바뀌었다 -- 버린다
       if (first) setResult(first);
       if (ai || first?.ai_available) {
         setAiBusy(true);
-        const next = await postJustification({ ...body, ai: true });
+        const next = await postJustification({ ...body, ai: true }, ctl.signal);
         if (g !== gen.current) return;
         setResult(next);
       }
     } catch (e) {
-      if (g !== gen.current) return;
+      if (g !== gen.current || ctl.signal.aborted) return;
       if (e instanceof DatasetChangedError) onDatasetChanged();
       else setError(String(e instanceof Error ? e.message : e));
     } finally {

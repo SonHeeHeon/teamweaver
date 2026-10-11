@@ -222,6 +222,8 @@ def run(model_key: str, cases: list[dict], evidence, resume: bool | None = None)
     if legacy and os.environ.get("E5_ACCEPT_LEGACY") != "1":
         raise ValueError(f"{partial_path.name}에는 사례·설정 기록이 없어 이어 잴 수 없다 -- 기록을 옮기고 새로 재거나, "
                          "같은 조건임을 확인했으면 E5_ACCEPT_LEGACY=1로 이어 잰다.")
+    if legacy:
+        partial["accepted_legacy"] = True
     partial["config"] = cfg
     from openai import OpenAI
     model, effort, _url = _model_and_effort(model_key)
@@ -326,7 +328,7 @@ def summarize() -> dict:
         concl: dict = {}
         for x in ok:
             concl[x["conclusion"]] = concl.get(x["conclusion"], 0) + 1
-        cost = _cost(m, own, r.get("model"))
+        cost = _cost(m, own, (r.get("config") or {}).get("model") or r.get("model"))
         out["models"][m] = {
             "model": r.get("model"), "effort": r.get("effort"), "partial": bool(r.get("partial")),
             "n_run": len(own), "success": len(ok) / len(rows) if rows else None,

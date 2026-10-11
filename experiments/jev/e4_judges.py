@@ -313,6 +313,8 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
         # 지문·설정이 없는 중간 기록에 새 판정을 이어 붙이면 다른 조건의 행이 섞일 수 있다(Codex 사후 리뷰 MUST)
         raise ValueError(f"{partial_path.name}에는 글 지문·판정기 설정 기록이 없어 이어 잴 수 없다 -- 기록을 옮기고 새로 재거나, "
                          "같은 조건임을 확인했으면 E4_ACCEPT_LEGACY=1로 이어 잰다.")
+    if legacy:
+        partial["accepted_legacy"] = True          # 지문 없던 기록을 운영자가 확인하고 이어 쟀다는 흔적(감사용)
     partial["fingerprint"], partial["settings"], partial["config"] = fp, _settings(judge), cfg
     if judge in ("llm", "llm_low"):
         from openai import OpenAI
@@ -368,6 +370,8 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
         return partial_record(stop_reason)
     rec = _record(judge, name, model, [done_rows[str(i)] for i in range(len(reviews))], None, partial["wall_s"], fp,
                   config=cfg)
+    if partial.get("accepted_legacy"):
+        rec["accepted_legacy"] = True
     _atomic_json(path, rec)
     partial_path.unlink(missing_ok=True)
     return rec
@@ -382,7 +386,8 @@ def cost_usd(rec: dict) -> float:
                 + rec["out_tokens"] * GLM_PRICE["output"]) / 1e6
     # 기록된 모델의 단가로 센다 -- 지금 설정 모델의 단가로 세면 기본 모델이 바뀐 뒤 과거 기록 비용이 바뀐다(Codex 사후 리뷰 SHOULD)
     models = load_pricing()["models"]
-    price = models.get(rec.get("model") or "", models[load_pricing()["parse_model"]])
+    name = (rec.get("config") or {}).get("model") or rec.get("model") or ""    # 요청한 모델 이름 우선(응답 스냅숏 이름은 단가표에 없을 수 있다)
+    price = models.get(name, models[load_pricing()["parse_model"]])
     return rec["in_tokens"] * price["input_per_1m"] / 1e6 + rec["out_tokens"] * price["output_per_1m"] / 1e6
 
 

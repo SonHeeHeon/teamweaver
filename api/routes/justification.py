@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import anyio
@@ -25,6 +26,7 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 AI_TIMEOUT_S = 40.0          # 한 사업 AI 글 p95 10~18초(E7b) -- 걸리면 템플릿으로
+AI_SLOTS = threading.BoundedSemaphore(6)   # 화면 요청의 동시 AI 호출 상한 -- 사업을 빠르게 넘겨 쌓인 요청이 스레드·비용을 잡지 않게(폴백 리뷰 SHOULD)
 PDF_WORKERS = 6              # PDF에 사업마다 넣을 때 동시 호출 수(계약 제안)
 
 
@@ -134,10 +136,17 @@ async def justification(req: JustificationRequest, dataset: ActiveDataset = Depe
         entries = resolved_entries(dataset.graph, S, C, params, req.weights, req.entries, req.base_entries, req.applied_swaps)
         if not any(e.project_id == req.project_id for e in entries):
             raise HTTPException(status_code=404, detail=f"이 배치에 {req.project_id} 사업의 팀원이 없다")
-        out = justify_one(dataset, kg, req.project_id, entries, dataset.graph, S, C, params,
-                          _client_with_timeout(client), ai=req.ai)
+        use_ai = req.ai and client is not None and AI_SLOTS.acquire(blocking=False)
+        try:
+            out = justify_one(dataset, kg, req.project_id, entries, dataset.graph, S, C, params,
+                              _client_with_timeout(client) if use_ai else None, ai=bool(use_ai))
+        finally:
+            if use_ai:
+                AI_SLOTS.release()
         if req.ai and client is None:
             out["fallback_reason"] = blocked          # no_client | external_blocked
+        elif req.ai and not use_ai:
+            out["fallback_reason"] = "busy"           # 다른 AI 글이 많이 돌고 있다 -- 정해진 틀로, 잠시 뒤 '다시 쓰기'
         return out
     out = await anyio.to_thread.run_sync(go)
     return {**out, "dataset_version": dataset.info.version, "ai_available": client is not None,

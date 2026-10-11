@@ -159,3 +159,19 @@ def test_pdf_time_allowance_grows_with_the_number_of_projects():
     req = lambda n: ReportRequest(plan_label="A", objective=1, fulfillment=1, optimization_ratio=1,
                                   entries=[{"person_id": f"p{i}", "project_id": f"J{i}", "alloc": 1.0} for i in range(n)])
     assert _justify_allowance(req(6)) == AI_TIMEOUT_S + 30 and _justify_allowance(req(30)) == 5 * AI_TIMEOUT_S + 30
+
+
+def test_ai_falls_back_to_the_template_when_too_many_ai_texts_run(jc, monkeypatch):
+    # 동시 AI 호출 상한(폴백 리뷰 SHOULD): 상한이 차 있으면 AI를 부르지 않고 정해진 틀로, 이유 busy
+    import threading
+    import api.routes.justification as jr
+    c, app = jc
+    fake = MagicMock()
+    fake.base_url = "https://api.openai.com/v1/"
+    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
+    monkeypatch.setattr(jr, "AI_SLOTS", threading.BoundedSemaphore(1))
+    assert jr.AI_SLOTS.acquire(blocking=False)
+    out = c.post("/api/justification", json=_body(c)).json()
+    assert out["method"] == "template" and out["fallback_reason"] == "busy"
+    fake.chat.completions.create.assert_not_called()
+    jr.AI_SLOTS.release()
