@@ -59,5 +59,14 @@ describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
     render(<PlanCards plans={[pre]} selected="A" onSelect={() => {}} editCounts={{ A: 2 }} />);
     expect(screen.getByText("미리 계산 원안 + 변경 2건")).toBeInTheDocument();
   });
+
+  it("변경한 명단에는 원안의 '최선 증명' 배지를 물려주지 않는다(Codex 사후 리뷰 MUST)", () => {
+    const solved = { ...plan("A", 0.9), termination: "Optimal", objective: 5, best_bound: 5, gap_allowed: 0.05 };
+    const { rerender } = render(<PlanCards plans={[solved]} selected="A" onSelect={() => {}} />);
+    expect(screen.queryByText("변경 후 재평가 · 솔버 증명은 원안 기준")).not.toBeInTheDocument();
+    rerender(<PlanCards plans={[solved]} selected="A" onSelect={() => {}} editCounts={{ A: 1 }} />);
+    expect(screen.getByText("변경 후 재평가 · 솔버 증명은 원안 기준")).toBeInTheDocument();
+    expect(screen.queryByText(/최선 증명/)).not.toBeInTheDocument();
+  });
 });
 

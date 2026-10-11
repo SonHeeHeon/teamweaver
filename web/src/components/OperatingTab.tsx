@@ -42,9 +42,12 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
   const onChanged = useRef(onDatasetChanged);
   useEffect(() => { onChanged.current = onDatasetChanged; });
 
+  const [reload, setReload] = useState(0);
   useEffect(() => {
     let alive = true;
     setError(null);                     // 이전 데이터의 오류를 새 데이터 화면에 남기지 않는다
+    // 옛 데이터의 상태도 비운다 -- 새 상태 조회가 실패하면 오류가 보여야지 '불러오는 중…'에 멈추면 안 된다(Codex 사후 리뷰 S)
+    setState(null);
     fetchOperatingState().then((s) => {
       if (!alive) return;
       setState(s);
@@ -53,14 +56,21 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
       if (s.available && s.dataset_version !== meta.dataset_version) onChanged.current();
     }).catch((e) => alive && setError(String(e)));
     return () => { alive = false; };
-  }, [meta.dataset_version]);
+  }, [meta.dataset_version, reload]);
 
   function fail(e: unknown) {
     if (e instanceof DatasetChangedError) onDatasetChanged();
     else setError(e === null ? null : String(e));
   }
 
-  if (error && !state) return <p role="alert" className="text-sm text-red-700">{error}</p>;
+  if (error && !state) {
+    return (
+      <p role="alert" className="text-sm text-red-700">
+        {error}{" "}
+        <button onClick={() => setReload((n) => n + 1)} className="ml-2 text-xs underline">다시 불러오기</button>
+      </p>
+    );
+  }
   // 데이터셋이 바뀌었는데 상태를 아직 다시 못 읽었으면 옛 상태로 계산하지 않는다(리뷰 S4)
   if (!state || (state.available && state.dataset_version !== meta.dataset_version)) {
     return <p className="text-sm text-slate-500">불러오는 중…</p>;
@@ -154,7 +164,7 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
         <PrecomputedNotice at={preAt} onRecompute={() => void run(true)}
                            hint={`처음부터 다시 푼다 — 예상 약 ${expectedS}초. 표의 시간 칸은 미리 계산 때 걸린 시간이다.`} />
       )}
-      {rows.length > 0 && (
+      {(rows.length > 0 || running) && (
         <table className="w-full max-w-4xl text-sm">
           <thead className="text-left text-xs text-slate-500">
             <tr><th className="font-medium">K</th><th className="font-medium">빈자리</th>
@@ -200,6 +210,13 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
                 ) : (
                   <td colSpan={6} className="text-xs text-red-700">계산 실패: {r.error ?? r.termination ?? "해 없음"}</td>
                 )}
+              </tr>
+            ))}
+            {running && ks.filter((k) => !rows.some((r) => r.k === k)).map((k, i) => (
+              // K별 실시간 송출(2026-10-11): 끝난 K는 바로 보이고, 남은 K는 계산 중으로 표시한다
+              <tr key={`pending-${k}`} className="border-t border-slate-100 text-xs text-slate-400">
+                <td className="py-1">K={k}</td>
+                <td colSpan={6}>{i === 0 ? "계산 중…" : "대기"}</td>
               </tr>
             ))}
           </tbody>
@@ -275,6 +292,19 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
   const team = state.current.filter((c) => c.project_id === project);
   const budgetAdd = budget.trim() === "" ? null : Number(budget);
   const budgetValid = budgetAdd === null || (Number.isInteger(budgetAdd) && budgetAdd >= 0);
+  // 결과는 그 결과를 계산한 입력(사업·조건·조합)에 묶는다 -- 계산 중 사업·조건을 바꾸면 늦게 온 응답을 버리고,
+  // 받은 뒤 입력을 바꾸면 옛 결과를 숨긴다(Codex 사후 리뷰 MUST: P1 후보가 P2 표에 보이고 그대로 P2에 넣어졌다).
+  const keyOf = {
+    cands: JSON.stringify([project, includePull, budget.trim()]),
+    sim: JSON.stringify([project, adds, removes, budget.trim()]),
+    best: JSON.stringify([project, n, grade, pull, budget.trim()]),
+  };
+  const keysRef = useRef(keyOf);
+  keysRef.current = keyOf;
+  const [resultKeys, setResultKeys] = useState<{ cands?: string; sim?: string; best?: string }>({});
+  const shownCands = cands && resultKeys.cands === keyOf.cands ? cands : null;
+  const shownSim = sim && resultKeys.sim === keyOf.sim ? sim : null;
+  const shownBest = best && resultKeys.best === keyOf.best ? best : null;
 
   function changeProject(p: string) {
     setProject(p); setCands(null); setAdds([]); setRemoves([]); setSim(null); setBest(null);
@@ -286,20 +316,29 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
   }
 
   const candidates = () => act("cands", async () => {
-    setCands((await postStaffingCandidates(common, { project_id: project, include_pull: includePull,
-                                                     budget_add: budgetAdd, top: 10 })).candidates);
+    const key = keyOf.cands;
+    const res = await postStaffingCandidates(common, { project_id: project, include_pull: includePull,
+                                                       budget_add: budgetAdd, top: 10 });
+    if (keysRef.current.cands !== key) return;          // 그사이 사업·조건이 바뀌었다 -- 버린다
+    setCands(res.candidates); setResultKeys((k) => ({ ...k, cands: key }));
   });
   const simulate = () => act("sim", async () => {
     const seats: Record<string, number> = {};
     for (const a of adds) seats[a.grade] = (seats[a.grade] ?? 0) + 1;
     const extra = budgetAdd ?? Math.ceil(adds.reduce((s, a) => s + a.cost, 0));
-    setSim(await postStaffingSimulate(common, {
+    const key = keyOf.sim;
+    const res = await postStaffingSimulate(common, {
       project_id: project, adds: adds.map(({ person_id, project_id, alloc }) => ({ person_id, project_id, alloc })),
-      removes, extra_seats: seats, budget_add: extra }));
+      removes, extra_seats: seats, budget_add: extra });
+    if (keysRef.current.sim !== key) return;
+    setSim(res); setResultKeys((k) => ({ ...k, sim: key }));
   });
   const bestN = () => act("best", async () => {
-    setBest(await postStaffingBest(common, { project_id: project, n, grade: grade || null, pull_budget: pull,
-                                             budget_add: budgetAdd }));
+    const key = keyOf.best;
+    const res = await postStaffingBest(common, { project_id: project, n, grade: grade || null, pull_budget: pull,
+                                                 budget_add: budgetAdd });
+    if (keysRef.current.best !== key) return;
+    setBest(res); setResultKeys((k) => ({ ...k, best: key }));
   });
 
   return (
@@ -334,7 +373,7 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
         </button>
       </div>
 
-      {cands && (
+      {shownCands && (
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-slate-500">
             <tr><th className="font-medium">후보</th><th className="font-medium">출처</th><th className="font-medium">점수 변화</th>
@@ -343,8 +382,8 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
                 <th className="font-medium">월 비용</th><th className="font-medium">새 위반</th><th /></tr>
           </thead>
           <tbody>
-            {cands.length === 0 && <tr><td colSpan={10} className="py-2 text-xs text-slate-500">넣을 수 있는 후보가 없다.</td></tr>}
-            {cands.map((c) => (
+            {shownCands.length === 0 && <tr><td colSpan={10} className="py-2 text-xs text-slate-500">넣을 수 있는 후보가 없다.</td></tr>}
+            {shownCands.map((c) => (
               <tr key={c.person_id} className="border-t border-slate-100">
                 <td className="py-1">{who(c.person_id)} · {c.grade} · 투입 {Math.round(c.alloc * 100)}%</td>
                 <td>{SOURCE_LABEL[c.source]}{c.pulled_from.length ? ` (${c.pulled_from.map(proj).join(", ")})` : ""}</td>
@@ -418,7 +457,7 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
                   className="mt-3 rounded-md border border-slate-300 px-3 py-1 text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
             {busy === "sim" ? "재평가 중…" : "재평가"}
           </button>
-          {sim && <PartsTable before={sim.before} after={sim.after} delta={sim.delta} newViolations={sim.new_violations} />}
+          {shownSim && <PartsTable before={shownSim.before} after={shownSim.after} delta={shownSim.delta} newViolations={shownSim.new_violations} />}
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
@@ -448,15 +487,15 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
               {busy === "best" ? "계산 중…" : "최선 조합 계산"}
             </button>
           </div>
-          {best && !best.accepted && <p className="mt-2 text-xs text-red-700">해를 찾지 못했다({best.termination ?? "원인 미상"}).</p>}
-          {best && best.accepted && best.diff && (
+          {shownBest && !shownBest.accepted && <p className="mt-2 text-xs text-red-700">해를 찾지 못했다({shownBest.termination ?? "원인 미상"}).</p>}
+          {shownBest && shownBest.accepted && shownBest.diff && (
             <>
-              <MoveList diff={best.diff} who={who} proj={proj} title={`최선 ${n}명 — 바뀐 배치`} />
-              <div className="mt-1"><ConfidenceBadge termination={best.termination} gapAllowed={0} /></div>
-              <p className="mt-1 text-xs text-slate-600">추가 월 비용 {Math.round(best.added_cost ?? 0).toLocaleString("ko-KR")}</p>
-              {best.before && best.after && best.delta && (
-                <PartsTable before={best.before} after={best.after} delta={best.delta}
-                            newViolations={(best.violations ?? []).map((v) => [v.code, v.location] as [string, string])} />
+              <MoveList diff={shownBest.diff} who={who} proj={proj} title={`최선 ${n}명 — 바뀐 배치`} />
+              <div className="mt-1"><ConfidenceBadge termination={shownBest.termination} gapAllowed={0} /></div>
+              <p className="mt-1 text-xs text-slate-600">추가 월 비용 {Math.round(shownBest.added_cost ?? 0).toLocaleString("ko-KR")}</p>
+              {shownBest.before && shownBest.after && shownBest.delta && (
+                <PartsTable before={shownBest.before} after={shownBest.after} delta={shownBest.delta}
+                            newViolations={(shownBest.violations ?? []).map((v) => [v.code, v.location] as [string, string])} />
               )}
             </>
           )}

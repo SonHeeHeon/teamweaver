@@ -152,4 +152,49 @@ describe("OperatingTab — 리뷰 반영", () => {
     await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(2));
     expect(vi.mocked(streamOperatingCompare).mock.calls[1][0].fresh).toBe(true);
   });
+
+  it("끝난 K는 바로 보이고 남은 K는 '계산 중'·'대기'로 보인다(K별 실시간)", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    vi.mocked(streamOperatingCompare).mockReset().mockImplementation(() => (async function* (): AsyncGenerator<OperatingEvent> {
+      yield { event: "start", data: { ks: [0, 1, 2], n_people: 3, expected_s_100: {}, note: "" } };
+      yield { event: "row", data: { k: 0, elapsed_s: 0.5, accepted: true, termination: "Optimal", objective: 1, best_bound: 1,
+        quality: 10, unfilled_seats: 0, diff: { kept: 2, moved: [], joined: [] }, project_change_vs_k0: {}, violations: [], entries: [] } };
+      await gate;
+      yield { event: "done", data: { elapsed_s: 1, count: 1 } };
+    })());
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByLabelText("K=3"));                     // K=0,1,2만
+    fireEvent.click(screen.getByRole("button", { name: "K별 비교 실행" }));
+    expect(await screen.findByText("10.00")).toBeInTheDocument();             // K=0 행이 먼저 보인다
+    expect(screen.getByRole("cell", { name: "계산 중…" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "대기" })).toBeInTheDocument();
+    release();
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "계산 중…" })).not.toBeInTheDocument());
+  });
+
+  it("후보 계산 중 사업을 바꾸면 늦게 온 이전 사업의 후보를 보이지 않는다(Codex 사후 리뷰 MUST)", async () => {
+    let resolve: (v: Awaited<ReturnType<typeof postStaffingCandidates>>) => void = () => {};
+    vi.mocked(postStaffingCandidates).mockReset().mockReturnValue(new Promise((r) => { resolve = r; }));
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "후보 보기" }));          // P1 후보 요청
+    fireEvent.change(screen.getByLabelText("보강할 사업"), { target: { value: "P2" } });
+    resolve({ note: "", candidates: [{ person_id: "p3", grade: "고급", alloc: 1, source: "bench", pulled_from: [],
+      delta_total: 1, delta: parts(1), skill_fit: 0.8, team_synergy: 0.3, project_total_after: 3, monthly_cost: 1,
+      budget_added: 1, new_violations: [] }] });
+    await waitFor(() => expect(screen.getByRole("button", { name: "후보 보기" })).toBeEnabled());
+    expect(screen.queryByRole("button", { name: "박삼(p3) 넣어 보기" })).not.toBeInTheDocument();
+  });
+
+  it("데이터가 바뀐 뒤 상태 조회가 실패하면 '불러오는 중'에 멈추지 않고 오류와 다시 불러오기를 보인다", async () => {
+    const { rerender } = render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    await screen.findByRole("button", { name: "K별 비교 실행" });
+    vi.mocked(fetchOperatingState).mockRejectedValueOnce(new Error("서버 꺼짐"));
+    rerender(<OperatingTab meta={{ ...META, dataset_version: "v2" }} params={null} onDatasetChanged={vi.fn()} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("서버 꺼짐");
+    vi.mocked(fetchOperatingState).mockResolvedValueOnce({ ...STATE, dataset_version: "v2" });
+    fireEvent.click(screen.getByRole("button", { name: "다시 불러오기" }));
+    expect(await screen.findByRole("button", { name: "K별 비교 실행" })).toBeInTheDocument();
+  });
 });
+
