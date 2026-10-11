@@ -25,7 +25,20 @@ from core.scoring.engine import ScoringEngine
 log = logging.getLogger(__name__)
 router = APIRouter()
 
-AI_TIMEOUT_S = 40.0          # 한 사업 AI 글 p95 10~18초(E7b) -- 걸리면 템플릿으로
+AI_TIMEOUT_S = 40.0          # 한 사업 AI 글 p95 10~18초(E7b) -- 걸리면 템플릿으로. 모델별 값은 ai_timeout_s()(아래)
+
+
+def ai_model() -> str:
+    from core.config import load_pricing
+    return load_pricing()["briefing_model"]
+
+
+def ai_timeout_s(model: str | None = None) -> float:
+    """AI 글 한 건을 기다리는 상한(초). 모델별 설정 `api.rag.justification.justification_settings`(사용자 결정 2026-10-11 (가):
+    사내 AI로 바꿔 적용하면 더 오래 기다린다 -- GLM-5.3-Flash 300초, 외부 luna는 이 파일의 AI_TIMEOUT_S와 같은 40초).
+    claude-a가 사용자 지시로 고쳤다(work-split 2026-10-11)."""
+    from api.rag.justification import justification_settings
+    return justification_settings(model or ai_model())["timeout_s"]
 AI_SLOTS = threading.BoundedSemaphore(6)   # 화면 요청의 동시 AI 호출 상한 -- 사업을 빠르게 넘겨 쌓인 요청이 스레드·비용을 잡지 않게(폴백 리뷰 SHOULD)
 PDF_WORKERS = 6              # PDF에 사업마다 넣을 때 동시 호출 수(계약 제안)
 
@@ -130,12 +143,11 @@ def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, 
     """사업 하나의 소명. client가 None이면 템플릿."""
     from api.rag.justification import generate_justification
     from core.kg.justify import justification_input
-    from core.config import load_pricing
     from core.optimize.types import AssignEntry
     roster = [e if isinstance(e, AssignEntry) else AssignEntry(**(e.model_dump() if hasattr(e, "model_dump") else e))
               for e in entries]
     inp = justification_input(kg, project_id, roster, graph=graph, S=S, C=C, params=params)
-    out = generate_justification(client if ai else None, load_pricing()["briefing_model"], inp)
+    out = generate_justification(client if ai else None, ai_model(), inp)
     if not ai:
         out["fallback_reason"] = None          # 화면이 템플릿을 먼저 달라고 했다(실패가 아니다)
     # 이름 치환은 검사·채움이 끝난 뒤 보여 줄 글에만 한다(AI·검사기는 ID 문법 그대로 -- E7c 측정 조건 유지)
@@ -145,8 +157,9 @@ def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, 
 def _client_with_timeout(client):
     if client is None:
         return None
+    timeout = ai_timeout_s()                            # 설정 오류는 감추지 않는다(아래 except가 삼키면 SDK 기본 600초로 돈다)
     try:
-        return client.with_options(timeout=AI_TIMEOUT_S, max_retries=0)
+        return client.with_options(timeout=timeout, max_retries=0)
     except Exception:                                   # noqa: BLE001 -- 테스트 대역 등
         return client
 
@@ -190,8 +203,10 @@ async def justification(req: JustificationRequest, dataset: ActiveDataset = Depe
             out["fallback_reason"] = "busy"           # 다른 AI 글이 많이 돌고 있다 -- 정해진 틀로, 잠시 뒤 '다시 쓰기'
         return out
     out = await anyio.to_thread.run_sync(go)
+    from api.rag.justification import justification_settings
     return {**out, "dataset_version": dataset.info.version, "ai_available": client is not None,
-            "ai_unavailable_reason": None if client is not None else blocked}
+            "ai_unavailable_reason": None if client is not None else blocked,
+            "ai_expected_s": justification_settings(ai_model())["expected_s"]}     # 화면 안내("약 N초")용 -- 모델마다 다르다
 
 
 def justify_projects(dataset: ActiveDataset, entries, weights: dict, milp_params: MilpParamsIn | None, client) -> list[dict]:
