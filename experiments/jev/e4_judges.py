@@ -215,6 +215,40 @@ def _settings(judge: str) -> dict:
             "llm_low": {"reasoning_effort": "low"}}.get(judge, {})
 
 
+def avg_rank(x) -> np.ndarray:
+    """동점에 평균 순위를 주는 순위(스피어만 상관용). 이중 argsort는 동점에 임의 순위를 줘 상관을 부풀렸다
+    (Codex 사후 리뷰 SHOULD: [0,1,0,1] 대 [0,0,1,1]의 참값 0을 0.8로 계산)."""
+    x = np.asarray(x, dtype=float)
+    order = np.argsort(x, kind="stable")
+    ranks = np.empty(len(x), dtype=float)
+    ranks[order] = np.arange(1, len(x) + 1, dtype=float)
+    for v in np.unique(x):                       # 같은 값끼리 평균
+        idx = x == v
+        ranks[idx] = ranks[idx].mean()
+    return ranks
+
+
+def run_config(judge: str) -> dict:
+    """판정기 설정 지문: 모델·주소·추론 강도·지시문 해시. 이어 재기·기록 재사용 때 글 지문과 함께 대조한다 --
+    같은 글이라도 모델·강도·지시문이 바뀐 기록을 섞지 않게(Codex 사후 리뷰 MUST 2026-10-11)."""
+    if judge in ("llm", "llm_low"):
+        from api import review_judge as rj
+        model, url = rj.model(), rj.base_url()
+    elif judge in ("glm", "glm_low"):
+        model, url = GLM_MODEL, GLM_URL
+    else:
+        model, url = "jev-latest", "typesafe"
+    prompt = JEV_INSTRUCTION + json.dumps(JEV_LEVELS, ensure_ascii=False) if judge == "jev" else LLM_SYSTEM
+    return {"model": model, "url": url, "reasoning_effort": _settings(judge).get("reasoning_effort"),
+            "prompt_sha": hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]}
+
+
+def _check_config(found: dict | None, cfg: dict, path: Path) -> None:
+    if found is not None and found != cfg:
+        raise ValueError(f"{path.name}은 지금과 다른 판정기 설정(모델·주소·추론 강도·지시문)으로 잰 기록이다 "
+                         f"(기록 {found} / 지금 {cfg}). 섞지 않도록 멈춘다 -- 기록을 옮기거나 E4_TAG로 다른 이름을 쓴다.")
+
+
 def _atomic_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -222,14 +256,14 @@ def _atomic_json(path: Path, data: dict) -> None:
     os.replace(tmp, path)              # 쓰는 도중 죽어도 중간 기록이 깨지지 않게
 
 
-def _record(judge, name, model, rows, idx, wall, fp, *, partial=False, stop_reason=None) -> dict:
+def _record(judge, name, model, rows, idx, wall, fp, *, partial=False, stop_reason=None, config=None) -> dict:
     rec = {"judge": judge, "set": name, "model": (rows[0].get("model") if rows else None) or model,
            "workers": WORKERS, "wall_s": wall, "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
            "pol": [x["pol"] for x in rows], "lat": [x["lat"] for x in rows],
            "in_tokens": sum(x["in"] for x in rows), "out_tokens": sum(x["out"] for x in rows),
            "cached_tokens": sum(x.get("cached", 0) for x in rows),
            "reasoning_tokens": sum(x.get("reasoning", 0) for x in rows),
-           "settings": _settings(judge), "fingerprint": fp}
+           "settings": _settings(judge), "fingerprint": fp, "config": config}
     if partial:
         rec.update(indices=idx, partial=True, stop_reason=stop_reason)
     return rec
@@ -249,34 +283,37 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
     resume = os.environ.get("E4_RESUME") == "1" if resume is None else resume
     path = RESULTS / f"e4_{judge}_{name}{_SUFFIX if judge in ('llm', 'llm_low') else ''}.json"
     fp = fingerprint(reviews)
+    load_env()                                       # 판정기 설정(모델·주소)을 읽으려고 -- API는 아직 부르지 않는다
+    cfg = run_config(judge)
     if path.exists():
         rec = json.loads(path.read_text("utf-8"))
         _check_fp(rec.get("fingerprint"), fp, path)
-        if rec.get("fingerprint") is None:            # 지문 이전 기록: 지금 글과 같다고 보고 지문을 남긴다(같은 커밋에서 잰 기록)
-            rec["fingerprint"] = fp
-            _atomic_json(path, rec)
+        _check_config(rec.get("config"), cfg, path)
+        # 지문·설정 기록 이전의 완료 기록은 지금 것과 같다고 입증할 수 없다 -- 덮어써 '확인됨'으로 만들지 않고 표시만 한다
+        if rec.get("fingerprint") is None or rec.get("config") is None:
+            rec = {**rec, "unverified_inputs": True}
         return rec
     partial_path = path.with_suffix(".partial.json")
     partial = (json.loads(partial_path.read_text("utf-8")) if partial_path.exists()
-               else {"rows": {}, "wall_s": 0.0, "fingerprint": fp, "settings": _settings(judge)})
+               else {"rows": {}, "wall_s": 0.0, "fingerprint": fp, "settings": _settings(judge), "config": cfg})
     _check_fp(partial.get("fingerprint"), fp, partial_path)
-    if partial_path.exists() and ("fingerprint" not in partial or "settings" not in partial):
-        # 지문 이전 중간 기록: 지금 글과 같다고 보고 지문을 남긴다 -- 이후 데이터가 바뀌면 섞이지 않고 멈추게(리뷰 2라운드)
-        partial.setdefault("fingerprint", fp)
-        partial.setdefault("settings", _settings(judge))
-        _atomic_json(partial_path, partial)
-    partial.setdefault("fingerprint", fp)
-    partial.setdefault("settings", _settings(judge))
+    _check_config(partial.get("config"), cfg, partial_path)
+    legacy = partial_path.exists() and (partial.get("fingerprint") is None or partial.get("config") is None)
     done_rows: dict = partial["rows"]
 
     def partial_record(reason: str | None) -> dict:
         idx = sorted(int(i) for i in done_rows)
-        return _record(judge, name, None, [done_rows[str(i)] for i in idx], idx, partial["wall_s"], fp,
-                       partial=True, stop_reason=reason)
+        rec = _record(judge, name, None, [done_rows[str(i)] for i in idx], idx, partial["wall_s"], fp,
+                      partial=True, stop_reason=reason, config=partial.get("config"))
+        return {**rec, "unverified_inputs": True} if legacy else rec
 
     if partial_path.exists() and not resume:
         return partial_record(partial.get("stop_reason") or "중단 사유 기록 없음")
-    load_env()
+    if legacy and os.environ.get("E4_ACCEPT_LEGACY") != "1":
+        # 지문·설정이 없는 중간 기록에 새 판정을 이어 붙이면 다른 조건의 행이 섞일 수 있다(Codex 사후 리뷰 MUST)
+        raise ValueError(f"{partial_path.name}에는 글 지문·판정기 설정 기록이 없어 이어 잴 수 없다 -- 기록을 옮기고 새로 재거나, "
+                         "같은 조건임을 확인했으면 E4_ACCEPT_LEGACY=1로 이어 잰다.")
+    partial["fingerprint"], partial["settings"], partial["config"] = fp, _settings(judge), cfg
     if judge in ("llm", "llm_low"):
         from openai import OpenAI
         from api import review_judge as rj
@@ -329,7 +366,8 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
         _atomic_json(partial_path, partial)
     if stop_reason is not None:
         return partial_record(stop_reason)
-    rec = _record(judge, name, model, [done_rows[str(i)] for i in range(len(reviews))], None, partial["wall_s"], fp)
+    rec = _record(judge, name, model, [done_rows[str(i)] for i in range(len(reviews))], None, partial["wall_s"], fp,
+                  config=cfg)
     _atomic_json(path, rec)
     partial_path.unlink(missing_ok=True)
     return rec
@@ -342,7 +380,9 @@ def cost_usd(rec: dict) -> float:
         cached = rec.get("cached_tokens", 0)
         return ((rec["in_tokens"] - cached) * GLM_PRICE["input"] + cached * GLM_PRICE["cached"]
                 + rec["out_tokens"] * GLM_PRICE["output"]) / 1e6
-    price = load_pricing()["models"][load_pricing()["parse_model"]]
+    # 기록된 모델의 단가로 센다 -- 지금 설정 모델의 단가로 세면 기본 모델이 바뀐 뒤 과거 기록 비용이 바뀐다(Codex 사후 리뷰 SHOULD)
+    models = load_pricing()["models"]
+    price = models.get(rec.get("model") or "", models[load_pricing()["parse_model"]])
     return rec["in_tokens"] * price["input_per_1m"] / 1e6 + rec["out_tokens"] * price["output_per_1m"] / 1e6
 
 
@@ -358,8 +398,7 @@ def metrics(pred: list[float], truth: list[float] | None) -> dict:
          "neg_share": float((p < -0.1).mean()), "pos_share": float((p > 0.1).mean())}
     if truth is not None:
         t = np.asarray(truth)
-        rk = lambda x: np.argsort(np.argsort(x, kind="stable"), kind="stable")
-        d.update(pearson=float(np.corrcoef(p, t)[0, 1]), spearman=float(np.corrcoef(rk(p), rk(t))[0, 1]),
+        d.update(pearson=float(np.corrcoef(p, t)[0, 1]), spearman=float(np.corrcoef(avg_rank(p), avg_rank(t))[0, 1]),
                  mae=float(np.abs(p - t).mean()), sign_agree=float((_sign(p) == _sign(t)).mean()),
                  neg_recall=float((p[t < 0] < -0.1).mean()))
     return d
@@ -420,10 +459,12 @@ def summarize() -> dict:
     out = {"sets": {}, "probe": {}}
     # 정답이 있는 시험(대조 문장·충실한 글)부터 돈다 -- 잔액이 모자라면 시연 원문이 부분 결과가 된다.
     probe = {j: run(j, "probe", sets["probe"]) for j in SET_JUDGES["probe"]}
+    raw_by_set: dict = {}
     for name in ("faithful", "demo_s300"):
         judges = SET_JUDGES[name]
         full = [item_polarity(r) for r in sets[name]]
         raw = {j: run(j, name, sets[name]) for j in judges}
+        raw_by_set[name] = raw
         # 부분 결과가 있으면 모든 판정기가 판정한 같은 리뷰끼리만 비교한다(공정 비교).
         common = sorted(set.intersection(*(set(r.get("indices", range(len(full)))) for r in raw.values())))
         recs = {}
@@ -456,6 +497,10 @@ def summarize() -> dict:
                            for j in probe} for i, name in enumerate(PROBES)}
     out["service_smoke"] = json.loads(SERVICE_SMOKE.read_text("utf-8")) if SERVICE_SMOKE.exists() else None
     out["demo_total"] = len(sets["demo"])
+    # 설정 지문(모델·주소·추론 강도·지시문, 2026-10-11) 이전 기록 -- 같은 조건이었다고 입증할 수 없다. 보고서 상단에 밝힌다.
+    out["unverified_inputs"] = sorted({f"{j}:{name}" for name, raw_set in (("probe", probe),) for j, r in raw_set.items()
+                                       if r.get("unverified_inputs")} | {f"{j}:{n}" for n in ("faithful", "demo_s300")
+                                       for j, r in raw_by_set[n].items() if r.get("unverified_inputs")})
     (RESULTS / f"e4_summary{_SUFFIX}.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), "utf-8")
     return out
 
@@ -517,6 +562,15 @@ def _smoke(sm: dict | None) -> str:
             f'{html.escape(sm["data"])}) — {html.escape(sm["method"])}</b><ul>{rows}</ul></div>')
 
 
+def _unverified_box(items) -> str:
+    """설정 지문 이전 기록이 섞였으면 보고서 상단에 밝힌다(Codex 사후 리뷰 P1)."""
+    if not items:
+        return ""
+    return ('<div class="box warn"><b>입력 동일성 미입증</b>: 다음 기록은 판정기 설정 지문(모델·주소·추론 강도·지시문, 2026-10-11 도입) '
+            "이전에 쟀다. 글 지문은 대조했지만, 모델·추론 강도·지시문이 지금 코드와 같았는지는 기록으로 입증할 수 없다 — "
+            f"{html.escape(', '.join(items))}. 같은 조건임을 확실히 하려면 이 기록을 옮기고 다시 잰다.</div>")
+
+
 def render(s: dict) -> str:
     e = html.escape
     d, f = s["sets"]["demo_s300"], s["sets"]["faithful"]
@@ -566,6 +620,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 <p class="muted">실험 E4 · 코드 <code>experiments/jev/e4_judges.py</code> · 원시 결과 <code>experiments/jev/results/e4_*.json</code> ·
 모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
 
+{_unverified_box(s.get("unverified_inputs"))}
 <div class="box ok"><b>결정(사용자)</b>: 리뷰 글 판정은 선택지 없이 <b>LLM(OpenAI 호환 API)</b>으로 통일한다(2026-10-06).
 LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상 함께</b> 재고,
 <b>양쪽 모두 추론 강도 low</b>·<b>유의미한 표본 크기</b>로 잰다(2026-10-07). 사내 서버로는 측정할 수 없어

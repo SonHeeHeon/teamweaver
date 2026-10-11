@@ -177,24 +177,56 @@ def one(model_key: str, client, model: str, effort: str | None, case: dict, evid
     return row
 
 
-def run(model_key: str, cases: list[dict], evidence, resume: bool | None = None) -> dict:
-    resume = os.environ.get("E5_RESUME") == "1" if resume is None else resume
-    path = RESULTS / f"e5_{model_key}.json"
-    if path.exists():
-        return json.loads(path.read_text("utf-8"))
-    partial_path = path.with_suffix(".partial.json")
-    partial = json.loads(partial_path.read_text("utf-8")) if partial_path.exists() else {"rows": {}, "wall_s": 0.0}
-    if partial_path.exists() and not resume:
-        return {**partial, "partial": True}
-    load_env()
-    from openai import OpenAI
+def _model_and_effort(model_key: str) -> tuple[str, str | None, str]:
     if model_key == "llm":
         # 서비스 설정 그대로: 브리핑 모델과 pricing.json의 추론 강도(gpt-6-luna는 low) -- 기록에 실제 값을 남긴다(리뷰 M2)
         model = load_pricing()["briefing_model"]
-        client, effort = OpenAI(max_retries=0), load_pricing().get("models", {}).get(model, {}).get("reasoning_effort")
-    else:
-        client = OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=300, max_retries=0)
-        model, effort = GLM_MODEL, "low"
+        # 실제로 부를 주소(OpenAI SDK는 OPENAI_BASE_URL을 스스로 읽는다) -- 프록시로 바뀌면 지문도 바뀐다(Codex 리뷰 P2)
+        url = (os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
+        return model, load_pricing().get("models", {}).get(model, {}).get("reasoning_effort"), url
+    return GLM_MODEL, "low", GLM_URL
+
+
+def run_config(model_key: str, cases: list[dict]) -> dict:
+    """사례·설정 지문: 교체 사례 키 목록 + 모델·주소·추론 강도·브리핑 지시문 해시. 호출 전에 대조한다 --
+    다른 사례나 다른 설정의 기록을 이어 붙이거나 재사용하지 않게(Codex 사후 리뷰 MUST 2026-10-11)."""
+    from api.rag import briefing
+    model, effort, url = _model_and_effort(model_key)
+    prompt = "".join(str(getattr(briefing, n, "")) for n in ("_SYSTEM", "_SYSTEM_SOURCED", "_SYSTEM_HIDDEN"))
+    return {"model": model, "effort": effort, "url": url,
+            "prompt_sha": hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16],
+            "cases_sha": hashlib.sha256(json.dumps([c["key"] for c in cases], ensure_ascii=False).encode()).hexdigest()[:16]}
+
+
+def _check_config(found: dict | None, cfg: dict, path: Path) -> None:
+    if found is not None and found != cfg:
+        raise ValueError(f"{path.name}은 지금과 다른 사례·설정으로 잰 기록이다(기록 {found} / 지금 {cfg}). 섞지 않도록 멈춘다.")
+
+
+def run(model_key: str, cases: list[dict], evidence, resume: bool | None = None) -> dict:
+    resume = os.environ.get("E5_RESUME") == "1" if resume is None else resume
+    path = RESULTS / f"e5_{model_key}.json"
+    load_env()
+    cfg = run_config(model_key, cases)
+    if path.exists():
+        rec = json.loads(path.read_text("utf-8"))
+        _check_config(rec.get("config"), cfg, path)
+        return rec if rec.get("config") is not None else {**rec, "unverified_inputs": True}
+    partial_path = path.with_suffix(".partial.json")
+    partial = (json.loads(partial_path.read_text("utf-8")) if partial_path.exists()
+               else {"rows": {}, "wall_s": 0.0, "config": cfg})
+    _check_config(partial.get("config"), cfg, partial_path)
+    legacy = partial_path.exists() and partial.get("config") is None
+    if partial_path.exists() and not resume:
+        return {**partial, "partial": True, **({"unverified_inputs": True} if legacy else {})}
+    if legacy and os.environ.get("E5_ACCEPT_LEGACY") != "1":
+        raise ValueError(f"{partial_path.name}에는 사례·설정 기록이 없어 이어 잴 수 없다 -- 기록을 옮기고 새로 재거나, "
+                         "같은 조건임을 확인했으면 E5_ACCEPT_LEGACY=1로 이어 잰다.")
+    partial["config"] = cfg
+    from openai import OpenAI
+    model, effort, _url = _model_and_effort(model_key)
+    client = (OpenAI(max_retries=0) if model_key == "llm"
+              else OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=300, max_retries=0))
     rows: dict = partial["rows"]
     lock, stop = threading.Lock(), threading.Event()
     t0 = time.monotonic()
@@ -235,9 +267,11 @@ def run(model_key: str, cases: list[dict], evidence, resume: bool | None = None)
 
 # --- 요약·보고서 -----------------------------------------------------------------------
 
-def _cost(model_key: str, rows: list[dict]) -> float:
+def _cost(model_key: str, rows: list[dict], model: str | None = None) -> float:
     if model_key == "llm":
-        price = load_pricing()["models"][load_pricing()["briefing_model"]]
+        # 기록된 모델의 단가(지금 설정 모델이 아니라) -- Codex 사후 리뷰 SHOULD
+        models = load_pricing()["models"]
+        price = models.get(model or "", models[load_pricing()["briefing_model"]])
         return sum(r["in_tokens"] * price["input_per_1m"] + r["out_tokens"] * price["output_per_1m"] for r in rows) / 1e6
     return sum((r["in_tokens"] - r["cached"]) * GLM_PRICE["input"] + r["cached"] * GLM_PRICE["cached"]
                + r["out_tokens"] * GLM_PRICE["output"] for r in rows) / 1e6
@@ -271,7 +305,8 @@ def summarize() -> dict:
     infra = {i for i in common for r in recs.values() if str(r["rows"][str(i)].get("code", "")).startswith("api:")}
     common = [i for i in common if i not in infra]       # 인프라 실패(API 4회 실패)는 모델 비교에서 뺀다(따로 센다)
     need_hold = [i for i in common if cases[i]["score_change"].get("new_violations")]
-    out = {"n": len(common), "n_total": len(cases), "n_new_violation_cases": len(need_hold), "n_infra_excluded": len(infra),
+    out = {"unverified_inputs": sorted(m for m, r in recs.items() if r.get("unverified_inputs")),
+           "n": len(common), "n_total": len(cases), "n_new_violation_cases": len(need_hold), "n_infra_excluded": len(infra),
            "models": {}}
     for m, r in recs.items():
         rows = [r["rows"][str(i)] for i in common]
@@ -291,7 +326,7 @@ def summarize() -> dict:
         concl: dict = {}
         for x in ok:
             concl[x["conclusion"]] = concl.get(x["conclusion"], 0) + 1
-        cost = _cost(m, own)
+        cost = _cost(m, own, r.get("model"))
         out["models"][m] = {
             "model": r.get("model"), "effort": r.get("effort"), "partial": bool(r.get("partial")),
             "n_run": len(own), "success": len(ok) / len(rows) if rows else None,
@@ -403,6 +438,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 <p class="muted">실험 E5 · 코드 <code>experiments/jev/e5_briefing.py</code> · 원시 결과 <code>experiments/jev/results/e5_*.json</code> ·
 모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED · 사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정(사내 서버 측정 불가)</p>
 
+{('<div class="box warn"><b>입력 동일성 미입증</b>: ' + e(', '.join(s['unverified_inputs'])) + ' 기록은 사례·설정 지문(2026-10-11 도입) 이전에 쟀다 — 사례 키는 행마다 대조했지만, 브리핑 지시문이 지금 코드와 같았는지는 기록으로 입증할 수 없다(모델·추론 강도는 기록에 있는 값을 표에 그대로 보인다).</div>') if s.get('unverified_inputs') else ''}
 <h2>1. 무엇을 비교했나</h2>
 <p>What-if 화면에서 "A 대신 B를 넣으면?"을 고르면 AI가 결론(권고/조건부/보류)·위험·대안을 쓴다(<code>api/rag/briefing.py</code>).
 같은 교체 {s['n']}건을 서비스와 똑같은 재료(근거 문맥·원문 인용 색인·평가기 점수 변화·새 위반)로 두 모델에 맡겼다.
