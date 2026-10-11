@@ -126,6 +126,8 @@ export interface WhatifResponse {
   feasible: boolean;
   briefing: Briefing;
   fallback_used: boolean;
+  /** 규칙 기반으로 쓴 이유: no_client · external_blocked(실데이터를 외부 AI로 보내지 않음) · llm_error. */
+  fallback_reason?: string | null;
 }
 
 export interface Swap {

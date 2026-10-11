@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from fastapi import Depends, HTTPException, Request
 from core.graph.memory_graph import MemoryGraph
@@ -64,3 +65,24 @@ def get_openai_client_or_none():
         return OpenAI()
     except Exception:                                   # noqa: BLE001
         return None
+
+
+def llm_client_for(dataset: ActiveDataset, client):
+    """설명 글(교체 설명·인사팀 소명)용 LLM 클라이언트를 데이터 종류로 거른다 → (client 또는 None, 쓰지 않은 이유).
+
+    실데이터(가상이 아닌 묶음)는 클라이언트 주소가 사내(사설 주소, 또는 OpenAI가 아닌 주소에 `TEAMWEAVER_REVIEW_ONPREM=1`)이거나 서버가 외부 전송을 허용
+    (`TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1`)했을 때만 보낸다 -- 리뷰 글 판정(api.review_judge)과 같은 정책.
+    설명 문맥에는 원문이 없어도 직원 ID·기술·협업 이력·평가 항목 라벨·사업명이 들어간다(Codex 사후 리뷰 MUST 2026-10-11).
+    이유: None(보냄) · "no_client"(키 없음) · "external_blocked"(실데이터를 회사 밖일 수 있는 곳으로 보내지 않음)."""
+    if client is None:
+        return None, "no_client"
+    if dataset.info.synthetic is True:
+        return client, None
+    from urllib.parse import urlparse
+    from api import review_judge as rj
+    url = str(getattr(client, "base_url", "") or "")
+    host = urlparse(url).hostname or ""
+    onprem = host and not rj._is_openai(url) and (os.environ.get(rj.ONPREM_ENV) == "1" or rj._is_internal_host(host))
+    if rj.external_allowed() or onprem:                 # 관리자가 사내로 지정한 주소도 따른다(Codex 리뷰 P2)
+        return client, None
+    return None, "external_blocked"

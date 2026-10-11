@@ -21,6 +21,11 @@ const RESULT: WhatifResponse = {
 };
 
 describe("BriefingPanel", () => {
+  it("실데이터라 외부 AI로 보내지 않았으면 그 이유를 배지에 밝힌다", () => {
+    render(<BriefingPanel result={{ ...RESULT, fallback_used: true, fallback_reason: "external_blocked" }} loading={false} />);
+    expect(screen.getByText("규칙 기반(실데이터라 외부 AI로 보내지 않음)")).toBeInTheDocument();
+  });
+
   it("명분·리스크·대안을 모두 보인다", () => {
     render(<BriefingPanel result={RESULT} loading={false} />);
     expect(screen.getByText(/p052로 교체 검토/)).toBeInTheDocument();

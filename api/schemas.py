@@ -103,6 +103,8 @@ class WhatifResponse(BaseModel):
     feasible: bool
     briefing: BriefingOut
     fallback_used: bool
+    # 규칙 기반으로 쓴 이유: no_client(키 없음) · external_blocked(실데이터를 외부로 보내지 않음) · llm_error
+    fallback_reason: str | None = None
 
 
 class MilpParamsIn(BaseModel):

@@ -122,6 +122,10 @@ def test_operating_rows_are_rescored(built):
     _write(bundle, active, params, [], operating={**op, "rows": [{**row, "objective": row["objective"] + 5}]})
     pre = load_precomputed(bundle, active, params)
     assert pre.operating is None and "K=0" in pre.skipped[-1]
+    for bad in ({**op, "rows": []}, {**op, "ks": [0, 1]}, {**op, "rows": [row, row]}):   # K와 행이 하나씩 맞아야 한다
+        _write(bundle, active, params, [], operating=bad)
+        pre = load_precomputed(bundle, active, params)
+        assert pre.operating is None and "하나씩 맞지 않는다" in pre.skipped[-1]
 
 
 def test_server_serves_precomputed_plans_and_fresh_solves_again(built, monkeypatch):
