@@ -5,6 +5,7 @@ from core.domain.models import CoworkRecord, Dataset, ParsedReview, PeerReview
 _SCHEMA = """
 CREATE TABLE person(id TEXT PRIMARY KEY, name TEXT, grade TEXT, monthly_rate INT);
 CREATE TABLE person_skill(person_id TEXT, skill TEXT, level INT);
+CREATE TABLE skill_credit(person_id TEXT, skill TEXT, source TEXT, months INT, depth INT, own_months INT);
 CREATE TABLE project(id TEXT PRIMARY KEY, name TEXT, sector TEXT, phase TEXT,
                      start_month INT, end_month INT, monthly_budget INT);
 CREATE TABLE grade_headcount(project_id TEXT, grade TEXT, headcount INT);
@@ -13,6 +14,7 @@ CREATE TABLE collaboration(a_id TEXT, b_id TEXT, co_months INT, project_count IN
 CREATE TABLE review(reviewer_id TEXT, reviewee_id TEXT, text_polarity REAL);
 CREATE TABLE review_item(reviewer_id TEXT, reviewee_id TEXT, item TEXT, is_positive INT);
 CREATE INDEX ix_ps ON person_skill(person_id); CREATE INDEX ix_ps_skill ON person_skill(skill);
+CREATE INDEX ix_credit ON skill_credit(person_id);
 CREATE INDEX ix_col_a ON collaboration(a_id); CREATE INDEX ix_col_b ON collaboration(b_id);
 CREATE INDEX ix_rev ON review(reviewee_id);
 """
@@ -25,6 +27,10 @@ def build_sqlite(ds: Dataset, parsed: list[ParsedReview], path: Path) -> None:
                      [(p.id, p.name, p.grade.value, p.monthly_rate) for p in ds.people])
     conn.executemany("INSERT INTO person_skill VALUES(?,?,?)",
                      [(p.id, s, lv) for p in ds.people for s, lv in p.skills.items()])
+    # 하위 기술에서 인정한 경력(2026-10-11, Person.skill_credit) -- person_skill과 따로 둬 기존 질의·Plan 3 동등성은 그대로
+    conn.executemany("INSERT INTO skill_credit VALUES(?,?,?,?,?,?)",
+                     [(p.id, s, c.source, c.months, c.depth, c.own_months)
+                      for p in ds.people for s, c in sorted(p.skill_credit.items())])
     conn.executemany("INSERT INTO project VALUES(?,?,?,?,?,?,?)",
                      [(j.id, j.name, j.sector.value, j.phase.value,
                        j.start_month, j.end_month, j.monthly_budget) for j in ds.projects])

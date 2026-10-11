@@ -12,11 +12,22 @@ class Sector(StrEnum):
 class ProjectPhase(StrEnum):
     EXECUTION = "실행"; PROPOSAL = "제안"
 
+class SkillCredit(BaseModel):
+    """하위 기술 경력에서 인정된 경력(2026-10-11 사용자 결정 "구분해서 표시"). 그 기술의 경력을 인정분이 정했을 때만 있다
+    (인정 개월 > 본인 개월). 예: Java {source: "Spring", months: 12, depth: 1, own_months: 0} → "Java 12개월(Spring 경력에서 인정)"."""
+    source: str                                   # 인정 출처: 하위 기술의 대표 이름
+    months: int = Field(gt=0)                     # 인정된 개월(레벨 계산에 쓴 값) = floor(출처 개월 × 계수^깊이)
+    depth: int = Field(ge=1)                      # 출처에서 이 기술까지의 상하위 거리
+    own_months: int = Field(default=0, ge=0)      # 본인 행의 경력(인정분보다 짧다, 없으면 0)
+
+
 class Person(BaseModel):
     id: str; name: str; grade: Grade
     monthly_rate: int = Field(gt=0)
     skills: dict[str, int]
     availability: list[float]
+    # 선택(2026-10-11): 레벨을 하위 기술 인정분이 정한 기술만. 비어 있으면 모든 기술이 본인 경력(예전 동작 그대로)
+    skill_credit: dict[str, SkillCredit] = Field(default_factory=dict)
 
     @field_validator("skills")
     @classmethod
@@ -24,6 +35,13 @@ class Person(BaseModel):
         if any(not 1 <= lv <= 5 for lv in v.values()):
             raise ValueError("skill level must be 1..5")
         return v
+
+    @model_validator(mode="after")
+    def _credit_keys(self):
+        missing = sorted(set(self.skill_credit) - set(self.skills))
+        if missing:
+            raise ValueError(f"skill_credit의 기술이 skills에 없다: {missing}")
+        return self
 
     @field_validator("availability")
     @classmethod

@@ -8,6 +8,7 @@ LLM 프롬프트가 바로 쓸 수 있는 구조로 바꿀 뿐 -- 새 질의를 
 K5: swap_diff의 evidence 행은 리뷰 극성 숫자뿐이다(SQLite에 리뷰 문장이 없다). 근거 색인
 (api/rag/evidence.py)을 넘기면 evidence를 출처 ID가 붙은 근거 문장으로 바꾼다. 넘기지 않으면
 예전과 똑같다. project_id를 넘기면 ctx["project"]에 그 프로젝트의 요구 기술을 더한다."""
+import sqlite3
 from dataclasses import asdict
 
 from api.rag.evidence import EvidenceIndex
@@ -21,9 +22,14 @@ def swap_context(conn, out_id: str, in_id: str, evidence: EvidenceIndex | None =
     rows = sqlite_rag.swap_diff(conn, out_id, in_id)
     ctx: dict[str, dict[str, list]] = {out_id: {"skills": [], "coworks": [], "evidence": []},
                                        in_id: {"skills": [], "coworks": [], "evidence": []}}
+    credit = _credits(conn, (out_id, in_id))
     for r in rows:
         bucket = ctx.setdefault(r["person_id"], {"skills": [], "coworks": [], "evidence": []})
-        bucket[_KIND_KEY[r["kind"]]].append({"key": r["key"], "value": r["value"]})
+        row = {"key": r["key"], "value": r["value"]}
+        c = credit.get((r["person_id"], r["key"])) if r["kind"] == "skill" else None
+        if c:                                           # 하위 기술에서 인정한 레벨(2026-10-11) -- 본인 경력과 구분해 쓰라고 지시문이 말한다
+            row.update(credited_from=c[0], credited_months=c[1], own_months=c[2])
+        bucket[_KIND_KEY[r["kind"]]].append(row)
     if evidence is not None:
         for pid in (out_id, in_id):
             ctx[pid]["evidence"] = [asdict(e) for e in evidence.for_person(pid)]
@@ -32,6 +38,15 @@ def swap_context(conn, out_id: str, in_id: str, evidence: EvidenceIndex | None =
         if project is not None:          # 없는 프로젝트면 빈 정보를 넣지 않는다(LLM이 "요구 없음"으로 읽지 않게)
             ctx["project"] = project
     return ctx
+
+
+def _credits(conn, ids) -> dict[tuple[str, str], tuple[str, int, int]]:
+    """(사람, 기술) → (인정 출처, 인정 개월, 본인 개월). 인정 표가 없는 예전 색인이면 빈 사전(예전과 같은 문맥)."""
+    try:
+        cur = conn.execute("SELECT person_id, skill, source, months, own_months FROM skill_credit WHERE person_id IN (?, ?)", tuple(ids))
+    except sqlite3.OperationalError:
+        return {}
+    return {(pid, skill): (src, m, own) for pid, skill, src, m, own in cur.fetchall()}
 
 
 def _project(conn, project_id: str) -> dict | None:

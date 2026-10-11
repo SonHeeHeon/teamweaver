@@ -27,7 +27,9 @@ log = logging.getLogger(__name__)
 _BASE = (
     "너는 SI 인력 배치 담당자를 돕는 설명가능AI(XAI) 브리핑 작성자다. 한국어로 쓴다."
     " 입력: out_person(빠질 사람), in_person(들어올 사람), context(사람별 skills=기술:레벨 1~5,"
-    " coworks=협업 상대:함께한 개월, evidence=리뷰 근거). 있으면 context.project(교체 대상 프로젝트의"
+    " coworks=협업 상대:함께한 개월, evidence=리뷰 근거). skills 항목에 credited_from이 있으면 그 레벨은 본인 경력이 아니라"
+    " 하위 기술(credited_from) 경력에서 일부 인정된 것이다 -- 그 기술을 말할 때는 'Java(Spring 경력에서 인정)'처럼 출처를 밝혀라."
+    " 있으면 context.project(교체 대상 프로젝트의"
     " 요구 기술·최소 레벨·인원)와 score_change(교체 전후 배치 점수 변화, total이 양수면 개선)도 온다."
     " 문맥에 있는 사실만 쓰고 지어내지 마라."
     " project가 있으면 두 사람을 그 요구 기술 기준으로 비교해 결론을 내라(정보 부족이라고 얼버무리지 마라)."

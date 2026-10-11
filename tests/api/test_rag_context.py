@@ -108,3 +108,30 @@ def test_project_id_adds_the_project_requirements(data_and_conn):
         key=lambda r: r["skill"])
     assert "project" not in swap_context(conn, out_id, in_id)
     assert "project" not in swap_context(conn, out_id, in_id, project_id="no-such-project")
+
+
+def test_credited_skills_are_marked_in_the_briefing_context(tmp_path):
+    """하위 기술에서 인정한 레벨은 근거 색인의 별도 표에 남고, 교체 설명 문맥이 출처를 붙인다(2026-10-11). 인정 표가 없는 예전 색인은 예전 문맥."""
+    from api.rag.context import swap_context
+    from core.domain.models import SkillCredit
+    ds = generate_dataset(40, 8, seed=5)
+    p0 = ds.people[0]
+    skill = next(iter(p0.skills))
+    ds.people[0] = p0.model_copy(update={"skill_credit": {skill: SkillCredit(source="하위기술", months=14, depth=1, own_months=3)}})
+    path = tmp_path / "credit.db"
+    build_sqlite(ds, parse_reviews_rule_based(ds.reviews), path)
+    c = sqlite3.connect(path)
+    rows = c.execute("SELECT person_id, skill, source, months, depth, own_months FROM skill_credit").fetchall()
+    assert rows == [(p0.id, skill, "하위기술", 14, 1, 3)]
+    ctx = swap_context(c, p0.id, ds.people[1].id)
+    marked = [s for s in ctx[p0.id]["skills"] if "credited_from" in s]
+    assert marked == [{"key": skill, "value": str(p0.skills[skill]), "credited_from": "하위기술", "credited_months": 14, "own_months": 3}]
+    assert all("credited_from" not in s for s in ctx[ds.people[1].id]["skills"])
+    c.execute("DROP TABLE skill_credit")
+    assert all("credited_from" not in s for s in swap_context(c, p0.id, ds.people[1].id)[p0.id]["skills"])
+    c.close()
+
+
+def test_briefing_prompt_tells_the_model_to_name_the_credit_source():
+    from api.rag import briefing
+    assert "credited_from" in briefing._BASE and "인정" in briefing._BASE
