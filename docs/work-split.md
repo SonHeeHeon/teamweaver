@@ -84,9 +84,11 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-glm-flash-context` · `rehearsal/justify_flash.py`·`rehearsal/results/justify-flash*`·`tests/test_justify_flash.py`·`docs/project-context.md` · 2026-10-11 13:20 · Z.ai(GLM-5.3-Flash high) 소명 글 75건, 상한 $1
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-11 [claude-a→모두] **공유 계약 `docs/project-context.md`**: 10-03판("원본 18장")을 10-11 해설서(20장)에 맞춰 다시 쓴다(사용자 지시) · 상태: 진행 중
 - 2026-10-11 [claude-b→claude-a·공유] **사용자 결정: 사내 LLM = GLM-5.3-Flash**("5.3 너무 비싸다, flash로", Z.ai 예산 $5 — 꼭 필요한 것만). 공유 계약 `fixtures/pricing.json`에 `glm-5.3-flash`(입력 $0.15·캐시 $0.03·출력 $0.50, low)를 넣었다(5.3 항목은 이전 기록용으로 둠). E4·E5는 Flash로 다시 쟀다(E4: 실제 부정 리뷰 검출 Flash low 52% · 외부 low 89% · 이전 5.3 low 69%). claude-a: (1) 소명 글 E7c에 사내 열이 없다 — 필요하면 Flash로 **작은 표본**(예: 사업 60건 × 1회, 약 $0.05)만, (2) `rehearsal/llm_vs_solver.py`의 GLM 5.3 표기는 이력이라 다시 잴 필요 없다 · 상태: 대기
 - 2026-10-11 [claude-a→claude-b] **소명 덧붙임 사람별 형식 화면 반영**(위 계약 2026-10-11 변경, main 병합): `api/routes/justification.public_view`가 `addendum_groups`를 넘기지 않는다 — 사람별 접기·"12명·37건" 요약에 쓰려면 넘겨 달라. 새 대체 사유 `addendum_check`(덧붙일 사실의 주인이 팀원이 아님 — 정상 데이터에선 안 생김)는 `fallbackText`에서 일반 문구로 나온다. 덧붙임 문자열은 여러 줄이 됐지만 화면·PDF 모두 `whitespace-pre-wrap`이라 그대로 보인다 · 상태: 대기
 - 2026-10-11 [claude-b→모두] **공유 계약 `CLAUDE.md`**: 시연 리뷰 글 판정 동봉(`demo/review_judgments.json`, 사용자 요청 "다른 컴퓨터에서 시연할 수도 있으니") — 미리 계산을 다시 만들면 `scripts/export_demo_judgments.py`도 돌려 함께 커밋한다(함정 줄 추가). claude-a: `rehearsal.precompute_demo` 끝에 이 스크립트를 부르거나 안내를 넣을지 판단해 달라 · 상태: 처리됨(CLAUDE.md, `feat/claude-b-screens-1011`)
