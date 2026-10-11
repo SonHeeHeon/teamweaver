@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 vi.mock("../api/client", () => ({ DatasetChangedError: class extends Error {}, postJustification: vi.fn() }));
 import { postJustification } from "../api/client";
 import { JustificationPanel } from "./JustificationPanel";
-import { fallbackText } from "./justification";
+import { fallbackText, segmentsOf } from "./justification";
 import type { Justification, Meta } from "../api/types";
 
 const META = {
@@ -16,8 +16,8 @@ const ENTRIES = [{ person_id: "p1", project_id: "P1", alloc: 1 }, { person_id: "
 
 const base = (over: Partial<Justification>): Justification => ({
   project_id: "P1", method: "template", text: "DP1은 Java 5년[F1]입니다.", addendum: null, appended_adverse: [],
-  facts: [{ id: "F1", kind: "SKL", text: "p1 Java 60개월", adverse: false },
-          { id: "F2", kind: "REQ", text: "요구 Python 미달", adverse: true }],
+  facts: [{ id: "F1", kind: "SKL", text: "p1 Java 60개월", phrase: "Java 5년", adverse: false },
+          { id: "F2", kind: "REQ", text: "요구 Python 미달", phrase: "요구 Python 미달", adverse: true }],
   fallback_reason: null, verification: null, usage: null, dataset_version: "v1", ai_available: true,
   ai_unavailable_reason: null, ...over,
 });
@@ -42,8 +42,9 @@ describe("JustificationPanel", () => {
     expect(screen.getByText(/서버가 덧붙임 — AI 글이 빠뜨린 불리한 사실 1개/)).toBeInTheDocument();
     expect(screen.getByText("불리")).toBeInTheDocument();
     expect(screen.getByText("덧붙임")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "근거 F1" })[0]);
-    expect(screen.getByTestId("fact-F1").className).toMatch(/ring-2/);
+    expect(screen.queryByText(/\[F\d+\]/)).not.toBeInTheDocument();            // 근거 번호는 보이지 않는다(사용자 결정)
+    fireEvent.click(screen.getByRole("button", { name: "근거 보기: 요구 Python 미달" }));
+    expect(screen.getByTestId("fact-F2").className).toMatch(/ring-2/);
   });
 
   it("AI를 쓸 수 없으면 정해진 틀만, 이유를 사람 말로 보인다", async () => {
@@ -68,7 +69,7 @@ describe("JustificationPanel", () => {
       .mockReturnValueOnce(new Promise((r) => { late = r; }))
       .mockResolvedValueOnce(base({ project_id: "P2", text: "P2 글[F1]입니다.", ai_available: false }));
     panel();
-    await screen.findByText(/DP1은 Java 5년/);
+    await screen.findByRole("button", { name: "근거 보기: Java 5년" });
     fireEvent.change(screen.getByLabelText("소명 사업"), { target: { value: "P2" } });
     expect(await screen.findByText(/P2 글/)).toBeInTheDocument();
     late(base({ method: "graphrag", text: "P1의 늦은 AI 글[F1]입니다." }));
@@ -82,7 +83,7 @@ describe("JustificationPanel", () => {
     panel();
     expect(await screen.findByRole("alert")).toHaveTextContent("잠깐 끊김");
     fireEvent.click(screen.getByRole("button", { name: "다시 불러오기" }));
-    expect(await screen.findByText(/DP1은 Java 5년/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "근거 보기: Java 5년" })).toBeInTheDocument();
   });
 
   it("서명 없는 플랜이면 요청하지 않고 이유를 보인다", () => {
@@ -90,6 +91,15 @@ describe("JustificationPanel", () => {
                                params={null} planLabel="A" planToken={null} onDatasetChanged={vi.fn()} />);
     expect(screen.getByText(/서명 있는 플랜/)).toBeInTheDocument();
     expect(postJustification).not.toHaveBeenCalled();
+  });
+
+  it("근거 문구를 찾지 못하면 작은 '근거' 표시로 남긴다", () => {
+    expect(segmentsOf("DP1은 Java 5년[F1]입니다.", [{ id: "F1", phrase: "Java 5년" }]))
+      .toEqual([{ text: "DP1은 " }, { cite: "F1", label: "Java 5년" }, { text: "입니다." }]);
+    expect(segmentsOf("요약[F9]", [])).toEqual([{ text: "요약" }, { cite: "F9", label: null }]);
+    // 정해진 틀: "머리: 사실 한 줄. [F#]"
+    expect(segmentsOf("요구 기술: Spark 2명 부족. [F5]\n", [{ id: "F5", text: "Spark 2명 부족" }]))
+      .toEqual([{ text: "요구 기술: " }, { cite: "F5", label: "Spark 2명 부족" }, { text: ". " }, { text: "\n" }]);
   });
 });
 

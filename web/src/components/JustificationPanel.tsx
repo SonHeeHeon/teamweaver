@@ -1,25 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, postJustification } from "../api/client";
 import type { AssignEntry, Justification, JustFact, Meta, PlacementSettings, Step } from "../api/types";
-import { KIND_LABEL, KIND_ORDER, fallbackText } from "./justification";
+import { KIND_LABEL, KIND_ORDER, fallbackText, segmentsOf } from "./justification";
 
 /** 인사팀 소명 글(claude-a 계약 docs/requests/2026-10-09-hr-justification.md).
  *  정해진 틀(템플릿)을 먼저 보이고 AI 글(GraphRAG, p50 약 8초)이 오면 바꾼다. 글 속 [F12]을 누르면 옆 사실 목록에서 강조한다.
  *  AI 원문(llm_text)은 서버가 보내지 않는다 -- 검사에서 떨어진 글은 틀린 주장이 있을 수 있다. */
 
-/** 글을 근거 칩([F12])과 일반 글로 나눈다. */
-function Prose({ text, onCite, active }: { text: string; onCite: (id: string) => void; active: string | null }) {
-  const parts = text.split(/(\[F\d+\])/g);
+/** 글: 근거 문구(밑줄)를 누르면 옆 사실 목록에서 그 근거를 강조한다. 근거 번호는 보이지 않는다(사용자 결정 2026-10-11). */
+function Prose({ text, facts, onCite, active }: { text: string; facts: JustFact[]; onCite: (id: string) => void;
+                                                  active: string | null }) {
   return (
     <p className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
-      {parts.map((part, i) => {
-        const m = /^\[(F\d+)\]$/.exec(part);
-        if (!m) return <span key={i}>{part}</span>;
-        return (
-          <button key={i} type="button" onClick={() => onCite(m[1])} aria-label={`근거 ${m[1]}`}
-                  className={`mx-0.5 rounded px-1 text-[11px] font-medium align-baseline ${
-                    active === m[1] ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"}`}>
-            {m[1]}
+      {segmentsOf(text, facts).map((seg, i) => {
+        if ("text" in seg) return <span key={i}>{seg.text}</span>;
+        const on = active === seg.cite;
+        return seg.label ? (
+          <button key={i} type="button" onClick={() => onCite(seg.cite)} aria-label={`근거 보기: ${seg.label}`}
+                  className={`underline decoration-dotted underline-offset-4 ${
+                    on ? "bg-indigo-100 text-indigo-900 decoration-indigo-600" : "decoration-slate-400 hover:bg-indigo-50"}`}>
+            {seg.label}
+          </button>
+        ) : (
+          <button key={i} type="button" onClick={() => onCite(seg.cite)} aria-label="근거 보기"
+                  className={`mx-0.5 align-super text-[10px] ${on ? "text-indigo-700" : "text-slate-400 hover:text-indigo-600"}`}>
+            근거
           </button>
         );
       })}
@@ -152,14 +157,14 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
       {result && (
         <div className="mt-3 grid gap-4 lg:grid-cols-[3fr_2fr]">
           <div>
-            <Prose text={main} onCite={cite} active={active} />
+            <Prose text={main} facts={result.facts} onCite={cite} active={active} />
             {add && (
               <details open={result.appended_adverse.length <= 5}
                        className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
                 <summary className="cursor-pointer text-xs font-medium text-amber-800">
                   서버가 덧붙임 — AI 글이 빠뜨린 불리한 사실 {result.appended_adverse.length}개(AI가 쓴 문장이 아니다)
                 </summary>
-                <div className="mt-1"><Prose text={add} onCite={cite} active={active} /></div>
+                <div className="mt-1"><Prose text={add} facts={result.facts} onCite={cite} active={active} /></div>
               </details>
             )}
             <p className="mt-2 text-[11px] text-slate-400">
@@ -179,7 +184,6 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
                         data-testid={`fact-${f.id}`}
                         className={`rounded px-2 py-1 text-xs ${active === f.id ? "ring-2 ring-indigo-500" : ""} ${
                           f.adverse ? "bg-red-50 text-red-800" : "bg-slate-50 text-slate-700"}`}>
-                      <span className="mr-1 font-medium">{f.id}</span>
                       {f.adverse && <span className="mr-1 rounded bg-red-600 px-1 text-[10px] text-white">불리</span>}
                       {result.appended_adverse.includes(f.id) && (
                         <span className="mr-1 rounded bg-amber-500 px-1 text-[10px] text-white">덧붙임</span>

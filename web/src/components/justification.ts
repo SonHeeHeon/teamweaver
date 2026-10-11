@@ -27,3 +27,42 @@ export function fallbackText(reason: string | null): string | null {
   return `정해진 틀로 썼습니다(${reason}).`;
 }
 
+
+
+export type Segment = { text: string } | { cite: string; label: string | null };
+
+/** 글을 일반 글과 근거 조각으로 나눈다(사용자 결정 2026-10-11: 근거 번호 [F12]은 숨기고 근거 문구를 누르게).
+ *  서버는 사실 문구를 채운 바로 뒤에 [F#]을 붙인다 -- 그 앞 글이 사실의 phrase_full·phrase로 끝나면 그 부분을 근거 조각으로 만든다.
+ *  못 찾으면(문구가 다르게 채워진 경우) 이름 없는 근거 조각(작은 표시)으로 둔다. */
+export function segmentsOf(text: string,
+                           facts: { id: string; phrase?: string; phrase_full?: string; text?: string }[]): Segment[] {
+  const byId = new Map(facts.map((f) => [f.id, f]));
+  const out: Segment[] = [];
+  for (const part of text.split(/(\[F\d+\])/g)) {
+    const m = /^\[(F\d+)\]$/.exec(part);
+    if (!m) { if (part) out.push({ text: part }); continue; }
+    const f = byId.get(m[1]);
+    const prev = out[out.length - 1];
+    // AI 글은 phrase_full·phrase를 채운 바로 뒤, 정해진 틀 글은 "사실 한 줄(text). " 뒤에 번호가 붙는다
+    const candidates = [f?.phrase_full, f?.phrase, f?.text].filter((c): c is string => !!c)
+      .sort((a, b) => b.length - a.length);
+    let done = false;
+    if (prev && "text" in prev) {
+      const whole = prev.text;
+      const trimmed = whole.replace(/[.\s]+$/, "");
+      const suffix = whole.slice(trimmed.length);            // 문구 뒤 마침표·띄어쓰기(정해진 틀)
+      for (const c of candidates) {
+        const base = whole.endsWith(c) ? whole : trimmed.endsWith(c) ? trimmed : null;
+        if (base === null) continue;
+        const rest = base.slice(0, -c.length);
+        if (rest) prev.text = rest; else out.pop();
+        out.push({ cite: m[1], label: c });
+        if (base === trimmed && suffix) out.push({ text: suffix });
+        done = true;
+        break;
+      }
+    }
+    if (!done) out.push({ cite: m[1], label: null });
+  }
+  return out;
+}

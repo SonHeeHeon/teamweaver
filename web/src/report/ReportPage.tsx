@@ -5,7 +5,20 @@ import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly } from "../components/allocFormat";
-import { fallbackText } from "../components/justification";
+import { fallbackText, segmentsOf } from "../components/justification";
+
+/** PDF의 소명 글: 근거 문구에 밑줄 + 사실 목록 번호(위 첨자). 'F12' 같은 내부 번호는 보이지 않는다(사용자 결정 2026-10-11). */
+function ReportProse({ text, facts }: { text: string; facts: any[] }) {
+  const num = new Map(facts.map((f: any, i: number) => [f.id, i + 1]));
+  return (
+    <>
+      {segmentsOf(text, facts).map((seg, i) => "text" in seg
+        ? <span key={i}>{seg.text}</span>
+        : <span key={i}>{seg.label && <span className="underline decoration-dotted underline-offset-2">{seg.label}</span>}
+            <sup className="text-[8px] text-slate-500">{num.get(seg.cite) ?? ""}</sup></span>)}
+    </>
+  );
+}
 
 declare global {
   interface Window {
@@ -227,7 +240,7 @@ export function ReportPage() {
           <h2 className="mb-1 text-base font-semibold">사업별 인사팀 소명</h2>
           <p className="mb-3 text-xs text-slate-500">
             서버가 최종 명단으로 사업마다 만든 글이다. "AI 구성"은 AI가 사실을 고르고 엮은 것이고 숫자·충족/미달은 데이터 그대로다.
-            [F#]는 아래 근거 사실 번호, "서버가 덧붙임"은 AI 글이 빠뜨린 불리한 사실이다. 계산상 근거 — NOT_CALIBRATED.
+            밑줄 친 문구의 작은 숫자는 아래 근거 사실 번호, "서버가 덧붙임"은 AI 글이 빠뜨린 불리한 사실이다. 계산상 근거 — NOT_CALIBRATED.
           </p>
           {data.justifications.map((j: any) => {
             const add: string | null = j.addendum ?? null;
@@ -240,16 +253,16 @@ export function ReportPage() {
                     {j.method === "graphrag" ? "AI 구성 · 사실은 데이터 그대로" : `정해진 틀${fallbackText(j.fallback_reason) ? " — " + fallbackText(j.fallback_reason) : ""}`}
                   </span>
                 </h3>
-                <p className="mt-1 whitespace-pre-wrap text-[12px] leading-6">{main}</p>
+                <p className="mt-1 whitespace-pre-wrap text-[12px] leading-6"><ReportProse text={main} facts={j.facts ?? []} /></p>
                 {add && (
                   <p className="mt-1 whitespace-pre-wrap rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[12px] leading-6">
-                    <b className="mr-1 text-[11px] text-amber-800">서버가 덧붙임</b>{add}
+                    <b className="mr-1 text-[11px] text-amber-800">서버가 덧붙임</b><ReportProse text={add} facts={j.facts ?? []} />
                   </p>
                 )}
                 <ul className="mt-1 columns-2 gap-4 text-[10px] text-slate-600">
-                  {(j.facts ?? []).map((f: any) => (
+                  {(j.facts ?? []).map((f: any, n: number) => (
                     <li key={f.id} className={f.adverse ? "text-red-700" : ""}>
-                      <b>{f.id}</b>{f.adverse ? " (불리)" : ""} {f.text}
+                      <b>{n + 1}.</b>{f.adverse ? " (불리)" : ""} {f.text}
                     </li>
                   ))}
                 </ul>

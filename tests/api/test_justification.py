@@ -175,3 +175,20 @@ def test_ai_falls_back_to_the_template_when_too_many_ai_texts_run(jc, monkeypatc
     assert out["method"] == "template" and out["fallback_reason"] == "busy"
     fake.chat.completions.create.assert_not_called()
     jr.AI_SLOTS.release()
+
+
+def test_synthetic_names_replace_ids_with_matching_particles():
+    from types import SimpleNamespace
+    from api.routes.justification import apply_names, display_names, with_names
+    names = {"DP0001": "김민준", "DP0002": "이서아"}
+    assert with_names("DP0001은 Java[F3]이며 DP0002은 Spark[F4]입니다.", names) == "김민준은 Java[F3]이며 이서아는 Spark[F4]입니다."
+    assert with_names("DP00012는 그대로", names) == "DP00012는 그대로"            # 다른 ID의 앞부분은 건드리지 않는다
+    assert with_names("팀장은 DP0001이며", names) == "팀장은 김민준이며"           # '이며'의 '이'는 조사가 아니다
+    out = apply_names({"text": "DP0002의 Python[F1]", "addendum": None,
+                       "facts": [{"id": "F1", "text": "DP0002 Python", "phrase": "Python", "phrase_full": "DP0002의 Python"}]}, names)
+    assert out["text"] == "이서아의 Python[F1]" and out["facts"][0]["phrase_full"] == "이서아의 Python"
+    person = lambda i, n: SimpleNamespace(id=i, name=n)
+    ds = lambda syn, people: SimpleNamespace(info=SimpleNamespace(synthetic=syn), graph=SimpleNamespace(people=people))
+    assert display_names(ds(False, [person("DP0001", "김민준")])) == {}                 # 실데이터는 이름을 쓰지 않는다
+    assert display_names(ds(True, [person("DP0001", "가상DP0001")])) == {}             # 자리표시 이름은 바꾸지 않는다
+    assert display_names(ds(True, [person("DP0001", "김민준")])) == {"DP0001": "김민준"}
