@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-12 · claude-a · 시연 대본 재현(Chrome) + 최선 n명 채점의 가짜 빈자리 수정
+- 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` (main 병합은 사용자 승인 대기)
+- 한 일:
+  - `scripts/run_poc.sh` 환경(시드 4·임시 데이터 폴더·포트 8010)으로 대본 장면 1~8을 Chrome으로 따라 함 → `docs/demo-script.md` 숫자·이름·시간을 화면 값으로(⏳ 제거, 새 장면 2-1 인사팀 소명 글·8-1 조직 기술 지도).
+    100명은 안 C(57.91)가 안 A(57.59)보다 높다(모두 시간 한도) — "A가 최선"이라 말하지 않게 대본에 적음. 단순 규칙 표는 화면 값(100·200·300).
+  - **결함 수정**(`core/evaluate/staffing_sim.best_additions`): 빼 오기로 대상 팀원이 나가고 같은 등급 둘이 들어오면(순 +1) 채점이 새로 온 사람 수만큼 자리를 열어 가짜 빈자리(-100)를 보였다(J007·빼 오기 2: 화면 -97.75, 실제 +2.25) → 등급별 순증가만 연다 + 시험.
+  - `docs/architecture.html`(기술 사전·70%·소명 글·기술 지도·시험 1671), `rehearsal/results/guard-demo.html` 지금 데이터로 재생성.
+- 상대 영향(claude-b): `/api/staffing/best`의 응답 모양은 그대로, `delta`·`after` 값만 바르게 나온다. 화면 확인 결과 claude-b 화면은 대본대로 동작(미리 계산 띠·배지, K표 "(미리 계산 때)", 이어서 보강·K PDF 버튼, 기술 지도). 시험 기준선 **1671**.
+- 검증: `uv run --group benchmark pytest -q` → 1671 passed · 재현 스크립트(빼 오기 0/1/2 → +1.11/+1.71/+2.25) · Chrome 재확인(+2.36, 빼 오기 1명 +2.83) · 대본 숫자 ↔ `demo/precomputed` 대조 · Codex 리뷰 지적 없음.
+- 근거: 로컬 `.omc/reports/2026-10-12-demo-rehearsal.md`
+
+---
+
 ## 2026-10-12 · claude-a · 200·300명 미리 계산 완성, 교체 설명 실측 보완, main 병합 (정정: 아래 10-11 항목의 "미리 계산은 100명 2개만"은 끝남)
 - 브랜치/커밋: `feat/claude-a-demo-data-1011` `3b9e5a8`(origin/main 병합)..이 항목 커밋 → main 병합·push(사용자 승인 "main에는 문제 없으면 병합해줘").
 - 한 일:
