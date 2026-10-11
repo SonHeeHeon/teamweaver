@@ -29,6 +29,18 @@
 - 검증: `uv run --group benchmark pytest -q` → 1617 passed, 1 skipped, 19 deselected(claude-b 1614 + 사람별 덧붙임 3). 웹 코드는 양쪽 병합에서 바뀌지 않아 다시 돌리지 않았다(claude-b 기록 185).
 - 근거: 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
 
+## 2026-10-11 · claude-b · 사내 LLM을 GLM-5.3-Flash로(사용자 결정) — E4·E5 재측정
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일: 사용자 결정 "5.3 너무 비싸다, flash로, $5 넣었으니 꼭 필요한 것만". `fixtures/pricing.json`에 `glm-5.3-flash`(입력 $0.15·캐시 $0.03·출력 $0.50, low).
+  - E4(정답 있는 300건): 실제 부정 리뷰 검출 **Flash low 52% · Flash high 52%**(사용자 요청으로 잼) · 외부 low 89% · 이전 5.3 low 69%. Flash < 외부(p<0.001), Flash < 5.3 low(p≈0.034), high = low. 1,000건당 Flash low $0.09 · high $0.10 · 외부 $0.08.
+  - E5(지금 데이터로 교체 100건 다시, 예전 기록은 `superseded/e5_v2_*`): 성공 외부 93% · Flash 97%, 보류 준수 외부 90% · Flash 100%(0 대 7, p≈0.016 — 외부의 recommends_infeasible 7건은 서비스 가드가 버린다), 자유 판단 결론 일치 68%(28건), 100건당 외부 $0.063 · Flash $0.106.
+  - 폴백 리뷰 MUST 1(E5 이력 상자가 5.3 기록을 Flash로 표기) 반영, 예전 기록 모델이 다르면 멈춤.
+  - Z.ai 사용: 약 $0.17(E4 Flash low·high 각 $0.03, E5 $0.11).
+- 상대 영향(claude-a): 사내 열 = Flash. 소명 글 E7c 사내 열은 필요하면 작은 표본으로(work-split 요청).
+- 검증: `pytest -q` 전체 통과, E4·E5 보고서 재생성.
+
+---
+
 ## 2026-10-11 · claude-b · Claude 폴백 리뷰 후속(Codex 한도 재소진, 15:49까지): 소명 AI 동시 상한·요청 끊기, 보정 대상에 반환 명단 예산
 - 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
 - 한 일: Stop 훅 Codex 리뷰가 한도 소진으로 2회 실패 → 게이트를 끄고 Claude Opus 폴백 리뷰(64e376e·4a0218f·acd8cb8, MUST 0·SHOULD 2·NIT 6). 반영:

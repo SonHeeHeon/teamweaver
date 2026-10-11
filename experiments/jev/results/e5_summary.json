@@ -1,4 +1,5 @@
 {
+ "unverified_inputs": [],
  "n": 100,
  "n_total": 100,
  "n_new_violation_cases": 72,
@@ -9,108 +10,113 @@
    "effort": "low",
    "partial": false,
    "n_run": 100,
-   "success": 1.0,
+   "success": 0.93,
    "success_ci": [
-    0.963005192523998,
-    0.9999999999999998
+    0.8625032899347025,
+    0.9656811756359358
    ],
-   "fail_codes": {},
-   "hold_compliance": 1.0,
+   "fail_codes": {
+    "recommends_infeasible": 7
+   },
+   "hold_compliance": 0.9027777777777778,
    "hold_ci": [
-    0.9493470601886036,
-    1.0
+    0.812647509746432,
+    0.952104288738832
    ],
    "hold_n": 72,
-   "citations_mean": 0.5,
+   "citations_mean": 0.6236559139784946,
    "quote_share": 1.0,
-   "chars_mean": 450.27,
+   "chars_mean": 461.19354838709677,
    "conclusions": {
-    "보류": 91,
-    "권고": 5,
-    "조건부": 4
+    "보류": 84,
+    "조건부": 4,
+    "권고": 5
    },
-   "lat_median_s": 3.6092083959374577,
-   "lat_p95_s": 5.075608596159144,
-   "in_tokens": 470493,
-   "out_tokens": 29613,
-   "reasoning_tokens": 1924,
-   "cost_usd": 0.0618558,
-   "per_100_usd": 0.06185580000000001,
-   "wall_s": 49.20771254086867,
+   "lat_median_s": 3.5094266878440976,
+   "lat_p95_s": 4.79157636812888,
+   "in_tokens": 478368,
+   "out_tokens": 30020,
+   "reasoning_tokens": 988,
+   "cost_usd": 0.06284680000000001,
+   "per_100_usd": 0.06284680000000001,
+   "wall_s": 47.08494595810771,
    "stop_reason": null
   },
   "glm_low": {
-   "model": "glm-5.3",
+   "model": "glm-5.3-flash",
    "effort": "low",
    "partial": false,
    "n_run": 100,
-   "success": 0.99,
+   "success": 0.97,
    "success_ci": [
-    0.9455124752390653,
-    0.9982326134344527
+    0.915479219195973,
+    0.9897456617765852
    ],
    "fail_codes": {
-    "quote_not_verbatim": 1
+    "JSONDecodeError": 2,
+    "ValidationError": 1
    },
    "hold_compliance": 1.0,
    "hold_ci": [
-    0.9493470601886036,
+    0.9472609058559943,
     1.0
    ],
-   "hold_n": 72,
-   "citations_mean": 1.9393939393939394,
+   "hold_n": 69,
+   "citations_mean": 2.1237113402061856,
    "quote_share": 1.0,
-   "chars_mean": 647.1313131313132,
+   "chars_mean": 601.2474226804123,
    "conclusions": {
-    "보류": 91,
+    "보류": 86,
     "권고": 4,
-    "조건부": 4
+    "조건부": 7
    },
-   "lat_median_s": 7.557619625236839,
-   "lat_p95_s": 13.254070189944468,
-   "in_tokens": 519858,
-   "out_tokens": 67611,
-   "reasoning_tokens": 6512,
-   "cost_usd": 0.9576556799999999,
-   "per_100_usd": 0.9576556799999999,
-   "wall_s": 109.83617637492716,
+   "lat_median_s": 10.279609145363793,
+   "lat_p95_s": 14.109865420823915,
+   "in_tokens": 527743,
+   "out_tokens": 66037,
+   "reasoning_tokens": 7289,
+   "cost_usd": 0.10584394999999999,
+   "per_100_usd": 0.10584394999999999,
+   "wall_s": 133.81296758307144,
    "stop_reason": null
   }
  },
  "success_only": {
-  "llm": 1,
-  "glm_low": 0
+  "llm": 3,
+  "glm_low": 7
  },
- "success_p": 1.0,
+ "success_p": 0.34375,
  "conclusion_agree_forced": 1.0,
- "conclusion_agree_free": 0.9259259259259259,
- "n_forced": 72,
- "n_free": 27,
+ "conclusion_agree_free": 0.6785714285714286,
+ "n_forced": 62,
+ "n_free": 28,
  "free_pairs": {
-  "보류→보류": 18,
-  "권고→권고": 4,
-  "조건부→조건부": 3,
+  "보류→보류": 16,
+  "조건부→권고": 2,
+  "권고→조건부": 3,
+  "조건부→조건부": 1,
+  "보류→조건부": 3,
   "조건부→보류": 1,
-  "권고→조건부": 1
+  "권고→권고": 2
  },
  "free_conclusions": {
   "llm": {
-   "보류": 18,
-   "권고": 5,
-   "조건부": 4
+   "보류": 19,
+   "조건부": 4,
+   "권고": 5
   },
   "glm_low": {
-   "보류": 19,
+   "보류": 17,
    "권고": 4,
-   "조건부": 4
+   "조건부": 7
   }
  },
- "n_both_ok": 99,
+ "n_both_ok": 90,
  "hold_paired": {
-  "n": 72,
+  "n": 69,
   "llm_only": 0,
-  "glm_low_only": 0,
-  "p": 1.0
+  "glm_low_only": 7,
+  "p": 0.015625
  },
  "history_v1": {
   "llm": {

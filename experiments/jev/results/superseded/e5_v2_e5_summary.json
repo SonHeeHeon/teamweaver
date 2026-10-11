@@ -1,0 +1,132 @@
+{
+ "n": 100,
+ "n_total": 100,
+ "n_new_violation_cases": 72,
+ "n_infra_excluded": 0,
+ "models": {
+  "llm": {
+   "model": "gpt-6-luna",
+   "effort": "low",
+   "partial": false,
+   "n_run": 100,
+   "success": 1.0,
+   "success_ci": [
+    0.963005192523998,
+    0.9999999999999998
+   ],
+   "fail_codes": {},
+   "hold_compliance": 1.0,
+   "hold_ci": [
+    0.9493470601886036,
+    1.0
+   ],
+   "hold_n": 72,
+   "citations_mean": 0.5,
+   "quote_share": 1.0,
+   "chars_mean": 450.27,
+   "conclusions": {
+    "보류": 91,
+    "권고": 5,
+    "조건부": 4
+   },
+   "lat_median_s": 3.6092083959374577,
+   "lat_p95_s": 5.075608596159144,
+   "in_tokens": 470493,
+   "out_tokens": 29613,
+   "reasoning_tokens": 1924,
+   "cost_usd": 0.0618558,
+   "per_100_usd": 0.06185580000000001,
+   "wall_s": 49.20771254086867,
+   "stop_reason": null
+  },
+  "glm_low": {
+   "model": "glm-5.3",
+   "effort": "low",
+   "partial": false,
+   "n_run": 100,
+   "success": 0.99,
+   "success_ci": [
+    0.9455124752390653,
+    0.9982326134344527
+   ],
+   "fail_codes": {
+    "quote_not_verbatim": 1
+   },
+   "hold_compliance": 1.0,
+   "hold_ci": [
+    0.9493470601886036,
+    1.0
+   ],
+   "hold_n": 72,
+   "citations_mean": 1.9393939393939394,
+   "quote_share": 1.0,
+   "chars_mean": 647.1313131313132,
+   "conclusions": {
+    "보류": 91,
+    "권고": 4,
+    "조건부": 4
+   },
+   "lat_median_s": 7.557619625236839,
+   "lat_p95_s": 13.254070189944468,
+   "in_tokens": 519858,
+   "out_tokens": 67611,
+   "reasoning_tokens": 6512,
+   "cost_usd": 0.9576556799999999,
+   "per_100_usd": 0.9576556799999999,
+   "wall_s": 109.83617637492716,
+   "stop_reason": null
+  }
+ },
+ "success_only": {
+  "llm": 1,
+  "glm_low": 0
+ },
+ "success_p": 1.0,
+ "conclusion_agree_forced": 1.0,
+ "conclusion_agree_free": 0.9259259259259259,
+ "n_forced": 72,
+ "n_free": 27,
+ "free_pairs": {
+  "보류→보류": 18,
+  "권고→권고": 4,
+  "조건부→조건부": 3,
+  "조건부→보류": 1,
+  "권고→조건부": 1
+ },
+ "free_conclusions": {
+  "llm": {
+   "보류": 18,
+   "권고": 5,
+   "조건부": 4
+  },
+  "glm_low": {
+   "보류": 19,
+   "권고": 4,
+   "조건부": 4
+  }
+ },
+ "n_both_ok": 99,
+ "hold_paired": {
+  "n": 72,
+  "llm_only": 0,
+  "glm_low_only": 0,
+  "p": 1.0
+ },
+ "history_v1": {
+  "llm": {
+   "n": 100,
+   "success": 0.98,
+   "fail_codes": {
+    "recommends_infeasible": 2
+   }
+  },
+  "glm_low": {
+   "n": 100,
+   "success": 0.98,
+   "fail_codes": {
+    "KeyError": 1,
+    "JSONDecodeError": 1
+   }
+  }
+ }
+}

@@ -1,5 +1,5 @@
-"""E5. 교체 설명(브리핑) 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM 5.3·Z.ai, 추론 low) -- 같은 교체 100건.
-사내 서버로는 측정할 수 없어 Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정한다(사용자 결정 2026-10-07).
+"""E5. 교체 설명(브리핑) 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM-5.3-Flash·Z.ai, 추론 low; 10-07 측정은 GLM 5.3) -- 같은 교체 100건.
+사내 서버로는 측정할 수 없어 Z.ai 공식 API의 GLM을 사내 LLM으로 가정한다(사용자 결정 2026-10-07; 10-11부터 GLM-5.3-Flash).
 
 사용자 지시(2026-10-07): LLM을 쓰는 모든 곳은 외부 AI와 사내 GLM 5.3을 항상 함께 비교하되 전부 low로, 유의미한 표본 크기만.
 서비스 What-if(`api/routes/whatif.py`)와 같은 재료로 claude-a의 `api.rag.briefing.generate_briefing`을 그대로 부른다(import만):
@@ -33,7 +33,7 @@ from pathlib import Path
 import numpy as np
 
 from core.config import REPO_ROOT, load_env, load_pricing
-from experiments.jev.e4_judges import (FatalApiError, GLM_MODEL, GLM_PRICE, GLM_URL, _atomic_json, _is_fatal,
+from experiments.jev.e4_judges import (FatalApiError, GLM_FLASH_MODEL, GLM_PRICES, GLM_URL, _atomic_json, _is_fatal,
                                        _mcnemar_exact, _wilson)
 
 RESULTS = Path(__file__).parent / "results"
@@ -43,7 +43,8 @@ N_CASES = 100
 SEED = 7
 WORKERS = 8
 MODELS = ("llm", "glm_low")
-LABEL = {"llm": "외부 LLM (gpt-6-luna)", "glm_low": "사내 LLM low (GLM 5.3·Z.ai)"}
+# 사내 열(glm_low 칸) = GLM-5.3-Flash low(사용자 결정 2026-10-11: 5.3은 비싸다). 이전 GLM 5.3 기록은 results/superseded/e5_v2_*.
+LABEL = {"llm": "외부 LLM (gpt-6-luna)", "glm_low": "사내 LLM low (GLM-5.3-Flash·Z.ai)"}
 
 
 # --- 사례 -----------------------------------------------------------------------------
@@ -184,7 +185,7 @@ def _model_and_effort(model_key: str) -> tuple[str, str | None, str]:
         # 실제로 부를 주소(OpenAI SDK는 OPENAI_BASE_URL을 스스로 읽는다) -- 프록시로 바뀌면 지문도 바뀐다(Codex 리뷰 P2)
         url = (os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
         return model, load_pricing().get("models", {}).get(model, {}).get("reasoning_effort"), url
-    return GLM_MODEL, "low", GLM_URL
+    return GLM_FLASH_MODEL, "low", GLM_URL
 
 
 def run_config(model_key: str, cases: list[dict]) -> dict:
@@ -211,6 +212,9 @@ def run(model_key: str, cases: list[dict], evidence, resume: bool | None = None)
     if path.exists():
         rec = json.loads(path.read_text("utf-8"))
         _check_config(rec.get("config"), cfg, path)
+        if rec.get("config") is None and rec.get("model") not in (None, cfg["model"]):
+            # 설정 지문 이전 기록이라도 기록된 모델이 지금 칸의 모델과 다르면 섞지 않는다(폴백 리뷰 SHOULD: 칸 이름은 그대로, 모델만 바뀜)
+            raise ValueError(f"{path.name}은 다른 모델({rec.get('model')})로 잰 기록이다(지금 {cfg['model']}). 옮기고 다시 잰다.")
         return rec if rec.get("config") is not None else {**rec, "unverified_inputs": True}
     partial_path = path.with_suffix(".partial.json")
     partial = (json.loads(partial_path.read_text("utf-8")) if partial_path.exists()
@@ -275,8 +279,9 @@ def _cost(model_key: str, rows: list[dict], model: str | None = None) -> float:
         models = load_pricing()["models"]
         price = models.get(model or "", models[load_pricing()["briefing_model"]])
         return sum(r["in_tokens"] * price["input_per_1m"] + r["out_tokens"] * price["output_per_1m"] for r in rows) / 1e6
-    return sum((r["in_tokens"] - r["cached"]) * GLM_PRICE["input"] + r["cached"] * GLM_PRICE["cached"]
-               + r["out_tokens"] * GLM_PRICE["output"] for r in rows) / 1e6
+    price = GLM_PRICES.get(model or "", GLM_PRICES[GLM_FLASH_MODEL])
+    return sum((r["in_tokens"] - r["cached"]) * price["input"] + r["cached"] * price["cached"]
+               + r["out_tokens"] * price["output"] for r in rows) / 1e6
 
 
 # 보류 가드 이후 단계(인용 검증)의 실패 코드 -- api/rag/briefing._verified_citations·_check_inline_quotes
@@ -378,7 +383,7 @@ def summarize() -> dict:
 
 
 def _history_v1() -> dict | None:
-    """1차 측정(같은 100건·같은 low 설정, 2026-10-07) 중 파서와 무관한 가드 기반 결과 -- 실패를 결과에서 빼지 않는다(리뷰 MUST).
+    """1차 측정(2026-10-07, 사내 = GLM 5.3 low, 그때 데이터의 100건) 중 파서와 무관한 가드 기반 결과 -- 실패를 결과에서 빼지 않는다(리뷰 MUST).
     결론 분포·일치율은 파서 결함('권고하지 않는다'를 권고로 셈)으로 폐기했다."""
     out = {}
     for m in MODELS:
@@ -400,12 +405,13 @@ def _history_html(s: dict) -> str:
         return ""
     e = html.escape
     codes = lambda m: ", ".join(f"{k} {v}" for k, v in sorted(m["fail_codes"].items())) or "없음"
-    return (f'<div class="box warn"><b>1차 측정(같은 100건·같은 low 설정, 기록 <code>results/superseded/</code>)</b><ul>'
-            f'<li>{e(LABEL["llm"])}: 성공 {_pct(h["llm"]["success"])} — 실패 {codes(h["llm"])}</li>'
-            f'<li>{e(LABEL["glm_low"])}: 성공 {_pct(h["glm_low"]["success"])} — 실패 {codes(h["glm_low"])}</li></ul>'
-            f'같은 사례·같은 설정이라도 실행마다 실패가 ±2건 정도 달라진다(외부의 보류 규칙 위반 <code>recommends_infeasible</code>, '
-            f'사내의 형식 실패). 서비스는 이런 답을 버리고 규칙 기반 설명으로 대신 보인다. 1차의 결론 분포·일치율은 결론 파서가 '
-            f'"권고하지 않는다"를 권고로 세는 결함이 있어 폐기하고, 결론 첫 문장을 저장하도록 고쳐 다시 쟀다(위 표).</div>')
+    return (f'<div class="box warn"><b>이전 측정 이력(2026-10-07, 사내 = GLM 5.3 low, 그때 데이터의 교체 100건 — 기록 <code>results/superseded/</code>)</b><ul>'
+            f'<li>1차 · {e(LABEL["llm"])}: 성공 {_pct(h["llm"]["success"])} — 실패 {codes(h["llm"])}</li>'
+            f'<li>1차 · 이전 사내 low (GLM 5.3·Z.ai): 성공 {_pct(h["glm_low"]["success"])} — 실패 {codes(h["glm_low"])}</li></ul>'
+            f'같은 사례·같은 설정이라도 실행마다 실패가 몇 건씩 달라진다(외부의 보류 규칙 위반 <code>recommends_infeasible</code>, '
+            f'사내의 형식 실패). 서비스는 이런 답을 버리고 규칙 기반 설명으로 대신 보인다. 1차의 결론 분포·일치율은 결론 파서 결함으로 폐기했고, '
+            f'2차(GLM 5.3, 같은 그때 사례)는 <code>e5_v2_*</code>에 있다. <b>위 표는 지금 데이터의 다른 교체 사례·다른 사내 모델(Flash)로 잰 것이라 '
+            f'이 이력과 직접 비교할 수 없다.</b></div>')
 
 
 def _pct(x):
@@ -436,9 +442,9 @@ table{{border-collapse:collapse;width:100%;font-size:.93rem;margin:10px 0;backgr
 th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin:12px 0}}
 .warn{{background:#fffbeb;border-color:#fcd34d}} .muted{{color:#6b7280;font-size:.88rem}}
 </style></head><body><main>
-<h1>교체 설명(AI 브리핑) 비교: 외부 LLM vs 사내 LLM(GLM 5.3 low)</h1>
+<h1>교체 설명(AI 브리핑) 비교: 외부 LLM vs 사내 LLM(GLM-5.3-Flash low)</h1>
 <p class="muted">실험 E5 · 코드 <code>experiments/jev/e5_briefing.py</code> · 원시 결과 <code>experiments/jev/results/e5_*.json</code> ·
-모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED · 사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정(사내 서버 측정 불가)</p>
+모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED · 사내 LLM = Z.ai 공식 API의 GLM-5.3-Flash로 가정(사내 서버 측정 불가, 10-11부터 Flash — 사용자 결정)</p>
 
 {('<div class="box warn"><b>입력 동일성 미입증</b>: ' + e(', '.join(s['unverified_inputs'])) + ' 기록은 사례·설정 지문(2026-10-11 도입) 이전에 쟀다 — 사례 키는 행마다 대조했지만, 브리핑 지시문이 지금 코드와 같았는지는 기록으로 입증할 수 없다(모델·추론 강도는 기록에 있는 값을 표에 그대로 보인다).</div>') if s.get('unverified_inputs') else ''}
 <h2>1. 무엇을 비교했나</h2>
@@ -470,7 +476,8 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 </table>
 <p><b>성공 여부 {verdict}</b>: 한쪽만 성공한 건 외부 {s['success_only']['llm']}건 · 사내 {s['success_only']['glm_low']}건(McNemar p≈{s['success_p']:.2f}).
 '보류' 준수도 짝지어 보면(둘 다 결론을 알 수 있는 {s['hold_paired']['n']}건) 한쪽만 지킨 건 {s['hold_paired']['llm_only']}건 대
-{s['hold_paired']['glm_low_only']}건(p≈{s['hold_paired']['p']:.2f}).</p>
+{s['hold_paired']['glm_low_only']}건(p≈{s['hold_paired']['p']:.2f}{' — 이 표본에서 차이가 확인된다' if s['hold_paired']['p'] < 0.05 else ' — 이 표본으로는 차이를 확정할 수 없다'}).
+외부가 지키지 않은 건은 새 위반이 생긴 교체를 '권고'한 답(<code>recommends_infeasible</code>)이고, 서비스 가드가 버리고 규칙 기반 설명으로 대신한다.</p>
 <p><b>결론 일치는 둘로 나눠 봐야 한다.</b> 새 위반이 생긴 교체({s['n_forced']}건)는 가드 때문에 성공한 답이 모두 '보류'라 일치
 {_pct(s['conclusion_agree_forced'])}가 강제된 값이다. <b>위반이 없어 자유롭게 판단한 교체 {s['n_free']}건의 일치율은
 {_pct(s['conclusion_agree_free'])}</b>(표본이 작다 — 95% 구간 {_ci(_wilson(round((s['conclusion_agree_free'] or 0) * s['n_free']), s['n_free']))}).
@@ -483,7 +490,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 <table><tr><th>모델</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰(추론)</th><th>비용</th><th>100건당</th></tr>
 {"".join(f"<tr><td>{e(LABEL[k])} ({m['n_run']}건)</td><td>{m['lat_median_s']:.1f}초 / {m['lat_p95_s']:.1f}초</td><td>{m['in_tokens']:,} / {m['out_tokens']:,} ({m['reasoning_tokens']:,})</td><td>${m['cost_usd']:.4f}</td><td>${m['per_100_usd']:.4f}</td></tr>" for k, m in s['models'].items())}
 </table>
-<p class="muted">단가(2026-10): gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시 $0.26·출력 $4.40 / 100만 토큰(추론 토큰은 출력).
+<p class="muted">단가(2026-10): gpt-6-luna 입력 $0.10·출력 $0.50, GLM-5.3-Flash(Z.ai) 입력 $0.15·캐시 $0.03·출력 $0.50 / 100만 토큰(추론 토큰은 출력).
 Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 = Z.ai 기준이다(실제 온프렘이면 GPU 시간이 비용이 된다).</p>
 
 <h2>5. 한계</h2>
@@ -496,7 +503,7 @@ Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 = Z.ai 기준�
 모호한 문장이 있어 몇 건은 해석이 갈릴 수 있다(기록에 첫 문장을 남겨 다시 확인할 수 있다).</li>
 <li>지연은 재시도 대기를 포함한 건당 시간이다(E4는 시도별 시간 — 정의가 다르다).</li>
 <li>외부 모델은 서비스 설정 그대로(추론 강도 {e(str(L.get('effort') or '기본'))}), 사내는 low다.</li>
-<li>가정: Z.ai 공식 API의 GLM 5.3 = 사내 LLM(사용자 결정). 실제 온프렘 서빙(양자화 등)이 다르면 결과·속도가 조금 달라질 수 있다.</li>
+<li>가정: Z.ai 공식 API의 GLM-5.3-Flash = 사내 LLM(사용자 결정 2026-10-11, 이전 측정은 GLM 5.3). 이전 2차 측정(GLM 5.3, 데이터 변경 전 사례)은 <code>results/superseded/e5_v2_*</code>에 남겼다. 실제 온프렘 서빙(양자화 등)이 다르면 결과·속도가 조금 달라질 수 있다.</li>
 </ul></div>
 </main></body></html>"""
 

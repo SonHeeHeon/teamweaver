@@ -1,6 +1,9 @@
-"""E4. 리뷰 글 판정기 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM 5.3) vs Jev -- 정확도·비용·소요 시간.
+"""E4. 리뷰 글 판정기 비교: 외부 LLM(gpt-6-luna) vs 사내 LLM(GLM-5.3-Flash, 10-11부터 · 이전 GLM 5.3) vs Jev -- 정확도·비용·소요 시간.
 
-2026-10-07 사용자 지시: 비교는 전부 추론 low, 유의미한 표본 크기만. 그래서 주 비교는 외부 low(llm_low) 대 사내 low(glm_low)이고,
+2026-10-11 사용자 결정: 사내 모델을 GLM-5.3-Flash로 바꾼다(5.3은 비싸다, Z.ai 예산 $5 -- 꼭 필요한 것만). 주 비교는
+외부 low(llm_low) 대 사내 Flash low(glmf_low), GLM 5.3 low·max(glm_low·glm)는 이전 사내 모델 참고 열이다.
+
+2026-10-07 사용자 지시: 비교는 전부 추론 low, 유의미한 표본 크기만. 그래서 (당시) 주 비교는 외부 low(llm_low) 대 사내 low(glm_low)였고,
 외부 기본 추론(llm, 2026-10-07 low 전환 전 서비스 설정)·사내 max(glm, 2026-10-06 기록)는 참고 열이다. 시험은 대조 문장 4·충실한 글 300(정답 있음)·
 현재 시연 원문 무작위 300(demo_s300). 예전 전체 시연 원문 기록(e4_*_demo*.json)은 데이터가 바뀌기 전 것이라 쓰지 않는다(이력).
 
@@ -70,24 +73,31 @@ BUNDLE = REPO_ROOT / "demo" / "org-n100"
 JEV_INSTRUCTION = "피어리뷰 좋은점/나쁜점 서술 전체의 감성 강도"
 JEV_LEVELS = ["매우 부정적", "다소 부정적", "중립", "다소 긍정적", "매우 긍정적"]
 WORKERS = 16
-JUDGES = ("llm_low", "glm_low", "llm", "glm", "jev")
+JUDGES = ("llm_low", "glmf_low", "glmf_high", "glm_low", "llm", "glm", "jev")
 # 시험마다 돌리는 판정기. GLM max는 비용 때문에(1,000건당 약 $4) 같은 글이 남은 시험에서만 참고 열로 쓴다
 # (2026-10-07 사용자 지시: 비교는 전부 low, 유의미한 표본 크기만).
 # 사용자 지시 "전부 low": 주 비교는 외부 low 대 사내 low. 외부 기본(low 전환 전 서비스 설정)과 사내 max는 참고 열.
+# 2026-10-11 사용자 결정: 사내 LLM = GLM-5.3-Flash(5.3은 비싸다, 예산 $5 -- 꼭 필요한 것만). Flash는 정답 있는 시험(대조 문장·
+# 충실한 글)에만 잰다 -- 시연 원문은 생성기 글이 부드러워 어느 판정기든 긍정으로 쏠려 판단에 보탬이 없다(마무리 때 생성기 수정 뒤).
 SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES,
               "demo_s300": ("llm_low", "glm_low", "llm", "jev")}
 N_DEMO_SAMPLE = 300           # 일치율의 95% 구간 반폭 ≤ ±5.7%p(1.96·√(0.25/300))
 # 사내 열 = Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정(사용자 결정 2026-10-07: 사내 서버 측정 불가). 표만 인용돼도
 # 무엇을 쟀는지 남게 이름에 Z.ai를 적는다.
-LABEL = {"llm_low": "외부 LLM low (gpt-6-luna)", "glm_low": "사내 LLM low (GLM 5.3·Z.ai)",
+LABEL = {"llm_low": "외부 LLM low (gpt-6-luna)", "glmf_low": "사내 LLM low (GLM-5.3-Flash·Z.ai)",
+         "glmf_high": "사내 LLM high (GLM-5.3-Flash·Z.ai)",
+         "glm_low": "이전 사내 low·참고 (GLM 5.3·Z.ai)",
          "llm": "외부 LLM 기본 추론·참고 (gpt-6-luna, 10-07 이전 서비스 설정)",
-         "glm": "사내 LLM max·참고 (GLM 5.3·Z.ai)", "jev": "Jev"}
+         "glm": "이전 사내 max·참고 (GLM 5.3·Z.ai)", "jev": "Jev"}
 GLM_URL = "https://api.z.ai/api/paas/v4"
 GLM_MODEL = "glm-5.3"
 GLM_REASONING = "max"                # 사용자 지정(2026-10-06). 공식 API는 추론을 끌 수 없다.
 # Z.ai 공식 단가(2026-10, docs.z.ai/guides/overview/pricing): 입력 $1.40, 캐시된 입력 $0.26, 출력 $4.40 / 100만 토큰.
 # 추론 토큰은 completion_tokens에 포함돼 출력으로 센다.
 GLM_PRICE = {"input": 1.40, "cached": 0.26, "output": 4.40}
+GLM_FLASH_MODEL = "glm-5.3-flash"    # 사용자 결정(2026-10-11): 사내 LLM = GLM-5.3-Flash
+# 모델별 Z.ai 공식 단가(2026-10-11 확인, docs.z.ai/guides/overview/pricing) -- 기록된 모델의 단가로 센다
+GLM_PRICES = {GLM_MODEL: GLM_PRICE, GLM_FLASH_MODEL: {"input": 0.15, "cached": 0.03, "output": 0.50}}
 SEED = 7
 N_FAITHFUL = 300
 
@@ -212,6 +222,7 @@ def fingerprint(reviews: list[PeerReview]) -> str:
 
 def _settings(judge: str) -> dict:
     return {"glm": {"reasoning_effort": GLM_REASONING}, "glm_low": {"reasoning_effort": "low"},
+            "glmf_low": {"reasoning_effort": "low"}, "glmf_high": {"reasoning_effort": "high"},
             "llm_low": {"reasoning_effort": "low"}}.get(judge, {})
 
 
@@ -234,8 +245,8 @@ def run_config(judge: str) -> dict:
     if judge in ("llm", "llm_low"):
         from api import review_judge as rj
         model, url = rj.model(), rj.base_url()
-    elif judge in ("glm", "glm_low"):
-        model, url = GLM_MODEL, GLM_URL
+    elif judge in ("glm", "glm_low", "glmf_low", "glmf_high"):
+        model, url = (GLM_FLASH_MODEL if judge.startswith("glmf") else GLM_MODEL), GLM_URL
     else:
         model, url = "jev-latest", "typesafe"
     prompt = JEV_INSTRUCTION + json.dumps(JEV_LEVELS, ensure_ascii=False) if judge == "jev" else LLM_SYSTEM
@@ -323,9 +334,10 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
         client, model = OpenAI(base_url=url, api_key=rj.api_key(url) or "EMPTY", max_retries=0), rj.model()
         extra = {"reasoning_effort": "low"} if judge == "llm_low" else None
         fn = lambda r: llm_one(client, model, r, extra)
-    elif judge in ("glm", "glm_low"):
+    elif judge in ("glm", "glm_low", "glmf_low", "glmf_high"):
         from openai import OpenAI
-        client, model = OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=300, max_retries=0), GLM_MODEL
+        client = OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=300, max_retries=0)
+        model = GLM_FLASH_MODEL if judge.startswith("glmf") else GLM_MODEL
         effort = _settings(judge)["reasoning_effort"]
         fn = lambda r: llm_one(client, model, r, {"reasoning_effort": effort})
     else:
@@ -380,10 +392,12 @@ def run(judge: str, name: str, reviews: list[PeerReview], resume: bool | None = 
 def cost_usd(rec: dict) -> float:
     if rec["judge"] == "jev":
         return rec["in_tokens"] * JEV_INPUT_USD_PER_1M / 1e6
-    if rec["judge"] in ("glm", "glm_low"):
+    if rec["judge"] in ("glm", "glm_low", "glmf_low", "glmf_high"):
         cached = rec.get("cached_tokens", 0)
-        return ((rec["in_tokens"] - cached) * GLM_PRICE["input"] + cached * GLM_PRICE["cached"]
-                + rec["out_tokens"] * GLM_PRICE["output"]) / 1e6
+        name = (rec.get("config") or {}).get("model") or rec.get("model") or ""
+        price = GLM_PRICES.get(name, GLM_PRICES[GLM_FLASH_MODEL if rec["judge"].startswith("glmf") else GLM_MODEL])
+        return ((rec["in_tokens"] - cached) * price["input"] + cached * price["cached"]
+                + rec["out_tokens"] * price["output"]) / 1e6
     # 기록된 모델의 단가로 센다 -- 지금 설정 모델의 단가로 세면 기본 모델이 바뀐 뒤 과거 기록 비용이 바뀐다(Codex 사후 리뷰 SHOULD)
     models = load_pricing()["models"]
     name = (rec.get("config") or {}).get("model") or rec.get("model") or ""    # 요청한 모델 이름 우선(응답 스냅숏 이름은 단가표에 없을 수 있다)
@@ -493,7 +507,10 @@ def summarize() -> dict:
             "pairwise_pearson": {f"{a}~{b}": float(np.corrcoef(recs[a]["pol"], recs[b]["pol"])[0, 1])
                                  for i, a in enumerate(judges) for b in judges[i + 1:]},
             "bands": {j: bands(r["pol"], truth) for j, r in recs.items()},
-            "stats": _paired_stats(recs, truth, "llm_low", "glm_low"),
+            "stats": _paired_stats(recs, truth, "llm_low", "glmf_low"),
+            "stats_flash_vs_53": _paired_stats(recs, truth, "glmf_low", "glm_low"),
+            "stats_flash_high": _paired_stats(recs, truth, "glmf_high", "glmf_low"),
+            "stats_flash_high_vs_ext": _paired_stats(recs, truth, "llm_low", "glmf_high"),
             "stats_low_vs_max": _paired_stats(recs, truth, "glm_low", "glm"),
         }
     out["probe"] = {name: {j: (probe[j]["pol"][probe[j]["indices"].index(i)]
@@ -610,7 +627,7 @@ def render(s: dict) -> str:
     pair = "".join(f"<tr><td>{e(LABEL[k.split('~')[0]])} ↔ {e(LABEL[k.split('~')[1]])}</td><td>{v:.2f}</td></tr>"
                    for k, v in d["pairwise_pearson"].items())
     na = {"pearson": None, "neg_recall": None, "per_1000_usd": float("nan"), "lat_median_s": float("nan"), "lat_p95_s": float("nan")}
-    LL, G, L, M, J = (f["judges"].get(j, na) for j in ("llm_low", "glm_low", "llm", "glm", "jev"))
+    LL, F, FH, G, L, M, J = (f["judges"].get(j, na) for j in ("llm_low", "glmf_low", "glmf_high", "glm_low", "llm", "glm", "jev"))
     return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>리뷰 판정기 비교</title>
 <style>
@@ -621,7 +638,7 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 .warn{{background:#fffbeb;border-color:#fcd34d}} .ok{{background:#ecfdf5;border-color:#6ee7b7}} .muted{{color:#6b7280;font-size:.88rem}}
 .wrap{{overflow-x:auto}}
 </style></head><body><main>
-<h1>리뷰 글 판정기 비교: 외부 LLM low · 사내 LLM low(GLM 5.3) · Jev</h1>
+<h1>리뷰 글 판정기 비교: 외부 LLM low · 사내 LLM low(GLM-5.3-Flash) · Jev</h1>
 <p class="muted">실험 E4 · 코드 <code>experiments/jev/e4_judges.py</code> · 원시 결과 <code>experiments/jev/results/e4_*.json</code> ·
 모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
 
@@ -629,12 +646,13 @@ th{{background:#f3f4f6}} .box{{background:#fff;border:1px solid #e5e7eb;border-r
 <div class="box ok"><b>결정(사용자)</b>: 리뷰 글 판정은 선택지 없이 <b>LLM(OpenAI 호환 API)</b>으로 통일한다(2026-10-06).
 LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상 함께</b> 재고,
 <b>양쪽 모두 추론 강도 low</b>·<b>유의미한 표본 크기</b>로 잰다(2026-10-07). 사내 서버로는 측정할 수 없어
-<b>사내 LLM = Z.ai 공식 API의 GLM 5.3으로 가정</b>한다(2026-10-07).</div>
+<b>사내 LLM = Z.ai 공식 API의 GLM으로 가정</b>한다(2026-10-07). <b>2026-10-11부터 사내 모델은 GLM-5.3-Flash</b>다
+(GLM 5.3은 너무 비싸다 — 사용자 결정). GLM 5.3 열은 그 전에 잰 참고 기록이다.</div>
 
 <h2>1. 왜 비교했나</h2>
 <p>협업 점수의 리뷰 부분은 <code>쌍 리뷰 점수 = 0.5 × 항목 점수 + 0.5 × 글 점수</code>다. 이전 기본이던 규칙 기반은
 글 점수 자리에 항목 균형을 다시 넣어 평가 사유(글)를 점수에 쓰지 않았다. 글을 읽는 판정기로 외부 LLM, 사내 LLM(사내 서버로는
-측정할 수 없어 Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정 — 사용자 결정), 판단 전용 모델 Jev를 같은 글로 비교했다.</p>
+측정할 수 없어 Z.ai 공식 API의 GLM-5.3-Flash를 사내 LLM으로 가정 — 사용자 결정), 판단 전용 모델 Jev를 같은 글로 비교했다.</p>
 
 <h2>2. 방법과 표본 크기</h2>
 <ul>
@@ -644,8 +662,9 @@ LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하�
 (일치율 95% 구간 반폭 ≤ ±{1.96 * (0.25 / max(d['n'], 1)) ** 0.5 * 100:.1f}%p). 정답이 없어 분포·판정기 간 일치만 본다.</li>
 <li><b>대조 문장</b> 4건 — 척도(−1~+1)가 살아 있는지.</li>
 <li>두 LLM은 같은 지시문(서비스 파서)을 받는다. <b>주 비교는 양쪽 모두 추론 강도 low</b>(사용자 지시 "전부 low"):
-외부 gpt-6-luna low, 사내 GLM 5.3 low(Z.ai 공식 API <code>glm-5.3</code>). 참고 열: 외부 기본 추론(10-07 low 전환 전 서비스 리뷰 판정 설정 —
-추론 강도 미전송, 지금은 <code>TEAMWEAVER_REVIEW_REASONING_EFFORT=none</code>과 같다), 사내 max(비용 때문에 같은 글이 남은 B·대조 문장만, 2026-10-06 측정).
+외부 gpt-6-luna low, 사내 GLM-5.3-Flash low(Z.ai 공식 API <code>glm-5.3-flash</code>, 2026-10-11 측정 — 정답 있는 B·대조 문장만).
+사용자 요청으로 Flash high도 같은 글로 쟀다(low가 부정 리뷰를 많이 놓쳐서). 참고 열: 외부 기본 추론(10-07 low 전환 전 서비스 리뷰 판정 설정 —
+추론 강도 미전송, 지금은 <code>TEAMWEAVER_REVIEW_REASONING_EFFORT=none</code>과 같다), 이전 사내 모델 GLM 5.3 low(2026-10-07)·max(2026-10-06, 비용 때문에 B·대조 문장만).
 Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정의 중립 구간 ±0.1, 병렬 {WORKERS}건.</li>
 <li>짝지은 비교(같은 건에 두 판정기)는 McNemar 정확검정, 비율 구간은 Wilson 95%.</li>
 </ul>
@@ -658,7 +677,7 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 {row("정답과 평균 절대 차이(작을수록 좋음)", "mae", f)}{row("긍정·중립·부정 일치율", "sign_agree", f, pct=True)}
 {row("실제 부정 리뷰를 부정으로 잡은 비율", "neg_recall", f, pct=True)}{row("평균 판정값 (정답 평균 " + _f(f['items']['mean']) + ")", "mean", f)}
 </table></div>
-<p>{_stats_text(f.get("stats", {}))}<br>{_stats_text(f.get("stats_low_vs_max", {}))}</p>
+<p>{"<br>".join(_stats_text(f.get(k, {})) for k in ("stats", "stats_flash_high", "stats_flash_high_vs_ext", "stats_flash_vs_53", "stats_low_vs_max") if f.get(k))}</p>
 <div class="wrap"><table><tr><th>정답(항목) 구간</th><th>건수</th>{head(f)}</tr>{band_rows}</table></div>
 
 <h3>A. 시연 원문 무작위 {d['n']}건 (정답 없음)</h3>
@@ -676,24 +695,25 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 <div class="wrap"><table><tr><th>판정기</th><th>총 소요 시간</th><th>건당 지연 중앙값 / 95%</th><th>입력 / 출력 토큰</th><th>비용</th><th>1,000건당</th></tr>
 <tr><th colspan="6">A. 시연 원문 무작위 {d['n']}건</th></tr>{cost_rows(d)}
 <tr><th colspan="6">B. 충실한 글 {f['n']}건</th></tr>{cost_rows(f)}</table></div>
-<p class="muted">비용 = 토큰 × 공식 단가(2026-10). gpt-6-luna 입력 $0.10·출력 $0.50, GLM 5.3(Z.ai) 입력 $1.40·캐시된 입력 $0.26·출력 $4.40
+<p class="muted">비용 = 토큰 × 공식 단가(2026-10). gpt-6-luna 입력 $0.10·출력 $0.50, GLM-5.3-Flash(Z.ai) 입력 $0.15·캐시된 입력 $0.03·출력 $0.50,
+GLM 5.3 입력 $1.40·캐시된 입력 $0.26·출력 $4.40
 (추론 토큰은 출력에 포함), Jev 입력 $0.042·출력 무료 / 100만 토큰. <b>Z.ai를 사내 LLM으로 가정했으므로 사내 시간·비용 =
 Z.ai 기준이다</b>(실제 온프렘이면 GPU 시간이 비용이 된다).</p>
 {_smoke(s.get("service_smoke"))}
 
 <h2>5. 해석</h2>
 <ul>
-<li><b>순위는 모두 잘 맞힌다</b>(B 상관: 외부 low {_f(LL['pearson'], sign=False)} · 사내 low {_f(G['pearson'], sign=False)} · 외부 기본 {_f(L['pearson'], sign=False)} · 사내 max {_f(M['pearson'], sign=False)} · Jev {_f(J['pearson'], sign=False)}).
-차이는 <b>부정 검출</b>이다: 외부 low {_f(LL['neg_recall'], pct=True)} · 사내 low {_f(G['neg_recall'], pct=True)} · 외부 기본 {_f(L['neg_recall'], pct=True)} · 사내 max {_f(M['neg_recall'], pct=True)} · Jev {_f(J['neg_recall'], pct=True)}.</li>
-<li><b>같은 low끼리 비교(주 비교)</b>: 위 3절의 검정 문장 참고. 사내 low 대 사내 max는 같은 모델 안의 추론 강도 차이다.</li>
-<li><b>비용·시간</b>: 1,000건당 외부 low ${LL['per_1000_usd']:.2f} · 사내 low ${G['per_1000_usd']:.2f} · 사내 max ${M['per_1000_usd']:.2f}.
-건당 지연 중앙값(재시도 대기 제외) 외부 low {LL['lat_median_s']:.1f}초 · 사내 low {G['lat_median_s']:.1f}초(95%: {LL['lat_p95_s']:.1f}초 · {G['lat_p95_s']:.1f}초).
-사내 쪽 <b>총 처리 시간은 지연 중앙값보다 훨씬 길다</b>(4절 표의 총 소요 시간) — 재시도 횟수를 기록하지 않아 원인은 추정이다
-(Z.ai 요청 한도 429 재시도로 보인다).</li>
-<li><b>사내 설정 선택에 주는 뜻</b>: 사내 low는 max보다 약 5배 싸지만 실제 부정 리뷰를 덜 잡는다
-({_f(G['neg_recall'], pct=True)} 대 max {_f(M['neg_recall'], pct=True)}). 아쉬운 점을 부드럽게 쓰는 조직이면 이 차이가 협업 점수에
-그대로 들어간다 — 사내 배포의 추론 강도는 비용(GPU 시간)과 이 정확도를 함께 보고 정한다(중간 강도 high는 재지 않았다).</li>
-<li><b>A에서는 모든 판정기가 긍정으로 쏠린다</b> — 판정기 문제가 아니라 시연 생성기의 글이 항목보다 부드럽기 때문이다(claude-a에 수정 요청).</li>
+<li><b>순위는 모두 잘 맞힌다</b>(B 상관: 외부 low {_f(LL['pearson'], sign=False)} · 사내 Flash low {_f(F['pearson'], sign=False)} · 이전 5.3 low {_f(G['pearson'], sign=False)} · 5.3 max {_f(M['pearson'], sign=False)} · Jev {_f(J['pearson'], sign=False)}).
+차이는 <b>부정 검출</b>이다: 외부 low {_f(LL['neg_recall'], pct=True)} · <b>사내 Flash low {_f(F['neg_recall'], pct=True)}</b> · 이전 5.3 low {_f(G['neg_recall'], pct=True)} · 5.3 max {_f(M['neg_recall'], pct=True)} · 외부 기본 {_f(L['neg_recall'], pct=True)} · Jev {_f(J['neg_recall'], pct=True)}.</li>
+<li><b>주 비교(외부 low 대 사내 Flash)</b>와 Flash 대 이전 5.3은 위 3절의 검정 문장 참고. 사내 Flash high: 부정 검출 {_f(FH['neg_recall'], pct=True)}, 1,000건당 ${FH['per_1000_usd']:.2f}.</li>
+<li><b>사내 설정 선택에 주는 뜻</b>: Flash low는 싸지만 실제 부정 리뷰를 외부·이전 5.3보다 확실히 덜 잡는다
+(외부 low {_f(LL['neg_recall'], pct=True)} · 이전 5.3 low {_f(G['neg_recall'], pct=True)} · Flash low {_f(F['neg_recall'], pct=True)}).
+아쉬운 점을 부드럽게 쓰는 조직이면 이 차이가 협업 점수의 부정 신호를 약하게 만든다 — 사내 추론 강도는 이 표(Flash high 포함)의 정확도와
+비용을 함께 보고 정한다. 비용은 Flash low가 외부 low와 비슷하다(1,000건당 ${F['per_1000_usd']:.2f} 대 ${LL['per_1000_usd']:.2f}).</li>
+<li><b>비용·시간</b>: 1,000건당 외부 low ${LL['per_1000_usd']:.2f} · 사내 Flash low ${F['per_1000_usd']:.2f} · 이전 5.3 low ${G['per_1000_usd']:.2f} · 5.3 max ${M['per_1000_usd']:.2f}.
+건당 지연 중앙값(재시도 대기 제외) 외부 low {LL['lat_median_s']:.1f}초 · 사내 Flash low {F['lat_median_s']:.1f}초(95%: {LL['lat_p95_s']:.1f}초 · {F['lat_p95_s']:.1f}초).
+사내 쪽 총 처리 시간은 지연 중앙값보다 길 수 있다(4절 표의 총 소요 시간, Z.ai 요청 한도 대기로 보인다 — 재시도 횟수는 기록하지 않았다).</li>
+<li><b>A에서는 모든 판정기가 긍정으로 쏠린다</b> — 판정기 문제가 아니라 시연 생성기의 글이 항목보다 부드럽기 때문이다(마무리 정리 때 생성기 수정 뒤 다시 잰다, 사용자 결정 2026-10-07). 그래서 Flash는 A에서 재지 않았다.</li>
 </ul>
 
 <h2>6. 한계</h2>
@@ -701,7 +721,7 @@ Z.ai 기준이다</b>(실제 온프렘이면 GPU 시간이 비용이 된다).</p
 <li><b>결정 근거(부정 검출)는 B(생성기 문장으로 다시 쓴 글)의 결과다.</b> 정답은 "항목 균형"이고 실제 협업 성과가 아니다(NOT_CALIBRATED).</li>
 <li>B의 글은 생성기의 문장 은행으로 만들었다. 실제 사람의 글(직설적인 평가 포함)과는 표현 폭이 다르다.</li>
 <li>판정값이 바뀌었을 때 <b>배치 결과(협업 점수·MILP 해)에 주는 영향은 재지 않았다.</b></li>
-<li><b>가정: Z.ai 공식 API의 GLM 5.3 = 사내 LLM</b>(사내 서버로는 측정할 수 없다 — 사용자 결정). 같은 공개 가중치지만 실제 온프렘
+<li><b>가정: Z.ai 공식 API의 GLM-5.3-Flash = 사내 LLM</b>(사내 서버로는 측정할 수 없다 — 사용자 결정, 10-11부터 Flash). 같은 공개 가중치지만 실제 온프렘
 서빙(BF16/FP8, vLLM 버전)이 다르면 결과·속도가 조금 달라질 수 있다. 비용은 Z.ai 요금으로 잡았다(온프렘이면 GPU 시간이 비용이 된다).</li>
 <li>GLM max 참고 열은 2026-10-06 측정(같은 글)이고, 시연 원문은 데이터가 바뀐 뒤라 max를 다시 재지 않았다.</li>
 <li>이전 실험 E2(가상 fixture 266건, <code>outputs/jev-experiment.html</code>)에서도 같은 방향(LLM 부호 일치 74% 대 Jev 61%)이었다.</li>
