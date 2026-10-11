@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-demo-data-1011` · `core/ingest/{names,review_text,org_profile,convert,skill_dictionary.json}`·`core/domain/models.py`(Person.skill_credit)·`core/graph/{sqlite_store,rehydrate}.py`·`api/rag/{context,briefing,justification}.py`·`fixtures/pricing.json`·`demo/**`·`rehearsal/precompute_demo.py`·`outputs/eli5-project-history-roadmap.html` · 2026-10-11 19:50 · 미리 계산 재생성(임시 데이터 폴더, 외부 판정 약 $0.7)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
