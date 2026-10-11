@@ -46,7 +46,7 @@ ALLOW_EXTERNAL_ENV = "TEAMWEAVER_REVIEW_ALLOW_EXTERNAL"   # 1이면 실데이터
 # 브리핑·설명 클라이언트도 OPENAI_API_KEY를 사내 서버로 보낸다(리뷰 2라운드 S-1).
 BASE_URL_ENV = "TEAMWEAVER_REVIEW_BASE_URL"
 MODEL_ENV = "TEAMWEAVER_REVIEW_MODEL"
-# 추론 강도(예: Z.ai GLM 5.3은 low|high|max). 기본 low(사용자 결정 2026-10-07, 아래 DEFAULT_REASONING), none|off면
+# 추론 강도(예: Z.ai GLM-5.3-Flash·GLM 5.3은 low|high|max). 기본 low(사용자 결정 2026-10-07, 아래 DEFAULT_REASONING), none|off면
 # 보내지 않는다. 허용값은 서버마다 다르다 -- vLLM·SGLang은 대개 low|medium|high만 받고, 추론 모델이 아닌 OpenAI 모델은
 # 이 칸 자체를 거절(400)한다. 사내 배포가 받는 값으로 둔다. 시간 한도는 아래 judge_reviews가 강도·주소에 맞춰 늘린다.
 REASONING_ENV = "TEAMWEAVER_REVIEW_REASONING_EFFORT"
@@ -105,7 +105,7 @@ def _is_internal_host(host: str) -> bool:
     return ip.is_private or ip.is_loopback
 
 
-DEFAULT_REASONING = "low"           # 사용자 결정(2026-10-07): 사내 LLM(GLM 5.3) 추론 강도 low. 외부 gpt-6-luna도 low를 받는다(E4 실측)
+DEFAULT_REASONING = "low"           # 사용자 결정(2026-10-07): 사내 LLM 추론 강도 low(10-11부터 사내 모델 GLM-5.3-Flash). 외부 gpt-6-luna도 low를 받는다(E4 실측)
 _SLOW_EFFORTS = ("high", "xhigh", "max")   # 건당 10초 이상(E4 GLM max 실측 중앙값 10.5초, 최대 70초)
 
 

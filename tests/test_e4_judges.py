@@ -101,7 +101,9 @@ def test_e5_conclusion_is_read_from_the_first_sentence():
 def test_e5_glm_cost_counts_cached_input_and_reasoning_as_output():
     import experiments.jev.e5_briefing as e5
     rows = [{"in_tokens": 1000, "cached": 400, "out_tokens": 500, "reasoning": 300}]
-    assert e5._cost("glm_low", rows) == pytest.approx((600 * 1.40 + 400 * 0.26 + 500 * 4.40) / 1e6)
+    # 사내 기본은 GLM-5.3-Flash(2026-10-11), 기록 모델이 5.3이면 그 단가
+    assert e5._cost("glm_low", rows) == pytest.approx((600 * 0.15 + 400 * 0.03 + 500 * 0.50) / 1e6)
+    assert e5._cost("glm_low", rows, "glm-5.3") == pytest.approx((600 * 1.40 + 400 * 0.26 + 500 * 4.40) / 1e6)
 
 
 def test_e4_sets_keep_the_faithful_texts_and_sample_the_demo():
@@ -166,3 +168,14 @@ def test_spearman_uses_average_ranks_for_ties():
     r = e4.avg_rank([0, 1, 0, 1])
     assert list(r) == [1.5, 3.5, 1.5, 3.5]
     assert abs(np.corrcoef(e4.avg_rank([0, 1, 0, 1]), e4.avg_rank([0, 0, 1, 1]))[0, 1]) < 1e-12   # 참값 0
+
+
+def test_flash_judges_use_the_flash_model_and_price():
+    # 사용자 결정(2026-10-11): 사내 = GLM-5.3-Flash. 기록 모델 단가로 센다 -- 5.3 기록은 5.3 단가
+    assert e4.run_config("glmf_low")["model"] == e4.run_config("glmf_high")["model"] == "glm-5.3-flash"
+    assert e4.run_config("glm_low")["model"] == "glm-5.3"
+    assert e4.run_config("glmf_high")["reasoning_effort"] == "high"
+    rec = {"judge": "glmf_low", "in_tokens": 1000, "out_tokens": 500, "cached_tokens": 0, "config": {"model": "glm-5.3-flash"}}
+    assert e4.cost_usd(rec) == pytest.approx((1000 * 0.15 + 500 * 0.50) / 1e6)
+    old = {"judge": "glm_low", "in_tokens": 1000, "out_tokens": 500, "cached_tokens": 0, "model": "glm-5.3"}
+    assert e4.cost_usd(old) == pytest.approx((1000 * 1.40 + 500 * 4.40) / 1e6)
