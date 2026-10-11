@@ -239,3 +239,21 @@ def test_skill_map_counts_only_credit_that_makes_someone_practical():
     finally:
         views.skill_map = orig
     assert r["practical_credited"] == 1 and [p["credited"] for p in r["practical_people"]] == [True, False, False]
+
+
+def test_round_trip_with_a_real_optimize_token_and_screen_settings(jc):
+    # 폴백 리뷰 NIT(2026-10-11): 화면이 실제로 보내는 설정 전체(PlacementSettings 모양)와 /api/optimize가 낸 서명으로 왕복한다 --
+    # MilpParamsIn과 PlacementSettings가 어긋나면 서명이 맞지 않아 이 시험이 잡는다.
+    c, _ = jc
+    st = c.get("/api/settings").json()
+    params = {**st["settings"], "time_limit": 5}
+    v = c.get("/api/meta").json()["dataset_version"]
+    plan = next(json.loads(line[5:]) for line in c.post("/api/optimize", json={
+        "weights": {}, "dataset_version": v, "milp_params": params, "n_alternatives": 0}).text.splitlines()
+        if line.startswith("data:") and '"label"' in line)
+    project = plan["entries"][0]["project_id"]
+    body = {"dataset_version": v, "project_id": project, "entries": plan["entries"], "weights": {}, "milp_params": params,
+            "ai": False, "plan_label": plan["label"], "plan_token": plan["plan_token"]}
+    res = c.post("/api/justification", json=body)
+    assert res.status_code == 200, res.text
+    assert c.post("/api/justification", json={**body, "milp_params": {**params, "min_alloc": 0.5}}).status_code == 422
