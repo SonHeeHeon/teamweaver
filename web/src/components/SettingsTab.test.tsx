@@ -5,9 +5,9 @@ import type { SettingsResponse } from "../api/types";
 
 const DATA: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },
@@ -182,5 +182,19 @@ describe("SettingsTab — 계산 시간 자동(claude-a 요청)", () => {
     fireEvent.click(screen.getByRole("button", { name: /저장/ }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0]).toMatchObject({ time_limit_auto: false, time_limit: 120 });
+  });
+});
+
+describe("SettingsTab — 동시 탐색 수", () => {
+  it("서버 기본(지금 값)과 1~8을 고르고, 고른 값을 저장한다", async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<SettingsTab data={{ ...DATA, effective_solver_seeds: 2 }} onSave={onSave} />);
+    const select = screen.getByLabelText("동시 탐색 수");
+    expect(select).toHaveValue("");
+    expect(screen.getByRole("option", { name: "서버 기본(지금 2)" })).toBeInTheDocument();
+    fireEvent.change(select, { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: /저장/ }));
+    await waitFor(() => expect(onSave).toHaveBeenCalled());
+    expect(onSave.mock.calls[0][0].solver_seeds).toBe(4);
   });
 });

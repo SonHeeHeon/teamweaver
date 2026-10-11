@@ -226,6 +226,8 @@ export interface PlacementSettings {
   allocation_mode: "fixed" | "monthly";
   /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
   time_limit_auto?: boolean;
+  /** 동시 탐색 수(서버 자원). null = 서버 기본(환경 변수, 없으면 1). 요청 계산에는 쓰이지 않고 저장값만 서버에 반영된다. */
+  solver_seeds?: number | null;
 }
 
 export interface TimeHint {
@@ -246,6 +248,8 @@ export interface SettingsResponse {
   recommended_time_monthly?: TimeHint | null;
   /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
   effective_time_limit?: number | null;
+  /** 지금 계산이 쓰는 동시 탐색 수. */
+  effective_solver_seeds?: number | null;
 }
 
 /** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */

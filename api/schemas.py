@@ -135,9 +135,13 @@ class MilpParamsIn(BaseModel):
     time_limit_auto: bool | None = None
     # 없앤 칸(리뷰 판정 방식 선택, 2026-10-06). 이전 화면이 보내도 거절하지 않고 무시한다.
     review_judge: str | None = None
+    # 동시 탐색 수(관리자 설정, 서버 자원). 화면이 설정 전체를 보내므로 받되 계산에는 쓰지 않는다 -- 요청이 서버의
+    # 코어 사용량을 정하지 못하게(서버가 저장한 설정만 TEAMWEAVER_SOLVER_SEEDS로 반영한다).
+    solver_seeds: int | None = Field(default=None, ge=1, le=8)
 
     def to_milp_params(self) -> MilpParams:
-        return MilpParams(**self.model_dump(exclude_none=True, exclude={"time_limit_auto", "review_judge"}))
+        return MilpParams(**self.model_dump(exclude_none=True,
+                                            exclude={"time_limit_auto", "review_judge", "solver_seeds"}))
 
 
 class SettingsUpdate(BaseModel):
@@ -159,6 +163,8 @@ class SettingsBody(BaseModel):
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
     effective_time_limit: int | None = None
+    # 지금 계산이 쓰는 동시 탐색 수(설정, 없으면 서버 환경 변수, 없으면 1)
+    effective_solver_seeds: int | None = None
 
 
 class PlanEvaluationOut(BaseModel):

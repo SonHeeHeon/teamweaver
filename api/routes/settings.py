@@ -30,9 +30,15 @@ def _body(state: SettingsState, request: Request) -> dict:
             # 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원·방식 기준 권장값, 아니면 수동값). 화면은 이 값을
             # time_limit으로 보낸다 -- 서명·캐시·PDF가 숫자 하나로 같게 묶인다.
             "effective_time_limit": state.settings.to_milp_params(n_people=n).time_limit,
+            "effective_solver_seeds": _effective_seeds(),
             "recommended_time": rec("fixed"),
             # 월별 투입률은 더 오래 걸린다(실측 2~4배) -- 화면이 고른 방식에 맞춰 보여 준다.
             "recommended_time_monthly": rec("monthly")}
+
+
+def _effective_seeds() -> int:
+    from core.optimize.milp import MilpParams, effective_seeds
+    return effective_seeds(MilpParams())
 
 
 @router.get("/api/settings", response_model=SettingsBody)

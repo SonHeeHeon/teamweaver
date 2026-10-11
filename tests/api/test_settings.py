@@ -421,3 +421,24 @@ def test_saved_auto_flag_round_trips(tmp_path):
     path = tmp_path / "settings.json"
     SettingsStore(path).save(PlacementSettings(time_limit_auto=True))
     assert SettingsStore(path).current().settings.time_limit_auto is True
+
+
+def test_solver_seeds_setting_drives_the_server_env_not_the_request(client, monkeypatch):
+    # 동시 탐색 수(claude-a 요청 2026-10-06 ①): 저장하면 계산이 읽는 환경 변수가 바뀌고, 서버 기본으로 돌리면 띄울 때 값으로.
+    from core.optimize.milp import SEEDS_ENV
+    import api.settings as st
+    monkeypatch.setattr(st, "_BOOT_SEEDS", "2")
+    monkeypatch.setenv(SEEDS_ENV, "2")                 # 끝나면 원래 환경으로 되돌린다(다른 시험에 새지 않게)
+    cur = client.get("/api/settings").json()
+    res = client.put("/api/settings", json={"settings": dict(cur["settings"], solver_seeds=4), "based_on": None})
+    assert res.status_code == 200, res.text
+    assert res.json()["effective_solver_seeds"] == 4 and __import__("os").environ[SEEDS_ENV] == "4"
+    res = client.put("/api/settings", json={"settings": dict(res.json()["settings"], solver_seeds=None),
+                                            "based_on": res.json()["updated_at"]})
+    assert res.json()["effective_solver_seeds"] == 2                       # 띄울 때 값(환경 변수)
+    assert client.put("/api/settings", json={"settings": dict(cur["settings"], solver_seeds=9),
+                                             "based_on": res.json()["updated_at"]}).status_code == 422
+    # 화면은 설정 전체를 milp_params로 보낸다 -- 받되 계산에는 쓰지 않는다(요청이 서버 코어 수를 정하지 못한다)
+    from api.schemas import MilpParamsIn
+    params = MilpParamsIn(solver_seeds=8).to_milp_params()
+    assert "solver_seeds" not in params.model_fields_set

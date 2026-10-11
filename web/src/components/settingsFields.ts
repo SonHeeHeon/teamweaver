@@ -1,7 +1,8 @@
 import type { PlacementSettings } from "../api/types";
 
 /** 숫자 칸만(투입률 방식은 SettingsTab이 따로 고른다). */
-export type NumKey = Exclude<keyof PlacementSettings, "allocation_mode" | "time_limit_auto" | "clique_window_months">;
+export type NumKey = Exclude<keyof PlacementSettings,
+  "allocation_mode" | "time_limit_auto" | "clique_window_months" | "solver_seeds">;
 
 /** 반복 협업(익숙한 쌍)을 셀 최근 기간. 2026-10-06 사용자 결정: 최근 3년 중 12개월(근거 rehearsal/results/rule-compare.html). */
 export const WINDOW_OPTIONS: { value: number | null; label: string }[] = [

@@ -34,6 +34,8 @@ export function SettingsTab({ data, onSave }: Props) {
   const savedWindow = data.settings.clique_window_months ?? null;
   const [windowMonths, setWindowMonths] = useState<number | null>(savedWindow);
   const [auto, setAuto] = useState<boolean>(data.settings.time_limit_auto !== false);
+  const savedSeeds = data.settings.solver_seeds ?? null;
+  const [seeds, setSeeds] = useState<number | null>(savedSeeds);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // 서버 값이 바뀌면(다른 사람 저장·실행 시 재조회·내 저장) 폼을 새 값으로 다시 채운다.
@@ -46,6 +48,7 @@ export function SettingsTab({ data, onSave }: Props) {
     setMode(data.settings.allocation_mode ?? "fixed");
     setWindowMonths(data.settings.clique_window_months ?? null);
     setAuto(data.settings.time_limit_auto !== false);
+    setSeeds(data.settings.solver_seeds ?? null);
   }
 
   const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time) : data.recommended_time;
@@ -54,12 +57,13 @@ export function SettingsTab({ data, onSave }: Props) {
   const valid = Object.keys(errors).length === 0;
   const next = valid
     ? ({ ...Object.fromEntries(parsed), allocation_mode: mode, time_limit_auto: auto,
-        clique_window_months: windowMonths } as unknown as PlacementSettings)
+        clique_window_months: windowMonths, solver_seeds: seeds } as unknown as PlacementSettings)
     : null;
   const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
                                   || mode !== (data.settings.allocation_mode ?? "fixed")
                                   || windowMonths !== savedWindow
-                                  || auto !== (data.settings.time_limit_auto !== false));
+                                  || auto !== (data.settings.time_limit_auto !== false)
+                                  || seeds !== savedSeeds);
 
   async function save() {
     if (!next) return;
@@ -126,6 +130,23 @@ export function SettingsTab({ data, onSave }: Props) {
             함께 일한 달 정보가 없는 데이터(예전 고정 데모 데이터)는 기간을 적용할 수 없어 전체 이력으로 센다.
           </p>
         </fieldset>
+        <div>
+          <label className="block text-sm font-medium text-slate-800" htmlFor="set-solver_seeds">동시 탐색 수</label>
+          <select id="set-solver_seeds" value={seeds === null ? "" : String(seeds)}
+                  onChange={(e) => setSeeds(e.target.value === "" ? null : Number(e.target.value))}
+                  className="mt-1 rounded-md border border-slate-300 px-2 py-1 text-sm">
+            <option value="">서버 기본{data.effective_solver_seeds != null && savedSeeds === null
+              ? `(지금 ${data.effective_solver_seeds})` : ""}</option>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <option key={n} value={n}>{n}{n === 4 ? "(권장)" : ""}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            같은 문제를 출발점(시드)만 바꿔 동시에 푸는 수 = 계산에 쓰는 CPU 코어 수. 늘리면 같은 시간 안에 더 좋은 답·대안을
+            찾을 가능성이 높아지지만 코어를 그만큼 쓴다(코어 4개 이상이면 4 권장). 100명 30초 실측: 1이면 대안이 품질 하한에 걸려 안 A만,
+            4면 안 A~D가 모두 나왔다. 서버 자원 설정이라 결과 캐시·미리 계산 비교에는 들어가지 않는다.
+          </p>
+        </div>
         {FIELDS.map((f) => (
           <div key={f.key}>
             <label className="block text-sm font-medium text-slate-800" htmlFor={`set-${f.key}`}>

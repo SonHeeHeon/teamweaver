@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-11 · claude-b · 운영 중 K별 실시간 송출 · 동시 탐색 수 설정 · 사후 Codex 리뷰(웹) 반영
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일:
+  - **K별 실시간 송출**: `/api/operating/compare`가 `compare_move_budgets(on_row=)`로 K 행을 끝나는 대로 보낸다(`elapsed_total_s` 추가, 고리를 안 부른 행은 끝에 보냄). 화면은 남은 K를 "계산 중…/대기"로.
+  - **동시 탐색 수**(claude-a 요청 ①): 관리자 설정 `solver_seeds`(서버 기본 = `TEAMWEAVER_SOLVER_SEEDS`, 1~8, 권장 4). 서버 자원이라 MilpParams·캐시 키·미리 계산 비교에 넣지 않고, 저장하면 환경 변수를 바꿔 `effective_seeds`가 읽는다. `/api/settings`에 `effective_solver_seeds`. HTTP `milp_params`의 `solver_seeds`는 받되 무시(요청이 코어 수를 정하지 못한다).
+  - **사후 Codex 리뷰(웹)** MUST 2·SHOULD 1 반영: 보강 화면 후보·재평가·최선 조합 결과를 계산한 입력에 묶음(사업을 바꾸면 늦은 응답 폐기·숨김), 화면에서 바꾼 명단에는 원안의 솔버 증명 배지 대신 "변경 후 재평가", 운영 상태 재조회 실패 시 오류+다시 불러오기.
+- 상대 영향: claude-a — `PUT /api/settings`에 `solver_seeds` 칸이 생겼다(설정 전체를 요구하므로 스크립트가 PUT하면 함께 보낸다). 서비스 동작은 설정을 바꾸기 전까지 그대로다.
+- 검증: `pytest -q` 1601 passed · 웹 179 · tsc · lint · build. Codex 커밋 전 리뷰 2라운드(P2 1 → 반영, 2라운드 문제 없음).
+
+---
+
 ## 2026-10-11 · claude-b · 사후 Codex 리뷰(API) 반영 + 시연 리뷰 글 판정 동봉
 - 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
 - 한 일:

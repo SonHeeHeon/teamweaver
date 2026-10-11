@@ -30,7 +30,9 @@ SETTINGS_PATH_ENV = "TEAMWEAVER_SETTINGS_PATH"
 
 
 # 설정이지만 MILP 파라미터가 아닌 칸: 자동 시간 표시.
-NON_SOLVER_FIELDS = frozenset({"time_limit_auto"})
+# solver_seeds(동시 탐색 수, 2026-10-11 claude-a 요청): 정책이 아니라 서버 자원(CPU 코어)이라 MilpParams·캐시 키·
+# 미리 계산 비교에 넣지 않는다 -- 저장하면 TEAMWEAVER_SOLVER_SEEDS를 바꿔 core.optimize.milp.effective_seeds가 읽는다.
+NON_SOLVER_FIELDS = frozenset({"time_limit_auto", "solver_seeds"})
 # 없앤 칸: 리뷰 글 판정 방식 선택(2026-10-06 하루 동안 있었다 -- 사용자 결정으로 LLM 통일, 선택지 없음).
 # 그때 저장한 settings.json이나 이전 화면이 보내는 값은 조용히 버린다(읽기 실패로 기본값이 되지 않게).
 _REMOVED_FIELDS = ("review_judge",)
@@ -70,6 +72,10 @@ class PlacementSettings(BaseModel):
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
     allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # 동시 탐색 수(시드 포트폴리오): 같은 문제를 시드만 바꿔 동시에 푸는 프로세스 수 = 쓰는 CPU 코어 수.
+    # None = 서버 기본(환경 변수 TEAMWEAVER_SOLVER_SEEDS, 없으면 1; 시연 run_poc.sh는 4). 권장 4(코어 4개 이상).
+    # 실측(claude-a 2026-10-06, 100명 30초): 1이면 대안이 품질 하한에 걸려 안 A만, 4면 안 A~D 모두.
+    solver_seeds: int | None = Field(default=None, ge=1, le=8)
 
     @model_validator(mode="before")
     @classmethod
@@ -102,6 +108,21 @@ class PlacementSettings(BaseModel):
         return out
 
 
+from core.optimize.milp import SEEDS_ENV  # noqa: E402
+
+_BOOT_SEEDS = os.environ.get(SEEDS_ENV)      # 서버를 띄울 때의 값(설정에서 "서버 기본"으로 돌리면 이것으로)
+
+
+def apply_solver_seeds(settings: PlacementSettings) -> None:
+    """동시 탐색 수 설정을 프로세스 환경에 반영한다(계산이 실행 시점에 읽는다). None이면 띄울 때의 값으로 되돌린다."""
+    if settings.solver_seeds is not None:
+        os.environ[SEEDS_ENV] = str(settings.solver_seeds)
+    elif _BOOT_SEEDS is None:
+        os.environ.pop(SEEDS_ENV, None)
+    else:
+        os.environ[SEEDS_ENV] = _BOOT_SEEDS
+
+
 class SettingsConflict(RuntimeError):
     """화면이 읽은 뒤 다른 사람이 먼저 저장했다."""
 
@@ -132,6 +153,7 @@ class SettingsStore:
         self.path = Path(path)
         self._lock = threading.Lock()       # 동시 PUT이 파일과 메모리 값을 엇갈리게 하지 않게
         self._state = self._load()
+        apply_solver_seeds(self._state.settings)
 
     def _load(self) -> SettingsState:
         # exists()도 try 안에 둔다: 폴더 권한이 없으면 exists()가 PermissionError를
@@ -189,4 +211,5 @@ class SettingsStore:
             Path(tmp).unlink(missing_ok=True)
             raise
         self._state = SettingsState(settings, updated_at, None)
+        apply_solver_seeds(settings)
         return self._state
