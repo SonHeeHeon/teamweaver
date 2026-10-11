@@ -297,6 +297,8 @@ class ReportRequest(BaseModel):
     # /api/optimize가 원 플랜에 붙인 서명(api/plan_token). 있으면 서버가 검증한다: 맞으면
     # PDF에 "서버 계산 원 플랜 확인", 틀리면 422, 없으면 "클라이언트 제공·미검증"으로 표시.
     plan_token: str | None = None
+    # 사업별 인사팀 소명 글 포함(claude-a 계약 2026-10-09). 서버가 최종 명단으로 사업마다 만든다(AI는 데이터 정책을 따른다).
+    include_justifications: bool = False
 
     @model_validator(mode="after")
     def _basis_must_be_complete(self) -> "ReportRequest":

@@ -132,7 +132,7 @@ def build_demo(root: Path):
     ds, parsed = to_dataset(bundle, report)          # ValueError with the report if it does not validate
     return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
                         version=bundle_version(root), source="demo-bundle",
-                        synthetic=bundle.manifest.get("synthetic") is True, manifest=bundle.manifest)
+                        synthetic=bundle.manifest.get("synthetic") is True, manifest=bundle.manifest, bundle=bundle)
 
 
 def current_demo_root() -> Path | None:

@@ -21,7 +21,7 @@ from api.pdf import (DEFAULT_MAX_BODY_BYTES, PDF_SLOTS, BrowserLaunchError, Orig
                      render_report_pdf, resolve_internal_origin)
 from api.briefing_evidence import verify_report_evidence
 from api.datasets import ActiveDataset
-from api.deps import check_dataset_version, get_dataset, get_evidence, get_graph
+from api.deps import check_dataset_version, get_dataset, get_evidence, get_graph, get_openai_client_or_none
 from api.plan_token import verify_plan
 from api.routes.meta import build_meta
 from api.routes.plans import apply_step, roster_metrics
@@ -121,6 +121,14 @@ _PREP_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=4, thread_name_pr
 MAX_RENDER_PAYLOAD_BYTES = 4 * 1024 * 1024
 
 
+def _justify_allowance(req: ReportRequest) -> float:
+    """사업별 소명 글에 더 줄 시간: 배치된 사업 수 ÷ 동시 호출 수(올림) × AI 한 건 상한 + 그래프·템플릿 여유 30초."""
+    import math
+    from api.routes.justification import AI_TIMEOUT_S, PDF_WORKERS
+    projects = {e.project_id for e in req.entries} | {e.project_id for e in (req.base_entries or [])}
+    return math.ceil(len(projects) / PDF_WORKERS) * AI_TIMEOUT_S + 30.0
+
+
 class PayloadTooLarge(RuntimeError):
     pass
 
@@ -147,10 +155,25 @@ def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
 
 
 def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
-                     provenance: str) -> dict:
-    """전용 스레드에서 돈다: 교체 재계산(K10) + 리포트 meta(K9) + 최종 크기 검사."""
+                     provenance: str, dataset: ActiveDataset | None = None, client=None) -> dict:
+    """전용 스레드에서 돈다: 교체 재계산(K10) + 리포트 meta(K9) + (선택) 사업별 소명 글 + 최종 크기 검사."""
     payload = req.model_dump()
     payload.update(_replay_applied_swaps(req, graph))
+    if req.include_justifications and dataset is not None and not dataset.has_kg:
+        payload["justifications"] = []
+        payload["justifications_note"] = "인사팀 소명 글은 CSV 묶음 데이터(업로드·시연 데이터)에서만 만들 수 있다."
+    elif req.include_justifications and provenance != "verified":
+        # 서버가 계산한 원 플랜임을 확인한 명단에만 소명 글을 만든다(Codex 리뷰 P1, /api/justification과 같은 규칙)
+        payload["justifications"] = []
+        payload["justifications_note"] = "원 플랜 서명이 없어(서버 계산 명단 확인 불가) 인사팀 소명 글을 넣지 않았다."
+    elif req.include_justifications and dataset is not None:
+        from api.routes.justification import justify_projects
+        # 최종 명단(교체를 서버가 다시 적용한 것)으로 만든다. PDF에는 글·덧붙임·사실 목록만(사실 문구는 서버가 채운 것).
+        out = justify_projects(dataset, payload["entries"], req.weights, req.milp_params, client)
+        payload["justifications"] = [{k: j.get(k) for k in ("project_id", "method", "text", "addendum", "fallback_reason")}
+                                     | {"facts": [{"id": f["id"], "kind": f["kind"], "text": f["text"],
+                                                   "adverse": f["adverse"]} for f in j.get("facts", [])]}
+                                     for j in out]
     payload["plan_provenance"] = provenance
     payload["meta"] = _report_meta(graph, version, payload)
     size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
@@ -203,7 +226,7 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
 async def report(req: ReportRequest, request: Request,
                  dataset: ActiveDataset = Depends(get_dataset),
                  graph: MemoryGraph = Depends(get_graph),
-                 evidence=Depends(get_evidence)) -> Response:
+                 evidence=Depends(get_evidence), client=Depends(get_openai_client_or_none)) -> Response:
     # 데이터셋 버전은 가장 먼저 본다 -- 원인이 더 정확하고(빌드가 없어도 409), 값싸다
     # (claude-a 교차 리뷰 S3).
     check_dataset_version(req.dataset_version, dataset)
@@ -249,13 +272,15 @@ async def report(req: ReportRequest, request: Request,
         nonlocal prep
         # 교체 재계산(K10)과 리포트 meta(K9 -- 렌더 중 전환돼도 이름이 섞이지 않게 이 요청이
         # 잡은 데이터셋으로 만든다)는 CPU 작업이라 전용 스레드에서, 시간 상한 안에서 돈다.
-        prep = _PREP_POOL.submit(_prepare_payload, req, graph, dataset.info.version, provenance)
+        prep = _PREP_POOL.submit(_prepare_payload, req, graph, dataset.info.version, provenance, dataset, client)
         payload = await asyncio.wrap_future(prep)
         return await render_report_pdf(payload, origin, settings.timeout_s)
 
+    # 소명 글을 넣으면 사업마다 AI 글이 더 걸린다 -- 최악(사업 수 ÷ 동시 수 × AI 상한)만큼 상한을 늘린다(Codex 리뷰 P2)
+    limit = settings.timeout_s + (_justify_allowance(req) if req.include_justifications else 0)
     try:
         # 교체 재생과 렌더를 합친 전체 시간에 상한을 건다(K4).
-        pdf = await asyncio.wait_for(build_and_render(), timeout=settings.timeout_s)
+        pdf = await asyncio.wait_for(build_and_render(), timeout=limit)
     except HTTPException:
         raise                                       # 잘못된 교체(404/422)는 그대로
     except PayloadTooLarge as exc:
@@ -273,7 +298,7 @@ async def report(req: ReportRequest, request: Request,
                                 detail=f"PDF 생성 실패({type(exc).__name__}). 서버 로그를 확인할 것.") from exc
         raise HTTPException(
             status_code=504,
-            detail=f"PDF 생성이 {settings.timeout_s:g}초 안에 끝나지 않았다"
+            detail=f"PDF 생성이 {limit:g}초 안에 끝나지 않았다"
                    "(TEAMWEAVER_PDF_TIMEOUT_S).") from exc
     finally:
         if prep is not None and not prep.done():

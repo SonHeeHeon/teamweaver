@@ -162,6 +162,8 @@ export interface ReportRequest {
   weights: Record<string, number>;
   /** 원 플랜의 서버 서명. 없으면 PDF에 "미검증"으로 표시된다. */
   plan_token: string | null;
+  /** 사업별 인사팀 소명 글 포함(서버가 최종 명단으로 만든다). */
+  include_justifications?: boolean;
 }
 
 /** 적용한 교체 한 건. warnings는 그 교체로 새로 생긴 위반·미충원 문장(swapWarnings). */
@@ -436,3 +438,27 @@ export interface DemoBundle { name: string; dataset_id: string; people: number |
                               scenario: string; synthetic: boolean;
                               /** 장면 한 줄 제목·설명(예: "운영 중 · 90명 배치 중, 대기 10명"). 예전 서버면 없다. */
                               title?: string; description?: string }
+
+
+/** 인사팀 소명 글의 사실 하나(claude-a core.kg.justify.Fact). text는 한 줄 사실, adverse는 불리한 사실. */
+export interface JustFact {
+  id: string; kind: string; text: string; phrase?: string; phrase_full?: string; owners?: string[];
+  skill?: string | null; status?: string | null; adverse: boolean;
+}
+
+/** POST /api/justification 응답. AI 원문(llm_text)은 서버가 보내지 않는다. */
+export interface Justification {
+  project_id: string;
+  method: "graphrag" | "template";
+  text: string;
+  addendum: string | null;
+  appended_adverse: string[];
+  facts: JustFact[];
+  fallback_reason: string | null;
+  verification: { ok: boolean; rules: string[]; cited: string[]; coverage?: Record<string, boolean | null> | null;
+                  adverse?: { available: number; cited: number } | null } | null;
+  usage: { model?: string; latency_s?: number; cost_usd?: number; reasoning_effort?: string | null } | null;
+  dataset_version: string;
+  ai_available: boolean;
+  ai_unavailable_reason: string | null;
+}

@@ -1,7 +1,7 @@
 import type {
   BaselineResult, BestResult, Candidate, DemoBundle, OperatingEvent, OperatingState, SimulateResult,
   Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
-  SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange,
+  SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange, Justification,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
@@ -257,6 +257,7 @@ export async function downloadReport(
   applied: { base: AssignEntry[]; swaps: Step[] } | null = null,
   basis: { weights: Record<string, number>; planToken: string | null } =
     { weights: {}, planToken: null },
+  includeJustifications = false,
 ) {
   const body: ReportRequest = {
     plan_label: plan.label,
@@ -277,6 +278,7 @@ export async function downloadReport(
     // 원 플랜 서명 검증과 교체 재계산의 기준 -- 플랜을 계산한 그때의 가중치다.
     weights: basis.weights,
     plan_token: basis.planToken,
+    ...(includeJustifications ? { include_justifications: true } : {}),
   };
   const res = await fetch(`${API_BASE}/api/report`, {
     method: "POST",
@@ -452,4 +454,22 @@ export async function chooseDemo(name: string, adminToken: string | null = null)
     throw new Error(`시연 데이터 전환 실패(${res.status}): ${detail.detail ?? ""}`);
   }
   return (await res.json()) as DatasetInfo;
+}
+
+
+/** 인사팀 소명 글(사업 하나). ai=false면 정해진 틀(템플릿)만 -- 화면은 이것을 먼저 보이고 AI 글로 바꾼다. */
+export async function postJustification(body: {
+  dataset_version: string; project_id: string; entries: AssignEntry[]; base_entries: AssignEntry[] | null;
+  applied_swaps: Step[]; weights: Record<string, number>; milp_params: PlacementSettings | null; ai: boolean;
+  plan_label: string; plan_token: string;
+}): Promise<Justification> {
+  const res = await fetch(`${API_BASE}/api/justification`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(typeof detail.detail === "string" ? detail.detail : `소명 글 실패(${res.status})`);
+  }
+  return (await res.json()) as Justification;
 }

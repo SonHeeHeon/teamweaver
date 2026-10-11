@@ -18,6 +18,7 @@ interface PlanEdit {
 import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { PrecomputedNotice } from "./components/PrecomputedNotice";
+import { JustificationPanel } from "./components/JustificationPanel";
 import { AssignmentTable } from "./components/AssignmentTable";
 import { NetworkGraph } from "./components/NetworkGraph";
 import { SwapControl } from "./components/SwapControl";
@@ -64,6 +65,8 @@ export default function App() {
   const [lastSwap, setLastSwap] = useState<Swap | null>(null);
   const [whatifBusy, setWhatifBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  // PDF에 사업별 인사팀 소명 글을 넣을지(사업마다 AI 글이라 1~2분 더 걸린다)
+  const [pdfJustify, setPdfJustify] = useState(false);
   // 그래프에서 강조할 인물. 교체 "투입" 대상은 아직 배치 전이라 그래프에
   // 노드가 없다 -- 강조해도 보이지 않는다. 그래서 빠지는 쪽(out)을 강조해
   // "이 사람을 빼면 협업망 어디에 구멍이 나는지"를 보여준다.
@@ -529,6 +532,8 @@ export default function App() {
 
   // 화면·교체 검토·PDF가 쓰는 명단은 적용한 교체가 있으면 그 결과다(K10).
   const shown = (p: PlanEvent) => edits[p.label]?.stack.at(-1)?.plan ?? p;
+  // 지식 그래프(인사팀 소명)는 CSV 묶음 데이터(업로드·시연 데이터)에서만 만들 수 있다
+  const kgData = dataset?.source === "upload" || dataset?.source === "demo-bundle";
   const original = plans.find((p) => p.label === selected) ?? null;
   const current = original ? shown(original) : null;
   const edit = selected ? edits[selected] : undefined;
@@ -691,7 +696,8 @@ export default function App() {
                                                swaps: edit.history.map(stepBody) }
                                            : null,
                                          { weights: planBasis?.weights ?? weights,
-                                           planToken: original?.plan_token ?? null });
+                                           planToken: original?.plan_token ?? null },
+                                         pdfJustify && kgData);
                   }
                   catch (e) {
                     if (e instanceof DatasetChangedError) await externalSwitch();
@@ -703,8 +709,21 @@ export default function App() {
                            font-medium text-slate-700 hover:bg-slate-50
                            disabled:cursor-not-allowed disabled:text-slate-400"
               >
-                {pdfBusy ? "PDF 생성 중…" : "PDF 내려받기"}
+                {pdfBusy ? (pdfJustify && kgData ? "PDF 생성 중…(사업별 소명 포함, 1~2분)" : "PDF 생성 중…") : "PDF 내려받기"}
               </button>
+            )}
+            {current && kgData && (
+              <label className="ml-3 inline-flex items-center gap-1.5 text-xs text-slate-600">
+                <input type="checkbox" checked={pdfJustify} onChange={(e) => setPdfJustify(e.target.checked)} />
+                PDF에 사업별 인사팀 소명 포함
+              </label>
+            )}
+            {current && kgData && planBasis && (
+              <JustificationPanel
+                meta={meta} datasetVersion={planBasis.datasetVersion} entries={current.entries}
+                applied={edit && original ? { base: original.entries, steps: edit.history.map(stepBody) } : null}
+                weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
+                planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
             )}
             {running && (
               <p className="text-sm text-slate-500">

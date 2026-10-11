@@ -78,8 +78,13 @@ class ActiveDataset:
     (deps.get_dataset이 acquire/release). 쓰는 요청이 없으면 retire 때 바로 닫는다."""
 
     def __init__(self, graph: MemoryGraph, sqlite_conn: sqlite3.Connection, info: DatasetInfo,
-                 evidence=None, current: list | None = None, scenario: dict | None = None):
+                 evidence=None, current: list | None = None, scenario: dict | None = None, kg_source=None):
         self.graph = graph
+        # 지식 그래프 재료(원 CSV 묶음·Dataset·판정된 리뷰). CSV 묶음 데이터에만 있다(고정 JSON fixture는 None).
+        # 그래프는 처음 쓸 때 한 번 만든다(core.kg.build_kg, 300명 약 0.06초) -- 인사팀 소명 글(claude-a 계약 2026-10-09).
+        self._kg_source = kg_source
+        self._kg = None
+        self._kg_lock = threading.Lock()
         # 운영 중 편성(2026-10-06, claude-a core.evaluate.operating·staffing_sim): 지금 진행 중인 배치(Dataset.current)와
         # 시나리오 정보(manifest의 scenario·bench·proposals). 처음부터 짜는 데이터면 빈 목록·빈 사전.
         self.current = list(current or [])
@@ -92,6 +97,21 @@ class ActiveDataset:
         self._users = 0
         self._retired = False
         self.closed = False
+
+    @property
+    def has_kg(self) -> bool:
+        return self._kg_source is not None
+
+    def knowledge_graph(self):
+        """이 데이터의 지식 그래프(없으면 None -- 묶음 데이터가 아니다)."""
+        if self._kg_source is None:
+            return None
+        with self._kg_lock:
+            if self._kg is None:
+                from core.kg import build_kg
+                bundle, ds, parsed = self._kg_source
+                self._kg = build_kg(bundle, ds, parsed)
+            return self._kg
 
     def acquire(self) -> None:
         """닫힌 데이터셋은 등록을 거부한다(닫힌 SQLite를 요청에 넘기지 않는다)."""
@@ -155,7 +175,7 @@ def scenario_of(manifest: dict | None) -> dict:
 
 def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
                  source: str, synthetic: bool | None, judge: bool = True,
-                 judge_cache: Path | None = None, manifest: dict | None = None) -> ActiveDataset:
+                 judge_cache: Path | None = None, manifest: dict | None = None, bundle=None) -> ActiveDataset:
     """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다."""
     content_version, judge_error = version, None
     meta: dict = {"review_judge": "fixture"}
@@ -204,7 +224,8 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     from api.rag.evidence import build_evidence_index
     evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
     return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence,
-                         current=ds.current, scenario=scenario_of(manifest))
+                         current=ds.current, scenario=scenario_of(manifest),
+                         kg_source=(bundle, ds, parsed) if bundle is not None else None)
 
 
 def _strip_common_folder(names: list[PurePosixPath]) -> list[PurePosixPath]:
