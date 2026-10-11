@@ -78,9 +78,10 @@ JUDGES = ("llm_low", "glmf_low", "glmf_high", "glm_low", "llm", "glm", "jev")
 # (2026-10-07 사용자 지시: 비교는 전부 low, 유의미한 표본 크기만).
 # 사용자 지시 "전부 low": 주 비교는 외부 low 대 사내 low. 외부 기본(low 전환 전 서비스 설정)과 사내 max는 참고 열.
 # 2026-10-11 사용자 결정: 사내 LLM = GLM-5.3-Flash(5.3은 비싸다, 예산 $5 -- 꼭 필요한 것만). Flash는 정답 있는 시험(대조 문장·
-# 충실한 글)에만 잰다 -- 시연 원문은 생성기 글이 부드러워 어느 판정기든 긍정으로 쏠려 판단에 보탬이 없다(마무리 때 생성기 수정 뒤).
-SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES,
-              "demo_s300": ("llm_low", "glm_low", "llm", "jev")}
+# 충실한 글)에만 잰다.
+# 시연 원문 A는 생성기 v2(2026-10-11, 아쉬운 점 항목마다·직설형 8%·어긋난 글 5%)로 다시 쟀다 -- 서비스가 쓰는 외부 low만
+# (사용자 결정 2026-10-11: 서비스는 외부 AI, 사내 모델 차이는 최종 보고에서 B(정답 있음) 결과로). 예전 A 기록은 superseded/e4_v1_*.
+SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES, "demo_s300": ("llm_low",)}
 N_DEMO_SAMPLE = 300           # 일치율의 95% 구간 반폭 ≤ ±5.7%p(1.96·√(0.25/300))
 # 사내 열 = Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정(사용자 결정 2026-10-07: 사내 서버 측정 불가). 표만 인용돼도
 # 무엇을 쟀는지 남게 이름에 Z.ai를 적는다.
@@ -141,7 +142,18 @@ def load_sets() -> dict[str, list[PeerReview]]:
     # 현재 시연 원문에서 무작위 300건(충실한 글과 다른 난수열 -- 기존 충실한 글 300건이 그대로 같게)
     demo_idx = sorted(random.Random(SEED + 100).sample(range(len(ds.reviews)), N_DEMO_SAMPLE))
     return {"demo": list(ds.reviews), "demo_s300": [ds.reviews[i] for i in demo_idx], "faithful": faithful,
-            "probe": probes}
+            "probe": probes, "demo_s300_style": [style_of(bundle, ds)[i] for i in demo_idx]}
+
+
+def style_of(bundle, ds) -> list[str]:
+    """리뷰마다 시연 글 성향(manifest review_style, 생성기 v2): harsh(항목보다 독함)·soft(항목보다 부드러움)·blunt(직설형 평가자)·normal.
+    어긋남이 직설형보다 우선한다(manifest note). 원천 표 순서 = Dataset.reviews 순서(같은 수일 때만 쓴다)."""
+    rs = (bundle.manifest or {}).get("review_style") or {}
+    ids = [r.get("review_id") for r in bundle.tables.get("reviews.csv", [])]
+    if len(ids) != len(ds.reviews):
+        return ["unknown"] * len(ds.reviews)
+    harsh, soft, blunt = set(rs.get("harsh_reviews", [])), set(rs.get("soft_reviews", [])), set(rs.get("blunt_reviews", []))
+    return ["harsh" if i in harsh else "soft" if i in soft else "blunt" if i in blunt else "normal" for i in ids]
 
 
 # --- 판정기 ---------------------------------------------------------------------
@@ -492,7 +504,9 @@ def summarize() -> dict:
             # 정확도는 같은 리뷰(common)끼리, 시간·비용은 그 판정기가 실제로 판정한 건 전부 기준(리뷰 S4)
             recs[j] = {**r, "pol": [r["pol"][pos[i]] for i in common], "lat_own": list(r["lat"]), "n_judged": len(pos)}
         truth = [full[i] for i in common]
+        raw_by_set[f"{name}_pol"] = {j: r["pol"] for j, r in recs.items()}
         out["sets"][name] = {
+            "common_idx": common,
             "n": len(truth), "n_total": len(full),
             "partial": {j: {"judged": r["n_judged"], "stop_reason": r.get("stop_reason")}
                         for j, r in recs.items() if r.get("partial")},
@@ -519,6 +533,21 @@ def summarize() -> dict:
                            for j in probe} for i, name in enumerate(PROBES)}
     out["service_smoke"] = json.loads(SERVICE_SMOKE.read_text("utf-8")) if SERVICE_SMOKE.exists() else None
     out["demo_total"] = len(sets["demo"])
+    # 시연 원문 성향별(생성기 v2 정답 보조): 항목 기준 부정 비율과 판정기가 부정(<-0.1)으로 읽은 비율·평균
+    d = out["sets"]["demo_s300"]
+    styles = [sets["demo_s300_style"][i] for i in d.get("common_idx", [])]
+    if styles:
+        truth = [item_polarity(sets["demo_s300"][i]) for i in d["common_idx"]]
+        rows = {}
+        for st in ("normal", "blunt", "harsh", "soft"):
+            ix = [k for k, x in enumerate(styles) if x == st]
+            if not ix:
+                continue
+            rows[st] = {"n": len(ix), "item_neg_share": sum(truth[k] < -0.1 for k in ix) / len(ix),
+                        "judges": {j: {"neg_share": sum(raw_by_set["demo_s300_pol"][j][k] < -0.1 for k in ix) / len(ix),
+                                       "mean": float(np.mean([raw_by_set["demo_s300_pol"][j][k] for k in ix]))}
+                                   for j in raw_by_set["demo_s300_pol"]}}
+        out["demo_style"] = rows
     # 설정 지문(모델·주소·추론 강도·지시문, 2026-10-11) 이전 기록 -- 같은 조건이었다고 입증할 수 없다. 보고서 상단에 밝힌다.
     out["unverified_inputs"] = sorted({f"{j}:{name}" for name, raw_set in (("probe", probe),) for j, r in raw_set.items()
                                        if r.get("unverified_inputs")} | {f"{j}:{n}" for n in ("faithful", "demo_s300")
@@ -582,6 +611,25 @@ def _smoke(sm: dict | None) -> str:
     rows = "".join(f"<li>{html.escape(r)}</li>" for r in sm["observations"])
     return (f'<div class="box"><b>서비스 경로 실측({html.escape(sm["recorded_at"])}, <code>api/review_judge.py</code>, '
             f'{html.escape(sm["data"])}) — {html.escape(sm["method"])}</b><ul>{rows}</ul></div>')
+
+
+_STYLE_LABEL = {"normal": "보통", "blunt": "직설형 평가자", "harsh": "항목보다 글이 독함", "soft": "항목보다 글이 부드러움"}
+
+
+def _style_table(rows) -> str:
+    """시연 원문 성향별(생성기 v2, manifest review_style -- 정답 보조): 글을 읽는 판정기라면 '독함'·'직설형'에서 부정이 늘어야 한다."""
+    if not rows:
+        return ""
+    judges = list(next(iter(rows.values()))["judges"])
+    head = "".join(f"<th>{html.escape(LABEL[j])} 부정 판정 · 평균</th>" for j in judges)
+    body = "".join(
+        f"<tr><td>{html.escape(_STYLE_LABEL.get(st, st))}</td><td>{r['n']}</td><td>{_f(r['item_neg_share'], pct=True)}</td>"
+        + "".join(f"<td>{_f(r['judges'][j]['neg_share'], pct=True)} · {_f(r['judges'][j]['mean'], sign=True)}</td>" for j in judges)
+        + "</tr>" for st, r in rows.items())
+    return ("<h4>A의 글 성향별(시연 생성기 v2의 정답 보조)</h4><div class=\"wrap\"><table><tr><th>성향</th><th>건수</th>"
+            f"<th>항목 기준 부정 비율</th>{head}</tr>{body}</table></div>"
+            "<p class=\"muted\">성향은 생성기가 정한 것(manifest <code>review_style</code>)이다. 항목은 성향과 무관하게 같은 규칙으로 골랐으므로, "
+            "글을 읽는 판정기라면 '항목보다 글이 독함'에서 부정 판정이 항목 기준보다 많고 '부드러움'에서 적어야 한다.</p>")
 
 
 def _unverified_box(items) -> str:
@@ -659,7 +707,9 @@ LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하�
 <li><b>B. 충실한 글 {f['n']}건(정답 있음)</b> — 시연 리뷰에서 뽑은 {f['n']}건을, 고른 항목을 빠짐없이 한 문장씩 다시 쓴 글.
 <b>정답 = 항목 균형</b>. 실제 부정 리뷰 {f['stats'].get('neg_n', '?')}건 → 부정 검출의 95% 구간 반폭은 최대 약 ±11%p(비율이 50% 근처일 때).</li>
 <li><b>A. 시연 원문 무작위 {d['n']}건</b> — 현재 시연 묶음 리뷰 {s['demo_total']:,}건에서 무작위로 뽑은 {d['n']}건
-(일치율 95% 구간 반폭 ≤ ±{1.96 * (0.25 / max(d['n'], 1)) ** 0.5 * 100:.1f}%p). 정답이 없어 분포·판정기 간 일치만 본다.</li>
+(일치율 95% 구간 반폭 ≤ ±{1.96 * (0.25 / max(d['n'], 1)) ** 0.5 * 100:.1f}%p). 2026-10-11 시연 생성기 v2의 글(아쉬운 점을 항목마다,
+직설형 평가자 8%, 항목과 온도가 어긋난 글 5%)이고 서비스가 쓰는 외부 low만 쟀다(사용자 결정: 사내 모델 차이는 B로 최종 보고에).
+정답은 없지만 생성기가 리뷰마다 정한 성향(<code>review_style</code>)을 정답 보조로 본다. 예전 생성기 v1 기록은 <code>superseded/e4_v1_*</code>.</li>
 <li><b>대조 문장</b> 4건 — 척도(−1~+1)가 살아 있는지.</li>
 <li>두 LLM은 같은 지시문(서비스 파서)을 받는다. <b>주 비교는 양쪽 모두 추론 강도 low</b>(사용자 지시 "전부 low"):
 외부 gpt-6-luna low, 사내 GLM-5.3-Flash low(Z.ai 공식 API <code>glm-5.3-flash</code>, 2026-10-11 측정 — 정답 있는 B·대조 문장만).
@@ -686,7 +736,8 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 {row("부정(−0.1 미만)으로 판정한 비율 (항목 기준 " + _f(d['items']['neg_share'], pct=True) + ")", "neg_share", d, pct=True)}
 {row("항목 균형과 상관", "pearson", d)}{row("항목 기준 부정 리뷰를 부정으로 잡은 비율", "neg_recall", d, pct=True)}
 </table></div>
-<table><tr><th>판정기끼리 상관 (A)</th><th>피어슨</th></tr>{pair}</table>
+{"<table><tr><th>판정기끼리 상관 (A)</th><th>피어슨</th></tr>" + pair + "</table>" if pair else ""}
+{_style_table(s.get("demo_style"))}
 
 <h3>대조 문장</h3>
 <div class="wrap"><table><tr><th>글</th>{"".join(f"<th>{e(LABEL[j])}</th>" for j in probe_judges)}</tr>{probe_rows}</table></div>
@@ -713,7 +764,9 @@ Z.ai 기준이다</b>(실제 온프렘이면 GPU 시간이 비용이 된다).</p
 <li><b>비용·시간</b>: 1,000건당 외부 low ${LL['per_1000_usd']:.2f} · 사내 Flash low ${F['per_1000_usd']:.2f} · 이전 5.3 low ${G['per_1000_usd']:.2f} · 5.3 max ${M['per_1000_usd']:.2f}.
 건당 지연 중앙값(재시도 대기 제외) 외부 low {LL['lat_median_s']:.1f}초 · 사내 Flash low {F['lat_median_s']:.1f}초(95%: {LL['lat_p95_s']:.1f}초 · {F['lat_p95_s']:.1f}초).
 사내 쪽 총 처리 시간은 지연 중앙값보다 길 수 있다(4절 표의 총 소요 시간, Z.ai 요청 한도 대기로 보인다 — 재시도 횟수는 기록하지 않았다).</li>
-<li><b>A에서는 모든 판정기가 긍정으로 쏠린다</b> — 판정기 문제가 아니라 시연 생성기의 글이 항목보다 부드럽기 때문이다(마무리 정리 때 생성기 수정 뒤 다시 잰다, 사용자 결정 2026-10-07). 그래서 Flash는 A에서 재지 않았다.</li>
+<li><b>A(생성기 v2)에서는 외부 low가 글을 읽어 판정한다</b>: 부정 판정 {_f(d['judges'].get('llm_low', {}).get('neg_share'), pct=True)}
+(항목 기준 {_f(d['items']['neg_share'], pct=True)}). 성향별 표에서 직설형·'항목보다 독함' 글은 부정으로, '부드러움' 글은 긍정으로 읽혀
+항목이 아니라 글을 따른다(예전 v1 글은 어느 판정기든 대부분 긍정이었다 — superseded 기록).</li>
 </ul>
 
 <h2>6. 한계</h2>
@@ -723,7 +776,7 @@ Z.ai 기준이다</b>(실제 온프렘이면 GPU 시간이 비용이 된다).</p
 <li>판정값이 바뀌었을 때 <b>배치 결과(협업 점수·MILP 해)에 주는 영향은 재지 않았다.</b></li>
 <li><b>가정: Z.ai 공식 API의 GLM-5.3-Flash = 사내 LLM</b>(사내 서버로는 측정할 수 없다 — 사용자 결정, 10-11부터 Flash). 같은 공개 가중치지만 실제 온프렘
 서빙(BF16/FP8, vLLM 버전)이 다르면 결과·속도가 조금 달라질 수 있다. 비용은 Z.ai 요금으로 잡았다(온프렘이면 GPU 시간이 비용이 된다).</li>
-<li>GLM max 참고 열은 2026-10-06 측정(같은 글)이고, 시연 원문은 데이터가 바뀐 뒤라 max를 다시 재지 않았다.</li>
+<li>GLM max 참고 열은 2026-10-06 측정(같은 글)이다. A(생성기 v2)는 외부 low만 쟀다 — '독함'·'부드러움' 표본이 작다(성향별 표의 건수).</li>
 <li>이전 실험 E2(가상 fixture 266건, <code>outputs/jev-experiment.html</code>)에서도 같은 방향(LLM 부호 일치 74% 대 Jev 61%)이었다.</li>
 </ul></div>
 </main></body></html>"""
