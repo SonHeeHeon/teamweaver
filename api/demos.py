@@ -102,6 +102,15 @@ def list_demos() -> list[dict]:
     return sorted(out, key=lambda d: (d["people"] or 0, d["scenario"] == "operating", d["name"]))
 
 
+JUDGMENTS_FILE = "review_judgments.json"
+
+
+def demo_judgments_path() -> Path:
+    """가상 시연 묶음의 리뷰 글 LLM 판정 동봉 파일(scripts/export_demo_judgments.py가 만든다, 2026-10-11).
+    다른 기기에서도 미리 계산 때와 같은 판정값을 쓰게 한다 -- api.review_judge.judge_reviews(seed_path=)."""
+    return _demo_dir() / JUDGMENTS_FILE
+
+
 def demo_root(name: str) -> Path | None:
     """허용 목록에 있는 이름이면 그 폴더(또는 zip), 아니면 None(경로 탈출·없는 이름)."""
     root = _demo_dir()

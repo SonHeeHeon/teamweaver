@@ -280,14 +280,26 @@ def _error_code(res: httpx.Response) -> str:
     return f", {code}" if isinstance(code, str) and code.replace("_", "").isalnum() and len(code) <= 60 else ""
 
 
+def cache_keys(ds: Dataset, url: str | None = None, model_name: str | None = None) -> list[str]:
+    """이 데이터의 리뷰마다 판정 캐시 키(지금 판정기: 주소·모델·추론 강도). 시연 판정 내보내기(scripts)도 같은 키를 쓴다."""
+    url = (url or base_url()).rstrip("/")
+    model_name = model_name or model()
+    effort = reasoning_effort()
+    return [_cache_key(r.positive.text, r.negative.text, model_name, url, effort) for r in ds.reviews]
+
+
 def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, key: str | None = None,
                   url: str | None = None, model_name: str | None = None,
                   transport: httpx.BaseTransport | None = None, workers: int | None = None,
-                  deadline_s: float | None = None, trim: bool = True) -> list[ParsedReview]:
+                  deadline_s: float | None = None, trim: bool = True,
+                  seed_path: Path | None = None) -> list[ParsedReview]:
     """parsed의 text_polarity만 LLM 판정으로 바꾼 새 목록. 하나라도 실패하거나 시간 한도를 넘으면
     JudgeError(부분 적용 없음). 이미 받은 판정은 캐시에 남긴다.
     trim=True면 캐시에 지금 데이터의 판정만 남긴다(실데이터). 가상 데이터는 trim=False로 쌓아 둔다 -- 업로드 후
-    되돌려도 시연 판정을 다시 부르지 않고 값·버전이 그대로다(리뷰 2라운드 S-2)."""
+    되돌려도 시연 판정을 다시 부르지 않고 값·버전이 그대로다(리뷰 2라운드 S-2).
+    seed_path: 저장소에 동봉한 판정(가상 시연 묶음, `demo/review_judgments.json`). 이 데이터의 키는 동봉 값이 캐시보다 우선한다 --
+    LLM은 같은 글도 매번 조금씩 다르게 매기므로, 다른 기기·빈 데이터 폴더에서도 미리 계산 때와 같은 판정값(= 같은
+    데이터 버전)을 쓰게 한다(사용자 요청 2026-10-11). 판정기가 다르면 키가 달라 쓰이지 않는다."""
     url = (url or base_url()).rstrip("/")
     key = key if key is not None else api_key(url)
     model_name = model_name or model()
@@ -304,6 +316,12 @@ def judge_reviews(ds: Dataset, parsed: list[ParsedReview], *, cache_path: Path, 
             # 지금 데이터의 판정만 남긴다(이전 데이터의 글 해시를 쌓지 않는다) -- 일찍 실패하는 경로에서도.
             cache = {k: v for k, v in cache.items() if k in current}
             _save_cache(cache_path, cache)
+        if seed_path is not None:
+            # 동봉 판정이 우선한다 -- 이 기기에 같은 키의 다른 값(LLM이 따로 매긴 값)이 있어도 바꾼다(Codex 리뷰 2라운드 P2)
+            seeded = {k: v for k, v in _load_cache(seed_path).items() if k in current and cache.get(k) != v}
+            if seeded:
+                cache.update(seeded)
+                _save_cache(cache_path, cache)
     todo = {k: t for k, t in zip(keys, texts) if k not in cache}
     fresh: dict[str, float] = {}
     if todo and not key and _is_openai(url):

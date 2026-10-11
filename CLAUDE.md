@@ -74,6 +74,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `demo/precomputed/*.json`은 데이터셋 버전(리뷰 글 LLM 판정값 포함)·서버 설정·평가기 재채점이 모두 맞을 때만 캐시에 들어간다 --
   재채점은 솔버 목적값이 아니라 미리 계산 때 기록한 평가기 점수(`eval_objective`)와 대조한다(솔버는 내림 전 투입률, 평가기는 내림한 투입률).
   데이터·설정·목적식이 바뀌면 `python -m rehearsal.precompute_demo`를 시연 기기에서 다시 돌린다(약 40분). 맞지 않으면 조용히 실시간 계산.
+  **리뷰 글 판정은 `demo/review_judgments.json`에 동봉한다**(2026-10-11) -- LLM 판정값이 기기마다 달라 버전이 어긋나지 않게, 가상 묶음을 켤 때 이 값이 캐시보다 우선한다.
+  미리 계산을 다시 만들면 `uv run python scripts/export_demo_judgments.py`도 돌려 함께 커밋한다(`--check`로 확인). 판정기(모델·주소·추론 강도)가 바뀌면 키가 달라 쓰이지 않는다.
 - **실험 G 파트너 다양성 하한**(`MilpParams.partner_floor`, 기본 0 = 꺼짐): 서비스 MILP·독립 검증기·평가기·예산 보정에만 있고
   벤치 정식·Phase 0 오라클·HTTP 계약·운영 중 기여 분해에는 없다. 측정(`rehearsal/results/partner-compare.html`)상 SI 팀 크기에서는 거의 걸리지 않고
   200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.

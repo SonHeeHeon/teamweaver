@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-11 · claude-b · 사후 Codex 리뷰(API) 반영 + 시연 리뷰 글 판정 동봉
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일:
+  - **Codex 사후 리뷰**(Codex 소진 기간 `5e5c2a3..main`의 claude-b API·scripts): MUST 1 — What-if 교체 설명이 허용 없이 실데이터 문맥(직원 ID·기술·협업·평가 라벨·사업명)을 OpenAI로 보냈다 → `api/deps.llm_client_for`(실데이터는 사내 주소·`TEAMWEAVER_REVIEW_ONPREM=1`·`TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1`일 때만, 리뷰 판정과 같은 정책), 응답 `fallback_reason`(`external_blocked`·`no_client`·`llm_error`), 화면 배지. SHOULD — 미리 계산 운영 중 행이 요청 K와 하나씩 맞아야 수용. WON'T — 다중 워커 교체 저장 경합(실행 스크립트는 단일 워커, 후속).
+  - **시연 판정 동봉**(사용자 요청): `demo/review_judgments.json`(6개 묶음 리뷰 8,025건, gpt-6-luna·low 키), 가상 묶음을 켤 때 이 값이 캐시보다 우선(`judge_reviews(seed_path=)`), `scripts/export_demo_judgments.py`(`--check`).
+- 상대 영향:
+  - **claude-a**: 인사팀 소명 글도 `llm_client_for`를 거쳐 부른다(계약의 "교체 설명과 같은 정책"이 이제 실제로 있다). 미리 계산을 다시 만들면 내보내기 스크립트도 돌려 함께 커밋(CLAUDE.md 함정 줄).
+  - `api/demo_precomputed._check_operating`(네 코드, 내 영역)에 K-행 일대일 검사 추가.
+- 검증: `pytest -q` 전체 통과(커밋 메시지), 웹 174 · tsc. **빈 데이터 폴더 + 틀린 API 키** 서버에서 6개 묶음 모두 `review_judge: llm`·`skipped: []`(LLM 호출 0). Codex 커밋 전 리뷰 2라운드(P2 1 → 반영, P2 1 → 반영).
+
+---
+
 ## 2026-10-10 · claude-a · 소명 글 불리한 사실 서버 덧붙임 + 지시문 개선 + E7c 재측정, Codex 사후 리뷰, 미리 계산 재생성, main 병합
 - 브랜치/커밋: `feat/claude-a-graphrag-justify` `ac8a870`(미래 이력 수정) · `4c56be4`(덧붙임·지시문) · `e3fdcb5`(E7c 사전 등록, 측정 전) · 결과·문서 커밋 · 미리 계산 커밋 → **main 빨리 감기 병합(사용자 승인 2026-10-10)**.
   지식 그래프(E7·E8)·기술 이름 사전·소명 글 브랜치가 모두 main에 들어갔다.

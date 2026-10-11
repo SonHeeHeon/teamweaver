@@ -173,7 +173,9 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
         else:
             try:
                 fake = synthetic is True
-                judged = rj.judge_reviews(ds, parsed, cache_path=judge_cache or judge_cache_path(fake), trim=not fake)
+                from api.demos import demo_judgments_path
+                judged = rj.judge_reviews(ds, parsed, cache_path=judge_cache or judge_cache_path(fake), trim=not fake,
+                                          seed_path=demo_judgments_path() if fake else None)   # 가상 데이터만 동봉 판정을 쓴다
                 parsed, version = judged, rj.judged_version(version, ep["model"], judged)
                 meta["review_judge"] = "llm"
             except rj.JudgeError as exc:
