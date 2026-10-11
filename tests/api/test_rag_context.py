@@ -135,3 +135,15 @@ def test_credited_skills_are_marked_in_the_briefing_context(tmp_path):
 def test_briefing_prompt_tells_the_model_to_name_the_credit_source():
     from api.rag import briefing
     assert "credited_from" in briefing._BASE and "인정" in briefing._BASE
+    assert "'Java" not in briefing._BASE and "따옴표로 감싸지 마라" in briefing._BASE   # 따옴표째 따라 쓰면 인용 검사가 글을 버린다(폴백 리뷰)
+
+
+@pytest.mark.parametrize("reveal", [False, True])
+def test_credit_source_in_parentheses_passes_the_quote_guard(reveal):
+    """지시문이 권하는 표기(괄호, 따옴표 없음)는 두 모드의 인용 검사를 통과하고, 따옴표로 감싸면 걸린다."""
+    from api.rag.briefing import BriefingRejected, _check_inline_quotes
+    from api.rag.evidence import EvidenceIndex
+    ev = EvidenceIndex({}, {}, reveal_text=reveal)
+    _check_inline_quotes("들어올 사람은 Java(Spring 경력에서 인정) 레벨 2라 요구를 채운다.", {}, ev)
+    with pytest.raises(BriefingRejected):
+        _check_inline_quotes("들어올 사람은 'Java(Spring 경력에서 인정)' 레벨 2다.", {}, ev)

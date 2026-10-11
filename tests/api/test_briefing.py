@@ -347,4 +347,4 @@ def test_swap_without_new_violations_is_not_forced_to_hold(sc):
 def test_prompt_tells_the_model_not_to_recommend_an_infeasible_swap():
     from api.rag.briefing import _SYSTEM, _SYSTEM_HIDDEN, _SYSTEM_SOURCED
     for p in (_SYSTEM, _SYSTEM_SOURCED, _SYSTEM_HIDDEN):
-        assert "new_violations가 있으면" in p and "'보류'" in p and "교체 전부터 있던 위반" in p
+        assert "new_violations가 있으면" in p and "결론을 보류로" in p and "교체 전부터 있던 위반" in p
