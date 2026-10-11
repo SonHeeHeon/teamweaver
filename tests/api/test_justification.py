@@ -202,3 +202,40 @@ def test_addendum_groups_are_passed_through_with_names():
     assert out["addendum_groups"] == [{"owner": "DP0001", "owner_label": "DP0001", "facts": ["F2"]}] and "llm_text" not in out
     named = apply_names(out, {"DP0001": "김민준"})
     assert named["addendum_groups"][0]["owner_label"] == "김민준" and named["addendum"].endswith("- 김민준: Java 미달[F2]")
+
+
+def test_skill_map_on_bundle_data(jc):
+    c, _ = jc
+    body = c.get("/api/skill-map").json()
+    assert body["rows"] and body["summary"]["skills"] == len(body["rows"]) and "NOT_CALIBRATED" in body["note"]
+    r = next(x for x in body["rows"] if x["practical"] > 0)
+    assert len(r["practical_people"]) == r["practical"] and {"id", "name", "credited"} <= set(r["practical_people"][0])
+    assert r["practical_credited"] == sum(p["credited"] for p in r["practical_people"])
+    assert all(p["name"] is None for x in body["rows"] for p in x["practical_people"])   # 시연 이름이 자리표시라 아직 이름 없음
+    res = c.get("/api/skill-map", params={"dataset_version": "stale"})
+    assert res.status_code == 409 and res.json()["detail"]["code"] == "dataset_changed"
+
+
+def test_skill_map_needs_bundle_data(client):
+    assert client.get("/api/skill-map").status_code == 409
+
+
+def test_skill_map_counts_only_credit_that_makes_someone_practical():
+    from types import SimpleNamespace
+    from api.routes.skill_map import build_skill_map
+    edges = [{"src": "person:A", "months": 20, "own_months": 0, "implied_from": {"skill": "Spring"}},   # 인정 덕분에 실무 가능
+             {"src": "person:B", "months": 30, "own_months": 14, "implied_from": {"skill": "Spring"}},  # 본인만으로도 실무 가능
+             {"src": "person:C", "months": 24, "own_months": 24}]
+    kg = SimpleNamespace(nodes_of=lambda t: [{"id": "skill:Java", "label": "Java"}], inc=lambda nid, et: edges)
+    import core.kg.views as views
+    rows = [{"skill": "Java", "practical_people": ["A", "B", "C"], "practical": 3, "proposal_gap": 0, "demand_headcount": 1,
+             "scarce": False}]
+    ds = SimpleNamespace(knowledge_graph=lambda: kg, info=SimpleNamespace(synthetic=True, version="v"),
+                         graph=SimpleNamespace(people=[]))
+    orig = views.skill_map
+    views.skill_map = lambda k: rows
+    try:
+        r = build_skill_map(ds)["rows"][0]
+    finally:
+        views.skill_map = orig
+    assert r["practical_credited"] == 1 and [p["credited"] for p in r["practical_people"]] == [True, False, False]

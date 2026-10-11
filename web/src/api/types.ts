@@ -447,6 +447,21 @@ export interface JustFact {
 }
 
 /** POST /api/justification 응답. AI 원문(llm_text)은 서버가 보내지 않는다. */
+/** GET /api/skill-map 행(claude-a core.kg.views.skill_map + 인정 경력 구분). */
+export interface SkillMapRow {
+  skill: string; category: string | null;
+  holders: number; practical: number; expert: number; practical_free: number; practical_credited: number;
+  demand_projects: number; demand_headcount: number; proposal_headcount: number; proposal_gap: number;
+  coverage: number | null; scarce: boolean;
+  demand: { project_id: string; project: string; proposal: boolean; headcount: number; min_months: number | null;
+            qualified_people: number }[];
+  practical_people: { id: string; name: string | null; credited: boolean }[];
+}
+export interface SkillMap {
+  dataset_version: string; rows: SkillMapRow[]; note: string;
+  summary: { skills: number; scarce: number; proposal_gap_skills: number; demanded: number };
+}
+
 export interface Justification {
   project_id: string;
   method: "graphrag" | "template";
