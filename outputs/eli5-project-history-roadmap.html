@@ -15,19 +15,30 @@
 </head>
 <body><main>
 <header>
-<div class="eyebrow">TEAMWEAVER · 프로젝트 전체 해설 · 2026년 10월 3일 기준</div>
+<div class="eyebrow">TEAMWEAVER · 프로젝트 전체 해설 · 2026년 10월 11일 기준(10월 3일판 갱신)</div>
 <h1>지금까지 무엇을 만들었고,<br>왜 만들었으며,<br>다음에는 무엇이 필요한가</h1>
-<p class="lead">TeamWeaver는 여러 프로젝트에 사람을 나눠 배치할 때, 기술·함께 일한 경험·가용 시간·예산을 함께 계산하고 선택 근거를 보여주는 시제품입니다. 동작하는 데모와 계산 검증은 마련됐고, 현실의 성과를 예측하는 모델 보정과 운영 연결이 남아 있습니다.</p>
-<p class="meta">읽는 대상: 인력 배치·AI·최적화 전문가가 아닌 프로젝트 담당자.<br>검토 기준: <code>feat/phase1-solver-benchmark</code> / 소스 기준 커밋 <code>5c0c4d4</code>. 장기 실험은 소스 <code>cf82e19</code>에 동결됐습니다. 이 문서는 그 이후 작성한 종합 해설입니다.</p>
+<p class="lead">TeamWeaver는 여러 프로젝트에 사람을 나눠 배치할 때, 기술·함께 일한 경험·가용 시간·예산을 함께 계산하고 선택 근거를 보여주는 시제품입니다. 10월 3일판 이후 일주일 동안 <strong>실제 형식의 CSV 입력, 300명 규모 시연, 이미 배치된 조직에서 일부만 바꾸는 운영 중 편성, 인사팀에 내는 소명 글</strong>까지 이어졌습니다. 현실 성과를 예측하는 모델 보정은 여전히 남아 있습니다.</p>
+<p class="meta">읽는 대상: 인력 배치·AI·최적화 전문가가 아닌 프로젝트 담당자.<br>검토 기준: <code>main</code> <code>f9b407a</code>(2026-10-10) + 작업 브랜치 <code>feat/claude-a-addendum-by-person</code>(2026-10-11, main 병합 승인 대기). 10월 3일판은 Phase 1 기준 커밋 <code>5c0c4d4</code>로 작성됐습니다. 이 판은 그 문서를 보존하면서 이후 기록(<code>docs/handoff-log.md</code>, 실험 보고서)을 대조해 고친 것입니다.</p>
 </header>
-<div class="callout"><strong>기억할 한 가지</strong><p>“우리 계산 규칙 안에서 좋은 배치”를 찾는 기술은 만들어졌습니다. 그 규칙이 실제로 좋은 팀을 만드는지는 별도의 결과 데이터와 검증이 필요합니다. <strong>수학적 정답, 계산 속도, 현실의 성과는 서로 다른 질문</strong>입니다.</p></div>
+<div class="callout"><strong>기억할 한 가지</strong><p>“우리 계산 규칙 안에서 좋은 배치”를 찾는 기술은 만들어졌고, 이제 실제 인사 자료와 같은 모양의 가상 자료로 100·200·300명까지 끝까지 돌아갑니다. 그 규칙이 실제로 좋은 팀을 만드는지는 여전히 별도의 결과 데이터와 검증이 필요합니다. <strong>수학적 정답, 계산 속도, 현실의 성과는 서로 다른 질문</strong>이고, 이 문서의 모든 수치는 가상 데이터·<code>NOT_CALIBRATED</code>입니다.</p></div>
 <div class="grid">
-<div class="panel"><span class="tag done">구현</span><h3>끝까지 이어지는 데모</h3><p>요건 가중치 → A/B/C/D 후보 → 협업 그림 → 교체 검토 → 설명 → PDF.</p></div>
-<div class="panel"><span class="tag done">기술 검증</span><h3>계산식과 솔버 비교</h3><p>Phase 0 계산 점검 PASS. Phase 1 사전 등록 357회 기록 완료.</p></div>
-<div class="panel"><span class="tag pending">현실 검증 대기</span><h3>실제 성과 예측</h3><p><code>NOT_CALIBRATED</code> — 현실 자료로 점수·계수를 보정하지 않았습니다.</p></div>
+<div class="panel"><span class="tag done">구현</span><h3>끝까지 이어지는 시연</h3><p>CSV 묶음 업로드 → 연초 계획 A~D 또는 운영 중 편성 → 교체 검토·적용 → AI 설명·인사팀 소명 글 → PDF. 100·200·300명.</p></div>
+<div class="panel"><span class="tag done">기술 검증</span><h3>계산식·솔버·AI 글</h3><p>Phase 0·1, 규모 리허설, 실험 E4~E8. 서비스 솔버는 HiGHS. AI 글은 검사기를 통과한 것만 씁니다.</p></div>
+<div class="panel"><span class="tag pending">현실 검증 대기</span><h3>실제 성과 예측</h3><p><code>NOT_CALIBRATED</code> — 현실 자료로 점수·계수를 보정하지 않았습니다. 실제 인사 자료도 아직 넣어 보지 않았습니다.</p></div>
 </div>
-<nav class="panel" aria-label="보고서 목차"><h2>읽는 순서</h2><p>처음에는 1~4장으로 큰 그림을 잡고, 실험은 7~9장, 데이터 준비는 12~14장, 실행 순서는 15장을 읽으세요.</p><ol>
-<li><a href="#purpose">처음 풀려고 했던 문제</a></li><li><a href="#map">현재 시스템의 실제 흐름</a></li><li><a href="#model">모델·방정식·솔버의 차이</a></li><li><a href="#inventory">개발된 기능과 현재 경계</a></li><li><a href="#history">시간순 작업 이력</a></li><li><a href="#process">설계·개발·리뷰 과정</a></li><li><a href="#experiments">초기 실험 1~5와 결정</a></li><li><a href="#phase0">Phase 0: 계산이 맞는지 검증</a></li><li><a href="#phase1">Phase 1: 오픈소스 솔버 비교</a></li><li><a href="#trust">어디까지 신뢰할 수 있는가</a></li><li><a href="#gaps">남은 구현·모델 문제</a></li><li><a href="#current-input">현재 코드의 입력 계약</a></li><li><a href="#csv">다음 CSV·데이터 프레임 명세</a></li><li><a href="#outcomes">성과 자료가 없어도 가능한 일</a></li><li><a href="#roadmap">다음 작업의 순서와 완료 기준</a></li><li><a href="#cost">비용과 상용 솔버</a></li><li><a href="#evidence">근거·검증·파일 보존 상태</a></li><li><a href="#glossary">용어 사전과 준비 체크리스트</a></li>
+<div class="panel"><h3 style="margin-top:0">10월 3일판 이후 무엇이 바뀌었나</h3><table><caption>한 줄 요약 · 자세한 내용은 해당 장</caption><thead><tr><th>주제</th><th>10월 3일</th><th>10월 11일</th></tr></thead><tbody>
+<tr><td>입력 자료</td><td>고정 JSON만 읽음. CSV import 없음.</td><td>실제 인사 자료 모양의 CSV 묶음을 검증해 읽음. 화면에서 zip 업로드, 오류를 파일·줄·칸까지 보고(15장).</td></tr>
+<tr><td>서비스 솔버</td><td>CBC. HiGHS는 실험에서 잠정 추천.</td><td>HiGHS 고정, 반환 전 독립 검증 강제, 시드 4개 동시 풀이(2·10장).</td></tr>
+<tr><td>규모</td><td>300명은 서비스 준비 안 됨.</td><td>규모 리허설로 원인(협업 쌍 변수 폭증)을 찾아 고침. 300명 A~D 약 6.5분, 빈자리 0(10장).</td></tr>
+<tr><td>배치 상황</td><td>백지에서 6개월을 새로 짬.</td><td>“이미 배치된 조직에서 1~3명만 옮기기”(운영 중 편성)와 진행 사업 보강 시뮬레이터 추가(10장).</td></tr>
+<tr><td>교체</td><td>검토만, 점수는 기술+협업 변화.</td><td>전체 목적·제약으로 재평가 → 적용·되돌리기·저장, PDF가 적용 명단을 다시 계산(4장).</td></tr>
+<tr><td>AI 사용</td><td>리뷰 파싱·교체 설명.</td><td>리뷰 판정(LLM 통일), 근거 인용 글자 대조, 인사팀 소명 글(GraphRAG, 채택 99%대)(11장).</td></tr>
+<tr><td>지식 그래프</td><td>Neo4j 제거 후 없음.</td><td>메모리 지식 그래프 + IT 기술 이름 사전(228개)(12장).</td></tr>
+<tr><td>개발 체계</td><td>Claude + Codex 2자.</td><td>claude-a·claude-b·Codex 3자 분담, Codex는 리뷰 전용(6장).</td></tr>
+<tr><td>시험</td><td>497 passed.</td><td>1,592 passed(작업 브랜치, main 1,589) · 느린 E2E 19 · 웹 165+(19장).</td></tr>
+</tbody></table></div>
+<nav class="panel" aria-label="보고서 목차"><h2>읽는 순서</h2><p>처음에는 1~4장으로 큰 그림을 잡으세요. 10월 3일 이후 새로 생긴 내용은 10~12장(규모·운영 중 편성, AI, 지식 그래프)입니다. 데이터 준비는 15~16장, 다음 순서는 17장을 읽으세요. 7~9장은 10월 3일판 그대로의 역사 기록입니다.</p><ol>
+<li><a href="#purpose">처음 풀려고 했던 문제</a></li><li><a href="#map">현재 시스템의 실제 흐름</a></li><li><a href="#model">모델·방정식·솔버의 차이</a></li><li><a href="#inventory">개발된 기능과 현재 경계</a></li><li><a href="#history">시간순 작업 이력</a></li><li><a href="#process">설계·개발·리뷰 과정</a></li><li><a href="#experiments">초기 실험 1~5와 결정</a></li><li><a href="#phase0">Phase 0: 계산이 맞는지 검증</a></li><li><a href="#phase1">Phase 1: 오픈소스 솔버 비교</a></li><li><a href="#scale">규모·모델 실험과 운영 중 편성</a></li><li><a href="#ai">AI는 어디에 쓰고 어떻게 막았나</a></li><li><a href="#kg">지식 그래프와 기술 이름 사전</a></li><li><a href="#trust">어디까지 신뢰할 수 있는가</a></li><li><a href="#gaps">남은 구현·모델 문제</a></li><li><a href="#current-input">지금 받는 입력: CSV 묶음</a></li><li><a href="#outcomes">성과 자료가 없어도 가능한 일</a></li><li><a href="#roadmap">다음 작업의 순서와 완료 기준</a></li><li><a href="#cost">비용과 상용 솔버</a></li><li><a href="#evidence">근거·검증·파일 보존 상태</a></li><li><a href="#glossary">용어 사전과 준비 체크리스트</a></li>
 </ol><button type="button" id="expand">상세 항목 모두 펼치기</button> <button type="button" id="collapse">상세 항목 모두 접기</button></nav>
 
 <section id="purpose"><h2><span class="num">01</span>처음 풀려고 했던 문제</h2>
@@ -35,70 +46,93 @@
 <div class="grid two"><div class="panel"><h3>사람이 하는 판단</h3><p>“Java 경험이 좋다. 하지만 다른 프로젝트에 70% 투입 중이다. 고객 경험이 있는 동료와 짝을 맞추고 싶다.”</p></div><div class="panel"><h3>시스템이 돕는 판단</h3><p>전체 프로젝트를 함께 계산해 겹치는 시간과 예산을 확인하고, 다른 조합도 제시합니다. 최종 결정은 담당자가 합니다.</p></div></div>
 <p>초기 목표는 경영진에게 보여줄 정량 보고서와 동작 데모였습니다. 기준 데모는 가상 인력 100명·프로젝트 20개·6개월 계획입니다. 300명·60개는 처음에는 차기 범위였고, 이후 Phase 1에서 기술 가능성을 따로 시험했습니다.</p>
 <p>원안의 네 축은 ① 정형 이력과 자유서술을 나눠 처리하는 파이프라인 ② 가중치가 바뀔 때 점수를 다시 계산하는 구조 ③ 제약을 지키는 최적화와 여러 대안 ④ 교체 근거를 검색해 설명하는 기능입니다. 초기 원안은 Neo4j 그래프 DB를 포함했고, 실험 후 SQLite 중심으로 바뀌었습니다.</p>
+<p><strong>10월에 넓어진 목표.</strong> 실제 인사 자료의 항목·규칙을 받아(15장) 시연 자료를 그 모양으로 바꿨고, 기준 시연은 100·200·300명 × “연초 계획”과 “운영 중(이미 배치된 조직에서 신규 제안·보강)” 6개 묶음이 됐습니다. 또 배치를 확정한 뒤 인사팀에 “왜 이 사람들인가”를 설명하는 <strong>소명 글</strong>이 새 목표로 들어왔습니다(11장).</p>
 <p class="source">근거: <a href="#e1">E1 초기 PoC 설계</a>, <a href="#e2">E2 소스·커밋 연표</a>. 초기 목표 “최적화율 90%”는 정책 목표이며, 실제 고객 만족 90%라는 뜻이 아닙니다.</p>
 </section>
 
 <section id="map"><h2><span class="num">02</span>현재 시스템의 실제 흐름</h2>
 <p>아래에서 파란 사각형은 같은 <span class="packet">입력·배치 정보</span>가 단계마다 모습을 바꾸며 이동하는 것을 뜻합니다.</p>
-<div class="flow" aria-label="입력 자료에서 보고서까지의 다섯 단계"><div class="node"><strong>1. 자료</strong><span class="packet">이력·리뷰</span><p>고정 JSON 자료를 읽습니다.</p></div><div class="node"><strong>2. 관계·점수</strong><span class="packet">S / C</span><p>기술 적합도와 협업 점수.</p></div><div class="node"><strong>3. 배치 계산</strong><span class="packet">A/B/C/D</span><p>시간·등급·예산을 함께 계산.</p></div><div class="node"><strong>4. 선택·교체</strong><span class="packet">검토안</span><p>화면에서 후보와 근거를 확인.</p></div><div class="node"><strong>5. 설명·공유</strong><span class="packet">브리핑·PDF</span><p>관련 리뷰 근거를 붙여 설명.</p></div></div>
-<div class="panel"><svg viewBox="0 0 900 400" role="img" aria-label="현재 서비스는 fixture에서 SQLite와 메모리 그래프를 구성하고 CBC로 추천한다. Phase 1 비교 경로는 별도이며 CBC, HiGHS, SCIP와 독립 검증기를 사용한다.">
-<rect x="20" y="20" width="230" height="72" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="135" y="48" text-anchor="middle" fill="#17232f" font-size="18">고정 fixture JSON</text><text x="135" y="75" text-anchor="middle" fill="#536272" font-size="15">가상 인력·프로젝트·리뷰</text>
-<path d="M250 56H300V138H338 M300 56V242H338" fill="none" stroke="#185ec0" stroke-width="3"/><rect x="340" y="105" width="210" height="65" rx="10" fill="#ffffff" stroke="#185ec0" stroke-width="2"/><text x="445" y="144" text-anchor="middle" fill="#17232f" font-size="18">SQLite · 근거 검색</text><rect x="340" y="207" width="210" height="72" rx="10" fill="#ffffff" stroke="#185ec0" stroke-width="2"/><text x="445" y="236" text-anchor="middle" fill="#17232f" font-size="18">메모리 그래프 · S/C</text><text x="445" y="262" text-anchor="middle" fill="#536272" font-size="15">빠른 점수 계산</text>
-<path d="M550 242H610" fill="none" stroke="#185ec0" stroke-width="3"/><rect x="612" y="207" width="265" height="72" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="744" y="236" text-anchor="middle" fill="#17232f" font-size="18">서비스: CBC → API → 웹</text><text x="744" y="262" text-anchor="middle" fill="#536272" font-size="15">설명·후보·PDF</text>
-<path d="M550 138H744V207" fill="none" stroke="#185ec0" stroke-width="3"/><rect x="20" y="318" width="857" height="62" rx="10" fill="#fff4e3" stroke="#c17a18" stroke-width="2"/><text x="448" y="346" text-anchor="middle" fill="#17232f" font-size="18">별도 실험 경로: 동결 합성 입력 → CBC / HiGHS / SCIP → 독립 검증</text><text x="448" y="370" text-anchor="middle" fill="#536272" font-size="14">HiGHS 잠정 추천은 아직 서비스 기본 엔진으로 연결되지 않았습니다.</text>
+<div class="flow" aria-label="입력 자료에서 보고서까지의 다섯 단계"><div class="node"><strong>1. 자료</strong><span class="packet">CSV 묶음</span><p>검증 리포트를 통과해야 바뀝니다.</p></div><div class="node"><strong>2. 관계·점수</strong><span class="packet">S / C · 그래프</span><p>기술 적합도·협업 점수·지식 그래프.</p></div><div class="node"><strong>3. 배치 계산</strong><span class="packet">A~D · K</span><p>연초 계획 또는 운영 중 편성.</p></div><div class="node"><strong>4. 검토·적용</strong><span class="packet">교체·보강</span><p>전체 점수·규칙으로 재평가.</p></div><div class="node"><strong>5. 설명·공유</strong><span class="packet">설명·소명·PDF</span><p>검사한 AI 글과 서버 재계산.</p></div></div>
+<div class="panel"><svg viewBox="0 0 900 430" role="img" aria-label="CSV 묶음을 검증해 SQLite와 메모리 그래프와 지식 그래프를 만들고, HiGHS로 배치를 계산한 뒤 독립 검증을 거쳐 API와 웹과 PDF로 보낸다. AI는 리뷰 판정과 교체 설명과 소명 글에만 쓰이고 모두 검사를 거친다.">
+<rect x="20" y="20" width="230" height="80" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="135" y="50" text-anchor="middle" fill="#17232f" font-size="18">CSV 묶음(zip)</text><text x="135" y="76" text-anchor="middle" fill="#536272" font-size="14">검증 리포트 · 시연 묶음 6개</text>
+<path d="M250 60H300V140H338 M300 60V250H338 M300 140V355H338" fill="none" stroke="#185ec0" stroke-width="3"/>
+<rect x="340" y="108" width="210" height="62" rx="10" fill="#ffffff" stroke="#185ec0" stroke-width="2"/><text x="445" y="135" text-anchor="middle" fill="#17232f" font-size="17">SQLite · 근거 색인</text><text x="445" y="158" text-anchor="middle" fill="#536272" font-size="13">출처 ID가 붙은 근거</text>
+<rect x="340" y="218" width="210" height="62" rx="10" fill="#ffffff" stroke="#185ec0" stroke-width="2"/><text x="445" y="245" text-anchor="middle" fill="#17232f" font-size="17">메모리 그래프 · S/C</text><text x="445" y="268" text-anchor="middle" fill="#536272" font-size="13">빠른 점수 계산</text>
+<rect x="340" y="324" width="210" height="62" rx="10" fill="#ffffff" stroke="#185ec0" stroke-width="2"/><text x="445" y="351" text-anchor="middle" fill="#17232f" font-size="17">지식 그래프</text><text x="445" y="374" text-anchor="middle" fill="#536272" font-size="13">소명 글의 사실</text>
+<path d="M550 250H610" fill="none" stroke="#185ec0" stroke-width="3"/>
+<rect x="612" y="208" width="270" height="84" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="747" y="236" text-anchor="middle" fill="#17232f" font-size="17">HiGHS(시드 4) → 독립 검증</text><text x="747" y="260" text-anchor="middle" fill="#536272" font-size="14">→ API → 웹 · PDF</text><text x="747" y="281" text-anchor="middle" fill="#536272" font-size="13">연초 계획 A~D · 운영 중 K 비교</text>
+<path d="M550 139H747V206 M550 355H747V294" fill="none" stroke="#185ec0" stroke-width="3"/>
+<rect x="612" y="20" width="270" height="80" rx="10" fill="#fff4e3" stroke="#c17a18" stroke-width="2"/><text x="747" y="48" text-anchor="middle" fill="#17232f" font-size="17">AI(LLM)의 자리 세 곳</text><text x="747" y="72" text-anchor="middle" fill="#536272" font-size="13">리뷰 판정 · 교체 설명 · 소명 글</text><text x="747" y="91" text-anchor="middle" fill="#536272" font-size="13">모두 검사 통과분만 사용</text>
 </svg></div>
-<div class="mobile-diagram" aria-label="현재 서비스와 별도 실험 경로"><div class="box"><strong>고정 fixture JSON</strong><p>가상 이력·리뷰</p></div><div class="connector">↓</div><div class="grid two"><div class="box"><strong>SQLite</strong><p>근거 검색</p></div><div class="box"><strong>메모리 그래프</strong><p>S/C 계산</p></div></div><div class="connector">↓</div><div class="box"><strong>CBC → API → 웹</strong><p>후보·설명·PDF</p></div><div class="box wait"><strong>별도 Phase 1 비교</strong><p>CBC / HiGHS / SCIP → 독립 검증<br>HiGHS는 아직 서비스에 연결 전</p></div></div>
-<p>SQLite는 디스크에 놓을 수 있는 표 기반 저장소이고, 메모리 그래프는 사람과 관계를 계산하기 쉽게 RAM에 올린 구조입니다. 현재 API는 부팅할 때 fixture를 읽어 임시 SQLite DB와 메모리 그래프를 만듭니다. 인사팀 DB를 실시간으로 읽거나 변경 이력을 영구 보관하는 운영 서비스는 아직 아닙니다.</p>
-<p>LLM은 사람을 직접 배정하지 않습니다. 자유서술 리뷰를 숫자·근거 문장으로 바꾸거나, 검색한 근거를 쉬운 설명으로 작성하는 데 사용합니다. 사람 선택과 투입률은 수리최적화 엔진이 계산합니다.</p>
+<div class="mobile-diagram" aria-label="현재 서비스 흐름"><div class="box"><strong>CSV 묶음(zip)</strong><p>검증 리포트 · 시연 묶음 6개</p></div><div class="connector">↓</div><div class="grid two"><div class="box"><strong>SQLite</strong><p>근거 색인</p></div><div class="box"><strong>메모리 그래프</strong><p>S/C 계산</p></div></div><div class="box"><strong>지식 그래프</strong><p>소명 글의 사실</p></div><div class="connector">↓</div><div class="box"><strong>HiGHS → 독립 검증 → API → 웹·PDF</strong><p>연초 계획 A~D · 운영 중 K 비교</p></div><div class="box wait"><strong>AI의 자리 세 곳</strong><p>리뷰 판정 · 교체 설명 · 소명 글 — 검사 통과분만</p></div></div>
+<p>10월 3일판의 “고정 JSON → 서비스 CBC, 별도 실험 경로 HiGHS” 구조는 바뀌었습니다. 지금은 <strong>관리자가 올린 CSV 묶음</strong>(또는 시연 묶음)을 검증해 활성 데이터셋을 통째로 바꿉니다. 오류가 하나라도 있으면 바꾸지 않고 검증 리포트를 돌려줍니다. 업로드 자료와 적용한 교체는 서버 데이터 폴더에 저장돼 재기동 뒤에도 이어집니다. 인사 시스템을 실시간으로 읽는 연결은 아직 없습니다.</p>
+<p>배치 계산은 HiGHS 하나로 고정했습니다. 같은 모델을 시드만 바꾼 프로세스 4개가 동시에 풀고 가장 좋은 답을 고릅니다. 답은 반환 직전에 <strong>독립 검증기</strong>가 모든 제약과 점수를 다시 계산해 통과해야만 화면에 나갑니다. 시연 묶음은 미리 계산한 결과를 쓸 수 있는데, 데이터 버전·설정·재채점이 모두 맞을 때만 씁니다. 하나라도 다르면 조용히 실시간 계산으로 돌아갑니다.</p>
+<p>LLM은 여전히 사람을 직접 배정하지 않습니다. 쓰는 곳은 세 군데입니다. ① 동료 평가 글이 긍정인지 부정인지 판정 ② 교체 설명 ③ 인사팀 소명 글. 세 곳 모두 결과를 기계가 검사하고, 틀리면 정해진 규칙 기반 글로 대신합니다(11장).</p>
 <details><summary>기술은 왜 선택했고, 다른 후보는 어떻게 다뤘나요?</summary><table><caption>측정으로 결정한 기술과 설계 판단으로 선택한 기술</caption><thead><tr><th>선택</th><th>후보·이유</th><th>근거 수준</th></tr></thead><tbody>
 <tr><td>SQLite + 메모리</td><td>Neo4j까지 탐색·검색·영속성 비교. 현재 규모/질의에서 유지 근거가 없어 제거.</td><td>실험 1·4·5와 사전 기준.</td></tr>
-<tr><td>MILP + Greedy</td><td>빠른 기준선과 월별 자원·예산을 함께 다루는 최적화.</td><td>실험 3. 모든 휴리스틱 후보를 비교한 것은 아님.</td></tr>
+<tr><td>지식 그래프 = 자체 메모리 그래프</td><td>networkx·RDF(Oxigraph)·Neo4j를 같은 질문 4개로 비교. 정확성은 셋 다 4/4, 사전 규칙상 메모리 그래프가 최선. 지금 구현이 networkx보다 10/12칸 빨라 유지.</td><td>실험 E8·E8b(12장). 사전 커밋한 판정 규칙.</td></tr>
+<tr><td>MILP + HiGHS</td><td>CBC·HiGHS·SCIP를 같은 모델로 비교(Phase 1). 실제 형식 100명 리허설에서도 같은 시간에 HiGHS만 쓸 만한 답.</td><td>Phase 1 + 10-05 리허설. Gurobi는 비용으로 보류.</td></tr>
 <tr><td>PuLP 유지</td><td>Pyomo·native 모델 재작성도 고려했지만 솔버 효과와 구현 변경 효과가 섞여 보류.</td><td>Phase 1 설계 판단. PuLP의 보편적 우월성 실험 없음.</td></tr>
-<tr><td>CBC·HiGHS·SCIP</td><td>같은 모델을 비교. CP-SAT는 연속 투입률을 이산화하면 문제가 바뀌어 별도 실험으로 보류.</td><td>동결 설계의 후보 구분과 Phase 1 결과.</td></tr>
-<tr><td>OpenAI SDK</td><td>LangChain은 단일 설명 경로에 불필요한 추상화가 늘어난다고 판단해 제외.</td><td>초기 복잡도 판단. 프레임워크 속도 비교 없음.</td></tr>
+<tr><td>OpenAI SDK(호환 API)</td><td>LangChain은 불필요한 추상화. 같은 호출 방식으로 외부 모델과 사내 가정 모델(GLM 5.3)을 바꿔 끼움.</td><td>초기 복잡도 판단 + E4·E5 비교.</td></tr>
 <tr><td>Python 3.12·FastAPI</td><td>코어/실험 재사용, 당시 3.14 휠 호환 위험 회피. API는 원안 스택.</td><td>당시 환경·계약 선택. 다른 API 프레임워크 벤치 없음.</td></tr>
 <tr><td>React·TypeScript</td><td>원안 화면 스택에 타입을 추가해 서버와 화면 계약 차이를 조기에 검출.</td><td>타입·화면·결함 주입 검증. 다른 UI 스택 우열 실험 없음.</td></tr>
-<tr><td>SSE + 캐시</td><td>전체 후보 약 28.5초를 기다리는 대신 나오는 순서로 전달. 당시 세션 없는 요청 계약에 맞춤.</td><td>풀이 실측 기반 UX 판단. job/queue가 일반적으로 불가능한 것은 아님.</td></tr>
-<tr><td>Playwright PDF·SVG</td><td>웹 인쇄 경로 재사용. canvas의 정착 시점과 인쇄 품질 때문에 인쇄용 SVG를 분리.</td><td>PDF 본문·출처·준비 신호 검증. 다른 PDF 엔진 성능 비교 없음.</td></tr>
+<tr><td>SSE + 캐시 + 미리 계산</td><td>후보를 나오는 순서로 전달. 300명은 A~D에 수 분이 걸려 시연 묶음은 미리 계산을 두되, 맞지 않으면 실시간 계산.</td><td>풀이 실측 기반 UX 판단.</td></tr>
+<tr><td>Playwright PDF·SVG</td><td>웹 인쇄 경로 재사용. PDF는 요청 Host를 믿지 않고 고정 내부 주소로만 렌더(K4).</td><td>PDF 본문·출처·준비 신호 검증. 다른 PDF 엔진 성능 비교 없음.</td></tr>
 </tbody></table><p>이 구분을 유지해야 “후보를 검토했다”는 말과 “수치로 최고임을 확인했다”는 말을 혼동하지 않습니다.</p></details>
-<p class="source">근거: <a href="#e3">E3 API·그래프·점수 코드</a>, <a href="#e6">E6 Phase 1 구현</a>.</p>
+<p class="source">근거: <a href="#e3">E3 API·그래프·점수 코드</a>, <a href="#e7">E7 10월 기록</a>.</p>
 </section>
 
 <section id="model"><h2><span class="num">03</span>모델은 무엇이고, 솔버는 무엇인가</h2>
-<div class="grid two"><div class="panel"><h3>모델 = 선택 규칙</h3><p>무엇을 좋은 배치라고 할지, 무엇을 지켜야 할지 방정식으로 적은 것입니다. 요리의 조리법에 해당합니다.</p></div><div class="panel"><h3>솔버 = 계산하는 도구</h3><p>그 방정식을 풀어 조합을 찾는 프로그램입니다. 같은 조리법을 실행하는 다른 조리 도구에 해당합니다.</p></div></div>
-<p>이번 솔버 실험은 같은 입력과 같은 방정식을 CBC·HiGHS·SCIP에 주고, 제한 시간 안에 유효한 답과 품질 근거를 남기는지를 비교했습니다. 서로 다른 방정식의 점수를 비교하지 않았습니다. 다만 방정식 자체를 바꾸면 좋은 배치의 정의가 바뀌므로 다시 검증해야 합니다.</p>
+<div class="grid two"><div class="panel"><h3>모델 = 선택 규칙</h3><p>무엇을 좋은 배치라고 할지, 무엇을 지켜야 할지 방정식으로 적은 것입니다. 요리의 조리법에 해당합니다.</p></div><div class="panel"><h3>솔버 = 계산하는 도구</h3><p>그 방정식을 풀어 조합을 찾는 프로그램입니다. 같은 조리법을 실행하는 다른 조리 도구에 해당합니다. 서비스는 HiGHS 하나로 고정했습니다.</p></div></div>
+<p>솔버를 바꾸는 것과 방정식을 바꾸는 것은 다른 일입니다. 방정식을 바꾸면 좋은 배치의 정의가 바뀌므로 다시 검증해야 합니다. 그래서 이 저장소에는 방정식을 다시 쓰는 곳 다섯 군데(서비스 MILP, 벤치 정식, 예산 보정 LP, 독립 검증기, 평가기)를 함께 고치고 Phase 0 검증을 다시 돌리는 규칙이 있습니다.</p>
 <h3>현재 좋은 배치의 점수표</h3>
-<div class="formula"><span class="term">기술 적합도 × 투입률</span> ＋ <span class="term">0.3 × 협업 시너지</span> − <span class="term penalty">0.2 × 반복 협업 쌍</span> − <span class="term penalty">100 × 미충원 정원</span><br><span class="small">이 합계가 가장 커지는 배치를 찾습니다. 0.3·0.2·100은 현재 설계 계수이며 실제 성과로 학습하거나 보정한 값이 아닙니다.</span></div>
-<table><caption>결정 변수: 계산기가 실제로 정하는 것</caption><thead><tr><th>변수</th><th>쉬운 뜻</th><th>현재 규칙</th></tr></thead><tbody>
-<tr><td><code>z[i,j]</code></td><td>사람 i를 프로젝트 j에 넣을까요?</td><td>0 또는 1.</td></tr><tr><td><code>a[i,j]</code></td><td>그 사람이 시간을 얼마나 쓰나요?</td><td>배치하면 최소 20%, 최대 100%. 프로젝트 기간 동안 같은 비율.</td></tr><tr><td><code>y[p,q,j]</code></td><td>두 사람이 같은 프로젝트에 있나요?</td><td>두 배치 여부를 묶어 시너지를 계산합니다. 두 사람의 월별 실제 겹침량을 정밀 계산하지 않습니다.</td></tr><tr><td><code>slack[j,g]</code></td><td>필요 등급 인원 중 몇 명을 못 채웠나요?</td><td>부족을 허용하되 큰 감점을 줍니다. 부족을 숨기지 않고 출력합니다.</td></tr>
+<div class="formula"><span class="term">기술 적합도 × 투입률</span> ＋ <span class="term">0.3 × 협업 시너지(상위 200쌍)</span> − <span class="term penalty">0.2 × 익숙한 쌍</span> − <span class="term penalty">100 × 미충원 정원</span><br><span class="small">이 합계가 가장 커지는 배치를 찾습니다. 0.3·0.2·100은 설계 계수이며 실제 성과로 학습하거나 보정한 값이 아닙니다. 10월 3일판과 식의 모양은 같고, “어떤 쌍을 넣느냐”가 바뀌었습니다.</span></div>
+<table><caption>10월 3일 이후 바뀐 두 가지 쌍 규칙</caption><thead><tr><th>항목</th><th>예전</th><th>지금과 이유</th></tr></thead><tbody>
+<tr><td>협업 시너지 보상 쌍</td><td>협업 점수 상위 15%, 최대 5,000쌍.</td><td><strong>최대 200쌍</strong>(10-05). 쌍 변수는 “쌍 수 × 사업 수”만큼 생겨, 200명에서 600초에도 빈자리 57석, 300명은 답을 못 찾았습니다. 200쌍이면 세 규모 모두 빈자리 0(10장).</td></tr>
+<tr><td>익숙한 쌍(감점)</td><td>10년 동안 6개월 이상 같은 사업.</td><td><strong>최근 36개월 중 12개월 이상</strong>(10-06 사용자 결정, 관리자 설정 가능). 실제 같은 10년 이력에서는 예전 기준으로 익숙한 쌍이 1만 개 안팎이 돼 200·300명 배치가 무너졌습니다. 협업 점수 C 자체는 10년 전체를 씁니다.</td></tr>
 </tbody></table>
-<h3>기술 점수 S: 요구에 얼마나 가까운가</h3><p>각 요구 기술에서 <code>보유 레벨 / 요구 레벨</code>을 계산하고 최대 1로 자릅니다. 사용자가 정한 1~5 가중치로 평균냅니다. 예를 들어 Java 요구 4·보유 3이면 0.75, SQL 요구 3·보유 5면 1입니다. 두 기술의 가중치가 같으면 S는 0.875입니다.</p>
-<h3>협업 점수 C: 무엇을 가정했는가</h3><p><code>C = 0.4 × min(함께 일한 개월 / 12, 1) + 0.6 × 리뷰 점수</code>입니다. 리뷰 점수는 긍정·부정 체크 항목 수의 균형과 텍스트 극성을 반씩 섞고, 있는 방향의 리뷰들을 평균냅니다. 현재는 “소통” 항목 내용에 별도 가중치를 주는 방식이 아니라 체크 개수로 점수를 냅니다.</p><p>오래 협업한 쌍에는 긍정적 경험 점수가 붙으면서, 6개월 이상이면 반복 조합 감점도 붙습니다. 익숙한 팀의 안정성과 새 조합의 기회를 함께 보려는 설계 의도입니다. 이 이중 효과가 현실에서 적절한지는 아직 검증하지 않았습니다. 이른바 Clique Penalty는 실제 고차원 집단을 모두 분석하는 장치보다 <strong>오래 함께 일한 두 사람의 반복 배치 감점</strong>에 가깝습니다.</p>
-<h3>반드시 지키는 규칙과 점수로만 유도하는 규칙</h3><table><thead><tr><th>항목</th><th>현재 계산 방식</th><th>해석</th></tr></thead><tbody><tr><td>월별 가용률</td><td>같은 달의 전체 프로젝트 투입률 합 ≤ 가용률.</td><td>시간 중복을 막습니다.</td></tr><tr><td>월 예산</td><td>월 단가 × 투입률 합 ≤ 프로젝트 월 예산.</td><td>배치가 가능하다고 나온다면 이 수학적 한도 안입니다.</td></tr><tr><td>등급별 정원</td><td>기재된 등급의 배치 인원 + 부족 = 요구 인원.</td><td>부족을 감점으로 처리합니다. 정원은 인원수 기준이며 전일제 환산 인원과 다릅니다.</td></tr><tr><td>필수 기술·레벨</td><td>S 점수와 사후 충족률에 반영.</td><td><strong>필수 기술 인원 충족을 강제하는 제약이 현재 없습니다.</strong></td></tr><tr><td>등급 목록 밖 사람</td><td>프로젝트에 기재하지 않은 등급은 그 정원 식의 대상이 아닙니다.</td><td>필요 없는 등급도 예산·가용률 안에서 선택될 수 있습니다. 운영 규칙 확인이 필요합니다.</td></tr></tbody></table>
-<div class="callout caution"><strong>모델을 검토할 때 먼저 확인할 질문</strong><p>“Java 레벨 4 두 명”이 계약상 반드시 필요한가요, 선호사항인가요? “고급 2명”은 각각 20% 투입이어도 괜찮나요? 월별 투입률이 일정해야 하나요? 이 답에 따라 점수와 제약의 설계가 달라집니다.</p></div>
-<p class="source">근거: <a href="#e3">E3 모델·점수·MILP 코드</a>. 예시는 계산 원리 설명용 가상 숫자입니다.</p>
+<table><caption>결정 변수: 계산기가 실제로 정하는 것</caption><thead><tr><th>변수</th><th>쉬운 뜻</th><th>현재 규칙</th></tr></thead><tbody>
+<tr><td><code>z[i,j]</code></td><td>사람 i를 프로젝트 j에 넣을까요?</td><td>0 또는 1.</td></tr><tr><td><code>a[i,j]</code></td><td>그 사람이 시간을 얼마나 쓰나요?</td><td>배치하면 최소 30%(관리자 설정, 실데이터 답변 기준)·최대 100%. 기본은 사업 기간 내내 같은 비율. 관리자가 “달마다 다른 비율”을 켤 수 있습니다(기본 꺼짐).</td></tr><tr><td><code>y[p,q,j]</code></td><td>두 사람이 같은 프로젝트에 있나요?</td><td>보상 상위 200쌍과 감점 대상 익숙한 쌍에만 만듭니다.</td></tr><tr><td><code>slack[j,g]</code></td><td>필요 등급 인원 중 몇 명을 못 채웠나요?</td><td>부족을 허용하되 큰 감점을 줍니다. 부족을 숨기지 않고 출력합니다.</td></tr>
+</tbody></table>
+<h3>기술 점수 S: 요구에 얼마나 가까운가</h3><p>실제 인사 자료에는 “숙련도 레벨”이 없고 기술별 <strong>경력 개월</strong>만 있다는 답을 받았습니다(10-05 사용자 결정). 그래서 입력 단계에서 경력 개월을 대리 레벨로 바꿉니다: 12개월 미만 1, 12~35개월 2, 36~59개월 3, 60~95개월 4, 96개월 이상 5. 그다음은 예전과 같습니다. 각 요구 기술에서 <code>보유 레벨 / 요구 레벨</code>을 최대 1로 자르고 1~5 가중치로 평균냅니다.</p>
+<p>10-09부터는 기술 이름을 먼저 통일합니다. “PostgreSQL”, “postgres”, “포스트그레스”가 다른 기술로 세지면 같은 사람이 요구를 못 채운 것처럼 보이기 때문입니다. IT 기술 이름 사전(228개)이 대표 이름으로 바꾸고, 하위 기술 경력의 일부(<code>0.5^깊이</code>)를 상위 기술에 인정합니다. 예: “RAG·벡터DB 10개월”은 상위 “LLM Application”에 5개월로 인정됩니다. 0.5는 근거 없는 가정값입니다(12장).</p>
+<h3>협업 점수 C: 무엇을 가정했는가</h3><p><code>C = 0.4 × min(함께 일한 개월 / 12, 1) + 0.6 × 리뷰 점수</code>는 그대로입니다. 바뀐 점은 세 가지입니다. ① 같은 평가자가 여러 번 쓴 평가를 모두 씁니다(방향 안에서 평균한 뒤 두 방향을 평균). ② 평가 글이 긍정인지 부정인지는 LLM이 판정합니다(10-06 사용자 결정, 11장). ③ 함께 일한 개월은 최근 10년 창 안에서만 셉니다.</p><p>오래 함께 일한 쌍에는 긍정적 경험 점수가 붙으면서, 최근 3년에 많이 붙어 있었다면 반복 조합 감점도 붙습니다. 익숙한 팀의 안정성과 새 조합의 기회를 함께 보려는 설계 의도입니다. 가상 과거 성과로 이 감점이 맞는지 시험했지만 판단할 수 없었습니다(검정력 부족, 10장). 그래서 계수 0.2는 운영 원칙으로 남겨 두었습니다.</p>
+<h3>반드시 지키는 규칙과 점수로만 유도하는 규칙</h3><table><thead><tr><th>항목</th><th>현재 계산 방식</th><th>해석</th></tr></thead><tbody><tr><td>월별 가용률</td><td>같은 달의 전체 프로젝트 투입률 합 ≤ 가용률.</td><td>시간 중복을 막습니다.</td></tr><tr><td>월 예산</td><td>월 단가 × 투입률 합 ≤ 프로젝트 월 예산.</td><td>배치가 가능하다고 나온다면 이 한도 안입니다. 반올림 수준의 극미세 초과(상대 1e-7 이하)만 작은 보정 계산으로 고친 뒤 다시 검증합니다(C1).</td></tr><tr><td>등급별 정원</td><td>기재된 등급의 배치 인원 + 부족 = 요구 인원.</td><td>부족을 감점으로 처리합니다. 정원은 인원수 기준이며 전일제 환산 인원과 다릅니다.</td></tr><tr><td>동시 프로젝트 수</td><td>한 사람이 같은 달에 맡는 프로젝트 ≤ 3(관리자 설정 1~6).</td><td>실데이터 답변 “최대 3개, 보통 1개”(C6). 최소 투입률 30%에서는 3과 6의 결과가 같았습니다.</td></tr><tr><td>필수 기술·레벨</td><td>S 점수와 사후 충족률에 반영.</td><td><strong>하드 제약이 아닙니다.</strong> 실데이터 답변에서 필요 기술은 “선호”로 확인됐습니다.</td></tr><tr><td>등급 목록 밖 사람</td><td>프로젝트에 기재하지 않은 등급은 그 정원 식의 대상이 아닙니다.</td><td>실데이터 답변에서 “요청에 없는 등급도 허용”으로 확인돼 현재 동작을 유지합니다.</td></tr><tr><td>운영 중 이동 예산 K</td><td>(운영 중 편성만) 이미 배치된 사람 중 최대 K명만 옮길 수 있습니다. 옮긴 사람은 원래 없던 사업에 들어가야 합니다.</td><td>“1~2명만 옮기면 얼마나 좋아지나”를 K=0~3으로 비교합니다. 작은 개선을 가리지 않도록 갭 0으로 풉니다(10장).</td></tr></tbody></table>
+<div class="callout"><strong>10월 3일판에서 던진 모델 질문의 답</strong><p>“필수 기술은 반드시 필요한가?” → 선호(점수로만). “요청에 없는 등급은?” → 허용. “최소 투입률은?” → 30%, 관리자가 바꿀 수 있어야 함. “월별 투입률이 일정해야 하나?” → 바꿀 수 있어야 함(선택 기능으로 구현, 기본은 일정). 이 답들은 사용자가 실데이터 스키마 양식에 적은 내용입니다. 측정해 보고 <strong>채택하지 않은 변경</strong>도 있습니다: 자리당 적합도 항, 파트너 다양성 하한(둘 다 꺼진 선택지로 보존, 10장).</p></div>
+<p class="source">근거: <a href="#e3">E3 모델·점수·MILP 코드</a>, <a href="#e7">E7 10월 기록</a>. 예시는 계산 원리 설명용 가상 숫자입니다.</p>
 </section>
 
 <section id="inventory"><h2><span class="num">04</span>현재 개발된 것들의 목록</h2>
-<table><caption>완료는 해당 시제품 범위의 구현 완료를 뜻합니다</caption><thead><tr><th>영역</th><th>구현된 것</th><th>남은 경계</th></tr></thead><tbody>
-<tr><td>도메인 데이터 모델</td><td>Pydantic으로 인력·등급·기술·프로젝트·리뷰·협업 구조와 값 범위를 정의.</td><td>실제 HR 컬럼 매핑, 시점·증빙·데이터 버전이 없음.</td></tr>
-<tr><td>가상 데이터</td><td>seed 고정 생성기, 규모 조절, 가용 용량 보정, JSON 저장·읽기.</td><td>실제 분포를 반영하지 않았고 데모용 용량 보정이 현실 병목을 약하게 만들 수 있음.</td></tr>
-<tr><td>리뷰 처리</td><td>LLM 생성·파싱, 규칙 파서, 체크포인트와 배치 재개, 토큰·비용 요약.</td><td>사람이 정답을 매긴 평가 세트, 최신성·편향·불확실성 처리가 필요.</td></tr>
-<tr><td>저장·관계</td><td>SQLite 정규화·색인·증분 추가·재수화, 메모리 희소행렬, 협업 경로 탐색.</td><td>운영용 영구 저장·동시 갱신·권한·감사·백업이 없음. Neo4j는 제거됨.</td></tr>
-<tr><td>점수와 배치</td><td>동적 S/C, Greedy 기준선, PuLP/CBC MILP, 미충원, A안과 다양성 대안.</td><td>필수 기술 하드 제약, 월별 가변 투입, 성과 계수 보정 등이 필요.</td></tr>
-<tr><td>설명용 검색</td><td>반복 협업 쌍·대체 후보·hop 내 기술·교체 차이·팀 응집도 질의 5종.</td><td>설명 근거의 적합성과 권한 필터를 현실 자료로 검증해야 함.</td></tr>
-<tr><td>API</td><td>메타 조회, 최적화 SSE, What-if, PDF, 캐시·기동 워밍·LLM fallback.</td><td>데이터 업로드 API, 인증, 작업 큐·취소·전체 요청 기한, 동시성 제한이 없음.</td></tr>
-<tr><td>웹</td><td>가중치 슬라이더, 후보 카드·배치 표·협업 그래프, 선택/드래그 교체, 설명 패널.</td><td>실제 제약 편집·배치 확정/저장·권한별 UX·교체 적용은 추가 작업.</td></tr>
-<tr><td>PDF</td><td>Playwright로 인쇄용 SPA를 PDF로 만듦. 설명 출처·검토한 교체·델타 표시.</td><td>PDF 명단은 원래 선택 플랜입니다. 검토한 교체가 명단에 반영된 확정안은 아님.</td></tr>
-<tr><td>검증 도구</td><td>원시 변수 계약, 별도 제약/목적 재계산, 소형 정답기, Phase 0 보고서.</td><td>현실적 개념 오류나 사업 효과까지 검증하는 도구는 아님.</td></tr>
-<tr><td>솔버 실험 인프라</td><td>CBC/HiGHS/SCIP 어댑터, 입력·일정 동결, 해시, 시간/메모리 감독, 복구·HTML.</td><td>HiGHS 서비스 연결, Gurobi 어댑터·실험, Linux 운영 환경 검증이 남음.</td></tr>
+<table><caption>완료는 해당 시제품 범위의 구현 완료를 뜻합니다 · 굵은 글씨는 10월 3일 이후 새로 생긴 것</caption><thead><tr><th>영역</th><th>구현된 것</th><th>남은 경계</th></tr></thead><tbody>
+<tr><td>입력(CSV)</td><td><strong>실제 인사 자료 모양의 CSV 묶음 계약·읽기·검증 리포트·변환(<code>core/ingest</code>), 같은 모양의 가상 묶음 생성기, 화면 zip 업로드, 오류를 파일·줄·칸까지 표시.</strong></td><td>실제 인사 자료는 아직 넣어 보지 않음. 인사 시스템 직접 연결 없음.</td></tr>
+<tr><td>가상 데이터</td><td>seed 고정 생성기. <strong>조직형 생성기: 등급별 근속, 최근 10년 업무 이력, 긴 동료 평가 글, 숨은 규칙의 과거 성과·교체 파일, 100·200·300명.</strong></td><td>실제 분포를 반영하지 않음. 평가 글 생성기 다듬기는 프로젝트 마무리 때 한 번에(사용자 결정).</td></tr>
+<tr><td>리뷰 처리</td><td>LLM 생성·파싱, 체크포인트. <strong>CSV 묶음의 평가 글 판정을 LLM으로 통일, 판정 캐시, 실패 시 항목 점수로 대체하고 “다시 판정”.</strong></td><td>사람이 정답을 매긴 실제 평가 세트 없음. 실데이터는 동의 설정 또는 사내 주소일 때만 LLM으로 보냄.</td></tr>
+<tr><td>저장·관계</td><td>SQLite 정규화·색인·증분 추가·재수화, 메모리 희소행렬, 협업 경로 탐색. <strong>지식 그래프(<code>core/kg</code>), IT 기술 이름 사전 228개.</strong></td><td>운영용 DB·동시 갱신·감사·백업 없음(파일 영속만).</td></tr>
+<tr><td>점수와 배치</td><td>동적 S/C, Greedy 기준선, MILP, 미충원, A안과 다양성 대안. <strong>HiGHS 고정·시드 포트폴리오·독립 검증 강제·예산 극미세 보정·대안 품질 필터·인원별 권장 시간·동시 프로젝트 상한·달별 투입률(선택).</strong></td><td>성과 계수 보정 없음. 시간 한도 해는 “최선 증명 전”으로 표시.</td></tr>
+<tr><td>운영 중 편성</td><td><strong>현재 배치 + 대기 인력 + 신규 제안을 입력으로 받아 K=0~3명 이동별 비교, 진행 사업 보강 후보·넣어 보기/빼 보기·최선 n명, 단순 규칙 대비 비교.</strong></td><td>운영 결과를 다음 기준 배치로 이어 쓰기, PDF에 운영 결과 넣기는 미구현.</td></tr>
+<tr><td>설명</td><td>반복 협업 쌍·대체 후보·교체 차이 질의. <strong>출처 ID가 붙은 근거, AI 인용을 원문과 글자 그대로 대조(하나라도 틀리면 규칙 기반 글), 실데이터 원문 비공개.</strong></td><td>설명이 그럴듯하다고 효과가 입증된 것은 아님.</td></tr>
+<tr><td>인사팀 소명 글</td><td><strong>지식 그래프 사실로 AI가 글의 뼈대를 짜고 서버가 사실 문구를 채움(GraphRAG), 검사기 6규칙, 실패 시 템플릿 글, AI가 빠뜨린 불리한 사실은 서버가 사람별 줄로 덧붙임.</strong></td><td>API·화면·PDF는 claude-b 작업 예정(계약 문서 완료).</td></tr>
+<tr><td>API</td><td>메타, 최적화 SSE, What-if, PDF. <strong>데이터셋 업로드·되돌리기·시연 묶음 고르기·다시 판정, 관리자 설정·로그인, 교체·달별 조정 적용과 저장, 운영 중 비교·보강, 단순 규칙 대비.</strong></td><td>작업 큐·취소·사용자별 계정·SSO 없음. 운영 중 비교는 서버 전체에서 한 번에 하나.</td></tr>
+<tr><td>웹</td><td>가중치, 후보 카드·배치 표·협업 그래프, 교체, 설명. <strong>데이터·배치 설정·운영 중 편성 탭, 교체 적용·되돌리기, 달별 조정, 계산 신뢰도 배지, 미리 계산 표시.</strong></td><td>소명 글 화면 미구현. 권한별 화면 없음(관리자 한 명).</td></tr>
+<tr><td>PDF</td><td>Playwright로 인쇄용 화면을 PDF로. <strong>원 플랜 서명 확인, 적용한 교체를 서버가 다시 계산한 명단·지표, 근거를 서버 색인으로 재확인, 고정 내부 주소로만 렌더.</strong></td><td>운영 중 편성 결과·소명 글은 아직 PDF에 없음.</td></tr>
+<tr><td>검증 도구</td><td>원시 변수 계약, 독립 검증기, 소형 정답기, Phase 0. <strong>규모 리허설(실제 서버 전 과정), 사전 등록 측정 스크립트(E6~E8, 소명 글), 헤드리스 브라우저 시연 리허설.</strong></td><td>현실적 개념 오류나 사업 효과까지 검증하는 도구는 아님.</td></tr>
+<tr><td>시연</td><td><strong>시연 묶음 6개(100·200·300명 × 연초 계획·운영 중) + 일부러 틀린 묶음, 미리 계산 결과, 시연 대본 10장면, 한 장 구조도, 실행 스크립트 <code>run_poc.sh</code>.</strong></td><td>시연 기기에서 미리 계산을 다시 만들어야 할 때가 있음(데이터·설정이 바뀌면).</td></tr>
 </tbody></table>
-<h3>API 네 가지를 사용자가 이해하는 말로</h3><table><thead><tr><th>주소</th><th>역할</th><th>현재 주의점</th></tr></thead><tbody><tr><td><code>GET /api/meta</code></td><td>화면용 인력·프로젝트·기술·관계 목록.</td><td>서버가 올린 고정 자료를 조회.</td></tr><tr><td><code>POST /api/optimize</code></td><td>가중치·파라미터로 A안부터 후보를 순서대로 반환.</td><td>입력 CSV를 이 요청으로 보내는 구조가 아님.</td></tr><tr><td><code>POST /api/whatif</code></td><td>교체 전후 참고 점수와 설명.</td><td>재최적화·완전한 제약 점검 아님.</td></tr><tr><td><code>POST /api/report</code></td><td>받은 배치와 설명으로 PDF 출력.</td><td>서버가 검증해 승인한 배치의 영구 원장은 아님.</td></tr></tbody></table>
-<p class="source">근거: <a href="#e3">E3 현행 코드</a>, <a href="#e1">E1 Plan 4·5 완료 기록</a>.</p>
+<h3>API를 사용자가 이해하는 말로</h3><table><thead><tr><th>주소</th><th>역할</th><th>현재 주의점</th></tr></thead><tbody>
+<tr><td><code>GET /api/meta</code></td><td>화면용 인력·프로젝트·기술·관계 목록.</td><td>활성 데이터셋 기준, 데이터셋 버전을 함께 줍니다.</td></tr>
+<tr><td><code>POST /api/optimize</code></td><td>가중치·설정으로 A안부터 후보를 순서대로 반환. 각 안에 서명(plan_token).</td><td>데이터셋 버전이 다르면 409. 시간 한도 해는 캐시하지 않습니다.</td></tr>
+<tr><td><code>POST /api/whatif</code></td><td>교체 전후를 전체 목적·제약으로 재평가한 참고값과 AI 설명.</td><td>재최적화가 아닙니다. 새 위반이 생기면 AI 결론은 “보류”.</td></tr>
+<tr><td><code>POST /api/plans/apply-swap</code>, <code>apply-alloc</code></td><td>교체·달별 조정을 적용한 명단 재평가.</td><td>적용 이력은 서명 기준으로 서버에 저장·복원.</td></tr>
+<tr><td><code>POST /api/report</code></td><td>원 플랜 + 적용 교체 목록을 받아 서버가 다시 계산한 PDF.</td><td>서명이 틀리면 422. 승인 원장은 아닙니다.</td></tr>
+<tr><td><code>POST /api/datasets</code> 외</td><td>CSV 묶음 업로드·되돌리기·시연 묶음 고르기·다시 판정.</td><td>관리자 로그인 필요. 오류가 있으면 바꾸지 않습니다.</td></tr>
+<tr><td><code>GET/PUT /api/settings</code>, <code>/api/admin/*</code></td><td>관리자 배치 설정, 비밀번호 로그인.</td><td>계정 하나. 직원별 계정·SSO는 범위 밖.</td></tr>
+<tr><td><code>/api/operating/*</code>, <code>/api/staffing/*</code>, <code>/api/baseline</code></td><td>운영 중 K 비교(SSE), 보강 후보·넣어 보기·최선 n명, 단순 규칙 대비.</td><td>운영 중 비교는 한 번에 하나(바쁘면 429), 시간 600초 이하.</td></tr>
+</tbody></table>
+<p class="source">근거: <a href="#e3">E3 현행 코드</a>, <a href="#e7">E7 10월 기록</a>.</p>
 </section>
 
 <section id="history"><h2><span class="num">05</span>시간순 작업 이력: 왜 다음 단계로 갔는가</h2>
-<p>초기 개발의 <strong>Plan 1~5</strong>와 나중의 <strong>Phase 0~1</strong>은 다른 번호 체계입니다. Plan은 제품을 만드는 작업 묶음이고, Phase는 최근에 추가한 검증·비교 단계입니다. 번호가 내려갔다고 개발을 되돌린 것이 아닙니다.</p>
+<p>초기 개발의 <strong>Plan 1~5</strong>와 나중의 <strong>Phase 0~1</strong>은 다른 번호 체계입니다. Plan은 제품을 만드는 작업 묶음이고, Phase는 최근에 추가한 검증·비교 단계입니다. 번호가 내려갔다고 개발을 되돌린 것이 아닙니다. 10월부터는 작업 목록 번호가 셋 더 생겼습니다: <strong>K*</strong>(Claude 제품 작업), <strong>C*</strong>(Codex 모델·솔버 작업), <strong>E*</strong>(10월 실험).</p>
 <div class="timeline">
 <article class="event"><h3>2026-08-02~04 · Plan 1: 계산 코어</h3><p>전체 문제를 API 없이 시험할 수 있도록 Core-First로 시작했습니다. 데이터 모델 → 가상 데이터 → 리뷰 파서 → SQLite·메모리·Neo4j → 점수 → Greedy·MILP → 대안 → 100/20 fixture·E2E를 만들었습니다.</p><p>초기 리뷰에서 월 순서, 작은 데이터 생성 종료, 관계 중복, 다중 기술의 용량 중복 계산, 반복 협업 감점 누락, 시간 제한 때 해가 없는 상태 등을 수정했습니다. template 리뷰의 감정 점수가 체크 개수와 동일하다는 한계도 공개했습니다.</p><p class="small">주요 커밋: <code>5d91490</code> 시작, <code>a404a54</code> MILP, <code>3d5ba01</code> 대안, <code>6053c49</code> 초기 fixture.</p></article>
 <article class="event"><h3>2026-08-05~11 · Plan 2: 아키텍처 가설을 실험으로 확인</h3><p>규모별 저장 탐색·LLM 비용·Greedy/MILP 비교를 마련했습니다. 협업 쌍 변수가 커져 계산이 어려워지자 상위 비율뿐 아니라 절대 pair cap을 추가했습니다. tie-break도 고정해 재현성을 높였습니다.</p><p>한국어 감정 단어 사전 수정은 점수를 거의 상수로 만들어 정보량이 줄어들어 되돌렸습니다. 이후 실 LLM 생성·파싱으로 266건을 동결했고, 장기 API 호출 중단에 대비해 리뷰별 체크포인트를 구현했습니다. 결과 JSON → 표·그림·노트북·보고서 생성 경로도 구축했습니다.</p><p class="small">주요 커밋: <code>4d4f355</code> pair cap, <code>b59efdb</code> LLM fixture, <code>2f2c9c2</code> 실험 결과 재생성.</p></article>
@@ -108,16 +142,30 @@
 <article class="event"><h3>2026-09-18 · Phase 0: 모델 검증을 선행 단계로 추가</h3><p>사용자께서 “방정식이 달라지면 결과도 달라지는데, 무엇을 검증하는가”를 질문한 뒤 계산 구현 검증과 현실 성과 검증을 분리했습니다. 원시 해·독립 검증기·소형 정답기·기한·원자 체크포인트·HTML을 추가했습니다.</p><p>11개 점검 완료, 계산 PASS. 현실 효과는 NOT_CALIBRATED로 유지했습니다.</p><p class="small">주요 커밋: <code>9ca0492</code> 설계, <code>5a81095</code> 독립 검증, <code>4f2a60e</code> 정답기, <code>c22ca5a</code> 최종 근거.</p></article>
 <article class="event"><h3>2026-09-21~10-01 · Phase 1: 오래 돌려도 증거가 남는 비교 도구</h3><p>실 HR 컬럼이 없어도 가능한 기술 비교를 허용하는 새 설계를 승인받았습니다. CBC·HiGHS·SCIP, 최대 4분/건, 최대 활성 24시간, 빈번한 체크포인트로 고정했습니다.</p><p>원시 해 계약 → 어댑터 → 입력·357개 일정 → 감독자 → 보고서·게이트 순으로 개발했습니다. 부동소수 0/1 경계 잡음과 macOS 종료 그룹 경합을 실패 기록·회귀 테스트로 보강했습니다. 중단된 첫 장기 run은 보존하고 수정 후 v2로 분리했습니다.</p><p class="small">주요 커밋: <code>5e5a10a</code> 설계, <code>9de916e</code> 어댑터, <code>701995c</code> 감독자, <code>cf82e19</code> 실행 고정 소스.</p></article>
 <article class="event"><h3>2026-10-03 · Phase 1 v2 전체 기록 완료</h3><p>357/357 터미널 상태, 활성 실행 약 10시간 15분. 중단 5건은 감독 완료 증거가 없어 성공에서 제외하고 각 240초를 전액 차감했습니다. HiGHS를 잠정 기본 후보로 추천했지만 300/60은 서비스 준비 완료로 볼 수 없습니다.</p><p class="small">완료 기록 커밋: <code>5c0c4d4</code>. 현재 보고서는 이 상태를 기준으로 작성했습니다.</p></article>
-</div><p class="source">근거: <a href="#e1">E1 초기 작업 문서</a>, <a href="#e2">E2 Git 연표</a>, <a href="#e5">E5 Phase 0</a>, <a href="#e6">E6 Phase 1</a>.</p>
+
+<article class="event"><h3>2026-10-03~04 · 병합, 분담, 중간 감사, What-if 정정</h3><p>Phase 0·1을 main에 합치고 Claude와 Codex가 같은 파일을 동시에 고치지 않도록 <strong>파일 소유 영역</strong>을 나눴습니다(<code>docs/work-split.md</code>). 서로 한 일은 <code>docs/handoff-log.md</code>에 남깁니다. Codex가 읽기 전용 중간 품질 감사를 해 P0 2건·P1 4건·P2 6건을 냈고, 항목마다 담당을 정했습니다.</p><p>첫 처리는 K1입니다. What-if 점수가 “기술+협업 변화”만 보던 것을 MILP 전체 목적 4항과 제약으로 다시 재는 평가기(<code>core/evaluate/plan_eval.py</code>)로 바꿨습니다.</p><p class="small">주요 커밋: <code>f2c6252</code> 병합, <code>3df8399</code> 분담, <code>a034250</code> K1.</p></article>
+<article class="event"><h3>2026-10-04~05 · 실데이터 모양을 묻고 답을 받다(K7)</h3><p>실제 값을 받지 않고 <strong>항목·형식·의미·배치 규칙</strong>만 받는 입력 양식을 만들었습니다. 사용자가 답한 내용은 Git 밖 <code>private/</code>에 글자로만 둡니다. 핵심 결정: 실제 기술 이력에는 숙련도 레벨이 없으므로 <strong>기술별 경력 개월</strong>로 계산한다. 배치 규칙 답(필요 기술은 선호, 최소 투입률 30%, 동시 프로젝트 최대 3개, 월별 투입률 변경 허용, 요청에 없는 등급 허용)은 이후 모델 작업의 입력이 됐습니다.</p></article>
+<article class="event"><h3>2026-10-04~05 · 서비스 답을 독립 검증으로 막기(C0~C4)</h3><p>Codex가 서비스 MILP 반환 직전에 독립 검증을 강제했습니다(C0). 그러자 기본 데이터의 A안이 예산을 1e-6 수준으로 넘어 거절되는 문제가 드러났습니다. C1은 반올림 수준의 극미세 초과(상대 1e-7 이하)만 작은 보정 계산으로 고친 뒤 엄격하게 다시 검증하는 정책을 세웠습니다. 이때 Phase 1 보고서가 “독립 검증 실패 0건”으로 적은 것과 달리, “유효 후보 없음”으로 집계된 87건이 실제로는 검증기가 거절한 해였음을 찾아 정정 보고서를 따로 냈습니다(원본은 보존).</p><p>Codex 주간 한도가 소진된 동안 claude-b가 C0~C4를 이어받아 main에 넣었습니다. C2 대안 품질 필터, C3 표시 투입률이 해 값보다 커지지 않게, C4 원시 결과 577MB를 48MB 압축으로 로컬 보관.</p><p class="small">근거: <code>outputs/phase1-c1-*</code>, <code>outputs/phase0-c1-*</code>.</p></article>
+<article class="event"><h3>2026-10-05 · 3자 체제와 제품 표면 완성(K2~K14)</h3><p>Claude를 두 계정으로 나눴습니다. claude-a는 입력·평가·설명 근거, claude-b는 API·웹·스크립트, Codex는 모델·솔버를 맡았습니다. 하루 동안 CSV 입력 계약(K2), PDF가 요청 Host를 믿지 않게(K4), 근거 인용 검증(K5), 관리자 설정(K8), zip 업로드(K9), 교체 적용(K10), 저장·복원(K13), 관리자 로그인(K14)이 들어갔습니다.</p><p class="small">주요 병합: <code>f10e710</code> K2, <code>6a36137</code> K4·K8·K9·K10, <code>67242b9..e6072d1</code> K5.</p></article>
+<article class="event"><h3>2026-10-05 · HiGHS 전환과 규모 리허설</h3><p>사용자 결정으로 서비스 솔버를 HiGHS로 고정했습니다(K3). HiGHS가 1.0000000000000007 같은 값을 돌려줘 엄격 검증기가 전부 거절하던 문제는 1e-9 안쪽 잔차만 경계로 옮겨 해결했습니다. 이어 실제 서버로 100·200·300명 전 과정을 돌리는 <strong>규모 리허설</strong>에서 300명을 막는 것이 시간이 아니라 협업 쌍 변수의 크기임을 찾았습니다. 보상 쌍 상한을 5,000에서 200으로 내리자 세 규모 모두 빈자리 0이 됐습니다(10장).</p><p>같은 날 동시 프로젝트 상한(C6), 달별 투입률(선택), 모델 실험실(팩터 후보 비교)이 들어갔고, “자리당 적합도” 항은 측정 결과 기각했습니다.</p></article>
+<article class="event"><h3>2026-10-06 · 실제 같은 데이터에서 무너진 것을 고치다</h3><p>시연 데이터를 실제 인사 자료처럼 10년 이력·긴 평가 글로 바꾸자 100명 계산조차 느려지고 200·300명이 무너졌습니다. 원인은 “익숙한 쌍” 기준(10년 중 6개월)이 1만 쌍 가까이를 감점 대상으로 만든 것이었습니다. 세 기준을 측정해 비교했고, 사용자가 <strong>최근 3년 중 12개월</strong>을 골랐습니다. 시드 4개 동시 풀이도 운영화했습니다.</p><p>같은 날 평가 글 판정을 LLM으로 통일했고(사용자 결정 “선택권 없이 LLM”), <strong>운영 중 편성</strong>(이미 배치된 조직에서 K명만 옮기기)·사업 보강 시뮬레이터·단순 규칙 대비 비교를 만들었습니다. 과거 성과로 가정을 검증하는 절차도 세웠습니다.</p><p class="small">주요 커밋: <code>9087ffa..5b5693c</code> 운영 중 편성.</p></article>
+<article class="event"><h3>2026-10-07 · 시연 준비와 “그냥 AI에게 시키면?”</h3><p>시연 묶음 6개와 미리 계산 결과, 시연 대본, 한 장 구조도를 만들고 헤드리스 브라우저로 대본을 끝까지 따라 해 고쳤습니다. 화면은 미리 계산 결과임을 숨기지 않게 표시합니다. 파트너 다양성 하한(실험 G)은 측정 후 채택하지 않았습니다.</p><p>사용자 요청 “증명해 보이자”로 <strong>E6</strong>를 했습니다. 같은 문제를 LLM에게 통째로 맡기면 20명에서는 솔버 점수의 89~94%였지만 100명에서는 규칙을 지키는 배치를 내지 못했습니다(11장). 외부 LLM과 사내 LLM(가정: GLM 5.3)을 리뷰 판정·교체 설명에서 비교했습니다(E4·E5).</p></article>
+<article class="event"><h3>2026-10-08~09 · 지식 그래프, 기술 이름 사전, 소명 글</h3><p>사람·기술·사업·고객사·산업·평가·협업을 한 그래프로 묶었습니다. 그래프 하나로 조직 기술 지도와 “이 사업에 왜 이 사람들인가” 근거를 둘 다 만듭니다. 인사팀 소명 방식 비교(E7)에서 정확도는 같고 글 길이가 크게 달라, 사용자가 사용성을 근거로 <strong>GraphRAG</strong>를 골랐습니다. 저장 기술 비교(E8·E8b)와 IT 기술 이름 사전(228개)도 이때 들어갔습니다.</p><p class="small">주요 커밋: <code>be6c902</code> E7b 사전 등록.</p></article>
+<article class="event"><h3>2026-10-10~11 · 소명 글 확대 검증과 main 병합</h3><p>소명 글을 843번 다시 써 보는 E7c에서 채택률 99.4%, 처음 보는 데이터 99.6%를 얻었습니다. Codex 사후 리뷰가 “계획 시작 뒤에 시작하는 이력이 과거 경험으로 셈해질 수 있다”를 찾아 고쳤습니다. 지식 그래프·기술 사전·소명 글이 모두 main에 합쳐졌습니다(<code>f9b407a</code>). 10-11에는 AI가 빠뜨린 불리한 사실을 서버가 <strong>사람별 줄</strong>로 덧붙이게 바꾸고 이 문서를 갱신했습니다.</p><p class="small">주요 커밋: <code>e3fdcb5</code> E7c 사전 등록, <code>f9b407a</code> main, <code>ed27203</code> 사람별 덧붙임.</p></article>
+</div><p class="source">근거: <a href="#e1">E1 초기 작업 문서</a>, <a href="#e2">E2 Git 연표</a>, <a href="#e5">E5 Phase 0</a>, <a href="#e6">E6 Phase 1</a>, <a href="#e7">E7 10월 작업 기록</a>.</p>
 </section>
 
 <section id="process"><h2><span class="num">06</span>어떤 프로세스로 개발했는가</h2>
-<div class="flow" aria-label="질문과 설계에서 실험 기록까지 개발 과정"><div class="node"><strong>질문·설계</strong><p>목표와 제외 범위를 적음.</p></div><div class="node"><strong>실패 사례</strong><p>깨져야 할 입력과 테스트 작성.</p></div><div class="node"><strong>작은 구현</strong><p>코어를 만들고 실제로 실행.</p></div><div class="node"><strong>검토·수정</strong><p>계약·수치·테스트 의미 확인.</p></div><div class="node"><strong>기록·커밋</strong><p>방법·실패·한계·다음 단계 보존.</p></div></div>
-<p>초기 작업 문서는 Claude 기반 작업 흐름과 구현자/리뷰어 역할을 기록하고 있습니다. Git만으로 모든 변경을 어느 AI가 작성했는지 확정할 수는 없습니다. 이 보고서는 문서에 기록된 과정과 현재 소스를 함께 확인해 설명합니다.</p>
-<h3>좋은 원칙이 실제로 적용된 사례</h3><ul><li><strong>코어를 함께 사용:</strong> 노트북과 API가 같은 계산 코드를 가져다 씁니다. 다만 벤치마크가 제품의 네트워크·동시성·UI까지 포함하는 것은 아닙니다.</li><li><strong>가설이 틀리면 구조를 수정:</strong> Neo4j가 규모가 커지면 역전할 것이라는 예상이 관측에서 기각돼 제거 결정으로 이어졌습니다.</li><li><strong>결과 맞추기 금지:</strong> 90% 숫자를 위해 기술 난도를 낮추는 대신 최적화율과 충족률의 서로 다른 정의를 공개했습니다.</li><li><strong>실패도 보존:</strong> 실험 중단·미측정 규모·잘못된 비용 가정·원시 해 거부를 결과에서 빼서 숨기지 않았습니다.</li><li><strong>테스트의 검출력을 확인:</strong> 가드를 잠깐 제거했을 때 실제로 실패하는지 확인하는 결함 주입을 사용했습니다.</li></ul>
-<h3>절차가 완벽했는가: 기록상 편차도 있습니다</h3><p>Plan 5 Task 6~9의 작업별 리뷰가 세션 경계에서 누락됐고, 최종 브랜치 리뷰가 그 구간을 깊게 확인해 주요 4건을 발견했습니다. 재검토 에이전트가 세션 한도로 종료돼 담당 컨트롤러가 직접 재검토한 사실도 기록했습니다. 최근 Phase 1 최종 보고는 독립 리뷰 없이 자체 검토였음을 공개했습니다. 따라서 “모든 단계가 항상 독립 최고 모델 리뷰를 거쳤다”고 소급해 주장할 수 없습니다.</p>
-<p>2026-09-25에 최고 역량 모델 리뷰와 한국어 ELI5 HTML 인계 규칙이 추가됐습니다. 기존 문서 대부분은 Git 제외 <code>.omc/</code>에 있어 원격 이력으로 보존되지 않습니다. 이번 종합 HTML은 주요 내용을 추적 가능한 <code>outputs/</code>로 옮겨 담습니다.</p>
-<div class="callout"><strong>현재 작업의 검토 원칙</strong><p>수치가 기록된 범위만 설명하고, 현재 코드의 실제 동작과 초기 설계 의도를 따로 확인합니다. 문서 리뷰에서는 수치·근거·입력 계약·남은 단계의 순서를 점검하고, 적용한 모델과 독립성 상태를 별도 리뷰 기록에 남깁니다.</p></div>
+<div class="flow" aria-label="질문과 설계에서 실험 기록까지 개발 과정"><div class="node"><strong>질문·설계</strong><p>원 요청·목표·제외 범위를 적음.</p></div><div class="node"><strong>기준 먼저</strong><p>측정이면 판정 기준을 먼저 커밋.</p></div><div class="node"><strong>작은 구현</strong><p>실패하는 시험부터, 실제로 실행.</p></div><div class="node"><strong>독립 리뷰</strong><p>Codex가 결함을 찾고 판정·반영.</p></div><div class="node"><strong>기록·커밋</strong><p>실패·한계·다음 단계까지 보존.</p></div></div>
+<h3>10월 4일부터: 세 에이전트 분담</h3><table><thead><tr><th>누가</th><th>맡은 곳</th><th>일하는 위치</th></tr></thead><tbody>
+<tr><td>claude-a</td><td>입력(CSV)·평가기·설명 근거·지식 그래프·소명 글, 측정 도구.</td><td>저장소 루트, <code>feat/claude-a-*</code>.</td></tr>
+<tr><td>claude-b</td><td>API·웹·PDF·실행 스크립트.</td><td><code>.worktrees/claude-b-*</code>.</td></tr>
+<tr><td>Codex</td><td>처음엔 모델·솔버·실험(C0~C6). 10-06부터 사용자 지시로 <strong>리뷰 전용</strong>, 작업은 Claude가 함.</td><td><code>.worktrees/</code>.</td></tr>
+</tbody></table><p>남의 영역은 읽기만 하고, 고칠 일이 있으면 <code>docs/work-split.md</code>의 “요청”에 적습니다. 공유 계약 파일(도메인 모델·점수·<code>CLAUDE.md</code> 등)은 바꾸기 전에 요청에 먼저 적습니다. main 병합과 원격 push는 사용자가 승인할 때만 합니다.</p>
+<h3>좋은 원칙이 실제로 적용된 사례</h3><ul><li><strong>판정 기준을 측정 전에 커밋:</strong> E6~E8과 소명 글 측정은 기준·상수를 먼저 커밋하고 측정했습니다. 소명 글 E7c는 지시문을 고칠 때 보지 않은 <strong>새 가상 회사 3곳</strong>을 따로 채점해, 같은 문제지로 점수가 부푸는 것을 막았습니다.</li><li><strong>가설이 틀리면 채택하지 않음:</strong> 자리당 적합도 항, 파트너 다양성 하한은 측정 결과 더 나빠져 꺼진 선택지로만 남겼습니다. Neo4j 제거와 같은 태도입니다.</li><li><strong>결과 맞추기 금지:</strong> 목표 수치를 위해 데이터 생성기·계수를 고치지 않았습니다. 시연 평가 글 생성기 개선도 측정 대상이 바뀌므로 마지막에 한 번만 하기로 했습니다.</li><li><strong>실패도 보존:</strong> 덮어쓴 첫 측정은 <code>superseded</code> 이름으로 남기고, 정정 보고서는 원본 옆에 따로 냈습니다(C1 87건, E5 1차 결론 폐기, E8 첫 결과).</li><li><strong>테스트의 검출력 확인:</strong> 고치기 전 코드에서 새 시험이 실패하는지 확인하는 결함 주입을 계속 썼습니다.</li><li><strong>사용자 결정은 기록으로:</strong> 익숙한 쌍 기준, 리뷰 판정 LLM 통일, 추론 강도 low, 소명 방식 GraphRAG, 불리한 사실 덧붙임처럼 갈림길마다 근거 측정을 붙여 사용자가 고르고, 그 결정을 문서에 남겼습니다.</li></ul>
+<h3>리뷰 게이트와 그 편차</h3><p>코드를 바꾸면 자체 시험을 통과한 뒤 커밋 전에 Codex 리뷰를 받습니다. 지적은 MUST·SHOULD·WON'T로 판정해 반영하고, 리뷰는 최대 2라운드입니다. Codex가 쿼터 소진으로 아예 돌지 못한 기간(주로 10-05~10-10)에는 Claude Opus가 같은 범위를 대신 리뷰했고, 각 기록에 “폴백 리뷰”라고 적었습니다. Codex가 돌아온 10-10에 그 기간 브랜치 전체를 사후 리뷰해 MUST 2건을 더 찾았습니다.</p><p>기록상 편차도 있습니다. 10-07에 시연 데이터 고르기 기능이 두 에이전트에서 따로 두 벌 구현돼 있던 것이 발견됐습니다(claude-a가 “진행 중”에 적지 않은 조율 누락). 사용자 결정으로 한 벌로 합쳤습니다. 2라운드 리뷰 뒤 반영분이 3라운드 리뷰를 받지 않고 시험·결함 주입으로만 확인된 경우도 여럿 있습니다(각 기록에 표시). 10월 3일판에 적은 Plan 5 리뷰 누락·Phase 1 자체 검토 편차도 그대로 유효합니다.</p>
+<p>상세 작업 기록은 Git 제외 <code>.omc/</code>에 남고, 원격으로 보존되는 것은 커밋·<code>docs/handoff-log.md</code>·<code>rehearsal/results/</code>·<code>outputs/</code>입니다. 이 종합 HTML은 그 주요 내용을 추적 가능한 위치에 옮겨 담습니다.</p>
+<div class="callout"><strong>현재 작업의 검토 원칙</strong><p>수치가 기록된 범위만 설명하고, 현재 코드의 실제 동작과 설계 의도를 따로 확인합니다. 이번 10-11 갱신은 문서 변경이라 Codex 리뷰를 생략했고, 수치는 handoff 기록·실험 보고서와 대조했습니다.</p></div>
 </section>
 
 <section id="experiments"><h2><span class="num">07</span>초기 실험 1~5: 어떤 질문에 답했는가</h2>
@@ -142,6 +190,7 @@
 <p>독립 검증기는 a/z/y/slack의 누락·NaN·Infinity·범위·이진성, 가용률·예산·등급, pair 적용 범위, 목적함수 네 항과 표시값을 다시 계산합니다. 다중 솔버 비교 전에 원시 계약을 더 엄격하게 보강했습니다. 검증 불가한 값을 0으로 채워 성공처럼 만들지 않습니다.</p>
 <p>전체 runner 기한은 240초이며, 남은 시간을 각 계산기에 전달하고 매 케이스 원자 체크포인트를 저장합니다. 원자 저장은 임시 파일을 완성한 뒤 정상 파일로 한 번에 교체해 중간 저장 실패가 이전 정상 파일을 망가뜨리지 않게 하는 방식입니다.</p>
 <div class="callout caution"><strong>Phase 0 PASS가 뜻하는 범위</strong><p>현재 수학 모델의 계산 구현이 이 합성 점검을 통과했다는 뜻입니다. 모델의 협업 계수·반복 감점이 현실적으로 옳다는 뜻은 아닙니다. 정답기의 LP 엔진은 HiGHS 계보여서 Phase 1 HiGHS와 완전히 독립적인 수치 엔진이라고 부르지도 않습니다.</p></div><p class="source">근거: <a href="#e5">E5 Phase 0 JSON·설계·정답기·검증기</a>.</p>
+<div class="callout"><strong>그 뒤(10월)</strong><p>모델을 바꿀 때마다(익숙한 쌍 기준, 동시 프로젝트 상한, 달별 투입률, 자리당 적합도 실험, 기술 이름 사전) Phase 0을 다시 돌려 PASS를 확인했습니다. HiGHS 전환 때 정답 대조 사례를 gap 0으로 풀도록 고쳤습니다. 기본 5% gap이면 솔버가 최적 직전에 멈춰도 정상인데, 예전 CBC 통과는 우연히 최적을 낸 덕분이었습니다. 달별 투입률 정식은 서비스와 정답기에만 있고 벤치 정식에는 없습니다.</p></div>
 </section>
 
 <section id="phase1"><h2><span class="num">09</span>Phase 1: 동일한 문제를 어떤 솔버가 잘 푸는가</h2>
@@ -157,68 +206,144 @@
 <details><summary>“5% 이내” 품질을 어떻게 계산했나요?</summary><p>검증된 현재 배치 점수를 L, 솔버가 제공하는 최고 가능 점수의 상한을 U라고 합니다. <code>gap = max(0, U-L) / max(1, |U|, |L|)</code>입니다. L=-100, U=-90이면 10%입니다. 상한이 없으면 BOUND_UNKNOWN이고, 임의로 추정해 채우지 않습니다.</p><p>QUALITY_PASS는 독립 검증 통과·기한 내 저장·gap≤5%입니다. PROVEN_OPTIMAL은 더 강한 조건입니다. CBC는 이번 연결에서 신뢰할 수 있는 U를 제공하지 않아 “PuLP Optimal” 문자열만으로 품질을 확정하지 않았습니다. 작은 문제는 별도 정답 대조 21/21을 통과했습니다.</p><p>5%는 <strong>pair 절삭이 적용된 현행 목적함수</strong> 기준입니다. 절삭 전 모델·고객 만족·기술 충족률의 5% 보장을 뜻하지 않습니다.</p></details>
 <details><summary>중단과 복구는 무엇을 남겼나요?</summary><p>15초 heartbeat, 슬롯 전 시간 예약, 각 케이스 원자 결과 저장, 매니페스트/해시 검증을 구현했습니다. 체크포인트는 솔버 탐색 트리를 저장하는 기능은 아닙니다. 한 계산이 중단되면 그 슬롯의 작업을 잃을 수 있습니다.</p><p>v2의 178·179·237·273·331번은 종료·검증·정산을 감독자가 완료하지 못했습니다. worker 결과가 남아 있어도 채택하지 않고, 복구 전 파일과 버린 출력 해시를 보존했습니다. 좋은 결과가 나올 때까지 재실행하지 않았습니다.</p><p>앞선 게이트는 0/1 경계 약 10⁻¹⁵ 잡음으로 두 해를 거부했습니다. 어댑터에서 10⁻⁶ 이내 경계만 정규화하고 그 밖 위반은 계속 거절하도록 수정했습니다. macOS 종료 그룹 경합으로 중단한 run도 새 ID로 분리했습니다. 현재 v2는 supervisor 비활성·열린 예약 없음으로 닫혔습니다.</p></details>
 <p class="source">근거: <a href="#e6">E6 동결 설계·일정·체크포인트·357개 해시 검증·최종 HTML</a>.</p>
+<div class="callout"><strong>그 뒤(10월)</strong><p>이 결과를 근거로 서비스 솔버를 HiGHS로 바꿨습니다(K3, 10-05). Codex의 C1 점검에서 위 표의 “유효 후보 없음” 87건이 실제로는 독립 검증기가 거절한 해(대부분 CBC의 미세한 예산 초과)였음이 드러나 정정 보고서를 따로 냈습니다(원본 보존). 300/60 문제는 솔버를 바꾸지 않고 모델 크기(보상 쌍 수)를 줄여 풀었습니다(10장).</p></div>
 </section>
 
-<section id="trust"><h2><span class="num">10</span>이 결과를 어디까지 신뢰할 수 있는가</h2>
-<div class="panel"><svg viewBox="0 0 850 290" role="img" aria-label="신뢰의 세 층: 수학 구현은 합성 점검 통과, 계산 성능은 해당 환경에서 비교 완료, 실제 사업 효과는 성과 데이터가 없어 미검증."><rect x="35" y="20" width="780" height="70" rx="10" fill="#e8f5ed" stroke="#176943" stroke-width="2"/><text x="60" y="49" fill="#176943" font-size="20">1 · 계산 구현</text><text x="60" y="75" fill="#17232f" font-size="16">현재 방정식의 제약과 점수를 제대로 계산하는가 → 합성 검증 통과</text><rect x="35" y="110" width="780" height="70" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="60" y="139" fill="#185ec0" font-size="20">2 · 기술 성능</text><text x="60" y="165" fill="#17232f" font-size="16">고정 문제를 4분 안에 푸는가 → 해당 합성 입력·환경에서 비교 완료</text><rect x="35" y="200" width="780" height="70" rx="10" fill="#fff4e3" stroke="#c17a18" stroke-width="2"/><text x="60" y="229" fill="#8b5106" font-size="20">3 · 현실의 효과</text><text x="60" y="255" fill="#17232f" font-size="16">고객 만족·품질·지속 수주를 높이는가 → 결과 자료·현장 검증 필요</text></svg></div>
-<div class="mobile-diagram" aria-label="세 수준의 신뢰 범위"><div class="box"><strong>1 · 계산 구현</strong><p>현재 식의 제약·점수 → 합성 점검 통과</p></div><div class="box"><strong>2 · 기술 성능</strong><p>같은 문제를 4분 안에 푸는가 → 환경 한정 비교 완료</p></div><div class="box wait"><strong>3 · 현실 효과</strong><p>고객 만족·품질·후속 과제 → 성과 데이터 필요</p></div></div>
-<p><strong>객관적 판단:</strong> 실데이터가 없어도 방정식 구현 오류와 같은 모델에서의 솔버 차이는 신뢰할 수 있는 기술 증거로 만들 수 있습니다. 지금도 그 증거는 있습니다. 그러나 실제 직원·프로젝트 분포를 대표한다고 볼 근거가 없으므로 운영 성공률·최적 인력 구성의 현실 효과를 신뢰할 수준은 아닙니다.</p>
-<table><thead><tr><th>주장</th><th>현재 판단</th><th>추가로 필요한 증거</th></tr></thead><tbody><tr><td>계산기가 예산과 가용률 식을 점검한다</td><td>제시한 합성 케이스에서 근거 있음.</td><td>실제 입력 계약·단위 변환의 검증.</td></tr><tr><td>현재 합성 문제에서는 HiGHS가 기본 후보로 유리하다</td><td>해당 환경·지표에서 근거 있음.</td><td>실제 분포 기반 입력·운영 환경·상용 후보 비교.</td></tr><tr><td>추천 팀이 실제로 성과가 가장 좋다</td><td>근거 없음.</td><td>독립 성과 기록·비교군·현장 평가.</td></tr><tr><td>가상 성과 데이터로 효과를 입증할 수 있다</td><td>불가. 파이프라인·통계 오류 점검은 가능.</td><td>가상 생성 규칙과 독립적인 현실 결과.</td></tr><tr><td>컬럼만 받아도 모델을 현실 보정할 수 있다</td><td>구조 정합성 개선 가능, 성과 보정은 불가.</td><td>분포·결측·시점 및 별도 성과 관측.</td></tr></tbody></table>
-<h3>특히 혼동하기 쉬운 숫자 세 개</h3><ul><li><strong>최적화율 약 93%:</strong> 선택안의 기술 점수 / 기술만 최대화한 완화 문제 상한. 전체 목적의 최적성이나 성과 성공 확률이 아닙니다.</li><li><strong>기술 충족률 약 55%:</strong> 한 사람의 투입량을 자격 있는 기술 슬롯에 나눠 세는 보조 지표. 등급 인원 미충원율과 다릅니다.</li><li><strong>솔버 gap 5%:</strong> 현행 절삭 목적함수에서 남은 점수 개선의 상한 차이. 앞 두 비율과 분모가 다릅니다.</li></ul>
-<p>처음부터 “좋은 점수의 팀은 성공”이라는 규칙으로 가상 성과를 만든 뒤 같은 점수로 맞히면 순환 검증입니다. 그것은 우리가 만든 가정을 다시 읽어낸 결과이며 현실적 타당성의 증거가 될 수 없습니다.</p>
-</section>
-
-<section id="gaps"><h2><span class="num">11</span>아직 남은 개발: 확인된 내용과 계획 구분</h2>
-<table><caption>현행 소스를 읽어 확인한 운영 전 보강 지점</caption><thead><tr><th>우선순위</th><th>현재 상황</th><th>진행할 작업</th></tr></thead><tbody>
-<tr><td>높음 · 모델 계약</td><td>필수 기술은 점수에 반영되지만 하드 제약 없음. 등급 정원은 기재한 등급만 검사.</td><td>필수/선호 구분, 역할·기술 슬롯·투입량·등급 허용 규칙 확정 후 모델 버전 분리.</td></tr>
-<tr><td>높음 · 제품 검증 연결</td><td>Phase 1 검증·HiGHS 어댑터는 실험 경로. 서비스는 <code>solve_milp</code>의 CBC 반환 경로.</td><td>공통 모델·솔버 인터페이스로 연결하고 raw·display 검증을 API 응답 전 수행.</td></tr>
-<tr><td>높음 · What-if</td><td><code>objective_delta</code>는 기술 변화 + 협업 변화. MILP의 λ=0.3·반복 감점·절삭 범위·미충원을 반영한 전체 목적 델타가 아님. 교체 후 전체 가용률·예산·등급 검증 없음.</td><td>참고 점수 이름·설명 정정, 전체 목적 재평가와 제약 검사, 검토/적용/재최적화 구분.</td></tr>
-<tr><td>높음 · 입력 파이프라인</td><td>고정 JSON만 읽음. CSV import·외부 인사 API 없음.</td><td>컬럼 계약·변환기·검증 리포트·스냅샷 저장, 이후 같은 계약에 API 커넥터 추가.</td></tr>
-<tr><td>높음 · 300/60</td><td>기본·예산·밀집에서 세 솔버 모두 완료 0.</td><td>먼저 기존 모델의 상용 baseline. 이후 후보 축소·모델 식·warm start·분해 등을 한 요인씩 실험.</td></tr>
-<tr><td>중간 · 시간 표현</td><td>6개월, 프로젝트 전체 기간 같은 투입률. 실제 날짜·월별 변경·인수인계 미지원.</td><td>현장 요구가 확인되면 월별 a[i,j,m] 등 모델 확장과 재검증.</td></tr>
-<tr><td>중간 · 리뷰 이력</td><td>리뷰에 project/date/review_id가 없음. 같은 reviewer/reviewee 중복은 메모리 dict에서 마지막 항목으로 덮일 수 있음.</td><td>평가 ID·프로젝트·시점·가중 집계·결측/노후화 정책·근거 추적.</td></tr>
-<tr><td>중간 · 점수 보정</td><td>S/C·계수가 설계 가정. 실제 결과로 학습하지 않음.</td><td>도메인 검토·민감도·불확실성, 결과가 확보되면 시점 분리한 평가와 보정.</td></tr>
-<tr><td>중간 · API 자원</td><td>벤치 supervisor의 4분·메모리 보호가 API 전체 요청에 적용되지 않음. 기술 상한 LP도 서비스 경로 기한이 없음.</td><td>작업 큐·요청 전체 기한·동시성·취소·캐시 한도·상태 조회·관측.</td></tr>
-<tr><td>중간 · 캐시/데이터</td><td>캐시 키는 weights/params/대안수. 데이터 버전 없음. 현행 고정 자료에서는 재사용 가능.</td><td>자료/모델/솔버 버전 포함, 갱신 때 무효화, 오래된 추천 표시.</td></tr>
-<tr><td>운영 전 필수</td><td>실 인증/권한·인사 API·감사 원장·배포·동시 요청 운영 검증은 초기 범위 밖.</td><td>인사 데이터 접근 정책, 설명 권한, 배치 승인 원장, 백업·배포·모니터링·회복 절차.</td></tr>
-</tbody></table><p>이 항목들은 이번 보고서에서 발견·정리했으며 코드를 수정하지 않았습니다. 서비스의 실제 사용자 요구를 확정한 뒤 별도 구현 과제로 진행해야 합니다.</p>
-<details><summary>대안 생성에서 “다르다”와 “95%”는 어떻게 해석하나요?</summary><p>이전 후보의 사람/프로젝트 쌍 중 최대 80%까지만 다시 선택하도록 추가 제약을 넣고 반복 풀이합니다. 실제 구현은 이전 집합과의 겹침 상한이며, Jaccard 유사도 자체를 목적함수로 최적화하는 것은 아닙니다.</p><p>대안 품질은 <code>alt ≥ A − 0.05 × |A|</code>로 검사해 음수 점수에서도 부호가 뒤집히지 않게 합니다. 이 기준은 A안과의 비교입니다. A안이 진짜 전역 최적이라는 독립 증명이 없으면 대안의 실제 최적값 대비 95% 보장도 없습니다. 조건을 충족한 대안이 3개보다 적을 수 있습니다.</p></details>
-</section>
-
-<section id="current-input"><h2><span class="num">12</span>현재 코드가 받는 입력: 정확한 계약</h2>
-<p>데이터 프레임은 “한 종류의 사실을 행과 열로 담은 표”입니다. CSV는 그 표를 저장하는 파일 형식입니다. 현재 내부는 JSON·Pydantic 모델이며 CSV 읽기 기능은 아직 없습니다. 다음 표는 <strong>이미 구현된 계약</strong>입니다.</p>
-<table><caption>현행 도메인 모델 · core/domain/models.py</caption><thead><tr><th>모델·필드</th><th>형식·범위</th><th>의미·주의</th></tr></thead><tbody>
-<tr><td>Person: <code>id, name, grade</code></td><td>문자열 / 특급·고급·중급·초급.</td><td>고유 ID로 모든 표를 연결. 이름은 추천 계산에 필요 없음.</td></tr>
-<tr><td><code>monthly_rate</code></td><td>양의 정수.</td><td>예산과 동일한 월 단위 비용 척도여야 함. fixture의 1,000 등을 원화 실단가로 읽으면 안 됨.</td></tr>
-<tr><td><code>skills</code></td><td>기술명 → 정수 1~5 dict.</td><td>경력 문장을 바로 받지 않음. 키가 없는 기술은 점수 계산에서 0으로 처리.</td></tr>
-<tr><td><code>availability</code></td><td>정확히 6개 실수, 각각 0~1.</td><td>월 0~5의 가용률. 실제 기준월 필드는 없음.</td></tr>
-<tr><td>Project: <code>id, name, sector, phase</code></td><td>sector: 대내·대외금융·대외공공. phase: 실행·제안.</td><td>sector/phase는 구분·표시이고 별도 우선순위 목적항은 아님.</td></tr>
-<tr><td><code>start_month, end_month</code></td><td>정수 0~5, 종료≥시작.</td><td>시작·종료 월 모두 포함.</td></tr>
-<tr><td><code>grade_headcount</code></td><td>등급 → 인원수 dict.</td><td>운영 import에서 비음수 정수·누락 등급 정책을 추가 검사해야 함.</td></tr>
-<tr><td><code>requirements</code></td><td>skill / min_level 1~5 / headcount≥1의 목록.</td><td>기술 슬롯·S와 충족률 입력. headcount를 현재 MILP 기술 하드 제약으로 쓰지 않음.</td></tr>
-<tr><td><code>monthly_budget</code></td><td>양의 정수.</td><td>단가와 같은 통화·스케일·기간 기준.</td></tr>
-<tr><td>CoworkRecord</td><td><code>a_id, b_id, co_months≥1, project_count≥1</code>.</td><td>무방향 관계로 메모리에 넣음. project_count는 현행 C 식에 직접 쓰지 않음.</td></tr>
-<tr><td>PeerReview</td><td><code>reviewer_id, reviewee_id</code>, positive/negative 각각 items 1~5개와 text.</td><td>좋은/나쁜 쪽 항목이 모두 최소 1개인 데모 계약. 실제 양식에 맞춰 바뀔 수 있음.</td></tr>
-<tr><td>ParsedReview</td><td>방향 ID, <code>text_polarity∈[-1,1]</code>, evidence 목록.</td><td>LLM 또는 규칙 파서의 산출물. 현실의 감정 정답 라벨은 아님.</td></tr>
+<section id="scale"><h2><span class="num">10</span>규모·모델 실험과 운영 중 편성 (10월 5~7일)</h2>
+<p>Phase 1이 “300명은 서비스 준비가 안 됐다”로 끝났기 때문에, 다음 질문은 “무엇이 300명을 막는가”였습니다. 이번에는 벤치 장치가 아니라 <strong>실제 서버를 띄워 업로드부터 PDF까지 전 과정</strong>을 100·200·300명으로 돌리는 규모 리허설로 답을 찾았습니다. 사람 수가 같아도 조직 구성이 다릅니다: 100명은 데이터 조직 하나, 200명은 여기에 AI 조직, 300명은 업무 자동화 조직까지 더합니다. 가장 큰 사업은 28석입니다.</p>
+<h3>300명을 막은 것은 시간이 아니라 모델 크기였다</h3><p>협업 보상은 “두 사람이 같은 사업에 들어갔는가”를 나타내는 변수가 쌍마다·사업마다 하나씩 필요합니다. 200명에서 약 3,000쌍 × 40사업 = 12만 개입니다. 솔버가 이 변수 더미 속에서 좋은 답을 찾지 못한 것이 원인이었습니다.</p>
+<table><caption>보상 쌍 상한별 결과 · HiGHS 120초, 예전 기본 목적식으로 다시 채점(클수록 좋음)</caption><thead><tr><th>규모</th><th>0쌍</th><th>200쌍</th><th>400쌍</th><th>예전 기본(최대 5,000)</th></tr></thead><tbody>
+<tr><td>100명</td><td>+41.2 (5초)</td><td>+42.6 (10초)</td><td>+42.1 (9초)</td><td>+41.5 (한도)</td></tr>
+<tr><td>200명</td><td>+84.9 (12초)</td><td>+87.0 (22초)</td><td>+88.6 (57초)</td><td>빈자리 57석</td></tr>
+<tr><td>300명</td><td>+131.6 (58초)</td><td>+134.0 (98초)</td><td>빈자리 50석</td><td>답 없음</td></tr>
+</tbody></table><p>200명만 보면 400쌍이 조금 낫지만 300명이 400쌍에서 무너져, 세 규모 모두 버티는 <strong>200쌍</strong>을 서비스 기본으로 정했습니다. 그래서 화면의 “협업 시너지”는 협업 점수 상위 200쌍만 보상한다는 뜻입니다(감점 쌍은 그대로).</p>
+<table><caption>인원별 권장 계산 시간 · HiGHS, 보상 쌍 200</caption><thead><tr><th>규모</th><th>최선 1% 안에 드는 최소 시간</th><th>권장(×1.5)</th><th>실제 전 과정 A~D</th></tr></thead><tbody>
+<tr><td>100명</td><td>15초</td><td>30초</td><td>29초</td></tr><tr><td>200명</td><td>30초</td><td>60초</td><td>189초</td></tr><tr><td>300명</td><td>120초</td><td>180초</td><td>392초(약 6.5분)</td></tr>
+</tbody></table><p>세 규모 모두 A~D 4안·빈자리 0·교체 검토·PDF가 정상이었습니다(10-05, 120초 설정 실측). 같은 측정에서 CBC는 세 규모 모두 최선 1% 안에 들지 못했습니다. 관리자 설정에는 인원 기준 자동 시간이 기본으로 들어갔습니다.</p>
+<h3>실제 같은 10년 이력에서 다시 무너지고, 규칙을 정하다</h3><p>시연 데이터를 실제 인사 자료처럼 바꾸자(최근 10년 업무 이력, 1인 연 9건 안팎의 긴 평가 글) 같은 모델이 다시 무너졌습니다. “10년 중 6개월 이상 같은 사업”이면 익숙한 쌍으로 감점하는데, 10년이면 그런 쌍이 200명에서 9,794개, 300명에서 11,733개였습니다.</p>
+<table><caption>익숙한 쌍 기준 비교 · 100/200/300명 × 1·4시드, 안 A</caption><thead><tr><th>기준</th><th>결과</th><th>판단</th></tr></thead><tbody>
+<tr><td>10년 중 6개월(예전)</td><td>200·300명 빈자리 79 / 91~95.</td><td>사용 불가.</td></tr>
+<tr><td>최근 5년 중 12개월</td><td>300명 갭 3~7%로 좋지만 200명 갭 37~40%.</td><td>규모별로 들쭉날쭉.</td></tr>
+<tr><td>최근 3년 중 12개월</td><td>모든 규모 갭 4~11%, 빈자리 0, 협업 보상 가장 큼. 대신 오래 함께 일한 쌍이 한 팀에 더 들어감.</td><td><strong>사용자 결정(10-06)</strong>, 관리자 설정 가능.</td></tr>
+</tbody></table><p>시간 한도 안의 답이 시드(난수 시작값)에 따라 흔들려, 같은 모델을 시드 4개로 동시에 풀고 가장 좋은 답을 고르게 했습니다. 100명 60초 기준 29.5 → 33.3. 시드 1개면 대안이 품질 하한에 걸려 안 A 하나만 나오는 일도 있었습니다.</p>
+<h3>모델을 더 좋게 만들 수 있나: 실험했고, 대부분 기각했다</h3><table><thead><tr><th>시도</th><th>결과</th><th>결정</th></tr></thead><tbody>
+<tr><td>팩터 실험실: 기술 외 팩터 6종(최근성·도메인 등)을 넣고 빼며 후보 23개 비교</td><td>후보를 고를 때 쓰지 않은 검증용 가정 두 개(필수 기술 공백, 쪼개기 비효율)에서 <strong>현재 모델(기술 S만)이 가장 좋았습니다</strong>(처음 100 / 98.5, 실제 같은 데이터·새 쌍 기준으로 다시 돌려 100 / 100). 다른 가정에서의 우위는 같은 팩터로 만든 가정이라 순환이었습니다.</td><td>근거 없이 기준을 늘리지 않음.</td></tr>
+<tr><td>자리당 적합도 항: 작고 짧은 사업에 덜 맞는 사람이 앉는다는 의심</td><td>100명에서는 그런 경향, 200명에서는 반대. 계수를 키우면 쪼개기 비효율이 나빠짐(0.500 → 0.451).</td><td>기각, 기본 0으로 보존.</td></tr>
+<tr><td>파트너 다양성 하한(실험 G): 같은 사람과만 묶이지 않게</td><td>SI 팀 크기에서는 거의 걸리지 않고 200명 풀이를 망침.</td><td>사용자 결정: 채택 안 함, 쌍 감점 유지.</td></tr>
+<tr><td>과거 성과로 가정 검증: 사업 시작 전 정보로 팀 특징을 복원해 가상 성과와 비교</td><td>협업 보상 방향은 단순 비교에서 일관되나 여러 변수를 함께 보면 견고하지 않음. 익숙함 감점은 검정력이 부족해 판단 불가.</td><td>감점 계수는 운영 원칙으로 남김. 실데이터 보정 절차의 원형.</td></tr>
 </tbody></table>
-<details open><summary>현재 JSON 한 명과 한 프로젝트를 읽어보기</summary><pre><code>{
-  "id": "p000", "name": "가상인력 A", "grade": "중급",
-  "monthly_rate": 1000,
-  "skills": {"Java": 4, "SQL": 3},
-  "availability": [0.5, 1.0, 1.0, 0.8, 0.8, 1.0]
-}
-{
-  "id": "j00", "name": "가상 프로젝트 A",
-  "sector": "대외금융", "phase": "실행",
-  "start_month": 0, "end_month": 2,
-  "grade_headcount": {"고급": 1, "중급": 2},
-  "requirements": [{"skill": "Java", "min_level": 4, "headcount": 2}],
-  "monthly_budget": 3000
-}</code></pre><p>예시입니다. 비용 1,000과 3,000은 같은 가상 비용 단위이며 실제 월급·원화 견적을 뜻하지 않습니다.</p></details>
-<p>추천 결과의 현재 최소 단위는 <code>person_id, project_id, alloc</code>입니다. 여기에 plan label·objective·unfilled·지표가 붙습니다. 앞으로 결과 ID, 입력 스냅샷 ID, 모델/솔버 버전, 검증 상태, 승인자·수정 이유를 추가해야 추후 같은 의사결정을 재현할 수 있습니다.</p>
+<h3>달별 투입률과 동시 프로젝트 상한</h3><p>실데이터 답변에 따라 두 규칙을 넣었습니다. 한 사람이 같은 달에 맡는 사업은 최대 3개(관리자 1~6)이고, 최소 투입률 30%에서는 3과 6의 결과가 같았습니다(1로 묶으면 −2%). 달마다 투입률을 다르게 하는 방식은 끝까지 풀면 목적값이 100/200/300명에서 +20.5/+15.4/+15.0% 좋아지지만 16/77/309초가 걸립니다. 그래서 기본은 “기간 내내 한 비율”로 두고(사용자 결정), 관리자가 켜거나 배치 표에서 겸임 인력만 달별로 고치게 했습니다.</p>
+<h3>운영 중 편성: 이미 배치된 조직에서 일부만 바꾸기</h3><p>실제 현장은 연초에 백지에서 짜는 일보다 “대부분 이미 배치돼 있는데 신규 제안 2~3개가 들어왔다”가 더 흔합니다. 사용자 요청에 따라 <strong>현재 배치 + 최근 끝난 대기 인력 + 신규 제안</strong>을 입력으로 받아, 이미 배치된 사람을 최대 K명까지만 옮기는 계산을 만들었습니다.</p>
+<table><caption>시연 운영 중 100명 묶음 · 90명 배치 중, 대기 10명, 신규 제안 2개 · 모두 최적 증명</caption><thead><tr><th>옮기는 사람 K</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>
+<tr><td>빈자리</td><td>2</td><td>1</td><td>0</td><td>0</td></tr><tr><td>배치 품질</td><td>69.19</td><td>69.90</td><td>69.68</td><td>70.39</td></tr><tr><td>계산 시간</td><td>0.5초</td><td>1.1초</td><td>9초</td><td>25초</td></tr>
+</tbody></table><p>K=2의 품질이 K=1보다 조금 낮은 것은 빈자리 하나를 메우는 대가입니다. 그래서 화면은 빈자리와 품질을 따로 보여 줍니다. 같은 사람들을 “전부 다시 짜기”(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남습니다. 정원·예산이 현재 명단에 맞춰져 있기 때문입니다. 운영 중 묶음은 K 비교로 씁니다. 작은 개선이 솔버의 허용 오차에 가려지지 않도록 운영 중 편성은 갭 0으로 풉니다.</p>
+<p>진행 사업 보강 시뮬레이터는 후보표, 넣어 보기·빼 보기, “최선 n명”을 줍니다. 100명에서 최선 2명 보강은 남는 인력만 쓰면 +2.10, 다른 사업에서 1명 빼 오면 +2.61이었습니다.</p>
+<div class="callout caution"><strong>“사람이 엑셀로 짜면?”과 비교한 숫자의 범위</strong><p>점수 높은 사람부터 넣는 단순 규칙과 비교하면 배치 품질이 100명 31.6 → 58.2, 300명 113.5 → 164.0이었고, 단순 규칙은 빈자리 1~3·예산 위반 0~2가 남았습니다. 이것은 우리 점수표 안에서의 비교입니다. 숙련된 담당자의 실제 배치와 비교한 것이 아니며, 운영 중 화면에는 조건이 같지 않아 이 카드를 두지 않았습니다.</p></div>
+<h3>시연 묶음과 미리 계산</h3><p>시연 묶음은 100·200·300명 × 연초 계획·운영 중 6개와, 오류 6건을 일부러 넣은 묶음 하나입니다. 300명 A~D는 실시간이면 수 분이 걸려 미리 계산한 결과를 둡니다. 서버는 데이터 버전(리뷰 판정값 포함)·설정·평가기 재채점이 모두 맞을 때만 그 결과를 “미리 계산(시각)”이라고 표시해 보여 주고, 하나라도 다르면 실시간으로 계산합니다. 기술 이름 사전 도입으로 200·300명 점수가 바뀌어 10-10에 4개를 다시 만들었고, 서버 검사에서 6개 모두 받아들여졌습니다.</p>
+<p class="source">근거: <code>rehearsal/results/rehearsal-report.html</code>, <code>rehearsal/results/n*/pairs.json</code>, <code>rehearsal/results/rule-compare.html</code>, <code>rehearsal/results/factor_lab/</code>, <code>rehearsal/results/partner-compare.html</code>, <code>rehearsal/results/outcome-check.html</code>, <code>outputs/c6-*.json</code>, <code>rehearsal/results/{operating-check,baseline-check}.json</code>, <code>docs/model-roadmap.md</code>, <code>docs/demo-script.md</code>.</p>
 </section>
 
-<section id="csv"><h2><span class="num">13</span>앞으로 필요한 CSV·데이터 프레임: 제안 명세</h2>
+<section id="ai"><h2><span class="num">11</span>AI는 어디에 쓰고, 어떻게 막았나 (10월 5~11일)</h2>
+<p>원칙은 10월 3일판과 같습니다. <strong>AI(LLM)는 사람을 배정하지 않습니다.</strong> 바뀐 것은 AI가 쓰는 곳이 세 군데로 늘었고, 세 곳 모두 “AI가 틀려도 틀린 글이 나가지 않게” 기계 검사와 대체 경로를 붙였다는 점입니다. 사용자 지시로 AI를 쓰는 곳마다 외부 모델(gpt-6-luna)과 사내 모델을 함께 비교했습니다. 사내 서버로는 측정할 수 없어 <strong>Z.ai의 GLM 5.3을 사내 LLM으로 가정</strong>했습니다(사용자 결정, 가상 데이터만 보냄).</p>
+<h3>① 동료 평가 글 판정</h3><p>평가 글이 긍정인지 부정인지(−1~+1)는 협업 점수 C에 들어갑니다. 10-06 사용자 결정으로 판정을 LLM으로 통일했습니다. 실패하면 체크 항목 점수로 대신하고 화면에서 “다시 판정”을 누를 수 있습니다. 실데이터 평가 글은 관리자가 외부 전송에 동의했거나 사내 주소일 때만 LLM으로 갑니다.</p>
+<table><caption>E4 · 정답이 있는 평가 글 300건에서 부정 평가를 잡은 비율</caption><thead><tr><th>판정기</th><th>부정 검출</th><th>1,000건 비용</th></tr></thead><tbody>
+<tr><td>외부 gpt-6-luna(추론 low)</td><td>89%</td><td>$0.08</td></tr><tr><td>사내 가정 GLM 5.3(추론 low)</td><td>69%</td><td>$0.78</td></tr><tr><td>사내 가정 GLM 5.3(추론 max)</td><td>84%</td><td>$4.10</td></tr><tr><td>판단 전용 AI 서비스(Jev)</td><td>17%</td><td>$0.02</td></tr>
+</tbody></table><p>사내 low는 max보다 확실히 덜 잡지만(통계적으로 유의), 비용을 보고 사용자가 추론 강도 low를 골랐습니다. 이 수치는 사내 배포 때 추론 강도를 다시 정하는 근거입니다.</p>
+<h3>② 교체 설명과 근거 인용</h3><p>교체 설명은 근거마다 출처 ID를 달고, AI가 인용한 문장을 원문과 <strong>글자 그대로</strong> 대조합니다. 없는 출처·바꿔 쓴 인용이 하나라도 있으면 그 설명을 버리고 규칙 기반 설명을 씁니다. 실데이터에서는 평가 원문을 화면·AI 어디에도 보내지 않고 항목 라벨만 씁니다. 교체로 새 규칙 위반이 생기면 결론은 반드시 “보류”입니다.</p><p>E5(운영 중 묶음 교체 100건, 양쪽 low): 성공 100% · 99%, 새 위반 교체의 “보류” 준수 100% · 100%, 자유 판단 결론 일치 93%(25/27), 100건 비용 $0.06 · $0.96, 지연 3.6초 · 7.6초(외부 · 사내 가정 순).</p>
+<h3>③ “그냥 AI에게 배치를 시키면?” (E6)</h3><p>사용자 요청 “증명해 보이자”로, 같은 배치 문제를 LLM에게 통째로 맡겨 서비스 평가기로 채점했습니다.</p><ul><li>외부 gpt-6-luna(추론 high): 20명에서는 솔버 점수의 89~94%. 100명에서는 원자료만 주면 규칙을 지킨 배치 0/2, 점수를 계산해 줘도 2/3에서 솔버의 55%. 한 번에 4~11분.</li><li>사내 가정 GLM 5.3: 쓸 수 있는 배치 0(출력 한도를 추론에 다 써 버리거나 규칙 위반). 실험 중 잔액이 소진돼 50·100명은 돌리지 못했습니다(미측정으로 기록).</li><li>판단 전용 AI(Jev)로 자리마다 사람을 고르게 하면 100명에서 26.24, 솔버 40.58, “기술 1등부터” 규칙 30.11, 무작위 11.41이었습니다.</li></ul><p>결론: 규칙이 많은 배치 계산은 솔버에 맡기고, AI는 글과 판단 보조에 쓰는 지금 구조가 맞습니다. 이 비교는 2026-10-07 당시 모델·가상 데이터 기준입니다.</p>
+<h3>④ 인사팀 소명 글: “왜 이 사람들인가”를 글로</h3><p>배치를 확정하면 인사팀에 근거를 설명하는 글이 필요합니다. 세 방식을 비교했습니다(E7). 지식 그래프 사실을 정해진 틀에 채운 글(템플릿)과 그래프 사실로 AI가 쓴 글(GraphRAG)은 둘 다 근거 오류 0, 필수 요소 63/63으로 같았습니다. 하지만 길이가 약 5,200자 대 약 890자였습니다. 일반 검색형 RAG는 비교·규칙 사실이 없어 핵심을 다루지 못했습니다. 사용자는 <strong>사용성을 근거로 GraphRAG</strong>를 고르고, 템플릿은 실패 때 대체로만 쓰기로 했습니다.</p>
+<div class="grid two"><div class="panel"><h3>AI가 하는 일</h3><p>사실 번호 <code>{F12}</code>를 고르고, 순서를 정하고, 정해진 연결 말(“DP0035는”, “동료 평가는”, “이며”, “입니다”)로만 엮습니다. 숫자·충족/미달·다른 사람 ID는 쓸 수 없습니다.</p></div><div class="panel"><h3>서버가 하는 일</h3><p>사실 번호 자리에 데이터 그대로의 문구를 채웁니다. 검사기 6규칙(없는 번호, 허용 밖 말, 지어낸 ID, 사람-사실 짝, 빠진 팀원, 빈 글) 중 하나라도 걸리면 글 전체를 버리고 템플릿을 씁니다.</p></div></div>
+<p>처음 설계(자유 문장 + 금지어 목록)는 폴백 리뷰 때마다 새 구멍이 나와, 측정 전에 이 “자리표시 + 허용 목록” 방식으로 바꿨습니다. 이 방식에서는 채운 글의 숫자·상태·사람-사실 짝이 구성상 데이터와 같습니다.</p>
+<table><caption>소명 글 확대 검증 · gpt-6-luna 추론 low · 측정 전 기준 커밋</caption><thead><tr><th>측정</th><th>E7b (10-09)</th><th>E7c (10-10)</th></tr></thead><tbody>
+<tr><td>규모</td><td>618편, $0.50</td><td>843편, $0.69(처음 보는 데이터 225편 포함)</td></tr>
+<tr><td>일부러 심은 실수를 다 잡았나</td><td>9,309/9,309</td><td>13,323/13,323, 16종 모두 하한 이상</td></tr>
+<tr><td>AI 글 채택률</td><td>94.7%(목표 95% 조건부)</td><td><strong>99.4%</strong>, 처음 보는 데이터 <strong>99.6%</strong></td></tr>
+<tr><td>탈락 이유</td><td>주로 소제목-사실 종류 불일치 25건, 일본어 섞임</td><td>불일치 0. 남은 5건은 일본어·한자 섞임 4, 기술 이름을 머리로 쓴 1</td></tr>
+<tr><td>한 편 시간</td><td>p50 7.6~9.0초</td><td>p50 7.5~8.8초</td></tr>
+</tbody></table>
+<p>E7b와 E7c 사이에 바꾼 것은 AI에게 주는 안내서(소제목별로 놓을 수 있는 사실 종류 표, 한국어만)뿐입니다. 검사기는 그대로 둬 효과만 따로 봤습니다. 안내서를 고칠 때 본 문제지로 다시 재면 점수가 부풀 수 있어, 새 시드로 만든 가상 회사 3곳을 따로 채점했습니다.</p>
+<h3>불리한 사실은 빠짐없이</h3><p>AI는 “이 사람은 요구 기술 경력이 모자란다” 같은 불리한 사실을 가끔 뺐습니다(자체 인용률 92~97%). 사용자 결정(10-10)으로 <strong>AI가 빠뜨린 불리한 사실은 서버가 글 끝에 정해진 문단으로 덧붙입니다.</strong> AI가 쓴 부분은 한 글자도 바꾸지 않습니다. 28명 팀에서 이 문단이 한 줄에 85개까지 이어지자, 10-11 사용자 결정으로 사람별 줄로 바꿨습니다.</p>
+<pre><code>… 이상의 근거로 이 배치를 제안합니다.
+다만 다음 사항도 함께 확인이 필요합니다.
+- 사업 전체: SQL 요구 2명(레벨 2 이상) 대비 해당자 1명으로 부족[F3]
+- DP0082: SQL 경력 7개월로 레벨 1(요구 레벨 2) 미달[F48]</code></pre>
+<p>저장해 둔 E7c의 AI 글 838편을 AI 호출 없이 새 형식으로 다시 돌려, 채택 결과와 AI 부분이 그대로이고 무결성 검사 838/838을 확인했습니다. 21명 이상 팀은 사람 줄이 최대 26줄, 가장 긴 줄 303자입니다. 전체 길이는 4,605자에서 4,159자로 10%쯤 줄 뿐이라, 화면에서는 접어 두고 사람별로 펼치기를 권했습니다. 소명 글의 API·화면·PDF는 claude-b가 만들 차례입니다.</p>
+<div class="callout caution"><strong>이 수치가 말하지 않는 것</strong><p>“처음 보는 데이터”도 같은 생성기로 만든 가상 회사입니다. 실제 인사 자료로는 재지 않았고, 사내 가정 모델(GLM)은 잔액 소진으로 소명 글을 재지 못했습니다. 99%대 채택률은 “검사기를 통과한 글의 비율”이지 인사팀이 그 글에 만족한다는 뜻이 아닙니다.</p></div>
+<p class="source">근거: <code>outputs/review-judge-comparison.html</code>(E4), <code>outputs/briefing-llm-comparison.html</code>(E5), <code>rehearsal/results/llm-vs-solver.html</code>(E6), <code>outputs/jev-experiment.html</code>, <code>rehearsal/results/justification-compare.html</code>(E7), <code>rehearsal/results/justify-scale.html</code>(E7b), <code>rehearsal/results/justify-scale-e7c.html</code>(E7c), <code>rehearsal/results/addendum-by-person.html</code>, <code>docs/requests/2026-10-09-hr-justification.md</code>.</p>
+</section>
+
+<section id="kg"><h2><span class="num">12</span>지식 그래프와 기술 이름 사전 (10월 8~9일)</h2>
+<p>지식 그래프는 “사람—기술—사업—고객사—산업—평가—협업”을 점과 선으로 이은 지도입니다. 8월에 Neo4j(그래프 전용 DB)를 뺀 것은 <strong>검색 속도·저장</strong> 근거가 없어서였습니다. 이번에 다시 그래프를 만든 이유는 다릅니다. 인사팀 소명 글과 조직 기술 지도처럼 <strong>여러 종류의 사실을 한 번에 엮어 보여 주는 용도</strong>가 생겼기 때문입니다.</p>
+<h3>그래프 하나, 보기 둘</h3><p>“용도별로 각각 만들어야 하나?”라는 질문에 그래프는 하나만 만들었습니다(<code>core/kg</code>). 보기는 두 가지입니다. ① <strong>조직 기술 지도</strong>: 어떤 기술이 몇 명에게 얼마나 있고, 신규 제안에 무엇이 모자란지. ② <strong>사업별 근거</strong>: 요구 기술 충족, 같은 산업·고객사 경험, 팀 안 협업 이력, 동료 평가, “왜 다른 사람이 아니었나”(현행 평가기로 잰 교체 비교). 실데이터에서는 이름·평가 원문·업무 요약을 그래프에 넣지 않습니다.</p><p>10-10 Codex 사후 리뷰에서 “계획 시작 뒤에 시작하는 업무 이력이 과거 경험으로 셈해질 수 있다”는 지적을 받아 고쳤습니다. 시연 데이터에는 그런 행이 없어 이전 결과는 영향이 없었습니다.</p>
+<h3>어떤 기술로 만들까: E8·E8b</h3><p>사용자 요청 “지금 시스템에 어떤 게 베스트인지 증적”에 따라 판정 규칙을 먼저 커밋하고, 같은 사실·같은 질문 4개로 세 후보를 쟀습니다.</p>
+<table><thead><tr><th>후보</th><th>결과</th><th>해석</th></tr></thead><tbody>
+<tr><td>메모리 그래프(networkx)</td><td>정확성 4/4, 12칸 중 11칸에서 가장 좋음.</td><td>사전 규칙상 최선. 지금의 자체 메모리 그래프는 networkx보다 12칸 중 10칸에서 더 빨라 그대로 씁니다.</td></tr>
+<tr><td>그래프 DB(Neo4j)</td><td>정확성 4/4. 별도 서버라 후순위.</td><td>3,000명 조직 기술 지도에서 27.9ms. 우리 그래프도 색인·집계를 고쳐 671ms → 33.6ms로 비슷해졌습니다.</td></tr>
+<tr><td>RDF(표준 지식 그래프 형식)</td><td>정확성 4/4.</td><td>표준 추론(상위 기술 전이)은 147쌍으로 같음. 하지만 “하위 기술 경력의 절반 인정” 같은 가중 계산은 표준 추론으로 표현할 수 없습니다.</td></tr>
+</tbody></table><p>결론: 지금 규모·질문에서는 별도 DB 없이 메모리 그래프로 충분합니다. 보고서용 근거는 <code>docs/kg-technology-decision.md</code>에 정리했습니다. 실제 규모가 훨씬 크거나 여러 시스템이 같은 그래프를 공유해야 하면 다시 비교할 문제입니다.</p>
+<h3>IT 기술 이름 사전과 하위 기술 부분 인정</h3><p>실제 기술 이력은 사람이 직접 적은 이름이라 같은 기술이 여러 이름으로 들어옵니다. 사용자 결정(10-09)으로 SI 핵심 기술 <strong>228개</strong>를 큐레이션한 사전을 입력 단계 기본값으로 넣었습니다. 한·영 별칭, 버전 표기(“Java 17”), 괄호 병기를 대표 이름으로 바꾸고, 상위·관련 관계를 둡니다. 하위 기술 경력은 깊이마다 절반씩 상위 기술에 인정합니다(<code>0.5^깊이</code>, 근거 없는 가정값). 사전에 없는 이름은 합치지 않고 경고만 합니다.</p><p>측정: 이름만 흐트러뜨린 사본에서 사전을 쓰면 S가 원본과 같았습니다(100·200·300명). 사전이 없으면 100명에서 사람-사업 쌍의 86%에서 S가 달라지고, 배치 점수가 57.8에서 49.1로 떨어졌습니다. 즉 실제 자료에서는 이름 정리가 배치 품질을 크게 좌우할 수 있습니다.</p>
+<div class="callout caution"><strong>알려진 한계</strong><p>부분 인정분이 출처 표시 없이 근거 색인·AI 설명에 “보유 기술”처럼 보일 수 있습니다(claude-b·공유 계약 요청 대기). 소명 글의 사실 문구에는 “하위 기술 … 에서 일부 인정”이 붙습니다. 인정 계수를 관리자 설정에 노출할지, 데이터셋 버전에 사전 버전을 넣을지도 요청 대기입니다.</p></div>
+<p class="source">근거: <code>rehearsal/results/kg-preview.html</code>, <code>rehearsal/results/kg-backends.html</code>(E8), <code>rehearsal/results/kg-advantages.html</code>(E8b), <code>rehearsal/results/skill-dictionary.html</code>, <code>docs/kg-technology-decision.md</code>.</p>
+</section>
+
+<section id="trust"><h2><span class="num">13</span>이 결과를 어디까지 신뢰할 수 있는가</h2>
+<div class="panel"><svg viewBox="0 0 850 380" role="img" aria-label="신뢰의 네 층: 계산 구현은 합성 점검 통과, 계산 성능은 300명까지 시연 가능, AI 글은 검사기 통과분만 사용, 실제 사업 효과는 성과 데이터가 없어 미검증."><rect x="35" y="20" width="780" height="70" rx="10" fill="#e8f5ed" stroke="#176943" stroke-width="2"/><text x="60" y="49" fill="#176943" font-size="20">1 · 계산 구현</text><text x="60" y="75" fill="#17232f" font-size="16">현재 방정식의 제약과 점수를 제대로 계산하는가 → 합성 검증 통과, 서비스 답마다 독립 검증</text><rect x="35" y="110" width="780" height="70" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="60" y="139" fill="#185ec0" font-size="20">2 · 기술 성능</text><text x="60" y="165" fill="#17232f" font-size="16">300명을 시연 시간 안에 푸는가 → 실제 형식 가상 자료로 A~D 약 6.5분, 빈자리 0</text><rect x="35" y="200" width="780" height="70" rx="10" fill="#edf4ff" stroke="#185ec0" stroke-width="2"/><text x="60" y="229" fill="#185ec0" font-size="20">3 · AI 글의 사실성</text><text x="60" y="255" fill="#17232f" font-size="16">AI 글이 데이터와 다른 말을 하는가 → 검사기 통과분만, 실패는 규칙 기반 글</text><rect x="35" y="290" width="780" height="70" rx="10" fill="#fff4e3" stroke="#c17a18" stroke-width="2"/><text x="60" y="319" fill="#8b5106" font-size="20">4 · 현실의 효과</text><text x="60" y="345" fill="#17232f" font-size="16">고객 만족·품질·지속 수주를 높이는가 → 결과 자료·현장 검증 필요</text></svg></div>
+<div class="mobile-diagram" aria-label="네 수준의 신뢰 범위"><div class="box"><strong>1 · 계산 구현</strong><p>합성 점검 통과, 서비스 답마다 독립 검증</p></div><div class="box"><strong>2 · 기술 성능</strong><p>300명 A~D 약 6.5분, 빈자리 0(가상 자료)</p></div><div class="box"><strong>3 · AI 글의 사실성</strong><p>검사기 통과분만, 실패는 규칙 기반 글</p></div><div class="box wait"><strong>4 · 현실 효과</strong><p>고객 만족·품질·후속 과제 → 성과 데이터 필요</p></div></div>
+<p><strong>객관적 판단:</strong> 실데이터가 없어도 방정식 구현 오류, 같은 모델에서의 솔버 차이, AI 글이 데이터와 어긋나는지는 신뢰할 수 있는 기술 증거로 만들 수 있고, 지금 그 증거가 있습니다. 10월 3일판보다 넓어진 것은 “실제 인사 자료와 같은 <strong>모양</strong>의 가상 자료로 300명까지 끝까지 돈다”는 점입니다. 그러나 실제 직원·프로젝트 <strong>분포</strong>를 대표한다는 근거는 여전히 없으므로, 운영 성공률이나 현실 효과를 신뢰할 수준은 아닙니다.</p>
+<table><thead><tr><th>주장</th><th>현재 판단</th><th>추가로 필요한 증거</th></tr></thead><tbody><tr><td>서비스가 내는 배치는 예산·가용률·정원·동시 프로젝트 규칙을 지킨다</td><td>근거 있음. 반환 직전 독립 검증을 통과한 답만 나갑니다.</td><td>실제 입력의 단위·변환 검증.</td></tr><tr><td>300명 규모를 시연할 수 있다</td><td>가상 자료·이 기기 기준 근거 있음(약 6.5분, 미리 계산으로 즉시).</td><td>실제 분포의 자료, 운영 서버, 동시 사용자.</td></tr><tr><td>AI 글의 숫자·사람-사실 짝이 데이터와 같다</td><td>소명 글은 구성상 같음, 교체 설명은 인용 대조로 확인. 검사 실패는 대체 글.</td><td>실제 평가 글·인사팀 사용자 평가.</td></tr><tr><td>추천 팀이 실제로 성과가 가장 좋다</td><td>근거 없음.</td><td>독립 성과 기록·비교군·현장 평가.</td></tr><tr><td>단순 규칙보다 낫다</td><td>우리 점수표 안에서만 근거 있음(10장).</td><td>숙련 담당자 배치와의 비교, 현실 성과.</td></tr><tr><td>가상 성과 데이터로 효과를 입증할 수 있다</td><td>불가. 절차·통계 오류 점검과 “판단 불가” 확인까지만 가능(10장 과거 성과 검증).</td><td>가상 생성 규칙과 독립적인 현실 결과.</td></tr></tbody></table>
+<h3>특히 혼동하기 쉬운 숫자들</h3><ul><li><strong>최적화율 약 93%:</strong> 선택안의 기술 점수 / 기술만 최대화한 완화 문제 상한. 전체 목적의 최적성이나 성과 성공 확률이 아닙니다.</li><li><strong>기술 충족률 약 55%:</strong> 한 사람의 투입량을 자격 있는 기술 슬롯에 나눠 세는 보조 지표. 등급 인원 미충원율과 다릅니다.</li><li><strong>솔버 gap 5%:</strong> 현행 목적함수에서 남은 점수 개선의 상한 차이. 화면의 신뢰도 배지(“최대 X% 높을 수 있음”)가 이 값입니다.</li><li><strong>소명 글 채택률 99%대:</strong> AI 글이 검사기를 통과한 비율. 글의 품질이나 인사팀 만족도가 아닙니다.</li><li><strong>배치 품질(운영 중 69~70, 단순 규칙 대비 31.6 → 58.2):</strong> 우리 점수표의 합계. 묶음·조건이 다르면 서로 비교할 수 없습니다.</li></ul>
+<p>처음부터 “좋은 점수의 팀은 성공”이라는 규칙으로 가상 성과를 만든 뒤 같은 점수로 맞히면 순환 검증입니다. 팩터 실험실도 처음 설계가 이 순환에 빠져 리뷰에서 지적받고 고쳤습니다(10장).</p>
+</section>
+
+<section id="gaps"><h2><span class="num">14</span>아직 남은 개발: 10월 3일판 목록의 현재 상태</h2>
+<table><caption>10월 3일판 “운영 전 보강 지점”이 지금 어떻게 됐는지</caption><thead><tr><th>10월 3일 항목</th><th>지금 상태</th><th>남은 것</th></tr></thead><tbody>
+<tr><td>모델 계약: 필수 기술 하드 제약 없음, 미기재 등급 자유</td><td><span class="tag done">결정</span> 실데이터 답변상 필요 기술은 선호, 미기재 등급 허용 → 현재 동작이 의도와 맞음.</td><td>실제 운영 담당자 확인.</td></tr>
+<tr><td>제품 검증 연결: 서비스는 CBC, 검증은 실험 경로</td><td><span class="tag done">해결</span> HiGHS 고정, 반환 전 독립 검증 강제, 극미세 예산 보정(K3·C0·C1).</td><td>—</td></tr>
+<tr><td>What-if: 부분 점수, 제약 검사 없음</td><td><span class="tag done">해결</span> 전체 목적·제약으로 재평가(K1), 검토 → 적용 → 저장(K10·K13), PDF가 서버에서 다시 계산.</td><td>“승인” 단계와 승인 원장은 없음.</td></tr>
+<tr><td>입력 파이프라인: 고정 JSON만</td><td><span class="tag done">해결</span> CSV 계약·검증 리포트·zip 업로드(K2·K9).</td><td>인사 시스템 API 연결, 실제 자료 첫 적재.</td></tr>
+<tr><td>300/60: 세 솔버 모두 완료 0</td><td><span class="tag done">시연 가능</span> 보상 쌍 200·익숙한 쌍 규칙·시드 4로 300명 A~D 빈자리 0(10장).</td><td>실제 분포에서 다시 측정.</td></tr>
+<tr><td>시간 표현: 기간 내내 같은 투입률</td><td><span class="tag pending">일부</span> 달별 투입률(선택)·사람별 달별 조정.</td><td>실제 날짜·인수인계·중도 투입.</td></tr>
+<tr><td>리뷰 이력: 같은 방향 리뷰는 마지막 1건</td><td><span class="tag pending">일부</span> 모든 회차를 평균해 씀.</td><td>SQLite 근거 표에 회차 칸이 없어 재수화 경로는 여러 회차를 거부.</td></tr>
+<tr><td>점수 보정: 계수가 설계 가정</td><td><span class="tag risk">남음</span> 과거 성과 검증 절차만 준비(가상 자료로는 판단 불가 확인).</td><td>실제 성과 자료.</td></tr>
+<tr><td>API 자원: 전체 요청 기한·큐 없음</td><td><span class="tag pending">일부</span> PDF 크기·동시성·시간 상한, 운영 중 비교 한 번에 하나, 계산 시간 상한 900초.</td><td>작업 큐·취소·상태 조회.</td></tr>
+<tr><td>캐시/데이터 버전 없음</td><td><span class="tag done">해결</span> 캐시 키·요청에 데이터셋 버전(K9), 미리 계산은 버전·설정·재채점 확인.</td><td>사전 버전을 데이터셋 버전에 넣기(요청 대기).</td></tr>
+<tr><td>운영 전 필수: 인증·권한·감사·배포</td><td><span class="tag pending">일부</span> 관리자 비밀번호 로그인, 업로드·교체·서명키 영속, <code>run_poc.sh</code>(소스 그대로 실행, 사용자 결정).</td><td>직원별 계정·권한·감사 원장·백업·배포·모니터링.</td></tr>
+</tbody></table>
+<h3>10월 3일 이후 새로 생긴 남은 일</h3><table><thead><tr><th>항목</th><th>상태</th><th>담당·조건</th></tr></thead><tbody>
+<tr><td>인사팀 소명 글 API·화면·PDF</td><td>계약 문서 완료, 착수 전.</td><td>claude-b. 덧붙임 문단 접기·사람별 펼치기 권장.</td></tr>
+<tr><td>경력 개월을 직접 쓰는 기술 점수</td><td>제안(대리 레벨 대신 <code>min(보유 개월/요구 개월, 1)</code>).</td><td>공유 계약 변경이라 합의 필요. Phase 0 재검증 동반.</td></tr>
+<tr><td>부분 인정 기술의 출처 표시, 인정 계수 설정, 사전 버전</td><td>요청 대기.</td><td>claude-b·공유 계약.</td></tr>
+<tr><td>운영 중 결과를 다음 기준 배치로 이어 쓰기, PDF에 운영 결과</td><td>미구현.</td><td>claude-b.</td></tr>
+<tr><td>시연 평가 글 생성기 다듬기(직설형 평가자 5~10% 등)</td><td>보류.</td><td>사용자 결정: 프로젝트 마무리 때 한 번에(바뀌면 미리 계산·판정 실험을 다시 돌려야 함).</td></tr>
+<tr><td>사내 가정 모델(GLM) 재측정</td><td>잔액 소진으로 중단.</td><td>사용자 충전 뒤.</td></tr>
+<tr><td>실데이터 사람 ID 형식</td><td>소명 글 문법이 ID를 “영문+숫자”로 가정.</td><td>실제 ID 형식 확인 필요.</td></tr>
+<tr><td>claude-b가 임시로 맡은 C0~C4 통합의 Codex 재리뷰</td><td>요청 대기.</td><td>Codex.</td></tr>
+</tbody></table>
+<details><summary>대안 생성에서 “다르다”와 “95%”는 어떻게 해석하나요?</summary><p>이전 후보의 사람/프로젝트 쌍 중 최대 80%까지만 다시 선택하도록 추가 제약을 넣고 반복 풀이합니다. 실제 구현은 이전 집합과의 겹침 상한이며, Jaccard 유사도 자체를 목적함수로 최적화하는 것은 아닙니다.</p><p>대안 품질은 <code>alt ≥ A − 0.05 × |A|</code>로 검사합니다. 10-05부터는 빈 팀·중복 구성·A보다 빈자리가 많은 후보도 뺍니다(C2). 조건을 만족하는 대안이 없으면 화면에 “조건을 만족하는 대안 없음”이 나옵니다. A안이 전역 최적이라는 독립 증명이 없으면 대안의 진짜 최적값 대비 95% 보장도 없습니다.</p></details>
+</section>
+
+<section id="current-input"><h2><span class="num">15</span>지금 받는 입력: CSV 묶음 계약</h2>
+<p>데이터 프레임은 “한 종류의 사실을 행과 열로 담은 표”이고, CSV는 그 표를 저장하는 파일 형식입니다. 10월 3일판에서는 CSV를 읽는 기능이 없어 13장에 <strong>제안</strong> 명세를 적었습니다. 그 뒤 사용자가 실제 인사 자료의 항목·형식·규칙을 답해 주었고, 그 모양에 맞춘 <strong>실제 계약</strong>을 구현했습니다(<code>core/ingest</code>, 10-05). 실제 사람의 값은 받지 않았고, 같은 모양의 가상 묶음을 생성기로 만듭니다.</p>
+<div class="callout"><strong>제안과 달라진 핵심</strong><p>① 기술은 1~5 레벨이 아니라 <strong>기술별 경력 개월</strong>입니다(입력 단계에서 대리 레벨로 변환, 3장). ② 단가는 사람마다가 아니라 <strong>등급×직무 단가표</strong>입니다. ③ 가용은 비율이 아니라 <strong>월별 M/M(0~1)</strong>입니다. ④ 협업 기록 표가 따로 없고 <strong>업무 이력</strong>에서 함께 일한 개월을 계산합니다(최근 10년 창). ⑤ 평가는 회차·사업이 있는 반복 행입니다.</p></div>
+<table><caption>CSV 묶음 · 폴더 하나 또는 zip 하나 · 시연 묶음 <code>demo/org-n100</code></caption><thead><tr><th>파일</th><th>한 행의 단위와 주요 칸</th><th>쓰임·주의</th></tr></thead><tbody>
+<tr><td><code>manifest.json</code></td><td>묶음 하나. <code>dataset_id, schema_version, horizon_start, horizon_months(6), cost_unit, synthetic, seed</code>.</td><td>계획 시작 달과 비용 단위를 고정. 가상 자료는 <code>synthetic: true</code>.</td></tr>
+<tr><td><code>people.csv</code></td><td>사람. <code>person_id, display_name, career_grade, role_type, job_family</code>.</td><td>이름은 표시용이며 실데이터에서는 지식 그래프·AI로 보내지 않음.</td></tr>
+<tr><td><code>rate_card.csv</code></td><td>등급×직무. <code>career_grade, role_type, monthly_rate</code>.</td><td>예산과 같은 가상 비용 단위.</td></tr>
+<tr><td><code>person_skills.csv</code></td><td>사람×기술. <code>skill_name, skill_category, project_count, experience_months, last_used_month</code>.</td><td>이름은 기술 사전으로 통일, 경력 개월 → 대리 레벨. 10년 창 이전에 마지막으로 쓴 기술은 제외.</td></tr>
+<tr><td><code>work_history.csv</code></td><td>사람×업무. <code>work_id, project_code, start_date, end_date, status</code> + 선택 맥락 칸(업무명·고객사·산업·개요).</td><td>함께 일한 개월·익숙한 쌍 계산, 지식 그래프의 과거 경험. 개요 글은 모델에 쓰지 않음.</td></tr>
+<tr><td><code>availability.csv</code></td><td>사람×월. <code>month, available_mm</code>.</td><td>계획 6개월이 모두 있어야 함. 빈 달을 100%로 채우지 않음.</td></tr>
+<tr><td><code>projects.csv</code></td><td>사업. <code>project_id, project_name, sector, phase, start_month, end_month, monthly_budget</code>.</td><td>달은 YYYY-MM, 계획 시작 기준 0~5로 변환.</td></tr>
+<tr><td><code>project_grade_requirements.csv</code></td><td>사업×등급. <code>career_grade, headcount</code>.</td><td>등급 정원. 없는 등급은 자유.</td></tr>
+<tr><td><code>project_skill_requirements.csv</code></td><td>사업×기술. <code>skill_name, min_experience_months, headcount</code>.</td><td>요구 경력도 개월 → 대리 레벨.</td></tr>
+<tr><td><code>reviews.csv</code></td><td>평가 한 건. <code>review_id, review_round, project_code, reviewer_id, reviewee_id, reviewed_at, positive_text, negative_text</code>.</td><td>모든 회차 사용. 글은 LLM 판정(동의·사내 주소일 때만, 11장).</td></tr>
+<tr><td><code>review_items.csv</code></td><td>평가×항목. <code>review_id, polarity, item</code>.</td><td>체크 항목. 항목 라벨은 화면·AI로 나가도 됨(사용자 결정).</td></tr>
+<tr><td><code>current_assignments.csv</code>(선택)</td><td>사람×사업. <code>person_id, project_id, alloc, locked</code>.</td><td>운영 중 편성의 현재 배치. 없으면 연초 계획.</td></tr>
+<tr><td><code>project_outcomes.csv</code>, <code>replacements.csv</code>(선택)</td><td>과거 사업 성과, 고객 요청 교체.</td><td>계산에 쓰지 않음. 과거 성과 검증 절차용(16장). 시연 묶음은 숨은 규칙으로 만든 가상 값.</td></tr>
+<tr><td><code>mapping.json</code>(선택)</td><td>실제 칸 이름 → 계약 칸 이름.</td><td>실제 자료의 칸 이름이 달라도 파일을 고치지 않고 연결.</td></tr>
+</tbody></table>
+<h3>읽을 때 남기는 검증 리포트</h3><ul class="checklist"><li>오류는 전환을 막고, 경고는 화면에 보입니다. 오류마다 <strong>파일·줄·칸</strong>을 적습니다(일부러 틀린 시연 묶음에 6건).</li><li>행 수·고유 키·중복·없는 사람/사업 참조, 계획 6개월 가용 완전성, 시작/종료 순서, 단가표에 없는 등급·직무.</li><li>사전에 없는 기술 이름은 합치지 않고 경고합니다.</li><li>결측을 몰래 0이나 100%로 바꾸지 않습니다. 수요가 공급보다 많은 것은 오류가 아니라 모델이 보여 줄 빈자리입니다.</li></ul>
+<p>추천 결과의 최소 단위는 여전히 <code>person_id, project_id, alloc</code>(+ 선택 <code>monthly_alloc</code>)입니다. 10월 3일판에서 제안한 재현 정보 중 데이터셋 버전·원 플랜 서명·적용 이력은 들어갔고, 승인자·수정 이유·모델 버전 기록은 아직 없습니다.</p>
+<details><summary>기록용: 10월 3일판의 제안 명세(13장) 전문</summary>
 <div class="callout"><strong>이 장의 표는 다음 단계의 제안입니다</strong><p>아직 CSV import나 아래 컬럼을 구현한 상태는 아닙니다. 인사팀의 실제 컬럼명·뜻을 받으면 매핑을 확정합니다. 우선 실제 인물의 값을 받지 않고, <strong>컬럼 정의·범위·익명 예시·가능한 집계 분포</strong>로 가상 데이터를 만듭니다.</p></div>
 <h3>한 큰 표보다 여러 작은 표로 나누는 이유</h3><p>인력은 한 명당 한 행이지만 기술은 한 명이 여러 개, 가용률은 월마다 한 행, 리뷰는 평가마다 한 행입니다. 한 표로 합치면 이름·단가가 반복돼 수정 충돌이 생깁니다. <code>person_id</code>와 <code>project_id</code>로 연결하는 것이 단순하고 검증하기 쉽습니다.</p>
 <div class="panel"><div class="flow" aria-label="CSV 관계: people의 person_id를 skills와 availability 및 reviews가 참조하고 projects와 requirements가 project_id로 연결된다"><div class="node"><strong>people</strong><span class="packet">person_id</span><p>누구인가</p></div><div class="node"><strong>skills / availability</strong><span class="packet">person_id</span><p>무엇을·언제 가능한가</p></div><div class="node"><strong>projects</strong><span class="packet">project_id</span><p>무엇이 필요한가</p></div><div class="node"><strong>requirements</strong><span class="packet">project_id</span><p>기술·등급 요건</p></div><div class="node"><strong>reviews / history</strong><span class="packet">연결 ID</span><p>함께 일한 근거</p></div></div></div>
@@ -263,9 +388,12 @@ R001,negative,DOCUMENTATION</code></pre><p>현행 PeerReview는 각 방향당 �
 
 <h3>데이터를 읽을 때 반드시 남길 검증 리포트</h3><ul class="checklist"><li>파일별 행 수·고유 ID·누락·중복·없는 사람/프로젝트 참조.</li><li>6개월 가용률 완전성, 시작/종료 순서, 단가·예산의 단위, 기술 사전의 동의어 충돌.</li><li>필수 기술·등급의 월별 수요/공급, 병목과 데이터 없음의 구분.</li><li>가상/실제 표시, 기준시점, 원본→정규화 컬럼 매핑, 변환·제외된 행과 이유.</li><li>오류는 중단, 경고는 사용자에게 명시. 결측을 몰래 0 또는 100%로 바꾸지 않음.</li></ul>
 <p>수요가 공급보다 많다는 사실은 입력 오류가 아닐 수 있습니다. 모델은 부족을 보여줘야 합니다. 합성 자료를 “항상 성공 가능한 자료”로 강제 보정하면 실서비스 병목 실험이 약해집니다.</p>
+</details>
+<p class="source">근거: <code>core/ingest/contract.py</code>, <code>docs/data-schema/README.md</code>, <code>demo/org-n100/</code>, <code>demo/org-n100-broken.zip</code>.</p>
 </section>
 
-<section id="outcomes"><h2><span class="num">14</span>성과 자료는 무엇이 필요하고, 없으면 무엇까지 가능한가</h2>
+<section id="outcomes"><h2><span class="num">16</span>성과 자료는 무엇이 필요하고, 없으면 무엇까지 가능한가</h2>
+<div class="callout"><strong>10월에 바뀐 것</strong><p>스키마 양식 답변상 회사에는 고객 평가, 고객 요청 인력 교체와 그 사유, 같은 고객의 후속·고도화 과제 기록이 <strong>있습니다</strong>(아직 확보 전). 가상 묶음에는 같은 모양의 선택 파일(<code>project_outcomes.csv</code>, <code>replacements.csv</code>)을 숨은 규칙으로 만들어 넣었고, 사업 시작 전 정보만으로 팀 특징을 복원해 성과와 비교하는 절차(<code>core/evaluate/outcome_check.py</code>)를 시험했습니다. 결과는 “협업 방향은 단순 비교에서 일관, 여러 변수를 함께 보면 견고하지 않음, 익숙함 감점은 판단 불가”였습니다(10장). 이 절차가 실제 성과 자료가 들어왔을 때 보정 마법사가 할 일의 원형입니다. 아래 본문은 10월 3일판 그대로입니다.</p></div>
 <p>사용자께서 공유할 수 있는 것은 인사 이력·피드백의 <strong>컬럼 정보</strong>이며 실제 직원·피드백·과거 성과 값은 아닙니다. 이 전제에 맞춰 CSV 계약과 가상 인력 데이터를 먼저 개발할 수 있습니다. 성과 컬럼도 지금은 확정된 원천이 아니라 조사·합의할 제안입니다.</p>
 <table><caption>추후 평가용 표 · 현재 모델 입력과 별도</caption><thead><tr><th>표 / 한 행의 단위</th><th>구체적 컬럼 제안</th><th>왜 필요한가</th></tr></thead><tbody>
 <tr><td><code>assignment_history</code><br>사람×프로젝트×투입구간</td><td>assignment_id, person_id, project_id, role_id, start_date, end_date, planned_alloc, actual_alloc, assignment_reason.</td><td>실제로 누가 언제 얼마나 일했는지. 추천 입력과 결과 연결.</td></tr>
@@ -281,49 +409,68 @@ R001,negative,DOCUMENTATION</code></pre><p>현행 PeerReview는 각 방향당 �
 <h3>현실 평가를 할 수 있게 될 때의 순서</h3><p>① 추천 시점에 알 수 있었던 입력만 사용 → ② 이후 성과를 별도 표로 연결 → ③ 시간순 학습/검증/최종시험 분리 → ④ 현재 담당자 배치와 예산 인지 기준선 비교 → ⑤ 실제 결정에 영향 없는 shadow mode → ⑥ 승인된 제한 파일럿 순서입니다. 과거에 없던 추천 팀의 성과는 관측되지 않으므로 단순 과거 비교만으로 인과적 개선을 증명할 수 없습니다.</p>
 </section>
 
-<section id="roadmap"><h2><span class="num">15</span>다음 작업: 의존관계를 반영한 진행 순서</h2>
-<p>새 기능을 한꺼번에 늘리면 어떤 변경이 성능을 바꿨는지 알기 어렵습니다. 먼저 기존 비교 기준을 보존하고, 모델 계약과 데이터 계약을 정한 뒤 서비스에 연결하는 순서가 적절합니다. 아래는 <strong>제안 로드맵</strong>이며 이번 작업에서 착수하지 않았습니다.</p>
-<div class="step"><div class="step-number">0</div><div><h3>현재 증거를 닫고 보존하기</h3><p>357개 결과와 입력·로그·해시·실패·코드 기준을 읽기 전용 묶음으로 보존합니다. Phase 1 원시는 약 423MB의 로컬 비추적 자료이므로, 향후 승인된 저장소에 백업할 경로가 필요합니다. Git에는 요약 HTML·리뷰·설계를 유지합니다.</p><p><strong>완료 기준:</strong> 누락 없는 아카이브·해시 목록·재현 명령·코드/결과 연결. 원격은 주소를 나중에 연결한다는 기존 결정 유지.</p></div></div>
-<div class="step"><div class="step-number">1</div><div><h3>같은 동결 모델로 상용 솔버 하나 비교</h3><p>Gurobi 평가판을 확보할 수 있으면 기존 입력·계수·pair·1스레드·기한을 그대로 유지해 어댑터와 소형 게이트부터 비교합니다. 기존 오픈소스 357개 기록을 참고 baseline으로 사용하되, 날짜·부하 차이가 큰 속도 비교는 필요한 짝지은 부분을 재측정합니다.</p><p><strong>이 순서의 이유:</strong> 모델 식을 먼저 바꾸면 상용 솔버 효과와 방정식 변경 효과가 섞입니다. 먼저 기존 모델의 한계를 solver 관점에서 확인합니다. 라이선스 확보를 기다리는 동안 2단계 계약 작업은 진행할 수 있습니다.</p><p><strong>완료 기준:</strong> oracle 통과·같은 모델 hash·완료/품질/기한/메모리 비교·도입 비용 조건. 라이선스/계정 신청·구매는 별도 사용자 조율이 필요합니다.</p></div></div>
-<div class="step"><div class="step-number">2</div><div><h3>실 컬럼 뜻과 배치 규칙을 확정하기</h3><p>HR 컬럼 사전, 기술 레벨 의미, 가용률 계산법, 비용 단위, 필수/선호 기술, 허용 등급·최소 투입·역할을 정합니다. 값은 가상으로 만들어도 됩니다. 인사팀의 실제 성과 원천을 찾는 일은 별도 과제입니다.</p><p><strong>완료 기준:</strong> 승인된 CSV 명세·데이터 사전·모델 정책표·불확실성 목록. 최적화 목표와 실제 성과 정의를 각각 문서화.</p></div></div>
-<div class="step"><div class="step-number">3</div><div><h3>CSV 수집·가상 데이터·품질 검증 구현</h3><p>13장의 파일 묶음을 읽어 현재 모델로 변환합니다. 잘못된 단위·없는 ID·누락 월·기술 중복을 실제로 거절하는 검증과 리포트를 만듭니다. 실제 컬럼 형태·승인된 분포를 반영한 가상 인력을 여러 seed로 생성합니다.</p><p><strong>완료 기준:</strong> CSV→정규화→스냅샷→JSON/모델 흐름, 오류 예시, 가상 표시, 해시·버전·가정. 실제 API 연동도 같은 정규화 계약을 사용.</p></div></div>
-<div class="step"><div class="step-number">4</div><div><h3>모델 개선과 300명 병목 실험</h3><p>필수 기술과 등급 정책을 먼저 모델에 반영하고 Phase 0를 새 버전에서 반복합니다. 그다음 변수 후보 축소, 실제 관련 pair만 생성, warm start, 프로젝트/기간 분해, 전체 목적을 유지하는 선형식 개선, 예산 인지 Greedy 등을 비교합니다.</p><p><strong>완료 기준:</strong> 하나의 변경마다 입력·모델 버전·시간·유효 해·gap·미충원·절삭 손실 기록. 성공한 케이스 시간만으로 승자를 고르지 않음. 300/60 조건별 목표를 미리 고정하고 미달도 공개.</p></div></div>
-<div class="step"><div class="step-number">5</div><div><h3>검증된 엔진을 서비스에 연결</h3><p>현재 잠정 후보 HiGHS를 제품 인터페이스로 연결하고 raw/display 검증을 응답 전 적용합니다. What-if 점수명·전체 목적·교체 제약을 정리하고 “검토→적용→승인”을 구분합니다. 캐시 키에 데이터·모델 버전을 넣고 PDF와 확정 명단을 일치시킵니다.</p><p><strong>완료 기준:</strong> CSV부터 추천·교체·PDF까지 통합 검증, 오류·기한·해 없음이 명확한 API 응답. 대안수와 기술 충족 여부가 사용자에게 정확히 표시.</p></div></div>
-<div class="step"><div class="step-number">6</div><div><h3>운영 환경과 권한·관측 준비</h3><p>Linux 자원 제한, 동시 작업 수·큐·취소·캐시 한도·전체 요청 시간 예산을 실제 배포 형태에서 시험합니다. 인증·인사 데이터 권한·설명 공개 범위·감사 원장·백업·장애 복구를 연결합니다.</p><p><strong>완료 기준:</strong> 목표 규모·동시성·응답 기준과 부하 시험, 권한별 접근 시험, 실패 복구·배포·롤백 문서. macOS 단일 실험을 서비스 SLA로 재사용하지 않음.</p></div></div>
-<div class="step"><div class="step-number">7</div><div><h3>가능한 범위에서 현실 모델 평가</h3><p>현실 결과 자료가 승인된 방식으로 확보되면 시간순 평가·리뷰 파싱 정답 평가·계수 민감도와 보정을 합니다. 자료가 없으면 도메인 전문가가 가상 시나리오의 제약/추천을 검토하는 수준에 머물며 NOT_CALIBRATED를 유지합니다.</p><p><strong>완료 기준:</strong> 관측 가능한 질문만 결론 냄. 고객 만족·교체·후속 과제별 관측 정의와 누락을 기록하고, 가상 테스트를 현실 증거로 올리지 않음.</p></div></div>
-<div class="step"><div class="step-number">8</div><div><h3>Shadow mode → 제한 파일럿 → 운영 확대</h3><p>기존 담당자 결정에 영향을 주지 않은 채 추천을 기록하고 차이·거절 사유를 수집합니다. 계산·권한·현장 수용성이 검증되면 승인된 파일럿을 진행하고 실제 결과를 장기간 관찰합니다.</p><p><strong>완료 기준:</strong> 사람이 승인하는 의사결정 흐름, 현실 성과와 부작용의 평가, 중단/롤백 기준. 실제 성과 개선은 이 단계 근거가 쌓인 뒤 주장.</p></div></div>
-<div class="callout"><strong>지금 바로 가능한 개발</strong><p>원시 증거 보존 점검, Gurobi 어댑터의 라이선스 없는 계약 설계·mock 테스트, CSV 초안·검증기, What-if 계약 정정 설계, 필수 기술/등급 정책 시나리오 문서화입니다. 실제 HR 값 없이도 가능합니다. 실제 숙련도 분포와 성과 예측 보정은 별도 자료가 필요합니다.</p></div>
+<section id="roadmap"><h2><span class="num">17</span>다음 작업: 의존관계를 반영한 진행 순서</h2>
+<p>10월 3일판은 0~8단계 로드맵을 제안했습니다. 일주일 동안 앞 단계 상당수가 끝났고, 순서는 실제 사정에 맞게 바뀌었습니다. 예를 들어 상용 솔버 비교(1단계)는 비용 때문에 보류하고, 모델 크기를 줄이는 쪽(4단계)으로 300명 문제를 풀었습니다.</p>
+<table><caption>10월 3일판 로드맵의 현재 상태</caption><thead><tr><th>단계</th><th>상태</th><th>무엇으로</th></tr></thead><tbody>
+<tr><td>0 · 현재 증거 보존</td><td><span class="tag done">완료</span></td><td>C4: Phase 1 원시 결과를 로컬 보관소에 압축·해시 보관.</td></tr>
+<tr><td>1 · 같은 모델로 상용 솔버 비교</td><td><span class="tag pending">보류</span></td><td>C5: 상용은 연간 견적제, 무료판은 100명 모델도 초과 → 사용자 결정으로 보류.</td></tr>
+<tr><td>2 · 실 컬럼 뜻과 배치 규칙 확정</td><td><span class="tag done">대부분</span></td><td>K7 입력 양식과 사용자 답변. 성과 지표 정의는 남음.</td></tr>
+<tr><td>3 · CSV 수집·가상 데이터·품질 검증</td><td><span class="tag done">완료</span></td><td>K2·K9, 조직형 가상 묶음 생성기.</td></tr>
+<tr><td>4 · 모델 개선과 300명 병목</td><td><span class="tag done">시연 수준 완료</span></td><td>보상 쌍 200, 익숙한 쌍 규칙, 시드 4, 동시 프로젝트 상한, 달별 투입률. 팩터 추가는 근거 없어 기각.</td></tr>
+<tr><td>5 · 검증된 엔진을 서비스에 연결</td><td><span class="tag done">완료</span></td><td>K3·C0~C3, K1·K10·K13, 캐시 키 데이터 버전.</td></tr>
+<tr><td>6 · 운영 환경·권한·관측</td><td><span class="tag pending">일부</span></td><td>관리자 로그인·영속·PDF 보호. 계정·감사·큐·배포 없음.</td></tr>
+<tr><td>7 · 현실 모델 평가</td><td><span class="tag risk">자료 대기</span></td><td>과거 성과 검증 절차만 준비.</td></tr>
+<tr><td>8 · Shadow mode → 파일럿</td><td><span class="tag risk">미착수</span></td><td>—</td></tr>
+</tbody></table>
+<p>아래는 지금 기준의 <strong>제안 순서</strong>입니다. 앞 단계의 결과가 뒤 단계의 비교 기준이 되므로 순서가 중요합니다.</p>
+<div class="step"><div class="step-number">1</div><div><h3>소명 글을 화면·PDF까지</h3><p>사람별 덧붙임 브랜치를 main에 합치고(사용자 승인), claude-b가 계약 문서대로 API·화면·PDF를 만듭니다. 화면은 템플릿 글을 먼저 보이고 AI 글이 오면 바꾸며, 근거 번호 칩을 누르면 사실 목록에서 강조합니다. AI가 쓴 부분과 서버가 덧붙인 부분을 구분해 보입니다.</p><p><strong>완료 기준:</strong> 시연 묶음 6개에서 사업별 소명 글·PDF, 탈락 시 대체 사유 표시, AI 원문(검사 전 글)은 화면에 나오지 않음.</p></div></div>
+<div class="step"><div class="step-number">2</div><div><h3>실제 인사 자료 첫 적재 준비</h3><p>실제 사람 ID 형식(소명 글 문법이 “영문+숫자”를 가정), 칸 이름 매핑(<code>mapping.json</code>), 사전에 없는 기술 이름 목록, 평가 글을 어디서 판정할지(사내 주소·동의)를 정합니다. 실데이터는 사내 환경에서만 다루고 이 저장소에 넣지 않습니다.</p><p><strong>완료 기준:</strong> 실제 묶음이 검증 리포트를 오류 0으로 통과, 규모·시간·빈자리를 실제 분포로 다시 측정, 가상 자료와 다른 점 목록.</p></div></div>
+<div class="step"><div class="step-number">3</div><div><h3>점수의 남은 계약 정리</h3><p>경력 개월을 대리 레벨로 바꾸는 대신 직접 비율로 쓰는 기술 점수, 부분 인정 계수·출처 표시, 데이터셋 버전에 사전 버전 넣기. 방정식을 다시 쓰는 다섯 곳과 Phase 0을 함께 고칩니다.</p><p><strong>완료 기준:</strong> 변경 전후 배치 비교, Phase 0 PASS, 미리 계산 재생성, 모든 변경에 측정 근거.</p></div></div>
+<div class="step"><div class="step-number">4</div><div><h3>시연 마무리 정리(한 번에)</h3><p>시연 평가 글 생성기를 다듬고(직설형 평가자 5~10% 등), 그 데이터로 리뷰 판정 비교(E4)와 미리 계산을 다시 돌립니다. 사내 가정 모델은 충전 뒤 E4·E5·소명 글을 다시 잽니다.</p><p><strong>완료 기준:</strong> 시연 대본 10장면을 헤드리스 브라우저로 끝까지 재현, 미리 계산 6개 서버 수용, 바뀐 수치를 보고서에 반영.</p></div></div>
+<div class="step"><div class="step-number">5</div><div><h3>운영 준비(파일럿을 할 경우)</h3><p>직원별 계정·권한, 승인 단계와 승인 원장, 감사 기록, 백업·배포·모니터링, 작업 큐·취소, 실제 서버(Linux)에서 시간·메모리 재측정.</p><p><strong>완료 기준:</strong> 목표 규모·동시성 부하 시험, 권한별 접근 시험, 장애 복구 문서. macOS 단일 기기 측정을 서비스 약속으로 쓰지 않음.</p></div></div>
+<div class="step"><div class="step-number">6</div><div><h3>현실 평가 → Shadow mode → 제한 파일럿</h3><p>승인된 방식으로 과거 성과(고객 평가·고객 요청 교체·후속 과제)를 얻으면, 준비해 둔 과거 성과 검증 절차로 계수를 점검합니다. 그 뒤 실제 결정에 영향 없이 추천만 기록하는 단계를 거쳐 파일럿으로 갑니다.</p><p><strong>완료 기준:</strong> 관측 가능한 질문만 결론, 가상 시험을 현실 증거로 올리지 않음, 중단·되돌리기 기준.</p></div></div>
+<div class="callout"><strong>지금 바로 가능한 개발</strong><p>소명 글 화면·PDF, 실데이터 적재 체크리스트, 점수 계약 정리의 설계·측정. 실제 인사 값 없이도 가능합니다. 실제 분포에서의 규모·품질과 성과 예측 보정은 별도 자료가 필요합니다.</p></div>
 </section>
 
-<section id="cost"><h2><span class="num">16</span>비용: 이미 쓴 것과 앞으로 필요한 것</h2>
-<table><thead><tr><th>항목</th><th>확인 가능한 금액·상태</th><th>포함하지 않은 비용</th></tr></thead><tbody><tr><td>LLM fixture 동결</td><td>2026-08 당시 266건 × 생성/파싱 = 532호출. 사용량 기반 당시 단가 계산 $0.7021.</td><td>초기 smoke·중단 호출 등 전체 계정 청구액은 아님. 개발/리뷰 모델 비용도 별도.</td></tr><tr><td>LLM 비용 비교 실험</td><td>$0.20752 vs $0.14235는 가정한 출력량으로 계산한 시나리오.</td><td>운영 월 청구액·실시간 두 방식 비교가 아님.</td></tr><tr><td>오픈소스 장기 sweep</td><td>이번 로컬 실행은 별도 상용 solver 라이선스를 구매하지 않음.</td><td>전력·장비·개발시간·향후 클라우드 VM 비용은 미집계.</td></tr><tr><td>Gurobi 평가</td><td>공식 상용 30일 평가판 신청 가능. 승인·실행 조건 확인 필요.</td><td>서비스 상용 사용 권한·계속 무료 사용을 뜻하지 않음.</td></tr><tr><td>Gurobi 운영</td><td>공개 고정 정가로 산정 불가. 실제 배포·동시성 조건으로 견적 필요.</td><td>확인되지 않은 연간 가격을 임의로 적지 않음.</td></tr></tbody></table>
-<p>Gurobi 기본 크기 제한 라이선스는 공식 안내상 변수 2,000·선형 제약 2,000 한도이며 비상업용입니다. Phase 0 50/10 모델도 변수 2,861·제약 6,831이므로 그 제한 라이선스로 본 비교를 해결할 수 없습니다. 상업적 평가 목적에 맞는 전체 기능 평가판을 신청해야 합니다.</p>
-<p>견적 준비에는 내부 전용 서비스인지 외부 고객에게 제공하는지, 서버/컨테이너/클라우드 형태, 실행 장비·코어·동시 작업·사용자 수·기간이 필요합니다. 구매 연락이나 계정 생성은 이번 보고서 작업에서 수행하지 않았습니다.</p>
-<p class="source">공식 출처·2026-10-03 확인: <a href="https://www.gurobi.com/product/pricing-and-licensing">Gurobi 가격·라이선스 안내</a>, <a href="https://www.gurobi.com/utility/free-trial/eval-license">30일 평가 라이선스</a>, <a href="https://support.gurobi.com/hc/en-us/articles/29682074018833-What-does-Restricted-license-for-non-production-use-only-mean">크기 제한·비상업용 조건</a>. 역사적 LLM 비용 근거: <a href="#e4">E4 redacted usage summary</a>.</p>
-<h3>향후 월 운영비를 계산하는 방법</h3><p>월 비용 = 실행 서버·저장·백업 + LLM 실제 사용량 + 선택한 상용 라이선스 + 운영 인력입니다. LLM 부분은 리뷰 신규/변경 건수와 브리핑 횟수 × 실제 입력·출력 토큰으로 측정합니다. solver 비교 자체는 리뷰를 LLM으로 계속 재생성할 필요가 없습니다. 동일 자료를 동결해 반복 사용합니다.</p>
+<section id="cost"><h2><span class="num">18</span>비용: 이미 쓴 것과 앞으로 필요한 것</h2>
+<table><caption>확인 가능한 LLM·라이선스 비용 · 측정 당시 단가 기준</caption><thead><tr><th>항목</th><th>확인 가능한 금액·상태</th><th>포함하지 않은 비용</th></tr></thead><tbody>
+<tr><td>LLM fixture 동결(8월)</td><td>266건 × 생성/파싱 = 532호출, 당시 단가 계산 $0.7021.</td><td>초기 smoke·중단 호출 등 전체 계정 청구액은 아님.</td></tr>
+<tr><td>평가 글 판정(서비스)</td><td>외부 low 1,000건당 약 $0.08. 시연 100명 묶음 1,372건 약 3분·약 $0.12, 300명 약 4,000건 약 9분·약 $0.33(처음 켤 때 한 번, 이후 캐시).</td><td>사내 모델 운영비. 사내 가정 GLM low는 1,000건당 $0.78.</td></tr>
+<tr><td>교체 설명(서비스)</td><td>100건당 외부 $0.06 · 사내 가정 $0.96(E5).</td><td>실제 사용 빈도.</td></tr>
+<tr><td>인사팀 소명 글(서비스)</td><td>한 편 약 $0.0008. 확대 검증 E7b 618편 $0.50, E7c 843편 $0.69.</td><td>PDF에 사업 전체 소명을 넣을 때의 호출 수 × 단가.</td></tr>
+<tr><td>실험 E6(LLM 직접 배치)</td><td>성공 호출 기준 최소 $1.44.</td><td>실패·중단 호출, 사내 가정 모델 잔액 소진분.</td></tr>
+<tr><td>판단 전용 AI(Jev) 실험</td><td>391회 약 $0.011.</td><td>—</td></tr>
+<tr><td>오픈소스 솔버</td><td>HiGHS 서비스·실험 모두 라이선스 비용 없음.</td><td>전력·장비·개발시간·향후 서버 비용 미집계.</td></tr>
+<tr><td>Gurobi(상용 솔버)</td><td><strong>보류(C5, 10-05 사용자 결정).</strong> 상용은 연간 견적제, 30일 평가판 있음.</td><td>확인되지 않은 연간 가격을 임의로 적지 않음.</td></tr>
+</tbody></table>
+<p>Gurobi 기본 크기 제한 라이선스는 공식 안내상 변수 2,000·선형 제약 2,000 한도이며 비상업용입니다. Phase 0 50/10 모델도 변수 2,861·제약 6,831이므로 그 제한 라이선스로는 비교할 수 없습니다. HiGHS로 300명 시연이 가능해진 지금, 상용 솔버는 실제 분포에서 시간이 모자랄 때 다시 검토할 선택지입니다.</p>
+<p class="source">공식 출처·2026-10-03 확인: <a href="https://www.gurobi.com/product/pricing-and-licensing">Gurobi 가격·라이선스 안내</a>, <a href="https://www.gurobi.com/utility/free-trial/eval-license">30일 평가 라이선스</a>, <a href="https://support.gurobi.com/hc/en-us/articles/29682074018833-What-does-Restricted-license-for-non-production-use-only-mean">크기 제한·비상업용 조건</a>. 10월 이후 LLM 비용은 각 실험 보고서의 기록값입니다.</p>
+<h3>향후 월 운영비를 계산하는 방법</h3><p>월 비용 = 실행 서버·저장·백업 + LLM 실제 사용량 + 선택한 상용 라이선스 + 운영 인력입니다. LLM 부분은 ① 새로 들어오거나 바뀐 평가 글 수 × 판정 단가 ② 교체 설명 횟수 ③ 소명 글 수(사업 수 × 다시 쓰기)로 나눠 실제 토큰으로 측정합니다. 사내 LLM을 쓰면 토큰 단가 대신 서버 비용이 되고, 리뷰 판정 정확도(E4: 사내 가정 low 69%)를 함께 따져야 합니다.</p>
 </section>
 
-<section id="evidence"><h2><span class="num">17</span>근거와 파일 보존 상태</h2>
+<section id="evidence"><h2><span class="num">19</span>근거와 파일 보존 상태</h2>
 <p>이 문서는 실제 자료를 교차 확인한 프로젝트 해설이며 실행 중인 시스템의 실시간 상태판은 아닙니다. 아래 경로는 저장소/로컬 근거 위치를 알려주는 표이고, 이 HTML을 읽는 데 외부 파일을 불러오지 않습니다.</p>
 <table><caption>근거 색인</caption><thead><tr><th>번호</th><th>확인한 근거</th><th>보존·역할</th></tr></thead><tbody>
-<tr id="e1"><td>E1 · 초기 설계/작업</td><td>루트의 <code>.omc/plan/2026-08-02-teamweaver-poc-design.md</code>, Plan 1~5 설계·완료·최종 리뷰 기록. 특히 <code>2026-08-21-plan5-completion.md</code>.</td><td>로컬 Git 제외 자료. 작성 경위와 편차. 주요 내용을 이번 문서에 요약.</td></tr>
-<tr id="e2"><td>E2 · Git 이력</td><td><code>git log --all --reverse</code>, 주요 커밋 내용, branch 상태. main <code>9cc3021</code>, Phase 0 <code>c22ca5a</code>, Phase 1 기준 <code>5c0c4d4</code>.</td><td>개발 연표. Phase 1 작업은 linked worktree에 있음. main만 열면 최신 실험 구현이 보이지 않을 수 있음.</td></tr>
-<tr id="e3"><td>E3 · 실제 기능</td><td><code>core/domain/models.py</code>, <code>core/scoring/engine.py</code>, <code>core/graph/memory_graph.py</code>, <code>core/optimize/{milp,alternatives,metrics,validation}.py</code>, <code>api/</code>, <code>web/src/</code>.</td><td>현행 입출력·방정식·교체·제품 연결 경계를 확인.</td></tr>
-<tr id="e4"><td>E4 · 초기 실험</td><td><code>experiments/optimization_report.md</code>, <code>experiments/results/exp1~5*.json</code>, <code>llm_checkpoint_summary.json</code>, <code>experiments/decision.py</code>.</td><td>Git 추적 결과·자동 생성 보고서·판단 기준. 초기 Neo4j 구현은 제거돼 결과 재집계와 전체 재실행은 구분해야 함.</td></tr>
-<tr id="e5"><td>E5 · Phase 0</td><td><code>docs/superpowers/specs/2026-09-18-phase0-model-validation-design.md</code>, plan, <code>experiments/results/phase0_model_validation.json</code>, <code>outputs/phase0-model-validation.html</code>.</td><td>7 정답+2 성질+1 pair+1 smoke=11 PASS 근거.</td></tr>
-<tr id="e6"><td>E6 · Phase 1</td><td><code>docs/superpowers/specs/2026-09-21-phase1-long-sweep-design.md</code>, plan, <code>docs/phase1-checkpoint.md</code>, <code>outputs/phase1-solver-benchmark.html</code>, <code>outputs/eli5-phase1-long-sweep-v2.html</code>, <code>docs/reviews/2026-10-03-phase1-long-sweep-v2-review.md</code>.</td><td>Git 추적 요약. 원시는 <code>experiments/results/phase1/phase1-long-sweep-v2/</code>에 있으며 약 423MB·Git 비추적.</td></tr>
+<tr id="e1"><td>E1 · 초기 설계/작업</td><td>루트의 <code>.omc/plan/2026-08-02-teamweaver-poc-design.md</code>, Plan 1~5 설계·완료·최종 리뷰 기록. 특히 <code>2026-08-21-plan5-completion.md</code>.</td><td>로컬 Git 제외 자료. 작성 경위와 편차. 주요 내용을 이 문서에 요약.</td></tr>
+<tr id="e2"><td>E2 · Git 이력</td><td><code>git log --all</code>, 주요 커밋 내용, 브랜치 상태. 10월 3일판 기준 main <code>9cc3021</code>·Phase 1 <code>5c0c4d4</code>, 이번 판 기준 main <code>f9b407a</code>.</td><td>개발 연표. 10월 이후 Phase 1 작업도 main에 합쳐졌습니다.</td></tr>
+<tr id="e3"><td>E3 · 실제 기능</td><td><code>core/{domain,scoring,graph,optimize,evaluate,ingest,kg}/</code>, <code>api/</code>(<code>api/rag/</code> 포함), <code>web/src/</code>.</td><td>현행 입출력·방정식·교체·운영 중 편성·소명 글 경계를 확인.</td></tr>
+<tr id="e4"><td>E4 · 초기 실험</td><td><code>experiments/optimization_report.md</code>, <code>experiments/results/exp1~5*.json</code>, <code>llm_checkpoint_summary.json</code>, <code>experiments/decision.py</code>.</td><td>Git 추적 결과·자동 생성 보고서·판단 기준.</td></tr>
+<tr id="e5"><td>E5 · Phase 0</td><td><code>docs/superpowers/specs/2026-09-18-phase0-model-validation-design.md</code>, <code>experiments/results/phase0_model_validation.json</code>, <code>outputs/phase0-model-validation.html</code>, <code>outputs/phase0-c1-*.json</code>.</td><td>7 정답+2 성질+1 pair+1 smoke=11 PASS 근거. 모델을 바꿀 때마다 다시 돌림.</td></tr>
+<tr id="e6"><td>E6 · Phase 1</td><td><code>docs/phase1-checkpoint.md</code>, <code>outputs/phase1-solver-benchmark.html</code>, <code>outputs/phase1-c1-evidence-correction.html</code>(87건 정정), <code>outputs/eli5-phase1-long-sweep-v2.html</code>.</td><td>원시 결과는 Git 밖. 로컬 보관소 <code>~/Dev/teamweaver-archive/</code>(577MB → 48MB 압축, 파일별 해시).</td></tr>
+<tr id="e7"><td>E7 · 10월 작업 기록</td><td><code>docs/handoff-log.md</code>(에이전트별 항목), <code>docs/work-split.md</code>(소유 영역·요청·결정), <code>docs/requests/</code>(화면 계약), <code>docs/model-roadmap.md</code>, <code>outputs/eli5-mid-project-quality-audit.html</code>(Codex 감사).</td><td>Git 추적. 상세 리포트는 각 계정 로컬 <code>.omc/reports/</code>.</td></tr>
+<tr id="e8"><td>E8 · 10월 측정</td><td><code>rehearsal/results/</code>: <code>rehearsal-report.html</code>, <code>rule-compare.html</code>, <code>factor_lab/</code>, <code>partner-compare.html</code>, <code>outcome-check.html</code>, <code>llm-vs-solver.html</code>, <code>justification-compare.html</code>, <code>justify-scale*.html</code>, <code>addendum-by-person.html</code>, <code>kg-backends.html</code>, <code>kg-advantages.html</code>, <code>skill-dictionary.html</code>. <code>outputs/</code>: <code>review-judge-comparison.html</code>, <code>briefing-llm-comparison.html</code>, <code>jev-experiment.html</code>, <code>c6-*.json</code>.</td><td>Git 추적. 측정 스크립트의 docstring·상수가 사전 등록 원본이고, 원자료(<code>.json.gz</code>)로 보고서를 다시 그릴 수 있습니다.</td></tr>
+<tr id="e9"><td>E9 · 시연</td><td><code>docs/demo-script.md</code>(대본 10장면), <code>docs/demo-notes.md</code>, <code>docs/architecture.html</code>(한 장 구조도), <code>demo/</code>(묶음 6+1개, <code>precomputed/</code>), <code>scripts/run_poc.sh</code>.</td><td>Git 추적. 미리 계산은 데이터·설정이 바뀌면 다시 만듭니다.</td></tr>
 </tbody></table>
-<h3>검증 기록을 언제의 수치로 읽어야 하나요?</h3><table><thead><tr><th>시점</th><th>기록된 확인</th><th>범위</th></tr></thead><tbody><tr><td>Plan 5 종료 당시</td><td>Python 기본 294 passed·slow 10 passed. 웹 38 passed·타입/빌드 성공. 결함 주입 검출 기록.</td><td>2026-08-21 역사적 작업 기록.</td></tr><tr><td>Phase 1 종료 당시</td><td>Phase 1 168 passed, 전체 497 passed·10 deselected.</td><td>2026-10-03 기존 리뷰의 기록. 이 문서 작성 중 전체 재실행하지 않음.</td></tr><tr><td>이번 보고서</td><td>357개 result를 기존 검증 로더로 다시 읽어 매니페스트·체크포인트·결과 SHA-256 연결 확인. 상태/분모/합계 재집계. HTML 자체 검사와 화면 검증은 인계 리뷰에 기록.</td><td>문서 변경에 맞춘 검증. 새 성과 실험·제품 기능 변경 없음.</td></tr></tbody></table>
-<h3>원격에서 받을 수 있나요?</h3><p>현재 Git remote가 없습니다. 이 HTML은 <code>feat/phase1-solver-benchmark</code>의 <code>outputs/eli5-project-history-roadmap.html</code>로 저장하고 관련 리뷰와 커밋으로 보존합니다. 채팅의 파일 링크는 로컬 파일 연결이며 원격 호스팅이나 어디서나 다운로드 가능한 URL을 뜻하지 않습니다. 주소·push 권한이 정해지면 해당 커밋과 필요 원시 아카이브를 승인된 경로에 올려야 합니다.</p>
-<p>linked worktree 위치: <code>/Users/honey/Dev/teamweaver/.worktrees/phase1-solver-benchmark</code>. 원시 자료는 Git에 없으므로 브랜치를 복제하는 것만으로 장기 실험의 모든 로그가 복원되지는 않습니다.</p>
+<h3>검증 기록을 언제의 수치로 읽어야 하나요?</h3><table><thead><tr><th>시점</th><th>기록된 확인</th><th>범위</th></tr></thead><tbody><tr><td>Plan 5 종료(08-21)</td><td>Python 294 passed·slow 10. 웹 38.</td><td>역사적 작업 기록.</td></tr><tr><td>Phase 1 종료(10-03)</td><td>전체 497 passed·10 deselected.</td><td>10월 3일판 기준.</td></tr><tr><td>제품 표면 병합(10-05)</td><td>1,044 → 1,126 passed, slow 19, Phase 0 PASS 11.</td><td>HiGHS·C0~C4·K* 병합 직후.</td></tr><tr><td>운영 중 편성·시연(10-06~07)</td><td>1,341 → 1,384 passed, 웹 165~173, slow 19.</td><td>각 병합 기록.</td></tr><tr><td>지식 그래프·소명 글 main 병합(10-10)</td><td>1,589 passed, 1 skipped, 19 deselected · slow 19.</td><td>main <code>f9b407a</code>.</td></tr><tr><td>이번 판(10-11)</td><td>1,592 passed(사람별 덧붙임 브랜치) · 소명 글 다시 돌려 보기 R1~R4 통과.</td><td>문서는 기록과 대조, 새 성과 실험 없음.</td></tr></tbody></table>
+<h3>원격에서 받을 수 있나요?</h3><p>10월 3일판 때와 달리 지금은 원격 GitHub 저장소(<code>origin</code>)가 연결돼 있습니다. 이 판을 쓸 때 확인한 원격 추적 참조는 main <code>f9b407a</code>였습니다. push와 PR은 사용자가 요청할 때만 합니다. <code>private/</code>(실데이터 답변)·<code>.omc/</code>(로컬 작업 기록)·Phase 1 원시 결과는 Git에 없으므로, 저장소를 복제해도 그 자료는 따라오지 않습니다.</p>
 </section>
 
-<section id="glossary"><h2><span class="num">18</span>용어 사전과 지금 준비할 것</h2>
-<dl class="glossary"><dt>PoC / 시제품</dt><dd>아이디어가 동작하는지 보여주는 구현. 운영에 필요한 권한·배포·실데이터 검증까지 모두 끝났다는 뜻은 아닙니다.</dd><dt>MILP</dt><dd>정수 선택과 연속량을 함께 계산하는 최적화. “넣을까 0/1”과 “몇 % 투입할까”를 함께 정합니다.</dd><dt>제약 / 목적함수</dt><dd>제약은 예산 같은 지켜야 할 선, 목적함수는 그 선 안에서 더 좋은 답을 고르는 점수표입니다.</dd><dt>LP relaxation / 완화 문제</dt><dd>0/1 선택을 0~1 중간값도 허용해 더 쉽게 풀어 얻는 상한. 현실에서 그대로 실행할 수 없는 분수 선택이 들어갈 수 있습니다.</dd><dt>incumbent / 현재 유효 후보</dt><dd>지금까지 찾은 실행 가능한 정수 배치. 존재한다고 최적임이 증명된 것은 아닙니다.</dd><dt>bound / gap</dt><dd>아직 가능할 수 있는 최고 점수의 상한과 현재 후보의 차이. 같은 방정식 기준의 계산 품질입니다.</dd><dt>oracle / 소형 정답기</dt><dd>작은 입력의 모든 선택을 조사해 제품 계산 결과와 비교하는 별도 계산 절차입니다.</dd><dt>pair pruning / 관계 쌍 절삭</dt><dd>모든 두 사람 관계를 다 계산하면 커지므로 일부 시너지 쌍만 남깁니다. 모델 자체가 달라질 수 있어 손실을 확인해야 합니다.</dd><dt>RAG / XAI</dt><dd>관련 근거를 먼저 검색해 설명에 넣는 방식 / 왜 그런 판단인지 이해할 수 있게 보여주는 기능. 설명이 그럴듯하다고 효과가 입증된 것은 아닙니다.</dd><dt>SSE</dt><dd>서버가 한 번의 응답을 열어 두고 A안·B안처럼 결과가 나올 때마다 보내는 통신 방식입니다.</dd><dt>fixture / seed / hash</dt><dd>고정 테스트 자료 / 가상 생성의 난수 시작값 / 파일이 같은지 확인하는 지문입니다.</dd><dt>p50 / p95 / 생존 편향</dt><dd>중앙값 / 관측 시간의 95%가 그 아래인 값 / 실패한 느린 실행을 빼고 성공만 보면 빨라 보이는 왜곡입니다.</dd><dt>FTE</dt><dd>전일제 한 사람의 투입량을 1로 보는 단위. 인원수 2명과 각 20%인 총 0.4 FTE는 다릅니다.</dd><dt>shadow mode</dt><dd>실제 결정은 기존 방식으로 하고 추천만 뒤에서 기록해 차이를 점검하는 단계입니다.</dd></dl>
-<div class="panel"><h3>사용자가 준비하면 가장 도움이 되는 자료</h3><ol><li><strong>실제 컬럼 사전:</strong> 테이블명·컬럼명·뜻·형식·허용값·필수/선택·기준시점. 실제 인물 값은 필요하지 않습니다.</li><li><strong>익명 또는 가상 예시 2~3행:</strong> 여러 기술, 같은 사람의 반복 평가, 누락값 등 특이 구조가 보이면 좋습니다.</li><li><strong>배치 규칙:</strong> 필수 기술·등급·최소 투입·역할·기간·예산 기준. 반드시 지킬 것과 선호할 것을 구분.</li><li><strong>가용성 정의:</strong> 기존 배치·제안·휴가를 어떤 방식으로 차감하는지.</li><li><strong>성과 원천의 존재 여부:</strong> 고객 평가·교체 사유·후속 과제가 어디에 기록되는지, 접근 없이 집계 평가가 가능한지. 모르면 조사 대상이라고 기록.</li><li><strong>운영 목표:</strong> 최대 인원/프로젝트·동시 요청·기다릴 수 있는 시간·승인자·설명 공개 범위.</li></ol></div>
-<div class="callout"><strong>다음 개발에서 먼저 만들어야 할 결과물</strong><p>현재 동결 실험을 보존한 상용 비교 기준, 실제 컬럼을 반영한 CSV 계약, 필수/선호와 투입량을 분명히 한 모델 정책입니다. 이 세 가지가 정리돼야 “어떤 입력으로 어떤 답을 만들고, 그 답을 어떻게 검증할 것인가”가 서비스 수준에서 명확해집니다.</p></div>
+<section id="glossary"><h2><span class="num">20</span>용어 사전과 지금 준비할 것</h2>
+<dl class="glossary"><dt>PoC / 시제품</dt><dd>아이디어가 동작하는지 보여주는 구현. 운영에 필요한 권한·배포·실데이터 검증까지 모두 끝났다는 뜻은 아닙니다.</dd><dt>MILP</dt><dd>정수 선택과 연속량을 함께 계산하는 최적화. “넣을까 0/1”과 “몇 % 투입할까”를 함께 정합니다.</dd><dt>제약 / 목적함수</dt><dd>제약은 예산 같은 지켜야 할 선, 목적함수는 그 선 안에서 더 좋은 답을 고르는 점수표입니다.</dd><dt>HiGHS / 시드 포트폴리오</dt><dd>서비스가 쓰는 오픈소스 솔버 / 같은 문제를 난수 시작값만 바꿔 여러 개 동시에 풀고 가장 좋은 답을 고르는 방법(서비스 4개).</dd><dt>LP relaxation / 완화 문제</dt><dd>0/1 선택을 0~1 중간값도 허용해 더 쉽게 풀어 얻는 상한. 현실에서 그대로 실행할 수 없는 분수 선택이 들어갈 수 있습니다.</dd><dt>incumbent / 현재 유효 후보</dt><dd>지금까지 찾은 실행 가능한 정수 배치. 존재한다고 최적임이 증명된 것은 아닙니다. 화면의 “시간 한도 도달(최선 증명 전)”이 이 상태입니다.</dd><dt>bound / gap</dt><dd>아직 가능할 수 있는 최고 점수의 상한과 현재 후보의 차이. 같은 방정식 기준의 계산 품질입니다.</dd><dt>독립 검증기</dt><dd>솔버의 답을 솔버 코드와 따로 다시 계산해 모든 제약과 점수를 확인하는 프로그램. 통과한 답만 화면에 나갑니다.</dd><dt>oracle / 소형 정답기</dt><dd>작은 입력의 모든 선택을 조사해 제품 계산 결과와 비교하는 별도 계산 절차입니다.</dd><dt>pair pruning / 관계 쌍 절삭</dt><dd>모든 두 사람 관계를 다 계산하면 커지므로 일부 시너지 쌍만 남깁니다. 서비스는 상위 200쌍만 보상합니다.</dd><dt>익숙한 쌍</dt><dd>최근 36개월 중 12개월 이상 같은 사업에 있던 두 사람. 같은 팀에 다시 넣으면 작은 감점을 받습니다.</dd><dt>연초 계획 / 운영 중 편성 / K</dt><dd>백지에서 6개월을 짜는 것 / 이미 배치된 조직에서 신규 제안·보강을 위해 일부만 바꾸는 것 / 운영 중 편성에서 옮겨도 되는 기존 인원 수.</dd><dt>미리 계산</dt><dd>오래 걸리는 시연 결과를 미리 풀어 둔 파일. 데이터·설정·재채점이 모두 맞을 때만 쓰고, 화면에 그 사실을 표시합니다.</dd><dt>CSV 묶음 / 검증 리포트</dt><dd>여러 CSV와 설명서(manifest)를 한 폴더·zip으로 묶은 입력 / 읽을 때 오류·경고를 파일·줄·칸까지 적은 보고서.</dd><dt>대리 레벨</dt><dd>실제 자료에 숙련도 레벨이 없어 경력 개월(12/36/60/96개월 경계)로 대신 만든 1~5 레벨. 현장 숙련도가 아닙니다.</dd><dt>기술 이름 사전 / 부분 인정</dt><dd>같은 기술의 여러 이름을 대표 이름 하나로 바꾸는 목록(228개) / 하위 기술 경력의 일부(깊이마다 절반)를 상위 기술 경력으로 쳐 주는 규칙. 계수는 가정값입니다.</dd><dt>지식 그래프</dt><dd>사람·기술·사업·고객사·산업·평가·협업을 점과 선으로 이은 지도. 이 프로젝트는 별도 DB 없이 메모리에 만듭니다.</dd><dt>RAG / GraphRAG / XAI</dt><dd>관련 근거를 먼저 검색해 설명에 넣는 방식 / 그 근거를 지식 그래프의 사실로 주는 방식 / 왜 그런 판단인지 이해할 수 있게 보여주는 기능. 설명이 그럴듯하다고 효과가 입증된 것은 아닙니다.</dd><dt>자리표시 + 허용 목록</dt><dd>소명 글에서 AI는 사실 번호 <code>{F12}</code>와 정해진 연결 말만 쓰고, 숫자·판정은 서버가 데이터 그대로 채우는 방식. 목록 밖 말이 한 글자라도 섞이면 글 전체를 버립니다.</dd><dt>불리한 사실 덧붙임</dt><dd>AI 글이 빠뜨린 미달·위반·부정 평가 같은 사실을 서버가 글 끝에 사람별 줄로 붙이는 것. AI가 쓴 부분은 바꾸지 않습니다.</dd><dt>사전 등록 / 보류 집합</dt><dd>측정 전에 판정 기준을 커밋해 두는 것 / 설계를 고칠 때 보지 않은 데이터로 따로 채점해 점수가 부푸는 것을 막는 것(E7c의 “처음 보는 데이터”).</dd><dt>폴백 리뷰</dt><dd>원래 검토 담당(Codex)이 사용 한도 소진으로 돌지 못할 때 다른 모델이 같은 범위를 대신 검토한 것. 기록에 그렇게 표시합니다.</dd><dt>SSE</dt><dd>서버가 한 번의 응답을 열어 두고 A안·B안처럼 결과가 나올 때마다 보내는 통신 방식입니다.</dd><dt>fixture / seed / hash</dt><dd>고정 테스트 자료 / 가상 생성의 난수 시작값 / 파일이 같은지 확인하는 지문입니다.</dd><dt>p50 / p95 / 생존 편향</dt><dd>중앙값 / 관측 시간의 95%가 그 아래인 값 / 실패한 느린 실행을 빼고 성공만 보면 빨라 보이는 왜곡입니다.</dd><dt>FTE / M/M</dt><dd>전일제 한 사람의 투입량을 1로 보는 단위 / 한 사람의 한 달 투입량(실제 가용 자료의 단위). 인원수 2명과 각 20%인 총 0.4 FTE는 다릅니다.</dd><dt>shadow mode</dt><dd>실제 결정은 기존 방식으로 하고 추천만 뒤에서 기록해 차이를 점검하는 단계입니다.</dd></dl>
+<div class="panel"><h3>사용자가 준비하면 가장 도움이 되는 자료</h3><ol><li><strong>실제 ID·칸 이름:</strong> 사람·사업 ID 형식, 실제 칸 이름과 계약 칸의 대응. 실제 인물 값은 필요하지 않습니다(컬럼 사전과 배치 규칙은 이미 받았습니다).</li><li><strong>평가 글 판정 위치:</strong> 사내 LLM 주소가 생기는지, 없으면 외부 전송 동의 여부. 사내 모델이면 추론 강도를 다시 정합니다.</li><li><strong>성과 원천 접근:</strong> 고객 평가·고객 요청 교체 사유·후속 과제가 어디에 있는지, 접근 없이 집계만 받는 방식이 가능한지.</li><li><strong>시연·보고 일정:</strong> 시연 데이터 마무리 정리(평가 글 생성기·미리 계산)를 언제 한 번에 할지.</li><li><strong>운영 목표:</strong> 최대 인원/프로젝트·동시 사용자·기다릴 수 있는 시간·승인자·설명 공개 범위.</li></ol></div>
+<div class="callout"><strong>다음 개발에서 먼저 만들어야 할 결과물</strong><p>인사팀 소명 글의 화면·PDF, 실제 자료 첫 적재를 위한 체크리스트, 점수 계약(경력 개월·부분 인정)의 정리입니다. 이 세 가지가 끝나면 “실제 입력으로 어떤 답을 만들고, 그 답을 어떤 글로 설명하며, 어떻게 검증하는가”가 한 흐름으로 이어집니다.</p></div>
 </section>
-<footer class="footer"><p><strong>문서 상태:</strong> 2026-10-03 기준 종합 기록. 가상 데이터·미보정 계수·미완성 기능은 해당 장에 표시했습니다. 제안한 새 컬럼과 로드맵은 아직 구현된 기능이 아닙니다.</p><p class="small">외부 리소스·라이브러리 없이 열리는 단일 HTML입니다. 공식 출처 링크는 클릭할 때만 이동합니다. 로컬 추적/원격 상태와 문서 검사·리뷰 결과는 채팅 인계 및 <code>docs/reviews/2026-10-03-project-history-roadmap-review.md</code>에서 확인하세요.</p><a href="#">맨 위로</a></footer>
+<footer class="footer"><p><strong>문서 상태:</strong> 2026-10-11 갱신(claude-a). 10월 3일판(Codex 작성, <code>0bc4c7c</code>)의 1·7·8·9·16장 본문과 이력은 보존하고(각 장에 “그 뒤” 상자를 더함), 나머지는 <code>docs/handoff-log.md</code>·실험 보고서와 대조해 고쳤습니다. 가상 데이터·미보정 계수·미완성 기능은 해당 장에 표시했습니다. 수치는 각 기록 시점의 값이며 이번 갱신에서 다시 측정하지 않았습니다(사람별 덧붙임 확인만 새로 실행).</p><p class="small">외부 리소스·라이브러리 없이 열리는 단일 HTML입니다. 공식 출처 링크는 클릭할 때만 이동합니다. 10월 3일판의 문서 검사·리뷰 기록은 <code>docs/reviews/2026-10-03-project-history-roadmap-review.md</code>, 이번 갱신 기록은 claude-a 로컬 <code>.omc/reports/2026-10-11-addendum-by-person-roadmap.md</code>에 있습니다.</p><a href="#">맨 위로</a></footer>
 </main><script>
 document.getElementById('expand').addEventListener('click',()=>document.querySelectorAll('details').forEach(el=>el.open=true));
 document.getElementById('collapse').addEventListener('click',()=>document.querySelectorAll('details').forEach(el=>el.open=false));
