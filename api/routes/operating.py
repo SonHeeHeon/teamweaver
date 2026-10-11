@@ -104,6 +104,17 @@ def _params(req: _Base):
     return p.model_copy(update={"time_limit": min(p.time_limit, OPERATING_TIME_LIMIT_MAX)})
 
 
+def _signed(row: dict, req, version: str) -> dict:
+    """채택된 K 행에 서버 서명(PDF가 "서버 계산 확인"으로 검증, api/routes/report._plan_provenance). 라벨은 "K{k}".
+    서명은 화면이 보낸 설정 그대로(운영 시간 상한을 씌우기 전)로 만든다 -- PDF도 같은 설정을 보낸다."""
+    if not row.get("accepted") or not row.get("entries"):
+        return row
+    from api.plan_token import sign_plan
+    return {**row, "plan_label": f"K{row['k']}",
+            "plan_token": sign_plan(version, f"K{row['k']}", list(row["entries"]), dict(req.weights or {}),
+                                    req.milp_params.to_milp_params())}
+
+
 def _matrices(dataset: ActiveDataset, weights):
     eng = ScoringEngine(dataset.graph)
     return eng.skill_matrix(weights), eng.synergy_matrix()
@@ -200,7 +211,8 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
             yield sse_event("start", {"ks": ks, "n_people": len(dataset.graph.people), "precomputed_at": pre_at,
                                       "expected_s_100": {k: EXPECTED_S_100.get(k) for k in ks}, "note": NOT_CALIBRATED})
             for row in pre_rows:
-                yield sse_event("row", {**row, "dataset_version": dataset.info.version, "precomputed_at": pre_at})
+                yield sse_event("row", {**_signed(row, req, dataset.info.version), "dataset_version": dataset.info.version,
+                                        "precomputed_at": pre_at})
             yield sse_event("done", {"elapsed_s": 0.0, "count": len(pre_rows), "precomputed_at": pre_at})
         return StreamingResponse(precomputed_stream(), media_type="text/event-stream")
     S, C = await anyio.to_thread.run_sync(lambda: _matrices(dataset, req.weights))
@@ -242,7 +254,7 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
                 continue
             if kind == "row":
                 sent.add(payload.get("k"))
-                yield sse_event("row", {**payload, "dataset_version": dataset.info.version,
+                yield sse_event("row", {**_signed(payload, req, dataset.info.version), "dataset_version": dataset.info.version,
                                         "elapsed_total_s": round(time.monotonic() - t0, 1)})
                 continue
             break
@@ -251,7 +263,7 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
             return
         for row in payload:                     # on_row로 오지 않은 행이 있으면(계산 함수가 고리를 안 부른 경우) 끝에 보낸다
             if row.get("k") not in sent:
-                yield sse_event("row", {**row, "dataset_version": dataset.info.version})
+                yield sse_event("row", {**_signed(row, req, dataset.info.version), "dataset_version": dataset.info.version})
         yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(payload)})
 
     return StreamingResponse(stream(), media_type="text/event-stream")

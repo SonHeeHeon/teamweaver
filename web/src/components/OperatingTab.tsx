@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  DatasetChangedError, fetchOperatingState, postStaffingBest, postStaffingCandidates,
+  DatasetChangedError, downloadReport, fetchOperatingState, postStaffingBest, postStaffingCandidates,
   postStaffingSimulate, streamOperatingCompare,
 } from "../api/client";
 import type {
-  BestResult, Candidate, Meta, OperatingDiff, OperatingRow, OperatingState, Parts, PlacementSettings,
+  AssignEntry, BestResult, Candidate, Meta, OperatingDiff, OperatingRow, OperatingState, Parts, PlacementSettings,
   SimulateResult,
 } from "../api/types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
@@ -31,6 +31,7 @@ function signed(x: number | null | undefined, digits = 2): string {
 
 export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
   const [state, setState] = useState<OperatingState | null>(null);
+  const [base, setBase] = useState<Base | null>(null);
   const [error, setError] = useState<string | null>(null);
   const person = useMemo(() => new Map(meta.people.map((p) => [p.id, p])), [meta.people]);
   const project = useMemo(() => new Map(meta.projects.map((p) => [p.id, p])), [meta.projects]);
@@ -48,6 +49,7 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
     setError(null);                     // 이전 데이터의 오류를 새 데이터 화면에 남기지 않는다
     // 옛 데이터의 상태도 비운다 -- 새 상태 조회가 실패하면 오류가 보여야지 '불러오는 중…'에 멈추면 안 된다(Codex 사후 리뷰 S)
     setState(null);
+    setBase(null);                      // 이어 쓰기 기준은 그 데이터의 결과다
     fetchOperatingState().then((s) => {
       if (!alive) return;
       setState(s);
@@ -90,8 +92,11 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
       </p>
       {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {/* key: 데이터셋이 바뀌면 하위 상태(비교 결과·후보·넣기/빼기 묶음)를 모두 버린다(리뷰 S4) */}
-      <MoveBudget key={`m-${state.dataset_version}`} state={state} common={common} who={who} proj={proj} fail={fail} />
-      <Reinforce key={`r-${state.dataset_version}`} state={state} common={common} who={who} proj={proj} fail={fail} />
+      <MoveBudget key={`m-${state.dataset_version}`} state={state} common={common} who={who} proj={proj} fail={fail}
+                  onUseAsBase={setBase} />
+      {/* key에 기준 배치를 넣는다 -- 기준이 바뀌면 보강의 넣기·빼기·결과를 모두 새로 시작한다 */}
+      <Reinforce key={`r-${state.dataset_version}-${base?.id ?? "now"}`} state={state} common={common} who={who}
+                 proj={proj} fail={fail} base={base} onClearBase={() => setBase(null)} />
     </div>
   );
 }
@@ -99,10 +104,17 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
 type Common = { dataset_version: string; milp_params: PlacementSettings | null };
 type Helpers = { state: OperatingState; common: Common; who: (id: string) => string; proj: (id: string) => string;
                  fail: (e: unknown) => void };
+/** 보강의 출발 배치: 없으면 지금 배치(state.current), 있으면 K 비교에서 고른 결과(이어 쓰기). */
+// id: 비교 실행마다 바뀐다 -- 같은 "K=1 결과"라도 다시 비교한 결과면 보강을 새로 시작한다(폴백 리뷰 SHOULD)
+type Base = { id: string; label: string; entries: AssignEntry[] };
 
 // --- S1: 신규 제안 편성(변경 예산 K) ------------------------------------------------------------
 
-function MoveBudget({ state, common, who, proj, fail }: Helpers) {
+function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
+                     Helpers & { onUseAsBase: (b: Base | null) => void }) {
+  const [pdfBusy, setPdfBusy] = useState(false);
+  // 비교를 실행한 그때의 설정·실행 번호 -- PDF 서명 확인은 계산 당시 설정이어야 한다(그 뒤 관리자 설정이 바뀌어도, 폴백 리뷰 SHOULD)
+  const [runBasis, setRunBasis] = useState<{ seq: number; params: PlacementSettings | null }>({ seq: 0, params: null });
   const [ks, setKs] = useState<number[]>([0, 1, 2, 3]);
   const [rows, setRows] = useState<OperatingRow[]>([]);
   const [running, setRunning] = useState(false);
@@ -116,6 +128,8 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
   /** fresh: 미리 계산 행을 쓰지 않고 다시 푼다. 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다. */
   async function run(fresh?: unknown) {
     setRunning(true);
+    onUseAsBase(null);                 // 새 비교를 시작하면 이전 결과에서 이어 쓰던 기준은 표에서 사라진다
+    setRunBasis((b) => ({ seq: b.seq + 1, params: common.milp_params }));
     setRows([]);
     setPick(null);
     setPreAt(null);
@@ -240,6 +254,29 @@ function MoveBudget({ state, common, who, proj, fail }: Helpers) {
               <p className="mt-2 text-xs text-red-700">제약 위반: {chosen.violations!.join(", ")}</p>
             )}
           </div>
+          <div className="flex flex-wrap items-center gap-2 lg:col-span-2">
+            {chosen.entries && chosen.entries.length > 0 && (
+              <button onClick={() => onUseAsBase({ id: `run${runBasis.seq}-k${chosen.k}`, label: `K=${chosen.k} 결과`,
+                                                   entries: chosen.entries! })}
+                      className="rounded-md border border-indigo-300 bg-white px-3 py-1 text-xs text-indigo-800 hover:bg-indigo-50">
+                이 결과에서 이어서 보강
+              </button>
+            )}
+            {chosen.plan_token && chosen.plan_label && (
+              <button disabled={pdfBusy} onClick={async () => {
+                setPdfBusy(true);
+                try {
+                  await downloadReport({ label: chosen.plan_label!, entries: chosen.entries ?? [], objective: chosen.objective ?? 0,
+                                         unfilled: [], fulfillment: 0, optimization_ratio: null, index: 0, cached: false,
+                                         plan_token: chosen.plan_token },
+                                       null, null, runBasis.params, common.dataset_version, null,
+                                       { weights: {}, planToken: chosen.plan_token! });
+                } catch (e) { fail(e); } finally { setPdfBusy(false); }
+              }} className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:text-slate-400">
+                {pdfBusy ? "PDF 생성 중…" : `K=${chosen.k} 결과 PDF`}
+              </button>
+            )}
+          </div>
           {/* 단순 규칙 대비 카드는 여기 두지 않는다: 단순 규칙은 백지에서 전부 짜고, 이 결과는 현재 배치에서 K명만
               옮긴 것이라 같은 조건이 아니다(시연 데이터 실측: K=0 품질 69.2 대 백지 단순 규칙 76.3 -- 비교가 오해를 낳는다).
               카드는 백지에서 짠 플랜을 보는 What-if 화면에 있다. */}
@@ -276,7 +313,8 @@ function MoveList({ diff, who, proj, title }: { diff: OperatingDiff; who: (id: s
 
 type Add = { person_id: string; project_id: string; alloc: number; grade: string; cost: number; pulled: string[] };
 
-function Reinforce({ state, common, who, proj, fail }: Helpers) {
+function Reinforce({ state, common, who, proj, fail, base, onClearBase }:
+                     Helpers & { base: Base | null; onClearBase: () => void }) {
   const [project, setProject] = useState(state.projects[0]?.id ?? "");
   const [includePull, setIncludePull] = useState(false);
   const [budget, setBudget] = useState("");
@@ -289,7 +327,13 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
   const [pull, setPull] = useState(0);
   const [grade, setGrade] = useState("");
   const [best, setBest] = useState<BestResult | null>(null);
-  const team = state.current.filter((c) => c.project_id === project);
+  // 이어 쓰기면 그 결과 명단이 출발점(잠금 표시는 지금 배치의 잠금을 따른다 -- 잠긴 사람은 K 비교에서도 옮겨지지 않는다)
+  const locked = new Set(state.current.filter((c) => c.locked).map((c) => `${c.person_id}@${c.project_id}`));
+  const roster = base
+    ? base.entries.map((e) => ({ ...e, locked: locked.has(`${e.person_id}@${e.project_id}`) }))
+    : state.current;
+  const team = roster.filter((c) => c.project_id === project);
+  const withBase = base ? { entries: base.entries } : {};
   const budgetAdd = budget.trim() === "" ? null : Number(budget);
   const budgetValid = budgetAdd === null || (Number.isInteger(budgetAdd) && budgetAdd >= 0);
   // 결과는 그 결과를 계산한 입력(사업·조건·조합)에 묶는다 -- 계산 중 사업·조건을 바꾸면 늦게 온 응답을 버리고,
@@ -318,7 +362,7 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
   const candidates = () => act("cands", async () => {
     const key = keyOf.cands;
     const res = await postStaffingCandidates(common, { project_id: project, include_pull: includePull,
-                                                       budget_add: budgetAdd, top: 10 });
+                                                       budget_add: budgetAdd, top: 10, ...withBase });
     if (keysRef.current.cands !== key) return;          // 그사이 사업·조건이 바뀌었다 -- 버린다
     setCands(res.candidates); setResultKeys((k) => ({ ...k, cands: key }));
   });
@@ -329,14 +373,14 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
     const key = keyOf.sim;
     const res = await postStaffingSimulate(common, {
       project_id: project, adds: adds.map(({ person_id, project_id, alloc }) => ({ person_id, project_id, alloc })),
-      removes, extra_seats: seats, budget_add: extra });
+      removes, extra_seats: seats, budget_add: extra, ...withBase });
     if (keysRef.current.sim !== key) return;
     setSim(res); setResultKeys((k) => ({ ...k, sim: key }));
   });
   const bestN = () => act("best", async () => {
     const key = keyOf.best;
     const res = await postStaffingBest(common, { project_id: project, n, grade: grade || null, pull_budget: pull,
-                                                 budget_add: budgetAdd });
+                                                 budget_add: budgetAdd, ...withBase });
     if (keysRef.current.best !== key) return;
     setBest(res); setResultKeys((k) => ({ ...k, best: key }));
   });
@@ -348,6 +392,12 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
         <p className="text-sm text-slate-500">
           사업을 고르면 한 명씩 넣어 본 점수 변화 순위를 보인다. "넣어 보기"·"빼 보기"로 조합을 만들어 재평가하거나 최선 n명을 계산한다.
         </p>
+        {base && (
+          <p role="status" className="mt-1 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-900">
+            기준 배치: <b>{base.label}</b>(위 K 비교에서 고른 결과에서 이어서 보강한다){" "}
+            <button onClick={onClearBase} className="ml-1 underline">지금 배치로 되돌리기</button>
+          </p>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label>사업{" "}
@@ -415,7 +465,7 @@ function Reinforce({ state, common, who, proj, fail }: Helpers) {
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
           <h3 className="font-semibold text-slate-900">시뮬레이션 묶음</h3>
-          <p className="mt-1 text-xs text-slate-500">지금 팀 — 빼 보기(잠긴 배치는 뺄 수 없다)</p>
+          <p className="mt-1 text-xs text-slate-500">{base ? `${base.label}의 팀` : "지금 팀"} — 빼 보기(잠긴 배치는 뺄 수 없다)</p>
           <ul className="mt-1 space-y-0.5">
             {team.map((t) => {
               const out = removes.some(([p, j]) => p === t.person_id && j === t.project_id);

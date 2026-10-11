@@ -12,6 +12,7 @@ import asyncio
 import concurrent.futures
 import json
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
@@ -159,6 +160,12 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
     """전용 스레드에서 돈다: 교체 재계산(K10) + 리포트 meta(K9) + (선택) 사업별 소명 글 + 최종 크기 검사."""
     payload = req.model_dump()
     payload.update(_replay_applied_swaps(req, graph))
+    if provenance == "verified" and re.fullmatch(r"K\d+", req.plan_label or ""):
+        # 운영 중 편성 K 결과(api/routes/operating._signed): 백지에서 전부 짠 안이 아니다 -- PDF가 그 맥락을 밝힌다(폴백 리뷰 SHOULD)
+        k = req.plan_label[1:]
+        payload["operating_note"] = (f"운영 중 편성 결과: 지금 배치에서 최대 {k}명만 옮겨 다시 짠 명단이다(백지에서 전부 짠 안 A~D가 아니다). "
+                                     "더 많이 옮겨도 나아지지 않으면 더 적게 옮긴 결과를 그대로 쓴다. 최적화율은 백지 배치의 상한 기준이라 "
+                                     "운영 중 결과에는 참고값이다.")
     if req.include_justifications and dataset is not None and not dataset.has_kg:
         payload["justifications"] = []
         payload["justifications_note"] = "인사팀 소명 글은 CSV 묶음 데이터(업로드·시연 데이터)에서만 만들 수 있다."
