@@ -347,4 +347,33 @@ def test_swap_without_new_violations_is_not_forced_to_hold(sc):
 def test_prompt_tells_the_model_not_to_recommend_an_infeasible_swap():
     from api.rag.briefing import _SYSTEM, _SYSTEM_HIDDEN, _SYSTEM_SOURCED
     for p in (_SYSTEM, _SYSTEM_SOURCED, _SYSTEM_HIDDEN):
-        assert "new_violations가 있으면" in p and "결론을 보류로" in p and "교체 전부터 있던 위반" in p
+        assert "new_violations가 있으면" in p and "첫 문장에 반드시 보류라는 낱말" in p and "교체 전부터 있던 위반" in p
+
+
+_CREDIT_CTX = {**_CTX, "p001": {"skills": [{"key": "Java", "value": "2", "credited_from": "Spring", "credited_months": 20,
+                                         "own_months": 4}], "coworks": [], "evidence": []}}
+
+
+@pytest.mark.parametrize("rationale, noted", [
+    ("교체를 권고합니다. p001은 Java 2로 요구를 채운다.", True),                       # 출처를 빼먹음 -> 서버가 밝힌다
+    ("교체를 권고합니다. p001은 Java 2(Spring 경력에서 인정)로 요구를 채운다.", False),
+    ("교체를 권고합니다. p001의 Java 레벨은 Spring 경력에서 일부 인정된 수준이다.", False),  # 서술로 밝혀도 된다
+    ("교체를 권고합니다. p001은 JavaScript 경험이 있다.", False),                      # 다른 기술 이름에 걸리지 않는다
+    ("교체를 권고합니다. 점수가 오른다.", False),                                     # 그 기술을 말하지 않음
+    ("교체를 권고합니다. p001은 Java 2와 Spring 3 경험이 있다.", True),                 # 출처 이름이 가까이 있을 뿐 인정이라고 밝히지 않음
+    ("교체를 권고합니다. p001은 Java 2(Spring 경력에서 인정)다. Java 요구는 2다.", True),  # 한 자리만 밝힘
+])
+def test_server_names_the_credit_source_the_model_left_out(rationale, noted):
+    payload = {"rationale": rationale, "risks": ["없음"], "alternatives": ["유지"]}
+    out = generate_briefing(_client(payload), "m", _CREDIT_CTX, "p000", "p001")["rationale"]
+    note = "참고: p001의 Java 2는 Spring 경력에서 일부 인정된 레벨이다."
+    assert out.endswith(note) if noted else out == rationale
+
+
+def test_credit_note_for_each_person_when_both_were_credited():
+    ctx = {"p000": {"skills": [{"key": "Java", "value": "3", "credited_from": "Kotlin"}], "coworks": [], "evidence": []},
+           "p001": _CREDIT_CTX["p001"]}
+    payload = {"rationale": "교체를 권고합니다. p001은 Java 2(Spring 경력에서 인정)이고 p000은 Java 3이다.",
+               "risks": ["없음"], "alternatives": ["유지"]}
+    out = generate_briefing(_client(payload), "m", ctx, "p000", "p001")["rationale"]
+    assert "p000의 Java 3은 Kotlin 경력에서" in out and "p001의 Java 2는 Spring 경력에서" in out
