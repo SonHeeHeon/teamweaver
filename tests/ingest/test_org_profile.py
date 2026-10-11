@@ -108,8 +108,10 @@ def test_roster_does_not_change_the_other_tables(tmp_path, monkeypatch):
 
 def test_reviews_are_long_contextual_and_use_the_org_item_list(bundle):
     from core.ingest.review_text import ORG_REVIEW_ITEMS
-    _, _, b, _, _ = bundle
-    reviews = b.tables["reviews.csv"]
+    _, root, b, _, _ = bundle
+    style = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["review_style"]
+    short = set(style["harsh_reviews"]) | {r["review_id"] for r in b.tables["reviews.csv"] if r["reviewer_id"] in set(style["blunt_reviewers"])}
+    reviews = [r for r in b.tables["reviews.csv"] if r["review_id"] not in short]   # 직설형·독한 글은 칭찬이 한 줄(2026-10-11)
     assert all(r["positive_text"].count("다.") >= 2 for r in reviews)           # opener + at least one strength
     assert sum(len(r["positive_text"]) for r in reviews) / len(reviews) > 120
     assert {i["item"] for i in b.tables["review_items.csv"]} <= set(ORG_REVIEW_ITEMS)
@@ -280,3 +282,71 @@ def test_operating_scenario_matches_the_described_situation(tmp_path):
             assert grades == {g: k for g, k in p.grade_headcount.items() if k}
     plan = generate_org_bundle(tmp_path / "plan", 100, seed=7)
     assert (root / "people.csv").read_bytes() == (plan / "people.csv").read_bytes()      # same organisation
+
+
+# ---------------------------------------------------------------- 2026-10-11: 가상 이름·시연 글 다듬기(claude-b 요청, 사용자 결정)
+def test_people_have_unique_virtual_korean_names(bundle):
+    from core.ingest.names import virtual_name
+    _, _, b, _, ds = bundle
+    rows = b.tables["people.csv"]
+    names = [r["display_name"] for r in rows]
+    assert len(set(names)) == len(names)
+    assert all(re.fullmatch(r"[가-힣]{3}", n) for n in names)                     # 성 한 글자 + 이름 두 글자, "가상DP0001" 아님
+    assert all(r["display_name"] == virtual_name(r["person_id"]) for r in rows)   # 같은 ID는 어느 묶음에서든 같은 이름
+    assert {p.id: p.name for p in ds.people} == {r["person_id"]: r["display_name"] for r in rows}
+
+
+def test_review_style_changes_only_the_prose(tmp_path):
+    """직설형·어긋남을 끄고 켜도 고른 항목·사람·이력은 바이트 단위로 같다(항목 난수열 불변) -- 바뀌는 것은 글과 manifest뿐."""
+    a = generate_org_bundle(tmp_path / "a", 200, seed=5)
+    c = generate_org_bundle(tmp_path / "c", 200, seed=5, blunt_share=0.0, mismatch_share=0.0)
+    for f in a.iterdir():
+        if f.name not in ("reviews.csv", "manifest.json"):
+            assert f.read_bytes() == (c / f.name).read_bytes(), f.name
+    style = json.loads((c / "manifest.json").read_text(encoding="utf-8"))["review_style"]
+    assert style["blunt_reviewers"] == [] and style["harsh_reviews"] == [] and style["soft_reviews"] == []
+
+
+def test_weaknesses_get_one_sentence_per_item_in_normal_reviews(tmp_path):
+    from core.ingest.review_text import NEGATIVE, NEGATIVE_ALT
+    root = generate_org_bundle(tmp_path / "n", 100, seed=5, blunt_share=0.0, mismatch_share=0.0)
+    b, _ = load_bundle(root)
+    neg = {}
+    for i in b.tables["review_items.csv"]:
+        if i["polarity"] == "negative":
+            neg.setdefault(i["review_id"], []).append(i["item"])
+    for r in b.tables["reviews.csv"]:
+        items = neg[r["review_id"]]
+        for it in items:
+            if "{skill}" in NEGATIVE[it] or "{skill}" in NEGATIVE_ALT[it]:
+                continue
+            assert NEGATIVE[it] in r["negative_text"] or NEGATIVE_ALT[it] in r["negative_text"], (r["review_id"], it)
+        assert r["negative_text"].count("다.") == len(items)                  # 예전: 첫 항목만 문장, 나머지는 "또한 A, B 측면도"
+        assert "측면도 보완하면" not in r["negative_text"]
+
+
+def test_blunt_reviewers_are_an_exact_share_per_group_and_mismatches_follow_the_items(bundle):
+    from core.ingest.org_profile import BLUNT_SHARE
+    from core.ingest.review_text import BLUNT_CLOSERS, SOFT_CLOSERS
+    size, root, b, _, _ = bundle
+    style = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["review_style"]
+    groups = {}
+    for pid in style["blunt_reviewers"]:
+        groups[pid[:2]] = groups.get(pid[:2], 0) + 1
+    assert groups == {g: round(BLUNT_SHARE * 100) for g in ("DP", "AI", "AU")[:size // 100]}
+    items = {}
+    for i in b.tables["review_items.csv"]:
+        items.setdefault(i["review_id"], {"positive": 0, "negative": 0})[i["polarity"]] += 1
+    text = {r["review_id"]: r for r in b.tables["reviews.csv"]}
+    assert style["harsh_reviews"] and style["soft_reviews"]
+    for rid in style["harsh_reviews"]:
+        assert items[rid]["positive"] >= items[rid]["negative"] and any(c in text[rid]["negative_text"] for c in BLUNT_CLOSERS)
+    for rid in style["soft_reviews"]:
+        assert items[rid]["negative"] > items[rid]["positive"] and any(c in text[rid]["negative_text"] for c in SOFT_CLOSERS)
+    share = (len(style["harsh_reviews"]) + len(style["soft_reviews"])) / len(text)
+    assert 0.02 < share < 0.09                                                   # 기본 5%
+
+
+def test_review_style_shares_are_checked(tmp_path):
+    with pytest.raises(ValueError):
+        generate_org_bundle(tmp_path / "x", 100, seed=5, blunt_share=1.5)
