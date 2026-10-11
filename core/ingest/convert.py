@@ -11,7 +11,7 @@ from itertools import combinations
 
 from core.datagen.parse_reviews import parse_reviews_rule_based
 from core.domain.models import (CoworkRecord, CurrentAssignment, Dataset, Grade, ParsedReview, PeerReview, Person,
-                                Project, ProjectPhase, ReviewSection, Sector, SkillRequirement)
+                                Project, ProjectPhase, ReviewSection, Sector, SkillCredit, SkillRequirement)
 from core.ingest.loader import Bundle
 from core.ingest.report import IngestReport
 from core.ingest.skills import SkillDictionary, load_dictionary, person_skill_months
@@ -131,11 +131,14 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
                     f"{len(stale)}건은 보유 기술로 보지 않았다(예: {stale[0]['person_id']} {stale[0]['skill_name']}, "
                     f"마지막 {stale[0]['last_used_month'].strftime('%Y-%m')})")
     skills: dict[str, dict[str, int]] = defaultdict(dict)
+    credits: dict[str, dict[str, SkillCredit]] = defaultdict(dict)     # 인정분이 경력을 정한 기술(2026-10-11, 화면·설명이 본인 경력과 구분)
     renamed, merged, credited, unknown, unknown_req = set(), 0, 0, set(), set()
     for pid, rows in skill_rows.items():
         sm = person_skill_months(rows, sd, partial_credit)
         skills[pid] = {name: level_from_months(m) for name, m in sm.months.items()}
-        credited += sum(1 for name, imp in sm.implied.items() if imp["months"] > sm.own.get(name, 0))
+        credits[pid] = {name: SkillCredit(source=imp["from"], months=imp["months"], depth=imp["depth"], own_months=sm.own.get(name, 0))
+                        for name, imp in sorted(sm.implied.items()) if imp["months"] > sm.own.get(name, 0)}
+        credited += len(credits[pid])
         for name, raws in sm.raw_names.items():
             renamed.update((r, name) for r in raws if r != name)
             merged += len(raws) - 1 if len(raws) > 1 else 0
@@ -158,7 +161,7 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
                          + ", ".join(m.strftime("%Y-%m") for m in missing))
             continue
         people.append(Person(id=p["person_id"], name=p["display_name"], grade=Grade(p["career_grade"]),
-                             monthly_rate=rate, skills=skills[p["person_id"]],
+                             monthly_rate=rate, skills=skills[p["person_id"]], skill_credit=credits[p["person_id"]],
                              availability=[avail[p["person_id"]][m] for m in bundle.horizon]))
 
     grade_req = defaultdict(dict)

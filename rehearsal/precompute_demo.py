@@ -7,6 +7,7 @@
 데이터셋 버전에 리뷰 글 판정값이 들어가므로 환경이 다르면 서버가 버전 불일치로 쓰지 않는다(로그·/api/datasets/active).
 관리자 설정을 바꾸면 다시 돌린다. 걸리는 시간(시드 4): 100명 약 2분, 200명 약 4분, 300명 약 12분 + 운영 중 비교 1~2분씩.
 결과: demo/precomputed/<묶음 id>.json
+끝나면 같은 데이터 폴더로 `scripts/export_demo_judgments.py`를 돌려 판정 동봉 파일도 함께 커밋한다(끝에 안내를 찍는다).
 """
 from __future__ import annotations
 
@@ -94,6 +95,9 @@ def main() -> None:
         path.parent.mkdir(exist_ok=True)
         path.write_text(json.dumps(data, ensure_ascii=False, indent=1), "utf-8")
         print(f"written {path}", flush=True)
+    # 미리 계산은 이 데이터 폴더의 리뷰 글 판정값에 묶인다 -- 같은 판정을 저장소에 동봉해야 다른 기기에서도 쓰인다(claude-b 요청 2026-10-11)
+    print("다음: 같은 데이터 폴더(TEAMWEAVER_DATA_DIR)로 `uv run python scripts/export_demo_judgments.py` → `--check`, "
+          "demo/review_judgments.json을 미리 계산과 함께 커밋한다(CLAUDE.md 함정 절)", flush=True)
 
 
 if __name__ == "__main__":

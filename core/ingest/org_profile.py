@@ -23,11 +23,13 @@ from pathlib import Path
 
 from core.ingest.contract import GRADES, HORIZON_MONTHS, SCHEMA_VERSION
 from core.ingest.convert import LOOKBACK_MONTHS
-from core.ingest.review_text import ORG_REVIEW_ITEMS, negative_text, positive_text
+from core.ingest.names import virtual_name
+from core.ingest.review_text import ORG_REVIEW_ITEMS, org_review_prose, positive_text
 from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS, _month_add, _month_end, _months,
                                    _review_rounds, _write_csv)
 
-GENERATOR = "core.ingest.org_profile v1"
+GENERATOR = "core.ingest.org_profile v2"          # v2(2026-10-11): 가상 이름, 아쉬운 점 항목마다 문장·직설형 평가자·어긋난 글
+BLUNT_SHARE, MISMATCH_SHARE = 0.08, 0.05        # 직설형 평가자 비율(평가자 단위) · 항목과 글이 어긋나는 리뷰 비율(claude-b 요청 5~10%)
 SIZES = {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}
 # the export keeps only the last LOOKBACK_MONTHS (10 years, same constant as the loader) -- careers can be longer
 # (20+ years), but old work and skills are not remembered well (user decision 2026-10-05)
@@ -119,7 +121,7 @@ def _people(rng: random.Random, groups: dict[str, int]) -> list[dict]:
         fams = FAMILIES[g]
         for i in range(n):
             fam = rng.choices(fams, weights=[f[1] for f in fams])[0]
-            out.append({"person_id": f"{g}{i + 1:04d}", "display_name": f"가상{g}{i + 1:04d}",
+            out.append({"person_id": f"{g}{i + 1:04d}", "display_name": virtual_name(f"{g}{i + 1:04d}"),   # 가상 이름(2026-10-11, 별도 난수열)
                         "career_grade": rng.choices(GRADES, weights=GRADE_WEIGHTS)[0],
                         "role_type": "컨설팅" if fam[2] else "개발", "job_family": f"{g}·{fam[0]}",
                         "_group": g, "_pool": fam[3]})
@@ -236,9 +238,20 @@ def _pick(rng: random.Random, preferred: list[str], k: int, exclude: set[str]) -
     return out
 
 
-def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], rounds):
+def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], rounds, *, seed: int = 0,
+                 blunt_share: float = BLUNT_SHARE, mismatch_share: float = MISMATCH_SHARE):
     """Half-yearly peer reviews among people active on the same past project (~5 per person per round, i.e.
-    ~10 a year as in the schema answer). Strength count leans on the hidden ability; prose from review_text."""
+    ~10 a year as in the schema answer). Strength count leans on the hidden ability; prose from review_text.
+    2026-10-11: rng picks the items exactly as before (positive_text still draws from it in the same order); the
+    weakness prose, blunt reviewers and tone mismatches draw only from per-reviewer / per-review streams, so the picked
+    items -- and everything after them -- are unchanged. Returns (reviews, review_items, style) where style says who
+    is blunt and which reviews disagree with their items (ground truth for judge experiments, not a contract column)."""
+    blunt_set = set()                                    # 그룹마다 정확히 round(비율 × 인원)명 -- 같은 그룹이면 묶음 크기와 무관하게 같은 사람
+    for g in sorted({q["_group"] for q in people}):
+        members = sorted((q["person_id"] for q in people if q["_group"] == g),
+                         key=lambda pid: (random.Random(f"{seed}:blunt:{pid}").random(), pid))
+        blunt_set.update(members[:round(blunt_share * len(members))])
+    style_of = {"blunt_reviewers": set(), "blunt": [], "harsh": [], "soft": []}
     by_id = {p["person_id"]: p for p in people}
     by_code = defaultdict(list)
     for w in works:
@@ -268,15 +281,29 @@ def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], roun
                 skill = rng.choice(w["_skills"])
                 n += 1
                 rid = f"R{n:06d}"
+                praise = positive_text(rng, pos, work_name=w["work_name"], domain=w["industry"],
+                                       skill=skill, area=w["_code"]["area"], grade=p["career_grade"])
+                prng = random.Random(f"{seed}:text:{rid}")
+                style = "blunt" if reviewer in blunt_set else "normal"
+                if style == "blunt":
+                    style_of["blunt_reviewers"].add(reviewer)
+                if prng.random() < mismatch_share:              # 항목과 글의 온도가 어긋남: 항목이 좋은 쪽이면 글이 독하고, 나쁜 쪽이면 부드럽다(직설형보다 우선)
+                    style = "harsh" if len(pos) >= len(neg) else "soft"
+                if style != "normal":
+                    style_of[style].append(rid)
+                pos_text, neg_text = org_review_prose(prng, style, pos, neg, praise, skill=skill)
                 reviews.append({
                     "review_id": rid, "review_round": round_id, "project_code": w["project_code"],
                     "reviewer_id": reviewer, "reviewee_id": reviewee, "reviewed_at": reviewed_at.isoformat(),
-                    "positive_text": positive_text(rng, pos, work_name=w["work_name"], domain=w["industry"],
-                                                   skill=skill, area=w["_code"]["area"], grade=p["career_grade"]),
-                    "negative_text": negative_text(rng, neg, skill=skill)})
+                    "positive_text": pos_text, "negative_text": neg_text})
                 review_items += [{"review_id": rid, "polarity": "positive", "item": x} for x in pos]
                 review_items += [{"review_id": rid, "polarity": "negative", "item": x} for x in neg]
-    return reviews, review_items
+    style = {"blunt_share": blunt_share, "mismatch_share": mismatch_share, "blunt_reviewers": sorted(style_of["blunt_reviewers"]),
+             "blunt_reviews": style_of["blunt"], "harsh_reviews": style_of["harsh"], "soft_reviews": style_of["soft"],
+             "note": "시연 글 성향(정답 보조, 계약 칸 아님): 리뷰마다 normal·blunt·harsh·soft 중 하나 -- 세 목록에 없는 리뷰는 normal. "
+                     "blunt = 직설형 평가자(blunt_reviewers)의 글(짧은 칭찬, 직설적인 아쉬운 점), harsh = 항목보다 글이 독함, soft = 항목보다 글이 부드러움. "
+                     "어긋남(harsh·soft)이 직설형보다 우선해, 직설형 평가자의 리뷰 일부는 harsh·soft에 있다. 고른 항목(review_items.csv)은 성향과 무관하다."}
+    return reviews, review_items, style
 
 
 CUSTOMER_REASONS = ("고객 요청 - 역량 부족", "고객 요청 - 소통 문제", "고객 요청 - 일정 지연 책임")
@@ -587,7 +614,8 @@ def _current_roster(rng: random.Random, people: list[dict], projects: list[dict]
 
 
 def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str = "2026-10",
-                        scenario: str = "planning") -> Path:
+                        scenario: str = "planning", *, blunt_share: float = BLUNT_SHARE,
+                        mismatch_share: float = MISMATCH_SHARE) -> Path:
     """scenario: "planning" = 연초 계획(사업을 백지에서 배치), "operating" = 운영 중(대부분이 진행 사업에 있고 신규 제안
     2~3개를 남는 인력으로 짠다, 2026-10-06). 같은 seed면 사람·이력·평가·과거 성과는 두 시나리오가 같다."""
     if size not in SIZES:
@@ -626,7 +654,11 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
         (projects, grade_reqs, skill_reqs, roster, availability, avail, bench, proposals,
          peak) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size)
         extra = {"scenario": "operating", "bench": bench, "proposals": proposals}
-    reviews, review_items = _org_reviews(random.Random(seed * 1299709 + 5), works, people, _review_rounds(first))
+    for name, share in (("blunt_share", blunt_share), ("mismatch_share", mismatch_share)):
+        if not 0 <= share <= 1:
+            raise ValueError(f"{name}는 0~1이어야 한다: {share}")
+    reviews, review_items, review_style = _org_reviews(random.Random(seed * 1299709 + 5), works, people, _review_rounds(first),
+                                                       seed=seed, blunt_share=blunt_share, mismatch_share=mismatch_share)
     # separate RNG stream so adding the roster does not change any other table of an existing seed
     if scenario == "planning":
         roster = _current_roster(random.Random(seed * 7919 + 1), people, projects, avail)
@@ -648,6 +680,6 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
                 "synthetic": True, "seed": seed, "generator": GENERATOR, "groups": groups,
                 "flagship_project": FLAGSHIP["project_id"],
                 "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
-                "peak_demand_ratio": round(peak, 4), **extra, "files": hashes}
+                "peak_demand_ratio": round(peak, 4), **extra, "review_style": review_style, "files": hashes}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return out_dir

@@ -125,9 +125,9 @@ MAX_RENDER_PAYLOAD_BYTES = 4 * 1024 * 1024
 def _justify_allowance(req: ReportRequest) -> float:
     """사업별 소명 글에 더 줄 시간: 배치된 사업 수 ÷ 동시 호출 수(올림) × AI 한 건 상한 + 그래프·템플릿 여유 30초."""
     import math
-    from api.routes.justification import AI_TIMEOUT_S, PDF_WORKERS
+    from api.routes.justification import PDF_WORKERS, ai_timeout_s
     projects = {e.project_id for e in req.entries} | {e.project_id for e in (req.base_entries or [])}
-    return math.ceil(len(projects) / PDF_WORKERS) * AI_TIMEOUT_S + 30.0
+    return math.ceil(len(projects) / PDF_WORKERS) * ai_timeout_s() + 30.0       # 모델별 대기 상한(사내 AI면 더 길다, 2026-10-11)
 
 
 class PayloadTooLarge(RuntimeError):
@@ -269,6 +269,10 @@ async def report(req: ReportRequest, request: Request,
     # 값싼 검사(원 플랜 서명)는 슬롯을 잡기 전에 끝낸다(K10).
     provenance = _plan_provenance(req, dataset.info.version)
 
+    # 소명 글을 넣으면 사업마다 AI 글이 더 걸린다 -- 최악(사업 수 ÷ 동시 수 × AI 상한)만큼 상한을 늘린다(Codex 리뷰 P2).
+    # 모델별 상한(pricing.json)을 읽다 실패해도 슬롯을 잡기 전이라 새지 않는다(2026-10-11 폴백 리뷰).
+    limit = settings.timeout_s + (_justify_allowance(req) if req.include_justifications else 0)
+
     # 동시성 상한은 무거운 계산(교체 재생 + 브라우저) *전에* 건다(K4 + Codex K10 리뷰).
     if not PDF_SLOTS.try_acquire(settings.max_concurrency):
         raise HTTPException(
@@ -286,8 +290,6 @@ async def report(req: ReportRequest, request: Request,
         payload = await asyncio.wrap_future(prep)
         return await render_report_pdf(payload, origin, settings.timeout_s)
 
-    # 소명 글을 넣으면 사업마다 AI 글이 더 걸린다 -- 최악(사업 수 ÷ 동시 수 × AI 상한)만큼 상한을 늘린다(Codex 리뷰 P2)
-    limit = settings.timeout_s + (_justify_allowance(req) if req.include_justifications else 0)
     try:
         # 교체 재생과 렌더를 합친 전체 시간에 상한을 건다(K4).
         pdf = await asyncio.wait_for(build_and_render(), timeout=limit)

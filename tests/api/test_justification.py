@@ -211,7 +211,7 @@ def test_skill_map_on_bundle_data(jc):
     r = next(x for x in body["rows"] if x["practical"] > 0)
     assert len(r["practical_people"]) == r["practical"] and {"id", "name", "credited"} <= set(r["practical_people"][0])
     assert r["practical_credited"] == sum(p["credited"] for p in r["practical_people"])
-    assert all(p["name"] is None for x in body["rows"] for p in x["practical_people"])   # 시연 이름이 자리표시라 아직 이름 없음
+    assert all(p["name"] and p["id"] not in p["name"] for x in body["rows"] for p in x["practical_people"])   # 시연 묶음에 가상 이름이 들어갔다(claude-a 2026-10-11)
     res = c.get("/api/skill-map", params={"dataset_version": "stale"})
     assert res.status_code == 409 and res.json()["detail"]["code"] == "dataset_changed"
 

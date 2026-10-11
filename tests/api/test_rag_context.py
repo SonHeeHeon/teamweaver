@@ -108,3 +108,43 @@ def test_project_id_adds_the_project_requirements(data_and_conn):
         key=lambda r: r["skill"])
     assert "project" not in swap_context(conn, out_id, in_id)
     assert "project" not in swap_context(conn, out_id, in_id, project_id="no-such-project")
+
+
+def test_credited_skills_are_marked_in_the_briefing_context(tmp_path):
+    """하위 기술에서 인정한 레벨은 근거 색인의 별도 표에 남고, 교체 설명 문맥이 출처를 붙인다(2026-10-11). 인정 표가 없는 예전 색인은 예전 문맥."""
+    from api.rag.context import swap_context
+    from core.domain.models import SkillCredit
+    ds = generate_dataset(40, 8, seed=5)
+    p0 = ds.people[0]
+    skill = next(iter(p0.skills))
+    ds.people[0] = p0.model_copy(update={"skill_credit": {skill: SkillCredit(source="하위기술", months=14, depth=1, own_months=3)}})
+    path = tmp_path / "credit.db"
+    build_sqlite(ds, parse_reviews_rule_based(ds.reviews), path)
+    c = sqlite3.connect(path)
+    rows = c.execute("SELECT person_id, skill, source, months, depth, own_months FROM skill_credit").fetchall()
+    assert rows == [(p0.id, skill, "하위기술", 14, 1, 3)]
+    ctx = swap_context(c, p0.id, ds.people[1].id)
+    marked = [s for s in ctx[p0.id]["skills"] if "credited_from" in s]
+    assert marked == [{"key": skill, "value": str(p0.skills[skill]), "credited_from": "하위기술", "credited_months": 14, "own_months": 3}]
+    assert all("credited_from" not in s for s in ctx[ds.people[1].id]["skills"])
+    c.execute("DROP TABLE skill_credit")
+    assert all("credited_from" not in s for s in swap_context(c, p0.id, ds.people[1].id)[p0.id]["skills"])
+    c.close()
+
+
+def test_briefing_prompt_tells_the_model_to_name_the_credit_source():
+    from api.rag import briefing
+    assert "credited_from" in briefing._BASE and "인정" in briefing._BASE
+    assert "'Java" not in briefing._BASE and "따옴표로 감싸지 마라" in briefing._BASE   # 따옴표째 따라 쓰면 인용 검사가 글을 버린다(폴백 리뷰)
+    assert "매번 레벨 뒤 괄호에 출처" in briefing._BASE      # "밝혀라"만으로는 실측 2/10만 괄호를 썼다(2026-10-12)
+
+
+@pytest.mark.parametrize("reveal", [False, True])
+def test_credit_source_in_parentheses_passes_the_quote_guard(reveal):
+    """지시문이 권하는 표기(괄호, 따옴표 없음)는 두 모드의 인용 검사를 통과하고, 따옴표로 감싸면 걸린다."""
+    from api.rag.briefing import BriefingRejected, _check_inline_quotes
+    from api.rag.evidence import EvidenceIndex
+    ev = EvidenceIndex({}, {}, reveal_text=reveal)
+    _check_inline_quotes("들어올 사람은 Java(Spring 경력에서 인정) 레벨 2라 요구를 채운다.", {}, ev)
+    with pytest.raises(BriefingRejected):
+        _check_inline_quotes("들어올 사람은 'Java(Spring 경력에서 인정)' 레벨 2다.", {}, ev)
