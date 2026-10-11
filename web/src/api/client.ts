@@ -1,7 +1,7 @@
 import type {
   BaselineResult, BestResult, Candidate, DemoBundle, OperatingEvent, OperatingState, SimulateResult,
   Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
-  SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange, Justification,
+  SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange, Justification, SkillMap,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
 import { swapWarnings } from "./whatifWarnings";
@@ -472,4 +472,16 @@ export async function postJustification(body: {
     throw new Error(typeof detail.detail === "string" ? detail.detail : `소명 글 실패(${res.status})`);
   }
   return (await res.json()) as Justification;
+}
+
+
+/** 조직 기술 지도. 묶음 데이터가 아니면 409(원 표가 없다). */
+export async function fetchSkillMap(datasetVersion: string): Promise<SkillMap> {
+  const res = await fetch(`${API_BASE}/api/skill-map?dataset_version=${encodeURIComponent(datasetVersion)}`);
+  await throwIfDatasetChanged(res);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(typeof detail.detail === "string" ? detail.detail : `조직 기술 지도 실패(${res.status})`);
+  }
+  return (await res.json()) as SkillMap;
 }

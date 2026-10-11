@@ -19,6 +19,7 @@ import { RequirementsTab } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { PrecomputedNotice } from "./components/PrecomputedNotice";
 import { JustificationPanel } from "./components/JustificationPanel";
+import { SkillMapTab } from "./components/SkillMapTab";
 import { AssignmentTable } from "./components/AssignmentTable";
 import { NetworkGraph } from "./components/NetworkGraph";
 import { SwapControl } from "./components/SwapControl";
@@ -33,7 +34,7 @@ import { BaselineCard } from "./components/BaselineCard";
 import { OperatingTab } from "./components/OperatingTab";
 import { effectiveSettings, stepBody } from "./api/types";
 
-type Tab = "req" | "whatif" | "operating" | "settings" | "data";
+type Tab = "req" | "whatif" | "operating" | "skills" | "settings" | "data";
 
 
 
@@ -570,7 +571,7 @@ export default function App() {
 
       <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
         {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["operating", "운영 중 편성"],
-           ["settings", "배치 설정"], ["data", "데이터"]] as const)
+           ["skills", "조직 기술 지도"], ["settings", "배치 설정"], ["data", "데이터"]] as const)
           .map(([id, label]) => (
           <button
             key={id}
@@ -643,7 +644,9 @@ export default function App() {
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
             </p>
           )
-        ) : tab === "operating" ? null : tab === "req" ? (
+        ) : tab === "operating" ? null : tab === "skills" ? (
+          <SkillMapTab datasetVersion={meta.dataset_version} onDatasetChanged={() => void externalSwitch()} />
+        ) : tab === "req" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} operating={dataset?.scenario === "operating"}
                            onOpenOperating={() => setTab("operating")} />
