@@ -57,14 +57,20 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props)
               <dd className="tabular-nums">{p.entries.length}건</dd>
             </div>
           </dl>
-          {p.termination !== undefined && (
+          {editCounts[p.label] ? (
+            // 화면에서 교체·조정한 명단은 솔버가 푼 해가 아니다 -- 원안의 증명 배지를 물려주지 않는다(Codex 사후 리뷰 MUST)
+            <p className={`mt-2 text-xs ${selected === p.label ? "text-slate-300" : "text-slate-500"}`}
+               title="솔버의 계산 신뢰도(최선 증명·허용 차이)는 원안에만 해당한다. 변경한 명단은 현행 평가기로 다시 채점한 값이다.">
+              변경 후 재평가 · 솔버 증명은 원안 기준
+            </p>
+          ) : p.termination !== undefined && (
             <div className="mt-2">
               <ConfidenceBadge termination={p.termination} timeLimited={p.time_limited} objective={p.objective}
                                bestBound={p.best_bound} gapAllowed={p.gap_allowed}
                                within={p.label !== "A" ? "다양성 조건" : undefined} />
             </div>
           )}
-          {p.time_limited && p.termination === undefined && (
+          {!editCounts[p.label] && p.time_limited && p.termination === undefined && (
             <p className="mt-2 text-xs text-amber-600" title="계산 시간 한도에 걸려 멈춘 답이다. 더 좋은 답이 있을 수 있다.">
               시간 한도 도달(최선 증명 전)
             </p>

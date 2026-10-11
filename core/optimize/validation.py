@@ -354,6 +354,32 @@ def validate_raw_solution(
             issues.append(ValidationIssue("plan_monthly_allocation", location,
                                           float(len(got_monthly or {})), float(len(want_monthly or {})), 1.0))
 
+    # 반환 명단 자체도 가용률·예산을 지키는지 본다(Codex 사후 리뷰 MUST 2026-10-11): 표시 규칙은 솔버가 최소 투입률
+    # 바로 아래(허용오차 안)에 둔 값을 최소값으로 올린다 -- 원해는 예산 안이어도 반환 명단이 몇 원 넘을 수 있다.
+    # 검증은 실제로 내보내는 명단에 대해 참이어야 한다. 값이 유한한지도 본다(NaN은 비교가 거짓이라 그냥 통과했다).
+    person_index = {person.id: i for i, person in enumerate(people)}
+    project_index = {project.id: j for j, project in enumerate(projects)}
+    returned: dict = {}
+    for (pid, jid), (got_alloc, got_monthly) in actual_entries.items():
+        i, j = person_index.get(pid), project_index.get(jid)
+        if i is None or j is None:
+            continue
+        for m in projects[j].months:
+            value = got_monthly.get(m) if got_monthly else got_alloc
+            if value is None or not math.isfinite(value):
+                issues.append(ValidationIssue("plan_allocation_finite", f"person={pid},project={jid},month={m}",
+                                              float("nan"), 0.0, float("inf")))
+                continue
+            returned[(i, j, m)] = value
+    for i, person in enumerate(people):
+        for month, availability in enumerate(person.availability):
+            load = sum(v for (pi, _j, m), v in returned.items() if pi == i and m == month)
+            upper("plan_availability", f"person={person.id},month={month}", load, availability)
+    for j, project in enumerate(projects):
+        for month in project.months:
+            cost = sum(people[pi].monthly_rate * v for (pi, pj, m), v in returned.items() if pj == j and m == month)
+            upper("plan_budget", f"project={project.id},month={month}", cost, float(project.monthly_budget))
+
     expected_unfilled = sorted(
         f"{projects[j].id}:{grade.value}:{int(round(value))}명 미충원"
         for (j, grade), value in solution.slack.items()

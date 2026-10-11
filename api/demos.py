@@ -102,6 +102,15 @@ def list_demos() -> list[dict]:
     return sorted(out, key=lambda d: (d["people"] or 0, d["scenario"] == "operating", d["name"]))
 
 
+JUDGMENTS_FILE = "review_judgments.json"
+
+
+def demo_judgments_path() -> Path:
+    """가상 시연 묶음의 리뷰 글 LLM 판정 동봉 파일(scripts/export_demo_judgments.py가 만든다, 2026-10-11).
+    다른 기기에서도 미리 계산 때와 같은 판정값을 쓰게 한다 -- api.review_judge.judge_reviews(seed_path=)."""
+    return _demo_dir() / JUDGMENTS_FILE
+
+
 def demo_root(name: str) -> Path | None:
     """허용 목록에 있는 이름이면 그 폴더(또는 zip), 아니면 None(경로 탈출·없는 이름)."""
     root = _demo_dir()
@@ -123,7 +132,7 @@ def build_demo(root: Path):
     ds, parsed = to_dataset(bundle, report)          # ValueError with the report if it does not validate
     return build_active(ds, parsed, dataset_id=str(bundle.manifest.get("dataset_id", root.name)),
                         version=bundle_version(root), source="demo-bundle",
-                        synthetic=bundle.manifest.get("synthetic") is True, manifest=bundle.manifest)
+                        synthetic=bundle.manifest.get("synthetic") is True, manifest=bundle.manifest, bundle=bundle)
 
 
 def current_demo_root() -> Path | None:

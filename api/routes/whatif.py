@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from api.datasets import ActiveDataset
 from api.briefing_evidence import clamp_briefing
 from api.deps import (check_dataset_version, get_dataset, get_evidence, get_graph,
-                      get_openai_client_or_none, get_sqlite_conn)
+                      get_openai_client_or_none, get_sqlite_conn, llm_client_for)
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
@@ -103,6 +103,7 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     if new_violations:
         score_change["new_violations"] = [v["message"] for v in new_violations][:5]
     fallback_used = False
+    client, fallback_reason = llm_client_for(dataset, client)
     if client is None:
         briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
         fallback_used = True
@@ -115,6 +116,7 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
             briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
             fallback_used = True
+            fallback_reason = "llm_error"
 
     return {
         "objective_delta": after.objective.total - before.objective.total,
@@ -125,4 +127,5 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "feasible": not after.violations,
         "briefing": clamp_briefing(briefing),
         "fallback_used": fallback_used,
+        "fallback_reason": fallback_reason if fallback_used else None,
     }

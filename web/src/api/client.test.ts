@@ -60,7 +60,7 @@ describe("fetchMeta", () => {
 describe("milp_params 전달(K8)", () => {
   afterEach(() => vi.unstubAllGlobals());
   const params = { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-                   time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false };
+                   time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null };
   const swap = { out_person_id: "p1", in_person_id: "p2", project_id: "j1" };
 
   it("postWhatif는 받은 설정을 milp_params로 보내고, null이면 아예 빼서 서버 기본값을 쓴다", async () => {
@@ -91,7 +91,7 @@ describe("milp_params 전달(K8)", () => {
 describe("saveSettings", () => {
   afterEach(() => vi.unstubAllGlobals());
   const params = { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-                   time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false };
+                   time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null };
 
   it("읽은 시점(based_on)을 함께 보내고 409는 충돌 오류로 구분한다", async () => {
     const fetchMock = vi.fn(async () => ({ ok: false, status: 409,
@@ -132,7 +132,7 @@ describe("applySwap", () => {
     const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
     vi.stubGlobal("fetch", fetchMock);
     const params = { min_alloc: 0.3, clique_threshold_months: 6, lam: 0.3, mu: 0.2,
-                     time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false };
+                     time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null };
     await applySwap([], { out_person_id: "a", in_person_id: "b", project_id: "j" }, { Java: 4 },
                     params, "v".repeat(64));
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];

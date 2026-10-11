@@ -232,3 +232,18 @@ def test_compare_slot_is_released_after_a_failing_calculation(op_client, monkeyp
 def test_unknown_ids_in_sent_entries_are_422(op_client):
     body = {"project_id": "P1", "entries": [{"person_id": "ghost", "project_id": "P1", "alloc": 1.0}]}
     assert op_client.post("/api/staffing/candidates", json=body).status_code == 422
+
+
+def test_compare_streams_each_k_as_it_finishes(op_client, monkeypatch):
+    # K별 실시간 송출(2026-10-11): 끝난 K 행은 뒤 K가 실패해도 이미 흘러갔다(예전엔 다 끝난 뒤 한꺼번에 보냈다)
+    import core.evaluate.operating as op
+
+    def first_then_fail(*a, on_row=None, **k):
+        on_row({"k": 0, "accepted": True, "elapsed_s": 0.1})
+        raise RuntimeError("K=1 solver exploded")
+    monkeypatch.setattr(op, "compare_move_budgets", first_then_fail)
+    events = _sse(op_client.post("/api/operating/compare", json={"milp_params": FAST, "ks": [0, 1]}).text)
+    kinds = [k for k, _ in events]
+    assert kinds[0] == "start" and "row" in kinds and kinds.index("row") < kinds.index("error")
+    row = next(d for k, d in events if k == "row")
+    assert row["k"] == 0 and "elapsed_total_s" in row and "dataset_version" in row

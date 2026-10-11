@@ -66,6 +66,23 @@ def test_records_of_other_texts_are_refused(results, monkeypatch):
         e4.run("glm", "probe", changed)
 
 
+def test_records_of_other_judge_settings_are_refused_and_legacy_partials_do_not_resume(results, monkeypatch):
+    # Codex 사후 리뷰 MUST(2026-10-11): 같은 글이라도 모델·추론 강도·지시문이 다른 기록을 섞지 않는다
+    import json
+    monkeypatch.setattr(e4, "llm_one", lambda *a, **k: {"pol": 0.0, "lat": 1.0, "in": 1, "out": 1})
+    rec = e4.run("glm", "probe", _reviews())
+    assert rec["config"] == e4.run_config("glm")
+    monkeypatch.setattr(e4, "GLM_REASONING", "high")                 # 같은 글, 다른 추론 강도
+    with pytest.raises(ValueError, match="다른 판정기 설정"):
+        e4.run("glm", "probe", _reviews())
+    # 설정 기록이 없는 예전 중간 기록: 그대로 보이되(표시) 이어 잴 때는 멈춘다
+    legacy = {"rows": {"0": {"pol": 0.1, "lat": 1.0, "in": 1, "out": 1}}, "wall_s": 1.0}
+    (results / "e4_glm_low_probe.partial.json").write_text(json.dumps(legacy), "utf-8")
+    assert e4.run("glm_low", "probe", _reviews())["unverified_inputs"] is True
+    with pytest.raises(ValueError, match="이어 잴 수 없다"):
+        e4.run("glm_low", "probe", _reviews(), resume=True)
+
+
 def test_mcnemar_and_wilson_match_known_values():
     assert e4._mcnemar_exact(7, 1) == pytest.approx(0.0703125)
     assert e4._mcnemar_exact(0, 0) == 1.0
@@ -142,3 +159,10 @@ def test_e5_post_guard_codes_match_the_briefing_module():
 def test_e5_negated_recommendations_are_holds(sentence, tag):
     import experiments.jev.e5_briefing as e5
     assert e5._conclusion(sentence) == tag
+
+
+def test_spearman_uses_average_ranks_for_ties():
+    import numpy as np
+    r = e4.avg_rank([0, 1, 0, 1])
+    assert list(r) == [1.5, 3.5, 1.5, 3.5]
+    assert abs(np.corrcoef(e4.avg_rank([0, 1, 0, 1]), e4.avg_rank([0, 0, 1, 1]))[0, 1]) < 1e-12   # 참값 0

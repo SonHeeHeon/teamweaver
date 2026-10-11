@@ -43,7 +43,9 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
         <h3 className="text-sm font-semibold text-slate-900">XAI 브리핑</h3>
         {result.fallback_used && (
           <span className="rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
-            규칙 기반(LLM 미사용)
+            {result.fallback_reason === "external_blocked"
+              ? "규칙 기반(실데이터라 외부 AI로 보내지 않음)"
+              : "규칙 기반(LLM 미사용)"}
           </span>
         )}
       </div>

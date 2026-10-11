@@ -212,7 +212,10 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
 
     def work():
         try:
-            out.put(("rows", compare_move_budgets(dataset.graph, S, C, params, dataset.current, ks=ks)))
+            # K 하나가 끝날 때마다 완성된 행을 바로 넘긴다(on_row, claude-a 2026-10-07) -- 화면이 K별로 한 줄씩 보인다
+            rows = compare_move_budgets(dataset.graph, S, C, params, dataset.current, ks=ks,
+                                        on_row=lambda row: out.put(("row", row)))
+            out.put(("done", rows))
         except Exception as exc:                               # noqa: BLE001 -- SSE error 이벤트로 전한다
             out.put(("error", exc))
         finally:
@@ -229,20 +232,26 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
     async def stream():
         yield sse_event("start", {"ks": ks, "n_people": len(dataset.graph.people),
                                   "expected_s_100": {k: EXPECTED_S_100.get(k) for k in ks}, "note": NOT_CALIBRATED})
-        # 끝날 때까지 진행 표시를 보낸다. K마다 넘겨받는 고리(compare_move_budgets(on_row=), claude-a 2026-10-07)가 생겼다 --
-        # K별 실시간 송출 전환은 claude-b 몫(docs/work-split.md).
+        # K 행은 끝나는 대로 흘리고, 그 사이엔 진행 표시를 보낸다(K별 실시간 송출, 2026-10-11).
+        sent: set = set()
         while True:
             try:
                 kind, payload = await anyio.to_thread.run_sync(lambda: out.get(timeout=PROGRESS_EVERY_S))
             except queue.Empty:
                 yield sse_event("progress", {"elapsed_s": round(time.monotonic() - t0, 1)})
                 continue
+            if kind == "row":
+                sent.add(payload.get("k"))
+                yield sse_event("row", {**payload, "dataset_version": dataset.info.version,
+                                        "elapsed_total_s": round(time.monotonic() - t0, 1)})
+                continue
             break
         if kind == "error":
             yield sse_event("error", {"message": str(payload)[:300]})
             return
-        for row in payload:
-            yield sse_event("row", {**row, "dataset_version": dataset.info.version})
+        for row in payload:                     # on_row로 오지 않은 행이 있으면(계산 함수가 고리를 안 부른 경우) 끝에 보낸다
+            if row.get("k") not in sent:
+                yield sse_event("row", {**row, "dataset_version": dataset.info.version})
         yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(payload)})
 
     return StreamingResponse(stream(), media_type="text/event-stream")

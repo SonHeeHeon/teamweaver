@@ -80,7 +80,7 @@ def validate_and_build(data: bytes) -> tuple[ActiveDataset | None, dict | None, 
         synthetic = manifest.get("synthetic") if isinstance(manifest.get("synthetic"), bool) else None
         active = build_active(ds, parsed, dataset_id=str(manifest["dataset_id"]),
                               version=bundle_version(root), source="upload", synthetic=synthetic,
-                              manifest=manifest)
+                              manifest=manifest, bundle=bundle)
         return active, _report_dict(report), None
 
 

@@ -12,6 +12,7 @@ th{background:#f3f4f6} .box{background:#fff;border:1px solid #e5e7eb;border-radi
 <p class="muted">실험 E4 · 코드 <code>experiments/jev/e4_judges.py</code> · 원시 결과 <code>experiments/jev/results/e4_*.json</code> ·
 모든 데이터는 가상(합성)이며 사업 효과는 NOT_CALIBRATED</p>
 
+<div class="box warn"><b>입력 동일성 미입증</b>: 다음 기록은 판정기 설정 지문(모델·주소·추론 강도·지시문, 2026-10-11 도입) 이전에 쟀다. 글 지문은 대조했지만, 모델·추론 강도·지시문이 지금 코드와 같았는지는 기록으로 입증할 수 없다 — glm:faithful, glm:probe, glm_low:demo_s300, glm_low:faithful, glm_low:probe, jev:demo_s300, jev:faithful, jev:probe, llm:demo_s300, llm:faithful, llm:probe, llm_low:demo_s300, llm_low:faithful, llm_low:probe. 같은 조건임을 확실히 하려면 이 기록을 옮기고 다시 잰다.</div>
 <div class="box ok"><b>결정(사용자)</b>: 리뷰 글 판정은 선택지 없이 <b>LLM(OpenAI 호환 API)</b>으로 통일한다(2026-10-06).
 LLM을 쓰는 곳의 비교는 <b>외부 AI(gpt-6-luna)와 회사가 제공하는 오픈소스 LLM(GLM 5.3)을 항상 함께</b> 재고,
 <b>양쪽 모두 추론 강도 low</b>·<b>유의미한 표본 크기</b>로 잰다(2026-10-07). 사내 서버로는 측정할 수 없어
@@ -40,7 +41,7 @@ Jev는 5단계 점수의 확률 기댓값을 −1~1로 옮겼다. 부호 판정�
 <h2>3. 결과</h2>
 <h3>B. 충실한 글 300건 (정답 있음)</h3>
 <div class="wrap"><table><tr><th>지표</th><th>외부 LLM low (gpt-6-luna)</th><th>사내 LLM low (GLM 5.3·Z.ai)</th><th>외부 LLM 기본 추론·참고 (gpt-6-luna, 10-07 이전 서비스 설정)</th><th>사내 LLM max·참고 (GLM 5.3·Z.ai)</th><th>Jev</th></tr>
-<tr><td>정답과 상관(피어슨)</td><td>0.94</td><td>0.93</td><td>0.94</td><td>0.94</td><td>0.94</td></tr><tr><td>정답과 순위 상관(스피어만)</td><td>0.96</td><td>0.95</td><td>0.96</td><td>0.95</td><td>0.95</td></tr>
+<tr><td>정답과 상관(피어슨)</td><td>0.94</td><td>0.93</td><td>0.94</td><td>0.94</td><td>0.94</td></tr><tr><td>정답과 순위 상관(스피어만)</td><td>0.97</td><td>0.95</td><td>0.96</td><td>0.95</td><td>0.95</td></tr>
 <tr><td>정답과 평균 절대 차이(작을수록 좋음)</td><td>0.20</td><td>0.18</td><td>0.20</td><td>0.20</td><td>0.27</td></tr><tr><td>긍정·중립·부정 일치율</td><td>82%</td><td>78%</td><td>84%</td><td>82%</td><td>60%</td></tr>
 <tr><td>실제 부정 리뷰를 부정으로 잡은 비율</td><td>89%</td><td>69%</td><td>92%</td><td>84%</td><td>17%</td></tr><tr><td>평균 판정값 (정답 평균 +0.13)</td><td>+0.31</td><td>+0.30</td><td>+0.32</td><td>+0.32</td><td>+0.40</td></tr>
 </table></div>

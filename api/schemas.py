@@ -103,6 +103,8 @@ class WhatifResponse(BaseModel):
     feasible: bool
     briefing: BriefingOut
     fallback_used: bool
+    # 규칙 기반으로 쓴 이유: no_client(키 없음) · external_blocked(실데이터를 외부로 보내지 않음) · llm_error
+    fallback_reason: str | None = None
 
 
 class MilpParamsIn(BaseModel):
@@ -133,9 +135,13 @@ class MilpParamsIn(BaseModel):
     time_limit_auto: bool | None = None
     # 없앤 칸(리뷰 판정 방식 선택, 2026-10-06). 이전 화면이 보내도 거절하지 않고 무시한다.
     review_judge: str | None = None
+    # 동시 탐색 수(관리자 설정, 서버 자원). 화면이 설정 전체를 보내므로 받되 계산에는 쓰지 않는다 -- 요청이 서버의
+    # 코어 사용량을 정하지 못하게(서버가 저장한 설정만 TEAMWEAVER_SOLVER_SEEDS로 반영한다).
+    solver_seeds: int | None = Field(default=None, ge=1, le=8)
 
     def to_milp_params(self) -> MilpParams:
-        return MilpParams(**self.model_dump(exclude_none=True, exclude={"time_limit_auto", "review_judge"}))
+        return MilpParams(**self.model_dump(exclude_none=True,
+                                            exclude={"time_limit_auto", "review_judge", "solver_seeds"}))
 
 
 class SettingsUpdate(BaseModel):
@@ -157,6 +163,8 @@ class SettingsBody(BaseModel):
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
     effective_time_limit: int | None = None
+    # 지금 계산이 쓰는 동시 탐색 수(설정, 없으면 서버 환경 변수, 없으면 1)
+    effective_solver_seeds: int | None = None
 
 
 class PlanEvaluationOut(BaseModel):
@@ -289,6 +297,8 @@ class ReportRequest(BaseModel):
     # /api/optimize가 원 플랜에 붙인 서명(api/plan_token). 있으면 서버가 검증한다: 맞으면
     # PDF에 "서버 계산 원 플랜 확인", 틀리면 422, 없으면 "클라이언트 제공·미검증"으로 표시.
     plan_token: str | None = None
+    # 사업별 인사팀 소명 글 포함(claude-a 계약 2026-10-09). 서버가 최종 명단으로 사업마다 만든다(AI는 데이터 정책을 따른다).
+    include_justifications: bool = False
 
     @model_validator(mode="after")
     def _basis_must_be_complete(self) -> "ReportRequest":

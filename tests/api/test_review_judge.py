@@ -509,3 +509,28 @@ def test_cache_key_without_effort_is_unchanged():
                             .encode("utf-8")).hexdigest()
     assert rj._cache_key("p", "n", "m", "u") == old == rj._cache_key("p", "n", "m", "u", None)
     assert rj._cache_key("p", "n", "m", "u", "max") != old
+
+
+def test_seed_file_fills_missing_judgments_without_calling_the_llm(small, tmp_path, monkeypatch):
+    # 시연 판정 동봉(demo/review_judgments.json): 캐시가 빈 다른 기기에서도 같은 값·같은 버전이 나와야 한다(2026-10-11)
+    ds, parsed = small
+    monkeypatch.delenv(rj.REASONING_ENV, raising=False)
+    first = _judge(ds, parsed, tmp_path, _transport(lambda u: 0.3, []))
+    keys = rj.cache_keys(ds, url=URL, model_name="m-test")
+    seed = tmp_path / "seed.json"
+    seed.write_text(json.dumps({k: 0.3 for k in keys} | {"unrelated": 0.9}), "utf-8")
+    fresh_dir = tmp_path / "other-machine"
+    fresh_dir.mkdir()
+
+    def boom(request):
+        raise AssertionError("동봉 판정이 있으면 LLM을 부르지 않는다")
+    again = judge_reviews(ds, parsed, cache_path=fresh_dir / "c.json", key=FAKE_KEY, url=URL, model_name="m-test",
+                          transport=httpx.MockTransport(boom), seed_path=seed, trim=False)
+    assert [p.text_polarity for p in again] == [p.text_polarity for p in first]
+    assert "unrelated" not in json.loads((fresh_dir / "c.json").read_text("utf-8"))   # 이 데이터의 키만 옮긴다
+    stale = tmp_path / "stale-machine"                  # 이 기기가 따로 매긴 다른 값이 있어도 동봉 값이 이긴다
+    stale.mkdir()
+    (stale / "c.json").write_text(json.dumps({k: -0.7 for k in keys}), "utf-8")
+    again = judge_reviews(ds, parsed, cache_path=stale / "c.json", key=FAKE_KEY, url=URL, model_name="m-test",
+                          transport=httpx.MockTransport(boom), seed_path=seed, trim=False)
+    assert [p.text_polarity for p in again] == [p.text_polarity for p in first]

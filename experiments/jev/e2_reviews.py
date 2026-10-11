@@ -106,7 +106,7 @@ def judge_with_luna(reviews, cache: Path) -> tuple[list[float] | None, dict]:
 
 def _metrics(pred: list[float], truth: list[float]) -> dict:
     p, t = np.asarray(pred), np.asarray(truth)
-    rank = lambda x: np.argsort(np.argsort(x, kind="stable"), kind="stable")
+    from experiments.jev.e4_judges import avg_rank as rank
 
     def sign(x):
         return np.where(x > 0.1, 1, np.where(x < -0.1, -1, 0))

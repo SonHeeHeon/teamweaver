@@ -57,9 +57,9 @@ import type { SettingsResponse } from "./api/types";
 
 const SETTINGS: SettingsResponse = {
   settings: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null },
   defaults: { min_alloc: 0.3, clique_threshold_months: 6, clique_window_months: 36, lam: 0.3, mu: 0.2,
-              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false },
+              time_limit: 120, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" as const, time_limit_auto: false, solver_seeds: null },
   bounds: { min_alloc: { min: 0.05, max: 1 }, clique_threshold_months: { min: 1, max: 24 },
             lam: { min: 0, max: 1 }, mu: { min: 0, max: 1 }, time_limit: { min: 5, max: 600 },
             gap: { min: 0, max: 0.2 }, max_concurrent_projects: { min: 1, max: 6 } },

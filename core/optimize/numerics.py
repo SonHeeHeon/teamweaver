@@ -238,8 +238,12 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         return finish("POLICY_DISABLED")
     if native_capture is None or native_validation is None:
         return finish("NATIVE_CAPTURE_MISSING")
-    if ({i.code for i in initial.issues} != {"budget"}
-            or {i.code for i in native_validation.issues} != {"budget"}
+    # 반환 명단 예산(plan_budget, 2026-10-11)은 원해 예산 잔차에 딸려 오는 것이라 같이 보정한다 -- 보정 뒤 명단을 다시 만든다
+    # (Claude 폴백 리뷰 SHOULD: 빼면 예전에 보정으로 살리던 해가 거절된다)
+    def _budget_only(issues) -> bool:
+        codes = {i.code for i in issues}
+        return "budget" in codes and codes <= {"budget", "plan_budget"}
+    if (not _budget_only(initial.issues) or not _budget_only(native_validation.issues)
             or any(v not in (0.,1.) for v in native_capture.z.values())):
         return finish("INELIGIBLE_CONSTRAINT_OR_DOMAIN")
     if not before or any(r["normalized"] > policy.budget_relative_admission for r in before):

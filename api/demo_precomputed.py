@@ -146,7 +146,15 @@ def _check_operating(pre: Precomputed, op, graph, S, C, params: MilpParams, vers
             pre.skipped.append("운영 중 비교: 지금 서버 설정이 미리 계산 때와 다르다")
         elif fparams is not None:
             bad = None
-            for row in op.get("rows", []):
+            # 요청 K와 행이 하나씩 맞아야 한다 -- 행이 비거나 빠지면 계산 없이 결과 0건으로 끝난다(Codex 사후 리뷰 SHOULD)
+            try:
+                want = sorted(int(k) for k in op.get("ks", []))
+                got = sorted(int(r.get("k")) for r in op.get("rows", []))
+            except (TypeError, ValueError):
+                want, got = [], None
+            if not want or got != want:
+                bad = "운영 중 비교: 기록된 K 행이 요청 K와 하나씩 맞지 않는다"
+            for row in ([] if bad else op.get("rows", [])):
                 if not row.get("accepted"):
                     continue
                 if not row.get("entries"):              # 채택 행인데 배치가 없으면 확인할 수 없다 -- 버린다(리뷰 nit)

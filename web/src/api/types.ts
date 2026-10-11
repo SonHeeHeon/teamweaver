@@ -126,6 +126,8 @@ export interface WhatifResponse {
   feasible: boolean;
   briefing: Briefing;
   fallback_used: boolean;
+  /** 규칙 기반으로 쓴 이유: no_client · external_blocked(실데이터를 외부 AI로 보내지 않음) · llm_error. */
+  fallback_reason?: string | null;
 }
 
 export interface Swap {
@@ -160,6 +162,8 @@ export interface ReportRequest {
   weights: Record<string, number>;
   /** 원 플랜의 서버 서명. 없으면 PDF에 "미검증"으로 표시된다. */
   plan_token: string | null;
+  /** 사업별 인사팀 소명 글 포함(서버가 최종 명단으로 만든다). */
+  include_justifications?: boolean;
 }
 
 /** 적용한 교체 한 건. warnings는 그 교체로 새로 생긴 위반·미충원 문장(swapWarnings). */
@@ -224,6 +228,8 @@ export interface PlacementSettings {
   allocation_mode: "fixed" | "monthly";
   /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
   time_limit_auto?: boolean;
+  /** 동시 탐색 수(서버 자원). null = 서버 기본(환경 변수, 없으면 1). 요청 계산에는 쓰이지 않고 저장값만 서버에 반영된다. */
+  solver_seeds?: number | null;
 }
 
 export interface TimeHint {
@@ -244,6 +250,8 @@ export interface SettingsResponse {
   recommended_time_monthly?: TimeHint | null;
   /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
   effective_time_limit?: number | null;
+  /** 지금 계산이 쓰는 동시 탐색 수. */
+  effective_solver_seeds?: number | null;
 }
 
 /** GET /api/datasets/active -- 지금 서버가 계산에 쓰는 데이터셋(K9). */
@@ -430,3 +438,27 @@ export interface DemoBundle { name: string; dataset_id: string; people: number |
                               scenario: string; synthetic: boolean;
                               /** 장면 한 줄 제목·설명(예: "운영 중 · 90명 배치 중, 대기 10명"). 예전 서버면 없다. */
                               title?: string; description?: string }
+
+
+/** 인사팀 소명 글의 사실 하나(claude-a core.kg.justify.Fact). text는 한 줄 사실, adverse는 불리한 사실. */
+export interface JustFact {
+  id: string; kind: string; text: string; phrase?: string; phrase_full?: string; owners?: string[];
+  skill?: string | null; status?: string | null; adverse: boolean;
+}
+
+/** POST /api/justification 응답. AI 원문(llm_text)은 서버가 보내지 않는다. */
+export interface Justification {
+  project_id: string;
+  method: "graphrag" | "template";
+  text: string;
+  addendum: string | null;
+  appended_adverse: string[];
+  facts: JustFact[];
+  fallback_reason: string | null;
+  verification: { ok: boolean; rules: string[]; cited: string[]; coverage?: Record<string, boolean | null> | null;
+                  adverse?: { available: number; cited: number } | null } | null;
+  usage: { model?: string; latency_s?: number; cost_usd?: number; reasoning_effort?: string | null } | null;
+  dataset_version: string;
+  ai_available: boolean;
+  ai_unavailable_reason: string | null;
+}

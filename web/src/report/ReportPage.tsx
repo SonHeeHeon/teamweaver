@@ -5,6 +5,7 @@ import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly } from "../components/allocFormat";
+import { fallbackText } from "../components/justification";
 
 declare global {
   interface Window {
@@ -217,6 +218,46 @@ export function ReportPage() {
           </tbody>
         </table>
       </section>
+
+      {data.justifications_note && (
+        <p className="mt-6 text-xs text-slate-500">{data.justifications_note}</p>
+      )}
+      {(data.justifications ?? []).length > 0 && (
+        <section className="mt-8" style={{ breakBefore: "page" }}>
+          <h2 className="mb-1 text-base font-semibold">사업별 인사팀 소명</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            서버가 최종 명단으로 사업마다 만든 글이다. "AI 구성"은 AI가 사실을 고르고 엮은 것이고 숫자·충족/미달은 데이터 그대로다.
+            [F#]는 아래 근거 사실 번호, "서버가 덧붙임"은 AI 글이 빠뜨린 불리한 사실이다. 계산상 근거 — NOT_CALIBRATED.
+          </p>
+          {data.justifications.map((j: any) => {
+            const add: string | null = j.addendum ?? null;
+            const main: string = add && j.text.endsWith(add) ? j.text.slice(0, -add.length).trimEnd() : j.text;
+            return (
+              <article key={j.project_id} className="mb-6" style={{ breakInside: "avoid-page" }}>
+                <h3 className="text-sm font-semibold">
+                  {jName.get(j.project_id) ?? j.project_id}({j.project_id})
+                  <span className="ml-2 text-[11px] font-normal text-slate-500">
+                    {j.method === "graphrag" ? "AI 구성 · 사실은 데이터 그대로" : `정해진 틀${fallbackText(j.fallback_reason) ? " — " + fallbackText(j.fallback_reason) : ""}`}
+                  </span>
+                </h3>
+                <p className="mt-1 whitespace-pre-wrap text-[12px] leading-6">{main}</p>
+                {add && (
+                  <p className="mt-1 whitespace-pre-wrap rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[12px] leading-6">
+                    <b className="mr-1 text-[11px] text-amber-800">서버가 덧붙임</b>{add}
+                  </p>
+                )}
+                <ul className="mt-1 columns-2 gap-4 text-[10px] text-slate-600">
+                  {(j.facts ?? []).map((f: any) => (
+                    <li key={f.id} className={f.adverse ? "text-red-700" : ""}>
+                      <b>{f.id}</b>{f.adverse ? " (불리)" : ""} {f.text}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }

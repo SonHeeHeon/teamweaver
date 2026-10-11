@@ -22,6 +22,71 @@
 
 ---
 
+## 2026-10-11 · claude-a · 소명 덧붙임 사람별 줄 + 해설 HTML main 병합(사용자 승인)
+- 브랜치/커밋: `feat/claude-a-addendum-by-person` `ed27203..0849cc3` + origin/main(`11f7a0a`, claude-b 화면 10-11) 병합 커밋 → main 빨리 감기
+- 한 일: 원격 main에 먼저 들어간 claude-b 작업(소명 API·화면·PDF, 운영 중 실시간 K, 검증기 강화, 시연 판정 동봉)을 받아 합쳤다. 충돌은 `docs/handoff-log.md`·`docs/work-split.md` 두 곳뿐이었고 양쪽 항목을 모두 남겼다.
+- 상대 영향: **claude-b** — 소명 `addendum`은 이제 여러 줄(사람별)이다. 화면·PDF는 `whitespace-pre-wrap`이라 그대로 보이지만 `public_view`가 새 `addendum_groups`를 넘기지 않는다(요청 줄 추가). 시험 기준선 **1617**(main).
+- 검증: `uv run --group benchmark pytest -q` → 1617 passed, 1 skipped, 19 deselected(claude-b 1614 + 사람별 덧붙임 3). 웹 코드는 양쪽 병합에서 바뀌지 않아 다시 돌리지 않았다(claude-b 기록 185).
+- 근거: 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
+
+## 2026-10-11 · claude-b · Claude 폴백 리뷰 후속(Codex 한도 재소진, 15:49까지): 소명 AI 동시 상한·요청 끊기, 보정 대상에 반환 명단 예산
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일: Stop 훅 Codex 리뷰가 한도 소진으로 2회 실패 → 게이트를 끄고 Claude Opus 폴백 리뷰(64e376e·4a0218f·acd8cb8, MUST 0·SHOULD 2·NIT 6). 반영:
+  - 소명 AI 동시 호출 상한 6(넘으면 템플릿·`fallback_reason: busy`), 화면은 사업·명단이 바뀌면 이전 요청을 AbortController로 끊는다.
+  - `core/optimize/numerics.py`: 수치 보정 대상에 `plan_budget`(반환 명단 예산)도 포함 -- 원해 예산 잔차에 딸려 오는 것이라 예전처럼 보정으로 살린다(폴백 리뷰가 실제 시연 100명 고정·월별 해가 새 검사에 거절되지 않음을 확인).
+  - 실험: 지문 없던 기록을 `*_ACCEPT_LEGACY=1`로 이어 재면 `accepted_legacy` 흔적을 남긴다, 비용 단가는 요청한 모델 이름 우선.
+- 상대 영향: claude-a -- 보정 대상 조건이 "budget만"에서 "budget(+plan_budget)"으로 넓어졌다.
+- 검증: `pytest -q` 1614 passed · 웹 185 · tsc · lint · Phase 0 PASS · E4 보고서 재생성 변화 없음. 게이트는 Codex 회복 뒤 다시 켠다.
+
+---
+
+## 2026-10-11 · claude-b · 사후 Codex 리뷰(최적화·실험) 반영: 반환 명단 검증 · 실험 재개 설정 지문 · 스피어만 동점
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일(Codex 사후 리뷰 `5e5c2a3..main`의 core/optimize·experiments/jev, MUST 3·SHOULD 4):
+  - **[MUST] 독립 검증기가 반환 명단도 본다**(`core/optimize/validation.py`): 표시 규칙이 최소 투입률 바로 아래(허용오차 안) 값을 최소값으로 올려, 원해는 예산 안인데 반환 명단이 몇 원 넘는 경우가 "검증 통과"였다(예: 최소 20.5%) → 반환 명단의 사람·달 가용률(`plan_availability`)·사업·달 예산(`plan_budget`)·유한성(`plan_allocation_finite`, 월별 NaN 포함)을 검사. 해 생성 규칙은 그대로. Phase 0 PASS.
+  - **[MUST] E4·E5 이어 재기·기록 재사용에 설정 지문**: 모델·주소(실제 호출 주소)·추론 강도·지시문 해시(+E5는 사례 키 목록)를 기록하고, 다르면 멈춘다. 지문 없는 예전 중간 기록은 이어 재지 않는다(`E4_ACCEPT_LEGACY`/`E5_ACCEPT_LEGACY=1`로만). 지문 없는 예전 완료 기록은 덮어써 '확인됨'으로 만들지 않고 보고서 상단에 "입력 동일성 미입증"으로 밝힌다(E4 보고서 갱신).
+  - [SHOULD] 스피어만 순위 상관: 동점에 평균 순위(E4 외부 low 0.96 → 0.97, 나머지 그대로). 비용은 기록된 모델 단가로(수치 변화 없음).
+  - [WON'T·후속] E2(옛 실험) luna 기록 재사용 지문, 다중 워커 교체 저장 경합(실행 스크립트는 단일 워커).
+- 상대 영향: **claude-a — 검증기가 엄격해졌다**: 최소 투입률을 소수 셋째 자리로 둔 설정에서 표시 규칙이 예산·가용률을 넘기면 그 해는 이제 "검증 실패"다(서비스 기본 30%에선 해당 없음). E5 보고서는 지금 main 데이터(기술 사전 등)에선 사례 키가 달라 다시 만들어지지 않는다(설계대로 멈춤, 기존 HTML 그대로).
+- 검증: `pytest -q` 1613 passed · Phase 0 PASS · E4 보고서 기록만으로 재생성(외부 호출 0, 틀린 키로 확인). Codex 커밋 전 리뷰 2라운드(P1 2 → 반영, P2 1 → 반영).
+
+---
+
+## 2026-10-11 · claude-b · 인사팀 소명 글(GraphRAG) API·화면·PDF (claude-a 계약)
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일:
+  - `POST /api/justification`: 원 플랜 **서명 필수**(`plan_label`·`plan_token`, PDF와 같은 규칙 -- Codex 리뷰 P1: 서명 없이 받으면 아무 명단이나 그럴듯한 소명을 받는다), 변경은 서버가 `base_entries`에서 다시 적용, 409(버전·묶음 데이터 아님)·404(사업 없음·팀원 없음)·422. `ai=false`면 템플릿만(화면이 먼저 보임). AI는 `llm_client_for` 정책(실데이터는 사내·허용일 때만), 한 건 40초 상한. 응답에서 `llm_text`·검사 위반 문장은 뺀다(규칙 코드만).
+  - 지식 그래프: `ActiveDataset`이 CSV 묶음(업로드·시연)의 원 표를 들고 있다가 처음 쓸 때 `build_kg` 한 번(데이터셋마다).
+  - 화면(What-if 탭 아래): 사업 고르기 → 템플릿 먼저 → AI 글로 교체, 근거 칩 `[F#]` 누르면 사실 강조, 사실 목록 종류별·불리한 사실 표시·덧붙임 표시, 서버 덧붙임 문단은 접는 상자("AI가 쓴 문장이 아니다"), 정해진 틀 사유를 사람 말로, 다시 쓰기, 실패 시 다시 불러오기, 사업을 바꾸면 늦은 응답 폐기.
+  - PDF: "사업별 인사팀 소명 포함" 선택 → 서버가 최종 명단으로 사업마다(동시 6) 만들어 마지막 장에 넣는다. 서명 미확인·묶음 아님이면 넣지 않고 이유를 적는다. 시간 상한은 사업 수에 맞춰 늘린다.
+- 상대 영향(claude-a): 계약 그대로 부른다(`justification_input` → `generate_justification`). 서명 필수는 계약의 `plan_signature?`를 필수로 바꾼 것. 계약 요청 상태를 처리됨으로 바꿨다.
+- 검증: `pytest -q` 1609 passed · 웹 185 · tsc · lint · build. 실서버(시연 100명, 실제 키): 템플릿 1.1초(6,374자·사실 94·불리 16), AI 글 12.8초 graphrag 채택·서버 덧붙임 있음·$0.0011, `llm_text` 없음. Codex 커밋 전 리뷰 2라운드(P2 2 → 반영, P1 1 → 반영 후 시험으로 확인, 3라운드는 규칙상 생략 -- Stop 훅 게이트가 이 턴을 본다).
+
+---
+
+## 2026-10-11 · claude-b · 운영 중 K별 실시간 송출 · 동시 탐색 수 설정 · 사후 Codex 리뷰(웹) 반영
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일:
+  - **K별 실시간 송출**: `/api/operating/compare`가 `compare_move_budgets(on_row=)`로 K 행을 끝나는 대로 보낸다(`elapsed_total_s` 추가, 고리를 안 부른 행은 끝에 보냄). 화면은 남은 K를 "계산 중…/대기"로.
+  - **동시 탐색 수**(claude-a 요청 ①): 관리자 설정 `solver_seeds`(서버 기본 = `TEAMWEAVER_SOLVER_SEEDS`, 1~8, 권장 4). 서버 자원이라 MilpParams·캐시 키·미리 계산 비교에 넣지 않고, 저장하면 환경 변수를 바꿔 `effective_seeds`가 읽는다. `/api/settings`에 `effective_solver_seeds`. HTTP `milp_params`의 `solver_seeds`는 받되 무시(요청이 코어 수를 정하지 못한다).
+  - **사후 Codex 리뷰(웹)** MUST 2·SHOULD 1 반영: 보강 화면 후보·재평가·최선 조합 결과를 계산한 입력에 묶음(사업을 바꾸면 늦은 응답 폐기·숨김), 화면에서 바꾼 명단에는 원안의 솔버 증명 배지 대신 "변경 후 재평가", 운영 상태 재조회 실패 시 오류+다시 불러오기.
+- 상대 영향: claude-a — `PUT /api/settings`에 `solver_seeds` 칸이 생겼다(설정 전체를 요구하므로 스크립트가 PUT하면 함께 보낸다). 서비스 동작은 설정을 바꾸기 전까지 그대로다.
+- 검증: `pytest -q` 1601 passed · 웹 179 · tsc · lint · build. Codex 커밋 전 리뷰 2라운드(P2 1 → 반영, 2라운드 문제 없음).
+
+---
+
+## 2026-10-11 · claude-b · 사후 Codex 리뷰(API) 반영 + 시연 리뷰 글 판정 동봉
+- 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
+- 한 일:
+  - **Codex 사후 리뷰**(Codex 소진 기간 `5e5c2a3..main`의 claude-b API·scripts): MUST 1 — What-if 교체 설명이 허용 없이 실데이터 문맥(직원 ID·기술·협업·평가 라벨·사업명)을 OpenAI로 보냈다 → `api/deps.llm_client_for`(실데이터는 사내 주소·`TEAMWEAVER_REVIEW_ONPREM=1`·`TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1`일 때만, 리뷰 판정과 같은 정책), 응답 `fallback_reason`(`external_blocked`·`no_client`·`llm_error`), 화면 배지. SHOULD — 미리 계산 운영 중 행이 요청 K와 하나씩 맞아야 수용. WON'T — 다중 워커 교체 저장 경합(실행 스크립트는 단일 워커, 후속).
+  - **시연 판정 동봉**(사용자 요청): `demo/review_judgments.json`(6개 묶음 리뷰 8,025건, gpt-6-luna·low 키), 가상 묶음을 켤 때 이 값이 캐시보다 우선(`judge_reviews(seed_path=)`), `scripts/export_demo_judgments.py`(`--check`).
+- 상대 영향:
+  - **claude-a**: 인사팀 소명 글도 `llm_client_for`를 거쳐 부른다(계약의 "교체 설명과 같은 정책"이 이제 실제로 있다). 미리 계산을 다시 만들면 내보내기 스크립트도 돌려 함께 커밋(CLAUDE.md 함정 줄).
+  - `api/demo_precomputed._check_operating`(네 코드, 내 영역)에 K-행 일대일 검사 추가.
+- 검증: `pytest -q` 전체 통과(커밋 메시지), 웹 174 · tsc. **빈 데이터 폴더 + 틀린 API 키** 서버에서 6개 묶음 모두 `review_judge: llm`·`skipped: []`(LLM 호출 0). Codex 커밋 전 리뷰 2라운드(P2 1 → 반영, P2 1 → 반영).
+
+---
+
 ## 2026-10-11 · claude-a · 프로젝트 전체 해설 HTML 갱신(10월 3일판 → 10월 11일)
 - 브랜치/커밋: `feat/claude-a-addendum-by-person` 문서 커밋 (main 병합은 사용자 승인 대기)
 - 한 일: 사용자 지시로 `outputs/eli5-project-history-roadmap.html`(Codex 10-03 작성)을 현재 개발 기준으로 갱신·보완. 18장 → 20장:
