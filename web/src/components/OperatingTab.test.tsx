@@ -4,10 +4,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 vi.mock("../api/client", () => ({
   DatasetChangedError: class extends Error {},
   fetchOperatingState: vi.fn(), streamOperatingCompare: vi.fn(), postBaseline: vi.fn(),
-  postStaffingCandidates: vi.fn(), postStaffingSimulate: vi.fn(), postStaffingBest: vi.fn(),
+  postStaffingCandidates: vi.fn(), postStaffingSimulate: vi.fn(), postStaffingBest: vi.fn(), downloadReport: vi.fn(),
 }));
 import {
-  fetchOperatingState, postStaffingBest, postStaffingCandidates, postStaffingSimulate, streamOperatingCompare,
+  downloadReport, fetchOperatingState, postStaffingBest, postStaffingCandidates, postStaffingSimulate, streamOperatingCompare,
 } from "../api/client";
 import { OperatingTab } from "./OperatingTab";
 import type { Meta, OperatingEvent, OperatingState } from "../api/types";
@@ -195,6 +195,40 @@ describe("OperatingTab — 리뷰 반영", () => {
     vi.mocked(fetchOperatingState).mockResolvedValueOnce({ ...STATE, dataset_version: "v2" });
     fireEvent.click(screen.getByRole("button", { name: "다시 불러오기" }));
     expect(await screen.findByRole("button", { name: "K별 비교 실행" })).toBeInTheDocument();
+  });
+
+  it("K 결과에서 이어서 보강하면 보강 요청이 그 명단을 쓰고, 서명된 결과는 PDF로 내려받는다", async () => {
+    const entries = [{ person_id: "p0", project_id: "P1", alloc: 1 }, { person_id: "p3", project_id: "P1", alloc: 1 }];
+    vi.mocked(streamOperatingCompare).mockReset().mockImplementation(() => (async function* (): AsyncGenerator<OperatingEvent> {
+      yield { event: "row", data: { k: 1, elapsed_s: 1, accepted: true, termination: "Optimal", objective: 3, best_bound: 3,
+        quality: 3, unfilled_seats: 0, diff: { kept: 1, moved: [], joined: [] }, project_change_vs_k0: {}, violations: [],
+        entries, plan_label: "K1", plan_token: "tok" } };
+      yield { event: "done", data: { elapsed_s: 1, count: 1 } };
+    })());
+    vi.mocked(postStaffingCandidates).mockReset().mockResolvedValue({ note: "", candidates: [] });
+    vi.mocked(downloadReport).mockReset().mockResolvedValue(undefined);
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "K별 비교 실행" }));
+    fireEvent.click(await screen.findByRole("button", { name: "K=1 이동 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "K=1 결과 PDF" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    const [plan, , , , , , basis] = vi.mocked(downloadReport).mock.calls[0];
+    expect(plan.label).toBe("K1");
+    expect(basis?.planToken).toBe("tok");
+    fireEvent.click(screen.getByRole("button", { name: "이 결과에서 이어서 보강" }));
+    expect(screen.getByText(/기준 배치:/)).toHaveTextContent("K=1 결과");
+    expect(screen.getByText(/K=1 결과의 팀/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "후보 보기" }));
+    await waitFor(() => expect(postStaffingCandidates).toHaveBeenCalled());
+    expect(vi.mocked(postStaffingCandidates).mock.calls[0][1].entries).toEqual(entries);
+    fireEvent.click(screen.getByRole("button", { name: "지금 배치로 되돌리기" }));
+    expect(screen.queryByText(/기준 배치:/)).not.toBeInTheDocument();
+    // 다시 비교하면 이전 결과에서 이어 쓰던 기준은 지운다(폴백 리뷰 SHOULD)
+    fireEvent.click(await screen.findByRole("button", { name: "K=1 이동 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "이 결과에서 이어서 보강" }));
+    expect(screen.getByText(/기준 배치:/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "K별 비교 실행" }));
+    await waitFor(() => expect(screen.queryByText(/기준 배치:/)).not.toBeInTheDocument());
   });
 });
 

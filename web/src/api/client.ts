@@ -412,20 +412,21 @@ type Common = { dataset_version: string | null; milp_params: PlacementSettings |
 const common = (c: Common) => ({ dataset_version: c.dataset_version, milp_params: c.milp_params ?? {} });
 
 export async function postStaffingCandidates(c: Common, req: {
-  project_id: string; include_pull: boolean; budget_add: number | null; top: number;
+  project_id: string; include_pull: boolean; budget_add: number | null; top: number; entries?: AssignEntry[];
 }): Promise<{ candidates: Candidate[]; note: string }> {
   return postJson("/api/staffing/candidates", { ...common(c), ...req });
 }
 
 export async function postStaffingSimulate(c: Common, req: {
   project_id: string; adds: { person_id: string; project_id: string; alloc: number }[];
-  removes: [string, string][]; extra_seats: Record<string, number>; budget_add: number;
+  removes: [string, string][]; extra_seats: Record<string, number>; budget_add: number; entries?: AssignEntry[];
 }): Promise<SimulateResult & { note: string }> {
   return postJson("/api/staffing/simulate", { ...common(c), ...req });
 }
 
 export async function postStaffingBest(c: Common, req: {
   project_id: string; n: number; grade: string | null; pull_budget: number; budget_add: number | null;
+  entries?: AssignEntry[];
 }): Promise<BestResult & { note: string }> {
   return postJson("/api/staffing/best", { ...common(c), ...req });
 }

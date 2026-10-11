@@ -373,6 +373,9 @@ export interface OperatingRow {
   error?: string;
   /** 미리 계산 행이면 그 계산 시각 -- elapsed_s는 그때의 풀이 시간이다. */
   precomputed_at?: string | null;
+  /** 채택 행의 서버 서명(라벨 "K{k}") -- PDF가 "서버 계산 확인"으로 검증한다. */
+  plan_label?: string;
+  plan_token?: string;
 }
 
 export type OperatingEvent =

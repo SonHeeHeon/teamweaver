@@ -81,6 +81,7 @@ export function ReportPage() {
         </p>
       )}
       <p className="text-xs text-slate-500">
+        {data.operating_note && <b className="mb-1 block text-slate-700">{data.operating_note}</b>}
         원 플랜: {data.plan_provenance === "verified"
           ? "명단이 서버가 계산한 플랜과 일치(서명 확인)"
           : "화면이 보낸 명단 — 서버 계산 여부 미검증"}

@@ -247,3 +247,40 @@ def test_compare_streams_each_k_as_it_finishes(op_client, monkeypatch):
     assert kinds[0] == "start" and "row" in kinds and kinds.index("row") < kinds.index("error")
     row = next(d for k, d in events if k == "row")
     assert row["k"] == 0 and "elapsed_total_s" in row and "dataset_version" in row
+
+
+
+def test_compare_rows_are_signed_so_the_pdf_can_verify_them(op_client, monkeypatch, tmp_path):
+    # 운영 중 K 결과 PDF(2026-10-11): 채택 행에 서버 서명 -- /api/report가 "서버 계산 확인"으로 받는다
+    import api.routes.report as report_route
+    index = tmp_path / "index.html"
+    index.write_text("x")
+    monkeypatch.setattr(report_route, "_DIST_INDEX", index)
+    seen = []
+
+    async def fake_render(payload, origin, timeout_s):
+        seen.append(payload)
+        return b"%PDF"
+    monkeypatch.setattr(report_route, "render_report_pdf", fake_render)
+    v = op_client.get("/api/operating/state").json()["dataset_version"]
+    rows = [d for k, d in _sse(op_client.post("/api/operating/compare",
+                                              json={"dataset_version": v, "milp_params": FAST, "ks": [0, 1]}).text)
+            if k == "row"]
+    row = rows[1]
+    assert row["plan_label"] == "K1" and row["plan_token"]
+    body = {"plan_label": row["plan_label"], "entries": row["entries"], "objective": row["objective"], "fulfillment": 0,
+            "optimization_ratio": None, "dataset_version": v, "milp_params": None, "plan_token": row["plan_token"]}
+    # 화면은 운영 설정 그대로 보낸다 -- 여기선 FAST를 PlacementSettings 모양으로 못 보내므로 서명을 같은 설정으로 다시 확인
+    from api.plan_token import verify_plan
+    from api.schemas import MilpParamsIn
+    assert verify_plan(row["plan_token"], v, "K1", row["entries"], {}, MilpParamsIn(**FAST).to_milp_params())
+    bad = {**body, "entries": row["entries"][1:]}
+    assert op_client.post("/api/report", json=bad).status_code == 422          # 서명이 맞지 않으면 PDF를 거절한다
+    # 성공 경로: 화면처럼 설정 전체(PlacementSettings 모양)로 비교하고 같은 설정으로 PDF -- "서버 계산 확인"+운영 중 설명(폴백 리뷰 SHOULD)
+    screen = {**op_client.get("/api/settings").json()["settings"], "min_alloc": 1.0, "time_limit": 30, "gap": 0.0}
+    rows = [d for k, d in _sse(op_client.post("/api/operating/compare",
+                                              json={"dataset_version": v, "milp_params": screen, "ks": [0, 1]}).text)
+            if k == "row"]
+    ok = {**body, "entries": rows[1]["entries"], "plan_token": rows[1]["plan_token"], "milp_params": screen}
+    assert op_client.post("/api/report", json=ok).status_code == 200
+    assert seen[-1]["plan_provenance"] == "verified" and "최대 1명만 옮겨" in seen[-1]["operating_note"]
