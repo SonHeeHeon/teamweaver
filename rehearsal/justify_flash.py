@@ -15,6 +15,8 @@
 - F3(보고, 기준 없음): luna 1회차와 짝 비교(채택 여부 McNemar 정확 검정), 탈락 규칙, 지연 p50·p95·최대와 서비스 상한 안 비율, 편당 비용·출력 토큰,
   AI가 스스로 인용한 불리한 사실 비율, 덧붙임이 붙은 글 비율, 팀 크기별(1~10·11~20·21명 이상).
 - 비용 상한 COST_CAP_USD를 넘으면 새 호출을 멈추고 "미완"으로 표시한다. 동시 WORKERS, 재시도 1.
+- **측정 뒤 수정(2026-10-11)**: 귀속 검사용 사람 ID 모양이 DP만 잡고 바로 붙은 한글 조사 앞에서 끊지 못해(_PID) 200명 묶음의 AI·AU 사람이 사실 문구에만 나올 때 빠질 수 있었다. 모양을 고치고
+  저장된 채택 글의 무결성을 AI 호출 없이 다시 검사한다(--render-only가 recheck). 기준은 그대로이고 검사가 엄격해지는 방향이다.
 - 측정 전 배관 확인(지시문·기준 변경 없음, 기록만): 대상 A의 3건(팀 4·9·28명) → 3/3 채택, 지연 84·114·245초, 출력 토큰 5.6천·7.2천·18.5천, 비용 $0.0034·$0.0046·$0.012.
 
   uv run python -m rehearsal.justify_flash             → rehearsal/results/justify-flash.{json.gz,html}
@@ -53,7 +55,7 @@ WORKERS, COST_CAP_USD, TIMEOUT_S = 4, 1.0, 600
 SERVICE_TIMEOUT_S = 40.0            # api/routes/justification.AI_TIMEOUT_S(claude-b) -- 시험이 같은지 확인한다
 F2_TARGET, F2_FLOOR = e7c.G2_TARGET, e7c.G2_FLOOR
 BINS = ((1, 10, "1~10명"), (11, 20, "11~20명"), (21, 999, "21명 이상"))
-_PID = re.compile(r"\bDP\d{4}\b")   # 가상 묶음의 사람 ID 모양(사실 문구 안의 동료·평가자·후보를 귀속 검사에 넣으려고)
+_PID = re.compile(r"(?<![A-Za-z0-9])[A-Z]{2}\d{4}(?!\d)")   # 사람 ID 모양 DP·AI·AU+4자리(사업은 J+3자리). 한글 조사가 바로 붙어도(\b는 한글을 글자로 본다) 잡는다
 
 
 # ---------------------------------------------------------------- 재료
@@ -159,6 +161,21 @@ def run(client=None, *, limit: int | None = None, cost_cap: float = COST_CAP_USD
     return res
 
 
+def recheck(res: dict) -> dict:
+    """저장된 채택 글의 무결성을 지금 검사기·사람 ID로 다시 본다(AI 호출 없음, 결정적)."""
+    src = load_source()
+    people = prime_ids(src)
+    changed = 0
+    for r in res["calls"]:
+        if r["method"] == "graphrag":
+            new = e7c.integrity_problems(r, e7c._inp(src, {"bundle": r["bundle"], "project_id": r["project_id"]}), people[r["bundle"]])
+            changed += new != r.get("integrity")
+            r["integrity"] = new
+    res["integrity_rechecked"] = {"when": dt.datetime.now().astimezone().isoformat(timespec="seconds"), "changed": changed,
+                                  "commit": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()}
+    return res
+
+
 # ---------------------------------------------------------------- 요약
 def mcnemar_exact(b: int, c: int) -> float:
     """짝 이진 결과의 정확 McNemar(양측): 불일치 b+c건 중 적은 쪽 이하가 나올 확률 × 2."""
@@ -250,7 +267,8 @@ table{{border-collapse:collapse;width:100%;margin:.6em 0 1.4em;font-size:.92em}}
 <h1>E7c-F: 인사팀 소명 글 — 사내 LLM(GLM-5.3-Flash·Z.ai, 추론 high)</h1>
 <p class="sub">{html.escape(res['when'])} · 코드 {html.escape(res['commit'])}{' (작업 트리 변경 있음)' if res['dirty'] else ''} · 지시문 해시 {res['prompt_sha']} ·
 입력 = E7c(<code>{html.escape(res['source_commit'])}</code>) 보류 집합 B 1회차, 짝 = 외부 {html.escape(res['source_model'])}(low) · 비용 ${res['spent_usd']:.3f}
-{' · <b>비용 상한으로 멈춤(미완)</b>' if res['stopped_by_cost_cap'] else ''}</p>
+{' · <b>비용 상한으로 멈춤(미완)</b>' if res['stopped_by_cost_cap'] else ''}
+{f" · 측정 뒤 무결성 다시 검사(사람 ID 모양 수정, 코드 {html.escape(res['integrity_rechecked']['commit'])}): 바뀐 글 {res['integrity_rechecked']['changed']}" if res.get('integrity_rechecked') else ''}</p>
 <div class="box"><b>판정</b> — F1 무결성: <b>{s['F1']}</b>(채택 글 {s['F1_checked']}편 검사, 실패 {s['F1_failed']}) ·
 F2 채택률: <b>{_pct(s['rate'])} ({s['accepted']}/{s['planned']}) → {s['F2']}</b>(기준 ≥{F2_TARGET:.0%} 달성, {F2_FLOOR:.0%}~{F2_TARGET:.0%} 조건부)</div>
 <div class="w"><table><tr><th></th><th>사내 Flash high</th><th>외부 luna low(E7c 1회차, 같은 입력)</th></tr>
@@ -280,8 +298,9 @@ def main():
     ap.add_argument("--render-only", action="store_true")
     a = ap.parse_args()
     if a.render_only:
-        res = json.loads(gzip.decompress(OUT_JSON.read_bytes()))
+        res = recheck(json.loads(gzip.decompress(OUT_JSON.read_bytes())))
         res["summary"] = summarize(res)
+        OUT_JSON.write_bytes(gzip.compress(json.dumps(res, ensure_ascii=False, indent=1).encode("utf-8")))
     else:
         res = run()
         OUT_JSON.write_bytes(gzip.compress(json.dumps(res, ensure_ascii=False, indent=1).encode("utf-8")))

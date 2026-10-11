@@ -86,3 +86,29 @@ def test_cost_cap_stops_and_marks_incomplete(src):
     res = jf.run(fake, limit=6, workers=1, cost_cap=1.0)
     assert res["stopped_by_cost_cap"] and len(res["calls"]) == 1 and fake.calls == 1
     assert res["summary"]["F2"] == "미완" and res["summary"]["planned"] == 6
+
+
+def test_person_ids_include_other_prefixes_seen_only_in_fact_text():
+    """200·300명 묶음의 AI·AU 사람이 사실 문구에만 나와도 귀속 검사 대상이다(DP만 잡던 모양은 놓쳤다)."""
+    fake = {"inputs": {"x/J001": {"team": ["DP0001"], "facts": [
+        {"owners": ["DP0001"], "text": "DP0001과 AI0007, AU0012가 함께 일한 이력 14개월"}]}}}
+    assert {"DP0001", "AI0007", "AU0012"} <= jf.prime_ids(fake)["x"]
+
+
+def test_person_ids_cover_every_person_shaped_token_in_fact_texts(src):
+    import re
+    people = jf.prime_ids(src)
+    for key, meta in src["inputs"].items():
+        b = key.split("/", 1)[0]
+        for f in meta["facts"]:
+            for t in re.findall(r"(?<![A-Za-z0-9])[A-Z]+\d+(?!\d)", f["text"]):
+                if not re.fullmatch(r"J\d{3}", t):          # 사업 ID
+                    assert t in people[b], (key, t)
+
+
+def test_recheck_recomputes_integrity_without_ai(src):
+    res = jf.run(_Fake(_texts(src)), limit=3, workers=1)
+    for r in res["calls"]:
+        r["integrity"] = ["가짜"]
+    out = jf.recheck(res)
+    assert out["integrity_rechecked"]["changed"] == 3 and all(r["integrity"] == [] for r in out["calls"])
