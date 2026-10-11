@@ -1,0 +1,33 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>소명 글 사내 열(Flash high)</title><style>
+body{font:15px/1.7 -apple-system,"Apple SD Gothic Neo",sans-serif;max-width:980px;margin:auto;padding:24px 16px;color:#222;background:#fff}
+table{border-collapse:collapse;width:100%;margin:.6em 0 1.4em;font-size:.92em}td,th{border-bottom:1px solid #ddd;padding:5px 7px;text-align:left;vertical-align:top}
+.box{background:#f3f6fa;border-radius:8px;padding:10px 16px;margin:1em 0}.warn{background:#fff5e6}.sub{color:#666}.w{overflow-x:auto}
+</style></head><body>
+<h1>E7c-F: 인사팀 소명 글 — 사내 LLM(GLM-5.3-Flash·Z.ai, 추론 high)</h1>
+<p class="sub">2026-10-11T13:10:15+09:00 · 코드 d7fbc52 · 지시문 해시 70365633976f841d ·
+입력 = E7c(<code>e3fdcb5</code>) 보류 집합 B 1회차, 짝 = 외부 gpt-6-luna(low) · 비용 $0.222
+
+ · 측정 뒤 무결성 다시 검사(사람 ID 모양 수정, 코드 4b46e3e): 바뀐 글 0</p>
+<div class="box"><b>판정</b> — F1 무결성: <b>통과</b>(채택 글 73편 검사, 실패 0) ·
+F2 채택률: <b>97.3% (73/75) → 달성</b>(기준 ≥95% 달성, 90%~95% 조건부)</div>
+<div class="w"><table><tr><th></th><th>사내 Flash high</th><th>외부 luna low(E7c 1회차, 같은 입력)</th></tr>
+<tr><td>채택</td><td>73/75</td><td>75/75</td></tr>
+<tr><td>짝 비교</td><td colspan=2>luna만 채택 2 · Flash만 채택 0 · McNemar 정확 p=0.5</td></tr>
+<tr><td>AI 호출 오류·시간 초과</td><td>0</td><td>—</td></tr>
+<tr><td>지연 p50 / p95 / 최대</td><td>59.5 / 162.4 / 208.9초</td><td>p50 7.9초</td></tr>
+<tr><td>서비스 대기 상한(40초) 안</td><td>12/75</td><td>—</td></tr>
+<tr><td>편당 비용 · 출력 토큰 p50</td><td>$0.0030 · 3,765</td><td>—</td></tr>
+<tr><td>불리한 사실 스스로 인용</td><td>100.0%(783/783) · 덧붙임 붙은 글 0편</td><td>—</td></tr>
+</table></div>
+<h2>묶음별</h2><div class="w"><table><tr><th>묶음</th><th>Flash 채택</th><th>luna 채택</th><th>지연 p50</th><th>최대</th><th>40초 안</th><th>편당 비용</th></tr><tr><td>holdout-n100</td><td>19/20</td><td>20/20</td><td>69.8초</td><td>184.3초</td><td>2/20</td><td>$0.0032</td></tr><tr><td>holdout-n100-operating</td><td>15/15</td><td>15/15</td><td>65.2초</td><td>208.9초</td><td>0/15</td><td>$0.0035</td></tr><tr><td>holdout-n200</td><td>39/40</td><td>40/40</td><td>50.9초</td><td>151.2초</td><td>10/40</td><td>$0.0026</td></tr></table></div>
+<h2>팀 크기별</h2><div class="w"><table><tr><th>팀</th><th>채택</th><th>지연 p50</th><th>p95</th><th>40초 안</th><th>출력 토큰 p50</th><th>편당 비용</th></tr><tr><td>1~10명</td><td>72/74</td><td>59.5초</td><td>162.4초</td><td>12/74</td><td>3,765</td><td>$0.0029</td></tr><tr><td>21명 이상</td><td>1/1</td><td>151.2초</td><td>151.2초</td><td>0/1</td><td>11,748</td><td>$0.0086</td></tr></table></div>
+<h2>탈락·대체</h2><p>대체 사유 {&quot;verify&quot;: 2} · 검사 규칙 {&quot;S2&quot;: 2}</p>
+<div class="w"><table><tr><th>사업</th><th>팀</th><th>사유</th><th>위반(앞 3개)</th></tr><tr><td>holdout-n100/J001</td><td>8</td><td>verify:S2</td><td>S2 허용 목록 밖 연결 말 &#x27;동료 평가는 DP0021의 경우&#x27;</td></tr><tr><td>holdout-n200/J033</td><td>4</td><td>verify:S2</td><td>S2 허용 목록 밖 연결 말 &#x27;동료 평가는 AI0001의 경우&#x27;; S2 허용 목록 밖 연결 말 &#x27;다른 후보와의 비교 결과는 AI0001의 경우&#x27;</td></tr></table></div>
+<div class="box warn"><b>읽을 때 주의</b><ul>
+<li>사내 LLM은 Z.ai 공식 API의 GLM-5.3-Flash로 가정했다(사용자 결정). 실제 사내 서버는 서빙 환경이 달라 속도·결과가 다를 수 있다.</li>
+<li>지연은 호출 전체 시간(오류 포함)이고 동시 4건으로 잰 값이다. 실패한 호출의 비용은 0으로 셌다(usage 없음). 서비스는 소명 AI를 동시 6건까지 부른다.</li>
+<li>지시문은 외부 luna의 E7b 탈락을 보고 고쳤다. Flash에 맞춰 고친 적은 없다. 표본은 75건 × 1회다(묶음 3개).</li>
+<li>서비스 기본 추론 강도는 pricing.json의 Flash 항목(low)이다. 이 측정은 사용자 지시로 high다.</li>
+<li>틀린 글이 나가지 않는가(F1)는 모델과 무관한 검사기가 지킨다. 채택률·속도는 화면에서 AI 글 대신 정해진 틀이 보이는 빈도를 정한다.</li></ul></div>
+</body></html>

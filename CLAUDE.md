@@ -14,7 +14,7 @@ SI 조직의 인력→프로젝트 배치 최적화 시제품. 기술 적합도(
 task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 상세 맥락(모델 수식·실험 결과·입력 계약·로드맵)은 `docs/project-context.md`를 먼저 읽는다.
-`outputs/eli5-project-history-roadmap.html`(원본 전체 해설, ~35k 토큰)은 그 요약으로 부족할 때만.
+`outputs/eli5-project-history-roadmap.html`(원본 전체 해설 20장, 10-11판, ~50k 토큰)은 그 요약으로 부족할 때만.
 
 ## 브랜치·작업 위치 (2026-10-04 기준)
 
@@ -86,7 +86,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **인사팀 소명 글은 자리표시 + 연결 말 허용 목록**(2026-10-09, `core/kg/justify.py`·`api/rag/justification.py`): AI는 사실 `{F#}`를 고르고 정해진 문법(주어·`LABELS`·연결어·맺음말)으로만 엮는다.
   숫자·충족/미달은 서버가 사실 문구로 채운다 -- 자유 문장·판단어 금지 목록은 폴백 리뷰마다 뚫렸다. 프롬프트와 검사기가 같은 `LABELS`를 쓴다.
   AI가 빠뜨린 불리한 사실(`Fact.adverse`)은 서버가 정해진 마지막 문단으로 덧붙인다(`adverse_addendum`, 사용자 결정 2026-10-10 · 사람별 줄 2026-10-11 -- 형식을 바꾸면 `python -m rehearsal.addendum_by_person`, AI 호출 없음).
-  사실 문구·문법·라벨·지시문을 바꾸면 `python -m rehearsal.justify_scale_e7c`(약 $0.7, 처음 보는 데이터 포함)를 다시 돌린다. 측정 E7c: 채택 99.4%·처음 보는 데이터 99.6%, 글은 템플릿보다 조금 짧다.
+  사실 문구·문법·라벨·지시문을 바꾸면 `python -m rehearsal.justify_scale_e7c`(약 $0.7, 처음 보는 데이터 포함)를 다시 돌린다. 측정 E7c: 채택 99.4%·처음 보는 데이터 99.6%, 글은 템플릿보다 조금 짧다. 사내 LLM 대리 GLM-5.3-Flash high(E7c-F, `python -m rehearsal.justify_flash`, 75건 약 $0.22):
+  채택 97.3%·무결성 73/73이지만 한 편 p50 60초 -- 화면·PDF의 AI 대기 상한(`api/routes/justification.AI_TIMEOUT_S` 40초) 안은 16%뿐이다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -101,7 +102,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-11 **1617 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, main(claude-b 화면 10-11 + 소명 덧붙임 사람별 줄 병합) · slow 19 passed, 웹 185)
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-11 **1628 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, `feat/claude-a-glm-flash-context`(main 1618) · slow 19 passed, 웹 185)
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
