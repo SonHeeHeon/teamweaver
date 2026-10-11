@@ -32,6 +32,19 @@
 - 검증: `pytest -q` 1616 passed · 웹 186 · tsc · build. Codex 커밋 전 리뷰(한도 회복) 문제 없음 → Stop 훅 게이트 다시 켬.
 
 ---
+
+## 2026-10-11 · claude-a · 소명 글 사내 열 E7c-F(GLM-5.3-Flash high) + 요약 문서 10-11판
+- 브랜치/커밋: `feat/claude-a-glm-flash-context` `d7fbc52`(사전 등록, 측정 전) · `4b46e3e`(측정 뒤 수정: 귀속 검사용 사람 ID 모양 AI·AU·조사 붙은 ID — 저장 데이터에선 놓친 ID 0, 다시 검사 바뀐 글 0) · 결과·문서 커밋 (main 병합은 사용자 승인 대기)
+- 한 일:
+  - **E7c-F**(claude-b 요청 "소명 글 사내 열은 작은 표본으로", 사용자 지시 "Flash high로"): E7c 보류 집합(새 시드 묶음 3개) 75건 × 1회를 저장된 같은 입력으로 Flash high에 다시 쓰게 해 외부 luna 1회차와 짝 비교. $0.22.
+    채택 **97.3%**(73/75, F2 달성 — 외부 75/75, 짝 비교 p=0.5), 채택 글 무결성 **73/73**(F1 통과), 탈락 2건은 S2("동료 평가는 DP0021의 경우"처럼 라벨 뒤 사람 주어),
+    불리한 사실 스스로 인용 100%(외부 89%, 덧붙임 0편). **한 편 p50 60초·p95 162초·최대 209초**(외부 8초), 서비스 대기 상한 40초 안 12/75(16%), 편당 $0.003(외부 약 $0.0009).
+  - `docs/project-context.md`(공유 계약)를 10-11 해설서(20장)에 맞춰 다시 씀: 입력·흐름·모델(쌍 규칙 둘·동시 프로젝트·운영 중 편성)·10월 실험·AI 비교(Flash 포함)·남은 일.
+- 상대 영향: **claude-b** — 실데이터 소명 AI 글은 사내 LLM이 쓰는데, Flash high로는 `AI_TIMEOUT_S` 40초 안에 16%만 끝난다(대부분 정해진 틀이 된다). 상한·추론 강도는 사용자 결정 대기(work-split 요청).
+  서비스의 Flash 기본 추론 강도는 pricing.json의 low다(이 측정은 high). 공유 계약 `CLAUDE.md` 소명 글 함정 줄·해설서 크기·시험 기준선 **1628**(이 브랜치).
+- 검증: `uv run --group benchmark pytest -q` → 1628 passed, 1 skipped, 19 deselected · `uv run python -m rehearsal.justify_flash`(커밋 `d7fbc52`, dirty=false) → `--render-only` 다시 검사(`4b46e3e`) · Codex review 1회차 지적 없음, 2회차 P2(보고서 재생성) 반영.
+- 근거: `rehearsal/results/justify-flash.html`(원자료 `.json.gz`), 사전 등록 `rehearsal/justify_flash.py` docstring, 로컬 `.omc/reports/2026-10-11-glm-flash-justification-context.md`
+
 ## 2026-10-11 · claude-a · 소명 덧붙임 사람별 줄 + 해설 HTML main 병합(사용자 승인)
 - 브랜치/커밋: `feat/claude-a-addendum-by-person` `ed27203..0849cc3` + origin/main(`11f7a0a`, claude-b 화면 10-11) 병합 커밋 → main 빨리 감기
 - 한 일: 원격 main에 먼저 들어간 claude-b 작업(소명 API·화면·PDF, 운영 중 실시간 K, 검증기 강화, 시연 판정 동봉)을 받아 합쳤다. 충돌은 `docs/handoff-log.md`·`docs/work-split.md` 두 곳뿐이었고 양쪽 항목을 모두 남겼다.
@@ -115,7 +128,7 @@
   10~12장 신설(규모·모델 실험과 운영 중 편성 / AI 사용과 검사 / 지식 그래프·기술 사전), 2·3·4·6·13·14·15·17~20장 다시 씀, 5장 이력에 10-03~10-11 사건 8개 추가,
   1·7·8·9·16장은 본문 보존 + "그 뒤" 상자. 10월 3일판 CSV 제안 명세는 15장 안 접힌 기록으로 보존.
 - 상대 영향: `outputs/`는 Codex 산출물 위치지만 사용자 지시로 claude-a가 고쳤다(이 파일만). `docs/project-context.md`(공유 계약)는 "원본 18장"·10-03 기준 서술이 남아 있다 — 갱신은 후속.
-- 검증: HTML 태그 균형·장 번호 01~20·id 중복 없음·목차 링크 모두 존재, 금지어(실명·사진 관련) 없음, Chromium 1200px·390px 가로 넘침 0·콘솔 오류 0. 문서 변경이라 Codex 리뷰 생략.
+- 검증: HTML 태그 균형·장 번호 01~20·id 중복 없음·목차 링크 모두 존재, 금지어 없음, Chromium 1200px·390px 가로 넘침 0·콘솔 오류 0. 문서 변경이라 Codex 리뷰 생략.
 - 근거: `outputs/eli5-project-history-roadmap.html`, 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
 
 ## 2026-10-11 · claude-a · 소명 글 덧붙임 사람별 줄(사용자 결정)
