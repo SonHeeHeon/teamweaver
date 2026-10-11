@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-11 · claude-a · 소명 글 덧붙임 사람별 줄(사용자 결정)
+- 브랜치/커밋: `feat/claude-a-addendum-by-person` `ed27203`(코드·시험·계약) · `36faa42`(다시 돌려 보기 표시 수정) · 결과 커밋 (main 병합은 사용자 승인 대기)
+- 한 일: AI 소명 글이 빠뜨린 불리한 사실 덧붙임을 한 줄 나열 → `- 사업 전체: …` / `- DP0082: …` 사람별 줄로(사용자 결정 2026-10-11, 지시문 완화 대신).
+  출력에 `addendum_groups` 추가. 주인이 팀원이 아닌 사실은 줄에 놓지 않고 템플릿으로(`fallback_reason="addendum_check"`, Codex 리뷰).
+  E7c AI 원문 843편을 AI 호출 없이 서비스 경로로 다시 돌려(`rehearsal/addendum_by_person.py`) 채택/탈락·AI 부분·덧붙인 사실 집합이 같고 무결성(새 형식) 838/838.
+  21명 이상 팀 덧붙임: 사람 줄 최대 26, 가장 긴 줄 최대 303자, 전체 4,605 → 4,159자(길이는 10%쯤만 준다 — 화면 접기는 여전히 권장).
+- 상대 영향: **claude-b 계약** `docs/requests/2026-10-09-hr-justification.md` — `addendum` 형식(여러 줄), `appended_adverse` 순서(문단 순서), 새 `addendum_groups`, 새 `fallback_reason` `addendum_check`.
+  `core/kg/justify.adverse_addendum` 반환이 `(문단, 묶음 목록)`으로 바뀌었다. 공유 계약 `CLAUDE.md` 소명 글 함정 줄 갱신. 시험 기준선 **1592**(이 브랜치).
+- 검증: `uv run --group benchmark pytest -q` → 1592 passed, 1 skipped, 19 deselected · Codex adversarial-review 1건(주인이 팀 밖) 반영 → review 지적 없음 ·
+  `uv run python -m rehearsal.addendum_by_person` → R1~R4 통과
+- 근거: `rehearsal/results/addendum-by-person.html`, 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
+
 ## 2026-10-10 · claude-a · 소명 글 불리한 사실 서버 덧붙임 + 지시문 개선 + E7c 재측정, Codex 사후 리뷰, 미리 계산 재생성, main 병합
 - 브랜치/커밋: `feat/claude-a-graphrag-justify` `ac8a870`(미래 이력 수정) · `4c56be4`(덧붙임·지시문) · `e3fdcb5`(E7c 사전 등록, 측정 전) · 결과·문서 커밋 · 미리 계산 커밋 → **main 빨리 감기 병합(사용자 승인 2026-10-10)**.
   지식 그래프(E7·E8)·기술 이름 사전·소명 글 브랜치가 모두 main에 들어갔다.
