@@ -66,7 +66,7 @@ def run() -> dict:
         e7b._ID_CACHE[b] = ids | {k.split("/", 1)[1] for k in res["inputs"] if k.startswith(b + "/")}
     out = {"source": "rehearsal/results/justify-scale-e7c.json.gz", "source_commit": res["commit"],
            "commit": subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip(),
-           "dirty": bool(subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "core", "api", "rehearsal"],
+           "dirty": bool(subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "core", "api", "rehearsal", ":!rehearsal/results"],
                                         capture_output=True, text=True).stdout.strip()),
            "replayed": 0, "no_llm_text": 0, "R1_method_changed": [], "R2_ai_part_changed": [], "R3_integrity": {"checked": 0, "failed": 0, "examples": []},
            "R4_fact_set_changed": [], "rows": []}
