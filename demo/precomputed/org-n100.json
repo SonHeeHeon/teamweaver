@@ -2,12 +2,12 @@
  "format": 1,
  "preset": "org-n100",
  "dataset_id": "org-n100-s2026",
- "dataset_version": "d3d37226663b3ae2e12d147554621f0343d5beabc2edebde90128dae0a067027",
+ "dataset_version": "84ffee286cf2f2fb86fbf2d4eecc21a1295192cb7db8698ff8ee0d49ed5d0ce0",
  "review_judge": "llm",
- "computed_at": "2026-10-07T14:18:14+00:00",
- "commit": "a3efcc7",
+ "computed_at": "2026-10-11T11:08:43+00:00",
+ "commit": "7fe05c2",
  "solver_seeds": 4,
- "build_s": 239.22,
+ "build_s": 0.19,
  "optimize": {
   "weights": {},
   "n_alternatives": 3,
@@ -30,9 +30,629 @@
    "partner_floor": 0,
    "partner_floor_weight": 0.0
   },
-  "elapsed_s": 122.65,
+  "elapsed_s": 123.07,
   "stop_reason": null,
   "plans": [
+   {
+    "entries": [
+     {
+      "person_id": "DP0001",
+      "project_id": "J002",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0002",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0003",
+      "project_id": "J017",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0004",
+      "project_id": "J015",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0005",
+      "project_id": "J007",
+      "alloc": 0.53
+     },
+     {
+      "person_id": "DP0006",
+      "project_id": "J006",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0008",
+      "project_id": "J003",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0008",
+      "project_id": "J005",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J012",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0011",
+      "project_id": "J016",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0012",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J013",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J011",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0020",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J001",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J012",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0022",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0023",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0025",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0027",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J014",
+      "alloc": 0.33
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J018",
+      "alloc": 0.36
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J002",
+      "alloc": 0.36
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J004",
+      "alloc": 0.37
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J008",
+      "alloc": 0.42
+     },
+     {
+      "person_id": "DP0031",
+      "project_id": "J013",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0032",
+      "project_id": "J009",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J004",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J012",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0038",
+      "project_id": "J011",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0041",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0043",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J006",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0048",
+      "project_id": "J013",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0048",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J015",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0050",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J012",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0054",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J016",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0057",
+      "project_id": "J019",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0062",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0063",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0065",
+      "project_id": "J005",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0068",
+      "project_id": "J014",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0069",
+      "project_id": "J013",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0070",
+      "project_id": "J016",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J017",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0075",
+      "project_id": "J014",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0076",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J019",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J019",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0081",
+      "project_id": "J006",
+      "alloc": 0.94
+     },
+     {
+      "person_id": "DP0082",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0082",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0084",
+      "project_id": "J020",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0086",
+      "project_id": "J001",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J009",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0090",
+      "project_id": "J001",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0091",
+      "project_id": "J010",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0093",
+      "project_id": "J016",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J004",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J005",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0097",
+      "project_id": "J010",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0099",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0099",
+      "project_id": "J010",
+      "alloc": 0.39
+     }
+    ],
+    "objective": 57.586337278693605,
+    "unfilled": [],
+    "violations": [],
+    "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 64.68255687799606,
+    "gap_used": 0.01,
+    "label": "A",
+    "eval_objective": 57.56164246031746,
+    "eval_violations": [],
+    "elapsed_s": 30.79
+   },
    {
     "entries": [
      {
@@ -42,7 +662,7 @@
      },
      {
       "person_id": "DP0001",
-      "project_id": "J003",
+      "project_id": "J008",
       "alloc": 0.3
      },
      {
@@ -52,17 +672,12 @@
      },
      {
       "person_id": "DP0002",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0003",
       "project_id": "J007",
       "alloc": 0.3
      },
      {
       "person_id": "DP0003",
-      "project_id": "J020",
+      "project_id": "J019",
       "alloc": 0.5
      },
      {
@@ -78,2196 +693,401 @@
      {
       "person_id": "DP0007",
       "project_id": "J007",
-      "alloc": 0.32
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0008",
-      "project_id": "J005",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0011",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0012",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J014",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0014",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0015",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0018",
-      "project_id": "J017",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0020",
-      "project_id": "J019",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J010",
-      "alloc": 0.39
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0022",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0023",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0025",
-      "project_id": "J001",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0026",
-      "project_id": "J008",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0027",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J004",
-      "alloc": 0.37
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0031",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0031",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0032",
-      "project_id": "J009",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J017",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J004",
-      "alloc": 0.6
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J010",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0038",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0040",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0041",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J010",
-      "alloc": 0.34
-     },
-     {
-      "person_id": "DP0043",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0046",
-      "project_id": "J020",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0047",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0048",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0053",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0054",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J016",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0057",
-      "project_id": "J019",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0058",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J005",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0062",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0063",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0065",
-      "project_id": "J005",
-      "alloc": 0.54
-     },
-     {
-      "person_id": "DP0066",
-      "project_id": "J008",
-      "alloc": 0.47
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J009",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J015",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0069",
-      "project_id": "J013",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0070",
-      "project_id": "J016",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J017",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J015",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0075",
-      "project_id": "J011",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0076",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0076",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J017",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J019",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0078",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0081",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0082",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0084",
-      "project_id": "J013",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0086",
-      "project_id": "J020",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0089",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0090",
-      "project_id": "J019",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0091",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0093",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0094",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J004",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J005",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0097",
-      "project_id": "J001",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J011",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J018",
-      "alloc": 0.3
-     }
-    ],
-    "objective": 59.00729266636152,
-    "unfilled": [],
-    "violations": [],
-    "time_limited": true,
-    "termination": "time_limit_incumbent",
-    "best_bound": 64.52297640150177,
-    "gap_used": 0.01,
-    "label": "A",
-    "eval_objective": 58.98704047619047,
-    "eval_violations": [],
-    "elapsed_s": 30.68
-   },
-   {
-    "entries": [
-     {
-      "person_id": "DP0001",
-      "project_id": "J002",
-      "alloc": 0.68
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J003",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0002",
-      "project_id": "J003",
-      "alloc": 0.34
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J019",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0004",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0005",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0006",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0008",
-      "project_id": "J005",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J008",
-      "alloc": 0.48
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0011",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0012",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0014",
-      "project_id": "J013",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0014",
-      "project_id": "J019",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0015",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0015",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0018",
-      "project_id": "J011",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0020",
-      "project_id": "J020",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J001",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0022",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0023",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0025",
-      "project_id": "J010",
-      "alloc": 0.51
-     },
-     {
-      "person_id": "DP0025",
-      "project_id": "J017",
-      "alloc": 0.48
-     },
-     {
-      "person_id": "DP0026",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0026",
-      "project_id": "J007",
-      "alloc": 0.32
-     },
-     {
-      "person_id": "DP0027",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0032",
-      "project_id": "J009",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J003",
-      "alloc": 0.39
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J004",
-      "alloc": 0.69
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0038",
-      "project_id": "J011",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0041",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0043",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0046",
-      "project_id": "J020",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0047",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0048",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0051",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0053",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0054",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J016",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0057",
-      "project_id": "J019",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0058",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0062",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0063",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0065",
-      "project_id": "J005",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J014",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J015",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0070",
-      "project_id": "J016",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J011",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J015",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0075",
-      "project_id": "J017",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0076",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J019",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0078",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0081",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0082",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0084",
-      "project_id": "J013",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0086",
-      "project_id": "J020",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J009",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J017",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0089",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0090",
-      "project_id": "J001",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0091",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0093",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J004",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J005",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0097",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J017",
-      "alloc": 0.4
-     }
-    ],
-    "objective": 58.820427837902926,
-    "unfilled": [],
-    "violations": [],
-    "time_limited": true,
-    "termination": "time_limit_incumbent",
-    "best_bound": 64.74562003877404,
-    "gap_used": 0.05,
-    "label": "B",
-    "eval_objective": 58.78877261904762,
-    "eval_violations": [],
-    "elapsed_s": 61.27
-   },
-   {
-    "entries": [
-     {
-      "person_id": "DP0001",
-      "project_id": "J002",
-      "alloc": 0.68
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J008",
-      "alloc": 0.39
-     },
-     {
-      "person_id": "DP0002",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J008",
-      "alloc": 0.32
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J010",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0004",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0005",
-      "project_id": "J007",
-      "alloc": 0.81
-     },
-     {
-      "person_id": "DP0006",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0011",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0012",
-      "project_id": "J011",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0014",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0015",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0018",
-      "project_id": "J005",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0018",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0020",
-      "project_id": "J020",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J001",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0022",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0023",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0025",
-      "project_id": "J001",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0027",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J012",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J020",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J004",
-      "alloc": 0.37
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0031",
-      "project_id": "J019",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0032",
-      "project_id": "J009",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J015",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J004",
-      "alloc": 0.6
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J010",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0038",
-      "project_id": "J005",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0038",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0041",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J010",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0043",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0046",
-      "project_id": "J020",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0047",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0048",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J011",
-      "alloc": 0.38
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J019",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0051",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0053",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0054",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J016",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0057",
-      "project_id": "J019",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0058",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J019",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0062",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0063",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0068",
-      "project_id": "J009",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0069",
-      "project_id": "J020",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0070",
-      "project_id": "J016",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J005",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J009",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0072",
-      "project_id": "J015",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0075",
-      "project_id": "J017",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0076",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J005",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J017",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0077",
-      "project_id": "J019",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0078",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0081",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0082",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0084",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0084",
-      "project_id": "J013",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0086",
-      "project_id": "J014",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J017",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0087",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0089",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0090",
-      "project_id": "J018",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0091",
-      "project_id": "J010",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0091",
-      "project_id": "J013",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0093",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0094",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J004",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0096",
-      "project_id": "J005",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0097",
-      "project_id": "J016",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J017",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0099",
-      "project_id": "J018",
-      "alloc": 0.4
-     }
-    ],
-    "objective": 58.750474041930374,
-    "unfilled": [],
-    "violations": [],
-    "time_limited": true,
-    "termination": "time_limit_incumbent",
-    "best_bound": 64.6333799091542,
-    "gap_used": 0.05,
-    "label": "C",
-    "eval_objective": 58.73291984126983,
-    "eval_violations": [],
-    "elapsed_s": 91.93
-   },
-   {
-    "entries": [
-     {
-      "person_id": "DP0001",
-      "project_id": "J002",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J005",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0001",
-      "project_id": "J008",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0002",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J003",
-      "alloc": 0.39
-     },
-     {
-      "person_id": "DP0003",
-      "project_id": "J012",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0004",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0006",
-      "project_id": "J006",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0007",
-      "project_id": "J013",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0009",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0010",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0011",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0012",
-      "project_id": "J019",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0013",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0014",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0015",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0018",
-      "project_id": "J017",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J007",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0019",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0020",
-      "project_id": "J020",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J010",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0021",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0022",
-      "project_id": "J010",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0023",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0025",
-      "project_id": "J001",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0026",
-      "project_id": "J020",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0027",
-      "project_id": "J011",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0027",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J005",
-      "alloc": 0.32
-     },
-     {
-      "person_id": "DP0028",
-      "project_id": "J018",
-      "alloc": 0.37
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J002",
-      "alloc": 0.44
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0029",
-      "project_id": "J010",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0031",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0032",
-      "project_id": "J009",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0033",
-      "project_id": "J017",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J003",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J004",
-      "alloc": 0.69
-     },
-     {
-      "person_id": "DP0035",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J011",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0036",
-      "project_id": "J018",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0038",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0041",
-      "project_id": "J001",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J008",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0042",
-      "project_id": "J020",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0043",
-      "project_id": "J018",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0046",
-      "project_id": "J020",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0047",
-      "project_id": "J015",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0048",
-      "project_id": "J013",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J014",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0049",
-      "project_id": "J019",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0051",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0053",
-      "project_id": "J012",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0054",
-      "project_id": "J018",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J001",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0055",
-      "project_id": "J016",
-      "alloc": 0.7
-     },
-     {
-      "person_id": "DP0057",
-      "project_id": "J019",
-      "alloc": 1.0
-     },
-     {
-      "person_id": "DP0058",
-      "project_id": "J014",
-      "alloc": 0.5
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0059",
-      "project_id": "J019",
-      "alloc": 0.4
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J002",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J003",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J004",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J005",
-      "alloc": 0.34
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J008",
-      "alloc": 0.34
-     },
-     {
-      "person_id": "DP0060",
-      "project_id": "J020",
       "alloc": 0.35
      },
      {
-      "person_id": "DP0062",
+      "person_id": "DP0007",
+      "project_id": "J013",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0008",
+      "project_id": "J005",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0011",
       "project_id": "J016",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0012",
+      "project_id": "J012",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J011",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0019",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0020",
+      "project_id": "J020",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0022",
+      "project_id": "J014",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0023",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0025",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0026",
+      "project_id": "J017",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0027",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J010",
+      "alloc": 0.35
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J020",
+      "alloc": 0.34
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0031",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0032",
+      "project_id": "J009",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J015",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J004",
+      "alloc": 0.46
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J010",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0038",
+      "project_id": "J011",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0041",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J008",
+      "alloc": 0.38
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J010",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0043",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J015",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0048",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J003",
+      "alloc": 0.42
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0054",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J015",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J016",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0057",
+      "project_id": "J019",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0062",
+      "project_id": "J013",
       "alloc": 1.0
      },
      {
@@ -2277,27 +1097,27 @@
      },
      {
       "person_id": "DP0065",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0065",
       "project_id": "J005",
-      "alloc": 0.7
+      "alloc": 0.4
      },
      {
       "person_id": "DP0068",
       "project_id": "J009",
-      "alloc": 0.7
+      "alloc": 0.4
      },
      {
       "person_id": "DP0068",
-      "project_id": "J015",
+      "project_id": "J010",
       "alloc": 0.3
      },
      {
       "person_id": "DP0069",
-      "project_id": "J013",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0070",
-      "project_id": "J007",
+      "project_id": "J020",
       "alloc": 0.3
      },
      {
@@ -2307,18 +1127,18 @@
      },
      {
       "person_id": "DP0071",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J011",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0071",
       "project_id": "J013",
       "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J014",
-      "alloc": 0.3
-     },
-     {
-      "person_id": "DP0071",
-      "project_id": "J017",
-      "alloc": 0.4
      },
      {
       "person_id": "DP0072",
@@ -2336,24 +1156,34 @@
       "alloc": 0.3
      },
      {
-      "person_id": "DP0076",
-      "project_id": "J008",
-      "alloc": 0.3
+      "person_id": "DP0077",
+      "project_id": "J003",
+      "alloc": 0.4
      },
      {
       "person_id": "DP0077",
-      "project_id": "J017",
+      "project_id": "J005",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J011",
       "alloc": 0.3
      },
      {
       "person_id": "DP0077",
       "project_id": "J019",
-      "alloc": 0.7
+      "alloc": 0.3
      },
      {
       "person_id": "DP0078",
       "project_id": "J001",
       "alloc": 0.5
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J007",
+      "alloc": 0.3
      },
      {
       "person_id": "DP0081",
@@ -2362,13 +1192,13 @@
      },
      {
       "person_id": "DP0082",
-      "project_id": "J012",
-      "alloc": 0.5
+      "project_id": "J003",
+      "alloc": 0.3
      },
      {
-      "person_id": "DP0084",
-      "project_id": "J007",
-      "alloc": 0.32
+      "person_id": "DP0082",
+      "project_id": "J012",
+      "alloc": 0.4
      },
      {
       "person_id": "DP0084",
@@ -2377,37 +1207,37 @@
      },
      {
       "person_id": "DP0086",
-      "project_id": "J014",
+      "project_id": "J001",
       "alloc": 1.0
      },
      {
       "person_id": "DP0087",
-      "project_id": "J003",
+      "project_id": "J014",
       "alloc": 0.3
      },
      {
       "person_id": "DP0087",
-      "project_id": "J012",
-      "alloc": 0.33
-     },
-     {
-      "person_id": "DP0087",
       "project_id": "J018",
-      "alloc": 0.36
+      "alloc": 0.4
      },
      {
       "person_id": "DP0089",
-      "project_id": "J019",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J015",
       "alloc": 0.5
      },
      {
       "person_id": "DP0090",
-      "project_id": "J010",
+      "project_id": "J001",
       "alloc": 0.7
      },
      {
       "person_id": "DP0091",
-      "project_id": "J010",
+      "project_id": "J020",
       "alloc": 1.0
      },
      {
@@ -2436,22 +1266,1227 @@
       "alloc": 1.0
      },
      {
+      "person_id": "DP0098",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
       "person_id": "DP0099",
-      "project_id": "J018",
+      "project_id": "J010",
       "alloc": 0.5
      }
     ],
-    "objective": 57.9815223201568,
+    "objective": 57.2725273284875,
     "unfilled": [],
     "violations": [],
     "time_limited": true,
     "termination": "time_limit_incumbent",
-    "best_bound": 64.84528183336101,
+    "best_bound": 64.93078533829865,
+    "gap_used": 0.05,
+    "label": "B",
+    "eval_objective": 57.23929325396825,
+    "eval_violations": [],
+    "elapsed_s": 61.51
+   },
+   {
+    "entries": [
+     {
+      "person_id": "DP0001",
+      "project_id": "J002",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0003",
+      "project_id": "J017",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0004",
+      "project_id": "J015",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0005",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0006",
+      "project_id": "J006",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0007",
+      "project_id": "J007",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0007",
+      "project_id": "J013",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0008",
+      "project_id": "J005",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0011",
+      "project_id": "J014",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0012",
+      "project_id": "J003",
+      "alloc": 0.43
+     },
+     {
+      "person_id": "DP0012",
+      "project_id": "J012",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J013",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J017",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0020",
+      "project_id": "J020",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0022",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0023",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0025",
+      "project_id": "J001",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0026",
+      "project_id": "J011",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0027",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J004",
+      "alloc": 0.31
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0031",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0032",
+      "project_id": "J009",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J004",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J014",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0038",
+      "project_id": "J009",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0041",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J008",
+      "alloc": 0.34
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0043",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J010",
+      "alloc": 0.64
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J015",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0048",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J011",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J012",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J012",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0054",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J016",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0057",
+      "project_id": "J019",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J002",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J004",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J008",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0062",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0063",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0065",
+      "project_id": "J005",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0068",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0068",
+      "project_id": "J018",
+      "alloc": 0.39
+     },
+     {
+      "person_id": "DP0069",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0070",
+      "project_id": "J016",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J013",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0075",
+      "project_id": "J014",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0076",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J019",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J007",
+      "alloc": 0.36
+     },
+     {
+      "person_id": "DP0081",
+      "project_id": "J006",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0082",
+      "project_id": "J012",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0084",
+      "project_id": "J013",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0086",
+      "project_id": "J001",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J014",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0090",
+      "project_id": "J010",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0091",
+      "project_id": "J010",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0093",
+      "project_id": "J016",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J004",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J005",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0097",
+      "project_id": "J016",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0099",
+      "project_id": "J010",
+      "alloc": 0.5
+     }
+    ],
+    "objective": 57.90929549755807,
+    "unfilled": [],
+    "violations": [],
+    "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 64.96076821726535,
+    "gap_used": 0.05,
+    "label": "C",
+    "eval_objective": 57.878684920634925,
+    "eval_violations": [],
+    "elapsed_s": 92.22
+   },
+   {
+    "entries": [
+     {
+      "person_id": "DP0001",
+      "project_id": "J002",
+      "alloc": 0.45
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0001",
+      "project_id": "J013",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0003",
+      "project_id": "J003",
+      "alloc": 0.43
+     },
+     {
+      "person_id": "DP0003",
+      "project_id": "J020",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0004",
+      "project_id": "J015",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0005",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0006",
+      "project_id": "J006",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0007",
+      "project_id": "J007",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0007",
+      "project_id": "J013",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0008",
+      "project_id": "J005",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0009",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0010",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0011",
+      "project_id": "J014",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0012",
+      "project_id": "J012",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0013",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0014",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0015",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0018",
+      "project_id": "J017",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0020",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J001",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0021",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0022",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0023",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0025",
+      "project_id": "J012",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0027",
+      "project_id": "J011",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0027",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0028",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J004",
+      "alloc": 0.37
+     },
+     {
+      "person_id": "DP0029",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0031",
+      "project_id": "J013",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0032",
+      "project_id": "J009",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0033",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J004",
+      "alloc": 0.6
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0035",
+      "project_id": "J020",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0036",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0038",
+      "project_id": "J005",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0038",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0041",
+      "project_id": "J001",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0042",
+      "project_id": "J013",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0043",
+      "project_id": "J018",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J014",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0046",
+      "project_id": "J016",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0047",
+      "project_id": "J015",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0048",
+      "project_id": "J014",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0049",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0051",
+      "project_id": "J001",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0053",
+      "project_id": "J012",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0054",
+      "project_id": "J018",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0055",
+      "project_id": "J016",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0057",
+      "project_id": "J019",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J012",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0059",
+      "project_id": "J019",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J004",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J008",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J018",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0060",
+      "project_id": "J020",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0062",
+      "project_id": "J013",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0063",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0068",
+      "project_id": "J014",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0070",
+      "project_id": "J016",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J002",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J007",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J013",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0071",
+      "project_id": "J017",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0072",
+      "project_id": "J015",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0075",
+      "project_id": "J020",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0076",
+      "project_id": "J008",
+      "alloc": 0.38
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J017",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0077",
+      "project_id": "J019",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J007",
+      "alloc": 0.36
+     },
+     {
+      "person_id": "DP0078",
+      "project_id": "J010",
+      "alloc": 0.41
+     },
+     {
+      "person_id": "DP0081",
+      "project_id": "J006",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0082",
+      "project_id": "J012",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0084",
+      "project_id": "J019",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0086",
+      "project_id": "J001",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J009",
+      "alloc": 0.4
+     },
+     {
+      "person_id": "DP0087",
+      "project_id": "J011",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J003",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0089",
+      "project_id": "J010",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0090",
+      "project_id": "J001",
+      "alloc": 0.7
+     },
+     {
+      "person_id": "DP0091",
+      "project_id": "J010",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0093",
+      "project_id": "J016",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J004",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0096",
+      "project_id": "J005",
+      "alloc": 0.5
+     },
+     {
+      "person_id": "DP0097",
+      "project_id": "J010",
+      "alloc": 1.0
+     },
+     {
+      "person_id": "DP0099",
+      "project_id": "J009",
+      "alloc": 0.3
+     },
+     {
+      "person_id": "DP0099",
+      "project_id": "J011",
+      "alloc": 0.4
+     }
+    ],
+    "objective": 57.51380372786943,
+    "unfilled": [],
+    "violations": [],
+    "time_limited": true,
+    "termination": "time_limit_incumbent",
+    "best_bound": 64.89897246770875,
     "gap_used": 0.05,
     "label": "D",
-    "eval_objective": 57.95075277777778,
+    "eval_objective": 57.500620634920644,
     "eval_violations": [],
-    "elapsed_s": 122.65
+    "elapsed_s": 123.07
    }
   ]
  },
