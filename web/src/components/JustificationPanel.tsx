@@ -120,6 +120,8 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
   for (const f of result?.facts ?? []) byKind.set(f.kind, [...(byKind.get(f.kind) ?? []), f]);
   const kinds = [...KIND_ORDER.filter((k) => byKind.has(k)), ...[...byKind.keys()].filter((k) => !KIND_ORDER.includes(k))];
   const adverseCount = (result?.facts ?? []).filter((f) => f.adverse).length;
+  const groups = result?.addendum_groups ?? [];
+  const addLines = add ? add.split("\n") : [];
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4" aria-label="인사팀 소명">
@@ -162,9 +164,26 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
               <details open={result.appended_adverse.length <= 5}
                        className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
                 <summary className="cursor-pointer text-xs font-medium text-amber-800">
-                  서버가 덧붙임 — AI 글이 빠뜨린 불리한 사실 {result.appended_adverse.length}개(AI가 쓴 문장이 아니다)
+                  서버가 덧붙임 — AI 글이 빠뜨린 불리한 사실{groups.length > 0
+                    ? ` · 확인 필요 ${groups.filter((g) => g.owner).length}명 · ${result.appended_adverse.length}건`
+                    : ` ${result.appended_adverse.length}개`}(AI가 쓴 문장이 아니다)
                 </summary>
-                <div className="mt-1"><Prose text={add} facts={result.facts} onCite={cite} active={active} /></div>
+                {groups.length > 0 && addLines.length === groups.length + 1 ? (
+                  // 사람별 줄(claude-a 2026-10-11): 머리말 다음 줄마다 한 사람. 많으면 사람별로 접는다
+                  <div className="mt-1 text-sm">
+                    <p className="text-slate-700">{addLines[0]}</p>
+                    {groups.map((g, i) => (
+                      <details key={`${g.owner ?? "all"}-${i}`} open={groups.length <= 5} className="ml-2 mt-1">
+                        <summary className="cursor-pointer text-xs text-amber-900">
+                          {g.owner_label ?? "사업 전체"} · {g.facts.length}건
+                        </summary>
+                        <Prose text={addLines[i + 1]} facts={result.facts} onCite={cite} active={active} />
+                      </details>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-1"><Prose text={add} facts={result.facts} onCite={cite} active={active} /></div>
+                )}
               </details>
             )}
             <p className="mt-2 text-[11px] text-slate-400">

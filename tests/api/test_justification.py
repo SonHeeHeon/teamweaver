@@ -192,3 +192,13 @@ def test_synthetic_names_replace_ids_with_matching_particles():
     assert display_names(ds(False, [person("DP0001", "김민준")])) == {}                 # 실데이터는 이름을 쓰지 않는다
     assert display_names(ds(True, [person("DP0001", "가상DP0001")])) == {}             # 자리표시 이름은 바꾸지 않는다
     assert display_names(ds(True, [person("DP0001", "김민준")])) == {"DP0001": "김민준"}
+
+
+def test_addendum_groups_are_passed_through_with_names():
+    from api.routes.justification import apply_names, public_view
+    out = public_view({"project_id": "J1", "method": "graphrag", "text": "글",
+                       "addendum": "다만 …:\n- DP0001: Java 미달[F2]", "appended_adverse": ["F2"],
+                       "addendum_groups": [{"owner": "DP0001", "facts": ["F2"]}], "facts": [], "llm_text": "숨김"})
+    assert out["addendum_groups"] == [{"owner": "DP0001", "owner_label": "DP0001", "facts": ["F2"]}] and "llm_text" not in out
+    named = apply_names(out, {"DP0001": "김민준"})
+    assert named["addendum_groups"][0]["owner_label"] == "김민준" and named["addendum"].endswith("- 김민준: Java 미달[F2]")

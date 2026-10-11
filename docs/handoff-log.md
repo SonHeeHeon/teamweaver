@@ -28,10 +28,16 @@
   - 사용자 결정 "F48 같은 번호는 숨기고 근거 문구를 누르게": 화면은 사실을 채운 문구에 밑줄(누르면 옆 목록 강조), 사실 목록의 F 번호도 뺐다. PDF는 밑줄 + 작은 목록 번호. `segmentsOf`가 AI 글(phrase_full·phrase)과 정해진 틀("머리: 사실 한 줄. [F#]") 둘 다 찾는다 -- 시연 데이터 실측 틀 538/538, 실제 AI 글 2건 138/138.
   - 사용자 요청 "이름표(DP0082) 대신 가상의 이름": 소명 글·PDF는 가상 데이터면 사람 ID를 이름으로 바꾸고 조사(은/는·이/가·을/를·과/와)를 맞춘다. AI·검사기는 ID 문법 그대로(E7c 조건 유지), 실데이터는 바꾸지 않는다. 지금 시연 이름은 "가상DP0001" 자리표시라 바뀌지 않는다 -- **claude-a가 생성기에 가상 이름을 넣으면 바로 나타난다**(work-split 요청).
   - 사용자 결정(work-split 요청으로 claude-a에): 부분 인정 70% 고정, 인정 경력 출처 구분(공유 계약 제안), 가상 이름.
-- 상대 영향(claude-a): 위 요청 3건, 미리 계산은 그 뒤 한 번만 재생성.
+- 상대 영향(claude-a): 위 요청 3건, 미리 계산은 그 뒤 한 번만 재생성. 네 사람별 덧붙임(`addendum_groups`)을 받아 응답·PDF에 넘기고(가상 데이터면 `owner_label`=이름), 화면은 "확인 필요 n명 · m건"으로 접고 사람마다 펼친다(5명 이하면 펼친 채) -- 요청 처리됨.
 - 검증: `pytest -q` 1616 passed · 웹 186 · tsc · build. Codex 커밋 전 리뷰(한도 회복) 문제 없음 → Stop 훅 게이트 다시 켬.
 
 ---
+## 2026-10-11 · claude-a · 소명 덧붙임 사람별 줄 + 해설 HTML main 병합(사용자 승인)
+- 브랜치/커밋: `feat/claude-a-addendum-by-person` `ed27203..0849cc3` + origin/main(`11f7a0a`, claude-b 화면 10-11) 병합 커밋 → main 빨리 감기
+- 한 일: 원격 main에 먼저 들어간 claude-b 작업(소명 API·화면·PDF, 운영 중 실시간 K, 검증기 강화, 시연 판정 동봉)을 받아 합쳤다. 충돌은 `docs/handoff-log.md`·`docs/work-split.md` 두 곳뿐이었고 양쪽 항목을 모두 남겼다.
+- 상대 영향: **claude-b** — 소명 `addendum`은 이제 여러 줄(사람별)이다. 화면·PDF는 `whitespace-pre-wrap`이라 그대로 보이지만 `public_view`가 새 `addendum_groups`를 넘기지 않는다(요청 줄 추가). 시험 기준선 **1617**(main).
+- 검증: `uv run --group benchmark pytest -q` → 1617 passed, 1 skipped, 19 deselected(claude-b 1614 + 사람별 덧붙임 3). 웹 코드는 양쪽 병합에서 바뀌지 않아 다시 돌리지 않았다(claude-b 기록 185).
+- 근거: 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
 
 ## 2026-10-11 · claude-b · 사내 LLM을 GLM-5.3-Flash로(사용자 결정) — E4·E5 재측정
 - 브랜치/커밋: `feat/claude-b-screens-1011` (main 병합)
@@ -102,6 +108,27 @@
 - 검증: `pytest -q` 전체 통과(커밋 메시지), 웹 174 · tsc. **빈 데이터 폴더 + 틀린 API 키** 서버에서 6개 묶음 모두 `review_judge: llm`·`skipped: []`(LLM 호출 0). Codex 커밋 전 리뷰 2라운드(P2 1 → 반영, P2 1 → 반영).
 
 ---
+
+## 2026-10-11 · claude-a · 프로젝트 전체 해설 HTML 갱신(10월 3일판 → 10월 11일)
+- 브랜치/커밋: `feat/claude-a-addendum-by-person` 문서 커밋 (main 병합은 사용자 승인 대기)
+- 한 일: 사용자 지시로 `outputs/eli5-project-history-roadmap.html`(Codex 10-03 작성)을 현재 개발 기준으로 갱신·보완. 18장 → 20장:
+  10~12장 신설(규모·모델 실험과 운영 중 편성 / AI 사용과 검사 / 지식 그래프·기술 사전), 2·3·4·6·13·14·15·17~20장 다시 씀, 5장 이력에 10-03~10-11 사건 8개 추가,
+  1·7·8·9·16장은 본문 보존 + "그 뒤" 상자. 10월 3일판 CSV 제안 명세는 15장 안 접힌 기록으로 보존.
+- 상대 영향: `outputs/`는 Codex 산출물 위치지만 사용자 지시로 claude-a가 고쳤다(이 파일만). `docs/project-context.md`(공유 계약)는 "원본 18장"·10-03 기준 서술이 남아 있다 — 갱신은 후속.
+- 검증: HTML 태그 균형·장 번호 01~20·id 중복 없음·목차 링크 모두 존재, 금지어(실명·사진 관련) 없음, Chromium 1200px·390px 가로 넘침 0·콘솔 오류 0. 문서 변경이라 Codex 리뷰 생략.
+- 근거: `outputs/eli5-project-history-roadmap.html`, 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
+
+## 2026-10-11 · claude-a · 소명 글 덧붙임 사람별 줄(사용자 결정)
+- 브랜치/커밋: `feat/claude-a-addendum-by-person` `ed27203`(코드·시험·계약) · `36faa42`(다시 돌려 보기 표시 수정) · 결과 커밋 (main 병합은 사용자 승인 대기)
+- 한 일: AI 소명 글이 빠뜨린 불리한 사실 덧붙임을 한 줄 나열 → `- 사업 전체: …` / `- DP0082: …` 사람별 줄로(사용자 결정 2026-10-11, 지시문 완화 대신).
+  출력에 `addendum_groups` 추가. 주인이 팀원이 아닌 사실은 줄에 놓지 않고 템플릿으로(`fallback_reason="addendum_check"`, Codex 리뷰).
+  E7c AI 원문 843편을 AI 호출 없이 서비스 경로로 다시 돌려(`rehearsal/addendum_by_person.py`) 채택/탈락·AI 부분·덧붙인 사실 집합이 같고 무결성(새 형식) 838/838.
+  21명 이상 팀 덧붙임: 사람 줄 최대 26, 가장 긴 줄 최대 303자, 전체 4,605 → 4,159자(길이는 10%쯤만 준다 — 화면 접기는 여전히 권장).
+- 상대 영향: **claude-b 계약** `docs/requests/2026-10-09-hr-justification.md` — `addendum` 형식(여러 줄), `appended_adverse` 순서(문단 순서), 새 `addendum_groups`, 새 `fallback_reason` `addendum_check`.
+  `core/kg/justify.adverse_addendum` 반환이 `(문단, 묶음 목록)`으로 바뀌었다. 공유 계약 `CLAUDE.md` 소명 글 함정 줄 갱신. 시험 기준선 **1592**(이 브랜치).
+- 검증: `uv run --group benchmark pytest -q` → 1592 passed, 1 skipped, 19 deselected · Codex adversarial-review 1건(주인이 팀 밖) 반영 → review 지적 없음 ·
+  `uv run python -m rehearsal.addendum_by_person` → R1~R4 통과
+- 근거: `rehearsal/results/addendum-by-person.html`, 로컬 `.omc/reports/2026-10-11-addendum-by-person-roadmap.md`
 
 ## 2026-10-10 · claude-a · 소명 글 불리한 사실 서버 덧붙임 + 지시문 개선 + E7c 재측정, Codex 사후 리뷰, 미리 계산 재생성, main 병합
 - 브랜치/커밋: `feat/claude-a-graphrag-justify` `ac8a870`(미래 이력 수정) · `4c56be4`(덧붙임·지시문) · `e3fdcb5`(E7c 사전 등록, 측정 전) · 결과·문서 커밋 · 미리 계산 커밋 → **main 빨리 감기 병합(사용자 승인 2026-10-10)**.

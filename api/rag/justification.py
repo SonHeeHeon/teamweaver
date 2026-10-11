@@ -4,7 +4,7 @@
 연결 말은 허용 목록(문법: 주어·주제 라벨·연결어·맺음말)만 쓸 수 있다. 서버가 검사(core/kg/justify.verify)를 통과한 원문의 자리표시를
 사실 문구로 채운다(render) -- 숫자·충족/미달·다른 사람 ID는 AI가 쓸 수 없다. 채운 뒤 중괄호·근거 칩 수를 한 번 더 확인한다(render_ok).
 AI 호출 실패·형식 오류·검사 탈락이면 템플릿 글(method="template")로 대신하고 이유를 남긴다(틀린 부분만 지우지 않는다, K5와 같은 원칙).
-채택된 글이 불리한 사실을 빠뜨렸으면 서버가 정해진 문단으로 끝에 덧붙인다(adverse_addendum, 사용자 결정 2026-10-10) -- 템플릿 글은 사실을 다 담는다.
+채택된 글이 불리한 사실을 빠뜨렸으면 서버가 정해진 문단(사람별 줄)으로 끝에 덧붙인다(adverse_addendum, 사용자 결정 2026-10-10·11) -- 템플릿 글은 사실을 다 담는다.
 모델·추론 강도는 fixtures/pricing.json(briefing_model, models[모델].reasoning_effort). 실데이터의 외부 전송 여부는 교체 설명(/api/whatif)과 같은 서버 정책 --
 사실 목록에는 이름·평가 원문·업무 요약이 없다(지식 그래프가 뺀다).
 """
@@ -78,11 +78,12 @@ def prompt(inp: JustificationInput) -> str:
 
 def generate_justification(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None) -> dict:
     """반환: {method: graphrag|template, text(보여 줄 글), facts, verification, fallback_reason, llm_text(AI 원문, 자리표시 포함), usage,
-    addendum(서버가 덧붙인 불리한 사실 문단, text의 마지막 문단과 같다 · 없으면 None), appended_adverse(그 사실 ID들)}.
+    addendum(서버가 덧붙인 불리한 사실 문단, text의 끝과 같다 · 없으면 None), appended_adverse(그 사실 ID들, 문단 순서),
+    addendum_groups([{owner: 사람 ID 또는 None(사업 전체), facts: [사실 ID…]}], 문단의 줄과 같은 순서 -- 화면이 사람별로 접을 수 있게)}.
     client가 None이면(키 없음·외부 전송 불가) 바로 템플릿."""
     out = {"method": "template", "text": template_text(inp.facts), "facts": [asdict(f) for f in inp.facts],
            "verification": None, "fallback_reason": None, "llm_text": None, "usage": None, "project_id": inp.project_id,
-           "addendum": None, "appended_adverse": []}
+           "addendum": None, "appended_adverse": [], "addendum_groups": []}
     if client is None:
         out["fallback_reason"] = "no_client"
         return out
@@ -119,8 +120,14 @@ def generate_justification(client, model: str, inp: JustificationInput, *, reaso
     if ver["ok"]:
         text = render(raw, inp)
         if render_ok(raw, text):
-            add, ids = adverse_addendum(raw, inp)              # AI가 빠뜨린 불리한 사실은 서버가 덧붙인다(사용자 결정 2026-10-10)
-            out.update(method="graphrag", text=f"{text}\n{add}" if add else text, addendum=add or None, appended_adverse=ids)
+            try:
+                add, groups = adverse_addendum(raw, inp)       # AI가 빠뜨린 불리한 사실은 서버가 사람별로 덧붙인다(사용자 결정 2026-10-10·11)
+            except ValueError as exc:                           # 사실의 주인이 팀원이 아니다 -- 사람별 줄에 놓지 않고 템플릿(사실을 다 담는다)으로
+                log.warning("소명 글 덧붙임 확인 실패 %s: %s", inp.project_id, exc)
+                out["fallback_reason"] = "addendum_check"
+                return out
+            out.update(method="graphrag", text=f"{text}\n{add}" if add else text, addendum=add or None,
+                       appended_adverse=[i for g in groups for i in g["facts"]], addendum_groups=groups)
         else:                                                   # 검사와 따로 하는 마지막 확인(중괄호·근거 칩 수)
             out["fallback_reason"] = "render_check"
             log.warning("소명 글 채움 확인 실패 %s", inp.project_id)

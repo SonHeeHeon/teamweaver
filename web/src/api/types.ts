@@ -453,6 +453,8 @@ export interface Justification {
   text: string;
   addendum: string | null;
   appended_adverse: string[];
+  /** 덧붙임 문단의 사람별 줄 묶음(머리말 다음 줄부터 같은 순서). owner null = 사업 전체. owner_label은 가상 데이터면 이름. */
+  addendum_groups?: { owner: string | null; owner_label: string | null; facts: string[] }[];
   facts: JustFact[];
   fallback_reason: string | null;
   verification: { ok: boolean; rules: string[]; cited: string[]; coverage?: Record<string, boolean | null> | null;

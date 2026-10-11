@@ -101,5 +101,16 @@ describe("JustificationPanel", () => {
     expect(segmentsOf("요구 기술: Spark 2명 부족. [F5]\n", [{ id: "F5", text: "Spark 2명 부족" }]))
       .toEqual([{ text: "요구 기술: " }, { cite: "F5", label: "Spark 2명 부족" }, { text: ". " }, { text: "\n" }]);
   });
+
+  it("사람별 덧붙임은 '확인 필요 n명 · m건'으로 묶고 사람마다 펼친다", async () => {
+    const add = "다만 다음 사항도 함께 확인이 필요합니다: \n- 김민준: 요구 Python 미달[F2]";
+    vi.mocked(postJustification).mockResolvedValueOnce(base({ method: "graphrag", ai_available: false,
+      text: `글[F1]\n${add}`, addendum: add, appended_adverse: ["F2"],
+      addendum_groups: [{ owner: "DP1", owner_label: "김민준", facts: ["F2"] }] }));
+    panel();
+    expect(await screen.findByText(/확인 필요 1명 · 1건/)).toBeInTheDocument();
+    expect(screen.getByText("김민준 · 1건")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "근거 보기: 요구 Python 미달" })).toBeInTheDocument();
+  });
 });
 

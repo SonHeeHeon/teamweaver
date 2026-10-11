@@ -170,7 +170,8 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
         from api.routes.justification import justify_projects
         # 최종 명단(교체를 서버가 다시 적용한 것)으로 만든다. PDF에는 글·덧붙임·사실 목록만(사실 문구는 서버가 채운 것).
         out = justify_projects(dataset, payload["entries"], req.weights, req.milp_params, client)
-        payload["justifications"] = [{k: j.get(k) for k in ("project_id", "method", "text", "addendum", "fallback_reason")}
+        payload["justifications"] = [{k: j.get(k) for k in ("project_id", "method", "text", "addendum", "fallback_reason",
+                                                            "addendum_groups")}
                                      | {"facts": [{"id": f["id"], "kind": f["kind"], "text": f["text"], "adverse": f["adverse"],
                                                    # 밑줄 위치 찾기용(사용자 결정 2026-10-11: 근거 번호 대신 근거 문구)
                                                    "phrase": f.get("phrase"), "phrase_full": f.get("phrase_full")}

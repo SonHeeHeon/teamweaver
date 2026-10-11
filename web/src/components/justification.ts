@@ -23,6 +23,7 @@ export function fallbackText(reason: string | null): string | null {
   if (reason.startsWith("llm_error")) return "AI 호출이 실패해 정해진 틀로 썼습니다.";
   if (reason.startsWith("llm_bad_json")) return "AI 응답 형식이 맞지 않아 정해진 틀로 썼습니다.";
   if (reason.startsWith("verify_error")) return "AI 글 검사 중 오류가 나서 정해진 틀로 썼습니다.";
+  if (reason === "addendum_check") return "덧붙일 불리한 사실의 주인을 팀에서 찾지 못해 정해진 틀로 썼습니다.";
   if (reason === "render_check") return "AI 글에 사실을 채운 결과 확인에 실패해 정해진 틀로 썼습니다.";
   return `정해진 틀로 썼습니다(${reason}).`;
 }

@@ -82,6 +82,9 @@ def public_view(out: dict) -> dict:
     usage = out.get("usage") or None
     return {"project_id": out.get("project_id"), "method": out.get("method"), "text": out.get("text"),
             "addendum": out.get("addendum"), "appended_adverse": out.get("appended_adverse") or [],
+            # 사람별 덧붙임 줄의 묶음(claude-a 2026-10-11) -- 화면이 "확인 필요 n명 · m건"으로 접고 사람별로 펼친다
+            "addendum_groups": [{"owner": g.get("owner"), "owner_label": g.get("owner"), "facts": list(g.get("facts") or [])}
+                                for g in (out.get("addendum_groups") or [])],
             "facts": out.get("facts") or [], "fallback_reason": out.get("fallback_reason"), "verification": summary,
             "usage": ({k: usage.get(k) for k in ("model", "latency_s", "cost_usd", "reasoning_effort")} if usage else None)}
 
@@ -118,8 +121,9 @@ def apply_names(out: dict, names: dict[str, str]) -> dict:
     if not names:
         return out
     facts = [{**f, **{k: with_names(f.get(k), names) for k in ("text", "phrase", "phrase_full")}} for f in out.get("facts", [])]
+    groups = [{**g, "owner_label": names.get(g.get("owner") or "", g.get("owner"))} for g in out.get("addendum_groups", [])]
     return {**out, "text": with_names(out.get("text"), names), "addendum": with_names(out.get("addendum"), names),
-            "facts": facts}
+            "facts": facts, "addendum_groups": groups}
 
 
 def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, C, params, client, *, ai: bool) -> dict:
