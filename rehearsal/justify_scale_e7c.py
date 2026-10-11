@@ -17,6 +17,8 @@ E7b(`rehearsal/justify_scale.py`, 사전 등록 be6c902, 결과 ca1dfbf: G1 통�
   덧붙임 확인(서버 함수를 쓰지 않고 따로 계산): 최종 글이 AI 부분 채움으로 시작하고, 덧붙임 문단의 칩이 정확히 "AI 원문에 자리표시가 없는 불리한 사실"(사실 순서)이며
   각 칩 앞이 그 사실의 phrase_full이고 덧붙임 문단이 ADDENDUM_LEAD로 시작하며, 모든 불리한 사실의 칩이 최종 글에 있다. 빠진 것이 없으면 덧붙임이 없어야 한다.
   변형·오류 주입은 E7b와 같다(rehearsal.justify_scale.mutations, 시드만 SEED).
+  **측정 뒤 수정(2026-10-11)**: 덧붙임이 사람별 줄 형식으로 바뀌어(사용자 결정) 덧붙임 확인을 그 형식으로 바꿨다(_addendum_lines). 결과 파일의 838/838은
+  옛 한 줄 형식 기준이고, 새 형식은 같은 AI 원문을 다시 돌린 rehearsal/addendum_by_person.py로 확인했다(AI 원문·검사기는 그대로라 채택률은 이 측정 그대로).
 - G2(목표, 대상 A): 채택률 ≥95% 달성, 90~95% 조건부, <90% 미달. 분모 = 대상 A의 계획한 호출 전부(AI 호출 오류 포함).
 - G2h(목표, 대상 B): 같은 기준. "처음 보는 데이터"의 추정치는 G2h다.
 - G3(보고, 기준 없음): E7b 대비 묶음별 채택률·탈락 규칙 변화, AI 자체 불리한 사실 인용률, 덧붙임이 필요한 글 비율·건수, 비용·지연·길이·팀 크기별 채택률·연결 말 감사.
@@ -163,7 +165,7 @@ def run() -> dict:
                     "violations": ver.get("violations", [])[:6], "coverage": ver.get("coverage"), "sentences": ver.get("sentences"),
                     "adverse": ver.get("adverse"), "chars": ver.get("chars") or 0, "usage": out["usage"], "llm_text": out["llm_text"],
                     "rendered": out["text"] if out["method"] == "graphrag" else None,
-                    "addendum": out["addendum"], "appended_adverse": out["appended_adverse"],
+                    "addendum": out["addendum"], "appended_adverse": out["appended_adverse"], "addendum_groups": out["addendum_groups"],
                     "final_chars": len(out["text"]) if out["method"] == "graphrag" else None}
         with ThreadPoolExecutor(WORKERS) as ex:
             futs = [ex.submit(one, j) for j in jobs]
@@ -215,16 +217,14 @@ def integrity_problems(c: dict, inp, person_ids: set) -> list[str]:
     tail = final[len(ai):]
     if want:
         body = tail[1:] if tail.startswith("\n") else None
-        if body is None or not body.startswith(ADDENDUM_LEAD):
+        lines = body.split("\n") if body is not None else []
+        if not lines or lines[0] != ADDENDUM_LEAD:
             bad.append("덧붙임 문단이 없거나 정해진 머리말이 아니다")
         else:
-            chips = re.findall(r"\[(F\d+)\]", body)
-            if chips != want:
-                bad.append(f"덧붙임 칩 {chips} ≠ 빠진 불리한 사실 {want}")
-            bad += [f"덧붙임 {fid} 앞 문구가 phrase_full이 아니다" for fid in chips if fid in facts and f"{facts[fid].phrase_full}[{fid}]" not in body]
-        if c.get("appended_adverse") != want:
-            bad.append(f"appended_adverse {c.get('appended_adverse')} ≠ {want}")
-    elif tail or c.get("addendum") or c.get("appended_adverse"):
+            bad += _addendum_lines(lines[1:], inp, want, c)
+        if c.get("addendum") != body:
+            bad.append("addendum이 최종 글의 끝 문단과 다르다")
+    elif tail or c.get("addendum") or c.get("appended_adverse") or c.get("addendum_groups"):
         bad.append("빠진 불리한 사실이 없는데 덧붙였다")
     missing = [f.id for f in inp.facts if f.adverse and f"[{f.id}]" not in final]
     if missing:
@@ -232,6 +232,54 @@ def integrity_problems(c: dict, inp, person_ids: set) -> list[str]:
     if "{" in final or "}" in final:
         bad.append("최종 글에 중괄호")
     return bad + e7b.attribution_problems(final, inp, person_ids)
+
+
+def _addendum_lines(lines: list[str], inp, want: list[str], c: dict) -> list[str]:
+    """덧붙임 줄 확인(2026-10-11 사람별 형식, 서버 함수와 따로): 줄마다 "- 사업 전체: …" 또는 "- 팀원 ID: …", 줄 순서 = 사업 전체 → 팀원 순서(중복 없음),
+    줄 안 = 사실 번호 순서의 "문구[F#]"를 ";"로 이음, 각 사실은 자기 주인 줄에 있고 문구는 phrase 또는 phrase_full(짧은 문구의 귀속은 attribution_problems가 본다),
+    칩 집합 = 빠진 불리한 사실, appended_adverse = 칩 순서, addendum_groups(있으면) = 줄 묶음."""
+    from core.kg.justify import SUBJECT_KINDS
+    facts = {f.id: f for f in inp.facts}
+    pos = {f.id: i for i, f in enumerate(inp.facts)}
+    rank = {None: -1, **{p: i for i, p in enumerate(inp.team)}}
+    bad, chips, heads, groups = [], [], [], []
+    for ln in lines:
+        m = re.fullmatch(r"- (.+?): (.+)", ln)
+        if m is None:
+            bad.append(f"덧붙임 줄 형식이 아니다 '{ln[:40]}'")
+            continue
+        head = None if m.group(1) == "사업 전체" else m.group(1)
+        if head not in rank:
+            bad.append(f"덧붙임 줄 머리 {head}가 팀원이 아니다")
+        heads.append(head)
+        ids = []
+        for it in re.split(r"(?<=\])\s*;\s*", m.group(2)):
+            mm = re.fullmatch(r"(.+)\[(F\d+)\]", it)
+            f = facts.get(mm.group(2)) if mm else None
+            if f is None:
+                bad.append(f"덧붙임 항목 '{it[:40]}'이 '문구[사실 번호]'가 아니다")
+                continue
+            ids.append(f.id)
+            if f.kind in SUBJECT_KINDS and not f.owners:
+                bad.append(f"덧붙임 {f.id}는 사람별 사실인데 주인이 없다")
+            own = f.owners[0] if f.owners else None
+            if own != head:
+                bad.append(f"덧붙임 {f.id}가 {head or '사업 전체'} 줄에 있다(주인 {own or '사업 전체'})")
+            if mm.group(1) not in (f.phrase, f.phrase_full):
+                bad.append(f"덧붙임 {f.id} 앞 문구가 사실 문구가 아니다")
+        if ids != sorted(ids, key=pos.get):
+            bad.append(f"덧붙임 {head or '사업 전체'} 줄 안 순서 {ids}")
+        chips += ids
+        groups.append({"owner": head, "facts": ids})
+    if sorted(chips, key=pos.get) != want:
+        bad.append(f"덧붙임 칩 {chips} ≠ 빠진 불리한 사실 {want}")
+    if len(set(heads)) != len(heads) or heads != sorted(heads, key=lambda h: rank.get(h, len(rank))):
+        bad.append(f"덧붙임 줄 순서 {heads}")
+    if c.get("appended_adverse") != chips:
+        bad.append(f"appended_adverse {c.get('appended_adverse')} ≠ 칩 순서 {chips}")
+    if "addendum_groups" in c and c["addendum_groups"] != groups:
+        bad.append("addendum_groups가 덧붙임 줄과 다르다")
+    return bad
 
 
 def inject(res: dict) -> dict:

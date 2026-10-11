@@ -18,7 +18,7 @@
      앞에는 사람 주어 금지, 라벨이 있으면 사실 종류가 라벨에 맞음, 여러 주어·"각각"의 대응 · S5 사람별 사실이 하나도 붙지 않은 팀원 · S6 빈 글·자리표시 없음.
 보장 범위: 채운 글의 숫자·상태·사람-사실 짝은 데이터 그대로다(구성상). AI가 고른 순서·묶음·라벨은 뜻을 바꾸지 않는 말로 한정했다.
 불리한 사실(Fact.adverse: 미달·감점·위반·빈자리·더 나은 후보·부정 평가)은 AI가 빼고 쓸 수 있다 -- 사용자 결정(2026-10-10, 선택지 b):
-AI 원문이 빠뜨린 불리한 사실을 서버가 정해진 한 문단(adverse_addendum)으로 글 끝에 덧붙인다. 검사(verify)는 AI 원문만 본다(AI 자체 인용률은 verify의 adverse).
+AI 원문이 빠뜨린 불리한 사실을 서버가 정해진 문단(adverse_addendum, 2026-10-11부터 사람별 줄)으로 글 끝에 덧붙인다. 검사(verify)는 AI 원문만 본다(AI 자체 인용률은 verify의 adverse).
 """
 from __future__ import annotations
 
@@ -329,17 +329,37 @@ def render(raw: str, inp: JustificationInput) -> str:
     return SLOT.sub(fill, raw)
 
 
-ADDENDUM_LEAD = "다만 다음 사항도 함께 확인이 필요합니다: "
+ADDENDUM_LEAD = "다만 다음 사항도 함께 확인이 필요합니다."
+ADDENDUM_WHOLE = "사업 전체"                     # 주인 없는 사실(요구 기술·규칙)의 줄 머리
 
 
-def adverse_addendum(raw: str, inp: JustificationInput) -> tuple[str, list[str]]:
-    """AI 원문에 자리표시가 없는 불리한 사실을 서버가 덧붙일 한 문단(사용자 결정 2026-10-10, 선택지 b). 문구는 주인 ID가 붙은
-    phrase_full(주어 없이 놓이므로), 사실 사이는 ";"(문구 안에 ","가 있다). 반환: (문단, 사실 ID들) -- 빠진 것이 없으면 ("", [])."""
+def adverse_addendum(raw: str, inp: JustificationInput) -> tuple[str, list[dict]]:
+    """AI 원문에 자리표시가 없는 불리한 사실을 서버가 덧붙일 문단(사용자 결정 2026-10-10, 선택지 b). 2026-10-11 사용자 결정으로 사람별로 묶는다
+    (28명 팀에서 한 줄에 85개까지 이어져 읽기 어려웠다): 머리말 다음 줄마다 "- 사업 전체: …" 또는 "- DP0082: …", 줄 순서는 사업 전체 → 팀원 순서,
+    줄 안은 사실 번호 순서, 사실 사이는 ";"(문구 안에 ","가 있다). 줄 머리가 주인이라 사람별 사실은 짧은 문구(phrase)지만, 같은 줄 앞에 다른 사람이 나오는
+    사실(평가·후보 비교 -- 주인이 둘)이 있으면 그 뒤로는 주인 ID가 붙은 문구(phrase_full) -- render와 같은 규칙.
+    반환: (문단, [{"owner": 사람 ID 또는 None(사업 전체), "facts": [사실 ID…]}…]) -- 빠진 것이 없으면 ("", []).
+    주인이 팀원이 아니거나 사람별 사실에 주인이 없으면 ValueError(줄 머리를 정할 수 없다 -- 호출 쪽이 템플릿으로 대신한다, Codex 리뷰 2026-10-11)."""
     cited = set(SLOT.findall(raw or ""))
-    miss = [f for f in inp.facts if f.adverse and f.id not in cited]
-    if not miss:
+    rank = {p: i for i, p in enumerate(inp.team)}
+    groups: dict[str | None, list[Fact]] = {}
+    for f in inp.facts:
+        if f.adverse and f.id not in cited:
+            owner = f.owners[0] if f.owners else None
+            if (owner is None and f.kind in SUBJECT_KINDS) or (owner is not None and owner not in rank):
+                raise ValueError(f"덧붙일 불리한 사실 {f.id}({f.kind})의 주인 {owner}이 팀원이 아니다")
+            groups.setdefault(owner, []).append(f)
+    if not groups:
         return "", []
-    return ADDENDUM_LEAD + "; ".join(f"{f.phrase_full}[{f.id}]" for f in miss) + ".", [f.id for f in miss]
+    lines, out = [ADDENDUM_LEAD], []
+    for owner in sorted(groups, key=lambda o: -1 if o is None else rank[o]):
+        items, mixed = [], False
+        for f in groups[owner]:
+            items.append(f"{f.phrase_full if f.kind in SUBJECT_KINDS and mixed else f.phrase}[{f.id}]")
+            mixed |= len(f.owners) > 1
+        lines.append(f"- {owner or ADDENDUM_WHOLE}: " + "; ".join(items))
+        out.append({"owner": owner, "facts": [f.id for f in groups[owner]]})
+    return "\n".join(lines), out
 
 
 def render_ok(raw: str, text: str) -> bool:

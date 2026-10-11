@@ -198,7 +198,7 @@ def test_accepted_text_is_rendered():
     assert "P1, P2" in user and "{F4} [SKL, 사람: P1]" in user                  # 팀원 명단과 사실 종류·사람 표시를 알려 준다
     assert "'다만 {F7}입니다'" in user                                            # 지시문의 예시 중괄호가 format에 먹히지 않는다
     assert "'동료 평가'" in SYSTEM and "'규칙 준수 현황'" in SYSTEM                # 프롬프트와 검사기가 같은 라벨 목록을 쓴다
-    assert out["addendum"] is None and out["appended_adverse"] == []              # 불리한 사실이 없으면 덧붙이지 않는다
+    assert out["addendum"] is None and out["appended_adverse"] == [] and out["addendum_groups"] == []   # 불리한 사실이 없으면 덧붙이지 않는다
 
 
 @pytest.mark.parametrize("client, reason", [
@@ -213,7 +213,7 @@ def test_fallback_to_template(client, reason):
     out = generate_justification(client, "gpt-6-luna", _small())
     assert out["method"] == "template" and out["fallback_reason"].startswith(reason)
     assert out["text"] == template_text(_small().facts)
-    assert out["addendum"] is None and out["appended_adverse"] == []              # 템플릿 글은 사실을 다 담는다
+    assert out["addendum"] is None and out["appended_adverse"] == [] and out["addendum_groups"] == []   # 템플릿 글은 사실을 다 담는다
 
 
 def test_render_check_failure_falls_back(monkeypatch):
@@ -345,12 +345,12 @@ def test_addendum_appends_only_the_adverse_facts_the_ai_left_out():
     assert verify(raw, s)["ok"] and verify(raw, s)["adverse"] == {"available": 3, "cited": 1}
     out = generate_justification(_Client(json.dumps({"text": raw}, ensure_ascii=False)), "gpt-6-luna", s)
     assert out["method"] == "graphrag" and out["appended_adverse"] == ["F5", "F8"]
+    assert out["addendum_groups"] == [{"owner": "P1", "facts": ["F5", "F8"]}]
     f = {x.id: x for x in s.facts}
-    assert out["addendum"] == f"{ADDENDUM_LEAD}{f['F5'].phrase_full}[F5]; {f['F8'].phrase_full}[F8]."
-    assert out["addendum"].startswith(ADDENDUM_LEAD + "P1의 Spark 경력 8개월") and "P1에 대한 동료 P2의 평가" in out["addendum"]
+    assert out["addendum"] == f"{ADDENDUM_LEAD}\n- P1: {f['F5'].phrase}[F5]; {f['F8'].phrase}[F8]"   # 줄 머리가 주인 -- 짧은 문구
     assert out["text"] == render(raw, s) + "\n" + out["addendum"]                  # AI 부분은 그대로, 덧붙임은 마지막 문단
     assert all(f"[{x}]" in out["text"] for x in ("F5", "F8", "F10"))
-    assert attribution_problems(out["text"], s, {"P1", "P2", "P9"}) == []           # 덧붙임도 주인 ID가 붙어 귀속이 맞다
+    assert attribution_problems(out["text"], s, {"P1", "P2", "P9"}) == []           # 덧붙임도 귀속이 맞다(줄 머리 P1 뒤 짧은 문구)
     assert out["verification"]["adverse"]["cited"] == 1                              # AI 자체 인용률은 덧붙임 전 기준
 
 
@@ -359,8 +359,49 @@ def test_addendum_is_not_added_to_rejected_or_template_text():
     s = _small_adverse()
     bad = GOOD.replace("{F11}", "{F4}").replace("이며, {F5}", "")
     out = generate_justification(_Client(json.dumps({"text": bad}, ensure_ascii=False)), "gpt-6-luna", s)
-    assert out["method"] == "template" and out["addendum"] is None and out["appended_adverse"] == []
+    assert out["method"] == "template" and out["addendum"] is None and out["appended_adverse"] == [] and out["addendum_groups"] == []
     assert all(f"[{x}]" in out["text"] for x in ("F5", "F8", "F10"))
+
+
+def test_addendum_groups_by_person_whole_project_first_and_full_phrase_after_another_person():
+    """사용자 결정 2026-10-11: 덧붙임은 사업 전체 → 팀원 순서의 사람별 줄. 같은 줄에 다른 사람이 나온 사실 뒤의 사람별 사실은 주인 ID를 붙인다."""
+    from api.rag.justification import generate_justification
+    from core.kg.justify import ADDENDUM_LEAD, adverse_addendum
+    from rehearsal.justify_scale import attribution_problems
+    s = _small_adverse()
+    s.facts += [Fact("F13", "REV", "P2가 P1을 평가(2)", "동료 P2의 평가 판정 -0.5(-1 부정 ~ +1 긍정), 항목 소통", ("P1", "P2"),
+                     phrase_full="P1에 대한 동료 P2의 평가 판정 -0.5(-1 부정 ~ +1 긍정), 항목 소통", adverse=True),
+                Fact("F14", "SKL", "P2의 Spark", "Spark 경력 3개월로 레벨 1(요구 레벨 2) 미달", ("P2",), "Spark", "short", adverse=True)]
+    f = {x.id: x for x in s.facts}
+    raw = GOOD.replace("이며, {F5}", "").replace(" 동료 평가는 {F8}입니다.", "").replace(" 마지막으로 규칙 준수 현황은 {F10}입니다.", "")
+    out = generate_justification(_Client(json.dumps({"text": raw}, ensure_ascii=False)), "gpt-6-luna", s)
+    assert out["method"] == "graphrag"
+    assert out["addendum"] == "\n".join([ADDENDUM_LEAD, f"- 사업 전체: {f['F10'].phrase}[F10]",
+                                         f"- P1: {f['F5'].phrase}[F5]; {f['F8'].phrase}[F8]; {f['F13'].phrase_full}[F13]",
+                                         f"- P2: {f['F14'].phrase}[F14]"])
+    assert out["addendum_groups"] == [{"owner": None, "facts": ["F10"]}, {"owner": "P1", "facts": ["F5", "F8", "F13"]},
+                                      {"owner": "P2", "facts": ["F14"]}]
+    assert out["appended_adverse"] == ["F10", "F5", "F8", "F13", "F14"]             # 칩 순서 = 문단 순서
+    assert out["text"].endswith(out["addendum"]) and attribution_problems(out["text"], s, {"P1", "P2", "P9"}) == []
+    short = out["text"].replace(f["F13"].phrase_full, f["F13"].phrase)               # 짧은 문구였다면 앞의 "동료 P2"에 귀속돼 보인다
+    assert attribution_problems(short, s, {"P1", "P2", "P9"})
+    assert adverse_addendum(raw, s)[1] == out["addendum_groups"]
+
+
+def test_addendum_owner_outside_the_team_falls_back_to_template():
+    """줄 머리를 정할 수 없는 사실은 사람별 줄에 놓지 않는다(Codex 리뷰 2026-10-11) -- 템플릿이 사실을 다 담는다."""
+    from api.rag.justification import generate_justification
+    from core.kg.justify import adverse_addendum
+    s = _small_adverse()
+    ownerless = Fact("F13", "SKL", "주인 없는 Spark", "Spark 경력 1개월로 레벨 1(요구 레벨 2) 미달", (), "Spark", "short", adverse=True)
+    with pytest.raises(ValueError):                                                 # 사람별 사실인데 주인 없음("사업 전체" 줄로 가면 안 된다)
+        adverse_addendum(GOOD, JustificationInput(s.project_id, s.project, s.team, s.facts + [ownerless], s.known_ids))
+    s.facts.append(Fact("F13", "SKL", "P7의 Spark", "Spark 경력 1개월로 레벨 1(요구 레벨 2) 미달", ("P7",), "Spark", "short", adverse=True))
+    with pytest.raises(ValueError):                                                 # 팀 밖 주인
+        adverse_addendum(GOOD, s)
+    out = generate_justification(_Client(json.dumps({"text": GOOD}, ensure_ascii=False)), "gpt-6-luna", s)
+    assert out["method"] == "template" and out["fallback_reason"] == "addendum_check" and out["addendum_groups"] == []
+    assert out["text"] == template_text(s.facts) and "[F13]" in out["text"]
 
 
 def test_prompt_shows_every_label_with_its_fact_kinds():
