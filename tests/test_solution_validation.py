@@ -66,3 +66,25 @@ def test_real_cbc_shortfall_solution_passes_independent_validation():
     result = validate_raw_solution(graph, skill, synergy, params, raw)
 
     assert result.valid, result.issues
+
+
+
+def test_validator_checks_the_returned_plan_against_budget_and_availability():
+    # Codex 사후 리뷰 MUST(2026-10-11): 원해가 예산 안이어도 반환 명단(표시 규칙으로 올린 투입률)이 넘으면 거절한다
+    from core.optimize.types import AssignEntry
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    entries = [AssignEntry(**{**e.model_dump(), "alloc": 1.5}) for e in raw.plan.entries]   # 반환 투입률만 부풀림
+    broken = replace(raw, plan=raw.plan.model_copy(update={"entries": entries}))
+    codes = {issue.code for issue in validate_raw_solution(graph, skill, synergy, params, broken).issues}
+    assert "plan_availability" in codes
+    assert validate_raw_solution(graph, skill, synergy, params, raw).valid           # 원래 명단은 그대로 통과
+
+
+def test_validator_rejects_non_finite_returned_allocations():
+    from core.optimize.types import AssignEntry
+    graph, skill, synergy, params, raw = all_terms_fixture()
+    first = raw.plan.entries[0]
+    entries = [AssignEntry(**{**first.model_dump(), "monthly_alloc": {0: float("nan")}})] + list(raw.plan.entries[1:])
+    broken = replace(raw, plan=raw.plan.model_copy(update={"entries": entries}))
+    result = validate_raw_solution(graph, skill, synergy, params, broken)
+    assert not result.valid and "plan_allocation_finite" in {i.code for i in result.issues}
