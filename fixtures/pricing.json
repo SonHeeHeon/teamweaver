@@ -25,7 +25,8 @@
     "gpt-6-luna": {
       "input_per_1m": 0.1,
       "output_per_1m": 0.5,
-      "reasoning_effort": "low"
+      "reasoning_effort": "low",
+      "justification": {"timeout_s": 40, "expected_s": 8, "_note": "인사팀 소명 AI 글: 한 편 p50 7.5~9초·p95 10~18초(E7b·E7c) -- 화면·PDF가 40초까지 기다린다"}
     },
     "gpt-5.5": {
       "input_per_1m": 5.0,
@@ -43,7 +44,8 @@
       "cached_input_per_1m": 0.03,
       "output_per_1m": 0.5,
       "reasoning_effort": "low",
-      "_note": "사내 LLM 대리 Z.ai GLM-5.3-Flash(사용자 결정 2026-10-11, 추론 low). 단가는 Z.ai 공식 2026-10-11 확인(docs.z.ai/guides/overview/pricing). 서비스 브리핑·소명 글 모델을 GLM으로 돌릴 때 api/rag가 이 reasoning_effort를 쓴다."
+      "_note": "사내 LLM 대리 Z.ai GLM-5.3-Flash(사용자 결정 2026-10-11, 추론 low). 단가는 Z.ai 공식 2026-10-11 확인(docs.z.ai/guides/overview/pricing). 서비스 브리핑 모델을 GLM으로 돌릴 때 api/rag가 이 reasoning_effort를 쓴다(소명 글은 아래 justification).",
+      "justification": {"reasoning_effort": "high", "timeout_s": 300, "expected_s": 60, "_note": "사내 AI로 바꿔 적용할 때의 소명 글 설정(사용자 결정 2026-10-11 (가) '사내 AI면 더 오래 기다린다'). 근거 E7c-F(rehearsal/results/justify-flash.html): high 채택 97.3%, 한 편 p50 60초·p95 162초·최대 209초 → 대기 300초. 서비스 기본은 외부 AI(사용자 결정 2026-10-11)라 평소에는 쓰이지 않는다."}
     }
   },
   "source_note": "OpenAI 공식 가격 페이지(developers.openai.com/api/docs/pricing), 표준(Standard) 티어. gpt-5·mini·nano는 2026-08-05, gpt-6-luna·gpt-5.5는 2026-10-05 확인."

@@ -5,7 +5,7 @@
 사실 문구로 채운다(render) -- 숫자·충족/미달·다른 사람 ID는 AI가 쓸 수 없다. 채운 뒤 중괄호·근거 칩 수를 한 번 더 확인한다(render_ok).
 AI 호출 실패·형식 오류·검사 탈락이면 템플릿 글(method="template")로 대신하고 이유를 남긴다(틀린 부분만 지우지 않는다, K5와 같은 원칙).
 채택된 글이 불리한 사실을 빠뜨렸으면 서버가 정해진 문단(사람별 줄)으로 끝에 덧붙인다(adverse_addendum, 사용자 결정 2026-10-10·11) -- 템플릿 글은 사실을 다 담는다.
-모델·추론 강도는 fixtures/pricing.json(briefing_model, models[모델].reasoning_effort). 실데이터의 외부 전송 여부는 교체 설명(/api/whatif)과 같은 서버 정책 --
+모델·추론 강도는 fixtures/pricing.json(briefing_model, models[모델].justification.reasoning_effort → 없으면 models[모델].reasoning_effort). 실데이터의 외부 전송 여부는 교체 설명(/api/whatif)과 같은 서버 정책 --
 사실 목록에는 이름·평가 원문·업무 요약이 없다(지식 그래프가 뺀다).
 """
 from __future__ import annotations
@@ -76,6 +76,19 @@ def prompt(inp: JustificationInput) -> str:
     return TASK.format(n=len(inp.team), team=", ".join(inp.team)) + "\n사실 목록(자리표시 → 서버가 채울 문구):\n" + "\n".join(lines)
 
 
+DEFAULT_TIMEOUT_S, DEFAULT_EXPECTED_S = 40.0, 8.0
+
+
+def justification_settings(model: str) -> dict:
+    """모델별 소명 AI 설정(`fixtures/pricing.json` models[모델].justification, 2026-10-11 사용자 결정 (가)):
+    reasoning_effort(없으면 그 모델의 기본 reasoning_effort), timeout_s(화면·PDF가 AI 글을 기다리는 상한), expected_s(화면 안내용 예상 시간).
+    외부 luna 40초·8초, 사내 대리 GLM-5.3-Flash high 300초·60초(E7c-F). 표에 없는 모델은 40초·8초."""
+    m = load_pricing().get("models", {}).get(model, {})
+    j = m.get("justification") or {}
+    return {"reasoning_effort": j.get("reasoning_effort", m.get("reasoning_effort")),
+            "timeout_s": float(j.get("timeout_s", DEFAULT_TIMEOUT_S)), "expected_s": float(j.get("expected_s", DEFAULT_EXPECTED_S))}
+
+
 def generate_justification(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None) -> dict:
     """반환: {method: graphrag|template, text(보여 줄 글), facts, verification, fallback_reason, llm_text(AI 원문, 자리표시 포함), usage,
     addendum(서버가 덧붙인 불리한 사실 문단, text의 끝과 같다 · 없으면 None), appended_adverse(그 사실 ID들, 문단 순서),
@@ -88,7 +101,7 @@ def generate_justification(client, model: str, inp: JustificationInput, *, reaso
         out["fallback_reason"] = "no_client"
         return out
     price = load_pricing().get("models", {}).get(model, {})
-    effort = reasoning_effort if reasoning_effort is not None else price.get("reasoning_effort")
+    effort = reasoning_effort if reasoning_effort is not None else justification_settings(model)["reasoning_effort"]
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt(inp)}]   # 지시문 오류는 호출 실패로 숨기지 않는다
     t0 = time.monotonic()
     try:

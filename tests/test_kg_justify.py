@@ -411,3 +411,27 @@ def test_prompt_shows_every_label_with_its_fact_kinds():
     assert all(t.count(f"'{lb}'") == 1 for lb in LABELS) and set(KIND_NAMES) >= {k for ks in LABELS.values() for k in ks}
     assert "[SKL] '기술 근거', '기술 경력'" in t and "[IND·CLI] '관련 경험', '과거 사업 경험'" in t
     assert t in SYSTEM and "', 다만'을 쓰지 말고" in SYSTEM and "일본어 글자" in SYSTEM   # E7b 탈락 유형(라벨-종류·', 다만'·다른 언어)
+
+
+def test_justification_settings_per_model():
+    """사내 AI로 바꿔 적용할 때(사용자 결정 2026-10-11 (가)): Flash는 high·300초, 외부 luna는 기본(low)·40초, 모르는 모델은 40초."""
+    from api.rag.justification import justification_settings
+    assert justification_settings("gpt-6-luna") == {"reasoning_effort": "low", "timeout_s": 40.0, "expected_s": 8.0}
+    assert justification_settings("glm-5.3-flash") == {"reasoning_effort": "high", "timeout_s": 300.0, "expected_s": 60.0}
+    assert justification_settings("no-such-model") == {"reasoning_effort": None, "timeout_s": 40.0, "expected_s": 8.0}
+
+
+def test_generate_justification_sends_the_per_model_effort():
+    from types import SimpleNamespace
+    from api.rag.justification import generate_justification
+    seen = {}
+
+    def create(**kw):
+        seen.update(kw)
+        raise RuntimeError("stop")
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    inp = _small()
+    assert generate_justification(client, "glm-5.3-flash", inp)["fallback_reason"].startswith("llm_error")
+    assert seen["reasoning_effort"] == "high"
+    generate_justification(client, "gpt-6-luna", inp)
+    assert seen["reasoning_effort"] == "low"
