@@ -18,6 +18,8 @@ def test_names_are_stable_and_unknown_ids_keep_the_old_label():
     assert virtual_name("DP1") == "가상DP1"
 
 
-def test_common_surnames_dominate():
-    first = [n[0] for n in _table().values()]
-    assert first.count("김") > first.count("박") > first.count("곽")
+def test_common_surnames_dominate_in_every_group_actually_used():
+    """묶음이 쓰는 앞번호(그룹당 1~100)마다 흔한 성이 흔하다 -- 그룹 순서대로 채우던 첫 판은 AU 그룹의 김씨가 2%였다(폴백 리뷰)."""
+    for prefix in KNOWN_PREFIXES:
+        first = [virtual_name(f"{prefix}{n:04d}")[0] for n in range(1, 101)]
+        assert first.count("김") >= 12 and first.count("이") >= 8, (prefix, first.count("김"), first.count("이"))

@@ -110,7 +110,7 @@ def test_reviews_are_long_contextual_and_use_the_org_item_list(bundle):
     from core.ingest.review_text import ORG_REVIEW_ITEMS
     _, root, b, _, _ = bundle
     style = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["review_style"]
-    short = set(style["harsh_reviews"]) | {r["review_id"] for r in b.tables["reviews.csv"] if r["reviewer_id"] in set(style["blunt_reviewers"])}
+    short = set(style["harsh_reviews"]) | set(style["blunt_reviews"])
     reviews = [r for r in b.tables["reviews.csv"] if r["review_id"] not in short]   # 직설형·독한 글은 칭찬이 한 줄(2026-10-11)
     assert all(r["positive_text"].count("다.") >= 2 for r in reviews)           # opener + at least one strength
     assert sum(len(r["positive_text"]) for r in reviews) / len(reviews) > 120
@@ -345,8 +345,46 @@ def test_blunt_reviewers_are_an_exact_share_per_group_and_mismatches_follow_the_
         assert items[rid]["negative"] > items[rid]["positive"] and any(c in text[rid]["negative_text"] for c in SOFT_CLOSERS)
     share = (len(style["harsh_reviews"]) + len(style["soft_reviews"])) / len(text)
     assert 0.02 < share < 0.09                                                   # 기본 5%
+    blunt_people = set(style["blunt_reviewers"])
+    by_blunt = {r["review_id"] for r in b.tables["reviews.csv"] if r["reviewer_id"] in blunt_people}
+    tagged = set(style["blunt_reviews"]) | set(style["harsh_reviews"]) | set(style["soft_reviews"])
+    assert set(style["blunt_reviews"]) == by_blunt - set(style["harsh_reviews"]) - set(style["soft_reviews"])   # 어긋남이 직설형보다 우선
+    assert len(tagged) == len(style["blunt_reviews"]) + len(style["harsh_reviews"]) + len(style["soft_reviews"])  # 리뷰마다 성향 하나
 
 
 def test_review_style_shares_are_checked(tmp_path):
     with pytest.raises(ValueError):
         generate_org_bundle(tmp_path / "x", 100, seed=5, blunt_share=1.5)
+
+
+def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp_path):
+    """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 표는 바이트 단위로 같다.
+    항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰)."""
+    v1 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
+          "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
+          "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
+          "availability.csv": "40a8a6a4e9ceddf7c93e68e7b012e3db0cac50ed2865089bf721db6773f710ea",
+          "projects.csv": "84cf274e4cd02cd9ed09c8eebfbdb50639672f61b00d06ec28cdcdcd5ad16f6b",
+          "project_grade_requirements.csv": "a1daf8b346f30d034c4b57fb84dcae7dba6faa91dfbecf905927f79576897921",
+          "project_skill_requirements.csv": "223c8c8c68c8e00aaedb35f94f15efab89cc76ac1f68cc649736f2bf9f38ae28",
+          "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
+          "current_assignments.csv": "f404b86f2dc48619815cfb0cffca967c5b48019bb8f8a4a8d2fc14cffd6b6152",
+          "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
+          "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"}
+    root = generate_org_bundle(tmp_path / "v2", 100, seed=2026)                   # v1 manifest의 seed(시연 묶음)
+    files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
+    assert {k: files[k] for k in v1} == v1
+    v1_n300 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",   # AI·AU 그룹까지(436aa9a demo/org-n300.zip)
+               "person_skills.csv": "9aaf017b68cfda60f6a13d08655ac1f089c7146e3eedb7359489a64c06475338",
+               "work_history.csv": "6463a3fa274bb266b973464bfd7e7f3a0f47c76674d1de544602973b96448c47",
+               "availability.csv": "a43b0d7ef18a91faeb3649ebd56388d2dde2e13d9e8a623a5855cee64a08fbdf",
+               "projects.csv": "b95c720a39e33529f0c2b8cd8654b0db57ff3161e588871fa107d82447a7efe8",
+               "project_grade_requirements.csv": "a0cc9cfac4cb0e360b2b75f5e08bfc6582540fc76fd0d972ecfb1bd1d69fef3a",
+               "project_skill_requirements.csv": "ae26d2fd5343f342e4f7442a39ee991491021f61e68b2d90c8c05c7f92e4620a",
+               "review_items.csv": "10e9967e81e913eabe5bab0f7a5744c44203ad0a70fe650735ac94afe30aa44e",
+               "current_assignments.csv": "7ee9b5108be18817d4baeb8c5a007a12784dcdb1bee0b4d4f8eb8ddbd941e616",
+               "project_outcomes.csv": "5fbcde115cc6a07fa81dd48cd9d1e46ae39c08ccbcba451cd2d50914370acf58",
+               "replacements.csv": "7c52ecaf8ea4a3db93cccf78f5f18fe19148f83d0688f2c16632a41918a9220a"}
+    root = generate_org_bundle(tmp_path / "v2-n300", 300, seed=2026)
+    files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
+    assert {k: files[k] for k in v1_n300} == v1_n300

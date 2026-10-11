@@ -69,6 +69,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   1~2명 이동의 개선(1~2점)을 통째로 가린다(실측: 빼 오기 허용이 더 나쁜 모순). 변경 예산 제약은 `core/optimize/incremental.py` --
   옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
   시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
+  생성기 v2(2026-10-11): 가상 이름(`core/ingest/names.py`, ID별 고정·중복 없음), 아쉬운 점 항목마다 문장·직설형 평가자 8%·어긋난 글 5%(manifest `review_style`) --
+  고른 항목의 난수열은 그대로라 글만 바뀐다. 글을 바꾸면 `python -m rehearsal.make_demo`(+`make_broken_demo`) → 판정·미리 계산·판정 동봉을 한 데이터 폴더에서 이어서 만든다.
   운영 중 묶음을 "전부 다시 짜기"(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남는다(정원·예산이 현재 명단에 맞춰짐) -- K 비교로 쓴다.
 - **시연 묶음 고르기·미리 계산**(claude-b `api/demos.py` + claude-a `api/demo_precomputed.py`, 2026-10-07 통일): `TEAMWEAVER_DEMO_DIR`의 폴더·zip 묶음을 `POST /api/datasets/demo {name}`으로 고르고 재기동해도 기억한다.
   `demo/precomputed/*.json`은 데이터셋 버전(리뷰 글 LLM 판정값 포함)·서버 설정·평가기 재채점이 모두 맞을 때만 캐시에 들어간다 --
@@ -80,9 +82,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   벤치 정식·Phase 0 오라클·HTTP 계약·운영 중 기여 분해에는 없다. 측정(`rehearsal/results/partner-compare.html`)상 SI 팀 크기에서는 거의 걸리지 않고
   200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.
 - **기술 이름 사전·하위 기술 부분 인정이 입력 단계 기본값이다**(2026-10-09 사용자 결정, `core/ingest/skills.py`·`skill_dictionary.json`): `to_dataset`이 보유·요구 기술 이름을 대표 이름으로 바꾸고
-  하위 기술 경력의 `0.5^깊이`를 상위 기술에 인정한다(계수는 근거 없는 가정값, NOT_CALIBRATED). 지식 그래프(`build_kg`)는 같은 함수로 같은 경력을 만든다 -- 둘에 같은 인자를 넘긴다.
+  하위 기술 경력의 `0.7^깊이`를 상위 기술에 인정한다(2026-10-11 사용자 결정 "70%로 고정", 이전 0.5 · 근거 없는 가정값, NOT_CALIBRATED, 설정 노출 안 함). 지식 그래프(`build_kg`)는 같은 함수로 같은 경력을 만든다 -- 둘에 같은 인자를 넘긴다.
   시연 org-n200·n300의 S가 바뀌므로(100은 그대로) **main 병합 뒤 미리 계산 4개(n200·n300 × 계획·운영 중)를 다시 만든다**. 사전에 없는 이름은 합치지 않고 경고만 한다.
-  알려진 한계: 인정분이 출처 없이 근거 색인·AI 설명에 "보유 기술"로 보인다(claude-b·공유 계약 요청, work-split).
+  인정분이 경력을 정한 기술은 `Person.skill_credit`(공유 계약, 2026-10-11)에 출처·개월이 남고, SQLite 근거 색인은 별도 표 `skill_credit`(재수화는 읽지 않는다 -- S/C에 안 쓰임), 교체 설명 문맥은 `credited_from`을 붙인다.
 - **인사팀 소명 글은 자리표시 + 연결 말 허용 목록**(2026-10-09, `core/kg/justify.py`·`api/rag/justification.py`): AI는 사실 `{F#}`를 고르고 정해진 문법(주어·`LABELS`·연결어·맺음말)으로만 엮는다.
   숫자·충족/미달은 서버가 사실 문구로 채운다 -- 자유 문장·판단어 금지 목록은 폴백 리뷰마다 뚫렸다. 프롬프트와 검사기가 같은 `LABELS`를 쓴다.
   AI가 빠뜨린 불리한 사실(`Fact.adverse`)은 서버가 정해진 마지막 문단으로 덧붙인다(`adverse_addendum`, 사용자 결정 2026-10-10 · 사람별 줄 2026-10-11 -- 형식을 바꾸면 `python -m rehearsal.addendum_by_person`, AI 호출 없음).

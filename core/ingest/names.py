@@ -13,7 +13,7 @@ import re
 from functools import lru_cache
 
 KNOWN_PREFIXES = ("DP", "AI", "AU")          # core.ingest.org_profile 그룹 순서
-MAX_NUMBER = 500
+MAX_NUMBER = 120                 # 묶음은 그룹당 100명까지 쓴다(org_profile.SIZES). 앞번호 이름은 MAX_NUMBER와 무관하다(번호 순으로 채움)
 SEED = 20261011
 
 # 성과 대략의 비중(%) -- 인구 통계의 큰 순서를 따른 근사값
@@ -39,10 +39,13 @@ def _table() -> dict[str, str]:
     names = [s for s, _ in SURNAMES]
     weights = [w for _, w in SURNAMES]
     given = sorted(set(GIVEN))
+    # 가장 흔한 성(김 21%)이 받을 몫이 그 성의 이름 수를 넘으면 그 성이 동나 뒤쪽 번호의 성씨 분포가 평평해지고(거절 표집), 조합이 동나면 끝나지 않는다
+    if max(weights) / sum(weights) * len(KNOWN_PREFIXES) * MAX_NUMBER > 0.8 * len(given):
+        raise ValueError("이름표가 가장 흔한 성의 이름 수에 비해 너무 크다 -- MAX_NUMBER를 줄이거나 이름 목록을 늘린다")
     used: set[str] = set()
     out: dict[str, str] = {}
-    for prefix in KNOWN_PREFIXES:
-        for n in range(1, MAX_NUMBER + 1):
+    for n in range(1, MAX_NUMBER + 1):                 # 번호 순으로 그룹을 섞어 채운다 -- 실제로 쓰는 앞번호(그룹당 100명)가 표의 앞쪽이라 성씨 분포가 자연스럽다
+        for prefix in KNOWN_PREFIXES:
             while True:
                 name = rng.choices(names, weights=weights)[0] + rng.choice(given)
                 if name not in used:

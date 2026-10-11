@@ -251,7 +251,7 @@ def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], roun
         members = sorted((q["person_id"] for q in people if q["_group"] == g),
                          key=lambda pid: (random.Random(f"{seed}:blunt:{pid}").random(), pid))
         blunt_set.update(members[:round(blunt_share * len(members))])
-    style_of = {"blunt_reviewers": set(), "harsh": [], "soft": []}
+    style_of = {"blunt_reviewers": set(), "blunt": [], "harsh": [], "soft": []}
     by_id = {p["person_id"]: p for p in people}
     by_code = defaultdict(list)
     for w in works:
@@ -287,8 +287,9 @@ def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], roun
                 style = "blunt" if reviewer in blunt_set else "normal"
                 if style == "blunt":
                     style_of["blunt_reviewers"].add(reviewer)
-                if prng.random() < mismatch_share:              # 항목과 글의 온도가 어긋남: 항목이 좋은 쪽이면 글이 독하고, 나쁜 쪽이면 부드럽다
+                if prng.random() < mismatch_share:              # 항목과 글의 온도가 어긋남: 항목이 좋은 쪽이면 글이 독하고, 나쁜 쪽이면 부드럽다(직설형보다 우선)
                     style = "harsh" if len(pos) >= len(neg) else "soft"
+                if style != "normal":
                     style_of[style].append(rid)
                 pos_text, neg_text = org_review_prose(prng, style, pos, neg, praise, skill=skill)
                 reviews.append({
@@ -298,9 +299,10 @@ def _org_reviews(rng: random.Random, works: list[dict], people: list[dict], roun
                 review_items += [{"review_id": rid, "polarity": "positive", "item": x} for x in pos]
                 review_items += [{"review_id": rid, "polarity": "negative", "item": x} for x in neg]
     style = {"blunt_share": blunt_share, "mismatch_share": mismatch_share, "blunt_reviewers": sorted(style_of["blunt_reviewers"]),
-             "harsh_reviews": style_of["harsh"], "soft_reviews": style_of["soft"],
-             "note": "시연 글 성향(정답 보조, 계약 칸 아님): 직설형 평가자의 리뷰는 짧은 칭찬과 직설적인 아쉬운 점, harsh = 항목보다 글이 독함, "
-                     "soft = 항목보다 글이 부드러움. 고른 항목(review_items.csv)은 성향과 무관하다."}
+             "blunt_reviews": style_of["blunt"], "harsh_reviews": style_of["harsh"], "soft_reviews": style_of["soft"],
+             "note": "시연 글 성향(정답 보조, 계약 칸 아님): 리뷰마다 normal·blunt·harsh·soft 중 하나 -- 세 목록에 없는 리뷰는 normal. "
+                     "blunt = 직설형 평가자(blunt_reviewers)의 글(짧은 칭찬, 직설적인 아쉬운 점), harsh = 항목보다 글이 독함, soft = 항목보다 글이 부드러움. "
+                     "어긋남(harsh·soft)이 직설형보다 우선해, 직설형 평가자의 리뷰 일부는 harsh·soft에 있다. 고른 항목(review_items.csv)은 성향과 무관하다."}
     return reviews, review_items, style
 
 
