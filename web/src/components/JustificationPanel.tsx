@@ -4,7 +4,7 @@ import type { AssignEntry, Justification, JustFact, Meta, PlacementSettings, Ste
 import { KIND_LABEL, KIND_ORDER, fallbackText, segmentsOf } from "./justification";
 
 /** 인사팀 소명 글(claude-a 계약 docs/requests/2026-10-09-hr-justification.md).
- *  정해진 틀(템플릿)을 먼저 보이고 AI 글(GraphRAG, p50 약 8초)이 오면 바꾼다. 글 속 [F12]을 누르면 옆 사실 목록에서 강조한다.
+ *  정해진 틀(템플릿)을 먼저 보이고 AI 글(GraphRAG, 모델마다 다름 -- 서버의 ai_expected_s: 외부 약 8초·사내 Flash 약 60초)이 오면 바꾼다. 글 속 [F12]을 누르면 옆 사실 목록에서 강조한다.
  *  AI 원문(llm_text)은 서버가 보내지 않는다 -- 검사에서 떨어진 글은 틀린 주장이 있을 수 있다. */
 
 /** 글: 근거 문구(밑줄)를 누르면 옆 사실 목록에서 그 근거를 강조한다. 근거 번호는 보이지 않는다(사용자 결정 2026-10-11). */
@@ -136,7 +136,8 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
                   title="AI는 사실을 고르고 순서·묶음만 정했다. 숫자·충족/미달·사람-사실 짝은 서버가 데이터 그대로 채웠다.">
               AI 구성 · 사실은 데이터 그대로</span>
           : <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">정해진 틀</span>)}
-        {aiBusy && <span className="text-xs text-slate-500">AI 글 쓰는 중…(약 8초)</span>}
+        {aiBusy && <span className="text-xs text-slate-500">
+          AI 글 쓰는 중…(약 {Math.round(result?.ai_expected_s ?? 8)}초)</span>}
         <button type="button" onClick={() => void load(true)} disabled={aiBusy || !result?.ai_available}
                 title={result && !result.ai_available ? fallbackText(result.ai_unavailable_reason) ?? "" : "AI로 다시 쓴다"}
                 className="ml-auto rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-700 hover:bg-slate-50

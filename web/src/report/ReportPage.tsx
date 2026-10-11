@@ -6,6 +6,7 @@ import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly } from "../components/allocFormat";
 import { fallbackText, segmentsOf } from "../components/justification";
+import { creditedLine } from "../components/skillLabel";
 
 /** PDF의 소명 글: 근거 문구에 밑줄 + 사실 목록 번호(위 첨자). 'F12' 같은 내부 번호는 보이지 않는다(사용자 결정 2026-10-11). */
 function ReportProse({ text, facts }: { text: string; facts: any[] }) {
@@ -218,7 +219,12 @@ export function ReportPage() {
           <tbody>
             {(data.entries ?? []).map((e: any) => (
               <tr key={`${e.person_id}-${e.project_id}`} className="border-b border-slate-100">
-                <td className="py-1">{byId.get(e.person_id)?.name ?? e.person_id}</td>
+                <td className="py-1">
+                  {byId.get(e.person_id)?.name ?? e.person_id}
+                  {creditedLine(byId.get(e.person_id)) && (
+                    <span className="block text-[10px] text-amber-800">인정: {creditedLine(byId.get(e.person_id))}</span>
+                  )}
+                </td>
                 <td className="py-1 text-slate-600">{byId.get(e.person_id)?.grade ?? "-"}</td>
                 <td className="py-1 text-slate-600">{jName.get(e.project_id) ?? e.project_id}</td>
                 <td className="py-1 text-right tabular-nums">

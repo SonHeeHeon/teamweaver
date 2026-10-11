@@ -6,6 +6,8 @@ export interface Person {
   name: string;
   grade: string;
   skills: Record<string, number>;
+  /** 하위 기술 경력에서 인정된 기술(사용자 결정 "구분해서 표시"). 예: Java {source: "Spring", months: 12, ...}. */
+  skill_credit?: Record<string, { source: string; months: number; depth: number; own_months: number }>;
 }
 
 export interface Project {
@@ -481,4 +483,6 @@ export interface Justification {
   dataset_version: string;
   ai_available: boolean;
   ai_unavailable_reason: string | null;
+  /** AI 글 예상 시간(초, 모델별 -- 외부 약 8·사내 Flash 약 60). 화면 "약 N초" 안내용. */
+  ai_expected_s?: number;
 }

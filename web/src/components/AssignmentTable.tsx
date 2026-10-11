@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AllocChange, AssignEntry, Person, Project } from "../api/types";
 import { formatAlloc, formatMonthly } from "./allocFormat";
+import { practicalCredits, skillChips } from "./skillLabel";
 
 interface Props {
   entries: AssignEntry[];
@@ -69,6 +70,7 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
   const pName = new Map(people.map((p) => [p.id, p]));
   const jById = new Map(projects.map((j) => [j.id, j]));
   const [editing, setEditing] = useState<string | null>(null);
+  const [skillsOf, setSkillsOf] = useState<string | null>(null);
   const byProject = new Map<string, AssignEntry[]>();
   for (const e of entries) {
     const list = byProject.get(e.project_id) ?? [];
@@ -99,6 +101,13 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
                     <span className="text-slate-900">
                       {p?.name ?? e.person_id}
                       <span className="ml-2 text-xs text-slate-500">{p?.grade}</span>
+                      {p && Object.keys(p.skills).length > 0 && (
+                        <button type="button" onClick={() => setSkillsOf(skillsOf === key ? null : key)}
+                                aria-expanded={skillsOf === key} aria-label={`${p.name} 기술 보기`}
+                                className="ml-2 text-[11px] text-indigo-700 underline">
+                          기술{practicalCredits(p).length > 0 ? " · 인정 포함" : ""}
+                        </button>
+                      )}
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="text-right tabular-nums text-slate-600">
@@ -116,6 +125,18 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
                       )}
                     </span>
                   </div>
+                  {skillsOf === key && (
+                    <div className="mt-1 flex flex-wrap gap-1" aria-label={`${p?.name ?? e.person_id} 기술`}>
+                      {skillChips(p).map((c) => (
+                        <span key={c.skill} title={c.credit ? "본인이 적은 경력이 아니라 하위 기술 경력에서 일부 인정한 값" : undefined}
+                              className={`rounded px-1.5 py-0.5 text-[11px] ${c.credit
+                                ? "border border-dashed border-amber-400 bg-amber-50 text-amber-900"
+                                : "bg-slate-100 text-slate-700"}`}>
+                          {c.skill} 레벨 {c.level}{c.credit ? ` (${c.credit})` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {onAdjust && editing === key && (
                     <MonthlyEditor key={JSON.stringify([e.alloc, e.monthly_alloc ?? null])}
                                    entry={e} project={jById.get(jid)} busy={busy} minAlloc={minAlloc}

@@ -109,7 +109,9 @@ def test_e5_glm_cost_counts_cached_input_and_reasoning_as_output():
 def test_e4_sets_keep_the_faithful_texts_and_sample_the_demo():
     s = e4.load_sets()
     assert len(s["faithful"]) == 300 and len(s["demo_s300"]) == e4.N_DEMO_SAMPLE
-    assert set(e4.SET_JUDGES["demo_s300"]) == {"llm_low", "glm_low", "llm", "jev"}
+    # 시연 원문은 생성기 v2로 외부 low만 다시 잰다(사용자 결정 2026-10-11) -- 성향 정답 보조가 리뷰마다 붙는다
+    assert set(e4.SET_JUDGES["demo_s300"]) == {"llm_low"}
+    assert len(s["demo_s300_style"]) == e4.N_DEMO_SAMPLE and set(s["demo_s300_style"]) <= {"normal", "blunt", "harsh", "soft", "unknown"}
 
 
 @pytest.mark.parametrize("judge,effort", [("glm_low", "low"), ("llm_low", "low"), ("glm", "max"), ("llm", None)])

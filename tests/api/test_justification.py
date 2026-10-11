@@ -184,6 +184,7 @@ def test_synthetic_names_replace_ids_with_matching_particles():
     assert with_names("DP0001은 Java[F3]이며 DP0002은 Spark[F4]입니다.", names) == "김민준은 Java[F3]이며 이서아는 Spark[F4]입니다."
     assert with_names("DP00012는 그대로", names) == "DP00012는 그대로"            # 다른 ID의 앞부분은 건드리지 않는다
     assert with_names("팀장은 DP0001이며", names) == "팀장은 김민준이며"           # '이며'의 '이'는 조사가 아니다
+    assert with_names("DP0002로 바꾸고 DP0001으로 둔다", names) == "이서아로 바꾸고 김민준으로 둔다"
     out = apply_names({"text": "DP0002의 Python[F1]", "addendum": None,
                        "facts": [{"id": "F1", "text": "DP0002 Python", "phrase": "Python", "phrase_full": "DP0002의 Python"}]}, names)
     assert out["text"] == "이서아의 Python[F1]" and out["facts"][0]["phrase_full"] == "이서아의 Python"
@@ -257,3 +258,36 @@ def test_round_trip_with_a_real_optimize_token_and_screen_settings(jc):
     res = c.post("/api/justification", json=body)
     assert res.status_code == 200, res.text
     assert c.post("/api/justification", json={**body, "milp_params": {**params, "min_alloc": 0.5}}).status_code == 422
+
+
+def test_names_leave_bracketed_markers_alone():
+    from api.routes.justification import with_names
+    names = {"DP0001": "최혜진", "DP0002": "김경민"}
+    text = "DP0001은 소통이 좋다[rv:DP0002>DP0001#1:pos]. DP0002의 평가[F3]."
+    assert with_names(text, names) == "최혜진은 소통이 좋다[rv:DP0002>DP0001#1:pos]. 김경민의 평가[F3]."
+
+
+def test_whatif_briefing_shows_names_for_synthetic_data(jc):
+    import api.routes.whatif as w
+    from types import SimpleNamespace
+    ds = SimpleNamespace(info=SimpleNamespace(synthetic=True), graph=SimpleNamespace(
+        people=[SimpleNamespace(id="DP0001", name="최혜진"), SimpleNamespace(id="DP0002", name="김경민")]))
+    b = {"rationale": "DP0001을 DP0002로 교체[rv:DP0002>DP0001#1:pos]", "risks": ["DP0002는 신규"], "alternatives": [],
+         "evidence": [{"source_id": "rv:DP0002>DP0001#1:pos"}]}
+    out = w._named(b, ds)
+    assert out["rationale"] == "최혜진을 김경민으로 교체[rv:DP0002>DP0001#1:pos]" and out["risks"] == ["김경민은 신규"]
+    assert out["evidence"] == b["evidence"]
+    real = SimpleNamespace(info=SimpleNamespace(synthetic=False), graph=ds.graph)
+    assert w._named(b, real) == b
+
+
+def test_meta_carries_skill_credit(jc):
+    # 사용자 결정(2026-10-11) "인정 경력은 구분해서 표시": /api/meta 사람에 skill_credit(인정분이 경력을 정한 기술만)
+    c, app = jc
+    people = c.get("/api/meta").json()["people"]
+    credited = [p for p in people if p["skill_credit"]]
+    assert all("skill_credit" in p for p in people)
+    if credited:                                    # 시연 묶음에 하위 기술만 적은 사람이 있으면
+        sk, cr = next(iter(credited[0]["skill_credit"].items()))
+        assert {"source", "months", "depth", "own_months"} <= set(cr) and cr["months"] > cr["own_months"]
+        assert sk in credited[0]["skills"]

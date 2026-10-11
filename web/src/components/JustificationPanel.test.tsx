@@ -112,5 +112,14 @@ describe("JustificationPanel", () => {
     expect(screen.getByText("김민준 · 1건")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "근거 보기: 요구 Python 미달" })).toBeInTheDocument();
   });
+
+  it("AI 글 대기 안내는 서버가 알려 준 모델별 예상 시간을 쓴다", async () => {
+    let release: (j: Justification) => void = () => {};
+    vi.mocked(postJustification).mockResolvedValueOnce(base({ ai_expected_s: 60 }))
+      .mockReturnValueOnce(new Promise((r) => { release = r; }));
+    panel();
+    expect(await screen.findByText(/AI 글 쓰는 중…\(약 60초\)/)).toBeInTheDocument();
+    release(base({ method: "graphrag" }));
+  });
 });
 

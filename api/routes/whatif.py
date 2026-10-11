@@ -71,6 +71,18 @@ def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+def _named(briefing: dict, dataset) -> dict:
+    """가상 데이터면 설명 글(명분·위험·대안) 속 사람 ID를 이름으로(claude-a 요청 2026-10-11 (2), 소명 글과 같은 display_names).
+    AI·인용 가드는 ID로 검증하므로 브리핑 모듈은 ID 그대로 두고, 보여 줄 때만 바꾼다. 근거 출처 표시 [rv:…]와 근거 목록은 그대로."""
+    from api.routes.justification import display_names, with_names
+    names = display_names(dataset)
+    if not names:
+        return briefing
+    return {**briefing, "rationale": with_names(briefing.get("rationale"), names),
+            "risks": [with_names(r, names) for r in briefing.get("risks", [])],
+            "alternatives": [with_names(a, names) for a in briefing.get("alternatives", [])]}
+
+
 @router.post("/api/whatif", response_model=WhatifResponse)
 def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
           conn=Depends(get_sqlite_conn), dataset: ActiveDataset = Depends(get_dataset),
@@ -125,7 +137,7 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "new_violations": new_violations,
         "new_shortfalls": new_shortfalls,
         "feasible": not after.violations,
-        "briefing": clamp_briefing(briefing),
+        "briefing": _named(clamp_briefing(briefing), dataset),
         "fallback_used": fallback_used,
         "fallback_reason": fallback_reason if fallback_used else None,
     }

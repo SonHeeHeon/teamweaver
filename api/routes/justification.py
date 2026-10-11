@@ -102,7 +102,8 @@ def public_view(out: dict) -> dict:
             "usage": ({k: usage.get(k) for k in ("model", "latency_s", "cost_usd", "reasoning_effort")} if usage else None)}
 
 
-_PAIRS = {"은": "은/는", "는": "은/는", "이": "이/가", "가": "이/가", "을": "을/를", "를": "을/를", "과": "과/와", "와": "과/와"}
+_PAIRS = {"은": "은/는", "는": "은/는", "이": "이/가", "가": "이/가", "을": "을/를", "를": "을/를", "과": "과/와", "와": "과/와",
+          "으로": "으로/로", "로": "으로/로"}
 
 
 def display_names(dataset: ActiveDataset) -> dict[str, str]:
@@ -114,19 +115,21 @@ def display_names(dataset: ActiveDataset) -> dict[str, str]:
 
 
 def with_names(text: str | None, names: dict[str, str]) -> str | None:
-    """글 속 사람 ID를 이름으로 바꾸고 바로 뒤 조사(은/는·이/가·을/를·과/와)를 이름 받침에 맞춘다(core.kg.justify.josa)."""
+    """글 속 사람 ID를 이름으로 바꾸고 바로 뒤 조사(은/는·이/가·을/를·과/와·으로/로)를 이름 받침에 맞춘다(core.kg.justify.josa)."""
     if not text or not names:
         return text
     import re
     from core.kg.justify import josa
     ids = sorted(names, key=len, reverse=True)
     # 조사는 그 뒤가 띄어쓰기·문장부호·끝일 때만 본다 -- "DP0001이며"의 '이'는 조사가 아니라 서술격이다
-    pattern = re.compile("(" + "|".join(re.escape(i) for i in ids) + r")(?:(은|는|이|가|을|를|과|와)(?=[\s,.;:!?)\]\[]|$))?(?![0-9A-Za-z])")
+    pattern = re.compile("(" + "|".join(re.escape(i) for i in ids) + r")(?:(으로|은|는|이|가|을|를|과|와|로)(?=[\s,.;:!?)\]\[]|$))?(?![0-9A-Za-z])")
 
     def repl(m):
         name, particle = names[m.group(1)], m.group(2)
         return name + (josa(name, _PAIRS[particle]) if particle else "")
-    return pattern.sub(repl, text)
+    # 대괄호 표시([F12]·[rv:DP0001>DP0002#1:pos] 근거 출처)는 건드리지 않는다 -- 출처 ID가 깨지면 근거 대조가 안 된다
+    parts = re.split(r"(\[[^\]]*\])", text)
+    return "".join(p if p.startswith("[") and p.endswith("]") else pattern.sub(repl, p) for p in parts)
 
 
 def apply_names(out: dict, names: dict[str, str]) -> dict:

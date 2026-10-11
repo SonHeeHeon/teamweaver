@@ -30,7 +30,8 @@ def _cowork_edges(graph: MemoryGraph) -> list[CoworkOut]:
 def build_meta(graph: MemoryGraph, dataset_version: str) -> MetaResponse:
     """meta를 graph 하나에서 만든다. /api/report도 요청이 잡은 데이터셋으로 이걸 만들어
     PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9)."""
-    people = [PersonOut(id=p.id, name=p.name, grade=p.grade.value, skills=p.skills)
+    people = [PersonOut(id=p.id, name=p.name, grade=p.grade.value, skills=p.skills,
+                        skill_credit={k: v.model_dump() for k, v in (getattr(p, "skill_credit", None) or {}).items()})
               for p in graph.people]
     projects = [ProjectOut(id=j.id, name=j.name, sector=j.sector.value, phase=j.phase.value,
                            start_month=j.start_month, end_month=j.end_month,

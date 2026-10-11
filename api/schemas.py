@@ -22,6 +22,9 @@ class PersonOut(BaseModel):
     name: str
     grade: str
     skills: dict[str, int]
+    # 하위 기술 경력에서 인정된 기술(claude-a 계약 Person.skill_credit, 사용자 결정 2026-10-11 "구분해서 표시").
+    # {기술: {source, months, depth, own_months}} -- 인정분이 경력을 정한 기술만, 없으면 빈 사전
+    skill_credit: dict[str, dict] = {}
 
 
 class ProjectOut(BaseModel):
