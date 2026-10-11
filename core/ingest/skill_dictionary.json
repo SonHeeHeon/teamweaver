@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-09.2",
+  "version": "2026-10-11.1",
   "description": "TeamWeaver IT 기술 이름 사전(SI 핵심 큐레이션). SKOS 구조를 따른다: label=skos:prefLabel, aliases=skos:altLabel, broader=skos:broader(하위→상위), related=skos:related. 사람이 고르고 검토한 목록이며 외부 분류를 복사하지 않았다.",
-  "partial_credit": {"narrower_to_broader": 0.5, "note": "하위 기술 경력 m개월 → 상위 기술에 계수^깊이 × m개월 인정(사용자 결정 2026-10-09). 계수 0.5는 근거 데이터가 없는 가정값(NOT_CALIBRATED)."},
+  "partial_credit": {"narrower_to_broader": 0.7, "note": "하위 기술 경력 m개월 → 상위 기술에 계수^깊이 × m개월 인정(사용자 결정 2026-10-09). 계수 0.7(사용자 결정 2026-10-11 \"70%로 고정\", 이전 0.5)은 근거 데이터가 없는 가정값(NOT_CALIBRATED). 관리자 설정에 노출하지 않는다."},
   "sources_consulted": [{"name": "ESCO (European Skills, Competences, Qualifications and Occupations)", "license": "CC BY 4.0", "use": "개념 구조(SKOS) 참고"}, {"name": "O*NET Technology Skills (U.S. Department of Labor, ETA)", "license": "CC BY 4.0", "use": "제품 이름 참고"}, {"name": "Wikidata", "license": "CC0", "use": "한국어 이름 참고"}],
   "concepts": [
     {"id": "ai_agent", "label": "AI 에이전트 프레임워크", "aliases": ["AI Agent", "AI 에이전트", "Agent Framework", "에이전트 프레임워크", "AI Agent Framework"], "broader": ["llm_app"], "related": [], "category": "AI", "kind": "field"},

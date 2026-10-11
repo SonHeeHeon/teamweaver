@@ -90,10 +90,13 @@ def test_ancestors_depth():
 
 def test_partial_credit_and_merge():
     sd = load_dictionary()
-    r = person_skill_months([("스프링부트", 60), ("Spring", 10), ("자바", 20), ("Spring Boot", 40)], sd)
-    assert r.own == {"Spring Boot": 60, "Spring": 10, "Java": 20}          # 같은 대표 이름은 가장 긴 경력
-    assert r.months["Spring"] == 30 and r.implied["Spring"]["from"] == "Spring Boot"
-    assert r.months["Java"] == 20                                           # 본인 경력(20)이 인정분(60×0.25=15)보다 길다
+    assert sd.narrower_credit == 0.7                                        # 사용자 결정 2026-10-11 "70%로 고정"(이전 0.5)
+    r = person_skill_months([("스프링부트", 60), ("Spring", 10), ("자바", 40), ("Spring Boot", 40)], sd)
+    assert r.own == {"Spring Boot": 60, "Spring": 10, "Java": 40}          # 같은 대표 이름은 가장 긴 경력
+    assert r.months["Spring"] == 42 and r.implied["Spring"]["from"] == "Spring Boot"   # 60×0.7
+    assert r.implied["Java"] == {"months": 29, "from": "Spring Boot", "from_months": 60, "depth": 2}   # 60×0.49 내림
+    assert r.months["Java"] == 40                                           # 본인 경력(40)이 인정분(29)보다 길다
+    assert person_skill_months([("Spring Boot", 60), ("자바", 20)], sd).months["Java"] == 29   # 인정분이 길면 인정분
     assert sorted(r.raw_names["Spring Boot"]) == ["Spring Boot", "스프링부트"]
     assert person_skill_months([("Spring Boot", 60)], sd, credit=0).months == {"Spring Boot": 60}
     assert person_skill_months([("Spring Boot", 60)], sd, credit=1).months == {"Spring Boot": 60, "Spring": 60, "Java": 60}
