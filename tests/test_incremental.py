@@ -276,3 +276,32 @@ def test_on_row_gets_each_finished_row_in_order():
     assert [r["k"] for r in seen] == [0, 1, 2]
     assert [r["quality_gain_vs_k0"] for r in seen] == [r["quality_gain_vs_k0"] for r in rows]
     assert seen[0]["gain_vs_k0"] == 0.0
+
+
+def test_best_additions_opens_seats_for_net_growth_not_for_every_newcomer(monkeypatch):
+    """Regression (2026-10-12 demo rehearsal): with pulls, the solve may move a target member out and bring two people of
+    the same grade in (net +1). Scoring must open one seat for that grade -- counting both newcomers opened two and
+    showed a phantom vacancy (-100 on the screen while the real change was positive)."""
+    from types import SimpleNamespace
+
+    import core.evaluate.staffing_sim as sim
+    people = [_person("m0", Grade.MID), _person("m1", Grade.MID), _person("m2", Grade.MID)]
+    req = [SkillRequirement(skill="Python", min_level=1, headcount=1)]
+    projects = [
+        Project(id="P1", name="보강 대상", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION, start_month=0, end_month=5,
+                grade_headcount={Grade.MID: 1}, requirements=req, monthly_budget=100_000),
+        Project(id="P2", name="다른 사업", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION, start_month=0, end_month=5,
+                grade_headcount={}, requirements=req, monthly_budget=100_000),
+    ]
+    graph = MemoryGraph.build(Dataset(people=people, projects=projects, coworks=[], reviews=[]), parsed=[])
+    S, C = np.full((3, 2), 0.8), np.zeros((3, 3))
+    params = MilpParams(min_alloc=1.0, time_limit=30, gap=0.0, solver="highs", max_pairs=10, pair_keep_ratio=1.0)
+    before = [AssignEntry(person_id="m0", project_id="P1", alloc=1.0)]
+    after = [AssignEntry(person_id="m0", project_id="P2", alloc=1.0),            # the target member moves out
+             AssignEntry(person_id="m1", project_id="P1", alloc=1.0),            # one replaces them
+             AssignEntry(person_id="m2", project_id="P1", alloc=1.0)]            # one is the addition
+    fake = SimpleNamespace(accepted=SimpleNamespace(plan=SimpleNamespace(entries=after)), native_capture=None)
+    monkeypatch.setattr(sim, "solve_milp_assessment", lambda *a, **k: fake)
+    best = sim.best_additions(graph, S, C, params, before, "P1", 1, pull_budget=1)
+    assert best["delta"]["unfilled"] == 0
+    assert best["violations"] == []

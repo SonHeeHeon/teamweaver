@@ -207,12 +207,18 @@ def best_additions(graph: MemoryGraph, S, C, params: MilpParams, entries: list[A
         return {"accepted": False, "termination": getattr(ev, "termination_reason", None)}
     new = list(a.accepted.plan.entries)
     before = _parts(evaluate_plan(graph, S, C, params, entries))          # 보강 전 = 원래 정원·예산
-    old_team = {e.person_id for e in entries if e.project_id == project_id}
     grade_of = {p.id: p.grade for p in graph.people}
-    joined: dict = {}
-    for e in new:
-        if e.project_id == project_id and e.person_id not in old_team:
-            joined[grade_of[e.person_id]] = joined.get(grade_of[e.person_id], 0) + 1
+
+    def team_by_grade(plan: list[AssignEntry]) -> dict:
+        out: dict = {}
+        for pid in {e.person_id for e in plan if e.project_id == project_id}:
+            out[grade_of[pid]] = out.get(grade_of[pid], 0) + 1
+        return out
+
+    # 늘린 자리는 등급별 **순증가**만큼: 빼 오기로 팀원이 다른 사업으로 가고 같은 등급 둘이 들어오면(순 +1) 새로 온 사람 수(2)로
+    # 열면 자리 하나가 빈 것처럼 채점된다(2026-10-12 시연 리허설: 화면에 빈자리 감점 -100, 실제 변화는 +2.25)
+    grown_before, grown_after = team_by_grade(entries), team_by_grade(new)
+    joined = {g: c - grown_before.get(g, 0) for g, c in grown_after.items() if c > grown_before.get(g, 0)}
     g_eval = graph_with_extra_seats(graph, project_id, joined, budget_add)  # 실제로 늘어난 등급만
     after_eval = evaluate_plan(g_eval, S, C, params, new)
     after = _parts(after_eval)
