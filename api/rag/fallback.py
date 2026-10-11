@@ -27,6 +27,14 @@ def rule_based_briefing(ctx: dict, out_id: str, in_id: str) -> dict:
         rationale_parts.append(f"{in_id}만 보유한 스킬: {', '.join(only_in)}.")
     if shared:
         rationale_parts.append(f"공통 보유 스킬: {', '.join(shared)}.")
+    # 인정 경력(credited_from)은 본인 경력과 구분해 밝힌다 -- LLM이 없을 때도(사용자 결정 2026-10-11, Codex 리뷰 P1 2026-10-12)
+    for pid in (in_id, out_id):
+        # 본인 경력이 있어도 인정분이 더 길어 레벨을 정한 기술이다(SkillCredit) -- "본인 경력이 아니다"라고 쓰지 않고 본인 개월을 같이 적는다(Codex 리뷰 P2)
+        credited = [f"{s['key']}({s['credited_from']} 경력에서 인정"
+                    + (f", 본인 경력 {s['own_months']}개월" if s.get("own_months") else "") + ")"
+                    for s in ctx.get(pid, {}).get("skills", []) if s.get("credited_from")]
+        if credited:
+            rationale_parts.append(f"{pid}의 다음 스킬 레벨은 하위 기술 경력에서 일부 인정된 개월로 정해졌다: {', '.join(credited)}.")
     rationale = " ".join(rationale_parts)
 
     risks = []

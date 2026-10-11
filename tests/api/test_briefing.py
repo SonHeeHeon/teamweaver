@@ -377,3 +377,12 @@ def test_credit_note_for_each_person_when_both_were_credited():
                "risks": ["없음"], "alternatives": ["유지"]}
     out = generate_briefing(_client(payload), "m", ctx, "p000", "p001")["rationale"]
     assert "p000의 Java 3은 Kotlin 경력에서" in out and "p001의 Java 2는 Spring 경력에서" in out
+
+
+def test_rule_based_briefing_separates_credited_skills():
+    """LLM 없이 규칙 설명으로 바뀌어도 인정 경력을 본인 경력처럼 보이지 않는다(Codex 리뷰 P1)."""
+    out = rule_based_briefing(_CREDIT_CTX, "p000", "p001")["rationale"]
+    assert "p001의 다음 스킬 레벨은 하위 기술 경력에서 일부 인정된 개월로 정해졌다: Java(Spring 경력에서 인정, 본인 경력 4개월)." in out
+    no_own = {**_CREDIT_CTX, "p001": {**_CREDIT_CTX["p001"], "skills": [{**_CREDIT_CTX["p001"]["skills"][0], "own_months": 0}]}}
+    assert "Java(Spring 경력에서 인정)." in rule_based_briefing(no_own, "p000", "p001")["rationale"]
+    assert "인정" not in rule_based_briefing(_CTX, "p000", "p001")["rationale"]

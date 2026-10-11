@@ -83,8 +83,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.
 - **기술 이름 사전·하위 기술 부분 인정이 입력 단계 기본값이다**(2026-10-09 사용자 결정, `core/ingest/skills.py`·`skill_dictionary.json`): `to_dataset`이 보유·요구 기술 이름을 대표 이름으로 바꾸고
   하위 기술 경력의 `0.7^깊이`를 상위 기술에 인정한다(2026-10-11 사용자 결정 "70%로 고정", 이전 0.5 · 근거 없는 가정값, NOT_CALIBRATED, 설정 노출 안 함). 지식 그래프(`build_kg`)는 같은 함수로 같은 경력을 만든다 -- 둘에 같은 인자를 넘긴다.
-  시연 org-n200·n300의 S가 바뀌므로(100은 그대로) **main 병합 뒤 미리 계산 4개(n200·n300 × 계획·운영 중)를 다시 만든다**. 사전에 없는 이름은 합치지 않고 경고만 한다.
+  시연 org-n200·n300의 S가 바뀐다(100은 그대로) -- 미리 계산 6개는 70%·생성기 v2 기준으로 2026-10-12에 다시 만들었다. 사전에 없는 이름은 합치지 않고 경고만 한다.
   인정분이 경력을 정한 기술은 `Person.skill_credit`(공유 계약, 2026-10-11)에 출처·개월이 남고, SQLite 근거 색인은 별도 표 `skill_credit`(재수화는 읽지 않는다 -- S/C에 안 쓰임), 교체 설명 문맥은 `credited_from`을 붙인다.
+  교체 설명은 그 출처를 매번 괄호로 쓰게 지시하고, 빠뜨리면 서버가 `참고:` 문장을 덧붙인다(`api/rag/briefing._credit_notes`, 규칙 설명 폴백도 따로 적음).
+  위반 교체는 첫 문장에 "보류"가 없으면 버려진다(규칙 설명으로 대체) -- 지시문을 바꾸면 외부 AI로 다시 잰다(2026-10-12: 괄호 9/10, 위반 교체 채택 6/10 → 18/20).
 - **인사팀 소명 글은 자리표시 + 연결 말 허용 목록**(2026-10-09, `core/kg/justify.py`·`api/rag/justification.py`): AI는 사실 `{F#}`를 고르고 정해진 문법(주어·`LABELS`·연결어·맺음말)으로만 엮는다.
   숫자·충족/미달은 서버가 사실 문구로 채운다 -- 자유 문장·판단어 금지 목록은 폴백 리뷰마다 뚫렸다. 프롬프트와 검사기가 같은 `LABELS`를 쓴다.
   AI가 빠뜨린 불리한 사실(`Fact.adverse`)은 서버가 정해진 마지막 문단으로 덧붙인다(`adverse_addendum`, 사용자 결정 2026-10-10 · 사람별 줄 2026-10-11 -- 형식을 바꾸면 `python -m rehearsal.addendum_by_person`, AI 호출 없음).
@@ -104,7 +106,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-11 **1659 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함, `feat/claude-a-demo-data-1011`(main 1630) · slow 19 passed, 웹 189 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 **1670 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 190 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
