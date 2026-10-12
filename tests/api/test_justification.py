@@ -185,6 +185,9 @@ def test_synthetic_names_replace_ids_with_matching_particles():
     assert with_names("DP00012는 그대로", names) == "DP00012는 그대로"            # 다른 ID의 앞부분은 건드리지 않는다
     assert with_names("팀장은 DP0001이며", names) == "팀장은 김민준이며"           # '이며'의 '이'는 조사가 아니다
     assert with_names("DP0002로 바꾸고 DP0001으로 둔다", names) == "이서아로 바꾸고 김민준으로 둔다"
+    # 받침을 몰라 괄호로 쓴 조사(규칙 설명 폴백 "DP0004(으)로 교체 검토")도 이름 받침에 맞춘다 -- 예전엔 "손하윤(으)로"로 남았다
+    assert with_names("DP0001(으)로 교체 검토, DP0002(으)로 바꾼다", names) == "김민준으로 교체 검토, 이서아로 바꾼다"
+    assert with_names("DP0001(이)가 맡고 DP0002은(는) 남는다", names) == "김민준이 맡고 이서아는 남는다"
     out = apply_names({"text": "DP0002의 Python[F1]", "addendum": None,
                        "facts": [{"id": "F1", "text": "DP0002 Python", "phrase": "Python", "phrase_full": "DP0002의 Python"}]}, names)
     assert out["text"] == "이서아의 Python[F1]" and out["facts"][0]["phrase_full"] == "이서아의 Python"

@@ -76,6 +76,18 @@ def test_swap_that_breaks_availability_is_reported_not_rejected(tiny_client):
     assert all(v["message"] for v in body["new_violations"])
 
 
+def test_rule_based_briefing_holds_a_swap_that_breaks_a_constraint(tiny_client):
+    # LLM이 없을 때(키 없음·실데이터 차단·AI 오류)의 규칙 설명도 위반 교체는 결론이 "보류"다 -- 예전엔
+    # "뚜렷한 리스크가 관측되지 않는다"가 나와 화면의 위반 경고와 어긋났다(claude-a 요청 2026-10-12 (1))
+    body = _swap(tiny_client, [("p0", "j0", 0.5)], "p0", "p2").json()
+    assert body["fallback_used"] is True
+    assert body["briefing"]["rationale"].startswith("보류: 이 교체는 제약 위반 3건을 새로 만든다.")
+    assert body["briefing"]["risks"][0].startswith("새 제약 위반:")
+    assert not any("뚜렷한 리스크" in r for r in body["briefing"]["risks"])
+    ok = _swap(tiny_client, [("p0", "j0", 0.5)], "p0", "p1").json()          # 위반 없는 교체는 보류가 아니다
+    assert not ok["briefing"]["rationale"].startswith("보류")
+
+
 def test_swap_to_other_grade_exposes_new_shortfall(tiny_client):
     body = _swap(tiny_client, [("p0", "j0", 0.5)], "p0", "p3").json()
     assert body["new_shortfalls"] == [{"project_id": "j0", "grade": "중급", "missing": 1}]

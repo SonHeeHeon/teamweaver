@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import threading
 from fastapi import Depends, HTTPException, Request
 from core.graph.memory_graph import MemoryGraph
 from api.cache import ResultCache
@@ -41,6 +42,12 @@ def get_graph(dataset: ActiveDataset = Depends(get_dataset)) -> MemoryGraph:
 
 def get_sqlite_conn(dataset: ActiveDataset = Depends(get_dataset)) -> sqlite3.Connection:
     return dataset.sqlite_conn
+
+
+# 데이터셋 SQLite(메모리 DB, check_same_thread=False) 연결 하나를 스레드풀 라우트들이 함께 쓴다 -- 동시에 질의하면
+# `sqlite3.InterfaceError: bad parameter or other API misuse`로 500이 났다(claude-a 요청 2026-10-12, 교체 설명 동시 5건).
+# 질의는 ms 단위라 요청별 연결 복사 대신 잠금으로 줄을 세운다. 연결을 쓰는 곳은 반드시 이 잠금 안에서 쓴다.
+SQLITE_LOCK = threading.Lock()
 
 
 def get_evidence(dataset: ActiveDataset = Depends(get_dataset)):

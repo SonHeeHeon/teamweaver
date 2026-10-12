@@ -103,7 +103,10 @@ def public_view(out: dict) -> dict:
 
 
 _PAIRS = {"은": "은/는", "는": "은/는", "이": "이/가", "가": "이/가", "을": "을/를", "를": "을/를", "과": "과/와", "와": "과/와",
-          "으로": "으로/로", "로": "으로/로"}
+          "으로": "으로/로", "로": "으로/로",
+          # ID 뒤에 받침을 몰라 괄호로 쓴 조사(규칙 설명 폴백의 "DP0004(으)로 교체 검토") -- 이름으로 바꾸면 받침에 맞춘다
+          "(으)로": "으로/로", "(이)가": "이/가", "은(는)": "은/는", "는(은)": "은/는", "이(가)": "이/가", "가(이)": "이/가",
+          "을(를)": "을/를", "를(을)": "을/를", "과(와)": "과/와", "와(과)": "과/와"}
 
 
 def display_names(dataset: ActiveDataset) -> dict[str, str]:
@@ -122,7 +125,8 @@ def with_names(text: str | None, names: dict[str, str]) -> str | None:
     from core.kg.justify import josa
     ids = sorted(names, key=len, reverse=True)
     # 조사는 그 뒤가 띄어쓰기·문장부호·끝일 때만 본다 -- "DP0001이며"의 '이'는 조사가 아니라 서술격이다
-    pattern = re.compile("(" + "|".join(re.escape(i) for i in ids) + r")(?:(으로|은|는|이|가|을|를|과|와|로)(?=[\s,.;:!?)\]\[]|$))?(?![0-9A-Za-z])")
+    particles = "|".join(re.escape(k) for k in sorted(_PAIRS, key=len, reverse=True))   # 긴 것부터("(으)로"가 "로"보다 먼저)
+    pattern = re.compile("(" + "|".join(re.escape(i) for i in ids) + r")(?:(" + particles + r")(?=[\s,.;:!?)\]\[]|$))?(?![0-9A-Za-z])")
 
     def repl(m):
         name, particle = names[m.group(1)], m.group(2)

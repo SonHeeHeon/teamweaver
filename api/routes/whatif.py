@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from api.datasets import ActiveDataset
 from api.briefing_evidence import clamp_briefing
 from api.deps import (check_dataset_version, get_dataset, get_evidence, get_graph,
-                      get_openai_client_or_none, get_sqlite_conn, llm_client_for)
+                      get_openai_client_or_none, get_sqlite_conn, llm_client_for, SQLITE_LOCK)
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
@@ -105,8 +105,9 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     # 근거 색인은 두 곳에 같이 넘긴다(K5): 문맥에만 넘기면 브리핑의 인용 검증이 꺼진다.
     # 교체 대상 프로젝트의 요구 기술과 점수 변화를 넘긴다(claude-a 요청 2026-10-05): 없으면 LLM이
     # "정보 부족으로 단정 어렵다"를 반복했다.
-    ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence,
-                       project_id=req.swap.project_id)
+    with SQLITE_LOCK:                                   # 공유 연결 -- 동시 요청이 겹치면 500(api.deps.SQLITE_LOCK)
+        ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence,
+                           project_id=req.swap.project_id)
     score_change = {k: getattr(after.objective, k) - getattr(before.objective, k)
                     for k in ("skill", "synergy", "overfamiliarity", "unfilled")}
     score_change["total"] = after.objective.total - before.objective.total
@@ -117,7 +118,9 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     fallback_used = False
     client, fallback_reason = llm_client_for(dataset, client)
     if client is None:
-        briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
+        # 위반 교체면 규칙 설명도 결론을 "보류"로 쓴다 -- 넘기지 않으면 "뚜렷한 리스크가 관측되지 않는다"가 나와
+        # 화면의 위반 경고와 어긋났다(claude-a 요청 2026-10-12 (1))
+        briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id, score_change=score_change)
         fallback_used = True
     else:
         try:
@@ -126,7 +129,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
                                          req.swap.in_person_id, evidence=evidence,
                                          score_change=score_change)
         except Exception:                               # noqa: BLE001 -- LLM 장애는 데모를 죽이지 않는다
-            briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id)
+            briefing = rule_based_briefing(ctx, req.swap.out_person_id, req.swap.in_person_id,
+                                           score_change=score_change)
             fallback_used = True
             fallback_reason = "llm_error"
 
