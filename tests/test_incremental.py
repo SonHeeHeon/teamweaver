@@ -304,4 +304,129 @@ def test_best_additions_opens_seats_for_net_growth_not_for_every_newcomer(monkey
     monkeypatch.setattr(sim, "solve_milp_assessment", lambda *a, **k: fake)
     best = sim.best_additions(graph, S, C, params, before, "P1", 1, pull_budget=1)
     assert best["delta"]["unfilled"] == 0
-    assert best["violations"] == []
+    assert best["violations"] == [] and best["new_violations"] == []
+
+
+def test_best_additions_reports_only_violations_it_creates(monkeypatch):
+    """A base plan that already breaks a rule: the old violation is in `violations` but not in `new_violations`."""
+    from types import SimpleNamespace
+
+    import core.evaluate.staffing_sim as sim
+    graph, S, C, params = _case()
+    entries = _plan_entries() + [AssignEntry(person_id="p0", project_id="P2", alloc=1.0)]   # p0 over 100% (old violation)
+    after = entries + [AssignEntry(person_id="p3", project_id="P1", alloc=1.0)]
+    fake = SimpleNamespace(accepted=SimpleNamespace(plan=SimpleNamespace(entries=after)), native_capture=None)
+    monkeypatch.setattr(sim, "solve_milp_assessment", lambda *a, **k: fake)
+    best = sim.best_additions(graph, S, C, params, entries, "P1", 1)
+    before = {(v.code, v.location) for v in evaluate_plan(graph, S, C, params, entries).violations}
+    assert before and before <= {(v["code"], v["location"]) for v in best["violations"]}
+    assert not (set(best["new_violations"]) & before)
+    # a violation the addition does create is reported (p3 also on P2 at 100% -> over availability)
+    after2 = after + [AssignEntry(person_id="p3", project_id="P2", alloc=1.0)]
+    fake2 = SimpleNamespace(accepted=SimpleNamespace(plan=SimpleNamespace(entries=after2)), native_capture=None)
+    monkeypatch.setattr(sim, "solve_milp_assessment", lambda *a, **k: fake2)
+    best2 = sim.best_additions(graph, S, C, params, entries, "P1", 1)
+    assert any("p3" in loc for _, loc in best2["new_violations"]) and not (set(best2["new_violations"]) & before)
+
+
+def test_move_budget_counts_people_not_assignments():
+    """Codex audit 2026-10-12: K counted removed assignments, so one person on two projects who moves cost 2.
+    Here p0 (50% on A and 50% on B) is much better on the new proposal T; with K=1 the whole person may move."""
+    people = [_person("p0", Grade.MID), _person("q1", Grade.MID), _person("q2", Grade.MID)]
+    req = [SkillRequirement(skill="Python", min_level=1, headcount=1)]
+    def proj(pid, phase):
+        return Project(id=pid, name=pid, sector=Sector.INTERNAL, phase=phase, start_month=0, end_month=5,
+                       grade_headcount={Grade.MID: 1}, requirements=req, monthly_budget=100_000)
+    projects = [proj("A", ProjectPhase.EXECUTION), proj("B", ProjectPhase.EXECUTION), proj("T", ProjectPhase.PROPOSAL)]
+    graph = MemoryGraph.build(Dataset(people=people, projects=projects, coworks=[], reviews=[]), parsed=[])
+    S = np.array([[0.2, 0.2, 1.0], [0.5, 0.5, 0.1], [0.5, 0.5, 0.1]])      # p0 fits T; q1, q2 fit A, B
+    C = np.zeros((3, 3))
+    params = MilpParams(min_alloc=0.5, time_limit=30, gap=0.0, solver="highs", max_pairs=10, pair_keep_ratio=1.0)
+    current = [CurrentAssignment(person_id="p0", project_id="A", alloc=0.5),
+               CurrentAssignment(person_id="p0", project_id="B", alloc=0.5)]
+    (row,) = compare_move_budgets(graph, S, C, params, current, ks=(1,))
+    moved = {(m["person_id"], m["from"]) for m in row["diff"]["moved"]}
+    assert moved == {("p0", "A"), ("p0", "B")}                             # one person, both assignments
+    assert row["unfilled_seats"] == 0
+
+
+def test_unfilled_seats_do_not_vanish_when_the_seat_penalty_is_zero():
+    """Codex audit 2026-10-12: seats were back-computed from the penalty, so slack_penalty=0 reported 0 empty seats."""
+    from core.evaluate.baseline import _summary
+    graph, S, C, params = _case()
+    zero = params.model_copy(update={"slack_penalty": 0.0})
+    want = sum(sum(p.grade_headcount.values()) for p in graph.projects)
+    assert _summary(graph, S, C, zero, [])["unfilled_seats"] == want
+    (row,) = compare_move_budgets(graph, S, C, zero, [], ks=(0,))
+    assert row["unfilled_seats"] == sum(len(row["unfilled"]) and int(u.split(":")[2].split("명")[0]) for u in row["unfilled"])
+
+
+def _three_projects(people, quotas=None):
+    req = [SkillRequirement(skill="Python", min_level=1, headcount=1)]
+    quotas = quotas or {"A": {Grade.MID: 1}, "B": {Grade.MID: 1}, "T": {Grade.MID: 1}}
+    projects = [Project(id=pid, name=pid, sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION, start_month=0, end_month=5,
+                        grade_headcount=q, requirements=req, monthly_budget=100_000) for pid, q in quotas.items()]
+    return MemoryGraph.build(Dataset(people=people, projects=projects, coworks=[], reviews=[]), parsed=[])
+
+
+def test_pull_takes_only_the_project_it_needs():
+    """Codex audit 2026-10-12: a person on A and B (40% each, 20% free, minimum 30%) was pulled from both, making two
+    vacancies; pulling from one is enough and better."""
+    from core.evaluate.staffing_sim import rank_candidates
+    graph = _three_projects([_person("x", Grade.MID), _person("t1", Grade.MID)])
+    S, C = np.full((2, 3), 0.6), np.zeros((2, 2))
+    params = MilpParams(min_alloc=0.3, time_limit=30, gap=0.0, solver="highs", max_pairs=10, pair_keep_ratio=1.0)
+    entries = [AssignEntry(person_id="x", project_id="A", alloc=0.4), AssignEntry(person_id="x", project_id="B", alloc=0.4),
+               AssignEntry(person_id="t1", project_id="T", alloc=1.0)]
+    (row,) = [r for r in rank_candidates(graph, S, C, params, entries, "T", include_pull=True, top=None) if r["person_id"] == "x"]
+    assert len(row["pulled_from"]) == 1 and row["delta"]["unfilled"] == -100.0
+
+
+def test_best_additions_respects_the_chosen_grade_even_if_unlisted():
+    """Codex audit 2026-10-12: grade=SENIOR on a project whose quota lists only MID let a better-fitting junior in."""
+    from core.evaluate.staffing_sim import best_additions
+    graph = _three_projects([_person("m", Grade.MID), _person("s", Grade.SENIOR), _person("j", Grade.JUNIOR)],
+                            {"T": {Grade.MID: 1}})
+    S, C = np.array([[0.5], [0.1], [1.0]]), np.zeros((3, 3))
+    params = MilpParams(min_alloc=1.0, time_limit=30, gap=0.0, solver="highs", max_pairs=10, pair_keep_ratio=1.0)
+    best = best_additions(graph, S, C, params, [AssignEntry(person_id="m", project_id="T", alloc=1.0)], "T", 1,
+                          grade=Grade.SENIOR)
+    assert best["accepted"] and [j["person_id"] for j in best["diff"]["joined"]] == ["s"]
+    # even when the only senior hurts the score, n=1 adds one (an unlisted grade used to allow adding nobody)
+    S2 = np.array([[0.5], [0.0], [1.0]])
+    C2 = np.zeros((3, 3)); C2[0, 1] = C2[1, 0] = -1.0
+    best2 = best_additions(graph, S2, C2, params, [AssignEntry(person_id="m", project_id="T", alloc=1.0)], "T", 1,
+                           grade=Grade.SENIOR)
+    assert best2["accepted"] and [j["person_id"] for j in best2["diff"]["joined"]] == ["s"]
+
+
+def test_best_additions_keeps_monthly_allocations_of_kept_members():
+    """Codex audit 2026-10-12: a kept member's monthly profile (20%/80%…) was flattened to its average."""
+    from core.evaluate.staffing_sim import best_additions
+    graph = _three_projects([_person("m", Grade.MID), _person("b", Grade.MID)], {"T": {Grade.MID: 1}})
+    S, C = np.array([[0.5], [0.9]]), np.zeros((2, 2))
+    params = MilpParams(min_alloc=0.1, time_limit=30, gap=0.0, solver="highs", max_pairs=10, pair_keep_ratio=1.0)
+    profile = {m: (0.2 if m % 2 == 0 else 0.8) for m in range(6)}
+    kept = AssignEntry(person_id="m", project_id="T", alloc=0.5, monthly_alloc=profile)
+    best = best_additions(graph, S, C, params, [kept], "T", 1)
+    (after,) = [e for e in best["entries"] if e.person_id == "m"]
+    assert after.monthly_alloc and all(abs(after.monthly_alloc[m] - profile[m]) < 1e-6 for m in profile)
+
+
+def test_move_budget_keeps_refinement_and_extra_row_checks(monkeypatch):
+    """2026-10-12 fallback review: the per-person 'moved' variables made the model look mutated, which silently turned
+    off the C1 refinement and the independent check of the move-budget rows (policy disabled, 0 extra rows).
+    Their solved values are now fixed, so both stay on."""
+    from core.optimize import numerics
+    from core.optimize.incremental import move_budget_constraints
+    from core.optimize.milp import solve_milp_assessment
+    seen = {}
+    orig = numerics.assess_candidate
+
+    def spy(*a, **k):
+        seen.update(enabled=k["policy"].enabled, rows=len(k.get("extra_linear_constraints") or ()))
+        return orig(*a, **k)
+    monkeypatch.setattr(numerics, "assess_candidate", spy)
+    graph, S, C, params = _case()
+    a = solve_milp_assessment(graph, S, C, params, extra_constraints=move_budget_constraints(graph, CURRENT, 1))
+    assert a.accepted is not None and seen["enabled"] and seen["rows"] > 0

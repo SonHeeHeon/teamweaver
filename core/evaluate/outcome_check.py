@@ -198,6 +198,10 @@ def regression(rows: list[dict], outcome: str = "customer_score",
     The features are correlated (co-work vs familiarity / industry ~0.6-0.7), so wide intervals mean "cannot tell",
     not "no effect" -- the same data cannot even recover industry experience, which the generator weights at 0.5."""
     import numpy as np
+    if len(rows) < len(features) + 2:
+        # 분석할 사업이 없거나(성과 행 없음·모두 1인 팀) 계수보다 적으면 회귀하지 않는다 -- 빈 배열에서 예외로 끝났다(Codex 감사
+        # 2026-10-12). 빈 결과면 verdicts는 단순 상관으로 돌아가고, 그것도 없으면 "unknown"이다.
+        return {}
     X = np.array([[r[f] for f in features] for r in rows], dtype=float)
     y = np.array([r[outcome] for r in rows], dtype=float)
     mu, sd = X.mean(axis=0), X.std(axis=0)

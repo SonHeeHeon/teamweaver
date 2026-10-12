@@ -159,3 +159,53 @@ def test_held_out_scenarios_use_signals_no_candidate_scores():
     from core.evaluate.factor_lab.simulator import HELD_OUT
     held = [s for s in SCENARIOS if s.name in HELD_OUT]
     assert len(held) == 2 and all(s.coverage_w or s.fragmentation_w for s in held)
+
+
+def test_unfilled_seats_counts_people_not_rows():
+    """Codex audit 2026-10-12: len(unfilled) counted one '(project, grade)' string as one seat."""
+    from core.evaluate.factor_lab.factors import unfilled_seats
+    assert unfilled_seats(["J1:고급:3명 미충원", "J2:중급:1명 미충원"]) == 4 and unfilled_seats([]) == 0
+
+
+def test_depth_and_recency_use_the_dictionary_names(org):
+    """Codex audit 2026-10-12: D/R keyed raw CSV names, so an alias the input stage merges (Apache Spark = Spark)
+    gave S credit but D = R = 0. Renaming a skill to an alias must not change D or R."""
+    import copy
+    bundle, _, g = org
+    F = compute_factors(g, bundle)
+    req = next(r for r in bundle.tables["project_skill_requirements.csv"] if r["skill_name"] == "Spark")
+    row = next(r for r in bundle.tables["person_skills.csv"] if r["skill_name"] == "Spark" and r["experience_months"] > req["min_experience_months"])
+    i, j = g.pid_index[row["person_id"]], g.project_index[req["project_id"]]
+    b2 = copy.copy(bundle)
+    b2.tables = dict(bundle.tables, **{"person_skills.csv": [dict(r, skill_name="Apache Spark") if r is row else r
+                                                            for r in bundle.tables["person_skills.csv"]]})
+    F2 = compute_factors(g, b2)
+    assert F[ "D"][i, j] > 0 and F2["D"][i, j] == pytest.approx(F["D"][i, j]) and F2["R"][i, j] == pytest.approx(F["R"][i, j])
+
+
+
+
+def test_recency_follows_the_credit_that_set_the_depth(org):
+    """Codex review 2026-10-12: when credited months (Spring -> Java, 70%) set the depth, recency must come from the
+    same source skill -- the person's own old Java date must not matter."""
+    import copy
+    import datetime as dt
+    bundle, _, g = org
+    pid = g.people[0].id
+    jid = g.projects[0].id
+
+    def with_java(java_last, spring_last=dt.date(2026, 6, 1)):
+        b2 = copy.copy(bundle)
+        rows = [r for r in bundle.tables["person_skills.csv"] if r["person_id"] != pid]
+        rows += [{"person_id": pid, "skill_name": "Java", "experience_months": 10, "last_used_month": java_last},
+                 {"person_id": pid, "skill_name": "Spring", "experience_months": 100, "last_used_month": spring_last}]
+        reqs = [r for r in bundle.tables["project_skill_requirements.csv"] if r["project_id"] != jid]
+        reqs += [{"project_id": jid, "skill_name": "Java", "min_experience_months": 12, "headcount": 1}]
+        b2.tables = dict(bundle.tables, **{"person_skills.csv": rows, "project_skill_requirements.csv": reqs})
+        return compute_factors(g, b2)
+    i, j = g.pid_index[pid], g.project_index[jid]
+    old, recent = with_java(dt.date(2020, 1, 1)), with_java(dt.date(2026, 5, 1))
+    assert old["D"][i, j] > 0                                  # 70 credited months beat 10 own months
+    assert old["R"][i, j] == pytest.approx(recent["R"][i, j])  # recency from Spring, not the own Java date
+    # the credit source has no date: no recency from the person's own Java date either
+    assert with_java(dt.date(2026, 5, 1), spring_last=None)["R"][i, j] == pytest.approx(0.0)

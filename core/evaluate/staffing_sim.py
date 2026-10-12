@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import itertools
 import math
 from dataclasses import replace
 
@@ -123,27 +124,38 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         if pid in team:
             continue
         elsewhere = sorted({e.project_id for e in entries if e.person_id == pid})
-        removes: list[tuple[str, str]] = []
-        free = _free_alloc(graph, entries, pid, project_id)
-        if free < params.min_alloc - 1e-9:
-            if not (elsewhere and include_pull) or any((pid, p) in locked for p in elsewhere):
-                continue                                  # 남는 가용률이 없다 -- 빼 오기 허용·잠금 아님일 때만 후보
-            removes = [(pid, p) for p in elsewhere]       # 다른 사업에서 빼 온다(그 사업의 빈자리 감점까지 계산)
-            free = _free_alloc(graph, [e for e in entries if e.person_id != pid], pid, project_id)
-        alloc = math.floor(min(1.0, free) * 10_000) / 10_000      # 내림: 반올림하면 남은 가용률을 넘을 수 있다
-        if budget_add is not None:                                 # 정해진 추가 예산 안으로 투입률을 맞춘다
-            room = (graph.projects[j].monthly_budget + int(budget_add) - spent) / person.monthly_rate
-            if room >= params.min_alloc - 1e-9:
-                alloc = min(alloc, math.floor(room * 10_000) / 10_000)
-        if alloc < params.min_alloc - 1e-9:
-            continue
         i_ = graph.pid_index[pid]
-        quick = float(S[i_, j]) * alloc + pair_value(i_, teams.get(project_id, []))
-        for _, src in removes:                     # 빼 오면 원래 사업의 기여와 정원 자리를 잃는다
-            src_e = next(e for e in entries if e.person_id == pid and e.project_id == src)
-            quick -= float(S[i_, graph.project_index[src]]) * src_e.alloc + pair_value(i_, teams.get(src, []))
-            if person.grade in listed[src]:
-                quick -= params.slack_penalty
+
+        def option(subset: tuple[str, ...]):
+            """subset 사업에서 빼 오면: (근사 점수, 빼는 배치, 투입률). 최소 투입률을 못 채우면 None."""
+            rest = [e for e in entries if not (e.person_id == pid and e.project_id in subset)]
+            alloc = math.floor(min(1.0, _free_alloc(graph, rest, pid, project_id)) * 10_000) / 10_000   # 내림: 반올림하면 남은 가용률을 넘을 수 있다
+            if budget_add is not None:                             # 정해진 추가 예산 안으로 투입률을 맞춘다
+                room = (graph.projects[j].monthly_budget + int(budget_add) - spent) / person.monthly_rate
+                if room >= params.min_alloc - 1e-9:
+                    alloc = min(alloc, math.floor(room * 10_000) / 10_000)
+            if alloc < params.min_alloc - 1e-9:
+                return None
+            quick = float(S[i_, j]) * alloc + pair_value(i_, teams.get(project_id, []))
+            for src in subset:                     # 빼 오면 원래 사업의 기여와 정원 자리를 잃는다
+                src_e = next(e for e in entries if e.person_id == pid and e.project_id == src)
+                quick -= float(S[i_, graph.project_index[src]]) * src_e.alloc + pair_value(i_, teams.get(src, []))
+                if person.grade in listed[src]:
+                    quick -= params.slack_penalty
+            return quick, [(pid, p) for p in subset], alloc
+
+        best = option(())
+        if best is None:
+            if not (elsewhere and include_pull):
+                continue                                  # 남는 가용률이 없다 -- 빼 오기 허용일 때만 후보
+            # 겸직자는 필요한 사업에서만 빼 온다(잠긴 배치는 그대로) -- 예전엔 모든 사업에서 빼 빈자리·점수가 틀렸다(Codex 감사 2026-10-12)
+            pullable = [p for p in elsewhere if (pid, p) not in locked]
+            opts = [o for size in range(1, len(pullable) + 1) for sub in itertools.combinations(pullable, size)
+                    if (o := option(sub)) is not None]
+            if not opts:
+                continue
+            best = max(opts, key=lambda o: (o[0], -len(o[1])))
+        quick, removes, alloc = best
         screened.append((quick, person, pid, elsewhere, removes, alloc))
     screened.sort(key=lambda t: (-t[0], t[2]))
     out = []
@@ -182,7 +194,15 @@ def best_additions(graph: MemoryGraph, S, C, params: MilpParams, entries: list[A
         budget_add = n * max(p.monthly_rate for p in graph.people)
     target = graph.projects[graph.project_index[project_id]]
     if grade is not None:
-        g2 = graph_with_extra_seats(graph, project_id, {grade: n}, budget_add)
+        # 고른 등급이 정원에 없으면 그 등급 정원을 "지금 팀의 그 등급 인원 + n"으로 둔다 -- 자리가 없으면 아무도 안 넣는 해(0명)도
+        # "최선"이 됐다(Codex 리뷰 2026-10-12). 정원에 있으면 정원 + n(예전과 같음).
+        have = sum(1 for e in entries if e.project_id == project_id
+                   and graph.people[graph.pid_index[e.person_id]].grade == grade)
+        hc = dict(target.grade_headcount)
+        hc[grade] = hc.get(grade, have) + n
+        projects = [p.model_copy(update={"grade_headcount": hc, "monthly_budget": p.monthly_budget + int(budget_add)})
+                    if p.id == project_id else p for p in graph.projects]
+        g2 = replace(graph, projects=projects, _within_cache={})
     else:
         # 등급을 정하지 않으면 **모든 등급**에 n자리씩 연다: 정원에 있던 등급은 정원 + n, 없던 등급은 지금 팀의 그 등급
         # 인원 + n. 일부 등급에만 열면 빈자리 감점(자리당 slack_penalty)을 줄이려고 그 등급만 고르는 왜곡이 생긴다
@@ -199,14 +219,30 @@ def best_additions(graph: MemoryGraph, S, C, params: MilpParams, entries: list[A
         g2 = replace(graph, projects=projects, _within_cache={})
     current = [CurrentAssignment(person_id=e.person_id, project_id=e.project_id, alloc=e.alloc,
                                  locked=(e.person_id, e.project_id) in locked) for e in entries]
-    cb = move_budget_constraints(g2, current, pull_budget, extra_seats={project_id: n}, cap_unstaffed=True,
-                                 movers_to=project_id, fill_open_seats=False)
-    a = solve_milp_assessment(g2, S, C, exact(params), extra_constraints=cb)
+    # 달별 투입률이 있는 기준 배치(K 결과·달별 조정)는 달마다 그대로 지킨다 -- 그러려면 달별 변수(monthly)로 푼다(Codex 감사 2026-10-12)
+    profiles = {(e.person_id, e.project_id): dict(e.monthly_alloc) for e in entries if e.monthly_alloc}
+    solve_params = exact(params)
+    if profiles and solve_params.allocation_mode != "monthly":
+        solve_params = solve_params.model_copy(update={"allocation_mode": "monthly"})
+    base_cb = move_budget_constraints(g2, current, pull_budget, extra_seats={project_id: n}, cap_unstaffed=True,
+                                      movers_to=project_id, fill_open_seats=False, monthly_alloc=profiles)
+    old_members = {e.person_id for e in entries if e.project_id == project_id}
+
+    def cb(prob, z, alloc_vars):
+        base_cb(prob, z, alloc_vars)
+        if grade is not None:
+            # 고른 추가 등급만 새로 들어온다 -- 정원에 없는 등급이면 자리를 늘려도 제약이 없어 다른 등급이 들어왔다(Codex 감사 2026-10-12)
+            jt = graph.project_index[project_id]
+            for i_, person in enumerate(graph.people):
+                if person.grade != grade and person.id not in old_members:
+                    prob += z[i_][jt] == 0
+    a = solve_milp_assessment(g2, S, C, solve_params, extra_constraints=cb)
     ev = a.native_capture.evidence if a.native_capture is not None else None
     if a.accepted is None:
         return {"accepted": False, "termination": getattr(ev, "termination_reason", None)}
     new = list(a.accepted.plan.entries)
-    before = _parts(evaluate_plan(graph, S, C, params, entries))          # 보강 전 = 원래 정원·예산
+    before_eval = evaluate_plan(graph, S, C, params, entries)            # 보강 전 = 원래 정원·예산
+    before = _parts(before_eval)
     grade_of = {p.id: p.grade for p in graph.people}
 
     def team_by_grade(plan: list[AssignEntry]) -> dict:
@@ -228,4 +264,8 @@ def best_additions(graph: MemoryGraph, S, C, params: MilpParams, entries: list[A
     return {"accepted": True, "termination": getattr(ev, "termination_reason", None), "added_cost": round(added_cost, 2),
             "entries": new, "diff": moves_from(current, new),
             "before": before, "after": after, "delta": {k: after[k] - before[k] for k in before},
-            "violations": [{"code": v.code, "location": v.location} for v in after_eval.violations]}
+            "violations": [{"code": v.code, "location": v.location} for v in after_eval.violations],
+            # simulate와 같은 모양: 보강으로 새로 생긴 위반만. 화면의 "새 위반"은 이 값을 써야 한다 -- violations는 보강 후 전체라
+            # 기준 배치에 원래 있던 위반이 새 위반처럼 보였다(폴백 리뷰 2026-10-12)
+            "new_violations": sorted({(v.code, v.location) for v in after_eval.violations}
+                                     - {(v.code, v.location) for v in before_eval.violations})}

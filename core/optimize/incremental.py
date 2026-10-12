@@ -5,7 +5,8 @@
 
 규칙(현재 배치 = Dataset.current):
 - 유지되는 배치는 사람·사업·투입률이 그대로다: a_ij = 현재 투입률 × z_ij (z_ij=0이면 그 사람이 그 사업에서 빠진 것).
-- 빠지는 배치 수 Σ(1 − z_ij) ≤ K(변경 예산). 잠긴 배치(locked)는 빠질 수 없다.
+- 옮기는 **사람** 수 ≤ K(변경 예산): 사람 i가 현재 배치 하나라도 빠지면 m_i = 1, Σ m_i ≤ K. 잠긴 배치(locked)는 빠질 수 없다.
+  (2026-10-12 Codex 감사: 예전엔 빠지는 배치 수를 세어 두 사업 겸직자 한 명이 옮기면 2로 셌다 -- 화면·대본의 "최대 K명"과 달랐다)
 - 진행 중 사업(현재 명단이 있는 사업)은 인원이 늘지 않는다: 빠진 자리만 다른 사람으로 메운다(정원식이 등급별 인원을 지킨다).
 - 그 밖(신규 제안, 남는 인력)은 모델이 자유롭게 정한다. 목적식·제약은 서비스 MILP 그대로다 -- 독립 검증·보정도 그대로 탄다.
 """
@@ -22,7 +23,8 @@ from core.graph.memory_graph import MemoryGraph
 def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment], k: int,
                             frozen_projects: set[str] | None = None, extra_seats: dict[str, int] | None = None,
                             cap_unstaffed: bool = False, movers_must_be_placed: bool = True,
-                            movers_to: str | None = None, fill_open_seats: bool = True):
+                            movers_to: str | None = None, fill_open_seats: bool = True,
+                            monthly_alloc: dict[tuple[str, str], dict[int, float]] | None = None):
     """MILP 추가 제약 콜백.
 
     frozen_projects: 명단이 아예 바뀌지 않는 사업. extra_seats: 그 사업은 현재 인원 + n명까지(보강).
@@ -31,7 +33,9 @@ def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment]
     넣었을 때") -- 없으면 엔진이 "빼서 대기시키고 남는 인력으로 교체"하는 해를 낸다(2026-10-06 실측).
     movers_to: 빠진 사람은 이 사업으로만 간다(보강: 다른 사업에서 빼 온 사람은 대상 사업으로).
     fill_open_seats: 진행 사업 인원 상한을 max(현재 인원, 정원)으로 -- 덜 찬 명단의 빈 정원은 메울 수 있게(신규 제안 편성).
-    보강은 False(그래프에 열어 둔 자리가 많아도 현재 인원 + n으로 정확히)."""
+    보강은 False(그래프에 열어 둔 자리가 많아도 현재 인원 + n으로 정확히).
+    monthly_alloc: (사람, 사업) → 달별 투입률. 유지되는 배치는 달마다 그 값 그대로(달별 변수일 때) -- 없으면 평균 투입률로
+    모든 달을 묶어 달별 모양이 평평해졌다(Codex 감사 2026-10-12). 달별 모양을 지키려면 풀이를 monthly 모드로 해야 한다."""
     if k < 0:
         raise ValueError("move budget must be >= 0")
     pdx, jdx = graph.pid_index, graph.project_index
@@ -53,11 +57,18 @@ def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment]
     frozen = {jdx[p] for p in (frozen_projects or set()) if p in jdx}
     n_people = len(graph.people)
 
+    profiles = {(pdx[p], jdx[j]): prof for (p, j), prof in (monthly_alloc or {}).items() if p in pdx and j in jdx}
+
     def constrain(prob, z, alloc_vars):
         for i, j, alloc, locked in rows:
-            for v in alloc_vars(i, j):
-                prob += v <= alloc                      # 늘리지 않는다
-                prob += v >= alloc * z[i][j]            # 유지하면(z=1) 그대로, 빠지면(z=0) 0(기존 a ≤ z)
+            vs = alloc_vars(i, j)
+            prof = profiles.get((i, j))
+            months = graph.projects[j].months
+            targets = ([float(prof.get(m, alloc)) for m in months] if prof and len(vs) == len(months)
+                       else [alloc] * len(vs))
+            for v, t in zip(vs, targets):
+                prob += v <= t                          # 늘리지 않는다
+                prob += v >= t * z[i][j]                # 유지하면(z=1) 그대로, 빠지면(z=0) 0(기존 a ≤ z)
             if locked or j in frozen:
                 prob += z[i][j] == 1
             elif movers_to is not None and movers_to in jdx and jdx[movers_to] != j:
@@ -68,7 +79,12 @@ def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment]
                 prob += pulp.lpSum(z[i][jj] for jj in range(len(graph.projects))
                                    if jj not in current_projects[i]) >= 1 - z[i][j]
         if rows:
-            prob += pulp.lpSum(1 - z[i][j] for i, j, _, _ in rows) <= k
+            moved = {}
+            for i, j, _, _ in rows:                     # m_i >= 1 - z_ij: 현재 배치 하나라도 빠지면 그 사람은 옮긴 사람
+                if i not in moved:
+                    moved[i] = pulp.LpVariable(f"moved_person_{i}", cat="Binary")
+                prob += moved[i] >= 1 - z[i][j]
+            prob += pulp.lpSum(moved.values()) <= k
         for j, size in team_size.items():               # 진행 중 사업은 인원이 늘지 않는다(빠진 자리만 메움)
             prob += pulp.lpSum(z[i][j] for i in range(n_people)) <= size
         for j in frozen:                                 # 고정 사업에는 새로 들어오지도 않는다

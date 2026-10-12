@@ -25,7 +25,7 @@ def _summary(graph: MemoryGraph, S, C, params: MilpParams, entries) -> dict:
     return {
         "total": round(o.total, 4), "quality": round(o.skill + o.synergy + o.overfamiliarity, 4),
         "skill": round(o.skill, 4), "synergy": round(o.synergy, 4), "overfamiliarity": round(o.overfamiliarity, 4),
-        "unfilled_seats": int(round(-o.unfilled / params.slack_penalty)) if params.slack_penalty else 0,
+        "unfilled_seats": sum(s.missing for s in ev.shortfalls),       # 감점에서 거꾸로 나누면 slack_penalty=0일 때 0석(Codex 감사 2026-10-12)
         "avg_seat_fit": round(sum(fits) / len(fits), 4) if fits else None,
         "assignments": len(entries), "people": len({e.person_id for e in entries}),
         "violations": dict(sorted(Counter(v.code for v in ev.violations).items())),
