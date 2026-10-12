@@ -415,7 +415,8 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         native_status=status,
         # PuLP는 CBC가 시간 한도에서 멈춰도 해가 있으면 status를 "Optimal"로 바꿔 준다 -- 그 경우
         # sol_status만 IntegerFeasible이다. 시간 한도에 걸린 해는 부하에 따라 달라지므로 구분해 둔다.
-        termination_reason=("time_limit_incumbent"
+        # 사용자가 멈춘 풀이(core/optimize/interrupt, finish)는 시간 한도와 구분한다 -- 둘 다 최선 증명 전의 해다
+        termination_reason=(("user_interrupt" if getattr(solver, "interrupted", False) else "time_limit_incumbent")
                             if prob.sol_status == pulp.LpSolutionIntegerFeasible else status),
         has_incumbent=has_incumbent,
         best_bound=_highs_best_bound(prob, solver) if params.solver == "highs" else None,

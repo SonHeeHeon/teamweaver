@@ -24,6 +24,11 @@
   오류면 RuntimeError로 이유를 올린다 -- "해 없음"으로 위장되지 않게.
 
 seeds=1이면 PuLP의 HiGHS와 똑같이 동작한다(기본값, 시험 속도와 기존 결과 유지).
+
+멈춤(2026-10-12, `core/optimize/interrupt`): 호출 스레드에 멈춤 신호가 걸려 있으면 풀이 시작 전에 이미 멈춤이면
+`SolveCancelled`, 풀이 중이면 HiGHS 중단 콜백으로 멈춘다(시드 1은 이 프로세스의 콜백, 시드 2+는 프로세스 공유 이벤트를
+각 시드의 콜백이 본다). finish면 그때까지의 해로 위와 같이 고르고(`self.interrupted`), abort면 시드를 바로 끝내고
+`SolveCancelled`. 중단을 받고도 INTERRUPT_GRACE_S 안에 답하지 않는 시드는 끝내고 오류로 기록한다.
 """
 from __future__ import annotations
 
@@ -37,7 +42,11 @@ import numpy as np
 import pulp
 from pulp import constants
 
+from core.optimize.interrupt import SolveCancelled, current as current_stop
+
 log = logging.getLogger(__name__)
+
+INTERRUPT_GRACE_S = 10.0          # finish 멈춤 뒤 시드가 해를 돌려줄 때까지 기다리는 시간
 
 _FEASIBLE = 2                     # HiGHS SolutionStatus kSolutionStatusFeasible
 _OPTIONS = ("time_limit", "mip_rel_gap", "mip_abs_gap", "threads", "output_flag")
@@ -66,12 +75,30 @@ def _export(h, extra_options: dict) -> dict:
     }
 
 
-def _solve_exported(model: dict, seed: int) -> dict:
-    """작업 프로세스: 배열로 모델을 다시 만들고 시드만 바꿔 푼다. 실패는 예외 대신 error로 돌려준다."""
+def _interrupt_callbacks():
+    import highspy
+    t = highspy.cb.HighsCallbackType
+    # MIP 탐색 중·뿌리 LP(심플렉스·내점법) 중 모두 멈출 수 있게 -- 큰 모델은 뿌리 LP만 수십 초 걸린다
+    return [t.kCallbackMipInterrupt, t.kCallbackSimplexInterrupt, t.kCallbackIpmInterrupt]
+
+
+def _interrupt_when_set(callback_type, message, data_out, data_in, flag) -> None:
+    """HiGHS 중단 콜백: flag(threading.Event·multiprocessing.Event·SolveStop -- is_set()만 본다)가 켜지면 멈춘다."""
+    if flag.is_set():
+        data_in.user_interrupt = True
+
+
+def _solve_exported(model: dict, seed: int, stop_event=None) -> dict:
+    """작업 프로세스: 배열로 모델을 다시 만들고 시드만 바꿔 푼다. 실패는 예외 대신 error로 돌려준다.
+    stop_event(프로세스 공유 이벤트)가 켜지면 HiGHS가 그때까지의 해를 들고 멈춘다(상태 kInterrupt)."""
     try:
         import highspy
         h = highspy.Highs()
         h.setOptionValue("output_flag", False)
+        if stop_event is not None:
+            h.setCallback(_interrupt_when_set, stop_event)
+            for cb_type in _interrupt_callbacks():
+                h.startCallback(cb_type)
         lp = highspy.HighsLp()
         lp.num_col_, lp.num_row_ = model["num_col"], model["num_row"]
         lp.sense_ = highspy.ObjSense(model["sense"])
@@ -106,14 +133,14 @@ def _solve_exported(model: dict, seed: int) -> dict:
                 "objective": None, "dual_bound": None, "col_value": None}
 
 
-def _seed_worker(seed: int, model_conn, out_conn) -> None:
-    """모델은 시작 인자가 아니라 시작 뒤 전용 파이프로 받는다(아래 _run_seeds 설명)."""
+def _seed_worker(seed: int, model_conn, out_conn, stop_event=None) -> None:
+    """모델은 시작 인자가 아니라 시작 뒤 전용 파이프로 받는다(아래 _run_seeds 설명). stop_event는 작아서 시작 인자로 넘긴다."""
     try:
         try:
             model = model_conn.recv()
         finally:
             model_conn.close()
-        out_conn.send(_solve_exported(model, seed))
+        out_conn.send(_solve_exported(model, seed, stop_event))
     except (EOFError, OSError):
         pass                                            # 부모가 사라졌거나 모델을 못 받았다 -- 조용히 끝낸다
     finally:
@@ -125,7 +152,8 @@ def _error_run(seed: int, message: str) -> dict:
             "objective": None, "dual_bound": None, "col_value": None}
 
 
-def _run_seeds(model: dict, seeds: int, optimal_status: int, deadline_s: float | None) -> tuple[list[dict], int | None]:
+def _run_seeds(model: dict, seeds: int, optimal_status: int, deadline_s: float | None,
+               stop=None) -> tuple[list[dict], int | None]:
     """시드마다 spawn 프로세스와 전용 파이프. (결과들, 증명한 가장 낮은 시드 또는 None)을 돌려준다.
 
     전용 파이프인 이유: 공유 큐는 결과를 쓰는 도중에 끝낸 프로세스가 통로를 깨뜨릴 수 있다. 결과 없이 죽은 프로세스는
@@ -139,13 +167,15 @@ def _run_seeds(model: dict, seeds: int, optimal_status: int, deadline_s: float |
     procs, readers = {}, {}
     runs: dict[int, dict] = {}
     proven_at: int | None = None
+    shared_stop = ctx.Event() if stop is not None else None   # 멈춤을 시드 프로세스들에 전한다
+    grace_end: float | None = None
     try:
         senders = {}
         for s in range(seeds):                          # try 안: 중간 시드가 못 뜨면 앞서 띄운 시드도 정리한다(3차 리뷰)
             model_r, model_w = ctx.Pipe(duplex=False)
             reader, writer = ctx.Pipe(duplex=False)
             readers[s] = reader
-            p = ctx.Process(target=_seed_worker, args=(s, model_r, writer), daemon=True)
+            p = ctx.Process(target=_seed_worker, args=(s, model_r, writer, shared_stop), daemon=True)
             p.start()
             model_r.close()                             # 자식 쪽 끝은 닫는다: 자식이 죽으면 보내기가 BrokenPipe로 끝난다
             writer.close()                              # 부모 쪽 쓰기 끝을 닫아야 자식이 죽으면 EOF가 온다
@@ -162,6 +192,16 @@ def _run_seeds(model: dict, seeds: int, optimal_status: int, deadline_s: float |
             needed = [s for s in procs if s not in runs and (proven_at is None or s < proven_at)]
             if not needed:
                 break
+            if stop is not None and stop.is_set():
+                if stop.aborting:                       # 받을 사람이 없다 -- 바로 끝낸다(finally가 프로세스를 정리)
+                    raise SolveCancelled("멈춤(abort) -- 시드 풀이를 끝냈다")
+                if grace_end is None:                   # finish: 각 시드가 그때까지의 해를 들고 멈추게 한다
+                    shared_stop.set()
+                    grace_end = time.monotonic() + INTERRUPT_GRACE_S
+                elif time.monotonic() > grace_end:
+                    for s in needed:
+                        runs[s] = _error_run(s, f"interrupted but no result within {INTERRUPT_GRACE_S:.0f}s")
+                    break
             # (모델을 못 넘긴 시드는 이미 runs에 오류로 들어 있다)
             by_conn = {readers[s]: s for s in needed}
             for conn in wait(list(by_conn), timeout=0.2):
@@ -203,8 +243,24 @@ class HighsPortfolio(pulp.HiGHS):
         super().__init__(**kwargs)
         self.seeds = max(1, int(seeds))
         self.portfolio: dict | None = None
+        self.interrupted = False                        # 멈춤(finish)으로 끝난 풀이인가 -- milp가 종료 사유를 user_interrupt로
 
     def actualSolve(self, lp):
+        stop = current_stop()
+        if stop is not None:
+            if stop.is_set():                           # 멈춤 뒤에는 새 풀이를 시작하지 않는다(다음 대안·다음 K)
+                raise SolveCancelled("멈춤 요청 뒤라 풀이를 시작하지 않았다")
+            # 이 프로세스 안에서 푸는 경로(시드 1·포트폴리오 실패 시 한 번 풀기)가 멈춤을 보게 한다
+            self.callbackTuple = (_interrupt_when_set, stop)
+            self.callbacksToActivate = _interrupt_callbacks()
+        try:
+            return self._solve(lp, stop)
+        finally:
+            self.interrupted = stop is not None and stop.is_set()
+            if stop is not None and stop.aborting:
+                raise SolveCancelled("멈춤(abort) -- 풀이 결과를 버렸다")
+
+    def _solve(self, lp, stop):
         if self.seeds <= 1:
             return super().actualSolve(lp)
         import highspy
@@ -216,7 +272,7 @@ class HighsPortfolio(pulp.HiGHS):
         limit = model["options"].get("time_limit")
         deadline = (float(limit) + max(30.0, 0.25 * float(limit))
                     if limit is not None and math.isfinite(float(limit)) and float(limit) < 1e20 else None)
-        runs, proven_at = _run_seeds(model, self.seeds, optimal, deadline)
+        runs, proven_at = _run_seeds(model, self.seeds, optimal, deadline, stop)
         # HiGHS 쪽은 최소화(PuLP가 최대화를 뒤집어 넘긴다). PuLP 방향 값 = sign * native + 상수
         sign = -1.0 if lp.sense == constants.LpMaximize else 1.0
         const = float(lp.objective.constant) if lp.objective is not None else 0.0
@@ -234,6 +290,9 @@ class HighsPortfolio(pulp.HiGHS):
             "chosen_seed": None,
         }
         if not feasible and runs and all(r.get("error") for r in runs):
+            if stop is not None and stop.is_set():
+                # 멈춤 뒤 유예 안에 아무 시드도 해를 못 냈다 -- 한 번 더 풀어 되살리지 않는다(Codex 리뷰 2026-10-12)
+                raise SolveCancelled("멈춤 뒤 해를 돌려준 시드가 없다")
             # 동시 풀이 자체가 실패했다(작업 프로세스를 못 띄움·모두 죽음). 계획을 못 내는 대신 보통 방식(한 프로세스,
             # 시드 0)으로 한 번 풀고, 실패 사실은 portfolio에 남긴다(증거 options에 실린다) -- 숨기지 않는다.
             log.warning("HiGHS seed portfolio failed for every seed, solving once in-process: %s", self.portfolio["errors"])

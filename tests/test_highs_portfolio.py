@@ -67,7 +67,7 @@ def test_the_best_seed_wins_ties_go_to_the_lowest_and_bounds_take_the_tightest(m
     prob, x = _knapsack()
     n = len(prob.variables())
     runs = [_fake_run(0, 20.0, n), _fake_run(1, 24.0, n), _fake_run(2, 24.0, n), _fake_run(3, None, n)]
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, None))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: (runs, None))
     solver = HighsPortfolio(seeds=4, msg=False, threads=1)
     prob.solve(solver)
     assert solver.portfolio["chosen_seed"] == 1
@@ -83,7 +83,7 @@ def test_minimization_picks_the_smallest_objective(monkeypatch):
     prob += x
     prob += x >= 2
     runs = [_fake_run(0, 9.0, 1, maximize=False), _fake_run(1, 3.0, 1, maximize=False)]
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, None))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: (runs, None))
     solver = HighsPortfolio(seeds=2, msg=False, threads=1)
     prob.solve(solver)
     assert solver.portfolio["chosen_seed"] == 1 and x.value() == 1.0
@@ -98,7 +98,7 @@ def test_a_proven_seed_marks_the_better_incumbent_optimal_when_it_is_within_the_
     proven["dual_bound"] = -41.0                                  # its bound: 41 (maximize)
     better = _fake_run(1, 40.5, n)                                # better, but stopped at the time limit
     better["dual_bound"] = -60.0
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: ([proven, better], None))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: ([proven, better], None))
     solver = HighsPortfolio(seeds=2, msg=False, threads=1, gapRel=0.05)
     prob.solve(solver)
     assert solver.portfolio["chosen_seed"] == 1
@@ -109,7 +109,7 @@ def test_no_seed_with_a_solution_means_no_incumbent_and_errors_are_kept(monkeypa
     prob, x = _knapsack()
     n = len(prob.variables())
     runs = [_fake_run(0, None, n), dict(_fake_run(1, None, n), error="run failed (Solve error)", model_status=-1)]
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, None))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: (runs, None))
     solver = HighsPortfolio(seeds=2, msg=False, threads=1)
     prob.solve(solver)
     assert prob.sol_status == pulp.LpSolutionNoSolutionFound
@@ -138,7 +138,7 @@ def test_every_seed_failing_falls_back_to_one_in_process_solve_and_keeps_the_rea
     prob, x = _knapsack()
     n = len(prob.variables())
     runs = [dict(_fake_run(s, None, n), error=f"boom {s}", model_status=-1) for s in range(2)]
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, None))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: (runs, None))
     solver = HighsPortfolio(seeds=2, msg=False, threads=1, gapRel=0.0)
     prob.solve(solver)
     assert pulp.value(prob.objective) == pulp.value(a.objective)
@@ -153,25 +153,25 @@ def test_a_proof_restricts_the_choice_to_seeds_at_or_below_it(monkeypatch):
     n = len(prob.variables())
     opt = int(highspy.HighsModelStatus.kOptimal)
     runs = [_fake_run(0, 40.0, n, status=opt), _fake_run(1, 40.4, n)]
-    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline: (runs, 0))
+    monkeypatch.setattr(hp, "_run_seeds", lambda model, seeds, optimal, deadline, stop=None: (runs, 0))
     solver = HighsPortfolio(seeds=2, msg=False, threads=1, gapRel=0.05)
     prob.solve(solver)
     assert solver.portfolio["chosen_seed"] == 0 and prob.sol_status == pulp.LpSolutionOptimal
 
 
-def _die(seed, model_conn, out_conn):          # stands in for a worker killed by the OS (OOM, segfault)
+def _die(seed, model_conn, out_conn, stop_event=None):          # stands in for a worker killed by the OS (OOM, segfault)
     import os
     if seed == 0:
         os._exit(9)
     hp._seed_worker(seed, model_conn, out_conn)
 
 
-def _die_before_reading(seed, model_conn, out_conn):   # dies during start-up, before taking the (large) model
+def _die_before_reading(seed, model_conn, out_conn, stop_event=None):   # dies during start-up, before taking the (large) model
     import os
     os._exit(3)
 
 
-def _hang(seed, model_conn, out_conn):
+def _hang(seed, model_conn, out_conn, stop_event=None):
     import time
     model_conn.recv()
     time.sleep(60)
