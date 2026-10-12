@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-12 · claude-a · 기술 점수 대리 레벨 유지 결정과 근거 문서
+- 브랜치/커밋: `docs/claude-a-skill-score-decision-1012` (main 병합은 사용자 승인 대기)
+- 한 일: 사용자 결정 "그대로 가되 근거만 작성" — 10-05 제안 "경력 개월 비율 직접 쓰기"(`min(보유 개월/요구 개월, 1)`)를 채택하지 않고 대리 레벨(12/36/60/96) 유지.
+  근거 문서 `docs/skill-score-decision.md`(두 방식 비교·숫자 예·실험으로 못 정하는 이유·유지 이유·알려진 한계·재검토 조건). work-split 10-05 요청 처리됨, 로드맵·맥락 문서·CLAUDE.md에 포인터.
+- 상대 영향(claude-b): `outputs/final-report.html` 다음 단계 줄(98행)이 결정과 어긋난다 — work-split 요청. 코드·시험 기준선 변화 없음.
+- 검증: 문서만(코드 변경 없음). 문서의 숫자 예는 `core/ingest/convert.level_from_months`·`core/scoring/engine.skill_matrix` 식으로 계산, 가상 성과 재료는 `core/ingest/org_profile._past_outcomes`에서 확인.
+- 근거: `docs/skill-score-decision.md`
+
+---
+
 ## 2026-10-12 · claude-a · main 병합 확인과 origin push (claude-b 마무리 + claude-a 점검 + claude-b 요청 처리)
 - 브랜치/커밋: main `e62b505`(origin push, 이전 origin/main `fbf7b9d`) + 이 항목 커밋. 아래 두 claude-b 항목과 claude-a 점검 항목의 "main 병합은 사용자 확인 대기"를 정정한다 —
   claude-b가 `feat/claude-b-wrapup-1012`(`005251a`)와 `feat/claude-b-a-requests-1012`(`e62b505`, claude-a `feat/claude-a-demo-rehearsal-1012` `a366ee9` 포함)를 main에 넣었고, 사용자가 claude-a 세션에서도 병합을 승인했다.
