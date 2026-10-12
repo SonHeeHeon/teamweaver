@@ -125,7 +125,8 @@ async def _drain(stream):
 def test_optimize_stream_payload_shape_is_unchanged(small_graph_client):
     with small_graph_client.stream("POST", "/api/optimize", json={"weights": {}, "n_alternatives": 1}) as res:
         data = [json.loads(line[5:]) for line in res.iter_lines() if line.startswith("data:")]
-    assert data[0]["label"] == "A" and "plan_token" in data[0] and "count" in data[-1]
+    assert "run_id" in data[0]                                                   # 새 풀이는 start(실행 번호)부터
+    assert data[1]["label"] == "A" and "plan_token" in data[1] and "count" in data[-1]
 
 
 def test_a_client_gone_before_the_headers_still_stops_the_next_alternative(small_graph_client, one_slot, monkeypatch):

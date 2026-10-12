@@ -67,3 +67,37 @@ def verify_plan(token: str, dataset_version: str, label: str, entries: list[dict
         return False
     expected = sign_plan(dataset_version, label, entries, weights, params)
     return hmac.compare_digest(expected.encode("ascii"), token.encode("ascii"))
+
+
+# --- 계산 신뢰도 서명(2026-10-12, 사용자 요청 "PDF에도 표기") ---------------------------------------------
+# 결과 카드의 신뢰도 배지(종료 사유·목적값·증명 상한·허용 차이)를 PDF에도 찍는다. 화면이 보낸 값을 그대로 찍으면 "최선 증명"을
+# 꾸며 넣을 수 있으니, 서버가 계산할 때 원 플랜 서명(plan_token)에 묶어 따로 서명하고 PDF는 둘 다 맞을 때만 찍는다.
+EVIDENCE_FIELDS = ("termination", "objective", "best_bound", "gap_allowed", "time_limited", "carried_from_k")
+
+
+def _evidence_canonical(plan_token: str, evidence: dict) -> bytes:
+    body = {k: evidence.get(k) for k in EVIDENCE_FIELDS}
+    body["time_limited"] = bool(body["time_limited"])
+    if body["carried_from_k"] is not None:
+        body["carried_from_k"] = int(body["carried_from_k"])
+    for k in ("objective", "best_bound", "gap_allowed"):
+        if body[k] is not None:
+            body[k] = float(body[k])
+    return json.dumps({"kind": "solve_evidence", "plan_token": plan_token, **body},
+                      sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+
+def evidence_of(values: dict) -> dict:
+    """서명할 신뢰도 묶음(EVIDENCE_FIELDS만). 화면은 이 묶음을 그대로 돌려보낸다 -- 다시 조립하다 어긋나지 않게."""
+    return {k: values.get(k) for k in EVIDENCE_FIELDS} | {"time_limited": bool(values.get("time_limited"))}
+
+
+def sign_evidence(plan_token: str, evidence: dict) -> str:
+    return hmac.new(_secret(), _evidence_canonical(plan_token, evidence), hashlib.sha256).hexdigest()
+
+
+def verify_evidence(token: str, plan_token: str, evidence: dict) -> bool:
+    if not isinstance(token, str) or not token.isascii() or not isinstance(plan_token, str):
+        return False
+    expected = sign_evidence(plan_token, evidence)
+    return hmac.compare_digest(expected.encode("ascii"), token.encode("ascii"))

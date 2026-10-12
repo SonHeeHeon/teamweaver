@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postBaseline, postWhatif, saveSettings, SettingsConflictError,
-  streamOptimize,
+  stopRun, streamOptimize,
 } from "./api/client";
 import type {
   AllocChange, AssignEntry,  AppliedStep, AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
   WhatifResponse,
 } from "./api/types";
+import { evidenceOf } from "./api/types";
 
 /** 플랜 하나에 적용한 교체(K10). stack[k]는 k+1번째 교체를 적용한 뒤의 명단·지표와 그 명단
  *  전체의 위반 문장이다 -- 되돌리기는 맨 위를 빼면 된다. 서버는 저장하지 않는다. */
@@ -15,7 +16,7 @@ interface PlanEdit {
   stack: { plan: PlanEvent; violations: string[] }[];
   history: AppliedStep[];
 }
-import { RequirementsTab } from "./components/RequirementsTab";
+import { RequirementsTab, StopButton } from "./components/RequirementsTab";
 import { PlanCards } from "./components/PlanCards";
 import { PrecomputedNotice } from "./components/PrecomputedNotice";
 import { JustificationPanel } from "./components/JustificationPanel";
@@ -59,6 +60,10 @@ export default function App() {
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  // 새로 푸는 계산의 실행 번호(SSE start) -- "계산 멈추기"가 쓴다. 캐시·미리 계산이면 없다(멈출 것이 없다).
+  const [runId, setRunId] = useState<string | null>(null);
+  const [stopping, setStopping] = useState(false);
+  const [stoppedNote, setStoppedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [whatif, setWhatif] = useState<WhatifResponse | null>(null);
   // whatif가 "어떤 교체"에 대한 결과인지. PDF가 스스로는 알 수 없으므로
@@ -108,6 +113,10 @@ export default function App() {
   // 스트림의 남은 플랜도 버린다 -- runGen이 바뀌면 이전 데이터셋의 결과다.
   const [dataset, setDataset] = useState<DatasetInfo | null>(null);
   const runGen = useRef(0);
+  // 진행 중인 최적화 스트림의 연결. 다시 실행·데이터셋 전환·화면을 떠나면 끊는다 -- 서버가 끊김을 보고 그 계산을
+  // 바로 중단해 슬롯을 돌려준다(2026-10-12; 예전엔 다음 이벤트가 올 때까지 연결을 쥐고 있었다).
+  const runAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => runAbort.current?.abort(), []);
   // 플랜별 적용 상태(K10). 재실행·데이터셋 전환이면 비운다. 다른 플랜을 봐도 유지한다.
   const [edits, setEdits] = useState<Record<string, PlanEdit>>({});
   // 적용 상태의 최신값(K13). 저장 본문은 렌더 클로저가 아니라 여기서 만든다 -- 빠른 적용·취소나
@@ -171,6 +180,7 @@ export default function App() {
    *  있다)를 모두 비우고 meta를 새로 읽는다. 옛 플랜으로 교체를 검토하면 없는 ID라 실패한다. */
   async function datasetSwitched(info: DatasetInfo) {
     runGen.current += 1;
+    runAbort.current?.abort();
     swapGen.current += 1;
     cancelApply();
     setDataset(info);
@@ -216,9 +226,15 @@ export default function App() {
   async function run(fresh?: unknown) {
     const recompute = fresh === true;
     const gen = ++runGen.current;
+    runAbort.current?.abort();                  // 이전 실행이 아직 돌고 있으면 끊는다(서버가 중단)
+    const abort = new AbortController();
+    runAbort.current = abort;
     swapGen.current += 1;          // 재실행 -- 진행 중이던 what-if 응답도 무효화
     cancelApply();
     setRunning(true);
+    setRunId(null);
+    setStopping(false);
+    setStoppedNote(null);
     setError(null);
     setPlans([]);
     setAltShortfall(null);
@@ -249,9 +265,11 @@ export default function App() {
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
       for await (const ev of streamOptimize(
           { weights, dataset_version: datasetVersion, ...(recompute ? { fresh: true } : {}),
-            ...(params ? { milp_params: { ...params } } : {}) })) {
+            ...(params ? { milp_params: { ...params } } : {}) }, abort.signal)) {
         if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
-        if (ev.event === "plan") {
+        if (ev.event === "start") {
+          setRunId(ev.data.run_id);
+        } else if (ev.event === "plan") {
           setPlans((prev) => [...prev, ev.data]);
           void restoreEdits(ev.data, gen);
           setSelected((cur) => cur ?? ev.data.label);
@@ -259,7 +277,12 @@ export default function App() {
         } else if (ev.event === "done") {
           const requested = ev.data.requested_alternatives;
           const found = Math.max(0, ev.data.count - 1);
-          if (requested !== undefined && found < requested)
+          if (ev.data.stop_reason === "user_stopped") {
+            // 사용자가 멈췄다 -- "대안 없음"이 아니다
+            setStoppedNote(ev.data.count === 0
+              ? "계산을 멈췄다. 멈추기 전까지 쓸 만한 배치를 찾지 못해 결과가 없다."
+              : `계산을 멈췄다. 받은 안 ${ev.data.count}개 — 멈출 때 계산 중이던 안은 그때까지 찾은 가장 좋은 배치다(최선 증명 전).`);
+          } else if (requested !== undefined && found < requested)
             setAltShortfall({ found, requested, solverFailed: ev.data.stop_reason === "time_limit",
                               precomputed: ev.data.precomputed_at != null });
         } else if (ev.event === "error") {
@@ -270,7 +293,23 @@ export default function App() {
       if (e instanceof DatasetChangedError) await externalSwitch();
       else if (gen === runGen.current) setError(String(e));
     } finally {
-      if (gen === runGen.current) setRunning(false);
+      if (gen === runGen.current) {
+        setRunning(false);
+        setRunId(null);
+        setStopping(false);
+      }
+    }
+  }
+
+  /** "계산 멈추기": 지금 푸는 안은 그때까지의 해로 끝내고 다음 대안은 시작하지 않는다. 결과는 같은 스트림으로 온다. */
+  async function stopRunning() {
+    if (!runId || stopping) return;
+    setStopping(true);
+    try {
+      await stopRun(runId);          // 이미 끝났으면(false) 스트림이 곧 done으로 끝난다
+    } catch (e) {
+      setStopping(false);
+      setError(String(e));
     }
   }
 
@@ -649,6 +688,7 @@ export default function App() {
         ) : tab === "req" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} operating={dataset?.scenario === "operating"}
+                           onStop={runId ? () => void stopRunning() : null} stopping={stopping}
                            onOpenOperating={() => setTab("operating")} />
         ) : (
           <div className="space-y-6">
@@ -699,7 +739,9 @@ export default function App() {
                                                swaps: edit.history.map(stepBody) }
                                            : null,
                                          { weights: planBasis?.weights ?? weights,
-                                           planToken: original?.plan_token ?? null },
+                                           planToken: original?.plan_token ?? null,
+                                           // 원안의 서명된 계산 신뢰도 -- PDF 배지(교체를 적용했으면 "원안 기준"으로 찍힌다)
+                                           evidence: original ? evidenceOf(original) : null },
                                          pdfJustify && kgData);
                   }
                   catch (e) {
@@ -728,8 +770,14 @@ export default function App() {
                 weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
                 planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
             )}
+            {stoppedNote && (
+              <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                {stoppedNote}
+              </p>
+            )}
             {running && (
               <p className="text-sm text-slate-500">
+                {runId && <StopButton onStop={() => void stopRunning()} stopping={stopping} className="mr-2 py-1" />}
                 {plans.length === 0
                   ? "Plan A 계산 중… (최초 실행은 약 8초)"
                   : `대안 계산 중… (${plans.length}개 도착)`}

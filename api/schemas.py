@@ -268,6 +268,18 @@ StepIn = Annotated[Union[Annotated[SwapIn, Tag("swap")], Annotated[AllocChangeIn
 
 
 
+class SolveEvidenceIn(BaseModel):
+    """원 플랜의 계산 신뢰도(결과 카드 배지와 같은 값). evidence_token(서버 서명)과 함께 와야 PDF에 찍힌다(2026-10-12)."""
+    model_config = ConfigDict(extra="forbid")
+    termination: str | None = Field(default=None, max_length=40)
+    objective: float | None = None
+    best_bound: float | None = None
+    gap_allowed: float | None = Field(default=None, ge=0.0, le=1.0)
+    time_limited: bool = False
+    # 운영 중 K 결과에서 더 나은 해가 없어 이전 K의 해를 유지했으면 그 K(이 K의 최선 증명이 아니다)
+    carried_from_k: int | None = Field(default=None, ge=0, le=50)
+
+
 class ReportRequest(BaseModel):
     """확정 배치 + 그때의 지표·브리핑. 서버는 이걸 저장하지 않는다 --
     Playwright가 리포트 페이지에 주입할 뿐이다(stateless 유지).
@@ -302,6 +314,9 @@ class ReportRequest(BaseModel):
     # /api/optimize가 원 플랜에 붙인 서명(api/plan_token). 있으면 서버가 검증한다: 맞으면
     # PDF에 "서버 계산 원 플랜 확인", 틀리면 422, 없으면 "클라이언트 제공·미검증"으로 표시.
     plan_token: str | None = None
+    # 원 플랜의 계산 신뢰도와 그 서명(/api/optimize·K 행의 evidence_token). 원 플랜 서명과 함께 맞을 때만 PDF에 배지를 찍는다.
+    solve_evidence: SolveEvidenceIn | None = None
+    evidence_token: str | None = Field(default=None, max_length=128)
     # 사업별 인사팀 소명 글 포함(claude-a 계약 2026-10-09). 서버가 최종 명단으로 사업마다 만든다(AI는 데이터 정책을 따른다).
     include_justifications: bool = False
 

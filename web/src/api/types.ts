@@ -67,6 +67,9 @@ export interface PlanEvent {
   termination?: string | null;
   best_bound?: number | null;
   gap_allowed?: number;
+  /** 서버가 서명한 신뢰도 묶음과 그 서명(2026-10-12) -- PDF 요청에 그대로 돌려보낸다. */
+  evidence?: SolveEvidence;
+  evidence_token?: string;
   /** 시연 묶음의 미리 계산 결과면 그 계산 시각(ISO, 서버 api/demo_precomputed). 화면은 "미리 계산"으로 밝힌다. */
   precomputed_at?: string | null;
 }
@@ -164,8 +167,30 @@ export interface ReportRequest {
   weights: Record<string, number>;
   /** 원 플랜의 서버 서명. 없으면 PDF에 "미검증"으로 표시된다. */
   plan_token: string | null;
+  /** 원 플랜의 계산 신뢰도(결과 카드 배지와 같은 값)와 서버 서명. 둘 다 맞아야 PDF에 배지가 찍힌다(2026-10-12). */
+  solve_evidence?: SolveEvidence | null;
+  evidence_token?: string | null;
   /** 사업별 인사팀 소명 글 포함(서버가 최종 명단으로 만든다). */
   include_justifications?: boolean;
+}
+
+/** 계산 신뢰도(서버 서명 대상과 같은 칸). */
+export interface SolveEvidence {
+  termination: string | null;
+  objective: number | null;
+  best_bound: number | null;
+  gap_allowed: number | null;
+  time_limited: boolean;
+  /** 운영 중 K 결과에서 더 나은 해가 없어 유지한 이전 K(이 K의 최선 증명이 아니다) */
+  carried_from_k?: number | null;
+}
+
+/** 결과(플랜·K 행)에서 서버가 서명한 신뢰도 묶음을 꺼낸다 -- 다시 조립하지 않고 그대로 보낸다(서명과 어긋나지 않게).
+ *  서명이 없으면 null(PDF에 배지를 찍지 않는다). */
+export function evidenceOf(p: { evidence?: SolveEvidence; evidence_token?: string }):
+    { solve_evidence: SolveEvidence; evidence_token: string } | null {
+  if (!p.evidence || !p.evidence_token) return null;
+  return { evidence_token: p.evidence_token, solve_evidence: p.evidence };
 }
 
 /** 적용한 교체 한 건. warnings는 그 교체로 새로 생긴 위반·미충원 문장(swapWarnings). */
@@ -378,14 +403,23 @@ export interface OperatingRow {
   /** 채택 행의 서버 서명(라벨 "K{k}") -- PDF가 "서버 계산 확인"으로 검증한다. */
   plan_label?: string;
   plan_token?: string;
+  /** 계산 신뢰도 서명(차이 0으로 푼다 -- gap_allowed 0) -- K 결과 PDF의 배지(2026-10-12). 이전 K 해를 유지한 행이면
+   *  evidence에 증명 없이 carried_from_k만 있다. */
+  gap_allowed?: number;
+  evidence?: SolveEvidence;
+  evidence_token?: string;
 }
 
 export type OperatingEvent =
   | { event: "start"; data: { ks: number[]; n_people: number; expected_s_100: Record<string, number | null>; note: string;
-                              precomputed_at?: string | null } }
+                              precomputed_at?: string | null;
+                              /** 새로 푸는 비교의 실행 번호 -- "계산 멈추기"(POST /api/runs/stop) */
+                              run_id?: string } }
   | { event: "progress"; data: { elapsed_s: number } }
   | { event: "row"; data: OperatingRow }
-  | { event: "done"; data: { elapsed_s: number; count: number; precomputed_at?: string | null } }
+  | { event: "done"; data: { elapsed_s: number; count: number; precomputed_at?: string | null;
+                             /** 사용자가 멈췄다 -- 받은 K 행까지가 결과다 */
+                             stopped?: boolean } }
   | { event: "error"; data: { message: string } };
 
 export interface Parts { total: number; skill: number; synergy: number; overfamiliarity: number; unfilled: number }

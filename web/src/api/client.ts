@@ -1,6 +1,6 @@
 import type {
   BaselineResult, BestResult, Candidate, DemoBundle, OperatingEvent, OperatingState, SimulateResult,
-  Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest,
+  Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SolveEvidence,
   SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange, Justification, SkillMap,
 } from "./types";
 import { parseFrames, type SseEvent } from "./sse";
@@ -218,8 +218,9 @@ export interface OptimizeRequest {
 
 /** 브라우저 EventSource는 GET 전용인데 /api/optimize는 POST다 -- 그래서
  *  fetch로 body 스트림을 직접 읽고 SSE 프레임을 손으로 파싱한다. */
-export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseEvent> {
+export async function* streamOptimize(req: OptimizeRequest, signal?: AbortSignal): AsyncGenerator<SseEvent> {
   const res = await fetch(`${API_BASE}/api/optimize`, {
+    signal,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ n_alternatives: 3, milp_params: {}, ...req }),
@@ -260,7 +261,9 @@ export async function downloadReport(
   milpParams: PlacementSettings | null = null,
   datasetVersion: string | null = null,
   applied: { base: AssignEntry[]; swaps: Step[] } | null = null,
-  basis: { weights: Record<string, number>; planToken: string | null } =
+  basis: { weights: Record<string, number>; planToken: string | null;
+           /** 원 플랜의 서명된 계산 신뢰도(evidenceOf) -- 교체를 적용했어도 원안 값이다 */
+           evidence?: { solve_evidence: SolveEvidence; evidence_token: string } | null } =
     { weights: {}, planToken: null },
   includeJustifications = false,
 ) {
@@ -283,6 +286,7 @@ export async function downloadReport(
     // 원 플랜 서명 검증과 교체 재계산의 기준 -- 플랜을 계산한 그때의 가중치다.
     weights: basis.weights,
     plan_token: basis.planToken,
+    ...(basis.evidence ? { solve_evidence: basis.evidence.solve_evidence, evidence_token: basis.evidence.evidence_token } : {}),
     ...(includeJustifications ? { include_justifications: true } : {}),
   };
   const res = await fetch(`${API_BASE}/api/report`, {
@@ -364,6 +368,16 @@ export async function resetDataset(adminToken: string | null = null): Promise<Da
 }
 
 
+/** 진행 중인 계산을 멈춘다(그때까지의 해를 쓰고 끝냄, 2026-10-12). 이미 끝났으면 false(404). */
+export async function stopRun(runId: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/api/runs/stop`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run_id: runId }),
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`계산 멈추기 실패: ${res.status}`);
+  return true;
+}
+
 // --- 운영 중 편성·진행 사업 보강·단순 규칙 대비 ---
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -386,8 +400,9 @@ export async function fetchOperatingState(): Promise<OperatingState> {
 
 export async function* streamOperatingCompare(body: {
   dataset_version: string | null; milp_params: PlacementSettings | null; ks: number[]; fresh?: boolean;
-}): AsyncGenerator<OperatingEvent> {
+}, signal?: AbortSignal): AsyncGenerator<OperatingEvent> {
   const res = await fetch(`${API_BASE}/api/operating/compare`, {
+    signal,
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...body, milp_params: body.milp_params ?? {} }),
   });

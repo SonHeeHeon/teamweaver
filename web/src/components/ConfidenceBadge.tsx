@@ -23,11 +23,16 @@ interface Props {
 
 export function ConfidenceBadge({ termination, timeLimited, objective, bestBound, gapAllowed, within }: Props) {
   const x = gapPct(objective, bestBound);
-  const limited = timeLimited || termination === "time_limit_incumbent";
-  const optimal = !limited && termination === "Optimal";
+  const stopped = termination === "user_interrupt";                 // 사용자가 "계산 멈추기"로 멈춘 해(2026-10-12)
+  const limited = !stopped && (timeLimited || termination === "time_limit_incumbent");
+  const optimal = !limited && !stopped && termination === "Optimal";
   let text: string;
   let tone: string;
-  if (limited) {
+  if (stopped) {
+    text = x != null ? `사용자가 멈춤 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${pct(x)} 높을 수 있음`
+                     : "사용자가 멈춤 · 최선 증명 전";
+    tone = "border-amber-300 bg-amber-50 text-amber-800";
+  } else if (limited) {
     text = x != null ? `시간 한도 도달 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${pct(x)} 높을 수 있음`
                      : "시간 한도 도달 · 최선 증명 전";
     tone = "border-amber-300 bg-amber-50 text-amber-800";

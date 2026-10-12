@@ -5,9 +5,11 @@ vi.mock("../api/client", () => ({
   DatasetChangedError: class extends Error {},
   fetchOperatingState: vi.fn(), streamOperatingCompare: vi.fn(), postBaseline: vi.fn(),
   postStaffingCandidates: vi.fn(), postStaffingSimulate: vi.fn(), postStaffingBest: vi.fn(), downloadReport: vi.fn(),
+  stopRun: vi.fn(async () => true),
 }));
 import {
-  downloadReport, fetchOperatingState, postStaffingBest, postStaffingCandidates, postStaffingSimulate, streamOperatingCompare,
+  downloadReport, fetchOperatingState, postStaffingBest, postStaffingCandidates, postStaffingSimulate, stopRun,
+  streamOperatingCompare,
 } from "../api/client";
 import { OperatingTab } from "./OperatingTab";
 import type { Meta, OperatingEvent, OperatingState } from "../api/types";
@@ -39,6 +41,27 @@ describe("OperatingTab", () => {
     vi.mocked(fetchOperatingState).mockResolvedValue({ ...STATE, available: false, hint: "현재 배치가 없는 데이터다." });
     render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
     expect(await screen.findByText("현재 배치가 없는 데이터다.")).toBeInTheDocument();
+  });
+
+  it("K별 비교를 멈추면 받은 K까지 남기고 멈춤을 알린다(2026-10-12)", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    vi.mocked(streamOperatingCompare).mockReturnValue((async function* (): AsyncGenerator<OperatingEvent> {
+      yield { event: "start" as const, data: { ks: [0, 1], n_people: 3, expected_s_100: {}, note: "", run_id: "cmp-1" } };
+      yield { event: "row" as const, data: { k: 0, elapsed_s: 0.5, accepted: true, termination: "user_interrupt", objective: -190,
+        best_bound: -180, quality: 10, unfilled_seats: 2, quality_gain_vs_k0: 0, quality_gain_pct_vs_k0: 0,
+        unfilled_change_vs_k0: 0, diff: { kept: 2, moved: [], joined: [] }, project_change_vs_k0: {}, violations: [], entries: [] } };
+      await gate;
+      yield { event: "done" as const, data: { elapsed_s: 2, count: 1, stopped: true } };
+    })());
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "K별 비교 실행" }));
+    fireEvent.click(await screen.findByRole("button", { name: "계산 멈추기" }));
+    await waitFor(() => expect(stopRun).toHaveBeenCalledWith("cmp-1"));
+    release();
+    expect(await screen.findByText(/비교를 멈췄다\. 받은 K 1개/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "계산 멈추기" })).not.toBeInTheDocument();
+    expect(vi.mocked(streamOperatingCompare).mock.calls[0][1]).toBeInstanceOf(AbortSignal);
   });
 
   it("K별 비교: 빈자리와 배치 품질을 나눠 보이고 이동 그림을 그린다", async () => {

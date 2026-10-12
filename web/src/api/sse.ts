@@ -1,6 +1,8 @@
 import type { PlanEvent } from "./types";
 
 export type SseEvent =
+  /** 새로 푸는 계산의 실행 번호 -- "계산 멈추기"(POST /api/runs/stop)에 쓴다(캐시·미리 계산이면 오지 않는다) */
+  | { event: "start"; data: { run_id: string } }
   | { event: "plan"; data: PlanEvent }
   | { event: "done"; data: { count: number; requested_alternatives?: number; stop_reason?: string;
                              precomputed_at?: string | null } }

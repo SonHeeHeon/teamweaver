@@ -25,7 +25,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_dataset
 from api.schemas import EntryIn, MilpParamsIn
-from api.sse import sse_event
+from api import runs
+from api.sse import CancellableStreamResponse, sse_event
+from core.optimize.interrupt import SolveStop, watching
 from core.domain.models import Grade
 from core.optimize.types import AssignEntry
 from core.scoring.engine import ScoringEngine
@@ -127,10 +129,19 @@ def _signed(row: dict, req, version: str) -> dict:
     서명은 화면이 보낸 설정 그대로(운영 시간 상한을 씌우기 전)로 만든다 -- PDF도 같은 설정을 보낸다."""
     if not row.get("accepted") or not row.get("entries"):
         return row
-    from api.plan_token import sign_plan
-    return {**row, "plan_label": f"K{row['k']}",
-            "plan_token": sign_plan(version, f"K{row['k']}", list(row["entries"]), dict(req.weights or {}),
-                                    req.milp_params.to_milp_params())}
+    from api.plan_token import evidence_of, sign_evidence, sign_plan
+    token = sign_plan(version, f"K{row['k']}", list(row["entries"]), dict(req.weights or {}),
+                      req.milp_params.to_milp_params())
+    # 계산 신뢰도(운영 중 편성은 차이 0으로 푼다 -- core.evaluate.operating.exact)도 서명해 K 결과 PDF가 찍게(2026-10-12).
+    # 더 나은 해가 없어 이전 K의 해를 유지한 행은 그 K의 증명·상한을 이 K의 것으로 내세우지 않는다 -- 화면처럼 "K=n 해 유지"
+    # (Codex 리뷰 2026-10-12: 유지 행에 이전 K의 Optimal이 서명돼 PDF가 이 K의 최선 증명으로 찍었다).
+    carried = row.get("carried_from_k")
+    evidence = evidence_of({"termination": None if carried is not None else row.get("termination"),
+                            "objective": row.get("objective"),
+                            "best_bound": None if carried is not None else row.get("best_bound"),
+                            "gap_allowed": 0.0, "time_limited": False, "carried_from_k": carried})
+    return {**row, "plan_label": f"K{row['k']}", "plan_token": token, "gap_allowed": 0.0,
+            "evidence": evidence, "evidence_token": sign_evidence(token, evidence)}
 
 
 def _matrices(dataset: ActiveDataset, weights):
@@ -239,16 +250,22 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
         raise HTTPException(status_code=429, detail="다른 운영 편성 비교가 계산 중이다. 끝난 뒤 다시 실행한다.")
 
     out: "queue.Queue" = queue.Queue()
+    # 멈춤(2026-10-12): "계산 멈추기"(POST /api/runs/stop, finish)면 풀던 K까지 행을 내고 끝, 화면이 닫히면(abort) 풀던 K까지 버린다.
+    # 다음 K는 풀이를 시작하는 순간 SolveCancelled로 멈춘다(core/optimize/interrupt -- 계산 함수는 고치지 않는다).
+    stop = SolveStop()
+    run_id = runs.register(request.app, stop)
 
     def work():
         try:
-            # K 하나가 끝날 때마다 완성된 행을 바로 넘긴다(on_row, claude-a 2026-10-07) -- 화면이 K별로 한 줄씩 보인다
-            rows = compare_move_budgets(dataset.graph, S, C, params, dataset.current, ks=ks,
-                                        on_row=lambda row: out.put(("row", row)))
+            with watching(stop):
+                # K 하나가 끝날 때마다 완성된 행을 바로 넘긴다(on_row, claude-a 2026-10-07) -- 화면이 K별로 한 줄씩 보인다
+                rows = compare_move_budgets(dataset.graph, S, C, params, dataset.current, ks=ks,
+                                            on_row=lambda row: out.put(("row", row)))
             out.put(("done", rows))
         except Exception as exc:                               # noqa: BLE001 -- SSE error 이벤트로 전한다
-            out.put(("error", exc))
+            out.put(("stopped", None) if stop.mode == "finish" else ("error", exc))
         finally:
+            runs.unregister(request.app, run_id)
             _COMPARE_SLOT.release()                             # 계산이 끝나야 슬롯이 풀린다(화면이 끊겨도)
 
     # 스레드는 응답을 돌려주기 전에 시작한다 -- 슬롯은 언제나 이 스레드가 풀어 준다(스트림을 읽든 말든).
@@ -256,11 +273,12 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
     try:
         threading.Thread(target=work, daemon=True).start()
     except BaseException:
+        runs.unregister(request.app, run_id)
         _COMPARE_SLOT.release()                                 # 스레드를 못 띄우면 슬롯을 바로 돌려준다
         raise
 
     async def stream():
-        yield sse_event("start", {"ks": ks, "n_people": len(dataset.graph.people),
+        yield sse_event("start", {"ks": ks, "n_people": len(dataset.graph.people), "run_id": run_id,
                                   "expected_s_100": {k: EXPECTED_S_100.get(k) for k in ks}, "note": NOT_CALIBRATED})
         # K 행은 끝나는 대로 흘리고, 그 사이엔 진행 표시를 보낸다(K별 실시간 송출, 2026-10-11).
         sent: set = set()
@@ -279,12 +297,16 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
         if kind == "error":
             yield sse_event("error", {"message": str(payload)[:300]})
             return
+        if kind == "stopped":                   # 사용자가 멈췄다 -- 이미 보낸 K 행까지가 결과다
+            yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(sent),
+                                     "stopped": True})
+            return
         for row in payload:                     # on_row로 오지 않은 행이 있으면(계산 함수가 고리를 안 부른 경우) 끝에 보낸다
             if row.get("k") not in sent:
                 yield sse_event("row", {**_signed(row, req, dataset.info.version), "dataset_version": dataset.info.version})
         yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(payload)})
 
-    return StreamingResponse(stream(), media_type="text/event-stream")
+    return CancellableStreamResponse(stream(), on_close=lambda: stop.request("abort"), media_type="text/event-stream")
 
 
 # --- 진행 사업 보강 -------------------------------------------------------------------------

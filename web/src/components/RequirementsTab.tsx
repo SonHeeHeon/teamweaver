@@ -9,12 +9,16 @@ interface Props {
   onWeightsChange: (w: Record<string, number>) => void;
   onRun: () => void;
   running: boolean;
+  /** 실행 중 "계산 멈추기"(그때까지의 해를 쓰고 끝냄). 없으면(캐시·미리 계산이라 멈출 것이 없음) 버튼을 숨긴다. */
+  onStop?: (() => void) | null;
+  stopping?: boolean;
   /** 운영 중 시연 묶음이면 '전부 다시 짜기'의 한계를 안내한다(claude-a 리허설 요청 2026-10-07). */
   operating?: boolean;
   onOpenOperating?: () => void;
 }
 
-export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running, operating, onOpenOperating }: Props) {
+export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running, onStop, stopping, operating,
+                                 onOpenOperating }: Props) {
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <section>
@@ -40,6 +44,7 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
         >
           {running ? "최적화 중…" : "최적화 실행"}
         </button>
+        {running && onStop && <StopButton onStop={onStop} stopping={!!stopping} />}
         {operating && (
           <p role="note" className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             지금은 <b>운영 중</b> 데이터다(대부분이 진행 사업에 배치돼 있다). "최적화 실행"은 모두를 처음부터 다시 짠다 —
@@ -85,5 +90,19 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
         </div>
       </section>
     </div>
+  );
+}
+
+
+/** "계산 멈추기": 지금 푸는 안은 그때까지 찾은 가장 좋은 해로 끝내고(검증은 그대로), 다음 대안은 시작하지 않는다. */
+export function StopButton({ onStop, stopping, className = "ml-2 mt-4 py-2" }:
+                           { onStop: () => void; stopping: boolean; className?: string }) {
+  return (
+    <button onClick={onStop} disabled={stopping}
+            title="지금 계산 중인 안은 그때까지 찾은 가장 좋은 배치로 끝내고, 다음 대안은 계산하지 않는다"
+            className={`${className} rounded-md border border-red-300 bg-white px-3 text-sm text-red-700
+                        hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60`}>
+      {stopping ? "멈추는 중…" : "계산 멈추기"}
+    </button>
   );
 }

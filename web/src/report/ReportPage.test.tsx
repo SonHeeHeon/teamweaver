@@ -207,6 +207,39 @@ describe("ReportPage — 원 플랜 서명", () => {
       plan_provenance: "verified" };
     render(<ReportPage />);
     expect(await screen.findByText(/서명 확인/)).toBeInTheDocument();
+    expect(screen.queryByTestId("solve-evidence")).not.toBeInTheDocument();      // 서버가 신뢰도를 안 실었으면 배지 없음
+  });
+
+  it("서버가 확인한 계산 신뢰도를 결과 카드와 같은 배지로 찍는다(2026-10-12)", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = { plan_label: "B", entries: [], objective: 1, fulfillment: 1,
+      optimization_ratio: 1, unfilled: [], briefing: null, fallback_used: false, swap: null,
+      objective_delta: null, swap_violations: [], milp_params: null, meta: META,
+      dataset_version: META.dataset_version, applied_swaps: [], applied_violations: [],
+      plan_provenance: "verified",
+      solve_evidence: { termination: "time_limit_incumbent", objective: 100, best_bound: 103, gap_allowed: 0.05,
+                        time_limited: true, within: "다양성 조건", changed: 2 } };
+    render(<ReportPage />);
+    const box = await screen.findByTestId("solve-evidence");
+    expect(box.textContent).toContain("독립 검증 통과");
+    expect(box.textContent).toContain("시간 한도 도달 · 다양성 조건의 최적값이 이 해보다 최대 3.0% 높을 수 있음");
+    expect(box.textContent).toContain("솔버가 푼 원안 기준 — 이후 변경 2건");
+  });
+
+  it("이전 K의 해를 유지한 K 결과에는 그 K의 증명을 붙이지 않는다", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = { plan_label: "K3", entries: [], objective: 1, fulfillment: 1,
+      optimization_ratio: 1, unfilled: [], briefing: null, fallback_used: false, swap: null,
+      objective_delta: null, swap_violations: [], milp_params: null, meta: META,
+      dataset_version: META.dataset_version, applied_swaps: [], applied_violations: [],
+      plan_provenance: "verified",
+      solve_evidence: { termination: null, objective: 69.1, best_bound: null, gap_allowed: 0, time_limited: false,
+                        carried_from_k: 2, within: null, changed: 0 } };
+    render(<ReportPage />);
+    const box = await screen.findByTestId("solve-evidence");
+    expect(box.textContent).toContain("K3에서 더 나은 해가 없어 K=2의 해를 유지했다");
+    expect(box.textContent).not.toContain("최선 증명 ");
+    expect(box.textContent).not.toMatch(/최선 증명$|허용 차이/);
   });
 });
 

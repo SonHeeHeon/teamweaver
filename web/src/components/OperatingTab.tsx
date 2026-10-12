@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DatasetChangedError, downloadReport, fetchOperatingState, postStaffingBest, postStaffingCandidates,
-  postStaffingSimulate, streamOperatingCompare,
+  postStaffingSimulate, stopRun, streamOperatingCompare,
 } from "../api/client";
 import type {
   AssignEntry, BestResult, Candidate, Meta, OperatingDiff, OperatingRow, OperatingState, Parts, PlacementSettings,
@@ -9,6 +9,8 @@ import type {
 } from "../api/types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { PrecomputedNotice } from "./PrecomputedNotice";
+import { StopButton } from "./RequirementsTab";
+import { evidenceOf } from "../api/types";
 
 /** 운영 중 편성(신규 제안 + 변경 예산 K)·진행 사업 보강 화면(claude-a 요청 2026-10-06, 계산 core.evaluate).
  *  총점에는 빈자리 감점(자리당 큰 값)이 섞여 있어 **배치 품질(기술+협업−익숙함)과 빈자리를 나눠** 보인다.
@@ -122,6 +124,14 @@ function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
   const [pick, setPick] = useState<number | null>(null);
   // 미리 계산 결과(시연 묶음)면 그 계산 시각 -- 시간 칸이 방금 푼 시간처럼 보이지 않게 밝힌다(claude-a 리허설 요청)
   const [preAt, setPreAt] = useState<string | null>(null);
+  // 새로 푸는 비교의 실행 번호와 멈춤 상태(2026-10-12) -- 멈추면 풀던 K까지 행을 내고 끝난다
+  const [runId, setRunId] = useState<string | null>(null);
+  const [stopping, setStopping] = useState(false);
+  const [stoppedAt, setStoppedAt] = useState<number | null>(null);
+  // 앱이 닫히면(컴포넌트가 사라지면) 연결을 끊는다 -- 서버가 끊김을 보고 비교를 바로 중단한다. 다른 탭으로 옮겨도
+  // 비교는 계속하고 결과를 받아 둔다(이 탭은 숨겨질 뿐이다, 최적화 실행과 같은 규칙) -- 그만두려면 "계산 멈추기"
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
   const expected = ks.reduce((a, k) => a + (state.expected_s_100[String(k)] ?? 0), 0);
   const expectedS = Math.ceil(expected * Math.max(1, state.n_people / 100));
 
@@ -134,17 +144,32 @@ function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
     setPick(null);
     setPreAt(null);
     setElapsed(0);
+    setRunId(null);
+    setStopping(false);
+    setStoppedAt(null);
     fail(null);
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
     try {
-      for await (const ev of streamOperatingCompare({ ...common, ks, ...(fresh === true ? { fresh: true } : {}) })) {
-        if (ev.event === "start") setPreAt(ev.data.precomputed_at ?? null);
+      for await (const ev of streamOperatingCompare({ ...common, ks, ...(fresh === true ? { fresh: true } : {}) },
+                                                    abort.signal)) {
+        if (ev.event === "start") { setPreAt(ev.data.precomputed_at ?? null); setRunId(ev.data.run_id ?? null); }
         else if (ev.event === "progress") setElapsed(ev.data.elapsed_s);
         else if (ev.event === "row") setRows((r) => [...r, ev.data]);
-        else if (ev.event === "done") setElapsed(ev.data.elapsed_s);
+        else if (ev.event === "done") { setElapsed(ev.data.elapsed_s); if (ev.data.stopped) setStoppedAt(ev.data.count); }
         else if (ev.event === "error") throw new Error(ev.data.message);
       }
-    } catch (e) { fail(e); }
-    finally { setRunning(false); }
+    } catch (e) { if (!abort.signal.aborted) fail(e); }
+    finally {
+      if (abortRef.current === abort) { setRunning(false); setRunId(null); setStopping(false); }
+    }
+  }
+
+  async function stopCompare() {
+    if (!runId || stopping) return;
+    setStopping(true);
+    try { await stopRun(runId); } catch (e) { setStopping(false); fail(e); }
   }
 
   const chosen = rows.find((r) => r.k === pick) ?? null;
@@ -169,11 +194,17 @@ function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
                 className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300">
           {running ? "계산 중…" : "K별 비교 실행"}
         </button>
+        {running && runId && <StopButton onStop={() => void stopCompare()} stopping={stopping} className="py-2" />}
         <span className="text-xs text-slate-500">
           {running && elapsed != null ? `${elapsed.toFixed(0)}초 경과 · ` : ""}
           예상 약 {expectedS}초(100명 실측 기준, 최선까지 푼다)
         </span>
       </div>
+      {stoppedAt != null && (
+        <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          비교를 멈췄다. 받은 K {stoppedAt}개 — 멈출 때 계산 중이던 K는 그때까지 찾은 가장 좋은 배치다(최선 증명 전).
+        </p>
+      )}
       {!running && preAt != null && rows.length > 0 && (
         <PrecomputedNotice at={preAt} onRecompute={() => void run(true)}
                            hint={`처음부터 다시 푼다 — 예상 약 ${expectedS}초. 표의 시간 칸은 미리 계산 때 걸린 시간이다.`} />
@@ -270,7 +301,7 @@ function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
                                          unfilled: [], fulfillment: 0, optimization_ratio: null, index: 0, cached: false,
                                          plan_token: chosen.plan_token },
                                        null, null, runBasis.params, common.dataset_version, null,
-                                       { weights: {}, planToken: chosen.plan_token! });
+                                       { weights: {}, planToken: chosen.plan_token!, evidence: evidenceOf(chosen) });
                 } catch (e) { fail(e); } finally { setPdfBusy(false); }
               }} className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:text-slate-400">
                 {pdfBusy ? "PDF 생성 중…" : `K=${chosen.k} 결과 PDF`}

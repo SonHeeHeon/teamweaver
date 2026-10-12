@@ -30,6 +30,7 @@ vi.mock("./api/client", () => ({
   saveSettings: vi.fn(),
   SettingsConflictError: class extends Error {},
   streamOptimize: vi.fn(),
+  stopRun: vi.fn(async () => true),
   postWhatif: vi.fn(),
   downloadReport: vi.fn(),
   applySwap: vi.fn(),
@@ -49,7 +50,7 @@ vi.mock("react-force-graph-2d", () => ({
 }));
 
 import {
-  fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, streamOptimize,
+  fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, stopRun, streamOptimize,
   postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap, applyAlloc,
   loadPlanEdits, savePlanEdits, EditsConflictError, adminLogin, adminLogout, AdminLoginRequiredError,
 } from "./api/client";
@@ -434,7 +435,7 @@ describe("App — 교체 적용(K10)", () => {
     // PDF에는 원 명단과 교체 순서만 보낸다 -- 수치는 서버가 다시 계산한다.
     expect(call[5]?.base).toEqual(PLAN_A.entries);
     expect(call[5]?.swaps).toEqual([{ out_person_id: "p1", in_person_id: "p3", project_id: "j1" }]);
-    expect(call[6]).toEqual({ weights: {}, planToken: "tok-A" });
+    expect(call[6]).toEqual({ weights: {}, planToken: "tok-A", evidence: null });   // 신뢰도 서명이 없는 플랜(배지 없음)
   });
 
   it("마지막 적용 취소로 원래 명단으로 돌아간다", async () => {
@@ -1128,3 +1129,54 @@ describe("App — 미리 계산 결과 표시", () => {
   });
 });
 
+
+describe("App — 계산 멈추기(2026-10-12)", () => {
+  it("실행 번호가 오면 멈춤 버튼이 보이고, 멈추면 대안 부족이 아니라 멈춤으로 알린다", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    const gate = deferred<void>();
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "start" as const, data: { run_id: "run-123" } };
+      yield { event: "plan" as const, data: { ...PLAN_A, termination: "user_interrupt", objective: 100, best_bound: 110 } };
+      await gate.promise;
+      yield { event: "done" as const, data: { count: 1, requested_alternatives: 3, stop_reason: "user_stopped" } };
+    })());
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    fireEvent.click(await screen.findByRole("button", { name: "계산 멈추기" }));
+    await waitFor(() => expect(stopRun).toHaveBeenCalledWith("run-123"));
+    expect(screen.getByRole("button", { name: "멈추는 중…" })).toBeDisabled();
+    await act(async () => { gate.resolve(); await Promise.resolve(); });
+    expect(await screen.findByText(/계산을 멈췄다\. 받은 안 1개/)).toBeInTheDocument();
+    expect(screen.queryByText(/조건을 만족하는 대안/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "계산 멈추기" })).not.toBeInTheDocument();
+    expect(screen.getByText("사용자가 멈춤 · 최적값이 이 해보다 최대 10% 높을 수 있음")).toBeInTheDocument();
+    // 스트림은 끊을 수 있게 연결 신호와 함께 연다(다시 실행·화면 떠남이면 서버가 중단)
+    expect(vi.mocked(streamOptimize).mock.calls[0][1]).toBeInstanceOf(AbortSignal);
+  });
+
+  it("계산 중에 데이터가 전환되면 이전 계산의 연결을 끊는다(서버가 그 계산을 중단)", async () => {
+    vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
+    const gate = deferred<void>();
+    vi.mocked(streamOptimize).mockReset().mockReturnValue((async function* () {
+      yield { event: "start" as const, data: { run_id: "run-1" } };
+      yield { event: "plan" as const, data: PLAN_A };
+      await gate.promise;
+    })());
+    vi.mocked(uploadDataset).mockResolvedValue({
+      activated: true, dataset: { ...FIXTURE_INFO, version: "c".repeat(64), source: "upload" },
+      report: { errors: [], warnings: [], notes: [], row_counts: {} } });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
+    await screen.findByText("Plan A");
+    const signal = vi.mocked(streamOptimize).mock.calls[0][1] as AbortSignal;
+    expect(signal.aborted).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
+    fireEvent.change(await screen.findByLabelText("묶음 zip 파일"),
+                     { target: { files: [new File(["PK"], "b.zip")] } });
+    fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
+    await screen.findByText(/이 데이터로 전환했다/);
+    expect(signal.aborted).toBe(true);
+    gate.resolve();
+  });
+});

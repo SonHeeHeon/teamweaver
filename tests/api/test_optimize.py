@@ -58,10 +58,11 @@ def test_optimize_streams_error_event_when_solver_raises(small_graph_client, mon
             elif line.startswith("data:"):
                 payloads.append(json.loads(line[len("data:"):].strip()))
 
-    assert event_types == ["error"], (
-        "solver가 첫 순회에서 즉시 raise하므로 plan/done 없이 error 프레임 하나뿐이어야 함")
-    assert len(payloads) == 1
-    assert "boom" in payloads[0]["message"]
+    # 새로 푸는 계산은 먼저 start(실행 번호, "계산 멈추기"용)를 보낸다(2026-10-12)
+    assert event_types == ["start", "error"], (
+        "solver가 첫 순회에서 즉시 raise하므로 plan/done 없이 start 다음 error 프레임 하나뿐이어야 함")
+    assert len(payloads) == 2 and payloads[0]["run_id"]
+    assert "boom" in payloads[1]["message"]
 
 
 @pytest.mark.slow

@@ -7,6 +7,7 @@ import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly } from "../components/allocFormat";
 import { fallbackText, segmentsOf } from "../components/justification";
 import { creditedLine } from "../components/skillLabel";
+import { ConfidenceBadge } from "../components/ConfidenceBadge";
 
 /** PDF의 소명 글: 근거 문구에 밑줄 + 사실 목록 번호(위 첨자). 'F12' 같은 내부 번호는 보이지 않는다(사용자 결정 2026-10-11). */
 function ReportProse({ text, facts }: { text: string; facts: any[] }) {
@@ -91,6 +92,21 @@ export function ReportPage() {
           ? " · 교체 검토 미리보기(Δ·브리핑 본문)는 화면에서 보낸 값(근거 출처·인용은 서버 확인)"
           : ""}
       </p>
+      {data.solve_evidence && (
+        // 결과 카드와 같은 계산 신뢰도 배지(2026-10-12) -- 서버가 원 플랜 서명·신뢰도 서명을 모두 확인한 값만 온다
+        <div className="mt-1 text-xs text-slate-600" data-testid="solve-evidence">
+          계산 신뢰도{data.solve_evidence.changed
+            ? `(솔버가 푼 원안 기준 — 이후 변경 ${data.solve_evidence.changed}건은 현행 평가기로 다시 채점한 값)`
+            : ""}:{" "}
+          {data.solve_evidence.carried_from_k != null
+            // 화면 K 표와 같은 규칙: 이전 K의 해를 유지한 결과에 그 K의 증명을 붙이지 않는다
+            ? <span>독립 검증 통과 · {data.plan_label}에서 더 나은 해가 없어 K={data.solve_evidence.carried_from_k}의 해를 유지했다
+                (이 K의 최선 증명이 아니다)</span>
+            : <ConfidenceBadge termination={data.solve_evidence.termination} timeLimited={data.solve_evidence.time_limited}
+                               objective={data.solve_evidence.objective} bestBound={data.solve_evidence.best_bound}
+                               gapAllowed={data.solve_evidence.gap_allowed} within={data.solve_evidence.within ?? undefined} />}
+        </div>
+      )}
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params
           ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `

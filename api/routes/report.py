@@ -24,7 +24,7 @@ from api.pdf import (DEFAULT_MAX_BODY_BYTES, PDF_SLOTS, BrowserLaunchError, Orig
 from api.briefing_evidence import verify_report_evidence
 from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_dataset, get_evidence, get_graph, get_openai_client_or_none
-from api.plan_token import verify_plan
+from api.plan_token import verify_evidence, verify_plan
 from api.routes.meta import build_meta
 from api.routes.plans import apply_step, roster_metrics
 from api.schemas import EntryIn, ReportRequest
@@ -223,11 +223,26 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
                                                   for f in j.get("facts", [])]}
                                      for j in out]
     payload["plan_provenance"] = provenance
+    payload["solve_evidence"] = _solve_evidence(req, provenance)
+    payload.pop("evidence_token", None)
     payload["meta"] = _report_meta(graph, version, payload)
     size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     if size > MAX_RENDER_PAYLOAD_BYTES:
         raise PayloadTooLarge(f"PDF 데이터가 {size:,}바이트로 상한 {MAX_RENDER_PAYLOAD_BYTES:,}바이트를 넘는다.")
     return payload
+
+
+def _solve_evidence(req: ReportRequest, provenance: str) -> dict | None:
+    """원 플랜의 계산 신뢰도(결과 카드 배지와 같은 값) -- 원 플랜 서명과 신뢰도 서명이 모두 맞을 때만 PDF에 싣는다.
+    교체·조정을 적용한 명단이면 원안 기준이라고 함께 밝힌다(화면과 같은 규칙: 변경한 명단은 솔버가 푼 해가 아니다)."""
+    if req.solve_evidence is None or provenance != "verified" or not req.plan_token:
+        return None
+    evidence = req.solve_evidence.model_dump()
+    if not req.evidence_token or not verify_evidence(req.evidence_token, req.plan_token, evidence):
+        raise HTTPException(status_code=422, detail="계산 신뢰도 서명이 맞지 않는다(서버가 계산한 값이 아니다).")
+    label = req.plan_label or ""
+    return {**evidence, "within": "다양성 조건" if label in ("B", "C", "D") else None,
+            "changed": len(req.applied_swaps)}
 
 
 def _plan_provenance(req: ReportRequest, version: str) -> str:
@@ -304,8 +319,9 @@ async def report(req: ReportRequest, request: Request,
     except OriginUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    # 값싼 검사(원 플랜 서명)는 슬롯을 잡기 전에 끝낸다(K10).
+    # 값싼 검사(원 플랜 서명·계산 신뢰도 서명)는 슬롯을 잡기 전에 끝낸다(K10).
     provenance = _plan_provenance(req, dataset.info.version)
+    _solve_evidence(req, provenance)
 
     # 소명 글을 넣으면 사업마다 AI 글이 더 걸린다 -- 최악(사업 수 ÷ 동시 수 × AI 상한)만큼 상한을 늘린다(Codex 리뷰 P2).
     # 모델별 상한(pricing.json)을 읽다 실패해도 슬롯을 잡기 전이라 새지 않는다(2026-10-11 폴백 리뷰).

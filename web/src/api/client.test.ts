@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { applySwap, downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, streamOptimize, uploadDataset } from "./client";
 import type { PlanEvent, WhatifResponse } from "./types";
+import { evidenceOf } from "./types";
 
 describe("downloadReport", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -166,5 +167,27 @@ describe("streamOptimize", () => {
       JSON.stringify({ detail: "다른 최적화 계산이 진행 중이다. 끝난 뒤 다시 실행한다." }), { status: 429 })));
     const it = streamOptimize({ weights: {} });
     await expect(it.next()).rejects.toThrow("다른 최적화 계산이 진행 중이다");
+  });
+});
+
+
+describe("downloadReport — 계산 신뢰도(2026-10-12)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("원안의 서명된 신뢰도를 PDF 요청에 싣는다", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, blob: async () => new Blob() }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("URL", { ...URL, createObjectURL: () => "blob:x", revokeObjectURL: () => {} });
+    const evidence = { termination: "Optimal", objective: 57.59, best_bound: 58, gap_allowed: 0.05, time_limited: false,
+                       carried_from_k: null };
+    const plan: PlanEvent = { label: "A", entries: [], objective: 57.59, unfilled: [], fulfillment: 1,
+                              optimization_ratio: 1, index: 0, cached: false, plan_token: "tok", termination: "Optimal",
+                              best_bound: 58, gap_allowed: 0.05, evidence, evidence_token: "ev" };
+    await downloadReport(plan, null, null, null, null, null,
+                         { weights: {}, planToken: "tok", evidence: evidenceOf(plan) });
+    const sent = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    expect(sent.evidence_token).toBe("ev");
+    expect(sent.solve_evidence).toEqual(evidence);                              // 서버가 서명한 묶음 그대로
+    expect(evidenceOf({ ...plan, evidence_token: undefined })).toBeNull();      // 서명 없는 값은 보내지 않는다
   });
 });

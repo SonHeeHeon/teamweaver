@@ -5,15 +5,15 @@ from typing import Annotated
 import anyio
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from starlette.types import Receive, Scope, Send
 from pydantic import BaseModel, Field
 
 from api.cache import ResultCache
 from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_cache, get_dataset, get_graph
-from api.plan_token import sign_plan
+from api.plan_token import evidence_of, sign_evidence, sign_plan
 from api.schemas import MilpParamsIn
-from api.sse import SyncStream, sse_event
+from api import runs
+from api.sse import CancellableStreamResponse, SyncStream, sse_event
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.alternatives import cacheable, generate_plans_streaming
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
@@ -25,21 +25,6 @@ router = APIRouter()
 # 스레드풀을 묶어 /api/meta가 9초 넘게 막혔고 끊어도 끝까지 풀었다(claude-a 점검 2026-10-12 (3)). 한 건이 시드 수만큼 프로세스를 쓴다.
 SLOTS_ENV = "TEAMWEAVER_OPTIMIZE_SLOTS"
 DEFAULT_SLOTS = 2
-
-
-class _SolveStreamResponse(StreamingResponse):
-    """응답이 어떻게 끝나든(다 보냄·끊김·헤더 전송 실패) 풀이에 멈춤 신호를 준다. 스트림 제너레이터의 finally만으로는
-    헤더를 보내기 전에 끊긴 경우를 놓친다 -- 제너레이터가 시작조차 안 돼 남은 대안을 다 풀었다(Codex 리뷰 2026-10-12 재현)."""
-
-    def __init__(self, content, *, on_close, **kwargs):
-        super().__init__(content, **kwargs)
-        self._on_close = on_close
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        try:
-            await super().__call__(scope, receive, send)
-        finally:
-            self._on_close()
 
 
 def solve_slots(app) -> threading.BoundedSemaphore:
@@ -84,7 +69,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
         pidx, jidx = graph.pid_index, graph.project_index
         skill_term = sum(S[pidx[e.person_id], jidx[e.project_id]] * e.alloc
                          for e in plan.entries)
-        return {
+        out = {
             "label": plan.label,
             "entries": [e.model_dump() for e in plan.entries],
             "objective": plan.objective,
@@ -103,27 +88,44 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             "gap_allowed": getattr(plan, "gap_used", None) if getattr(plan, "gap_used", None) is not None
                            else params.gap,
             "dataset_version": dataset.info.version,
-            # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
-            "plan_token": sign_plan(dataset.info.version, plan.label,
-                                    [e.model_dump() for e in plan.entries], req.weights, params),
         }
+        # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
+        out["plan_token"] = sign_plan(dataset.info.version, plan.label,
+                                      [e.model_dump() for e in plan.entries], req.weights, params)
+        # 계산 신뢰도(배지)도 서명한다 -- PDF가 꾸며지지 않은 값만 찍게(2026-10-12). 화면은 evidence를 그대로 돌려보낸다.
+        out["evidence"] = evidence_of(out)
+        out["evidence_token"] = sign_evidence(out["plan_token"], out["evidence"])
+        return out
 
     cached = None if req.fresh else cache.get(key)
     pre_at = precomputed_at(request.app, key) if cached is not None else None
     outcome: dict = {}
     solving: SyncStream | None = None
+    run_id: str | None = None
     if cached is None:
         slots = solve_slots(request.app)
         if not slots.acquire(blocking=False):
             raise HTTPException(status_code=429, detail="다른 최적화 계산이 진행 중이다. 끝난 뒤 다시 실행한다.")
         # 풀이는 응답을 돌려주기 전에 시작한다 -- 슬롯은 언제나 풀이 스레드가 놓는다(스트림을 읽든 말든).
-        # 화면이 끊으면 지금 푸는 대안까지만 풀고 다음 대안은 시작하지 않는다(SyncStream).
+        # 화면이 끊으면(abort) 지금 푸는 HiGHS까지 끊고, "계산 멈추기"(finish, POST /api/runs/stop)면 그때까지의 해를 내고 끝낸다.
+        app = request.app
+
+        def finished() -> None:
+            slots.release()
+            runs.unregister(app, run_id)
         solving = SyncStream(generate_plans_streaming, graph, S, C, params, req.n_alternatives, outcome,
-                             on_exit=slots.release)
+                             on_exit=finished, start=False)
+        run_id = runs.register(app, solving.stop)
+        solving.start()
+
+    def user_stopped() -> bool:
+        return solving is not None and solving.stop.mode == "finish"
 
     async def event_stream():
         count = 0
         try:
+            if run_id is not None:
+                yield sse_event("start", {"run_id": run_id})   # 화면의 "계산 멈추기"가 쓴다
             # UB는 (graph, S, params)에만 의존하고 플랜별로 달라지지 않는다 --
             # 요청당 1회만 푼다. 플랜마다 풀면 그 배수만큼 낭비다.
             # 실측(동결 fixture): 프로세스 첫 solve는 CBC 기동 비용이 섞여
@@ -142,25 +144,45 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
                     collected.append(plan)
                     yield sse_event("plan", _plan_payload(plan, count, False, ub))
                 # 시간 한도·검증 거절처럼 부하에 따라 달라질 수 있는 결과는 캐시하지 않는다 -- 한 번
-                # 짧게 끊긴 묶음이 같은 요청에 계속 쓰이지 않게(통합 리뷰 N2, C2 리뷰).
-                if cacheable(outcome):
+                # 짧게 끊긴 묶음이 같은 요청에 계속 쓰이지 않게(통합 리뷰 N2, C2 리뷰). 멈춘 묶음도 마찬가지.
+                if cacheable(outcome) and not user_stopped():
                     cache.put(key, collected)
                     forget(request.app, key)
             # 요청한 대안 수도 싣는다: 조건(품질·미충원·중복·빈 팀, C2)을 만족하는 대안이 모자라면
             # 서버는 억지로 채우지 않고 덜 낸다 -- 화면이 "대안 없음"을 알릴 수 있게.
             done = {"count": count, "requested_alternatives": req.n_alternatives, "precomputed_at": pre_at}
-            if cached is None and outcome.get("stop_reason"):
+            if user_stopped():
+                done["stop_reason"] = "user_stopped"            # 사용자가 멈췄다 -- 대안이 모자란 이유
+            elif cached is None and outcome.get("stop_reason"):
                 done["stop_reason"] = outcome["stop_reason"]   # 화면이 시간 초과를 조건 미충족과 구분한다
             elif pre_at is not None and precomputed_stop_reason(request.app, key):   # 시각이 빈 미리 계산도 이유를 싣는다
                 done["stop_reason"] = precomputed_stop_reason(request.app, key)   # 미리 계산 때의 이유
             yield sse_event("done", done)
         except Exception as exc:                        # noqa: BLE001
-            yield sse_event("error", {"message": str(exc)})
+            if user_stopped():
+                # 멈춘 뒤의 실패(해를 찾기 전에 멈춤·다음 풀이를 시작하지 않음)는 오류가 아니라 멈춤이다
+                yield sse_event("done", {"count": count, "requested_alternatives": req.n_alternatives,
+                                         "precomputed_at": None, "stop_reason": "user_stopped"})
+            else:
+                yield sse_event("error", {"message": str(exc)})
         finally:
             if solving is not None:
-                solving.cancel()                        # 끊겼거나 UB 계산이 실패했다 -- 다음 대안을 풀지 않는다
+                solving.cancel("abort")                 # 끊겼거나 UB 계산이 실패했다 -- 남은 풀이를 버린다
 
     headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     if solving is None:
         return StreamingResponse(event_stream(), media_type="text/event-stream", headers=headers)
-    return _SolveStreamResponse(event_stream(), on_close=solving.cancel, media_type="text/event-stream", headers=headers)
+    return CancellableStreamResponse(event_stream(), on_close=lambda: solving.cancel("abort"),
+                                     media_type="text/event-stream", headers=headers)
+
+
+class StopRequest(BaseModel):
+    run_id: str = Field(min_length=8, max_length=64)
+
+
+@router.post("/api/runs/stop")
+async def stop_run(req: StopRequest, request: Request) -> dict:
+    """진행 중인 계산을 멈춘다(그때까지의 해를 쓰고 끝냄). 이미 끝났거나 없는 번호면 404."""
+    if not runs.request_stop(request.app, req.run_id):
+        raise HTTPException(status_code=404, detail="이미 끝났거나 없는 계산이다.")
+    return {"stopping": True, "run_id": req.run_id}

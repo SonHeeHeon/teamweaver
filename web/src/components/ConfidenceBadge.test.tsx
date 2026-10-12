@@ -22,6 +22,11 @@ describe("ConfidenceBadge — 계산 신뢰도", () => {
     expect(screen.getByText("최선 증명")).toBeInTheDocument();
   });
 
+  it("사용자가 멈춘 해는 시간 한도와 구분해 보인다", () => {
+    render(<ConfidenceBadge termination="user_interrupt" objective={100} bestBound={105} gapAllowed={0.05} />);
+    expect(screen.getByText("사용자가 멈춤 · 최적값이 이 해보다 최대 5.0% 높을 수 있음")).toBeInTheDocument();
+  });
+
   it("시간 한도면 최적값이 최대 X% 높을 수 있음", () => {
     render(<ConfidenceBadge termination="time_limit_incumbent" objective={100} bestBound={112} gapAllowed={0.05} />);
     expect(screen.getByText("시간 한도 도달 · 최적값이 이 해보다 최대 12% 높을 수 있음")).toBeInTheDocument();
