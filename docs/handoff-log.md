@@ -35,6 +35,7 @@
 - 검증: `uv run --group benchmark pytest -q` → 1793 passed, 1 skipped, 19 deselected · `-m slow` 19 passed · Phase 0 PASS(11) · 웹 202 · `tsc -b` · oxlint 0 · build.
   실서버(시연 100명, 시드 4, 포트 8814): 8초에 멈춤 → 0.5초 뒤 안 A(`user_interrupt`) + done `user_stopped` · 5초에 연결 끊기 → 시드 프로세스 0.19초 뒤 정리, 바로 새 계산 200 · 멈춘 안으로 만든 PDF에 "계산 신뢰도: 독립 검증 통과 · 사용자가 멈춤 · 최적값이 이 해보다 최대 102% 높을 수 있음", 꾸민 신뢰도는 422.
   **리뷰**: Codex adversarial(gpt-6.1-sol) 1라운드 needs-attention — [medium] 유지 K 행이 이전 K의 증명을 PDF에 빌려 씀 → 반영, [medium] 멈춤 뒤 유예 만료 시 한 번 더 풀기 → 반영, [medium] 운영 탭 이동 시 비교 계속 → WON'T(탭 이동은 화면 닫기가 아니고 최적화 실행과 같은 규칙, 멈춤 버튼 있음 — 주석만 고침). 2라운드 approve.
+- 추가(같은 브랜치, main 병합 뒤): claude-a 요청 2건 — `outputs/final-report.html` 7절을 "이 PoC 안에서 남은 일"(사전 버전·대리 레벨 유지 결정)과 8절 "실제 도입 시 필요한 것(범위 밖)"으로 나누고, 한계에 실제 인사 자료 적재 불가·대리 레벨의 구간 안 차이를 적었다. 기능 표에 계산 멈추기·PDF 신뢰도. 문서만이라 리뷰 생략.
 - 근거: 로컬 `.omc/reports/2026-10-12-solve-stop-pdf-confidence.md`
 
 ---
