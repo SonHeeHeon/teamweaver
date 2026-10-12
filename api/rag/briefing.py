@@ -24,18 +24,23 @@ log = logging.getLogger(__name__)
 # 공통 지시(2026-10-05 튜닝): 실측에서 gpt-6-luna가 위험 4~5개·대안 3~4개의 긴 설명을 내고, 문맥에
 # 프로젝트 요구 기술·점수 변화가 없어 매번 "정보가 부족해 단정하기 어렵다"로 끝났다. 길이 상한과
 # 결론 우선, 그리고 project·score_change를 받으면 그것으로 판단하라는 지시를 둔다.
+# 2026-10-12 실측(외부 gpt-6-luna, 화면과 같은 입력 10회씩): "출처를 밝혀라"만으로는 인정 경력 괄호 표기 2/10, "결론을 보류로"만으로는
+# 점수가 오르는 위반 교체에서 첫 문장이 "권고한다"·"권고하지 않습니다"로 나와 6/10이 버려졌다 -- "매번 괄호"·"첫 문장에 보류라는 낱말"로
+# 바꿔 9/10 · 2/10(위반 없는 교체는 둘 다 10/10 채택). 버려진 글은 규칙 기반 설명으로 대신한다.
 _BASE = (
     "너는 SI 인력 배치 담당자를 돕는 설명가능AI(XAI) 브리핑 작성자다. 한국어로 쓴다."
     " 입력: out_person(빠질 사람), in_person(들어올 사람), context(사람별 skills=기술:레벨 1~5,"
     " coworks=협업 상대:함께한 개월, evidence=리뷰 근거). skills 항목에 credited_from이 있으면 그 레벨은 본인 경력이 아니라"
-    " 하위 기술(credited_from) 경력에서 일부 인정된 것이다 -- 그 기술을 말할 때는 기술 이름 뒤 괄호에 출처를 밝혀라(예: Java(Spring 경력에서 인정)). 따옴표로 감싸지 마라."
+    " 하위 기술(credited_from) 경력에서 일부 인정된 것이다 -- 그런 기술을 rationale·risks·alternatives 어디서든 말할 때는"
+    " 매번 레벨 뒤 괄호에 출처를 붙여라(예: Java 2(Spring 경력에서 인정)). 괄호 출처 없이 레벨만 쓰지 마라. 따옴표로 감싸지 마라."
     " 있으면 context.project(교체 대상 프로젝트의"
     " 요구 기술·최소 레벨·인원)와 score_change(교체 전후 배치 점수 변화, total이 양수면 개선)도 온다."
     " 문맥에 있는 사실만 쓰고 지어내지 마라."
     " project가 있으면 두 사람을 그 요구 기술 기준으로 비교해 결론을 내라(정보 부족이라고 얼버무리지 마라)."
     " score_change가 있으면 그 방향과 어긋나는 결론을 쓰지 말고 total 값을 한 번 언급하라."
     " score_change.new_violations가 있으면(이 교체로 가용률·예산·정원 등 제약 위반이 새로 생김) total과 상관없이"
-    " 교체를 권고하지 말고 결론을 보류로 하며, 그 위반을 risks의 첫 항목으로 써라."
+    " 교체를 권고하지 말고 rationale 첫 문장에 반드시 보류라는 낱말을 넣어라(예: 보류합니다. -- 권고하지 않습니다 같은 다른 표현으로"
+    " 바꾸지 마라). 그 위반을 risks의 첫 항목으로 써라."
     " feasible이 false인데 new_violations가 없으면 교체 전부터 있던 위반이니, 그 사실을 risks에 적고 권고 여부는 점수로 판단하라."
     " 형식: rationale은 결론(교체 권고/조건부/보류)을 첫 문장에 두고 2~3문장, risks는 최대 3개,"
     " alternatives는 최대 2개, 각 항목은 한 문장."
@@ -179,6 +184,27 @@ def _check_infeasible_conclusion(out: dict, score_change: dict | None) -> None:
                                "교체 후 제약 위반이 있는데 첫 문장 결론이 '보류'가 아니다")
 
 
+def _credit_notes(briefing: dict, ctx: dict, ids: tuple[str, str]) -> list[str]:
+    """AI가 인정 경력(credited_from) 기술을 말하면서 출처를 빼먹었으면 서버가 정해진 문장으로 밝힌다(Codex 리뷰 P2, 2026-10-12).
+    지시문만으로는 실측 9/10이라 남는 1을 버리지 않고 채운다 -- 소명 글의 덧붙임(adverse_addendum)과 같은 방식.
+    그 기술 이름이 나오는 **모든 자리**마다 뒤 같은 문장 안(괄호든 서술이든)에 출처 이름과 "인정"이 함께 있어야 밝힌 것으로 본다
+    (Codex 리뷰 2라운드: 한 자리만 밝혀도, 출처 이름이 우연히 가까이 있어도 통과하던 빈틈). 어느 자리가 누구 얘기인지는 가리지 않는다 --
+    한 자리라도 빠지면 그 기술을 인정받은 사람 모두에 대해 적는다(덧붙임이 겹쳐도 사실이라 해가 없다)."""
+    text = " ".join([briefing["rationale"], *briefing["risks"], *briefing["alternatives"]])
+    notes = []
+    for pid in ids:
+        for row in (ctx.get(pid) or {}).get("skills", []):
+            src = row.get("credited_from")
+            if not src:
+                continue
+            name = r"(?<![A-Za-z0-9])" + re.escape(row["key"]) + r"(?![A-Za-z0-9])"     # Java가 JavaScript에 걸리지 않게
+            tails = [re.split(r"[.!?。]", text[m.end():m.end() + 60], maxsplit=1)[0] for m in re.finditer(name, text)]
+            if any(not (src in tail and "인정" in tail) for tail in tails):
+                topic = "는" if str(row["value"])[-1:] in "2459" else "은"     # 이·사·오·구는 받침 없음(1 일, 3 삼은 받침)
+                notes.append(f"{pid}의 {row['key']} {row['value']}{topic} {src} 경력에서 일부 인정된 레벨이다.")
+    return notes
+
+
 def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
                       evidence: EvidenceIndex | None = None, score_change: dict | None = None,
                       reasoning_effort: str | None = None) -> dict:
@@ -209,6 +235,9 @@ def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
         briefing = BriefingOut(rationale=out["rationale"], risks=out["risks"],
                                alternatives=out["alternatives"]).model_dump()
         _check_infeasible_conclusion(briefing, score_change)
+        notes = _credit_notes(briefing, ctx, (out_id, in_id))
+        if notes:
+            briefing["rationale"] = " ".join([briefing["rationale"].rstrip(), "참고:", *notes])
         briefing["evidence"] = [] if evidence is None else _verified_citations(out, ctx, evidence)
         return briefing
     except (json.JSONDecodeError, KeyError, TypeError, ValidationError, ValueError) as exc:

@@ -136,6 +136,7 @@ def test_briefing_prompt_tells_the_model_to_name_the_credit_source():
     from api.rag import briefing
     assert "credited_from" in briefing._BASE and "인정" in briefing._BASE
     assert "'Java" not in briefing._BASE and "따옴표로 감싸지 마라" in briefing._BASE   # 따옴표째 따라 쓰면 인용 검사가 글을 버린다(폴백 리뷰)
+    assert "매번 레벨 뒤 괄호에 출처" in briefing._BASE      # "밝혀라"만으로는 실측 2/10만 괄호를 썼다(2026-10-12)
 
 
 @pytest.mark.parametrize("reveal", [False, True])
