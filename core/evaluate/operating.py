@@ -12,6 +12,7 @@ import time
 from core.evaluate.plan_eval import evaluate_plan
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.incremental import move_budget_constraints, moves_from
+from core.optimize.interrupt import SolveCancelled, current as current_stop
 from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs, solve_milp_assessment
 
 
@@ -62,7 +63,10 @@ def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, 
     그것을 유지하고(solve_failed), 없으면 실패 행만 남긴 채 나머지 K를 계속한다. 개선량은 K=0 행 기준(K=0이 실패하면 None).
 
     on_row(row): K 하나가 끝날 때마다 완성된 행(이전 해 유지·K=0 대비 개선량까지 반영)을 넘긴다 -- API가 K별로 바로
-    흘릴 수 있게(claude-b 요청 2026-10-06). K는 오름차순으로 풀므로 K=0 행이 늘 먼저다."""
+    흘릴 수 있게(claude-b 요청 2026-10-06). K는 오름차순으로 풀므로 K=0 행이 늘 먼저다.
+
+    멈춤(core/optimize/interrupt): 사용자가 멈춘 뒤 해 없이 끝난 K는 실패 행이 아니라 멈춤이다 -- SolveCancelled로 끝내고,
+    이미 넘긴 행이 결과다(Codex 최종 점검 2026-10-12: 화면에 '계산 실패'로 보였다). 멈출 때 해가 있었던 K는 그 해로 행을 낸다."""
     params = exact(params)
     rows, best_so_far, base = [], None, None
 
@@ -95,6 +99,8 @@ def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, 
         ev = a.native_capture.evidence if a is not None and a.native_capture is not None else None
         if failure is None and a.accepted is None:
             failure = {"termination": getattr(ev, "termination_reason", None)}
+        if failure is not None and (stop := current_stop()) is not None and stop.is_set():
+            raise SolveCancelled(f"K={k}를 풀던 중 멈춤 -- 그때까지 쓸 만한 해가 없었다")
         if failure is not None:
             row = {"k": k, "elapsed_s": elapsed, **failure}
             if best_so_far is None:

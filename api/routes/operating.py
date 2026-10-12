@@ -261,7 +261,8 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
                 # K 하나가 끝날 때마다 완성된 행을 바로 넘긴다(on_row, claude-a 2026-10-07) -- 화면이 K별로 한 줄씩 보인다
                 rows = compare_move_budgets(dataset.graph, S, C, params, dataset.current, ks=ks,
                                             on_row=lambda row: out.put(("row", row)))
-            out.put(("done", rows))
+            # 마지막 K를 풀던 중 멈추면 그 K를 그때까지의 해로 끝내고 정상으로 돌아온다 -- 그래도 멈춤으로 알린다(Codex 최종 점검 10-12)
+            out.put(("stopped", rows) if stop.mode == "finish" else ("done", rows))
         except Exception as exc:                               # noqa: BLE001 -- SSE error 이벤트로 전한다
             out.put(("stopped", None) if stop.mode == "finish" else ("error", exc))
         finally:
@@ -297,14 +298,14 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
         if kind == "error":
             yield sse_event("error", {"message": str(payload)[:300]})
             return
-        if kind == "stopped":                   # 사용자가 멈췄다 -- 이미 보낸 K 행까지가 결과다
-            yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(sent),
-                                     "stopped": True})
-            return
-        for row in payload:                     # on_row로 오지 않은 행이 있으면(계산 함수가 고리를 안 부른 경우) 끝에 보낸다
+        for row in payload or ():               # on_row로 오지 않은 행이 있으면(계산 함수가 고리를 안 부른 경우) 끝에 보낸다
             if row.get("k") not in sent:
+                sent.add(row.get("k"))
                 yield sse_event("row", {**_signed(row, req, dataset.info.version), "dataset_version": dataset.info.version})
-        yield sse_event("done", {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(payload)})
+        done = {"elapsed_s": round(time.monotonic() - t0, 1), "count": len(sent)}
+        if kind == "stopped":                   # 사용자가 멈췄다 -- 보낸 K 행까지가 결과다
+            done["stopped"] = True
+        yield sse_event("done", done)
 
     return CancellableStreamResponse(stream(), on_close=lambda: stop.request("abort"), media_type="text/event-stream")
 

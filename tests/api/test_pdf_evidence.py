@@ -31,6 +31,18 @@ def test_signed_evidence_goes_to_the_pdf_with_context():
     assert _solve_evidence(swapped, "verified")["changed"] == 1                       # 변경한 명단 -- 원안 기준이라고 밝힌다
 
 
+@pytest.mark.parametrize("label", ["B", "C", "D", "E", "F", "G"])
+def test_every_alternative_proof_is_within_the_diversity_condition(label):
+    # 대안은 최대 6개(B~G, optimize n_alternatives ≤ 6)이고 모두 다양성 조건을 더한 문제의 증명이다 -- 화면 배지와 같다
+    # (Codex 최종 점검 2026-10-12: E~G에 단서가 빠져 조건 없는 "최선 증명"으로 찍혔다)
+    assert _solve_evidence(_req(label=label), "verified")["within"] == "다양성 조건"
+
+
+def test_operating_k_and_plan_a_proofs_carry_no_diversity_condition():
+    assert _solve_evidence(_req(label="A"), "verified")["within"] is None
+    assert _solve_evidence(_req(label="K1"), "verified")["within"] is None              # 운영 중 K는 대안이 아니다
+
+
 @pytest.mark.parametrize("change", [{"termination": "Optimal"}, {"objective": 60.0}, {"best_bound": 57.6},
                                     {"gap_allowed": 0.0}, {"time_limited": False}, {"carried_from_k": 1}])
 def test_forged_evidence_is_refused(change):

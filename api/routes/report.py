@@ -30,6 +30,7 @@ from api.routes.plans import apply_step, roster_metrics
 from api.schemas import EntryIn, ReportRequest
 from core.config import REPO_ROOT
 from core.graph.memory_graph import MemoryGraph
+from core.optimize.alternatives import _LABELS
 from core.optimize.metrics import _skill_relaxation_upper_bound
 from core.optimize.milp import MilpParams
 from core.scoring.engine import ScoringEngine
@@ -38,6 +39,7 @@ router = APIRouter()
 log = logging.getLogger(__name__)
 
 REPORT_PATH = "/api/report"
+_ALTERNATIVE_LABELS = frozenset(_LABELS[1:])            # 안 A 다음의 대안 이름(B~G)
 _DIST_INDEX = REPO_ROOT / "web" / "dist" / "index.html"
 
 
@@ -241,7 +243,8 @@ def _solve_evidence(req: ReportRequest, provenance: str) -> dict | None:
     if not req.evidence_token or not verify_evidence(req.evidence_token, req.plan_token, evidence):
         raise HTTPException(status_code=422, detail="계산 신뢰도 서명이 맞지 않는다(서버가 계산한 값이 아니다).")
     label = req.plan_label or ""
-    return {**evidence, "within": "다양성 조건" if label in ("B", "C", "D") else None,
+    # 대안 B~G(core/optimize/alternatives._LABELS, 최대 6개)는 다양성 조건을 더한 문제의 증명이다 -- 화면 배지와 같은 규칙
+    return {**evidence, "within": "다양성 조건" if label in _ALTERNATIVE_LABELS else None,
             "changed": len(req.applied_swaps)}
 
 

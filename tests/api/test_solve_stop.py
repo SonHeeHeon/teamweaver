@@ -144,6 +144,31 @@ def test_operating_compare_can_be_stopped_after_a_row(op_client, monkeypatch):
     assert kinds == ["start", "row", "done"] and events[-1][1]["stopped"] is True
 
 
+def test_stopping_the_last_k_still_reports_a_stop(op_client, monkeypatch):
+    # 마지막 K를 풀던 중 멈추면 계산 함수는 그 K를 그때까지의 해로 끝내고 정상으로 돌아온다 -- 그래도 화면에는 멈춤으로 알린다
+    # (Codex 최종 점검 2026-10-12: stopped 없이 done만 갔다)
+    def compare(graph, S, C, params, current_rows, ks, on_row=None):
+        row = {"k": 0, "accepted": False, "quality": 1.0}
+        on_row(row)
+        _wait_for_stop()
+        return [row]
+
+    run = {}
+
+    def on_event(kind, data):
+        if kind == "start":
+            run["id"] = data["run_id"]
+        if kind == "row":
+            assert runs.request_stop(app, run["id"]) is True
+
+    monkeypatch.setattr("core.evaluate.operating.compare_move_budgets", compare)
+    v = op_client.get("/api/operating/state").json()["dataset_version"]
+    events = _asgi_stream("/api/operating/compare", {"dataset_version": v, "ks": [0], "fresh": True},
+                          on_event=on_event)
+    kinds = [k for k, _ in events if k != "progress"]
+    assert kinds == ["start", "row", "done"] and events[-1][1]["stopped"] is True and events[-1][1]["count"] == 1
+
+
 def test_operating_compare_disconnect_aborts(op_client, monkeypatch):
     seen, done = {}, threading.Event()
 

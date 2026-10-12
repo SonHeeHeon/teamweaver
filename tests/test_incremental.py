@@ -430,3 +430,47 @@ def test_move_budget_keeps_refinement_and_extra_row_checks(monkeypatch):
     graph, S, C, params = _case()
     a = solve_milp_assessment(graph, S, C, params, extra_constraints=move_budget_constraints(graph, CURRENT, 1))
     assert a.accepted is not None and seen["enabled"] and seen["rows"] > 0
+
+
+@pytest.mark.parametrize("interrupted", ["no_solution", "nothing_accepted"])
+def test_a_k_stopped_before_any_solution_ends_the_comparison_instead_of_failing(monkeypatch, interrupted):
+    """'계산 멈추기'(finish) during a K whose solve had no usable solution yet: the comparison stops there (rows already
+    handed over stay), it is not reported as a failed K (Codex final audit 2026-10-12: the screen showed '계산 실패')."""
+    import core.evaluate.operating as op
+    from core.optimize.interrupt import SolveCancelled, SolveStop, watching
+
+    graph, S, C, params = _case()
+    real, stop, seen = op.solve_milp_assessment, SolveStop(), []
+
+    def solve(*args, **kwargs):
+        if not seen:
+            return real(*args, **kwargs)
+        stop.request("finish")                       # the user pressed stop while this K was being solved
+        if interrupted == "no_solution":
+            raise RuntimeError("MILP failed: Not Solved")
+
+        class _Nothing:
+            accepted, native_capture = None, None
+        return _Nothing()
+
+    monkeypatch.setattr(op, "solve_milp_assessment", solve)
+    with watching(stop), pytest.raises(SolveCancelled):
+        compare_move_budgets(graph, S, C, params, CURRENT, ks=(0, 1, 2), on_row=lambda r: seen.append(r["k"]))
+    assert seen == [0]
+
+
+def test_a_failed_k_without_a_stop_is_still_a_failure_row(monkeypatch):
+    import core.evaluate.operating as op
+
+    graph, S, C, params = _case()
+    real, calls = op.solve_milp_assessment, []
+
+    def solve(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 2:
+            raise RuntimeError("MILP failed: Not Solved")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(op, "solve_milp_assessment", solve)
+    rows = compare_move_budgets(graph, S, C, params, CURRENT, ks=(0, 1, 2))
+    assert [r["k"] for r in rows] == [0, 1, 2] and rows[1]["solve_failed"] is True and rows[1]["carried_from_k"] == 0
