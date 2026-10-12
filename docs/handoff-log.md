@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-12 · claude-a · 최종 점검·제출 문서 최종판(main 병합 `5d48573` 포함)
+- 브랜치/커밋: `feat/claude-b-solve-stop`을 사용자 승인으로 main에 병합·검증·push(`00126dd..5d48573`, 로컬 fast-forward는 22:27에 이미 돼 있었고 claude-a가 시험 후 push).
+  이어서 `docs/claude-a-final-wrapup-1012`: `6a2dece`(결함 2건)·`7fb3a19`(시험 1건)·이 항목 커밋(문서). **main 병합은 사용자 승인 대기**.
+- 사용자 요청: "최종적으로 전체 프로젝트 훑어보고 보완할거 있는지 샅샅히 검증해줘. 그리고 최종 보고서랑 시연 시나리오,대본 다 작성해주고(이미 돼있으면 보완) 프로젝트 전체 작업 등을 정리한 eli5 html을 최종본으로 만들어줘."
+- 검증으로 찾아 고친 것:
+  - Codex 적대적 리뷰(`a366ee9..5d48573`, 감사 뒤 변경 전체) → needs-attention 중간 2건, 모두 반영(**claude-b 영역 `api/routes/operating.py`·`api/routes/report.py`를 사용자 지시 범위로 claude-a가 고침**):
+    (1) 운영 중 K 비교를 멈출 때 해 없이 끝난 K가 "계산 실패" 행으로 갔고, 마지막 K에서 멈추면 `stopped` 없이 끝났다 → `core/evaluate/operating.compare_move_budgets`가 멈춤 뒤 실패한 K는 `SolveCancelled`로 끝내고, 라우트는 finish 요청이 있었으면 정상 종료도 `done.stopped=true`.
+    (2) PDF 계산 신뢰도의 "다양성 조건" 단서가 B~D에만 → 대안 B~G 전부(`alternatives._LABELS`), 운영 중 K는 그대로 없음.
+  - GitHub에서 새로 받은 main 복제본(설치·웹 빌드·전 시험)에서 `test_highs_portfolio::test_a_worker_that_dies_is_reported_instead_of_waited_for_forever`가 늘 실패 — 동작은 맞고, 시험의 죽는 작업자가 모델을 받기 전에 죽어 부모의 보내기와 경쟁(BrokenPipe/EOF 두 정상 문구). 모델을 받은 뒤 죽게 고정(`7fb3a19`).
+  - 시연 최종 리허설(임시 데이터 폴더, 포트 8011): 장면 2~8-1, 계산 멈추기(안 A만 "사용자가 멈춤 · 최대 12%", 다시 최적화 실행하면 미리 계산 복귀), PDF(300명 안 A 5초, 613KB) — 대본 숫자와 일치, 미리 계산 6개 수용. 바뀐 것: 소명 근거 "불리한 사실 10개"(대본 9), 교체 설명 글에 이름(ID 문제 해결됨).
+- 문서 최종판: `README.md`(제출용 첫 화면 — 기능·제출물·실행·검증·구조, 옛 영문 기록은 부록으로 두고 저장소에 없는 `.omc` 참조 정리), `docs/demo-script.md`(시나리오 표·짧은 판 10분·여는/맺는 말·장면 2-2 계산 멈추기·범위), `docs/demo-notes.md`(범위 문구), `docs/architecture.html`, `outputs/final-report.html`(**claude-b 문서** — 최종 점검 절·제출물 안내·10-12 결정·소명 숫자 99.0%/100%), `outputs/eli5-project-history-roadmap.html`(최종판 — 10-12 이력, 14·16·17·20장을 "실제 도입 시"로, 시연 숫자·시험 수 갱신), `docs/project-context.md`, `CLAUDE.md` 기준선.
+- 상대 영향: **테스트 기준선 1804 passed, 1 skipped, 19 deselected**(+11: 위 회귀 시험). claude-b: 위 두 라우트 수정과 `final-report.html` 보완을 확인해 달라(work-split 정보 항목). 운영 중 SSE `done.count`는 이제 보낸 K 행 수(정상 종료에선 예전과 같음).
+- 검증: `uv run --group benchmark pytest -q` → 1804 passed, 1 skipped, 19 deselected · `-m slow` 19 passed · Phase 0 PASS(11) · 웹은 바뀐 코드 없음(main에서 202 passed·`tsc -b`) · GitHub main 복제본: 설치·빌드·slow 19·Phase 0·웹 202 통과, 일반 시험 1792+1(위 시험, 고침).
+  Codex 리뷰: 적대적 1회(2건) → 수정분 재리뷰 지적 없음 → 시험 수정·문서 리뷰 지적 없음.
+- 근거: `.omc/reports/2026-10-12-final-wrapup.md`(로컬).
+
 ## 2026-10-12 · claude-b · 계산 멈추기·화면 닫힘 즉시 중단·PDF 계산 신뢰도
 - 브랜치/커밋: `feat/claude-b-solve-stop` `ad2aa55`(core 중단)·`1ddf3d7`(API·화면·PDF)·이 항목 커밋. **main 병합은 사용자 확인 대기**. push 안 함.
 - 사용자 요청: "Pdf에도 표기해줘" · "화면 닫으면 중간에 끊기도록" · "중간에 사용자가 계산 멈추는 것 기능"(없었다).
