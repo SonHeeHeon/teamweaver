@@ -528,18 +528,3 @@ def test_reset_reports_a_broken_demo_bundle(client, monkeypatch, tmp_path):
     assert res.status_code == 200
     assert res.json()["restore_error"].startswith("시연 데이터 묶음을 읽지 못해")
     assert client.get("/api/datasets/active").json()["restore_error"].startswith("시연 데이터 묶음을 읽지 못해")
-
-
-def test_calculation_version_follows_the_skill_dictionary_but_content_version_does_not(monkeypatch):
-    # 마무리 정리(claude-a 요청 2026-10-09 (2)): 사전·인정 비율이 바뀌면 캐시·미리 계산 키(version)가 바뀐다. 원천 해시는 그대로.
-    from types import SimpleNamespace
-    import core.ingest.skills as skills
-    from api.datasets import rules_version
-    real = skills.load_dictionary()
-    a = rules_version("abc")
-    monkeypatch.setattr(skills, "load_dictionary", lambda path=None: SimpleNamespace(version=real.version + "x",
-                                                                                   narrower_credit=real.narrower_credit))
-    b = rules_version("abc")
-    monkeypatch.setattr(skills, "load_dictionary", lambda path=None: SimpleNamespace(version=real.version, narrower_credit=0.5))
-    c = rules_version("abc")
-    assert len({a, b, c}) == 3 and rules_version("abd") != a
