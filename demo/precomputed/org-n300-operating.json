@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n300-operating",
  "dataset_id": "org-n300-s2026-operating",
- "dataset_version": "1f192c4c70d352e6253076b05b6256155138200229f244edfcc5cae079bb07cb",
+ "dataset_version": "7ac01293a922f4a7f990ec6fac1c3c67984d6abc26fba294351e0177e12a0f7f",
  "review_judge": "llm",
  "computed_at": "2026-10-11T15:30:23+00:00",
  "commit": "3b9e5a8",
@@ -13948,5 +13948,10 @@
     }
    }
   ]
+ },
+ "rekeyed": {
+  "at": "2026-10-12T23:49:15+00:00",
+  "from_dataset_version": "1f192c4c70d352e6253076b05b6256155138200229f244edfcc5cae079bb07cb",
+  "reason": "dataset version now includes the skill dictionary version and the narrower-skill credit (skills:2026-10-11.1, credit:0.7); same bundle, review judgments and rules as when computed -- results were not re-solved, and the server still re-scores every plan on load"
  }
 }

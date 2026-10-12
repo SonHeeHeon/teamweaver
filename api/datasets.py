@@ -151,6 +151,13 @@ def dir_version(root: Path, names: list[str] | None = None) -> str:
     return h.hexdigest()
 
 
+def rules_version(content: str) -> str:
+    """원천 파일 해시 + 입력 단계 규칙(core.ingest.skills 사전 버전·인정 비율) → 계산 버전."""
+    from core.ingest.skills import load_dictionary
+    d = load_dictionary()
+    return hashlib.sha256(f"{content}|skills:{d.version}|credit:{d.narrower_credit}".encode("utf-8")).hexdigest()
+
+
 def bundle_version(root: Path) -> str:
     return dir_version(root, sorted(_ALLOWED))
 
@@ -178,6 +185,11 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
                  judge_cache: Path | None = None, manifest: dict | None = None, bundle=None) -> ActiveDataset:
     """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다."""
     content_version, judge_error = version, None
+    if bundle is not None:
+        # 계산 버전에 입력 규칙(기술 이름 사전 버전·하위 기술 인정 비율)을 넣는다(claude-a 요청 2026-10-09 (2), 마무리 정리):
+        # 같은 원천 파일이라도 사전·비율이 바뀌면 S가 달라지므로 캐시·미리 계산·저장된 교체가 옛 값으로 쓰이지 않게.
+        # content_version(원천 파일 해시)은 그대로 -- 업로드 저장본(DatasetStore)이 그것으로 묶여 있다.
+        version = rules_version(version)
     meta: dict = {"review_judge": "fixture"}
     if judge:
         from api import review_judge as rj
