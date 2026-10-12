@@ -100,6 +100,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **`/api/optimize`는 새 풀이마다 슬롯을 잡는다**(2026-10-12, `TEAMWEAVER_OPTIMIZE_SLOTS` 기본 2, 바쁘면 429 -- 캐시·미리 계산은 슬롯 없이). 슬롯은 풀이 스레드가 끝날 때 놓고,
   화면이 끊기면 풀던 대안까지만 푼다(`api.sse.SyncStream`). `time_limit`은 900초(`api.settings.TIME_LIMIT_MAX`)를 넘으면 422다 -- 깎아서 풀면 서명된 설정과 달라진다.
   리허설·시험에서 최적화를 동시에 여럿 돌리면 429가 날 수 있다. /api JSON 쓰기 요청 본문은 2 MiB(`TEAMWEAVER_MAX_JSON_BODY_BYTES`, PDF는 따로).
+- **계산 멈추기·끊김 중단**(2026-10-12, `core/optimize/interrupt`): 새 계산은 SSE `start {run_id}` → `POST /api/runs/stop`(finish: 풀던 안은 그때까지의 해, 종료 사유 `user_interrupt` -- 시간 한도와 구분).
+  연결이 끊기면 abort(시드 프로세스까지 즉시 정리). 멈춤 뒤에는 `HighsPortfolio`가 새 풀이를 시작하지 않고 `SolveCancelled`(RuntimeError 아님) --
+  대안 생성기·운영 K 비교가 이것을 "실패"로 삼키지 않게. 풀이 경로에 새 `except Exception`을 넣으면 멈춤이 실패로 바뀐다.
+  PDF 계산 신뢰도는 결과·K 행의 서버 서명 `evidence`+`evidence_token`(plan_token에 묶임)이 맞을 때만 찍는다 -- 화면은 `evidence`를 그대로 돌려보낸다(다시 조립하면 서명이 어긋난다).
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -114,7 +118,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 **1769 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 195 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 **1793 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 202 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

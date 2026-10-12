@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-12 · claude-b · 계산 멈추기·화면 닫힘 즉시 중단·PDF 계산 신뢰도
+- 브랜치/커밋: `feat/claude-b-solve-stop` `ad2aa55`(core 중단)·`1ddf3d7`(API·화면·PDF)·이 항목 커밋. **main 병합은 사용자 확인 대기**. push 안 함.
+- 사용자 요청: "Pdf에도 표기해줘" · "화면 닫으면 중간에 끊기도록" · "중간에 사용자가 계산 멈추는 것 기능"(없었다).
+- 한 일:
+  - **core/optimize**(Codex 영역, 사용자 지시 "Codex는 리뷰만"): 신설 `interrupt.py`(`SolveStop` finish/abort·`watching`·`SolveCancelled`). `HighsPortfolio`가 멈춤 뒤 새 풀이를 거절하고, 풀이 중이면 HiGHS 중단 콜백(시드 1: 이 프로세스, 시드 2+: 공유 이벤트)으로 멈춘다 — finish는 그때까지의 해(`termination` **`user_interrupt`**), abort는 시드를 끝내고 버림. 목적식·제약 불변, Phase 0 PASS(11).
+  - **API**: 새 계산이면 SSE `start {run_id}`, `POST /api/runs/stop {run_id}`(finish). `/api/optimize`·`/api/operating/compare` 모두. 응답이 `http.disconnect`를 직접 지켜보다 abort(풀던 안까지 끊음, 예전엔 다음 대안만 막음). 멈춘 묶음은 캐시 안 함, 멈춘 뒤의 실패는 오류가 아니라 `stop_reason: user_stopped`/`stopped: true`.
+  - **화면**: "계산 멈추기"(요건 탭·결과 탭 진행 줄·K 비교), 멈춤 안내, 배지 "사용자가 멈춤 · 최적값이 최대 X% 높을 수 있음". 다시 실행·데이터 전환·앱 닫힘이면 진행 중 연결을 끊는다(fetch AbortSignal → 서버가 즉시 중단, 슬롯 반납).
+  - **PDF 계산 신뢰도**: 결과·K 행에 서버가 서명한 `evidence`(종료 사유·목적·상한·허용 차이·시간 한도·유지한 K)와 `evidence_token`(plan_token에 묶임). PDF는 원 플랜 서명과 이 서명이 모두 맞을 때만 배지를 찍는다(꾸미면 422). 교체를 적용했으면 "원안 기준", 이전 K 해를 유지한 K 행은 "K=n 해 유지"(그 K의 증명을 빌리지 않음 — 화면 K 표와 같은 규칙).
+- 상대 영향(claude-a): 대안 생성기·운영 비교는 고치지 않았다 — 멈춤 뒤 다음 풀이에서 `SolveCancelled`(RuntimeError 아님)가 그대로 올라온다. 운영 K 행에 `evidence`·`evidence_token`·`gap_allowed` 칸이 붙는다(미리 계산 행 포함). 새 종료 사유 `user_interrupt`(`proven_optimal` false).
+  SSE 첫 이벤트가 `start`일 수 있다(새 계산일 때) — 스트림을 직접 읽는 스크립트는 건너뛰면 된다. 시험 기준선 **1793**·slow 19·웹 202.
+- 검증: `uv run --group benchmark pytest -q` → 1793 passed, 1 skipped, 19 deselected · `-m slow` 19 passed · Phase 0 PASS(11) · 웹 202 · `tsc -b` · oxlint 0 · build.
+  실서버(시연 100명, 시드 4, 포트 8814): 8초에 멈춤 → 0.5초 뒤 안 A(`user_interrupt`) + done `user_stopped` · 5초에 연결 끊기 → 시드 프로세스 0.19초 뒤 정리, 바로 새 계산 200 · 멈춘 안으로 만든 PDF에 "계산 신뢰도: 독립 검증 통과 · 사용자가 멈춤 · 최적값이 이 해보다 최대 102% 높을 수 있음", 꾸민 신뢰도는 422.
+  **리뷰**: Codex adversarial(gpt-6.1-sol) 1라운드 needs-attention — [medium] 유지 K 행이 이전 K의 증명을 PDF에 빌려 씀 → 반영, [medium] 멈춤 뒤 유예 만료 시 한 번 더 풀기 → 반영, [medium] 운영 탭 이동 시 비교 계속 → WON'T(탭 이동은 화면 닫기가 아니고 최적화 실행과 같은 규칙, 멈춤 버튼 있음 — 주석만 고침). 2라운드 approve.
+- 근거: 로컬 `.omc/reports/2026-10-12-solve-stop-pdf-confidence.md`
+
+---
+
 ## 2026-10-12 · claude-b · claude-a 요청 처리: 점검 (1)~(7)·보강 시뮬레이터 빈자리·SQLite 동시 사용
 - 브랜치/커밋: `feat/claude-b-a-requests-1012` = main(`005251a`) + claude-a `feat/claude-a-demo-rehearsal-1012`(`a366ee9`) 병합(`f2fe7a6`, 네 서버 함수가 필요해서) 위에
   `45ad14d`(What-if)·`167aa87`(보강)·`f97e2a3`(요청 방어)·`bcaaf66`(최적화 슬롯)·`26cb8cf`(ZIP64·ONPREM)·이 항목 커밋. **main 병합은 사용자 확인 대기**(네 점검 브랜치가 함께 들어간다).
