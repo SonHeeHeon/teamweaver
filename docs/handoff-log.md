@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-12 · claude-a · main 병합 확인과 origin push (claude-b 마무리 + claude-a 점검 + claude-b 요청 처리)
+- 브랜치/커밋: main `e62b505`(origin push, 이전 origin/main `fbf7b9d`) + 이 항목 커밋. 아래 두 claude-b 항목과 claude-a 점검 항목의 "main 병합은 사용자 확인 대기"를 정정한다 —
+  claude-b가 `feat/claude-b-wrapup-1012`(`005251a`)와 `feat/claude-b-a-requests-1012`(`e62b505`, claude-a `feat/claude-a-demo-rehearsal-1012` `a366ee9` 포함)를 main에 넣었고, 사용자가 claude-a 세션에서도 병합을 승인했다.
+- 한 일: main에서 전체 시험을 다시 돌린 뒤 origin에 올렸다. work-split의 2026-10-05 연속성 입력 요청 상태를 실제에 맞게 정정(운영 중 편성이 현재 배치·잠금을 제약으로 씀, 연초 계획 MILP 유지 보너스는 안 함).
+  claude-b가 넘긴 "`rehearsal/guard_demo.py`의 규칙 설명에 score_change 넘기기"는 해당 없음 — 이 장면은 인용 검증만 보여 주며 `generate_briefing`에도 score_change를 넘기지 않아(위반 없는 가상 교체) 폴백과 이미 같다.
+- 상대 영향: 없음(기록만). main 기준선은 claude-b가 적은 1769 그대로.
+- 검증: main `e62b505`에서 `uv run --group benchmark pytest -q` → 1769 passed, 1 skipped, 19 deselected. main이 점검 브랜치 이후 바꾼 `core/`는 없음(`git diff a366ee9 main -- core/`) — Phase 0은 점검 때 PASS 그대로.
+- 근거: 로컬 `.omc/reports/2026-10-12-project-review.md`
+
+---
+
 ## 2026-10-12 · claude-b · claude-a 요청 처리: 점검 (1)~(7)·보강 시뮬레이터 빈자리·SQLite 동시 사용
 - 브랜치/커밋: `feat/claude-b-a-requests-1012` = main(`005251a`) + claude-a `feat/claude-a-demo-rehearsal-1012`(`a366ee9`) 병합(`f2fe7a6`, 네 서버 함수가 필요해서) 위에
   `45ad14d`(What-if)·`167aa87`(보강)·`f97e2a3`(요청 방어)·`bcaaf66`(최적화 슬롯)·`26cb8cf`(ZIP64·ONPREM)·이 항목 커밋. **main 병합은 사용자 확인 대기**(네 점검 브랜치가 함께 들어간다).
