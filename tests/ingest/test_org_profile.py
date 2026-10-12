@@ -7,6 +7,7 @@ import pytest
 from core.ingest.convert import to_dataset
 from core.ingest.loader import load_bundle
 from core.ingest.org_profile import FLAGSHIP, LLM_ERA, LLM_ERA_MONTHS, generate_org_bundle
+from tests.name_guard import banned_hits
 
 
 @pytest.fixture(scope="module", params=[100, 200, 300])
@@ -42,8 +43,7 @@ def test_flagship_keeps_its_internal_seats(bundle):
 def test_no_real_client_names_are_written(bundle):
     _, root, _, _, _ = bundle
     text = "".join(p.read_text(encoding="utf-8") for p in root.iterdir())
-    for banned in ("우리은행", "삼성", "Samsung", "Woori"):
-        assert banned not in text
+    assert banned_hits(text) == []                      # 이름은 적지 않고 지문으로 대조(tests/name_guard.py)
 
 
 def test_llm_era_skills_never_exceed_the_era(bundle):

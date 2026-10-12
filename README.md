@@ -51,7 +51,7 @@ SKIP_SETUP=1 scripts/run_poc.sh    # 준비 단계를 이미 한 번 했을 때
 | 할 일 | 명령 | 기준(2026-10-12) |
 |---|---|---|
 | 설치 | `uv sync` (SCIP·벤치 포함은 `uv sync --group benchmark`) | |
-| 시험 | `uv run --group benchmark pytest -q` | 1804 passed, 1 skipped, 19 deselected |
+| 시험 | `uv run --group benchmark pytest -q` | 1805 passed, 1 skipped, 19 deselected |
 | 느린 전 과정 시험 | `uv run pytest -m slow` | 19 passed |
 | 정답 대조(Phase 0) | `uv run --group benchmark python -m experiments.bench.phase0_model` | PASS 11건 |
 | 웹 시험·타입체크 | `cd web && npm test` · `npx tsc -b` | 202 passed (`tsc --noEmit`은 프로젝트 참조 구조라 아무것도 검사하지 않는다) |

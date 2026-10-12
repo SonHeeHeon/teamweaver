@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-12 · claude-a · 회사 이름 검사 시험을 지문 대조로, 최종 점검 브랜치 main 병합
+- 브랜치/커밋: `docs/claude-a-final-wrapup-1012` 이 항목 커밋 → 사용자 승인("Main 병합해줘")으로 main fast-forward·push.
+- 사용자 결정: GitHub 기본 브랜치(지금 10-04 옛 브랜치)는 사용자가 나중에 바꾼다. 시험 두 개에 적혀 있던 금지 이름 목록은 **현재 파일에서만 빼고 과거 이력은 지우지 않는다**.
+- 한 일: `tests/name_guard.py` 신설 — 이름은 적지 않고 키 있는 해시(지문)만 두고, 글의 한글·영문 덩어리 안 같은 길이 구간을 대조(대소문자 구분, 예전 문자열 검사와 같은 뜻). `tests/ingest/test_org_profile.py`·`test_skill_dictionary.py`가 이것을 쓴다.
+  이름 없이 대조 동작을 보는 시험 1개 추가(가짜 낱말). 커밋 전 임시 스크립트로 네 이름이 글 속에서 모두 잡히고 띄어쓰기·대소문자가 다르면 안 잡힘을 확인(스크립트는 커밋하지 않음).
+- 상대 영향: **테스트 기준선 1805 passed, 1 skipped, 19 deselected**(+1). 금지 이름을 새로 검사하려면 `fingerprint(낱말)` 값을 `FINGERPRINTS`에 넣는다 — 이름을 저장소에 쓰지 않는다.
+- 검증: 아래 main 병합 뒤 전체 시험(이 항목 커밋 메시지·로컬 리포트).
+- 근거: `.omc/reports/2026-10-12-final-wrapup.md`(로컬, 후속 절).
+
 ## 2026-10-12 · claude-a · 최종 점검·제출 문서 최종판(main 병합 `5d48573` 포함)
 - 브랜치/커밋: `feat/claude-b-solve-stop`을 사용자 승인으로 main에 병합·검증·push(`00126dd..5d48573`, 로컬 fast-forward는 22:27에 이미 돼 있었고 claude-a가 시험 후 push).
   이어서 `docs/claude-a-final-wrapup-1012`: `6a2dece`(결함 2건)·`7fb3a19`(시험 1건)·이 항목 커밋(문서). **main 병합은 사용자 승인 대기**.

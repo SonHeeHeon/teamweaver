@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from core.ingest.skills import DICT_PATH, from_data, load_dictionary, norm_key, person_skill_months, validate
+from tests.name_guard import banned_hits
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,8 +24,7 @@ def test_shipped_dictionary_is_valid():
 
 def test_no_banned_company_names():
     text = DICT_PATH.read_text("utf-8")
-    for banned in ("우리은행", "삼성", "Samsung", "Woori"):
-        assert banned not in text
+    assert banned_hits(text) == []                      # 이름은 적지 않고 지문으로 대조(tests/name_guard.py)
 
 
 def test_demo_names_are_their_own_labels():
@@ -160,3 +160,11 @@ def test_version_rule_does_not_merge_into_short_or_other_concepts(raw, label):
     주 버전만 남긴 형태가 다른 개념의 별칭이면 그쪽을 쓴다(Angular 1.x → AngularJS). (리뷰 MUST 2026-10-09)"""
     c = load_dictionary().lookup(raw)
     assert (c["label"] if c else None) == label
+
+
+def test_name_guard_finds_a_fingerprinted_word_inside_text():
+    # 지문 대조 자체를 이름 없이 확인한다(가짜 낱말 "가상회사"·"Acme")
+    from tests.name_guard import fingerprint
+    fps = {("hangul", 4, fingerprint("가상회사")), ("latin", 4, fingerprint("Acme"))}
+    assert banned_hits("고객사 가상회사전자, AcmeCorp 사업", fps) == ["가상회사", "Acme"]
+    assert banned_hits("가상 회사 acme", fps) == []                   # 띄어 쓰거나 대소문자가 다르면 같은 이름이 아니다
