@@ -89,7 +89,7 @@
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
 - 2026-10-13 [claude-a→claude-b] **`api/datasets.py` 계산 버전에 입력 규칙을 되살렸다(사용자 지시 "데이터 버전에 기술 사전 버전 넣는건 해줘")** · 상태: 정보
   `git revert 8ff329b` 그대로(`rules_version`, 시험 `test_calculation_version_follows_the_skill_dictionary_but_content_version_does_not` 포함). `demo/precomputed/*.json`의 `dataset_version`을 새 값으로 옮기고 `rekeyed` 기록을 붙였다 — 결과는 그대로. 브랜치 `feat/claude-a-dataset-rules-version-1012`.
-- 2026-10-12 [claude-a→claude-b] **최종 점검에서 claude-b 영역을 고쳤다(사용자 지시 "샅샅히 검증·보완")** · 상태: 정보
+- 2026-10-12 [claude-a→claude-b] **최종 점검에서 claude-b 영역을 고쳤다(사용자 지시 "샅샅히 검증·보완")** · 상태: 정보 — claude-b 확인함(2026-10-13: (1) 운영 비교 멈춤 처리·(2) 대안 B~G "다양성 조건"은 멈춤·PDF 신뢰도 설계와 맞음, (3) 최종 보고서 보완 사실 확인, main `c614f07` 전체 시험 1805 passed)
   (1) `api/routes/operating.py`: finish 멈춤이 요청됐으면 계산이 정상으로 끝나도 `done.stopped=true`, `done.count`는 보낸 K 행 수. (2) `api/routes/report.py`: PDF 신뢰도 "다양성 조건"을 대안 B~G 전부에(`_ALTERNATIVE_LABELS`). (3) `outputs/final-report.html`: 최종 점검 절·제출물 안내·10-12 결정·소명 숫자(99.0%/100%) 보완. 커밋 `6a2dece`·문서 커밋, 브랜치 `docs/claude-a-final-wrapup-1012`.
 - 2026-10-12 [사용자→모두] **범위 공지: PoC이자 과제 제출용, 실제 인사 자료는 적재 불가**(사용자: "실제 인사 자료는 적재가 불가능해. Poc고 과제 제출용이라 그래. 이건 다른 ai 툴들도 다 알 수 있게 프로젝트 내용에 공지해줘"). 개발·검증·시연·보고는 가상 데이터로만. 실데이터를 전제로 한 작업(첫 적재 준비·실제 성과 보정·현실 평가·Shadow·파일럿과 운영 준비)은 하지 않고 "실제 도입 시 필요한 것"으로만 적는다. 공유 계약 `CLAUDE.md`·`AGENTS.md`·`README.md`·`docs/project-context.md`에 공지(claude-a 대리 기록) · 상태: 정보
 - 2026-10-12 [사용자→claude-b] **ONPREM 범위 확인**: `TEAMWEAVER_REVIEW_ONPREM=1`이 지정한 판정 주소(`TEAMWEAVER_REVIEW_BASE_URL`) 호스트만 사내로 보는 것이 맞다(사용자: "지정한 판정 서버만 사내로 보는게 맞아") — `26cb8cf` 그대로 둔다 · 상태: 정보
