@@ -242,3 +242,22 @@ def test_json_files_with_a_bom_and_decomposed_hangul_are_read(tmp_path):
     bundle, report = load_bundle(root)
     assert report.ok, report.summary()
     assert bundle.tables["people.csv"][0]["career_grade"] == "고급"
+
+
+def test_broken_quote_reports_where_it_broke(tmp_path):
+    """Codex audit 2026-10-12: a csv.Error (unclosed quote) was reported without row or line."""
+    root = write_bundle(tmp_path / "b")
+    text = (root / "people.csv").read_text("utf-8").splitlines()
+    text[2] = text[2].replace(",", ',"', 1)                       # second data row: an opening quote that never closes
+    (root / "people.csv").write_text("\n".join(text) + "\n", "utf-8")
+    _, report = load_bundle(root)
+    (err,) = [i for i in report.issues if i.level == "error" and i.file == "people.csv" and "cannot read CSV" in i.message]
+    assert err.row == 2 and "file line" in err.message
+
+
+def test_integers_that_do_not_fit_64_bits_are_rejected(tmp_path):
+    """Codex audit 2026-10-12: a valid-looking huge rate passed validation and crashed the SQLite index (upload 500)."""
+    tables = base_tables()
+    tables["rate_card.csv"][0]["monthly_rate"] = str(2 ** 63)
+    _, report = _load(tmp_path, tables)
+    assert any(i.level == "error" and i.file == "rate_card.csv" and "64-bit" in i.message for i in report.issues)
