@@ -500,6 +500,12 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             fixed_values.update({v.name: max(0.0, params.partner_floor * zz[(i, j)] - (
                 sizes[j] - zz[(i, j)] - sum(zz[(k, j)] for k in partners[i])))
                 for (i, j), v in short.items()})
+        # 콜백이 만든 보조 0/1·정수 변수(예: 운영 중 편성의 "옮긴 사람")는 풀이 값을 반올림해 고정한다 -- 고정값이 없으면 C1 보정과
+        # 추가 행 독립 검증이 통째로 꺼졌다(2026-10-12 폴백 리뷰: 사람 수 K로 바꾸며 생긴 회귀). 연속 보조 변수는 받지 않는다.
+        for var in prob.variables():
+            if var.name in after_callback.variables and var.name not in before_callback.variables \
+                    and var.cat == pulp.LpInteger and var.value() is not None:
+                fixed_values[var.name] = float(round(var.value()))
         try:
             extra_rows = project_additive_constraints(before_callback,after_callback,
                 allocation_variables=({v.name: key for key, v in am.items()} if monthly

@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-12 · claude-a · 프로젝트 전체 점검(ultrareview 대체: Codex + Claude 폴백 감사)과 보완
+- 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` `afc15bc`·`8060ba0`·`8fb64e1`·`1b5ab90`·이 항목 커밋 (main 병합은 사용자 승인 대기)
+- 한 일: 사용자 요청 "ultrareview 진행하고 보완" — ultrareview는 사용자만 시작할 수 있어 Codex 영역별 감사 4개(+ 한도 소진 때 Claude Opus 폴백)로 대신. 지적 27건.
+  claude-a 영역(+ 사용자 규칙상 `core/optimize`)을 고쳤다: 교체 설명 보류 판정·인용 위치 대조·시간 상한, 소명 글 사실 선택(부정 평가 모두)·"각각" 검사·과거 사업 속성 병합,
+  CSV 64비트·깨진 행 위치, K = 옮긴 사람 수(+ 보조 변수 풀이 값 고정으로 C1·추가 행 검증 유지), 최선 n명(등급·순증가 자리·달별 투입률·new_violations), 후보 빼 오기 최소화,
+  빈자리 수·회귀 빈 입력·factor_lab 사전. 리뷰가 고친 코드에서 회귀 2건(보류 판정 과거부, 검증 꺼짐)을 더 찾아 고침. E7c 재측정 99.0%·처음 보는 데이터 100%(843편, $0.68).
+- 상대 영향(claude-b): work-split 2026-10-12 요청 묶음 — whatif 규칙 설명에 `score_change` 넘기기(Codex high), `BestResult.new_violations` 화면, `/api/optimize` 동시 실행·시간 상한(P2), 비ASCII 서명 500, PDF 라벨, 본문 크기, ZIP64·ONPREM 확인, E5 첫 문장 자르기.
+  `best_additions` 응답에 `new_violations` 추가(모양은 simulate와 같음), 교체 설명 보류 판정이 바뀜(E5 기록 291개 재생: 2개만 다름). 시험 기준선 **1734**. `core/optimize` 변경은 work-split 정보 항목.
+- 검증: `uv run --group benchmark pytest -q` → 1734 passed · Phase 0 PASS(11) · 새 회귀 시험은 고치기 전 코드에서 실패 확인 · E7c G1 통과(13,316/13,316, 무결성 837/837), A 99.0%·B 100%.
+  리뷰: 감사 Codex(한도)→폴백→Codex · 반영 리뷰 폴백 1회 + Codex 적대적 1회 + Codex 1회. 게이트는 한도 동안 끄고 회복 뒤 켬.
+- 근거: 로컬 `.omc/reports/2026-10-12-project-review.md`
+
+---
+
 ## 2026-10-12 · claude-b · claude-a 후속 요청 4건 + 마무리(E4 v2·최종 보고서), 계산 버전 변경은 미룸 — 멈춘 세션을 새 세션이 인수
 - 브랜치/커밋: `feat/claude-b-wrapup-1012` `d05ee7f`(요청 4건)·`74adfb3`(E4 v2)·`8ff329b`(계산 버전 되돌림)·main 병합 `e4d78aa`·이 항목 커밋. **main 병합은 사용자 확인 대기**(main의 조상이라 fast-forward 가능), push 안 함.
 - 경위: 이 작업을 하던 claude-b 세션(800daab9)이 10-12 02:20 이후 멈췄다(대화가 길어 압축도 실패). 사용자 지시로 새 claude-b 세션이 이어받았다.
@@ -38,6 +52,19 @@
   Playwright 헤드리스: 미리 계산 표시, "김경민 기술 보기" → "(비정형 문서 처리(OCR) 경력에서 인정)", What-if 규칙 설명 폴백 글에 사번 0(이름 치환), 콘솔 오류 0. Chrome은 쓰지 않음(필요 시 claude-a에 요청 — 사용자 지시).
   **리뷰**: 멈춘 세션 때 Codex P1(미리 계산 재생성)·P2(E4 문구) 반영. 인수 후 Codex(gpt-6.1-sol) 작업 트리 리뷰: P2 "규칙 지문 제거로 옛 서명·저장이 통함" → 미룸(위 이유, 원래 main에 없던 기능), P2 "최종 보고서 정답 대조 과장" → 반영.
 - 근거: 로컬 `.omc/reports/2026-10-12-claude-b-wrapup-takeover.md`
+
+---
+
+## 2026-10-12 · claude-a · 시연 대본 재현(Chrome) + 최선 n명 채점의 가짜 빈자리 수정
+- 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` (main 병합은 사용자 승인 대기)
+- 한 일:
+  - `scripts/run_poc.sh` 환경(시드 4·임시 데이터 폴더·포트 8010)으로 대본 장면 1~8을 Chrome으로 따라 함 → `docs/demo-script.md` 숫자·이름·시간을 화면 값으로(⏳ 제거, 새 장면 2-1 인사팀 소명 글·8-1 조직 기술 지도).
+    100명은 안 C(57.91)가 안 A(57.59)보다 높다(모두 시간 한도) — "A가 최선"이라 말하지 않게 대본에 적음. 단순 규칙 표는 화면 값(100·200·300).
+  - **결함 수정**(`core/evaluate/staffing_sim.best_additions`): 빼 오기로 대상 팀원이 나가고 같은 등급 둘이 들어오면(순 +1) 채점이 새로 온 사람 수만큼 자리를 열어 가짜 빈자리(-100)를 보였다(J007·빼 오기 2: 화면 -97.75, 실제 +2.25) → 등급별 순증가만 연다 + 시험.
+  - `docs/architecture.html`(기술 사전·70%·소명 글·기술 지도·시험 1671), `rehearsal/results/guard-demo.html` 지금 데이터로 재생성.
+- 상대 영향(claude-b): `/api/staffing/best`의 응답 모양은 그대로, `delta`·`after` 값만 바르게 나온다. 화면 확인 결과 claude-b 화면은 대본대로 동작(미리 계산 띠·배지, K표 "(미리 계산 때)", 이어서 보강·K PDF 버튼, 기술 지도). 시험 기준선 **1671**.
+- 검증: `uv run --group benchmark pytest -q` → 1671 passed · 재현 스크립트(빼 오기 0/1/2 → +1.11/+1.71/+2.25) · Chrome 재확인(+2.36, 빼 오기 1명 +2.83) · 대본 숫자 ↔ `demo/precomputed` 대조 · Codex 리뷰 지적 없음.
+- 근거: 로컬 `.omc/reports/2026-10-12-demo-rehearsal.md`
 
 ---
 

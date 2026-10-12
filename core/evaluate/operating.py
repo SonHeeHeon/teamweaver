@@ -140,7 +140,8 @@ def _row(graph, S, C, params, current, entries, unfilled) -> dict:
     return {"objective": round(o.total, 4),
             # 빈자리 감점(자리당 slack_penalty)이 총점을 좌우하므로 배치 품질(기술+협업−익숙함)과 빈자리를 나눠 본다
             "quality": round(o.total - o.unfilled, 4),
-            "unfilled_seats": int(round(-o.unfilled / params.slack_penalty)) if params.slack_penalty else 0,
+            # 평가기의 등급 정원 부족을 직접 센다 -- 감점에서 거꾸로 나누면 slack_penalty=0일 때 실제 빈자리가 0석으로 보였다(Codex 감사 2026-10-12)
+            "unfilled_seats": sum(s.missing for s in evaluation.shortfalls),
             "parts": {"skill": round(o.skill, 4), "synergy": round(o.synergy, 4),
                       "overfamiliarity": round(o.overfamiliarity, 4), "unfilled": round(o.unfilled, 4)},
             "violations": [v.code for v in evaluation.violations], "unfilled": unfilled,

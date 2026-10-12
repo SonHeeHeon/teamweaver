@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from core.evaluate.factor_lab.factors import FACTORS
+from core.evaluate.factor_lab.factors import FACTORS, unfilled_seats
 from core.evaluate.factor_lab.simulator import HELD_OUT, SCENARIOS, Scenario, simulate
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.milp import MilpParams, _overfamiliar_pairs, solve_milp_assessment
@@ -97,7 +97,7 @@ def evaluate(graph: MemoryGraph, F: dict[str, np.ndarray], cands, params: MilpPa
                       for k, sc in enumerate(scenarios)}
             ev = getattr(a.validation_candidate, "evidence", None)
             out.append(CandidateResult(name, w, True, round(time.perf_counter() - t, 2), res[0].fill_rate,
-                                       {s: float(np.mean(v)) for s, v in chunks.items()}, len(unfilled),
+                                       {s: float(np.mean(v)) for s, v in chunks.items()}, unfilled_seats(unfilled),
                                        outcome_sd={s: float(np.std(v)) for s, v in chunks.items()},
                                        termination=getattr(ev, "termination_reason", None), scale=scale))
         except Exception as exc:  # noqa: BLE001 -- a failed candidate is a result

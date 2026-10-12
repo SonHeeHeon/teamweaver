@@ -68,6 +68,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **운영 중 편성은 갭 0으로 푼다**(`core/evaluate/operating.exact`, 2026-10-06): 빈자리 감점(자리당 100)이 섞인 목적에서 5% 갭은
   1~2명 이동의 개선(1~2점)을 통째로 가린다(실측: 빼 오기 허용이 더 나쁜 모순). 변경 예산 제약은 `core/optimize/incremental.py` --
   옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
+  K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 겸직자 한 명이 2로 셌다).
+  **추가 제약 콜백이 새 변수를 만들면 정수형(0/1)만** 쓴다: `milp`가 그 풀이 값을 고정해 `numerics.project_additive_constraints`에 넘겨야
+  C1 보정·추가 행 독립 검증이 켜진다. 연속 보조 변수나 기존 변수를 바꾸면 "모델 변형"으로 보정·검증이 조용히 꺼진다(실측: 추가 행 0개).
   시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
   생성기 v2(2026-10-11): 가상 이름(`core/ingest/names.py`, ID별 고정·중복 없음), 아쉬운 점 항목마다 문장·직설형 평가자 8%·어긋난 글 5%(manifest `review_style`) --
   고른 항목의 난수열은 그대로라 글만 바뀐다. 글을 바꾸면 `python -m rehearsal.make_demo`(+`make_broken_demo`) → 판정·미리 계산·판정 동봉을 한 데이터 폴더에서 이어서 만든다.
@@ -86,11 +89,13 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   시연 org-n200·n300의 S가 바뀐다(100은 그대로) -- 미리 계산 6개는 70%·생성기 v2 기준으로 2026-10-12에 다시 만들었다. 사전에 없는 이름은 합치지 않고 경고만 한다.
   인정분이 경력을 정한 기술은 `Person.skill_credit`(공유 계약, 2026-10-11)에 출처·개월이 남고, SQLite 근거 색인은 별도 표 `skill_credit`(재수화는 읽지 않는다 -- S/C에 안 쓰임), 교체 설명 문맥은 `credited_from`을 붙인다.
   교체 설명은 그 출처를 매번 괄호로 쓰게 지시하고, 빠뜨리면 서버가 `참고:` 문장을 덧붙인다(`api/rag/briefing._credit_notes`, 규칙 설명 폴백도 따로 적음).
-  위반 교체는 첫 문장에 "보류"가 없으면 버려진다(규칙 설명으로 대체) -- 지시문을 바꾸면 외부 AI로 다시 잰다(2026-10-12: 괄호 9/10, 위반 교체 채택 6/10 → 18/20).
+  위반 교체는 첫 문장이 보류 결론이 아니면 버려진다(규칙 설명으로 대체) -- 지시문을 바꾸면 외부 AI로 다시 잰다(2026-10-12: 괄호 9/10, 위반 교체 채택 6/10 → 18/20).
+  보류 판정(`briefing._is_hold`)은 허용 어미 목록이 아니라 막을 표현 + "마지막 절이 교체를 지지하면 아님"이다 -- 바꾸면 `experiments/jev/results/e5_*.json`의
+  첫 문장 291개를 다시 돌려 본다(허용 목록 방식은 정상 보류 42개를 거절했다, 지금 방식은 2개만 다름 -- 둘 다 "보류는 아니고").
 - **인사팀 소명 글은 자리표시 + 연결 말 허용 목록**(2026-10-09, `core/kg/justify.py`·`api/rag/justification.py`): AI는 사실 `{F#}`를 고르고 정해진 문법(주어·`LABELS`·연결어·맺음말)으로만 엮는다.
   숫자·충족/미달은 서버가 사실 문구로 채운다 -- 자유 문장·판단어 금지 목록은 폴백 리뷰마다 뚫렸다. 프롬프트와 검사기가 같은 `LABELS`를 쓴다.
   AI가 빠뜨린 불리한 사실(`Fact.adverse`)은 서버가 정해진 마지막 문단으로 덧붙인다(`adverse_addendum`, 사용자 결정 2026-10-10 · 사람별 줄 2026-10-11 -- 형식을 바꾸면 `python -m rehearsal.addendum_by_person`, AI 호출 없음).
-  사실 문구·문법·라벨·지시문을 바꾸면 `python -m rehearsal.justify_scale_e7c`(약 $0.7, 처음 보는 데이터 포함)를 다시 돌린다. 측정 E7c: 채택 99.4%·처음 보는 데이터 99.6%, 글은 템플릿보다 조금 짧다. 사내 LLM 대리 GLM-5.3-Flash high(E7c-F, `python -m rehearsal.justify_flash`, 75건 약 $0.22):
+  사실 문구·문법·라벨·지시문을 바꾸면 `python -m rehearsal.justify_scale_e7c`(약 $0.7, 처음 보는 데이터 포함)를 다시 돌린다. 측정 E7c: 채택 99.4%·처음 보는 데이터 99.6%(10-12 재측정 — 부정 평가 모두 사실로·라벨 머리 "각각" 검사 뒤: 99.0%·100%, 탈락 6건 모두 S2), 글은 템플릿보다 조금 짧다. 사내 LLM 대리 GLM-5.3-Flash high(E7c-F, `python -m rehearsal.justify_flash`, 75건 약 $0.22):
   채택 97.3%·무결성 73/73이지만 한 편 p50 60초 -- 화면·PDF의 AI 대기 상한(`api/routes/justification.AI_TIMEOUT_S` 40초) 안은 16%뿐이다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
@@ -106,7 +111,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 **1673 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 193 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 **1734 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 190 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

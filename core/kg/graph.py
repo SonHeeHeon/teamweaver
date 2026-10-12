@@ -198,15 +198,22 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
         if past not in kg.nodes:
             oc = outcomes.get(code, {})
             kg.add_node(past, "past_project", r.get("work_name") or code, project_code=code,
-                        client=r.get("client"), industry=r.get("industry"),
+                        client=None, industry=None,
                         customer_score=oc.get("customer_score"), schedule=oc.get("schedule"),
                         follow_on=oc.get("follow_on"), closed_month=_iso(oc.get("closed_month")))
-            if r.get("client"):
-                kg.add_node(f"client:{r['client']}", "client", r["client"])
-                kg.add_edge("FOR_CLIENT", past, f"client:{r['client']}")
-            if r.get("industry"):
-                kg.add_node(f"industry:{r['industry']}", "industry", r["industry"])
-                kg.add_edge("IN_INDUSTRY", past, f"industry:{r['industry']}")
+        # 같은 과거 사업의 여러 행에서 비어 있지 않은 첫 값을 쓴다 -- 첫 행만 보면 첫 행의 산업·고객이 비었을 때
+        # 뒤 행에 적힌 값이 사라져 같은 산업·고객 경험이 행 순서에 따라 달라졌다(Codex 감사 2026-10-12)
+        node = kg.nodes[past]
+        if node["label"] == code and r.get("work_name"):
+            node["label"] = r["work_name"]
+        if not node.get("client") and r.get("client"):
+            node["client"] = r["client"]
+            kg.add_node(f"client:{r['client']}", "client", r["client"])
+            kg.add_edge("FOR_CLIENT", past, f"client:{r['client']}")
+        if not node.get("industry") and r.get("industry"):
+            node["industry"] = r["industry"]
+            kg.add_node(f"industry:{r['industry']}", "industry", r["industry"])
+            kg.add_edge("IN_INDUSTRY", past, f"industry:{r['industry']}")
         months = None
         if start and end:                                          # 10년 창과 계획 시작 전날로 자른다(입력 단계 협업 계산과 같다)
             s0, e0 = max(start, since), min(end, cutoff)

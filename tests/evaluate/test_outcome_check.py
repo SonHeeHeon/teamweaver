@@ -73,3 +73,9 @@ def test_internal_replacements_still_count_as_churn():
     t["replacements.csv"] = [{"project_code": "P1", "person_id": "D", "requested_by": "내부"}]
     (row,) = project_features(t)
     assert abs(row["churn"] - 1 / 4) < 1e-9 and row["customer_replacements"] == 0
+
+
+def test_too_few_projects_give_no_regression_instead_of_crashing():
+    """Codex audit 2026-10-12: no analysable project (no outcomes, or only one-person teams) ended in a numpy error."""
+    assert regression([]) == {}
+    assert verdicts(correlations([]), regression([]))["collaboration_reward (lambda > 0)"] == "not shown"

@@ -68,12 +68,25 @@ _SYSTEM_HIDDEN = (
     ' JSON {"rationale": str, "risks": list[str], "alternatives": list[str], "citations": []}만 출력.'
 )
 # 출처 표시는 괄호 단위가 아니라 본문 어디서든 찾는다([rv:a, rv:b]처럼 묶어 써도 하나씩 걸린다).
-_MARKER = re.compile(r"rv:[^\s\],;)」』]+")
+# rv: 뒤 공백도 표시다 -- 웹(evidenceMarkers.ts)은 [rv: …]를 출처로 그리는데 서버가 놓치면 없는 출처가 통과했다(폴백 리뷰 2026-10-12).
+_MARKER = re.compile(r"(?<![A-Za-z0-9])rv:\s*([^\s\],;)」』]+)")      # 앞 경계: "Srv: 3대" 같은 글을 표시로 보지 않게
+
+
+def _markers(text: str) -> list[str]:
+    """본문의 출처 표시를 source_id 모양("rv:…", 공백 없이)으로."""
+    return ["rv:" + m.group(1) for m in _MARKER.finditer(text)]
 # 따옴표 짝: 큰따옴표류는 길이와 무관하게, 작은따옴표류(‘’)는 강조 표기와 겹쳐 5자 이상만 인용으로 본다.
 # ASCII 작은따옴표(')는 영어 아포스트로피라 보지 않는다.
-_DOUBLE = re.compile(r"[\"“”＂]([^\"“”＂]*)[\"“”＂]|「([^」]*)」|『([^』]*)』")
-_SINGLE = re.compile(r"‘([^’]*)’|'([^']*[가-힣][^']*)'")     # ASCII '는 안에 한글이 있을 때만 인용
-_QUOTE_CHARS = set('"“”＂「」『』')
+# « » 〝 〞 ＇도 인용으로 본다 -- 빠져 있어 숨김 모드(실데이터)에서 지어낸 평가 인용이 통과했다(폴백 리뷰 2026-10-12).
+# 《 》 〈 〉는 넣지 않는다: 한국어에서 사업·문서 제목 표기로 흔해 정상 설명이 버려진다(같은 리뷰 2차).
+_DOUBLE = re.compile(r"[\"“”＂]([^\"“”＂]*)[\"“”＂]|「([^」]*)」|『([^』]*)』|«([^»]*)»|〝([^〞〟]*)[〞〟]")
+_SINGLE = re.compile(r"‘([^’]*)’|'([^']*[가-힣][^']*)'|＇([^＇]*[가-힣][^＇]*)＇")     # ASCII·전각 '는 안에 한글이 있을 때만 인용
+_QUOTE_CHARS = set('"“”＂「」『』«»〝〞〟')
+
+
+# 교체 설명 한 번의 AI 대기 상한(초). 없으면 OpenAI 기본(읽기 600초 × 재시도)이라 늦은 응답 하나가 교체 검토를 10분 넘게 잡았다
+# (폴백 리뷰 2026-10-12). 실측 9~20초(gpt-6-luna low). 넘으면 라우트가 규칙 기반 설명으로 바꾼다.
+BRIEFING_TIMEOUT_S = 45.0
 
 
 class BriefingRejected(ValueError):
@@ -116,7 +129,7 @@ def _verified_citations(out: dict, ctx: dict, evidence: EvidenceIndex) -> list[d
                          "kind": "quote", "text": quote})
     cited = {v["source_id"] for v in verified}
     for text in [out["rationale"], *out["risks"], *out["alternatives"]]:
-        for sid in _MARKER.findall(text):
+        for sid in _markers(text):
             if sid not in allowed:
                 raise BriefingRejected("unknown_marker", f"본문이 문맥에 없는 출처를 가리킨다: {sid}")
             # 공개 모드: 본문의 출처 표시는 검증된 인용이 있는 출처여야 한다(표시와 인용의 짝).
@@ -160,15 +173,86 @@ def _check_inline_quotes(text: str, allowed: dict, evidence: EvidenceIndex) -> N
         if any(ch in _QUOTE_CHARS for ch in leftover) or any(normalize(sp) not in labels for sp in spans):
             raise BriefingRejected("hidden_quote", "원문 비공개 모드인데 본문에 라벨이 아닌 따옴표 인용이 있다")
         return
-    spans = [next(g for g in m.groups() if g is not None) for m in _DOUBLE.finditer(text)]
-    spans += [g for m in _SINGLE.finditer(text) for g in m.groups()
+    found = [(m, next(g for g in m.groups() if g is not None)) for m in _DOUBLE.finditer(text)]
+    found += [(m, g) for m in _SINGLE.finditer(text) for g in m.groups()
               if g is not None and len(g.strip()) >= MIN_QUOTE_CHARS]
     leftover = _SINGLE.sub("", _DOUBLE.sub("", text))
     if any(ch in _QUOTE_CHARS for ch in leftover):
         raise BriefingRejected("unbalanced_quote", "본문에 짝이 맞지 않는 따옴표가 있다")
-    for inline in spans:
+    for m, inline in found:
         if not any(evidence.verify_quote(sid, inline) for sid in allowed):
             raise BriefingRejected("inline_quote_not_verbatim", f"본문의 따옴표 인용이 원문에 없다: {inline[:40]!r}")
+        # 원문이 있어도 그 문장이 가리킨 출처의 원문이어야 한다 -- 나갈 사람의 평가를 들어올 사람 것처럼 인용해도
+        # 두 사람 문맥 어딘가에 있으면 통과했다(폴백 리뷰 2026-10-12). 표시는 문장 안이나 문장 바로 뒤에 둔다.
+        marked = [sid for sid in _markers(_sentence_around(text, m.start(), m.end())) if sid in allowed]
+        if not any(evidence.verify_quote(sid, inline) for sid in marked):
+            # 코드는 기존 것을 쓴다 -- 전환 사유 집계(experiments/jev/e5_briefing._POST_GUARD)와 맞춘다
+            raise BriefingRejected("inline_quote_not_verbatim", f"본문 인용이 같은 문장의 출처 표시 원문과 다르다: {inline[:40]!r}")
+
+
+_SENT_END = re.compile(r"[.!?。](?=\s|$)|\n")
+
+
+def _sentence_around(text: str, i: int, j: int) -> str:
+    """text[i:j](따옴표 인용)가 든 문장 + 문장 바로 뒤에 붙은 출처 표시들. 인용 속 마침표("…했습니다.”")는 문장 끝으로 보지
+    않는다. 위치로 찾는다(같은 인용이 두 번 나오면 각자의 문장, 폴백 리뷰 2차), 앞 문장 끝에 붙은 표시는 빼고 줄바꿈도 문장 끝."""
+    start = 0
+    for m in _SENT_END.finditer(text, 0, i):
+        start = m.end()
+    lead = re.match(r"(?:\s*\[[^\]]*\])*\s*", text[start:i])        # 앞 문장의 출처 표시는 이 문장이 아니다
+    start += lead.end() if lead else 0
+    end_m = _SENT_END.search(text, j)
+    end = end_m.end() if end_m else len(text)
+    tail = re.match(r"(?:[ \t]*\[[^\]]*\])*", text[end:])
+    return text[start:end + (tail.end() if tail else 0)]
+
+
+# 첫 문장 = 문장부호 뒤 공백·줄바꿈에서 자른다(문장부호 없이 줄을 바꿔 이어 쓴 글 전체가 첫 문장이 되면 뒤쪽의 '보류'가 걸렸다).
+_FIRST_SENTENCE = re.compile(r"(?<=[.!?。])\s|\n")
+# 결론으로서의 보류(_is_hold): '보류'가 독립된 낱말(보류금·보류액 제외)로 있고, 그 보류 바로 뒤(다음 문장부호까지)에 부정·양보
+# 표현이 없고, 보류를 권하는 말이 아닌 "권고합니다"가 없어야 한다. 허용 어미 목록 방식은 "보류(예산 초과).", "보류: …",
+# "보류하겠습니다" 같은 정상 결론을 E5 기록 291개 중 42개나 거절했다(폴백 리뷰 2026-10-12 2차) -- 그래서 막을 표현만 적는다.
+# 예전엔 '보류' 글자만 있으면 통과해 "보류하지 않고 교체를 권고합니다"·"보류할 이유는 없으며 …"도 받았다(폴백 리뷰 1차).
+_HOLD_WORD = re.compile(r"보류(?![금액])")
+_AFTER_HOLD = re.compile(r"[^.,;:!?。()\[\]—\-]{0,14}")
+_NEG_AFTER = re.compile(r"아니|아닌|없|않|말고|대신|보다|지만|만\s|만$|과하|과합|한다면|하면|하더라도|해도|함에도|하나\b"
+                        r"|여부|가능성|검토했으나|검토하였으나|검토한\s*뒤|검토\s*후")                 # 보류를 결정하지 않은 말(Codex 리뷰 2차)
+# 첫 문장이 실행 결론으로 끝나면 보류가 아니다: "보류를 검토했으나 교체합니다", "보류 가능성을 살핀 뒤 교체합니다"(Codex 리뷰 2026-10-12)
+_PROCEED = re.compile(r"(?:교체|진행|시행|투입|배치|적용)(?:을|를)?\s*(?:합니다|한다|함(?![가-힣])|하겠습니다|하기로|해도\s*됩니다)")
+_RECOMMEND = re.compile(r"권(?:고|장)(?:합니다|한다|함|드립니다|드린다)")
+
+
+# 한국어는 결론(서술어)이 문장 끝에 온다 -- 첫 문장의 마지막 절이 교체를 지지하면("보류 의견에도 불구하고 교체가 타당합니다")
+# 보류가 아니다(Codex 리뷰 2026-10-12 2차). 마지막 절에 '보류'가 있거나, 앞 절의 보류 뒤 마지막 절이 반대 결론이 아니면 받는다
+# ("교체를 보류하고 다른 후보를 찾습니다"). 머리말 꼴("보류: …", "보류(…)", "[보류] …", "결론 — 보류")도 받는다.
+_CLAUSE_SPLIT = re.compile(r"(?<=[가-힣])(?:(?<![다라])고|며|지만|으나|는데|은데|더라도|면서|므로|어서|아서|여서|해서|하여)\s+"
+                           r"|에도\s*불구하고\s+|,\s+")
+_HEADING_HOLD = re.compile(r"\s*(?:\*\*)?(?:\[보류\]|(?:결론\s*(?:은|:|：|—|-|–)?\s*)?(?:(?:이\s*)?교체(?:는|를)?\s*)?보류(?:\*\*)?\s*(?:[:：—–(\-]|$))")
+_ENDORSE = re.compile(r"(?:교체|투입|진행|시행|적용|배치)[^.]{0,15}?(?:타당|적절|바람직|권고|권장|필요|가능|유리|낫)")
+_ENDORSE_NEG = re.compile(r"\s*(?:하지|하진|치\s*않|지\s*않|않|못|없|어렵|하다고\s*보기\s*어렵)")
+
+
+def _endorses_swap(clause: str) -> bool:
+    return any(not _ENDORSE_NEG.match(clause, m.end()) for m in _ENDORSE.finditer(clause))
+
+
+def _is_hold(first: str) -> bool:
+    words = list(_HOLD_WORD.finditer(first))
+    if not words:
+        return False
+    for m in words:
+        if _NEG_AFTER.search(_AFTER_HOLD.match(first, m.end()).group(0)):
+            return False                               # 보류하지 않고·보류가 아닌·보류보다는·보류 없이·보류합니다만 …
+    for r in _RECOMMEND.finditer(first):               # "보류를 권고합니다"·"보류할 것을 권고합니다"는 보류다; "교체를 권고합니다(보류)"는 아니다
+        if "보류" not in first[max(0, r.start() - 10):r.start()]:
+            return False
+    if _PROCEED.search(first):
+        return False
+    if _HEADING_HOLD.match(first):
+        return True
+    main = re.sub(r"\([^)]*\)|\[[^\]]*\]", "", first).strip().rstrip(".!?。 ")
+    last = _CLAUSE_SPLIT.split(main)[-1]
+    return bool(_HOLD_WORD.search(last)) or not _endorses_swap(last)
 
 
 def _check_infeasible_conclusion(out: dict, score_change: dict | None) -> None:
@@ -178,10 +262,16 @@ def _check_infeasible_conclusion(out: dict, score_change: dict | None) -> None:
     # (feasible False with no new ones) must not block a swap that may even reduce them (review SHOULD)
     if not score_change or not score_change.get("new_violations"):
         return
-    first = re.split(r"(?<=[.!?。])\s", out["rationale"].strip(), maxsplit=1)[0]
-    if "보류" not in first:
+    first = _FIRST_SENTENCE.split(out["rationale"].strip(), maxsplit=1)[0]
+    if not _is_hold(first):
         raise BriefingRejected("recommends_infeasible",
                                "교체 후 제약 위반이 있는데 첫 문장 결론이 '보류'가 아니다")
+
+
+def _skill_aliases(key: str) -> set[str]:
+    """기술 이름과 괄호 라벨의 줄임: "UI 플랫폼(RIA)" -> {전체, "UI 플랫폼", "RIA"}."""
+    m = re.fullmatch(r"(.+?)\s*\((.+)\)", key)
+    return {key} | ({x for x in (m.group(1).strip(), m.group(2).strip()) if len(x) >= 2} if m else set())
 
 
 def _credit_notes(briefing: dict, ctx: dict, ids: tuple[str, str]) -> list[str]:
@@ -197,9 +287,15 @@ def _credit_notes(briefing: dict, ctx: dict, ids: tuple[str, str]) -> list[str]:
             src = row.get("credited_from")
             if not src:
                 continue
-            name = r"(?<![A-Za-z0-9])" + re.escape(row["key"]) + r"(?![A-Za-z0-9])"     # Java가 JavaScript에 걸리지 않게
-            tails = [re.split(r"[.!?。]", text[m.end():m.end() + 60], maxsplit=1)[0] for m in re.finditer(name, text)]
-            if any(not (src in tail and "인정" in tail) for tail in tails):
+            # 이름: 대소문자 무시, 괄호 라벨은 앞·괄호 안 줄임도(WAS(웹 애플리케이션 서버) -> WAS), Java가 JavaScript·C가 C++에 걸리지 않게
+            names = sorted(_skill_aliases(row["key"]), key=len, reverse=True)
+            name = r"(?<![A-Za-z0-9+#.])(?:" + "|".join(map(re.escape, names)) + r")(?![A-Za-z0-9+#])"
+            # 문장 끝은 마침표 뒤 공백·끝 -- Node.js·ASP.NET 같은 출처 이름의 점에서 자르면 밝혀도 덧붙였다(폴백 리뷰 2026-10-12)
+            in_src = [(x.start(), x.end()) for x in re.finditer(re.escape(src), text, flags=re.IGNORECASE)]
+            tails = [re.split(r"[.!?。](?=\s|$)", text[m.end():m.end() + 60], maxsplit=1)[0]
+                     for m in re.finditer(name, text, flags=re.IGNORECASE)
+                     if not any(a <= m.start() < b for a, b in in_src)]       # 출처 이름 속 자리(Spring Boot의 Spring)는 언급이 아니다
+            if any(not (src.lower() in tail.lower() and "인정" in tail) for tail in tails):
                 topic = "는" if str(row["value"])[-1:] in "2459" else "은"     # 이·사·오·구는 받침 없음(1 일, 3 삼은 받침)
                 notes.append(f"{pid}의 {row['key']} {row['value']}{topic} {src} 경력에서 일부 인정된 레벨이다.")
     return notes
@@ -224,9 +320,16 @@ def generate_briefing(client, model: str, ctx: dict, out_id: str, in_id: str,
         # 모델별 설정(pricing.json models[모델].reasoning_effort). 모델을 바꿔도 지원 안 하는 값이 남지 않게.
         reasoning_effort = load_pricing().get("models", {}).get(model, {}).get("reasoning_effort")
     effort = reasoning_effort
+    try:
+        import openai
+        if isinstance(client, openai.OpenAI):          # 재시도 없이 -- SDK 기본 재시도 2회면 45초 상한이 최대 약 135초가 됐다(폴백 리뷰 2차)
+            client = client.with_options(max_retries=0)
+    except ImportError:                                # pragma: no cover
+        pass
     resp = client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
+        timeout=BRIEFING_TIMEOUT_S,
         **({"reasoning_effort": effort} if effort else {}),
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}])

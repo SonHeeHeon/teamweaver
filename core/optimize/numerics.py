@@ -64,7 +64,12 @@ def capture_model_contract(prob):
 
 
 def project_additive_constraints(before, after, *, allocation_variables, fixed_values):
-    if (before.variables != after.variables or before.objective != after.objective
+    # 콜백은 행을 더할 수만 있다. 새 변수는 보조 변수로만 허용한다 -- 호출자가 그 값(풀이 값)을 fixed_values로 주면 그 행도
+    # 고정값을 넣어 독립 검증에 넘긴다(운영 중 편성의 "옮긴 사람" 0/1 변수, 2026-10-12). 값이 없으면 예전처럼 거절한다.
+    new_variables = set(after.variables) - set(before.variables)
+    if (any(after.variables.get(name) != var for name,var in before.variables.items())
+            or any(name not in fixed_values for name in new_variables)
+            or before.objective != after.objective
             or before.objective_sense != after.objective_sense
             or any(after.rows.get(name) != row for name,row in before.rows.items())):
         raise UnsupportedModelMutation("UNSUPPORTED_MODEL_MUTATION")

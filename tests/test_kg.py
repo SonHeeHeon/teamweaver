@@ -302,3 +302,23 @@ def test_kg_matches_scoring_on_a_renamed_copy(kw, tmp_path):
     for j in ds.projects:
         assert {(kg.nodes[e["dst"]]["label"], level_from_months(e["min_months"] or 0), e["headcount"])
                 for e in kg.out(f"project:{j.id}", "REQUIRES")} == {(r.skill, r.min_level, r.headcount) for r in j.requirements}
+
+
+def test_past_project_takes_industry_and_client_from_any_row(operating):
+    """Codex audit 2026-10-12: a past project took industry/client only from its first row, so the same history gave
+    different 'same industry / same client' experience depending on CSV row order."""
+    import copy
+    bundle, ds, parsed, _ = operating
+    rows = [r for r in bundle.tables["work_history.csv"] if r.get("industry") and r.get("client")]
+    a = dict(rows[0])
+    b = dict(next(r for r in bundle.tables["work_history.csv"] if r["person_id"] != a["person_id"]))
+    b.update(project_code=a.get("project_code"), work_id=a.get("work_id"), start_date=a["start_date"], end_date=a["end_date"])
+    blank = dict(a, industry=None, client=None, work_name=None)
+    for order in ([blank, b | {"industry": a["industry"], "client": a["client"], "work_name": a.get("work_name")}],
+                  [b | {"industry": a["industry"], "client": a["client"], "work_name": a.get("work_name")}, blank]):
+        b2 = copy.copy(bundle)
+        b2.tables = dict(bundle.tables, **{"work_history.csv": order})
+        kg = build_kg(b2, ds, parsed)
+        code = a.get("project_code") or a.get("work_id")
+        node = kg.nodes[f"past:{code}"]
+        assert node["industry"] == a["industry"] and node["client"] == a["client"]

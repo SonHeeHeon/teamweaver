@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 from api.settings import PlacementSettings
-from core.evaluate.factor_lab.factors import compute_factors
+from core.evaluate.factor_lab.factors import compute_factors, unfilled_seats
 from core.evaluate.factor_lab.robustness import breakdown
 from core.evaluate.factor_lab.simulator import SCENARIOS, simulate
 from core.evaluate.plan_eval import evaluate_plan
@@ -67,7 +67,7 @@ def run(size: int, betas, time_limit: int, seed: int = 2026) -> dict:
         table = breakdown(graph, S, entries, unfilled)
         old = evaluate_plan(graph, S, C, base, entries)          # beta = 0: what the old objective valued
         row.update({
-            "people": len({e.person_id for e in entries}), "entries": len(entries), "unfilled": len(unfilled),
+            "people": len({e.person_id for e in entries}), "entries": len(entries), "unfilled": unfilled_seats(unfilled),
             "old_objective_skill": round(old.objective.skill, 3), "old_objective_total": round(old.objective.total, 3),
             "gaps": {t: _gap(table, t, s_, l_) for t, s_, l_ in GAPS},
             "mean_fit_all": round(float(np.mean([S[graph.pid_index[e.person_id], graph.project_index[e.project_id]]

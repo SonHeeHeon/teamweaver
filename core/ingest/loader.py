@@ -46,6 +46,8 @@ def _parse(col: Column, text: str):
         if not _INT.match(text):
             raise ValueError("expected an integer")
         value = int(text)
+        if not -(2 ** 63) <= value < 2 ** 63:      # 검증을 통과한 값이 SQLite 근거 색인에서 OverflowError(업로드 500)를 냈다(Codex 감사 2026-10-12)
+            raise ValueError("too large (must fit a 64-bit integer)")
     elif col.kind == "float":
         if not _FLOAT.match(text):
             raise ValueError("expected a number like 0.5")
@@ -140,17 +142,23 @@ def _read_table(root: Path, spec, mapping: dict[str, str], report: IngestReport)
             return []
         report.error(spec.name, "required file is missing")
         return None
+    raw_rows = []
+    reader = None
     try:
         with path.open(encoding="utf-8-sig", newline="") as fh:
             reader = csv.reader(fh, strict=True)
             headers = [_nfc(h).strip() for h in next(reader, [])]
-            raw_rows = []
             for raw in reader:
                 raw_rows.append((reader.line_num, [_nfc(cell) for cell in raw]))
     except UnicodeDecodeError:
         report.error(spec.name, "not UTF-8 text — save the CSV as UTF-8 (Excel: 'CSV UTF-8')")
         return None
-    except (csv.Error, OSError) as exc:
+    except csv.Error as exc:
+        # 깨진 행의 위치를 함께 -- 예전엔 행·칸 없이 오류만 남아 어디를 고칠지 몰랐다(Codex 감사 2026-10-12)
+        line = getattr(reader, "line_num", None)
+        report.error(spec.name, f"cannot read CSV: {exc} (file line {line})", row=len(raw_rows) + 1)
+        return None
+    except OSError as exc:
         report.error(spec.name, f"cannot read CSV: {exc}")
         return None
     source_for = {c.name: mapping.get(c.name, c.name) for c in spec.columns}

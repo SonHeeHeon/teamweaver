@@ -326,6 +326,30 @@ def test_prompts_carry_the_length_limits_and_project_rule():
     ("교체는 보류합니다. 가용률을 넘는다.", True),
     ("교체를 권고합니다. 점수가 오른다.", False),
     ("조건부 교체를 권고한다. 보류할 이유도 있다.", False),     # '보류' only outside the first sentence
+    # 2026-10-12 fallback review: negated or embedded '보류', and a first sentence without punctuation
+    ("보류하지 않고 교체를 권고합니다.", False),
+    ("보류할 이유는 없으며 교체를 권고합니다.", False),
+    ("교체를 권고합니다\n보류 여부는 추후 검토한다.", False),
+    ("교체를 권고합니다 -- 보류 대상이 아닙니다.", False),
+    ("보류금 정산 사업에 교체를 권고합니다.", False),
+    ("보류한다. 예산을 넘는다.", True),
+    ("교체를 보류합니다", True),
+    ("결론은 보류입니다. 가용률을 넘는다.", True),
+    # 2nd fallback review: the allow-list version rejected these ordinary holds (42 of 291 recorded E5 first sentences)
+    ("보류(예산 초과). 가용률을 넘는다.", True), ("보류: 예산을 넘는다.", True), ("보류하겠습니다.", True),
+    ("교체 보류를 권고합니다.", True), ("보류할 것을 권고합니다.", True), ("결론 — 보류. 예산 초과.", True),
+    ("보류가 적절하다.", True), ("교체는 보류 대상입니다.", True),
+    # ...and these negations/concessions passed it
+    ("보류가 아닌 교체를 권고한다.", False), ("보류 없이 교체를 권고합니다.", False), ("보류 대신 교체를 권고합니다.", False),
+    ("보류를 권고하지 않습니다.", False), ("보류한다면 일정이 늦어지므로 교체를 권고한다.", False),
+    ("보류합니다만 교체를 권고합니다.", False), ("교체를 권고합니다(보류).", False),
+    # Codex review 2026-10-12: undecided holds that end in an action
+    ("보류 여부는 추후 검토하고 교체합니다.", False), ("보류 가능성을 살핀 뒤 교체합니다.", False),
+    ("보류를 검토했으나 교체합니다.", False), ("교체를 보류하고 다른 후보를 검토합니다.", True),
+    # Codex review round 2: the last clause decides (Korean puts the conclusion at the end)
+    ("보류 의견에도 불구하고 교체가 타당합니다.", False), ("보류를 고려했지만 교체가 필요합니다.", False),
+    ("교체는 현 시점에서 보류하는 것이 타당하다고 판단합니다.", True), ("[보류] 예산 초과.", True),
+    ("결론은 보류이며, 예산 초과로 교체를 권고하지 않는다.", True),
 ])
 def test_infeasible_swap_must_conclude_with_hold(rationale, ok):
     sc = {"total": 0.4, "feasible": False, "new_violations": ["p001의 계획 1번째 달 투입 합 1.20가 가용률 1.00를 초과"]}
@@ -386,3 +410,95 @@ def test_rule_based_briefing_separates_credited_skills():
     no_own = {**_CREDIT_CTX, "p001": {**_CREDIT_CTX["p001"], "skills": [{**_CREDIT_CTX["p001"]["skills"][0], "own_months": 0}]}}
     assert "Java(Spring 경력에서 인정)." in rule_based_briefing(no_own, "p000", "p001")["rationale"]
     assert "인정" not in rule_based_briefing(_CTX, "p000", "p001")["rationale"]
+
+
+
+# ---- 2026-10-12 fallback review (Codex quota) ---------------------------------------------------
+
+@pytest.mark.parametrize("quoted", ["«책임감이 없고 지각이 잦다»", "〝책임감이 없고 지각이 잦다〞", "＇책임감이 없고 지각이 잦다＇"])
+def test_every_quote_style_counts_as_a_quote_in_hidden_mode(quoted):
+    """Real data never shows review text: a fabricated 'quote' in other quote marks used to pass."""
+    idx = _index(reveal=False)
+    payload = _llm(citations=[], rationale=f"동료는 p001을 {quoted}고 평가했다 [{_SID_POS}].")
+    with pytest.raises(ValueError):
+        generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
+
+
+def test_inline_quote_must_match_the_source_its_sentence_points_at():
+    """A verbatim sentence from another review, marked as this source, used to pass because it existed somewhere."""
+    idx = _index()
+    wrong = _llm(rationale=f"동료는 “{_NEG}”라고 평가했다 [{_SID_POS}].")
+    with pytest.raises(ValueError):
+        generate_briefing(_client(wrong), "m", _ctx(idx), "p000", "p001", evidence=idx)
+    after = _llm(rationale=f"동료는 “{_POS}”라고 평가했다. [{_SID_POS}]")          # the marker right after the sentence
+    assert generate_briefing(_client(after), "m", _ctx(idx), "p000", "p001", evidence=idx)["evidence"]
+
+
+def test_marker_with_a_space_is_still_a_marker():
+    idx = _index()
+    payload = _llm(rationale="p001은 적극적이다 [rv: p999>p001#9:pos].")
+    with pytest.raises(ValueError):
+        generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)
+
+
+def test_briefing_call_has_a_time_limit():
+    from api.rag.briefing import BRIEFING_TIMEOUT_S
+    client = _client({"rationale": "교체를 권고합니다.", "risks": ["없음"], "alternatives": ["유지"]})
+    generate_briefing(client, "m", _CTX, "p000", "p001")
+    assert client.chat.completions.create.call_args.kwargs["timeout"] == BRIEFING_TIMEOUT_S
+
+
+@pytest.mark.parametrize("key, src, rationale, noted", [
+    ("WAS(웹 애플리케이션 서버)", "Tomcat", "교체를 권고합니다. p001은 WAS 2로 요구를 채운다.", True),        # 괄호 라벨 줄임
+    ("Java", "Spring", "교체를 권고합니다. p001은 JAVA 2로 요구를 채운다.", True),                          # 대소문자
+    ("JavaScript", "Node.js", "교체를 권고합니다. p001은 JavaScript 2(Node.js 경력에서 인정)다.", False),    # 출처의 점
+    ("C", "Embedded C", "교체를 권고합니다. p000은 C++ 4다.", False),                                       # C가 C++에 걸리지 않게
+])
+def test_credit_note_edge_cases(key, src, rationale, noted):
+    ctx = {**_CTX, "p001": {"skills": [{"key": key, "value": "2", "credited_from": src}], "coworks": [], "evidence": []}}
+    payload = {"rationale": rationale, "risks": ["없음"], "alternatives": ["유지"]}
+    out = generate_briefing(_client(payload), "m", ctx, "p000", "p001")["rationale"]
+    assert ("참고:" in out) is noted
+
+
+def test_rule_based_briefing_states_new_violations():
+    """The fallback (no LLM, real data, or a rejected briefing) must not say 'no visible risk' on a rule-breaking swap."""
+    sc = {"total": 0.3, "feasible": False, "new_violations": ["J003 월 비용 3,608이 예산 3,357을 초과"]}
+    out = rule_based_briefing(_CTX, "p000", "p001", score_change=sc)
+    assert out["rationale"].startswith("보류: 이 교체는 제약 위반 1건을 새로 만든다.")
+    assert out["risks"][0] == "새 제약 위반: J003 월 비용 3,608이 예산 3,357을 초과"
+    assert "뚜렷한 리스크" not in " ".join(out["risks"])
+    assert rule_based_briefing(_CTX, "p000", "p001") == rule_based_briefing(_CTX, "p000", "p001", score_change={"total": 1})
+
+
+
+def test_title_brackets_are_not_quotes():
+    """《 》 / 〈 〉 mark titles in Korean; treating them as quotes discarded ordinary briefings (2nd fallback review)."""
+    idx = _index(reveal=False)
+    payload = _llm(citations=[], rationale=f"p001은 《차세대 금융》 사업 경험이 있다 [{_SID_POS}].")
+    assert generate_briefing(_client(payload), "m", _ctx(idx), "p000", "p001", evidence=idx)["rationale"]
+
+
+def test_each_inline_quote_is_checked_in_its_own_sentence():
+    """Positions, not text.find: the same quote twice is checked against each sentence's own marker, and a marker that
+    ends the previous sentence does not vouch for the next one (2nd fallback review)."""
+    idx = _index()
+    twice = _llm(rationale=f"동료는 “{_POS}”라고 평가했다 [{_SID_POS}]. 다른 평가자도 “{_POS}”라고 했다 [{_SID_NEG}].")
+    with pytest.raises(ValueError):
+        generate_briefing(_client(twice), "m", _ctx(idx), "p000", "p001", evidence=idx)
+    bleed = _llm(rationale=f"p001은 적극적이다. [{_SID_POS}] 그리고 동료는 “{_POS}”라고 했다.")
+    with pytest.raises(ValueError):
+        generate_briefing(_client(bleed), "m", _ctx(idx), "p000", "p001", evidence=idx)
+    early = _llm(rationale=f"p001은 {_POS[:20]} 평이 있다. 동료는 “{_POS}”라고 평가했다 [{_SID_POS}].")
+    assert generate_briefing(_client(early), "m", _ctx(idx), "p000", "p001", evidence=idx)["evidence"]
+
+
+def test_rule_based_violation_count_says_or_more_at_the_route_cap():
+    sc = {"new_violations": [f"위반 {k}" for k in range(5)]}           # the route passes at most five
+    assert rule_based_briefing(_CTX, "p000", "p001", score_change=sc)["rationale"].startswith("보류: 이 교체는 제약 위반 5건 이상을")
+
+
+def test_credit_source_containing_the_skill_name_is_not_a_bare_mention():
+    ctx = {**_CTX, "p001": {"skills": [{"key": "Spring", "value": "2", "credited_from": "Spring Boot"}], "coworks": [], "evidence": []}}
+    payload = {"rationale": "교체를 권고합니다. p001은 Spring 2(Spring Boot 경력에서 인정)다.", "risks": ["없음"], "alternatives": ["유지"]}
+    assert "참고:" not in generate_briefing(_client(payload), "m", ctx, "p000", "p001")["rationale"]
