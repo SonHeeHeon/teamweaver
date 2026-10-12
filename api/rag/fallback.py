@@ -10,7 +10,9 @@ K5: 문맥의 근거가 근거 색인 형식(source_id·kind·text)이면, 새�
 그대로 둔다 -- 요약을 인용이라고 부르지 않는다."""
 
 
-def rule_based_briefing(ctx: dict, out_id: str, in_id: str) -> dict:
+def rule_based_briefing(ctx: dict, out_id: str, in_id: str, score_change: dict | None = None) -> dict:
+    """score_change(교체 라우트가 LLM에 넘기는 것과 같은 값)를 주면 이 교체가 새로 만드는 제약 위반을 결론·위험 첫 줄에 쓴다 --
+    없으면 위반 교체에도 "뚜렷한 리스크가 관측되지 않는다"가 나와 화면의 위반 경고와 어긋났다(폴백 리뷰 2026-10-12)."""
     out_skills = {s["key"]: s["value"] for s in ctx.get(out_id, {}).get("skills", [])}
     in_skills = {s["key"]: s["value"] for s in ctx.get(in_id, {}).get("skills", [])}
     out_coworks = len(ctx.get(out_id, {}).get("coworks", []))
@@ -35,9 +37,14 @@ def rule_based_briefing(ctx: dict, out_id: str, in_id: str) -> dict:
                     for s in ctx.get(pid, {}).get("skills", []) if s.get("credited_from")]
         if credited:
             rationale_parts.append(f"{pid}의 다음 스킬 레벨은 하위 기술 경력에서 일부 인정된 개월로 정해졌다: {', '.join(credited)}.")
+    new_violations = list((score_change or {}).get("new_violations") or [])
+    if new_violations:
+        # 라우트가 위반 문구를 5개까지만 넘긴다 -- 5개면 "5건 이상"(달마다 하나씩 생겨 6건을 넘기도 한다, 폴백 리뷰 2차)
+        count = f"{len(new_violations)}건" if len(new_violations) < 5 else f"{len(new_violations)}건 이상"
+        rationale_parts.insert(0, f"보류: 이 교체는 제약 위반 {count}을 새로 만든다.")
     rationale = " ".join(rationale_parts)
 
-    risks = []
+    risks = [f"새 제약 위반: {v}" for v in new_violations]
     if in_coworks < out_coworks:
         risks.append(f"{in_id}의 팀 내 협업 이력({in_coworks}건)이 {out_id}({out_coworks}건)보다 적다.")
     if in_evidence == 0:
