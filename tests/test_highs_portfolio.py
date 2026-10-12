@@ -162,6 +162,9 @@ def test_a_proof_restricts_the_choice_to_seeds_at_or_below_it(monkeypatch):
 def _die(seed, model_conn, out_conn, stop_event=None):          # stands in for a worker killed by the OS (OOM, segfault)
     import os
     if seed == 0:
+        # take the model first: dying before that races the parent's send (BrokenPipe vs EOF) -- that start-up path has
+        # its own test below (_die_before_reading). Seen 2026-10-12: this test failed every time on a fast run.
+        model_conn.recv()
         os._exit(9)
     hp._seed_worker(seed, model_conn, out_conn)
 
