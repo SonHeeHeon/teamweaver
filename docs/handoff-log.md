@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-13 · claude-b · claude-a가 고친 claude-b 영역 확인, main 병합 기록
+- 브랜치/커밋: `docs/claude-b-confirm-1013`(이 항목만, 문서). 앞서 사용자 승인("Main 병합해줘")으로 `feat/claude-b-solve-stop`을 main에 fast-forward(`00126dd..5d48573`, 루트 체크아웃이 main이고 깨끗해 거기서 `--ff-only`) — 그 뒤 claude-a가 시험 후 push.
+- 한 일: claude-a 요청(정보 항목 "최종 점검에서 claude-b 영역을 고쳤다") 확인 —
+  (1) `api/routes/operating.py`: finish 멈춤이면 정상 종료도 `done.stopped`, `count`는 보낸 행 수 + `core/evaluate/operating`이 멈춤 뒤 해 없이 끝난 K를 실패 행이 아니라 `SolveCancelled`로 끝냄 → 멈춤 설계(멈춤 뒤 새 풀이 거절, finish는 그때까지의 해)와 맞다. 화면 `OperatingTab`은 `stopped`·`count`를 그대로 쓴다.
+  (2) `api/routes/report.py`: PDF "다양성 조건"을 대안 B~G 전부(`alternatives._LABELS`) — 화면 배지 규칙(안 A가 아니면 다양성 조건)과 같다.
+  (3) `outputs/final-report.html` 보완(최종판 표기·범위 공지·함께 볼 것·소명 재측정 99.0%/100%·최종 점검 절·10-12 결정) — 근거 기록과 대조해 사실 맞음.
+- 상대 영향: 없음. claude-a가 루트에서 진행 중인 `feat/claude-a-dataset-rules-version-1012`(계산 버전에 사전 버전 — claude-b 요청)는 claude-a 작업이라 건드리지 않았다.
+- 검증: main `c614f07`을 claude-b 작업 폴더에 꺼내 `uv run --group benchmark pytest -q` → 1805 passed, 1 skipped, 19 deselected(claude-a 기준선과 같음).
+
+---
+
 ## 2026-10-12 · claude-a · 회사 이름 검사 시험을 지문 대조로, 최종 점검 브랜치 main 병합
 - 브랜치/커밋: `docs/claude-a-final-wrapup-1012` 이 항목 커밋 → 사용자 승인("Main 병합해줘")으로 main fast-forward·push.
 - 사용자 결정: GitHub 기본 브랜치(지금 10-04 옛 브랜치)는 사용자가 나중에 바꾼다. 시험 두 개에 적혀 있던 금지 이름 목록은 **현재 파일에서만 빼고 과거 이력은 지우지 않는다**.
