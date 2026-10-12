@@ -69,5 +69,12 @@ def test_whatif_does_not_send_real_data_to_openai(client, monkeypatch):
 def test_llm_client_for_honors_explicit_onprem_but_not_for_openai(monkeypatch):
     monkeypatch.delenv(rj.ALLOW_EXTERNAL_ENV, raising=False)
     monkeypatch.setenv(rj.ONPREM_ENV, "1")             # 관리자가 사내로 지정(공인 이름의 사내 서버)
+    monkeypatch.setenv(rj.BASE_URL_ENV, "https://llm.example.com/v1")
     assert llm_client_for(_ds(False), _client("https://llm.example.com/v1"))[1] is None
+    assert llm_client_for(_ds(False), _client("https://LLM.example.com/v1/"))[1] is None             # 호스트 대소문자
     assert llm_client_for(_ds(False), _client("https://api.openai.com/v1/"))[1] == "external_blocked"
+    # 지정한 판정 주소가 아닌 다른 외부 주소는 사내가 아니다(점검 2026-10-12 (7) -- 예전엔 OpenAI만 아니면 사내로 봤다)
+    assert llm_client_for(_ds(False), _client("https://api.z.ai/api/paas/v4"))[1] == "external_blocked"
+    monkeypatch.delenv(rj.ONPREM_ENV)
+    assert llm_client_for(_ds(False), _client("https://llm.example.com/v1"))[1] == "external_blocked"
+    assert llm_client_for(_ds(False), _client("http://10.0.0.5:8000/v1"))[1] is None                 # 사설 주소는 그대로 사내

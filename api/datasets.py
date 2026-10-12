@@ -250,6 +250,10 @@ def _check_central_directory(data: bytes, limit: int) -> None:
     total, cd_size, cd_offset = struct.unpack("<HII", data[pos + 10:pos + 20])
     if total == 0xFFFF or cd_size == 0xFFFFFFFF or cd_offset == 0xFFFFFFFF:
         raise BundleArchiveError("zip64 형식은 받지 않는다(묶음은 작아야 한다)")
+    # 끝 레코드 값이 평범해도 바로 앞에 ZIP64 위치 레코드가 있으면 zipfile은 그것을 따라 다른 중앙 디렉터리를 읽는다 --
+    # 아래 세기를 건너뛰는 길이었다(claude-a 점검 2026-10-12 (7), 마지막 항목 주석으로 숨길 수 있다)
+    if pos >= 20 and data[pos - 20:pos - 16] == b"PK\x06\x07":
+        raise BundleArchiveError("zip64 형식은 받지 않는다(묶음은 작아야 한다)")
     start = pos - cd_size
     if start < 0:
         raise BundleArchiveError("zip 파일이 손상됐다(중앙 디렉터리 범위가 맞지 않는다)")

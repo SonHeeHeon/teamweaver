@@ -82,6 +82,24 @@ def test_extract_rejects_not_a_zip(tmp_path):
         extract_bundle_zip(b"PK not really", tmp_path / "x")
 
 
+def test_extract_rejects_a_hidden_zip64_locator(tmp_path):
+    """끝 레코드 값은 평범하지만 바로 앞에 ZIP64 위치 레코드가 있는 zip -- zipfile은 그 레코드를 따라 다른 중앙 디렉터리를
+    읽으므로, 사전 검사(항목 수 세기)를 건너뛸 수 있었다(claude-a 점검 2026-10-12 (7)). 마지막 항목의 주석 20바이트로 숨긴다."""
+    import struct
+    locator = b"PK\x06\x07" + struct.pack("<IQI", 0, 0, 1)            # 20바이트: ZIP64 끝 레코드 위치 표시
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("manifest.json", b"{}")
+        info = zipfile.ZipInfo("people.csv")
+        info.comment = locator
+        z.writestr(info, b"id\n")
+    data = buf.getvalue()
+    pos = data.rfind(b"PK\x05\x06")
+    assert data[pos - 20:pos] == locator                                  # 끝 레코드 바로 앞에 놓였다
+    with pytest.raises(BundleArchiveError, match="zip64"):
+        extract_bundle_zip(data, tmp_path / "x")
+
+
 def test_extract_rejects_zip_bomb(tmp_path, monkeypatch):
     import api.datasets as d
     monkeypatch.setattr(d, "MAX_UNCOMPRESSED_BYTES", 10_000)

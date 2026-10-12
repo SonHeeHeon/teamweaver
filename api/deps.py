@@ -89,7 +89,12 @@ def llm_client_for(dataset: ActiveDataset, client):
     from api import review_judge as rj
     url = str(getattr(client, "base_url", "") or "")
     host = urlparse(url).hostname or ""
-    onprem = host and not rj._is_openai(url) and (os.environ.get(rj.ONPREM_ENV) == "1" or rj._is_internal_host(host))
+    # `TEAMWEAVER_REVIEW_ONPREM=1`은 "관리자가 지정한 판정 주소(TEAMWEAVER_REVIEW_BASE_URL)가 사내"라는 뜻이다 -- 그 주소와 같은
+    # 호스트일 때만 사내로 본다. 예전엔 OpenAI가 아닌 아무 주소나 사내로 봐서, 설명 클라이언트 주소(OPENAI_BASE_URL)가 다른
+    # 외부 서비스여도 실데이터가 나갔다(claude-a 점검 2026-10-12 (7)). 사설 주소·.internal 같은 사내 이름은 그대로 사내다.
+    designated = (urlparse(rj.base_url()).hostname or "").lower()
+    named_onprem = os.environ.get(rj.ONPREM_ENV) == "1" and host.lower() == designated
+    onprem = host and not rj._is_openai(url) and (named_onprem or rj._is_internal_host(host))
     if rj.external_allowed() or onprem:                 # 관리자가 사내로 지정한 주소도 따른다(Codex 리뷰 P2)
         return client, None
     return None, "external_blocked"
