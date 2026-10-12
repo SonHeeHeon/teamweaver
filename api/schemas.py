@@ -3,7 +3,7 @@ from typing import Annotated, Literal, Union
 from pydantic import (BaseModel, ConfigDict, Discriminator, Field, Tag, field_validator, model_serializer,
                       model_validator)
 
-from api.settings import PlacementSettings
+from api.settings import TIME_LIMIT_MAX, PlacementSettings
 from core.optimize.milp import MilpParams
 
 
@@ -126,10 +126,12 @@ class MilpParamsIn(BaseModel):
     # 익숙한 쌍을 셀 최근 기간(개월). 빠지면 모델 기본값(None = 전체 기간). 서비스 기본은 관리자 설정(36개월).
     clique_window_months: int | None = Field(default=None, ge=1, le=120)
     pair_keep_ratio: float | None = Field(default=None, ge=0.0, le=1.0)
-    slack_penalty: float | None = Field(default=None, ge=0.0)
-    time_limit: int | None = Field(default=None, ge=1, le=3600)
+    # 상한(claude-a 점검 2026-10-12 (3)): 빈자리 감점이 터무니없이 크면 수치가 무너지고, 보상 쌍이 많으면 변수가 (쌍 × 사업)으로
+    # 늘어 한 요청이 서버를 묶는다(예전 기본 5000에서 200명은 600초에도 못 풀었다). 서비스 기본은 100·200.
+    slack_penalty: float | None = Field(default=None, ge=0.0, le=10_000.0)
+    time_limit: int | None = Field(default=None, ge=1, le=TIME_LIMIT_MAX)
     gap: float | None = Field(default=None, ge=0.0, le=1.0)
-    max_pairs: int | None = Field(default=None, ge=1)
+    max_pairs: int | None = Field(default=None, ge=1, le=5000)
     max_concurrent_projects: int | None = Field(default=None, ge=1, le=6)
     allocation_mode: Literal["fixed", "monthly"] | None = None
     # 관리자 설정의 "자동(인원 기준)" 표시. 계산에는 쓰지 않는다(화면이 실제 시간을 time_limit으로 보낸다).

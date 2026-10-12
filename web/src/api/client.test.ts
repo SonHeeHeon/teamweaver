@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { applySwap, downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, uploadDataset } from "./client";
+import { applySwap, downloadReport, fetchMeta, postWhatif, saveSettings, SettingsConflictError, streamOptimize, uploadDataset } from "./client";
 import type { PlanEvent, WhatifResponse } from "./types";
 
 describe("downloadReport", () => {
@@ -154,5 +154,17 @@ describe("postBaseline — 같은 조건(가중치)으로 채점", () => {
     const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
     expect(body.weights).toEqual({ Java: 5 });
     vi.unstubAllGlobals();
+  });
+});
+
+
+describe("streamOptimize", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("다른 계산이 진행 중이면(429) 서버 문구를 그대로 보인다", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      JSON.stringify({ detail: "다른 최적화 계산이 진행 중이다. 끝난 뒤 다시 실행한다." }), { status: 429 })));
+    const it = streamOptimize({ weights: {} });
+    await expect(it.next()).rejects.toThrow("다른 최적화 계산이 진행 중이다");
   });
 });

@@ -38,6 +38,11 @@ NON_SOLVER_FIELDS = frozenset({"time_limit_auto", "solver_seeds"})
 _REMOVED_FIELDS = ("review_judge",)
 
 
+
+# 계산 시간 상한(초) -- 관리자 설정과 요청 파라미터(api.schemas.MilpParamsIn) 모두 이 값을 넘지 못한다(claude-a 점검 2026-10-12 (3):
+# 요청이 time_limit 3600·대안 6개로 서버를 몇 시간씩 묶을 수 있었다).
+TIME_LIMIT_MAX = 900
+
 class PlacementSettings(BaseModel):
     """관리자가 바꿀 수 있는 배치 규칙. 범위는 화면 검사에도 그대로 쓰인다(bounds()).
 
@@ -61,7 +66,7 @@ class PlacementSettings(BaseModel):
     lam: float = Field(default=0.3, ge=0.0, le=1.0)
     mu: float = Field(default=0.2, ge=0.0, le=1.0)
     # 계산 시간 상한 900초(claude-a 리허설: 300명 월별 309초, 고정 권장 180초 × 여유).
-    time_limit: int = Field(default=120, ge=5, le=900)
+    time_limit: int = Field(default=120, ge=5, le=TIME_LIMIT_MAX)
     # 자동(인원 기준, 기본): 활성 데이터 인원수와 투입률 방식으로 권장 시간(core/optimize/time_budget)을 쓴다.
     # 끄면 위 time_limit(관리자 수동값)을 쓴다. 서버가 GET /api/settings에서 실제로 쓸 값(effective)을 함께 준다.
     time_limit_auto: bool = True

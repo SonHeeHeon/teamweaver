@@ -225,7 +225,12 @@ export async function* streamOptimize(req: OptimizeRequest): AsyncGenerator<SseE
     body: JSON.stringify({ n_alternatives: 3, milp_params: {}, ...req }),
   });
   await throwIfDatasetChanged(res);
-  if (!res.ok || !res.body) throw new Error(`POST /api/optimize 실패: ${res.status}`);
+  if (!res.ok) {
+    // 429(다른 계산이 진행 중)·422(설정 범위 밖)는 서버 문구를 그대로 보인다(claude-a 점검 2026-10-12 (3))
+    const body = await res.json().catch(() => ({}));
+    throw new Error(typeof body?.detail === "string" ? body.detail : `POST /api/optimize 실패: ${res.status}`);
+  }
+  if (!res.body) throw new Error(`POST /api/optimize 실패: ${res.status}`);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";

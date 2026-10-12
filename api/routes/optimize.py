@@ -1,8 +1,11 @@
+import os
+import threading
 from typing import Annotated
 
 import anyio
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from starlette.types import Receive, Scope, Send
 from pydantic import BaseModel, Field
 
 from api.cache import ResultCache
@@ -10,13 +13,45 @@ from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_cache, get_dataset, get_graph
 from api.plan_token import sign_plan
 from api.schemas import MilpParamsIn
-from api.sse import sse_event, stream_sync_generator
+from api.sse import SyncStream, sse_event
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.alternatives import cacheable, generate_plans_streaming
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
 from core.scoring.engine import ScoringEngine
 
 router = APIRouter()
+
+# 새로 푸는 최적화(캐시·미리 계산이 아닌 것)를 동시에 몇 건까지 받나. 넘치면 기다리지 않고 429 -- 예전엔 익명 요청 40개가
+# 스레드풀을 묶어 /api/meta가 9초 넘게 막혔고 끊어도 끝까지 풀었다(claude-a 점검 2026-10-12 (3)). 한 건이 시드 수만큼 프로세스를 쓴다.
+SLOTS_ENV = "TEAMWEAVER_OPTIMIZE_SLOTS"
+DEFAULT_SLOTS = 2
+
+
+class _SolveStreamResponse(StreamingResponse):
+    """응답이 어떻게 끝나든(다 보냄·끊김·헤더 전송 실패) 풀이에 멈춤 신호를 준다. 스트림 제너레이터의 finally만으로는
+    헤더를 보내기 전에 끊긴 경우를 놓친다 -- 제너레이터가 시작조차 안 돼 남은 대안을 다 풀었다(Codex 리뷰 2026-10-12 재현)."""
+
+    def __init__(self, content, *, on_close, **kwargs):
+        super().__init__(content, **kwargs)
+        self._on_close = on_close
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self._on_close()
+
+
+def solve_slots(app) -> threading.BoundedSemaphore:
+    """앱 하나에 하나(처음 쓸 때 만든다). 슬롯은 풀이 스레드가 끝날 때 놓는다 -- 화면이 끊겨도(운영 비교와 같은 원칙)."""
+    sem = getattr(app.state, "optimize_slots", None)
+    if sem is None:
+        try:
+            n = max(1, int(os.environ.get(SLOTS_ENV, DEFAULT_SLOTS)))
+        except ValueError:
+            n = DEFAULT_SLOTS
+        sem = app.state.optimize_slots = threading.BoundedSemaphore(n)
+    return sem
 
 
 class OptimizeRequest(BaseModel):
@@ -73,11 +108,21 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
                                     [e.model_dump() for e in plan.entries], req.weights, params),
         }
 
+    cached = None if req.fresh else cache.get(key)
+    pre_at = precomputed_at(request.app, key) if cached is not None else None
+    outcome: dict = {}
+    solving: SyncStream | None = None
+    if cached is None:
+        slots = solve_slots(request.app)
+        if not slots.acquire(blocking=False):
+            raise HTTPException(status_code=429, detail="다른 최적화 계산이 진행 중이다. 끝난 뒤 다시 실행한다.")
+        # 풀이는 응답을 돌려주기 전에 시작한다 -- 슬롯은 언제나 풀이 스레드가 놓는다(스트림을 읽든 말든).
+        # 화면이 끊으면 지금 푸는 대안까지만 풀고 다음 대안은 시작하지 않는다(SyncStream).
+        solving = SyncStream(generate_plans_streaming, graph, S, C, params, req.n_alternatives, outcome,
+                             on_exit=slots.release)
+
     async def event_stream():
-        cached = None if req.fresh else cache.get(key)
-        pre_at = precomputed_at(request.app, key) if cached is not None else None
         count = 0
-        outcome: dict = {}
         try:
             # UB는 (graph, S, params)에만 의존하고 플랜별로 달라지지 않는다 --
             # 요청당 1회만 푼다. 플랜마다 풀면 그 배수만큼 낭비다.
@@ -92,8 +137,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
                     yield sse_event("plan", _plan_payload(plan, count, True, ub, pre_at))
             else:
                 collected = []
-                async for plan in stream_sync_generator(
-                        generate_plans_streaming, graph, S, C, params, req.n_alternatives, outcome):
+                async for plan in solving.items():
                     count += 1
                     collected.append(plan)
                     yield sse_event("plan", _plan_payload(plan, count, False, ub))
@@ -112,6 +156,11 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             yield sse_event("done", done)
         except Exception as exc:                        # noqa: BLE001
             yield sse_event("error", {"message": str(exc)})
+        finally:
+            if solving is not None:
+                solving.cancel()                        # 끊겼거나 UB 계산이 실패했다 -- 다음 대안을 풀지 않는다
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    if solving is None:
+        return StreamingResponse(event_stream(), media_type="text/event-stream", headers=headers)
+    return _SolveStreamResponse(event_stream(), on_close=solving.cancel, media_type="text/event-stream", headers=headers)
