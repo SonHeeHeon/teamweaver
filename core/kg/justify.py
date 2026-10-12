@@ -156,7 +156,12 @@ def facts_from_evidence(ev: dict, violations: int, shortfall: int = 0) -> list[F
                 q = cw["with"]
                 body = f"{p}{josa(p, '과/와')} {q}{josa(q, '이/가')} 함께 일한 기간 {cw['months_total']}개월(최근 3년 {cw['months_recent']}개월)"
                 add("CW", body, body, owners=(p, q))
-        for rv in m["reviews_from_team"][:2]:
+        # 불리한(부정) 평가는 모두, 나머지는 합쳐 2건까지 -- 앞 2건만 자르면 세 번째 이후의 부정 평가가 사실 목록·덧붙임
+        # 어디에도 남지 않았다(Codex 감사 2026-10-12: 시연 100명 안 A의 네 사업). 순서는 원래 순서를 지킨다.
+        revs = m["reviews_from_team"]
+        neg = [i for i, rv in enumerate(revs) if rv["polarity"] is not None and rv["polarity"] < 0]
+        rest = [i for i in range(len(revs)) if i not in neg][:max(0, 2 - len(neg))]
+        for rv in [revs[i] for i in sorted(neg + rest)]:
             labels = ", ".join(rv["labels"][:3])
             fr = rv["from"]
             add("REV", f"{fr}{josa(fr, '이/가')} {p}{josa(p, '을/를')} 평가: {_polarity(rv['polarity'])}, 항목 {labels}",
@@ -200,7 +205,7 @@ _IDS = rf"{_ID}(?:\s*(?:,|과|와|및)\s*{_ID})*"
 _LABEL_RE = "|".join(re.escape(lb).replace(r"\ ", r"\s*") for lb in sorted(LABELS, key=len, reverse=True))
 _LABEL_KEY = {lb.replace(" ", ""): lb for lb in LABELS}
 _HEAD = (rf"(?:(?P<sids>{_IDS})\s*(?:은|는|이|가|의\s*경우(?:에는|는)?)(?P<each>\s*각각)?"
-         rf"|(?:(?P<tids>{_IDS})\s*(?:의|이|가)\s*)?(?P<label>{_LABEL_RE})\s*(?:은|는|으로는|로는|에서는)(?:\s*각각)?)(?:\s*,)?")
+         rf"|(?:(?P<tids>{_IDS})\s*(?:의|이|가)\s*)?(?P<label>{_LABEL_RE})\s*(?:은|는|으로는|로는|에서는)(?P<leach>\s*각각)?)(?:\s*,)?")
 _CONN = "(?:" + "|".join(CONNECTIVES) + ")"
 LEAD = re.compile(rf"\s*(?:{_CONN}\s*,?\s*)?(?:{_HEAD})?\s*")
 MID = re.compile(rf"\s*(?:,|이며|이고|및|와|과|그리고)(?:\s*,)?(?:\s*(?:그리고|또한|및))?(?:\s*,)?\s*(?:{_HEAD})?\s*")
@@ -218,7 +223,9 @@ def _head(m: re.Match) -> tuple[list[str] | None, str | None, bool] | None:
     if m.group("sids"):
         return re.findall(_ID, m.group("sids")), None, bool(m.group("each"))
     if m.group("label"):
-        return (re.findall(_ID, m.group("tids")) if m.group("tids") else None), _LABEL_KEY[re.sub(r"\s+", "", m.group("label"))], False
+        # 라벨 머리 뒤 "각각"도 순서 검사를 한다 -- 버리면 "P1과 P2의 등급과 투입은 각각 {P2 사실}, {P1 사실}"이 통과했다(Codex 감사 2026-10-12)
+        return ((re.findall(_ID, m.group("tids")) if m.group("tids") else None),
+                _LABEL_KEY[re.sub(r"\s+", "", m.group("label"))], bool(m.group("leach")))
     return None
 
 

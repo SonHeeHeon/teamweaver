@@ -435,3 +435,28 @@ def test_generate_justification_sends_the_per_model_effort():
     assert seen["reasoning_effort"] == "high"
     generate_justification(client, "gpt-6-luna", inp)
     assert seen["reasoning_effort"] == "low"
+
+
+def test_label_head_each_checks_the_order_too():
+    """Codex audit 2026-10-12: '각각' after a label head was not captured, so a swapped order passed."""
+    s = _small()
+    v = verify("이 사업은 {F1}입니다. P1과 P2의 등급과 투입은 각각 {F6}, {F3}입니다.", s)
+    assert any(x["rule"] == "S4" for x in v["violations"])
+    assert verify("이 사업은 {F1}입니다. P1과 P2의 등급과 투입은 각각 {F3}, {F6}입니다.", s)["ok"]
+
+
+def test_every_adverse_review_becomes_a_fact():
+    """Codex audit 2026-10-12: only the first two team reviews became facts, so a third, negative one vanished
+    from the facts and the adverse addendum. All negative reviews stay; others fill up to two."""
+    from core.kg.justify import facts_from_evidence
+    revs = [{"from": "P2", "polarity": 0.5, "labels": ["전문성"]}, {"from": "P3", "polarity": 0.5, "labels": ["소통"]},
+            {"from": "P4", "polarity": -0.8, "labels": ["일정"]}, {"from": "P5", "polarity": -0.4, "labels": ["문서화"]}]
+    member = {"person_id": "P1", "grade": "중급", "alloc": 0.5, "skill_fit": 0.7, "requirements": [],
+              "same_industry_projects": None, "same_industry_months": None, "same_client_projects": [],
+              "cowork_in_team": [], "reviews_from_team": revs}
+    ev = {"project_id": "J1", "project": "데이터 마트", "requirements": [], "members": [member]}
+    rev = [f for f in facts_from_evidence(ev, 0) if f.kind == "REV"]
+    assert [f.owners[1] for f in rev] == ["P4", "P5"]                      # both negatives, no room left for positives
+    assert all(f.adverse for f in rev)
+    member["reviews_from_team"] = revs[:2] + revs[2:3]
+    assert [f.owners[1] for f in facts_from_evidence(ev, 0) if f.kind == "REV"] == ["P2", "P4"]   # one negative + one more
