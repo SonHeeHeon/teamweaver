@@ -81,8 +81,26 @@ class SimulateRequest(_WithEntries):
     project_id: str
     adds: list[AddIn] = Field(default=[], max_length=20)
     removes: list[tuple[str, str]] = Field(default=[], max_length=50)
+    # 옛 화면 호환으로 받기만 한다 -- 늘릴 자리는 서버가 등급별 순증가로 정한다(_net_new_seats, claude-a 요청 2026-10-12)
     extra_seats: dict[Grade, Annotated[int, Field(ge=0, le=10)]] = {}
     budget_add: int = Field(default=0, ge=0)
+
+
+def _net_new_seats(graph, project_id: str, before: list[AssignEntry], after: list[AssignEntry]) -> dict[Grade, int]:
+    """대상 사업의 등급별 순증가(넣은 뒤 인원 − 넣기 전 인원, 0 이상) = 보강으로 새로 여는 자리.
+
+    화면이 넣은 사람 등급마다 +1로 열면 팀원을 빼고 같은 등급을 넣는 맞교환(순증가 0)에도 자리가 하나 더 열려
+    빈자리 감점 -100이 붙었다(claude-a 요청 2026-10-12: 운영 중 100명 J007 DP0092→DP0046, 화면 -99.83 · 실제 +0.17).
+    core.evaluate.staffing_sim.best_additions(ecf4874)와 같은 식이다."""
+    grade_of = {p.id: p.grade for p in graph.people}
+
+    def team(entries):
+        out: dict = {}
+        for pid in {e.person_id for e in entries if e.project_id == project_id}:
+            out[grade_of[pid]] = out.get(grade_of[pid], 0) + 1
+        return out
+    was, now = team(before), team(after)
+    return {g: c - was.get(g, 0) for g, c in now.items() if c > was.get(g, 0)}
 
 
 class BestRequest(_WithEntries):
@@ -306,11 +324,15 @@ async def staffing_simulate(req: SimulateRequest, request: Request, dataset: Act
     S, C = _matrices(dataset, req.weights)
     from core.evaluate.staffing_sim import graph_with_extra_seats, simulate
 
+    adds = [AssignEntry(**a.model_dump()) for a in req.adds]
+    removes = [tuple(r) for r in req.removes]
+    drop = set(removes)
+    after = [e for e in entries if (e.person_id, e.project_id) not in drop] + adds     # simulate와 같은 규칙
+
     def go():
-        g2 = graph_with_extra_seats(dataset.graph, req.project_id, dict(req.extra_seats), req.budget_add)
-        return simulate(dataset.graph, S, C, params, entries,
-                        adds=[AssignEntry(**a.model_dump()) for a in req.adds],
-                        removes=[tuple(r) for r in req.removes], graph_after=g2)
+        seats = _net_new_seats(dataset.graph, req.project_id, entries, after)
+        g2 = graph_with_extra_seats(dataset.graph, req.project_id, seats, req.budget_add)
+        return simulate(dataset.graph, S, C, params, entries, adds=adds, removes=removes, graph_after=g2)
     async with _light(request):
         res = await anyio.to_thread.run_sync(lambda: _run(go))
     return {**res, "entries": _dump(res["entries"]), "new_violations": [list(v) for v in res["new_violations"]],

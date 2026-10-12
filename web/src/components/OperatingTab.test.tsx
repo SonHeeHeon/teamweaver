@@ -83,7 +83,7 @@ describe("OperatingTab", () => {
     await waitFor(() => expect(postStaffingSimulate).toHaveBeenCalled());
     expect(vi.mocked(postStaffingSimulate).mock.calls[0][1]).toEqual({
       project_id: "P1", adds: [{ person_id: "p3", project_id: "P1", alloc: 1 }], removes: [["p1", "P1"]],
-      extra_seats: { "고급": 1 }, budget_add: 1201 });
+      budget_add: 1201 });                               // 늘릴 자리는 서버가 순증가로 정한다(extra_seats 안 보냄)
     expect(await screen.findByText("변화(계산상)")).toBeInTheDocument();
   });
 
@@ -95,6 +95,18 @@ describe("OperatingTab", () => {
     fireEvent.click(await screen.findByRole("button", { name: "최선 조합 계산" }));
     expect(await screen.findByText(/추가 월 비용 2,400/)).toBeInTheDocument();
     expect(vi.mocked(postStaffingBest).mock.calls[0][1]).toMatchObject({ project_id: "P1", n: 1, pull_budget: 0 });
+  });
+
+  it("최선 n명: 새 위반은 보강으로 새로 생긴 것만 보인다(기준 배치에 원래 있던 위반은 빼고)", async () => {
+    // claude-a 요청 2026-10-12: violations는 보강 후 전체라 K 결과에서 이어서 보강할 때 원래 있던 위반이 "새 위반"으로 보였다
+    vi.mocked(postStaffingBest).mockResolvedValue({ accepted: true, termination: "Optimal", added_cost: 0,
+      diff: { kept: 2, moved: [], joined: [] }, before: parts(1), after: parts(2), delta: parts(1),
+      violations: [{ code: "availability", location: "p9:month0" }, { code: "budget", location: "P1:month1" }],
+      new_violations: [["budget", "P1:month1"]], entries: [], note: "" });
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "최선 조합 계산" }));
+    const line = await screen.findByText(/새 위반:/);
+    expect(line.textContent).toBe("새 위반: budget(P1:month1)");
   });
 });
 

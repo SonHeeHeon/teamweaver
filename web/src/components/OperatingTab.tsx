@@ -367,13 +367,11 @@ function Reinforce({ state, common, who, proj, fail, base, onClearBase }:
     setCands(res.candidates); setResultKeys((k) => ({ ...k, cands: key }));
   });
   const simulate = () => act("sim", async () => {
-    const seats: Record<string, number> = {};
-    for (const a of adds) seats[a.grade] = (seats[a.grade] ?? 0) + 1;
     const extra = budgetAdd ?? Math.ceil(adds.reduce((s, a) => s + a.cost, 0));
     const key = keyOf.sim;
     const res = await postStaffingSimulate(common, {
       project_id: project, adds: adds.map(({ person_id, project_id, alloc }) => ({ person_id, project_id, alloc })),
-      removes, extra_seats: seats, budget_add: extra, ...withBase });
+      removes, budget_add: extra, ...withBase });
     if (keysRef.current.sim !== key) return;
     setSim(res); setResultKeys((k) => ({ ...k, sim: key }));
   });
@@ -545,7 +543,7 @@ function Reinforce({ state, common, who, proj, fail, base, onClearBase }:
               <p className="mt-1 text-xs text-slate-600">추가 월 비용 {Math.round(shownBest.added_cost ?? 0).toLocaleString("ko-KR")}</p>
               {shownBest.before && shownBest.after && shownBest.delta && (
                 <PartsTable before={shownBest.before} after={shownBest.after} delta={shownBest.delta}
-                            newViolations={(shownBest.violations ?? []).map((v) => [v.code, v.location] as [string, string])} />
+                            newViolations={shownBest.new_violations ?? []} />
               )}
             </>
           )}

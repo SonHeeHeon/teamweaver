@@ -422,6 +422,8 @@ export interface BestResult {
   diff?: OperatingDiff;
   before?: Parts; after?: Parts; delta?: Parts;
   violations?: { code: string; location: string }[];
+  /** 보강으로 새로 생긴 위반만(simulate와 같은 모양) -- violations는 보강 후 전체라 기준 배치에 원래 있던 위반이 섞인다(claude-a 요청 2026-10-12) */
+  new_violations?: [string, string][];
   entries?: AssignEntry[];
 }
 

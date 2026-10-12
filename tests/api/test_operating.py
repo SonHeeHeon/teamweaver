@@ -113,6 +113,19 @@ def test_simulate_scores_adds_and_removes_and_protects_locks(op_client):
     assert op_client.post("/api/staffing/simulate", json=locked).status_code == 422
 
 
+def test_simulate_opens_seats_for_net_growth_only(op_client):
+    # 맞교환(P1 중급 p1 빼고 중급 p3 넣기, 순증가 0)에 옛 화면처럼 넣은 등급마다 자리를 보내도 자리를 더 열지 않는다 --
+    # 예전엔 빈자리 하나로 채점돼 감점 -100이 붙었다(claude-a 요청 2026-10-12)
+    swap = {"milp_params": FAST, "project_id": "P1", "adds": [{"person_id": "p3", "project_id": "P1", "alloc": 1.0}],
+            "removes": [["p1", "P1"]], "extra_seats": {Grade.MID.value: 1}, "budget_add": 0}
+    out = op_client.post("/api/staffing/simulate", json=swap).json()
+    assert out["delta"]["unfilled"] == 0 and out["after"]["unfilled"] == out["before"]["unfilled"]
+    # 정말 늘어나면(빼지 않고 중급 하나 더) 화면이 자리를 안 보내도 서버가 그만큼 연다 -- 정원 초과 위반·빈자리가 없다
+    grow = {**swap, "removes": [], "extra_seats": {}}
+    out = op_client.post("/api/staffing/simulate", json=grow).json()
+    assert out["delta"]["unfilled"] == 0 and out["new_violations"] == []
+
+
 def test_best_additions_returns_a_scored_plan(op_client):
     res = op_client.post("/api/staffing/best", json={"milp_params": FAST, "project_id": "P1", "n": 1})
     assert res.status_code == 200, res.text

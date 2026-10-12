@@ -419,7 +419,8 @@ export async function postStaffingCandidates(c: Common, req: {
 
 export async function postStaffingSimulate(c: Common, req: {
   project_id: string; adds: { person_id: string; project_id: string; alloc: number }[];
-  removes: [string, string][]; extra_seats: Record<string, number>; budget_add: number; entries?: AssignEntry[];
+  // 늘릴 자리(extra_seats)는 보내지 않는다 -- 서버가 등급별 순증가로 정한다(맞교환에 가짜 빈자리, claude-a 요청 2026-10-12)
+  removes: [string, string][]; budget_add: number; entries?: AssignEntry[];
 }): Promise<SimulateResult & { note: string }> {
   return postJson("/api/staffing/simulate", { ...common(c), ...req });
 }
