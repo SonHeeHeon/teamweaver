@@ -12,6 +12,7 @@ import asyncio
 import concurrent.futures
 import json
 import logging
+import os
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -47,8 +48,41 @@ def _settings() -> PdfSettings:
         raise HTTPException(status_code=503, detail=f"PDF 설정 오류: {exc}") from exc
 
 
+# /api/report 밖의 JSON 쓰기 요청 본문 상한(claude-a 점검 2026-10-12 (6): 예전엔 /api/report에만 있어 /api/whatif 등에
+# 큰 본문을 보내면 다 읽어 파싱했다). 업로드(/api/datasets)는 자체 상한(api/routes/datasets)이 있어 뺀다.
+JSON_LIMIT_ENV = "TEAMWEAVER_MAX_JSON_BODY_BYTES"
+DEFAULT_MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
+OWN_LIMIT_PATHS = frozenset({"/api/datasets"})
+_BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
+
+
+def _json_limit() -> int:
+    try:
+        value = int(os.environ.get(JSON_LIMIT_ENV, DEFAULT_MAX_JSON_BODY_BYTES))
+    except ValueError:
+        return DEFAULT_MAX_JSON_BODY_BYTES
+    return value if value > 0 else DEFAULT_MAX_JSON_BODY_BYTES
+
+
+def _too_large_json(limit: int) -> str:
+    return f"요청 본문이 상한 {limit:,}바이트를 넘는다({JSON_LIMIT_ENV})."
+
+
+def _route_path(scope: Scope) -> str:
+    """라우터가 매칭에 쓰는 경로(Starlette get_route_path와 같은 규칙): root_path는 경로 구간 경계('/')에서만 뗀다.
+    예전처럼 접두사만 보고 떼면 프록시가 접두사를 이미 뗀 배포(root_path "/a", path "/api/whatif")에서 "pi/whatif"가 되어
+    상한을 건너뛰었다(Codex 리뷰 2026-10-12)."""
+    path, root = scope.get("path", ""), scope.get("root_path", "")
+    if not root or not path.startswith(root):
+        return path
+    if path == root:
+        return ""
+    return path[len(root):] if path[len(root)] == "/" else path
+
+
 class ReportBodyLimit:
-    """/api/report 요청 본문을 TEAMWEAVER_PDF_MAX_BODY_BYTES로 자른다.
+    """요청 본문 크기 상한: /api/report는 TEAMWEAVER_PDF_MAX_BODY_BYTES, 그 밖의 /api JSON 쓰기 요청은
+    TEAMWEAVER_MAX_JSON_BODY_BYTES(기본 2 MiB, 업로드 제외).
 
     순수 ASGI 미들웨어라 FastAPI가 본문 전체를 메모리에 모아 JSON으로 파싱하기
     *전에* 끊는다. Content-Length가 있으면 바로 거절하고, 없거나(청크 전송)
@@ -63,18 +97,22 @@ class ReportBodyLimit:
         # uvicorn은 scope["path"]에 root_path를 붙여 주고(`--root-path /tw` →
         # "/tw/api/report"), 라우터는 그것을 떼고 매칭한다. 같은 방식으로 떼지
         # 않으면 하위 경로 배포에서 상한이 조용히 꺼진다(리뷰 실측: 413 → 422).
-        path = scope.get("path", "")
-        root = scope.get("root_path", "")
-        if root and path.startswith(root):
-            path = path[len(root):]
-        if scope["type"] != "http" or path != REPORT_PATH:
+        path = _route_path(scope)
+        if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        try:
-            limit = PdfSettings.from_env().max_body_bytes
-        except ValueError:
-            # 설정 오류는 라우트가 503으로 알린다. 여기서는 더 엄격한 기본값으로 막는다.
-            limit = DEFAULT_MAX_BODY_BYTES
+        if path == REPORT_PATH:
+            try:
+                limit = PdfSettings.from_env().max_body_bytes
+            except ValueError:
+                # 설정 오류는 라우트가 503으로 알린다. 여기서는 더 엄격한 기본값으로 막는다.
+                limit = DEFAULT_MAX_BODY_BYTES
+            describe = _too_large
+        elif path.startswith("/api/") and path not in OWN_LIMIT_PATHS and scope.get("method") in _BODY_METHODS:
+            limit, describe = _json_limit(), _too_large_json
+        else:
+            await self.app(scope, receive, send)
+            return
         for name, value in scope.get("headers", []):
             if name == b"content-length":
                 try:
@@ -82,7 +120,7 @@ class ReportBodyLimit:
                 except ValueError:
                     declared = -1
                 if declared < 0 or declared > limit:
-                    await _send_413(send, limit)
+                    await _send_413(send, describe(limit))
                     return
 
         seen = 0
@@ -93,7 +131,7 @@ class ReportBodyLimit:
             if message["type"] == "http.request":
                 seen += len(message.get("body", b""))
                 if seen > limit:
-                    raise HTTPException(status_code=413, detail=_too_large(limit))
+                    raise HTTPException(status_code=413, detail=describe(limit))
             return message
 
         await self.app(scope, counted, send)
@@ -103,8 +141,8 @@ def _too_large(limit: int) -> str:
     return f"요청 본문이 PDF 상한 {limit:,}바이트를 넘는다(TEAMWEAVER_PDF_MAX_BODY_BYTES)."
 
 
-async def _send_413(send: Send, limit: int) -> None:
-    body = json.dumps({"detail": _too_large(limit)}, ensure_ascii=False).encode()
+async def _send_413(send: Send, detail: str) -> None:
+    body = json.dumps({"detail": detail}, ensure_ascii=False).encode()
     await send({"type": "http.response.start", "status": 413,
                 "headers": [(b"content-type", b"application/json"),
                             (b"content-length", str(len(body)).encode()),
@@ -320,5 +358,11 @@ async def report(req: ReportRequest, request: Request,
             PDF_SLOTS.release()
 
     return Response(content=pdf, media_type="application/pdf",
-                    headers={"Content-Disposition":
-                             f'attachment; filename="teamweaver-plan-{req.plan_label}.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="{pdf_filename(req.plan_label)}"'})
+
+
+def pdf_filename(label: str | None) -> str:
+    """PDF 파일 이름: 라벨에서 영문·숫자만 8자까지(없으면 plan). 서명 없는 요청은 라벨이 아무 글자나 될 수 있어,
+    한글·따옴표면 PDF를 다 만든 뒤 헤더 인코딩(latin-1)에서 500이 나고 따옴표로 헤더를 깰 수 있었다(점검 2026-10-12 (5))."""
+    safe = re.sub(r"[^A-Za-z0-9]", "", label or "")[:8]
+    return f"teamweaver-plan-{safe or 'plan'}.pdf"

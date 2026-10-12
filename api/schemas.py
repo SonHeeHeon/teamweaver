@@ -275,7 +275,7 @@ class ReportRequest(BaseModel):
     PDF에 자동으로 따라오지 않으므로, PDF가 스스로 판단할 수 있게 원본
     출처 정보를 함께 보낸다."""
     plan_label: str
-    entries: list[EntryIn]
+    entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     objective: float
     fulfillment: float
     optimization_ratio: float | None      # 적용 후 명단에 위반이 있으면 None(산정 불가)

@@ -16,7 +16,7 @@ from api.deps import (check_dataset_version, get_dataset, get_evidence, get_grap
 from api.rag.briefing import generate_briefing
 from api.rag.context import swap_context
 from api.rag.fallback import rule_based_briefing
-from api.schemas import EntryIn, MilpParamsIn, SwapIn, WhatifResponse
+from api.schemas import MAX_PLAN_ENTRIES, EntryIn, MilpParamsIn, SwapIn, WhatifResponse
 from core.config import load_pricing
 from core.evaluate.plan_eval import PlanEvaluation, evaluate_plan
 from core.graph.memory_graph import MemoryGraph
@@ -27,7 +27,7 @@ router = APIRouter()
 
 
 class WhatifRequest(BaseModel):
-    entries: list[EntryIn]
+    entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)     # 개수 상한(점검 2026-10-12 (6)) -- 본문 상한과 별개로
     swap: SwapIn
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn = MilpParamsIn()

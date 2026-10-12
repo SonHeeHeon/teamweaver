@@ -21,7 +21,8 @@ from api.routes.whatif import WhatifRequest, _evaluate, _swapped_entries
 from pydantic import BaseModel, Field
 from typing import Annotated
 
-from api.schemas import AllocChangeIn, ApplySwapResponse, EntryIn, MilpParamsIn, PlanEditIn, StepIn, SwapIn
+from api.schemas import (MAX_PLAN_ENTRIES, AllocChangeIn, ApplySwapResponse, EntryIn, MilpParamsIn, PlanEditIn, StepIn,
+                         SwapIn)
 from core.optimize.milp import MilpParams, _floor6
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.metrics import _skill_relaxation_upper_bound, matching_fulfillment
@@ -168,7 +169,7 @@ def apply_swap(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
 
 class AllocRequest(BaseModel):
     """POST /api/plans/apply-alloc 본문: 지금 명단과 한 사람의 달별 투입률 조정."""
-    entries: list[EntryIn]
+    entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     change: AllocChangeIn
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn = MilpParamsIn()
@@ -217,11 +218,11 @@ async def save_plan_edits(plan_token: str, body: PlanEditIn, request: Request,
     서명이 맞지 않으면 422 -- 아무 명단에나 교체 기록을 붙일 수 없다."""
     check_dataset_version(body.dataset_version, dataset)
     params = body.milp_params.to_milp_params() if body.milp_params else MilpParams()
+    if not TOKEN_RE.fullmatch(plan_token):                # 형식부터 -- 서명 비교에 엉뚱한 값을 넘기지 않는다(점검 2026-10-12 (4))
+        raise HTTPException(status_code=422, detail="plan_token 형식이 아니다.")
     if not verify_plan(plan_token, dataset.info.version, body.plan_label,
                        [e.model_dump() for e in body.base_entries], body.weights, params):
         raise HTTPException(status_code=422, detail="원 플랜 서명이 맞지 않는다.")
-    if not TOKEN_RE.fullmatch(plan_token):
-        raise HTTPException(status_code=422, detail="plan_token 형식이 아니다.")
     store = request.app.state.plan_edit_store
     record = {"plan_label": body.plan_label,
               "base_entries": [e.model_dump() for e in body.base_entries],

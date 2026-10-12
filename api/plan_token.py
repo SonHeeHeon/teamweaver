@@ -61,5 +61,9 @@ def sign_plan(dataset_version: str, label: str, entries: list[dict], weights: di
 
 def verify_plan(token: str, dataset_version: str, label: str, entries: list[dict],
                 weights: dict, params: MilpParams) -> bool:
+    # 서명은 16진수 ASCII다. ASCII가 아닌 값은 hmac.compare_digest(str, str)가 TypeError(500)를 낸다 -- 그냥 틀린 서명이다
+    # (claude-a 점검 2026-10-12 (4)). bytes로 비교한다.
+    if not isinstance(token, str) or not token.isascii():
+        return False
     expected = sign_plan(dataset_version, label, entries, weights, params)
-    return hmac.compare_digest(expected, token)
+    return hmac.compare_digest(expected.encode("ascii"), token.encode("ascii"))

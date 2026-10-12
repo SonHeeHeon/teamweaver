@@ -150,12 +150,14 @@ def session_expiry(cookie: str | None, now: float | None = None) -> int | None:
     if not cookie or "." not in cookie or not password_login_enabled():
         return None
     exp_s, sig = cookie.split(".", 1)
-    if not exp_s.isdigit():
+    # 쿠키 값은 latin-1로 풀려 들어온다 -- ASCII가 아니면 compare_digest(str, str)가 TypeError, "²"는 isdigit이지만 int()가
+    # ValueError라 둘 다 500이었다(claude-a 점검 2026-10-12 (4)). 위조 쿠키일 뿐이다.
+    if not (exp_s.isascii() and exp_s.isdigit() and sig.isascii()):
         return None
     expires = int(exp_s)
     if expires <= (now if now is not None else time.time()):
         return None
-    return expires if hmac.compare_digest(sig, _sign(expires)) else None
+    return expires if hmac.compare_digest(sig.encode("ascii"), _sign(expires).encode("ascii")) else None
 
 
 # --- 무차별 대입 잠금 -----------------------------------------------------
