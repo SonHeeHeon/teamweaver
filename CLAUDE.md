@@ -5,6 +5,10 @@ SI 조직의 인력→프로젝트 배치 최적화 시제품. 기술 적합도(
 **모든 데이터는 가상(seed 고정)이며 사업 효과는 `NOT_CALIBRATED`** — 계산이 맞다는 것과
 현실 성과가 좋다는 것은 별개 주장이다. 문서·보고에서 둘을 섞지 않는다.
 
+**범위 공지(사용자 2026-10-12): 이 프로젝트는 PoC이자 과제 제출용이다. 실제 인사 자료는 적재할 수 없고, 적재하지 않는다.**
+개발·검증·시연·보고는 모두 가상 데이터로 한다. 실데이터용 장치(입력 계약·원문 비공개 모드·사내 판정 주소 등)는 설계로 남기되,
+실데이터를 전제로 한 작업(첫 적재 준비, 실제 성과로 모델 보정, 현실 평가·Shadow·파일럿과 그 운영 준비)은 하지 않는다 -- 보고서에는 "실제 도입 시 필요한 것"으로만 적는다.
+
 **Codex와 Claude 2개 계정(claude-a, claude-b)이 병행 개발 중이다.** 작업 전에 다음 순서로 확인한다.
 1. `git worktree list`와 `git log --all`로 Codex의 새 브랜치나 커밋이 있는지 본다.
 2. `docs/handoff-log.md`(서로 한 일)와 `docs/work-split.md`(파일 소유 영역·작업 목록·요청 기록)를 읽는다.
@@ -40,7 +44,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/optimize/milp.py` 제품 MILP(PuLP+**HiGHS**, 2026-10-05부터. `MilpParams.solver="cbc"`는 비교용) · `highs_portfolio.py` 시드 포트폴리오 · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
   · `validation.py` 원시 해 독립 검증 · `greedy.py` 기준선.
 - `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`).
-  숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월).
+  숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월). 개월 비율 직접 쓰기는 채택 안 함(사용자 결정 2026-10-12, 근거 `docs/skill-score-decision.md`).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
 - `web/` Vite+React+TS+Tailwind. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
 

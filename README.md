@@ -2,6 +2,9 @@
 
 AI-powered staffing optimization platform for intelligent team composition and resource allocation.
 
+> **범위**: PoC이자 과제 제출용 시제품이다. 실제 인사 자료는 적재하지 않으며(불가), 모든 데이터는 가상(seed 고정)이고
+> 사업 효과는 검증하지 않았다(`NOT_CALIBRATED`). 실데이터를 전제로 한 작업은 "실제 도입 시 필요한 것"으로만 기록한다.
+
 ## 프로젝트 전체 해설
 
 [한국어 ELI5 종합 보고서](outputs/eli5-project-history-roadmap.html)는 배경과 현재 구조,

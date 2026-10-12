@@ -39,6 +39,38 @@
 
 ---
 
+## 2026-10-12 · claude-a · 범위 공지(PoC·과제 제출용, 실제 인사 자료 적재 불가)와 ONPREM 확인 기록
+- 브랜치/커밋: `docs/claude-a-poc-scope-notice-1012` (사용자 요청 "다른 ai 툴들도 다 알 수 있게 공지" — main 병합). 앞선 `docs/claude-a-skill-score-decision-1012`(`05b7d71`)는 사용자 승인으로 main 병합·push.
+- 한 일: 사용자 공지 "실제 인사 자료는 적재가 불가능, PoC·과제 제출용"을 모든 에이전트가 읽는 곳에 적었다 — `CLAUDE.md`(첫 단락), `AGENTS.md`(작업 전 확인 맨 위, 영문), `README.md`, `docs/project-context.md`(1절·8절 2·5·6번을 "하지 않음, 실제 도입 시"로).
+  로드맵 4번·기술 점수 근거 문서의 재검토 조건도 "실제 도입 시"로. 사용자 확인: ONPREM은 지정 판정 서버만 사내(claude-b `26cb8cf` 그대로). `AGENTS.md` 기준선 줄(10-05의 648)은 `CLAUDE.md`를 가리키게.
+  멈춘 claude-b 세션이 띄운 점검 서버(포트 8799, `.worktrees/claude-b-wrapup-1012`의 uvicorn)를 사용자 승인으로 종료.
+- 상대 영향(claude-b·Codex): **실데이터를 전제로 한 작업은 착수하지 않는다**(첫 적재·실제 성과 보정·Shadow·파일럿 운영 준비). 최종 보고서의 해당 항목을 "실제 도입 시"로 읽히게 해 달라(work-split 요청). 코드·기준선 변화 없음.
+- 검증: 문서만. 금지어 0건.
+- 근거: 사용자 공지(work-split 2026-10-12 [사용자→모두])
+
+---
+
+## 2026-10-12 · claude-a · 기술 점수 대리 레벨 유지 결정과 근거 문서
+- 브랜치/커밋: `docs/claude-a-skill-score-decision-1012` (main 병합은 사용자 승인 대기)
+- 한 일: 사용자 결정 "그대로 가되 근거만 작성" — 10-05 제안 "경력 개월 비율 직접 쓰기"(`min(보유 개월/요구 개월, 1)`)를 채택하지 않고 대리 레벨(12/36/60/96) 유지.
+  근거 문서 `docs/skill-score-decision.md`(두 방식 비교·숫자 예·실험으로 못 정하는 이유·유지 이유·알려진 한계·재검토 조건). work-split 10-05 요청 처리됨, 로드맵·맥락 문서·CLAUDE.md에 포인터.
+- 상대 영향(claude-b): `outputs/final-report.html` 다음 단계 줄(98행)이 결정과 어긋난다 — work-split 요청. 코드·시험 기준선 변화 없음.
+- 검증: 문서만(코드 변경 없음). 문서의 숫자 예는 `core/ingest/convert.level_from_months`·`core/scoring/engine.skill_matrix` 식으로 계산, 가상 성과 재료는 `core/ingest/org_profile._past_outcomes`에서 확인.
+- 근거: `docs/skill-score-decision.md`
+
+---
+
+## 2026-10-12 · claude-a · main 병합 확인과 origin push (claude-b 마무리 + claude-a 점검 + claude-b 요청 처리)
+- 브랜치/커밋: main `e62b505`(origin push, 이전 origin/main `fbf7b9d`) + 이 항목 커밋. 아래 두 claude-b 항목과 claude-a 점검 항목의 "main 병합은 사용자 확인 대기"를 정정한다 —
+  claude-b가 `feat/claude-b-wrapup-1012`(`005251a`)와 `feat/claude-b-a-requests-1012`(`e62b505`, claude-a `feat/claude-a-demo-rehearsal-1012` `a366ee9` 포함)를 main에 넣었고, 사용자가 claude-a 세션에서도 병합을 승인했다.
+- 한 일: main에서 전체 시험을 다시 돌린 뒤 origin에 올렸다. work-split의 2026-10-05 연속성 입력 요청 상태를 실제에 맞게 정정(운영 중 편성이 현재 배치·잠금을 제약으로 씀, 연초 계획 MILP 유지 보너스는 안 함).
+  claude-b가 넘긴 "`rehearsal/guard_demo.py`의 규칙 설명에 score_change 넘기기"는 해당 없음 — 이 장면은 인용 검증만 보여 주며 `generate_briefing`에도 score_change를 넘기지 않아(위반 없는 가상 교체) 폴백과 이미 같다.
+- 상대 영향: 없음(기록만). main 기준선은 claude-b가 적은 1769 그대로.
+- 검증: main `e62b505`에서 `uv run --group benchmark pytest -q` → 1769 passed, 1 skipped, 19 deselected. main이 점검 브랜치 이후 바꾼 `core/`는 없음(`git diff a366ee9 main -- core/`) — Phase 0은 점검 때 PASS 그대로.
+- 근거: 로컬 `.omc/reports/2026-10-12-project-review.md`
+
+---
+
 ## 2026-10-12 · claude-b · claude-a 요청 처리: 점검 (1)~(7)·보강 시뮬레이터 빈자리·SQLite 동시 사용
 - 브랜치/커밋: `feat/claude-b-a-requests-1012` = main(`005251a`) + claude-a `feat/claude-a-demo-rehearsal-1012`(`a366ee9`) 병합(`f2fe7a6`, 네 서버 함수가 필요해서) 위에
   `45ad14d`(What-if)·`167aa87`(보강)·`f97e2a3`(요청 방어)·`bcaaf66`(최적화 슬롯)·`26cb8cf`(ZIP64·ONPREM)·이 항목 커밋. **main 병합은 사용자 확인 대기**(네 점검 브랜치가 함께 들어간다).
