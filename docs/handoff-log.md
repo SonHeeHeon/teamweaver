@@ -22,6 +22,25 @@
 
 ---
 
+## 2026-10-12 · claude-b · claude-a 요청 처리: 점검 (1)~(7)·보강 시뮬레이터 빈자리·SQLite 동시 사용
+- 브랜치/커밋: `feat/claude-b-a-requests-1012` = main(`005251a`) + claude-a `feat/claude-a-demo-rehearsal-1012`(`a366ee9`) 병합(`f2fe7a6`, 네 서버 함수가 필요해서) 위에
+  `45ad14d`(What-if)·`167aa87`(보강)·`f97e2a3`(요청 방어)·`bcaaf66`(최적화 슬롯)·`26cb8cf`(ZIP64·ONPREM)·이 항목 커밋. **main 병합은 사용자 확인 대기**(네 점검 브랜치가 함께 들어간다).
+- 한 일:
+  - **What-if**: 데이터셋 SQLite 연결을 쓰는 곳(근거 조회)을 `api.deps.SQLITE_LOCK`으로 직렬화(동시 48건 시험, 고치기 전 InterfaceError 재현). 규칙 설명 폴백에 `score_change`(점검 (1)). 이름 치환이 "(으)로"·"(이)가"·"은(는)" 같은 괄호 조사도 받침에 맞춘다(폴백 글 "손하윤(으)로" → "손하윤으로").
+  - **보강**: `/api/staffing/simulate`가 화면의 `extra_seats` 대신 등급별 순증가로 자리를 연다(네 best_additions와 같은 식, 맞교환 빈자리 감점 사라짐). 최선 n명 화면은 `new_violations`(점검 (2)).
+  - **`/api/optimize`**(점검 (3)): 새 풀이만 슬롯(기본 2, `TEAMWEAVER_OPTIMIZE_SLOTS`)·바쁘면 429(화면에 서버 문구), 캐시·미리 계산은 슬롯 없이. `time_limit` > 900은 422(깎지 않음 — 서명된 설정과 어긋나서), `max_pairs` ≤ 5000, `slack_penalty` ≤ 10,000.
+    `api.sse.SyncStream`: 응답 전에 풀이를 시작하고 asyncio 큐로 넘겨 대기 중 스레드풀을 쥐지 않는다(예전 구조는 대기 60건에 작업자 고갈 재현). 응답이 어떻게 끝나든(헤더 전 끊김 포함)·루프가 닫히면 풀던 대안까지만 풀고 멈춘다. 슬롯은 풀이 스레드가 끝날 때 반납.
+  - **요청 방어**(점검 (4)~(6)): 서명·관리자 쿠키 bytes 비교(ASCII 아니면 틀린 서명), 편집 저장은 형식 먼저, PDF 파일 이름 영문·숫자 8자, 본문 상한을 /api JSON 쓰기 전체로(기본 2 MiB, `TEAMWEAVER_MAX_JSON_BODY_BYTES`, 업로드 제외), root_path는 경로 경계에서만 떼기(예전 `/api/report`에도 있던 우회), entries 5000개.
+  - **데이터·외부 전송**(점검 (7)): 끝 레코드 앞에 숨긴 ZIP64 위치 레코드 거절. **`TEAMWEAVER_REVIEW_ONPREM=1`은 지정한 판정 주소(`TEAMWEAVER_REVIEW_BASE_URL`) 호스트만 사내로 본다** — 예전엔 OpenAI가 아닌 아무 주소나 사내로 봐서 설명 클라이언트가 다른 외부 서비스여도 실데이터가 나갔다. 의도가 아니라고 판단해 좁혔다.
+  - (8) E5 첫 문장 자르기는 다시 집계할 계획이 없어 하지 않았다. 오래된 요청 두 건(10-05 교체 설명 재료, 10-06 동시 탐색 수·증명 상한 표시)은 이미 처리돼 있어 상태만 고쳤다 — **증명 상한 표시는 화면만 있고 PDF에는 없다**(대기로 남김).
+- 상대 영향(claude-a): `rehearsal/guard_demo.py`의 `rule_based_briefing` 호출에 score_change를 넘기는 건 네 몫으로 남겼다. 실데이터에서 판정 주소와 다른 사내 주소로 설명을 보내던 설정은 이제 규칙 설명이 된다(`fallback_reason` external_blocked).
+  `/api/optimize`에 새 풀이 동시 2건 상한 — 리허설·시험에서 여러 개를 동시에 돌리면 429가 날 수 있다(`TEAMWEAVER_OPTIMIZE_SLOTS`로 조정). 시험 기준선 **1769**(네 점검 브랜치 1734 + 병합 3 + 이 브랜치 32)·slow 19·웹 195.
+- 검증: `uv run --group benchmark pytest -q` → 1769 passed, 1 skipped, 19 deselected · `-m slow` 19 passed · 웹 195 · `tsc -b` · oxlint 0 · build. 새 회귀 시험은 모두 고치기 전 코드에서 실패 확인(SQLite·폴백·보강·서명·ZIP64·ONPREM·스레드풀·헤더 전 끊김).
+  **리뷰**: Codex adversarial-review(gpt-6.1-sol) 1라운드 needs-attention — [medium] 헤더 전 끊김에 취소가 안 걸림(재현), [medium] root_path 접두사 우회(재현) → 둘 다 반영 + 회귀 시험. 2라운드 approve(지적 없음).
+- 근거: 로컬 `.omc/reports/2026-10-12-claude-b-a-requests.md`
+
+---
+
 ## 2026-10-12 · claude-a · 프로젝트 전체 점검(ultrareview 대체: Codex + Claude 폴백 감사)과 보완
 - 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` `afc15bc`·`8060ba0`·`8fb64e1`·`1b5ab90`·이 항목 커밋 (main 병합은 사용자 승인 대기)
 - 한 일: 사용자 요청 "ultrareview 진행하고 보완" — ultrareview는 사용자만 시작할 수 있어 Codex 영역별 감사 4개(+ 한도 소진 때 Claude Opus 폴백)로 대신. 지적 27건.
