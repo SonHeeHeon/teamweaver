@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-12 · claude-a · 프로젝트 전체 점검(ultrareview 대체: Codex + Claude 폴백 감사)과 보완
+- 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` `afc15bc`·`8060ba0`·`8fb64e1`·`1b5ab90`·이 항목 커밋 (main 병합은 사용자 승인 대기)
+- 한 일: 사용자 요청 "ultrareview 진행하고 보완" — ultrareview는 사용자만 시작할 수 있어 Codex 영역별 감사 4개(+ 한도 소진 때 Claude Opus 폴백)로 대신. 지적 27건.
+  claude-a 영역(+ 사용자 규칙상 `core/optimize`)을 고쳤다: 교체 설명 보류 판정·인용 위치 대조·시간 상한, 소명 글 사실 선택(부정 평가 모두)·"각각" 검사·과거 사업 속성 병합,
+  CSV 64비트·깨진 행 위치, K = 옮긴 사람 수(+ 보조 변수 풀이 값 고정으로 C1·추가 행 검증 유지), 최선 n명(등급·순증가 자리·달별 투입률·new_violations), 후보 빼 오기 최소화,
+  빈자리 수·회귀 빈 입력·factor_lab 사전. 리뷰가 고친 코드에서 회귀 2건(보류 판정 과거부, 검증 꺼짐)을 더 찾아 고침. E7c 재측정 99.0%·처음 보는 데이터 100%(843편, $0.68).
+- 상대 영향(claude-b): work-split 2026-10-12 요청 묶음 — whatif 규칙 설명에 `score_change` 넘기기(Codex high), `BestResult.new_violations` 화면, `/api/optimize` 동시 실행·시간 상한(P2), 비ASCII 서명 500, PDF 라벨, 본문 크기, ZIP64·ONPREM 확인, E5 첫 문장 자르기.
+  `best_additions` 응답에 `new_violations` 추가(모양은 simulate와 같음), 교체 설명 보류 판정이 바뀜(E5 기록 291개 재생: 2개만 다름). 시험 기준선 **1734**. `core/optimize` 변경은 work-split 정보 항목.
+- 검증: `uv run --group benchmark pytest -q` → 1734 passed · Phase 0 PASS(11) · 새 회귀 시험은 고치기 전 코드에서 실패 확인 · E7c G1 통과(13,316/13,316, 무결성 837/837), A 99.0%·B 100%.
+  리뷰: 감사 Codex(한도)→폴백→Codex · 반영 리뷰 폴백 1회 + Codex 적대적 1회 + Codex 1회. 게이트는 한도 동안 끄고 회복 뒤 켬.
+- 근거: 로컬 `.omc/reports/2026-10-12-project-review.md`
+
+---
+
 ## 2026-10-12 · claude-a · 시연 대본 재현(Chrome) + 최선 n명 채점의 가짜 빈자리 수정
 - 브랜치/커밋: `feat/claude-a-demo-rehearsal-1012` (main 병합은 사용자 승인 대기)
 - 한 일:
