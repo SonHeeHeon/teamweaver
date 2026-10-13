@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-13 · claude-a · 계산 버전(기술 사전 버전) 브랜치 main 병합
+- 브랜치/커밋: `feat/claude-a-dataset-rules-version-1012`(`e4a2caf` 기능·`f6734a0` main 합침·이 항목 커밋)을 사용자 승인("병합해줘")으로 main에 fast-forward·push. claude-b 확인 기록 `6240ab6`(로컬 main에만 있던 것)도 함께 올라간다.
+- 사용자 요청: "병합해줘"
+- 한 일: 병합만. 코드는 아래 10-13 claude-a 항목 그대로.
+- 상대 영향(claude-b): main의 계산 버전이 바뀐다 — 열어 둔 화면의 옛 버전 요청은 409(새로고침), 저장된 교체 이력은 이어지지 않는다. 기준선 1806.
+- 검증: 병합할 트리(`f6734a0`)에서 `uv run --group benchmark pytest -q` → **1806 passed, 1 skipped, 19 deselected**(160초).
+- 근거: `.omc/reports/2026-10-13-dataset-rules-version.md`(로컬, 병합 절 추가).
+
+---
+
 ## 2026-10-13 · claude-a · 계산 버전에 기술 사전 버전·인정 비율(되살림), 미리 계산 키 옮기기, 감점 결정 기록 정정
 - 브랜치/커밋: `feat/claude-a-dataset-rules-version-1012`(main에서 갈라짐) 이 항목 커밋. main 병합은 사용자 승인 대기.
 - 사용자 요청: "데이터 버전에 기술 사전 버전 넣는건 해줘 … 미리 계산도 이제 다 끝난거면 지금 진행하고" · "오래 함께 일한 사이 감점은 안넣기로 했었나?"
