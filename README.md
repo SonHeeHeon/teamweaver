@@ -21,8 +21,9 @@ AI(LLM)는 배치를 정하지 않고 글만 쓴다 — 동료 평가 글 판정
 
 | 문서 | 내용 |
 |---|---|
-| [`outputs/final-report.html`](outputs/final-report.html) | **최종 보고서** — 무엇을 만들었고, 계산이 맞는지, 무엇이 한계인지 |
-| [`docs/demo-script.md`](docs/demo-script.md) | **시연 시나리오·대본** — 장면별 누를 것·보이는 것·말할 것, 짧은 판, 막혔을 때 |
+| [`outputs/final-report.pdf`](outputs/final-report.pdf) · [`.html`](outputs/final-report.html) | **과제 결과 보고서**(A4 8쪽) — 정량·정성 성과, 시스템 구성, 적용 기술(모델 정식·검증·검사받는 AI), 설계 판단 근거, 한계. 영상과 겹치지 않게 영상으로 확인하기 어려운 내용 중심 |
+| [`docs/demo-script.md`](docs/demo-script.md) | **시연 영상 대본**(9분 30초) — 개요·구현·기술/성과 큐시트, 내레이션, 편집 지점, 녹화 준비, 장면별 숫자 |
+| [`outputs/demo-video-slides.html`](outputs/demo-video-slides.html) | 영상 개요·기술/성과 구간에 띄우는 슬라이드 7장(←/→, F 전체 화면) |
 | [`docs/architecture.html`](docs/architecture.html) | 한 장 구조도 |
 | [`outputs/eli5-project-history-roadmap.html`](outputs/eli5-project-history-roadmap.html) | **프로젝트 전체 해설(최종판)** — 비전문가용, 배경·개발 이력·실험·신뢰 범위 |
 | [`docs/demo-notes.md`](docs/demo-notes.md) | 설계 판단 설명 노트(협업 쌍 상한 200, 익숙한 쌍 기준, 문헌 근거, "그냥 GPT에게 시키면?") |

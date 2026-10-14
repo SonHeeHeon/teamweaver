@@ -1,6 +1,6 @@
 # TeamWeaver 프로젝트 맥락 요약 (2026-10-12 최종, main `5d48573` + 최종 점검 기준)
 
-개발 착수 전 읽는 압축본. 원본은 `outputs/eli5-project-history-roadmap.html`(20장, 비전문가용, 10-12 최종판). 제출물: `outputs/final-report.html`(최종 보고서), `docs/demo-script.md`(시연 시나리오·대본).
+개발 착수 전 읽는 압축본. 원본은 `outputs/eli5-project-history-roadmap.html`(20장, 비전문가용, 10-12 최종판). 제출물(2026-10-14 제출 가이드 반영): `outputs/final-report.pdf`·`.html`(과제 결과 보고서, A4 8쪽 — 가이드 최대 10쪽), `docs/demo-script.md`(시연 영상 대본 9분 30초 — 가이드 최대 10분) + `outputs/demo-video-slides.html`(영상 슬라이드).
 여기의 수치는 기록 시점 값이며 다시 측정한 값이 아니다. "현재 구현"·"과거 관측"·"제안"을 구분해 적었다.
 누가 무엇을 맡는지는 `docs/work-split.md`, 날짜별로 한 일은 `docs/handoff-log.md`.
 

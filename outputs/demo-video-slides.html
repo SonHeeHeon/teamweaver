@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeamWeaver 시연 슬라이드</title>
+<!-- 시연 영상의 개요(1~3)·구현 안내(4)·기술/성과(5~7) 구간에 띄우는 슬라이드. 대본: docs/demo-script.md.
+     ←/→·스페이스로 넘기고 F로 전체 화면. 녹화 화면이 시스템 테마에 따라 바뀌지 않게 밝은 색만 쓴다. -->
+<style>
+:root{--bg:#f4f2ec;--card:#fff;--ink:#1f2328;--muted:#5b6168;--line:#d9d6cf;--acc:#2f5f8a;--acc2:#2f6f5e;--warn:#9a5b13;--chip:#e9eef4;--soft:#eef5f1}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#2a2d31;font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink)}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.slide{width:1280px;height:720px;background:var(--bg);padding:56px 72px;position:absolute;display:none;flex-direction:column;transform-origin:center center;word-break:keep-all}
+.slide.on{display:flex}
+h1{font-size:64px;margin:0;letter-spacing:-.01em}
+h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
+.kicker{font-size:20px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:10px}
+.lead{font-size:24px;color:var(--muted);margin:0 0 26px;line-height:1.5}
+.grid{display:grid;gap:18px;flex:1;min-height:0}
+.grid.auto{flex:none}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;font-size:22px;line-height:1.55}
+.card h3{margin:0 0 12px;font-size:25px;color:var(--acc2)}
+.card ul{margin:0;padding-left:1.1em}.card li{margin:.25em 0}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.chip{background:var(--chip);border-radius:999px;padding:9px 18px;font-size:22px;font-weight:600}
+.banner{margin-top:20px;background:var(--acc);color:#fff;border-radius:12px;padding:16px 22px;font-size:24px;font-weight:700;text-align:center}
+.flow{display:flex;align-items:stretch;gap:8px;margin:6px 0 4px}
+.step{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 14px;font-size:18px;line-height:1.5;min-height:178px}
+.step b{display:block;font-size:21px;color:var(--acc);margin-bottom:8px}
+.arrow{align-self:center;color:var(--muted);font-size:26px}
+.n{display:inline-block;width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;text-align:center;line-height:30px;font-size:17px;font-weight:700;margin-right:8px;vertical-align:1px}
+.formula{font-size:19px;line-height:1.5;font-weight:600;background:var(--chip);border-radius:8px;padding:8px 12px;margin:4px 0 10px}
+.num{font-size:58px;font-weight:800;color:var(--acc);line-height:1.1;letter-spacing:-.01em}
+.num small{font-size:24px;color:var(--muted);font-weight:700}
+.cap{font-size:20px;color:var(--muted);margin-top:10px;line-height:1.5}
+.foot{margin-top:auto;padding-top:14px;font-size:16px;color:var(--muted)}
+.warnbox{background:#fff7e8;border:1px solid #e9c98f;border-radius:14px;padding:20px 24px;font-size:23px;line-height:1.6}
+.warnbox li{margin:.3em 0}
+.title-wrap{margin:auto 0}
+.title-wrap .sub{font-size:30px;color:var(--ink);margin:18px 0 28px;line-height:1.4}
+.title-wrap .meta{font-size:20px;color:var(--muted)}
+.steps8{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex:1}
+.steps8 .card{font-size:21px}
+.dense .card{font-size:20px;padding:20px 22px}
+.dense .card h3{font-size:24px;margin-bottom:10px}
+.steps8 .card h3{font-size:24px}
+#pager{position:fixed;right:14px;bottom:10px;color:#cfd3d8;font:13px/1 -apple-system,sans-serif;opacity:.7}
+@media print{
+  @page{size:1280px 720px;margin:0}
+  html,body{background:#fff}
+  #stage{position:static;display:block}
+  .slide{display:flex!important;position:relative;transform:none!important;break-after:page}
+  #pager{display:none}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<section class="slide">
+  <div class="title-wrap">
+    <div class="kicker">과제 시연</div>
+    <h1>TeamWeaver</h1>
+    <p class="sub">SI 조직 인력 → 프로젝트 배치 최적화와<br>근거를 검사받는 AI 설명</p>
+    <p class="meta">모든 데이터는 실제 인사 자료 모양으로 만든 가상 데이터입니다 · 사람 이름도 지어낸 이름</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">개요 · 과제 수행 배경</div>
+  <h2>누구를 어느 사업에 넣을까 — 다섯 가지를 한꺼번에</h2>
+  <p class="lead">한 사람이 여러 사업에 걸쳐 일하는 SI 조직의 배치 결정</p>
+  <div class="grid g3">
+    <div class="card"><h3>한꺼번에 맞출 조건</h3>
+      <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">월별 가용률</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
+      <p class="cap">하나만 보면 다른 조건을 어기기 쉽다</p></div>
+    <div class="card"><h3>두 상황</h3><ul>
+      <li><b>연초 계획</b> — 백지에서 6개월 배치</li>
+      <li><b>운영 중 편성</b> — 대부분 이미 일하는 중, 몇 명만 옮겨 신규 사업을 채움</li></ul></div>
+    <div class="card"><h3>지금 방식의 어려움</h3><ul>
+      <li>조건을 어겼는지 알기 어렵다</li>
+      <li>더 나은 배치가 있었는지 모른다</li>
+      <li>"왜 이 팀인가" 설명에 시간이 든다</li></ul></div>
+  </div>
+  <div class="banner">목표: 배치 결정을 계산으로 돕고, 그 근거까지 함께 낸다</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">개요 · 구현 시스템</div>
+  <h2>시스템 흐름</h2>
+  <p class="lead">솔버의 답도, AI의 글도 검사를 통과해야 화면에 나간다</p>
+  <div class="flow">
+    <div class="step"><b>① 입력 검증</b>인사 자료 모양 CSV 13종 · 오류는 파일·줄·칸까지</div><div class="arrow">→</div>
+    <div class="step"><b>② 점수·지식 그래프</b>기술 적합 S · 협업 C · 기술 이름 사전</div><div class="arrow">→</div>
+    <div class="step"><b>③ 수학 최적화</b>혼합정수계획 · HiGHS · 안 A~D</div><div class="arrow">→</div>
+    <div class="step"><b>④ 독립 검증</b>원자료로 다시 계산 · 통과만</div><div class="arrow">→</div>
+    <div class="step"><b>⑤ 검사받는 AI 글</b>평가 판정 · 교체 설명 · 소명 글</div><div class="arrow">→</div>
+    <div class="step"><b>⑥ 화면·PDF</b>계산 신뢰도 · 서명된 결과</div>
+  </div>
+  <div class="grid g2 auto" style="margin-top:20px">
+    <div class="card"><h3>결정은 수학 최적화</h3>모든 조건을 지키는 배치 가운데 점수가 가장 높은 것을 찾고, 증명된 상한과의 거리까지 보여 준다.</div>
+    <div class="card"><h3>글은 검사받는 AI</h3>AI는 배치를 정하지 않는다. 쓴 글은 원문·사실 목록과 대조하고, 어긋나면 버리고 규칙 기반 글을 낸다.</div>
+  </div>
+  <div class="banner" style="margin-top:auto">두 상황 — 연초 계획(백지에서 안 A~D) · 운영 중 편성(최대 K명만 이동)</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">구현 · 동작 화면 시연</div>
+  <h2>시연 흐름</h2>
+  <p class="lead">100명 가상 조직(사업 20건) → 운영 중 상황 → 300명 규모</p>
+  <div class="steps8">
+    <div class="card"><h3><span class="n">1</span>데이터 검증</h3>틀린 파일은 오류만 보이고 전환하지 않음</div>
+    <div class="card"><h3><span class="n">2</span>연초 계획</h3>안 A~D · 계산 신뢰도 · 계산 멈추기</div>
+    <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 근거 사실 연결</div>
+    <div class="card"><h3><span class="n">4</span>교체 검토</h3>점수 변화 · AI 설명 · 지어낸 근거 거절</div>
+    <div class="card"><h3><span class="n">5</span>운영 중 편성</h3>최대 K명만 옮길 때 K별 개선</div>
+    <div class="card"><h3><span class="n">6</span>사업 보강</h3>후보 순위 · 최선 2명 · 빼 오기</div>
+    <div class="card"><h3><span class="n">7</span>PDF 보고서</h3>서버가 다시 계산해 찍음</div>
+    <div class="card"><h3><span class="n">8</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
+  </div>
+</section>
+
+<section class="slide dense">
+  <div class="kicker">기술 · 주요 적용 기술</div>
+  <h2>네 가지 핵심 기술</h2>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3><span class="n">1</span>혼합정수계획(MILP) + HiGHS</h3>
+      <div class="formula">최대화 Σ 기술 적합 + 0.3·협업 − 0.2·익숙한 쌍 − 100·빈자리</div>
+      제약: 월 예산 · 월별 가용률 · 등급 정원 · 동시 사업 ≤ 3<br>시드 4개 동시 탐색 · 증명 상한 기록 · 대안은 구성이 다르고 품질 ≥ 95%</div>
+    <div class="card"><h3><span class="n">2</span>독립 검증기 · 평가기</h3>
+      솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·보강·미리 계산 확인도 같은 평가기로 채점.<br>운영 중 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
+    <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3><ul>
+      <li>평가 글 판정 → 협업 점수에 반영</li>
+      <li>교체 설명 — 인용을 원문과 한 글자씩 대조, 규칙 위반이면 "보류"</li>
+      <li>소명 글(GraphRAG) — AI는 사실 번호만 고르고 숫자는 서버가</li></ul></div>
+    <div class="card"><h3><span class="n">4</span>지식 그래프 · 기술 이름 사전</h3>
+      기술 개념 228개로 여러 이름을 하나로("postgres" = PostgreSQL).<br>하위 기술 경력은 70%만 상위 기술에 인정하고 출처를 표시.<br>조직 기술 지도 · 소명 글의 근거 사실.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="kicker">성과 · 구현 결과</div>
+  <h2>숫자로 본 결과</h2>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card"><div class="num">31.7 → 57.6</div><div class="cap">배치 품질, 단순 규칙(기술 1등 우선) 대비 · 100명 · 같은 점수표</div></div>
+    <div class="card"><div class="num">55<small>%</small></div><div class="cap">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%(점수 제공·1회 수정) · 원자료만 주면 규칙 위반</div></div>
+    <div class="card"><div class="num">3.3<small>%</small></div><div class="cap">300명 안 A와 증명된 상한의 거리 · 빈자리 0 · 위반 0</div></div>
+    <div class="card"><div class="num">2 → 0</div><div class="cap">운영 중 편성: 2명만 옮겨 빈자리 2석 해소 · K=0~3 모두 최선 증명</div></div>
+    <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(조율 데이터 618편 · 처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출</div></div>
+    <div class="card"><div class="num">1,806</div><div class="cap">자동 시험 통과 · 작은 문제 정답 대조 11/11 · 솔버 3종 비교 357칸</div></div>
+  </div>
+  <div class="foot">모든 수치는 가상 데이터와 설계한 점수표 안에서 잰 것이다. 사업 효과는 검증 전(NOT_CALIBRATED).</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">성과 · 한계와 맺음</div>
+  <h2>한계</h2>
+  <div class="warnbox" style="margin-top:14px"><ul>
+    <li>실제 성과 자료가 없어 <b>사업 효과는 아직 검증 전</b>이다(NOT_CALIBRATED).</li>
+    <li>계수는 설계값이다 — 협업 0.3 · 익숙한 사이 감점 0.2 · 하위 기술 인정 70%.</li>
+    <li>PoC·과제 제출용이라 <b>실제 인사 자료는 적재하지 않았다.</b></li></ul></div>
+  <div class="banner" style="margin-top:34px">계산이 맞다는 증거는 쌓았다. 현실 성과는 실제 자료로 확인할 다음 질문이다.</div>
+  <div class="foot" style="font-size:28px;text-align:center;color:var(--ink)">감사합니다</div>
+</section>
+
+</div>
+<div id="pager"></div>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var pager=document.getElementById('pager');
+  var i=0;
+  function fit(){
+    var s=Math.min(window.innerWidth/1280, window.innerHeight/720);
+    slides.forEach(function(el){el.style.transform='scale('+s+')';});
+  }
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(el,k){el.classList.toggle('on',k===i);});
+    pager.textContent=(i+1)+' / '+slides.length;
+    try{history.replaceState(null,'','#'+(i+1));}catch(e){}
+  }
+  document.addEventListener('keydown',function(e){
+    if(['ArrowRight','PageDown',' ','Enter'].indexOf(e.key)>=0){e.preventDefault();show(i+1);}
+    else if(['ArrowLeft','PageUp','Backspace'].indexOf(e.key)>=0){e.preventDefault();show(i-1);}
+    else if(e.key==='Home'){show(0);}else if(e.key==='End'){show(slides.length-1);}
+    else if(e.key==='f'||e.key==='F'){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+  });
+  document.addEventListener('click',function(e){show(e.clientX<window.innerWidth/3?i-1:i+1);});
+  window.addEventListener('resize',fit);
+  fit();
+  var h=parseInt((location.hash||'').slice(1),10);
+  show(isNaN(h)?0:h-1);
+})();
+</script>
+</body>
+</html>
