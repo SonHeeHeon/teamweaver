@@ -19,10 +19,25 @@ interface Props {
   gapAllowed?: number | null;
   /** 증명이 붙은 조건(예: 대안 플랜의 "다양성 조건 안에서"). */
   within?: string;
+  /** 카드의 "검증" 도장이 이미 보이면 첫 칩(독립 검증 통과·서버 재채점 통과)을 뺀다. */
+  hideVerified?: boolean;
 }
 
-export function ConfidenceBadge({ termination, timeLimited, objective, bestBound, gapAllowed, within }: Props) {
+export function ConfidenceBadge({ termination, timeLimited, objective, bestBound, gapAllowed, within, hideVerified }: Props) {
   const x = gapPct(objective, bestBound);
+  // 편성 기록에서 연 안(2026-10-18): 서버가 지금 평가기로 다시 채점해 제약 위반이 없음을 확인했다. 솔버 증명은 기록이 주장할 뿐
+  // 이 서버가 확인할 수 없어 버렸다(api/records) -- "다시 계산"하면 증명이 붙는다.
+  if (termination === "record") {
+    return (
+      <span className="inline-flex flex-wrap gap-1 text-[11px]">
+        {!hideVerified && <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-sky-800"
+              title="편성 기록의 명단을 지금 평가기로 다시 채점해 제약 위반이 없음을 확인했다">서버 재채점 통과</span>}
+        <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-600">
+          기록에서 불러옴 · 증명은 다시 계산 시
+        </span>
+      </span>
+    );
+  }
   const stopped = termination === "user_interrupt";                 // 사용자가 "계산 멈추기"로 멈춘 해(2026-10-12)
   const limited = !stopped && (timeLimited || termination === "time_limit_incumbent");
   const optimal = !limited && !stopped && termination === "Optimal";
@@ -45,8 +60,8 @@ export function ConfidenceBadge({ termination, timeLimited, objective, bestBound
   }
   return (
     <span className="inline-flex flex-wrap gap-1 text-[11px]">
-      <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-sky-800"
-            title="솔버의 해를 별도 검증기로 다시 확인했다(제약·목적 재계산)">독립 검증 통과</span>
+      {!hideVerified && <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-sky-800"
+            title="솔버의 해를 별도 검증기로 다시 확인했다(제약·목적 재계산)">독립 검증 통과</span>}
       <span className={`rounded border px-1.5 py-0.5 ${tone}`}>{text}</span>
     </span>
   );

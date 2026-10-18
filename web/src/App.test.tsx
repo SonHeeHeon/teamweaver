@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import App from "./App";
+import Root from "./Root";
 import type { Meta, PlanEvent, WhatifResponse } from "./api/types";
 
 // 실제 네트워크를 타지 않도록 클라이언트 모듈 전체를 목킹한다. postWhatif는
@@ -17,8 +18,12 @@ vi.mock("./api/client", () => ({
   AdminLoginRequiredError: class extends Error {},
   DatasetChangedError: class extends Error {},
   uploadDataset: vi.fn(),
-  fetchDemos: vi.fn(async () => []),
-  chooseDemo: vi.fn(),
+  fetchRecords: vi.fn(async () => []),
+  importRecord: vi.fn(),
+  openRecord: vi.fn(),
+  deleteRecord: vi.fn(),
+  recordFileUrl: (id: string) => `/api/records/${id}/file`,
+  exportRecord: vi.fn(),
   postBaseline: vi.fn(),
   fetchOperatingState: vi.fn(async () => ({ dataset_version: "none", available: false, scenario: null, bench: [],
     proposals: [], current: [], projects: [], expected_s_100: {}, n_people: 0, note: "", hint: "운영 데이터 아님" })),
@@ -304,7 +309,7 @@ describe("App — 데이터셋 전환(K9)", () => {
     fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
     expect(await screen.findByText(/이 데이터로 전환했다/)).toBeInTheDocument();
     await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
-    expect(screen.getByText(/synthetic-n1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/synthetic-n1/).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
     expect(screen.queryByText("Plan A")).not.toBeInTheDocument();
@@ -1037,20 +1042,19 @@ describe("App — 관리자 로그인(K14)", () => {
                    logged_in: false, expires_at: null };
   const IN = { ...LOCKED, logged_in: true, expires_at: 9999999999 };
 
-  it("로그인 전에는 배치 설정·데이터 탭이 로그인 화면이고, 로그인하면 내용이 보인다", async () => {
+  it("앱 전체 로그인(2026-10-18): 로그인 전에는 앱 대신 로그인 화면이고, 로그인하면 앱이 뜬다", async () => {
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     let loggedIn = false;
     vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
     vi.mocked(adminLogin).mockReset().mockImplementation(async () => { loggedIn = true; });
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
-    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
-    expect(screen.getByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "pw" } });
+    render(<Root />);
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "최적화 실행" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("아이디"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "admin1234" } });
     fireEvent.click(screen.getByRole("button", { name: "로그인" }));
-    expect(await screen.findByRole("button", { name: "로그아웃" })).toBeInTheDocument();
-    expect(screen.getByLabelText("묶음 zip 파일")).toBeInTheDocument();
+    await waitFor(() => expect(adminLogin).toHaveBeenCalledWith("admin1234", "admin"));
+    expect(await screen.findByRole("button", { name: "최적화 실행" })).toBeInTheDocument();
   });
 
   it("요건 설정·결과 화면은 로그인 없이 쓴다", async () => {
@@ -1065,11 +1069,11 @@ describe("App — 관리자 로그인(K14)", () => {
     let loggedIn = true;
     vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
     vi.mocked(adminLogout).mockReset().mockImplementation(async () => { loggedIn = false; });
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "로그아웃" }));
+    render(<Root />);
+    // 로그아웃은 메뉴 위(휴대폰 폭)와 아래(데스크톱) 두 곳에 있다
+    fireEvent.click((await screen.findAllByRole("button", { name: "로그아웃" }))[0]);
     await waitFor(() => expect(adminLogout).toHaveBeenCalled());
-    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
-    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
 
   it("세션이 끝나 저장이 401이면 로그인 화면으로 보낸다", async () => {

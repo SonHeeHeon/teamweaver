@@ -73,7 +73,7 @@ export function ReportPage() {
   const generatedAt = new Date().toLocaleString("ko-KR");
 
   return (
-    <div className="mx-auto max-w-[760px] bg-white p-8 text-slate-900">
+    <div className="report-root mx-auto max-w-[760px] bg-white p-8 text-slate-900">
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
       <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>

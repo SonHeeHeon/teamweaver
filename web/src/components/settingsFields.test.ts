@@ -17,3 +17,15 @@ describe("describeChanges", () => {
       .toEqual(["반복 협업 조회 기간 전체 이력→최근 3년"]);
   });
 });
+
+describe("describeChanges — 자동·수동 표시만 다를 때(2026-10-18 편성 기록)", () => {
+  it("실제 계산 시간이 같으면 같은 계산으로 본다", async () => {
+    const { describeChanges } = await import("./settingsFields");
+    const base = { min_alloc: 0.3, clique_threshold_months: 12, clique_window_months: 36, lam: 0.3, mu: 0.2,
+                   time_limit: 30, gap: 0.05, max_concurrent_projects: 3, allocation_mode: "fixed" } as never;
+    expect(describeChanges({ ...(base as object), time_limit_auto: false } as never,
+                           { ...(base as object), time_limit_auto: true } as never)).toEqual([]);
+    expect(describeChanges({ ...(base as object), time_limit_auto: false, time_limit: 60 } as never,
+                           { ...(base as object), time_limit_auto: true } as never).length).toBeGreaterThan(0);
+  });
+});

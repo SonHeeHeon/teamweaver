@@ -1,5 +1,5 @@
 import type {
-  BaselineResult, BestResult, Candidate, DemoBundle, OperatingEvent, OperatingState, SimulateResult,
+  BaselineResult, BestResult, Candidate, OpenRecordResult, PlacementRecord, OperatingEvent, OperatingState, SimulateResult,
   Meta, ApplySwapResponse, AssignEntry, DatasetInfo, PlacementSettings, PlanEvent, ReportRequest, SolveEvidence,
   SavedPlanEdits, SettingsResponse, Step, Swap, UploadResult, WhatifResponse, AllocChange, Justification, SkillMap,
 } from "./types";
@@ -34,6 +34,10 @@ export interface AdminStatus {
   logged_in: boolean;
   expires_at: number | null;
   token_required: boolean;
+  /** 로그인한 아이디(2026-10-18 앱 전체 로그인) */
+  user?: string | null;
+  /** 기본 계정(admin/admin1234)으로 열려 있다 -- 바꾸라고 안내한다 */
+  default_credentials?: boolean;
 }
 
 /** 관리자 동작이 401을 받았다 -- 로그인하지 않았거나 세션이 끝났다. */
@@ -48,12 +52,12 @@ export async function fetchAdminStatus(): Promise<AdminStatus> {
   return (await res.json()) as AdminStatus;
 }
 
-/** 비밀번호가 맞으면 서버가 세션 쿠키를 심는다. 틀리면 이유(잠금 포함)를 담아 throw. */
-export async function adminLogin(password: string): Promise<void> {
+/** 아이디·비밀번호가 맞으면 서버가 세션 쿠키를 심는다. 틀리면 이유(잠금 포함)를 담아 throw. */
+export async function adminLogin(password: string, username = "admin"): Promise<void> {
   const res = await fetch(`${API_BASE}/api/admin/login`, {
     method: "POST", credentials: WITH_COOKIE,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ username, password }),
   });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
@@ -458,26 +462,77 @@ export async function postBaseline(c: Common, entries: AssignEntry[],
   return postJson("/api/baseline", { ...common(c), entries, weights });
 }
 
-export async function fetchDemos(): Promise<DemoBundle[]> {
-  const res = await fetch(`${API_BASE}/api/datasets/demos`);
-  if (!res.ok) throw new Error(`GET /api/datasets/demos 실패: ${res.status}`);
-  return (await res.json()) as DemoBundle[];
+// --- 편성 기록(2026-10-18) -------------------------------------------------------------
+
+async function failWith(res: Response, what: string): Promise<never> {
+  const detail = await res.json().catch(() => ({}));
+  const d = detail?.detail;
+  throw new Error(`${what}(${res.status}): ${typeof d === "string" ? d : d?.message ?? ""}`);
 }
 
-export async function chooseDemo(name: string, adminToken: string | null = null): Promise<DatasetInfo> {
-  const res = await fetch(`${API_BASE}/api/datasets/demo`, {
+export async function fetchRecords(): Promise<PlacementRecord[]> {
+  const res = await fetch(`${API_BASE}/api/records`, { credentials: WITH_COOKIE });
+  if (!res.ok) await failWith(res, "편성 기록을 불러오지 못했다");
+  return (await res.json()) as PlacementRecord[];
+}
+
+/** 기록 파일(JSON)을 서버에 올린다 -- 검증을 통과하면 목록에 남는다(작업 데이터는 그대로). */
+export async function importRecord(file: Blob, adminToken: string | null = null,
+): Promise<{ record: PlacementRecord; check: OpenRecordResult["check"] }> {
+  const res = await fetch(`${API_BASE}/api/records`, {
     method: "POST", credentials: WITH_COOKIE,
-    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) },
-    body: JSON.stringify({ name }),
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) }, body: file,
   });
   throwIfLoginRequired(res);
-  if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(`시연 데이터 전환 실패(${res.status}): ${detail.detail ?? ""}`);
-  }
-  return (await res.json()) as DatasetInfo;
+  if (!res.ok) await failWith(res, "기록 파일을 받지 않았다");
+  return await res.json();
 }
 
+export async function openRecord(id: string, adminToken: string | null = null): Promise<OpenRecordResult> {
+  const res = await fetch(`${API_BASE}/api/records/${encodeURIComponent(id)}/open`, {
+    method: "POST", credentials: WITH_COOKIE,
+    headers: { "Content-Type": "application/json", ...adminHeaders(adminToken) }, body: "{}",
+  });
+  throwIfLoginRequired(res);
+  if (!res.ok) await failWith(res, "기록을 열지 못했다");
+  return (await res.json()) as OpenRecordResult;
+}
+
+export async function deleteRecord(id: string, adminToken: string | null = null): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/records/${encodeURIComponent(id)}`, {
+    method: "DELETE", credentials: WITH_COOKIE, headers: adminHeaders(adminToken),
+  });
+  throwIfLoginRequired(res);
+  if (!res.ok) await failWith(res, "기록을 지우지 못했다");
+}
+
+export function recordFileUrl(id: string): string {
+  return `${API_BASE}/api/records/${encodeURIComponent(id)}/file`;
+}
+
+/** 지금 화면의 편성안(서버 서명 포함)을 기록 파일로 받는다. 브라우저 내려받기까지 한다. */
+export async function exportRecord(body: {
+  title: string; weights: Record<string, number>; milp_params: Record<string, unknown> | null;
+  n_alternatives: number; dataset_version: string; plans: PlanEvent[]; stop_reason?: string | null;
+}): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/records/export`, {
+    method: "POST", credentials: WITH_COOKIE, headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...body, milp_params: body.milp_params ?? {},
+                           plans: body.plans.map((p) => ({ label: p.label, entries: p.entries, unfilled: p.unfilled,
+                                                           objective: p.objective, plan_token: p.plan_token,
+                                                           evidence: p.evidence, evidence_token: p.evidence_token })) }),
+  });
+  await throwIfDatasetChanged(res);
+  if (!res.ok) await failWith(res, "내보내지 못했다");
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${body.title.replace(/[\\/:*?"<>|]+/g, "_")}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 
 /** 인사팀 소명 글(사업 하나). ai=false면 정해진 틀(템플릿)만 -- 화면은 이것을 먼저 보이고 AI 글로 바꾼다. */
 export async function postJustification(body: {

@@ -70,8 +70,10 @@ export interface PlanEvent {
   /** 서버가 서명한 신뢰도 묶음과 그 서명(2026-10-12) -- PDF 요청에 그대로 돌려보낸다. */
   evidence?: SolveEvidence;
   evidence_token?: string;
-  /** 시연 묶음의 미리 계산 결과면 그 계산 시각(ISO, 서버 api/demo_precomputed). 화면은 "미리 계산"으로 밝힌다. */
+  /** 저장된 결과(편성 기록에서 연 결과)면 그 계산 시각(ISO). 화면은 "기록에서 연 결과"로 밝힌다. */
   precomputed_at?: string | null;
+  /** 편성 기록에서 연 결과면 그 기록 제목(2026-10-18). */
+  precomputed_label?: string | null;
 }
 
 /** 계산에 실제로 쓸 설정: 자동 계산 시간이면 서버가 정한 값으로 바꿔 넣는다. */
@@ -285,21 +287,22 @@ export interface SettingsResponse {
 export interface DatasetInfo {
   dataset_id: string;
   version: string;
-  source: "fixture" | "upload" | "demo-bundle";
+  source: "fixture" | "upload" | "demo-bundle" | "record";
   synthetic: boolean | null;
   people: number;
   projects: number;
   activated_at: string;
   /** 부팅 때 저장된 업로드 데이터를 복원하지 못해 기본 데이터로 떴으면 그 이유(K13). */
   restore_error?: string | null;
-  /** 지금 켜진 시연 묶음 이름(없으면 null). */
-  demo_name?: string | null;
+  /** 편성 기록에서 열었으면 그 기록 id·제목(2026-10-18). */
+  record_id?: string | null;
+  record_title?: string | null;
   /** "operating" = 운영 중 시연 묶음(대부분 배치 중·대기 인력·신규 제안), 그 밖은 "planning". */
   scenario?: string;
   /** 원천 파일만의 해시(다시 판정해도 같다). version은 LLM 판정값까지 담은 계산 버전. */
   content_version?: string;
   /** 평가 사유(글) 판정: llm = 지금 LLM이 매김, fixture = 가상 데이터 생성 때 LLM 값, items = LLM 실패로 항목 점수. */
-  review_judge?: "llm" | "fixture" | "items" | "blocked";
+  review_judge?: "llm" | "fixture" | "items" | "blocked" | "record";
   judge_model?: string | null;
   judge_host?: string | null;
   /** 보낸 곳: openai(회사 밖) | onprem(사내로 확인) | unknown(사내인지 확인 안 됨). */
@@ -475,10 +478,29 @@ export interface BaselineResult {
   note: string;
 }
 
-export interface DemoBundle { name: string; dataset_id: string; people: number | null; projects: number | null;
-                              scenario: string; synthetic: boolean;
-                              /** 장면 한 줄 제목·설명(예: "운영 중 · 90명 배치 중, 대기 10명"). 예전 서버면 없다. */
-                              title?: string; description?: string }
+/** 편성 기록(2026-10-18, GET /api/records). 지난 편성을 내보낸 JSON을 불러와 둔 것. */
+export interface PlacementRecord {
+  id: string; title: string; kind: "planning" | "operating" | string;
+  exported_at: string | null; imported_at: string; dataset_id: string | null;
+  people: number | null; projects: number | null; horizon_start: string | null; horizon_months: number | null;
+  synthetic: boolean | null; plans: number; operating: boolean; open: boolean;
+  score_changed: { label: string; recorded: number | null; current: number }[];
+}
+
+/** 기록을 열 때 받은 계산 요청 -- 화면이 그대로 /api/optimize에 보내면 기록의 편성안이 바로 나온다. */
+export interface RecordRequest {
+  weights: Record<string, number>;
+  milp_params: Record<string, unknown>;
+  n_alternatives: number;
+}
+
+export interface OpenRecordResult {
+  dataset: DatasetInfo;
+  record: PlacementRecord;
+  request: RecordRequest;
+  operating_params: Record<string, unknown> | null;
+  check: { plans: number; score_changed: PlacementRecord["score_changed"]; operating: boolean; skipped: string[] };
+}
 
 
 /** 인사팀 소명 글의 사실 하나(claude-a core.kg.justify.Fact). text는 한 줄 사실, adverse는 불리한 사실. */

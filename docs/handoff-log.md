@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-18 · claude-a · 실제 서비스처럼: 앱 전체 로그인 · 편성 기록(JSON) 내보내기/불러오기 · 빈 화면 안내 · 화면 전면 개편
+- 브랜치/커밋: `feat/claude-a-service-ui-1018`(main `fa9be61`에서 갈라짐). main 병합은 사용자 승인 대기.
+- 사용자 요청: ① 관리자 로그인 화면(admin/admin1234) ② "시연 데이터 고르기" 대신 과거 편성을 JSON으로 Export/Import해 화면에서 보는 기능(시연 데이터도 그것으로) ③ What-if 대시보드가 비었을 때 안내 ④ 화면 디자인 개편. 결정: 로그인은 앱 전체, 기록은 목록 + 열면 작업 화면, 디자인은 전면 개편(시안 승인).
+- 한 일:
+  - 로그인(`api/admin.py`): 아이디+비밀번호, 기본 admin/admin1234(비밀번호 env 우선, 토큰만 설정한 서버는 기본 계정 없음), `AppLoginGate`로 모든 `/api/*` 보호, `TEAMWEAVER_LOGIN=off`(시험). `run_poc.sh`는 외부 주소 + 기본 계정이면 시작 거부.
+  - 편성 기록(`api/records.py`·`api/routes/records.py`): 내보내기(서버 서명 확인한 안만), 불러오기(형식·CSV 계약·해시·평가기 재채점, 위반 거절, LLM 호출 없음), 목록·열기·내려받기·삭제, 열어 둔 기록 재기동 복원. 기록의 솔버 증명은 버리고 "재채점 통과 · 기록에서 불러옴"으로 표시. `demo/records/` 6개(`rehearsal/make_demo_records.py`).
+  - 없앤 것: `/api/datasets/demos`·`/api/datasets/demo`, 시연 선택 기억, 부팅·전환 때의 미리 계산 자동 설치.
+  - 화면(`web/`): 디자인 토큰(Tailwind 팔레트 재정의·IBM Plex Sans KR 묶음), 로그인 화면·Root 관문·fetch 래퍼, 왼쪽 메뉴·제목 줄, What-if 빈 화면 안내·하위 탭(배치 명단·교체 검토·인사팀 소명·단순 규칙 비교), 편성안 카드(큰 글자·인주색 도장·주 지표 전체 목적값), 데이터 화면(편성 기록 + 올리기 + 고급), 내보내기 창, 요건 설정 격자·고정 실행 줄. PDF 화면만 시스템 한글 글꼴.
+  - 문서: 시연 대본(로그인·기록 열기·하위 탭·운영 중 다시 계산), README, CLAUDE.md 함정, 결과 보고서(10쪽).
+- 상대 영향(claude-b 영역을 사용자 지시로 고침): `api/admin.py`·`api/routes/{admin,datasets,optimize,operating,report}.py`·`api/main.py`·`web/**` 대부분·`scripts/run_poc.sh`. 시험 서버는 `TEAMWEAVER_LOGIN=off`가 필요하다(conftest가 한다). `PlanEvent.precomputed_label`, `DatasetInfo.source="record"`·`record_id/record_title` 추가. `DemoBundle` 타입·`fetchDemos/chooseDemo` 삭제.
+- 검증: `uv run --group benchmark pytest -q` → 1831 passed, 1 skipped, 19 deselected · `pytest -m slow` 19 passed · 웹 206 passed · `npx tsc -b` 통과 · 실제 브라우저로 로그인 → 기록 불러오기·열기 → 하위 탭 → PDF·내보내기 → 390px 확인. 리뷰: Codex 쿼터 소진(2회) → Claude Opus 폴백 적대적 리뷰(MUST 3·SHOULD 7 반영) → 한도 회복 뒤 Codex 2라운드(P2 9건 반영, P1 2건은 리뷰 중 생성 파일을 옮겨 둔 탓의 오탐).
+- 근거: `.omc/plan/2026-10-18-service-ui-records.md`(+ `.design.html`), `.omc/reports/2026-10-18-service-ui-records.md`.
+
 ## 2026-10-18 · claude-a · Codex AI Pro 평가 반영 — E4 비교 정정, 더 강한 비교 상대, AI 판정의 배치 영향, 사업 관점 절
 - 브랜치/커밋: `docs/claude-a-ai-pro-fixes-1018`(main `738aa67`에서 갈라짐) 이 항목 커밋 + 병합 기록 커밋, **main fast-forward 병합(사용자 승인 2026-10-18)**. 앞서 main 병합(`fb783cd..738aa67`)과 원격 브랜치 정리(사용자 실행, 원격은 main만)는 끝났다.
 - 사용자 요청: Codex 평가(브랜치 `feat/codex-ai-pro-review`의 `docs/reviews/2026-10-18-ai-pro-evaluation.md` — 사용자 결정으로 **main에 넣지 않는다**)의 지적을 고치고, E4는 "Jev → 규칙 → LLM(OpenAI·GLM Flash) → 그래서 LLM" 흐름으로, 사업·투자 관점 보완. 틀린 말은 고치되 실적은 앞세우기.

@@ -20,13 +20,13 @@ interface Props {
 export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running, onStop, stopping, operating,
                                  onOpenOperating }: Props) {
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
       <section>
         <h2 className="mb-3 text-lg font-semibold text-slate-900">스킬 가중치</h2>
         <p className="mb-4 text-sm text-slate-500">
           1~5점. 값이 높을수록 그 스킬의 적합도가 배치 점수에 크게 반영된다.
         </p>
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="panel grid gap-x-6 px-4 py-3 sm:grid-cols-2">
           {meta.skills.map((s) => (
             <WeightSlider
               key={s}
@@ -36,15 +36,13 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
             />
           ))}
         </div>
-        <button
-          onClick={onRun}
-          disabled={running}
-          className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white
-                     hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          {running ? "최적화 중…" : "최적화 실행"}
-        </button>
-        {running && onStop && <StopButton onStop={onStop} stopping={!!stopping} />}
+        <div className="sticky bottom-0 z-10 -mx-1 mt-4 flex items-center gap-2 border-t border-line bg-canvas/95 px-1 py-3 backdrop-blur">
+          <button onClick={onRun} disabled={running} className="btn-primary whitespace-nowrap px-5">
+            {running ? "최적화 중…" : "최적화 실행"}
+          </button>
+          {running && onStop && <StopButton onStop={onStop} stopping={!!stopping} className="py-2" />}
+          <span className="text-xs text-slate-500">안 A부터 먼저 보이고, 대안 B~D가 이어서 도착합니다.</span>
+        </div>
         {operating && (
           <p role="note" className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
             지금은 <b>운영 중</b> 데이터다(대부분이 진행 사업에 배치돼 있다). "최적화 실행"은 모두를 처음부터 다시 짠다 —

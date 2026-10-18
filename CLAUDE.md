@@ -79,12 +79,20 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   생성기 v2(2026-10-11): 가상 이름(`core/ingest/names.py`, ID별 고정·중복 없음), 아쉬운 점 항목마다 문장·직설형 평가자 8%·어긋난 글 5%(manifest `review_style`) --
   고른 항목의 난수열은 그대로라 글만 바뀐다. 글을 바꾸면 `python -m rehearsal.make_demo`(+`make_broken_demo`) → 판정·미리 계산·판정 동봉을 한 데이터 폴더에서 이어서 만든다.
   운영 중 묶음을 "전부 다시 짜기"(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남는다(정원·예산이 현재 명단에 맞춰짐) -- K 비교로 쓴다.
-- **시연 묶음 고르기·미리 계산**(claude-b `api/demos.py` + claude-a `api/demo_precomputed.py`, 2026-10-07 통일): `TEAMWEAVER_DEMO_DIR`의 폴더·zip 묶음을 `POST /api/datasets/demo {name}`으로 고르고 재기동해도 기억한다.
-  `demo/precomputed/*.json`은 데이터셋 버전(리뷰 글 LLM 판정값 포함)·서버 설정·평가기 재채점이 모두 맞을 때만 캐시에 들어간다 --
-  재채점은 솔버 목적값이 아니라 미리 계산 때 기록한 평가기 점수(`eval_objective`)와 대조한다(솔버는 내림 전 투입률, 평가기는 내림한 투입률).
-  데이터·설정·목적식이 바뀌면 `python -m rehearsal.precompute_demo`를 시연 기기에서 다시 돌린다(약 40분). 맞지 않으면 조용히 실시간 계산.
-  **리뷰 글 판정은 `demo/review_judgments.json`에 동봉한다**(2026-10-11) -- LLM 판정값이 기기마다 달라 버전이 어긋나지 않게, 가상 묶음을 켤 때 이 값이 캐시보다 우선한다.
-  미리 계산을 다시 만들면 `uv run python scripts/export_demo_judgments.py`도 돌려 함께 커밋한다(`--check`로 확인). 판정기(모델·주소·추론 강도)가 바뀌면 키가 달라 쓰이지 않는다.
+- **편성 기록(JSON)이 시연 데이터 고르기를 대체했다**(2026-10-18 사용자 지시, `api/records.py`·`api/routes/records.py`): 데이터 탭의 시연 고르기·
+  `/api/datasets/demo(s)`·부팅/전환 때의 미리 계산 자동 설치는 없앴다. 시연은 `demo/records/*.json`을 화면에서 불러와 **열기**.
+  기록 = 원천 CSV 원문 + 평가 글 판정값(리뷰 순서) + 계산 요청(가중치·**설정 화면 모양**의 milp_params·대안 수) + 편성안 + 운영 중 K 행.
+  열면 데이터를 바꾸고(`source="record"`, 재기동해도 `records/active.json`으로 다시 연다) 편성안을 결과 캐시에 넣는다 -- 화면이 기록의 요청 그대로
+  `/api/optimize`를 부르면 캐시에서 나오고 서명은 그 경로가 붙인다. **기록의 솔버 증명(종료 사유·상한·허용 차이)은 버리고 목적값·빈자리는 평가기로
+  다시 계산한다**(termination="record" -- 서버가 남의 주장을 다시 서명해 "최선 증명"으로 세탁하지 않게, 폴백 리뷰 M3). 위반이 있으면 받지 않고, 점수만
+  다르면 받고 알린다. 불러오기·열기는 LLM을 부르지 않는다(판정값 없으면 항목 점수). milp_params에 설정 화면에 없는 칸(보상 쌍 수 등)을 담으면
+  PDF 요청이 422다 -- `records.request_fields`가 설정 모양으로만 쓴다. `demo/records/`는 `python -m rehearsal.make_demo_records`가
+  `demo/precomputed/`(+ 동봉 판정값)에서 만든다 -- 미리 계산을 다시 만들면 이것도 다시 돌린다. `api/demo_precomputed`의 검증 함수·`install`은 기록이 쓴다.
+  **리뷰 글 판정은 `demo/review_judgments.json`에 동봉한다**(2026-10-11) -- 미리 계산을 다시 만들면 `uv run python scripts/export_demo_judgments.py`도 돌려 함께 커밋한다.
+- **앱 전체 로그인**(2026-10-18, `api/admin.AppLoginGate`): 로그인하지 않으면 `/api/admin`·로그인·로그아웃 밖의 모든 `/api/*`가 401. 기본 계정 admin/admin1234
+  (비밀번호 env가 있으면 그것, 스크립트 토큰만 있으면 기본 계정을 열지 않음). **시험은 `TEAMWEAVER_LOGIN=off`**(tests/api/conftest, rehearsal/run 서버) --
+  새 리허설·스크립트 서버에도 넣거나 로그인한다. 관문은 root_path를 뗀 경로로 본다. 화면은 `web/src/auth.ts`가 fetch를 감싸 쿠키를 싣고 401이면 로그인 화면으로.
+  PDF(`/report`)는 데이터를 주입받아 API를 부르지 않고, 시스템 한글 글꼴로 찍는다(웹 글꼴이면 PDF 글자 추출이 한 자씩 떨어진다).
 - **실험 G 파트너 다양성 하한**(`MilpParams.partner_floor`, 기본 0 = 꺼짐): 서비스 MILP·독립 검증기·평가기·예산 보정에만 있고
   벤치 정식·Phase 0 오라클·HTTP 계약·운영 중 기여 분해에는 없다. 측정(`rehearsal/results/partner-compare.html`)상 SI 팀 크기에서는 거의 걸리지 않고
   200명에서 풀이를 망쳤다 -- **사용자 결정(2026-10-07): 채택 안 함, 쌍 감점 유지**. 켜려면 위 빠진 곳을 모두 맞춘다.
@@ -124,7 +132,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-12 최종 **1806 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 202 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-18 **1831 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 206 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
