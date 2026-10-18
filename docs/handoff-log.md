@@ -23,8 +23,8 @@
 ---
 
 ## 2026-10-18 · claude-a · Codex AI Pro 평가 반영 — E4 비교 정정, 더 강한 비교 상대, AI 판정의 배치 영향, 사업 관점 절
-- 브랜치/커밋: `docs/claude-a-ai-pro-fixes-1018`(main `738aa67`에서 갈라짐) 이 항목 커밋. main 병합은 사용자 승인 대기. 앞서 main 병합(`fb783cd..738aa67`)과 원격 브랜치 정리(사용자 실행, 원격은 main만)는 끝났다.
-- 사용자 요청: Codex 평가(`feat/codex-ai-pro-review`의 `docs/reviews/2026-10-18-ai-pro-evaluation.md`)의 지적을 고치고, E4는 "Jev → 규칙 → LLM(OpenAI·GLM Flash) → 그래서 LLM" 흐름으로, 사업·투자 관점 보완. 틀린 말은 고치되 실적은 앞세우기.
+- 브랜치/커밋: `docs/claude-a-ai-pro-fixes-1018`(main `738aa67`에서 갈라짐) 이 항목 커밋 + 병합 기록 커밋, **main fast-forward 병합(사용자 승인 2026-10-18)**. 앞서 main 병합(`fb783cd..738aa67`)과 원격 브랜치 정리(사용자 실행, 원격은 main만)는 끝났다.
+- 사용자 요청: Codex 평가(브랜치 `feat/codex-ai-pro-review`의 `docs/reviews/2026-10-18-ai-pro-evaluation.md` — 사용자 결정으로 **main에 넣지 않는다**)의 지적을 고치고, E4는 "Jev → 규칙 → LLM(OpenAI·GLM Flash) → 그래서 LLM" 흐름으로, 사업·투자 관점 보완. 틀린 말은 고치되 실적은 앞세우기.
 - 한 일:
   - 정정: 보고서의 "규칙 기반 17%"는 Jev 값(정답 있는 300건은 정답 = 항목 균형이라 규칙과 비교하는 시험이 아님). "AI가 틀려도 거짓 근거가 나가지 않는다" → 기능별 보장 범위. 대본 "843편 중 99%" → 조율 99.0%·처음 보는 데이터 100%. README "AI는 글만 쓴다" → 읽기·쓰기.
   - 새 측정 `rehearsal/ai_effect.py`: 규칙 판정이면 나쁘게 쓴 사이 34·34·22쌍(100·200·300명)이 협업 보상 상위 200쌍에 든다(AI 0). 서비스 설정(시드 4·안 A 허용 차이 1%) 안 A에서 그런 사이 같은 팀 18→9 · 27→7 · 26→19.
