@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-19 · claude-b · 편성 기록을 연 뒤 작업 데이터를 고치면 재기동해도 고친 판으로 뜬다
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(아래 3상황 항목 다음 커밋). main 병합은 사용자 승인 대기.
+- 사용자 요청: "끝나면 claude-a 작업에 맞춰서 추가로 해야하는거 있으면 추가로 진행해줘" -- claude-a의 편성 기록(재기동 복원 순서 "열어 둔 기록 → 업로드 저장본 → 시작 묶음")과 맞춤.
+- 한 일: `api/workspace._activate_blob`이 새 판 **저장이 성공한 뒤에만** 열어 둔 기록 표시(`records/active.json`)를 지운다(저장 실패면 남겨 둔다 -- 지우면 복원할 곳이 둘 다 없어진다). 표시 지우기 실패는 요청을 실패시키지 않고 `persist_error`로 알린다. 화면(`withPersistNote`)이 완료 알림 뒤에 "주의: …"로 보인다.
+- 상대 영향(claude-a): `api/routes/datasets.py` 업로드 경로(159행 근처)도 저장 **전에** `clear_active`를 부른다 -- 같은 문제(저장 실패 시 기록·업로드 둘 다 없음)가 있다. 네 브랜치가 이 파일을 고치고 있어 손대지 않았다(work-split 요청). 화면 두 파일은 `setNotice` 줄만 바꿨다(네 `onReviewDoc` 줄과 겹치지 않음). 기준선 +2(서버)·+1(웹).
+- 검증: 아래 커밋 메시지·리포트. Codex adversarial-review(gpt-6.1-sol) 2라운드: 1라운드 high 1·medium 1 → 반영, 2라운드 approve. Codex 한도 회복으로 Stop 게이트 다시 켬.
+- 근거: `.omc/reports/2026-10-19-three-scenarios.md`(로컬, "기록 열기 뒤 편집" 절).
+
+---
+
 ## 2026-10-19 · claude-b · 3가지 핵심 상황 — 신규 사업 편성 · 긴급 투입(서버·화면) + 야간 배치 재정비
 - 브랜치/커밋: `feat/claude-b-three-scenarios`(야간 배치 브랜치 위) `66152f6` 서버 · `181d08c` claude-a 개편 합침 · `488ee9d` 화면 · `7ddf403` main 합침. main 병합은 사용자 승인 대기.
 - 사용자 요청: "상황을 3가지로 두고 개발하자 … 화면에서 3가지 핵심 상황에서 잘 작업 할 수 있도록 ui ux도 만들고 내부 로직도 수정 보완해줘" + "사업 고정 자물쇠를 프로젝트 내 사람에도 적용", 야간 배치는 "축소해서 이번 작업에 합침". 설계 `.omc/plan/2026-10-18-three-scenarios.md`(+ impl).

@@ -114,6 +114,16 @@ describe("NewProjectsScreen", () => {
     await waitFor(() => expect(api.postLock).toHaveBeenCalledWith("v1", "J003", ["P2"], true));
   });
 
+  it("바꾼 판을 서버에 남기지 못했으면 완료 알림에 함께 알린다", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: null, note: "", bench: [], ending: [], pull: [] });
+    vi.mocked(api.postLock).mockResolvedValue({ workspace: WS, persisted: false, persist_error: "서버에 저장하지 못했다(디스크)" });
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /^은행 A 데이터 J003/ }));
+    fireEvent.click(screen.getByRole("button", { name: "이서연 고정" }));
+    expect(await screen.findByText(/주의: 서버에 저장하지 못했다\(디스크\)/)).toBeInTheDocument();
+  });
+
   it("고칠 수 없는 데이터면 이유를 보인다", async () => {
     vi.mocked(api.fetchWorkspace).mockResolvedValue({ ...WS, editable: false, reason: "기본 데이터는 고칠 수 없다" });
     render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);

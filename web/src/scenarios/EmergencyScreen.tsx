@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import {
   fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
-  type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
+  withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
 } from "./workspaceApi";
 
 type Group = "bench" | "spare" | "pull";
@@ -102,7 +102,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged }: {
         note: `${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, ...hint });
       setWs(res.workspace);
       setPlan(null);
-      setNotice(`${project?.name ?? projectId}에 ${plan.best.added?.map((a) => a.name).join(", ")}을(를) 넣었다(사업 끝까지).`);
+      setNotice(withPersistNote(`${project?.name ?? projectId}에 ${plan.best.added?.map((a) => a.name).join(", ")}을(를) 넣었다(사업 끝까지).`, res));
       onDatasetChanged();
     } catch (e) {
       setError((e as Error).message);

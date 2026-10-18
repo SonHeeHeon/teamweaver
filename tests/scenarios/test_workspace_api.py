@@ -238,3 +238,71 @@ def test_pipeline_candidates_fill_existing_seats(yearend):
     rows = cand["bench"] + cand["ending"] + cand["pull"]
     assert rows and all(r["budget_added"] == 0 for r in rows)
     assert any(r["delta"].get("unfilled", 0) > 0 for r in cand["bench"])
+
+
+def test_editing_a_record_survives_a_restart_and_exports(yearend):
+    """편성 기록을 연 뒤 작업 데이터를 고치면 재기동해도 고친 판으로 뜨고(열어 둔 기록 표시를 지운다), 기록으로 내보낼 수 있다."""
+    from tests.scenarios.conftest import ROOT
+    from api.main import app
+    raw = (ROOT / "demo" / "records" / "org-n100-operating.json").read_bytes()
+    with TestClient(app) as c:
+        r = c.post("/api/records", content=raw, headers={"Content-Type": "application/json"})
+        assert r.status_code == 200, r.text
+        rid = r.json()["record"]["id"]
+        r = c.post(f"/api/records/{rid}/open", json={})
+        assert r.status_code == 200, r.text
+        assert c.get("/api/datasets/active").json()["source"] == "record"
+        v = _ws(c)["dataset_version"]
+        r = c.post("/api/workspace/lock", json={"dataset_version": v, "project_id": "J001", "locked": True})
+        assert r.status_code == 200, r.text
+        edited = r.json()["workspace"]["dataset_version"]
+        from api.records import files_of                                      # 기록 내보내기가 읽는 원천 표
+        cur = files_of(app, app.state.dataset)["current_assignments.csv"]
+        assert all(line.endswith(",Y") for line in cur.splitlines()[1:] if ",J001," in line)
+    with TestClient(app) as c:
+        assert _ws(c)["dataset_version"] == edited                               # 옛 기록이 아니라 고친 판으로 뜬다
+
+
+def _open_operating_record(c):
+    from tests.scenarios.conftest import ROOT
+    raw = (ROOT / "demo" / "records" / "org-n100-operating.json").read_bytes()
+    r = c.post("/api/records", content=raw, headers={"Content-Type": "application/json"})
+    assert r.status_code == 200, r.text
+    r = c.post(f"/api/records/{r.json()['record']['id']}/open", json={})
+    assert r.status_code == 200, r.text
+
+
+def test_a_failed_save_keeps_the_open_record_marker(yearend, monkeypatch):
+    """새 판 저장이 실패하면 열어 둔 기록 표시를 지우지 않는다 -- 지우면 재기동 때 복원할 곳이 둘 다 없어진다."""
+    from api.main import app
+    with TestClient(app) as c:
+        _open_operating_record(c)
+        marker = app.state.record_store.dir / "active.json"
+        assert marker.exists()
+
+        def broken_save(*_a, **_k):
+            raise OSError("disk full")
+        monkeypatch.setattr(app.state.dataset_store, "save", broken_save)
+        v = _ws(c)["dataset_version"]
+        r = c.post("/api/workspace/lock", json={"dataset_version": v, "project_id": "J001", "locked": True})
+        assert r.status_code == 200, r.text
+        assert r.json()["persisted"] is False
+        assert marker.exists()
+
+
+def test_a_failed_marker_removal_does_not_fail_the_applied_edit(yearend, monkeypatch):
+    """기록 표시 지우기가 실패해도 이미 켠 새 판의 요청은 성공하고, 알림만 남긴다."""
+    from api.main import app
+    with TestClient(app) as c:
+        _open_operating_record(c)
+
+        def broken_clear():
+            raise PermissionError("read-only")
+        monkeypatch.setattr(app.state.record_store, "clear_active", broken_clear)
+        v = _ws(c)["dataset_version"]
+        r = c.post("/api/workspace/lock", json={"dataset_version": v, "project_id": "J001", "locked": True})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["persisted"] is False and "기록 표시" in body["persist_error"]
+        assert body["workspace"]["dataset_version"] != v
+        assert _ws(c)["dataset_version"] == body["workspace"]["dataset_version"]
