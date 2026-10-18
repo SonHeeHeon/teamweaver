@@ -23,7 +23,8 @@ from core.config import FIXTURES_DIR, load_env
 from core.datagen.fixtures_io import load_fixtures
 from core.optimize.alternatives import cacheable, generate_plans
 from core.scoring.engine import ScoringEngine
-from api.routes import admin, datasets, justification, meta, operating, optimize, plans, report, settings, skill_map, whatif
+from api.routes import (admin, datasets, justification, meta, operating, optimize, plans, records, report, settings,
+                        skill_map, whatif)
 
 
 log = logging.getLogger(__name__)
@@ -32,6 +33,10 @@ FIXTURE_DATA_FILES = ("people.json", "projects.json", "coworks.json", "reviews_k
                       "parsed_reviews.json")
 WARM_TIME_LIMIT_MAX = 120
 WARM_GAP_MIN = 0.05
+
+
+class _SkipRestore(Exception):
+    """열어 둔 편성 기록으로 이미 떴다 -- 업로드 저장본 복원을 건너뛴다."""
 
 
 @asynccontextmanager
@@ -54,11 +59,8 @@ async def lifespan(app: FastAPI):
         # 시연 기본 데이터(2026-10-05, claude-a): TEAMWEAVER_DEMO_BUNDLE이 CSV 묶음 폴더를 가리키면 그것으로
         # 뜬다(실제 시스템 형식의 조직형 가상 데이터, demo/org-n100). 없으면 예전 고정 fixture -- 테스트는 이쪽.
         # 묶음이 없거나 검증에 실패하면 서버는 예전 fixture로 뜨고 이유를 화면에 알린다(업로드 복원과 같은 정책).
-        # 데이터 탭에서 고른 시연 묶음(api.demos)이 있으면 그것이 먼저다.
-        from api.demos import demo_root, load_choice
-        chosen = load_choice(data_dir())
-        chosen_root = demo_root(chosen) if chosen else None
-        bundle_dir = str(chosen_root) if chosen_root else os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
+        # (2026-10-18) 데이터 탭의 "시연 데이터 고르기"는 없앴다 -- 시연 묶음은 편성 기록 파일(demo/records)로 연다.
+        bundle_dir = os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
         app.state.demo_bundle_error = None
         if bundle_dir:
             root = Path(bundle_dir).expanduser()
@@ -80,10 +82,24 @@ async def lifespan(app: FastAPI):
     # 해시가 저장 당시 버전과 다르면 거부한다. 실패하면 기본 데이터로 뜨고 이유를 화면에 알린다.
     store = DatasetStore(data_dir())
     app.state.dataset_store = store
+    from api.records import RecordStore, build_and_verify
+    app.state.record_store = RecordStore(data_dir())
     app.state.plan_edit_store = PlanEditStore(data_dir())
     app.state.dataset_restore_error = None
     restored = None
+    boot_record = None
+    # 편성 기록을 열어 둔 채 재기동했으면 그 기록으로 뜬다(api/records). 실패하면 아래 순서(업로드 저장본 → 기본)로.
+    rid = app.state.record_store.active_id()
+    if rid is not None:
+        try:
+            restored, boot_record, _ = build_and_verify(app.state.record_store.load(rid))
+        except Exception as exc:                    # noqa: BLE001
+            log.error("열어 둔 편성 기록(%s)을 다시 열지 못해 다른 데이터로 시작한다: %s", rid, exc)
+            app.state.record_store.clear_active()
+            app.state.dataset_restore_error = f"열어 둔 편성 기록을 다시 열지 못했다: {exc}"
     try:
+        if restored is not None:
+            raise _SkipRestore
         saved = store.load()
         if saved is not None:
             pointer, blob = saved
@@ -94,6 +110,8 @@ async def lifespan(app: FastAPI):
             if active.info.content_version != pointer["version"]:
                 raise ValueError("저장된 묶음의 내용 해시가 저장 당시와 다르다")
             restored = active
+    except _SkipRestore:
+        pass
     except Exception as exc:                        # noqa: BLE001
         # 어떤 이유로 실패해도(로더 계약 변경으로 옛 묶음이 새 코드에서 터지는 경우 포함) 서버는
         # 기본 데이터로 뜬다 -- 저장본이 남아 있어 재기동마다 죽는 일을 막는다(Opus 리뷰 S4).
@@ -109,11 +127,12 @@ async def lifespan(app: FastAPI):
 
     cache = ResultCache()
     app.state.cache = cache
-    # 시연 묶음이면 같은 데이터·같은 설정으로 미리 계산한 결과를 검증해 캐시에 넣는다(시연 확장 E, api/demo_precomputed).
-    from api.demo_precomputed import install, prepare_for
+    # 편성 기록으로 떴으면 그 편성안을 결과 캐시에 넣는다(api/records). 시연 묶음의 "미리 계산" 자동 설치는 2026-10-18에 없앴다
+    # -- 실제 서비스처럼, 결과는 계산하거나 편성 기록을 열어서 본다.
+    from api.demo_precomputed import install
     from api.demos import current_demo_root
     app.state.demo_active_root = (current_demo_root() if app.state.dataset.info.source == "demo-bundle" else None)
-    install(app, prepare_for(app, app.state.dataset, app.state.demo_active_root))
+    install(app, boot_record)
     # 야간 배치(2026-10-18, claude-b): 지금 데이터에 맞는 밤 결과를 검증해 캐시에 넣고, 켜져 있으면 예약을 시작한다(api/nightly).
     from api import nightly as nightly_batch
     nightly_batch.attach(app)
@@ -168,6 +187,9 @@ app = FastAPI(title="TeamWeaver API", lifespan=lifespan)
 # CORS보다 *먼저* 등록해 안쪽에 둔다(add_middleware는 나중 것이 바깥) -- 그래야
 # 상한 초과 413에도 CORS 헤더가 붙어 dev(:5173)에서 안내 문구를 읽을 수 있다.
 app.add_middleware(report.ReportBodyLimit)
+# 앱 전체 로그인(2026-10-18): CORS 안쪽에 둬서 401에도 CORS 헤더가 붙는다(dev :5173에서 로그인 화면으로 돌릴 수 있게).
+from api.admin import AppLoginGate  # noqa: E402
+app.add_middleware(AppLoginGate)
 # Vite dev 서버(:5173)가 API(:8000)를 부를 수 있어야 한다. 프로덕션 빌드는
 # FastAPI가 직접 서빙하므로(Task 8) same-origin이라 CORS가 필요 없지만,
 # 개발 중에는 포트가 갈리므로 필요하다.
@@ -200,6 +222,7 @@ from api.routes import scenarios as _scenario_routes, workspace as _workspace_ro
 app.include_router(_workspace_routes.router)
 app.include_router(_scenario_routes.router)
 app.include_router(skill_map.router)
+app.include_router(records.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

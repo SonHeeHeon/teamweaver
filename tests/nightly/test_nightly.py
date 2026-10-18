@@ -137,44 +137,23 @@ def test_other_data_version_is_not_installed(boot, fake_solvers, fast_checks, _i
         assert c.get("/api/nightly").json()["installed"][0]["reason"] == "다른 데이터의 밤 결과다"
 
 
-def test_demo_precomputed_results_are_not_overwritten(tmp_path, monkeypatch, fake_solvers, fast_checks):
-    """영상 대본 숫자의 근거(시연 미리 계산)가 있는 요청은 밤에 다시 풀지 않는다."""
-    from api.demo_precomputed import FORMAT, precomputed_path
-    from api.demos import build_demo
-    from api.settings import PlacementSettings
-    root = tmp_path / "demo2"
-    bundle = generate_org_bundle(root / "org-n100-operating", 100, seed=11, scenario="operating")
-    active = build_demo(bundle)
-    params = PlacementSettings().to_milp_params(n_people=len(active.graph.people))
-    ev = evaluated(active, params, current_entries(active))
-    plan = PlanAssignment(entries=current_entries(active), objective=ev.objective.total, unfilled=[], violations=[],
-                          time_limited=True, label="A")
-    path = precomputed_path(bundle)
-    path.parent.mkdir(exist_ok=True)
-    path.write_text(json.dumps({"format": FORMAT, "preset": bundle.name, "dataset_version": active.info.version,
-                                "computed_at": "2026-10-06T12:00:00+00:00",
-                                "optimize": {"weights": {}, "n_alternatives": 3, "milp_params": params.model_dump(),
-                                             "plans": [{**plan.model_dump(), "eval_objective": ev.objective.total}]},
-                                "operating": None}), "utf-8")
-    active.retire()
-    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
-    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
+def test_results_already_in_the_cache_are_not_solved_again(boot, fake_solvers, fast_checks):
+    """이미 바로 나오는 결과(편성 기록에서 연 결과·낮 결과)는 밤에 다시 풀지 않는다 -- 기록의 숫자를 덮지 않는다."""
+    from api.cache import ResultCache
     from api.main import app
+    from api.schemas import MilpParamsIn
     with TestClient(app) as c:
-        _record_day_request(app, c, n_alt=3)                    # 시연 미리 계산과 같은 요청 -- 이미 바로 나온다
+        body = _record_day_request(app, c, n_alt=3)
+        active = app.state.dataset
+        params = MilpParamsIn(**body["milp_params"]).to_milp_params()
+        ev = evaluated(active, params, current_entries(active))
+        plan = PlanAssignment(entries=current_entries(active), objective=ev.objective.total, unfilled=[], violations=[],
+                              label="A")
+        app.state.cache.put(ResultCache.key({}, params, 3, active.info.version), [plan])
         report = run_now(app)
     day = _solve(report, "낮 요청")
     assert len(day) == 1 and day[0]["status"] == "skipped"
     assert fake_solvers["plans"] == []
-    pre = [ch for ch in report["checks"] if ch["id"] == "precomputed"][0]
-    assert pre["status"] == "ok"
-    # 관리자 설정이 바뀌면 시연 미리 계산이 쓰이지 않는다 -- 점검이 알리고, 밤 풀이가 새 설정으로 대신 준비한다
-    real = nightly._server_params
-    monkeypatch.setattr(nightly, "_server_params", lambda app, ds: real(app, ds).model_copy(update={"mu": 0.3}))
-    with TestClient(app):
-        report = run_now(app)
-    pre = [ch for ch in report["checks"] if ch["id"] == "precomputed"][0]
-    assert pre["status"] == "warn" and "시연 대본" in pre["detail"]
 
 
 # --- 낮 요청 기록 ----------------------------------------------------------------------------------------------------

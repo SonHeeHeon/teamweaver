@@ -102,6 +102,11 @@ class ActiveDataset:
     def has_kg(self) -> bool:
         return self._kg_source is not None
 
+    @property
+    def parsed_reviews(self) -> list | None:
+        """계산에 쓴 평가 글 판정(리뷰 순서) -- CSV 묶음 데이터만. 편성 기록 내보내기가 쓴다(api/records)."""
+        return self._kg_source[2] if self._kg_source is not None else None
+
     def knowledge_graph(self):
         """이 데이터의 지식 그래프(없으면 None -- 묶음 데이터가 아니다)."""
         if self._kg_source is None:
@@ -187,8 +192,11 @@ def scenario_of(manifest: dict | None) -> dict:
 
 def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
                  source: str, synthetic: bool | None, judge: bool = True,
-                 judge_cache: Path | None = None, manifest: dict | None = None, bundle=None) -> ActiveDataset:
-    """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다."""
+                 judge_cache: Path | None = None, manifest: dict | None = None, bundle=None,
+                 recorded_judgments: tuple[str, list[float]] | None = None) -> ActiveDataset:
+    """judge=True(CSV 묶음): 평가 사유를 LLM이 읽어 글 극성을 매긴다. False(가상 fixture): 생성 때의 LLM 값을 쓴다.
+    recorded_judgments=(판정 모델, 리뷰 순서대로의 극성): 편성 기록(api/records)에 담긴 판정값을 그대로 쓴다 -- LLM을
+    부르지 않고, 버전은 LLM 판정과 같은 식(judged_version)으로 만든다(같은 값이면 같은 계산 버전)."""
     content_version, judge_error = version, None
     if bundle is not None:
         # 계산 버전에 입력 규칙(기술 이름 사전 버전·하위 기술 인정 비율)을 넣는다(claude-a 요청 2026-10-09 (2), 마무리 정리):
@@ -196,7 +204,13 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
         # content_version(원천 파일 해시)은 그대로 -- 업로드 저장본(DatasetStore)이 그것으로 묶여 있다.
         version = rules_version(version)
     meta: dict = {"review_judge": "fixture"}
-    if judge:
+    if recorded_judgments is not None:
+        from api import review_judge as rj
+        model_name, polarity = recorded_judgments
+        parsed = [p.model_copy(update={"text_polarity": v}) for p, v in zip(parsed, polarity)]
+        version = rj.judged_version(version, model_name, parsed)
+        meta = {"review_judge": "record", "judge_model": model_name}
+    elif judge:
         from api import review_judge as rj
         ep = rj.endpoint()
         meta = {"review_judge": "items", "judge_model": ep["model"], "judge_host": ep["host"],

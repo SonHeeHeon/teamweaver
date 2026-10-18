@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { AdminLoginRequiredError, chooseDemo, fetchDemos, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
-import type { DatasetInfo, DemoBundle, IngestIssue, UploadResult } from "../api/types";
-
-const SCENARIO_LABEL: Record<string, string> = { operating: "운영 중(대부분 배치됨)", planning: "연초 계획(백지 배치)" };
+import { useState } from "react";
+import { AdminLoginRequiredError, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
+import type { DatasetInfo, IngestIssue, OpenRecordResult, UploadResult } from "../api/types";
+import { RecordsPanel } from "./RecordsPanel";
 
 /** 평가 사유(글)를 보내는 곳 -- 사내로 확인되지 않은 주소를 "사내"라고 단정하지 않는다. */
 function placeLabel(location: string | null | undefined, host: string | null | undefined): string {
@@ -12,7 +11,7 @@ function placeLabel(location: string | null | undefined, host: string | null | u
 }
 
 const SOURCE_LABEL: Record<string, string> = {
-  fixture: "기본 데이터", upload: "업로드", "demo-bundle": "시연 데이터(실제 형식)",
+  fixture: "기본 예시 데이터", upload: "올린 데이터", "demo-bundle": "시작 데이터", record: "편성 기록에서 연 데이터",
 };
 
 /** 계산에 쓰지 않는 선택 파일(claude-a 요청) -- 목록에서 무엇인지 알 수 있게. */
@@ -29,6 +28,12 @@ interface Props {
   adminToken?: string | null;
   /** 관리자 동작이 401을 받았다(K14) -- App이 로그인 화면으로 보낸다. */
   onLoginRequired?: () => void;
+  /** 편성 기록을 열었다(2026-10-18) -- App이 데이터를 바꾸고 그 기록의 편성안을 띄운다. */
+  onRecordOpened?: (res: OpenRecordResult) => void | Promise<void>;
+  /** 지금 화면의 편성안을 기록으로 내보내기(편성안이 없으면 null). */
+  onExportCurrent?: (() => void) | null;
+  /** 편성 기록 구역을 함께 보일지(2026-10-18 메뉴에 "편성 기록"이 따로 생겨 App은 false로 넘긴다) */
+  showRecords?: boolean;
 }
 
 function where(i: IngestIssue): string {
@@ -52,42 +57,12 @@ function IssueList({ title, items, tone }: { title: string; items: IngestIssue[]
   );
 }
 
-export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired }: Props) {
+export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired, onRecordOpened,
+                             onExportCurrent = null, showRecords = true }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [demos, setDemos] = useState<DemoBundle[]>([]);
-  const [demo, setDemo] = useState("");
-  const [confirmDemo, setConfirmDemo] = useState(false);
-  const chosenDescription = demos.find((d) => d.name === demo)?.description;
-
-  useEffect(() => {
-    let alive = true;
-    fetchDemos().then((d) => { if (alive) { setDemos(d); setDemo((cur) => cur || d[0]?.name || ""); } })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-  // 고른 항목은 지금 켜진 시연 묶음을 따른다 -- 설명이 켜진 데이터와 어긋나지 않게(리뷰 NIT)
-  const activeDemo = active?.demo_name;
-  // 켜진 묶음이 바뀌면 진행 중이던 '전환 확인'도 접는다 -- 고른 것과 다른 묶음으로 전환되지 않게(2라운드 NIT)
-  useEffect(() => { if (activeDemo) { setDemo(activeDemo); setConfirmDemo(false); } }, [activeDemo]);
-
-  async function switchDemo() {
-    if (!demo) return;
-    setConfirmDemo(false);
-    setBusy(true);
-    setError(null);
-    setResult(null);
-    try {
-      onSwitched(await chooseDemo(demo, adminToken));
-    } catch (e) {
-      if (e instanceof AdminLoginRequiredError) onLoginRequired?.();
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function upload() {
     if (!file) return;
@@ -139,135 +114,83 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
 
   const report = result?.report ?? null;
   return (
-    <section className="max-w-3xl space-y-4">
-      <div>
-        <h2 className="mb-1 text-lg font-semibold text-slate-900">데이터</h2>
-        <p className="text-sm text-slate-500">
-          인력·프로젝트 CSV 묶음(manifest.json 포함)을 zip 하나로 올린다. 검증에 오류가 하나라도
-          있으면 전환하지 않는다. 전환은 이 서버를 쓰는 모든 사용자에게 적용된다. 올린 묶음은
-          서버의 보호된 폴더에 하나만 보관되어 서버를 다시 켜도 유지되고, "기본 데이터로
-          되돌리기"를 하면 보관본도 지운다.
-        </p>
-      </div>
-
+    <div className="max-w-[1080px] space-y-5">
       {active?.review_judge === "items" && (
-        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-amber-400 bg-amber-50
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50
                                      px-3 py-2 text-sm text-amber-800">
           <span className="flex-1">{active.judge_error ?? "LLM 판정에 실패해 평가 사유 대신 항목 점수를 썼다."}</span>
-          <button onClick={rejudge} disabled={busy}
-                  title="성공하면 데이터 버전이 바뀌어 이 데이터에 저장된 교체 기록은 지워진다"
-                  className="rounded-md border border-amber-500 bg-white px-3 py-1 text-xs font-medium
-                             hover:bg-amber-100 disabled:opacity-50">
+          <button onClick={rejudge} disabled={busy} className="btn py-1 text-xs"
+                  title="성공하면 데이터 버전이 바뀌어 이 데이터에 저장된 교체 기록은 지워진다">
             {busy ? "판정 중…" : "판정 다시 시도"}
           </button>
           <span className="basis-full text-xs">성공하면 판정이 바뀌어 이 데이터에 저장된 교체 기록은 지워진다.</span>
         </div>
       )}
       {active?.review_judge === "blocked" && (
-        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {active.judge_error}
         </p>
       )}
       {active?.restore_error && (
-        <p role="alert" className="rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p role="alert" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           {active.restore_error}
         </p>
       )}
-      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-        <p className="text-xs font-medium text-slate-500">지금 계산에 쓰는 데이터</p>
-        {active ? (
-          <p className="mt-1 text-slate-900">
-            <span className="font-medium">{active.dataset_id}</span>
-            {" · "}{SOURCE_LABEL[active.source] ?? active.source}
-            {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
-            {" · "}{active.people}명 · 프로젝트 {active.projects}건
-            <span className="ml-2 font-mono text-xs text-slate-400">{active.version.slice(0, 12)}</span>
-          </p>
-        ) : null}
-        {active ? (
-          <p className="mt-1 text-xs text-slate-500">
-            평가 사유(글) 판정:{" "}
-            {active.review_judge === "fixture" ? "가상 데이터 생성 때 LLM이 매긴 값"
-              : active.review_judge === "items" ? "LLM 실패 — 항목 점수로 대신함"
-              : active.review_judge === "blocked" ? "외부 전송이 허용되지 않아 판정하지 않음 — 항목 점수로 대신함"
-              : `LLM ${active.judge_model ?? ""} · ${placeLabel(active.judge_location, active.judge_host)}`}
-          </p>
-        ) : (
-          <p className="mt-1 text-slate-500">불러오는 중…</p>
-        )}
-      </div>
 
-      {active?.judge_endpoint && (
-        <p className={`rounded-md border px-3 py-2 text-sm ${active.judge_endpoint.external
-          ? "border-amber-400 bg-amber-50 text-amber-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
-          올린 묶음의 평가 사유(좋은점·나쁜점 글)는 LLM이 읽어 협업 점수에 반영한다. 보내는 곳:{" "}
-          <b>{placeLabel(active.judge_endpoint.location, active.judge_endpoint.host)}</b>
-          {" · "}모델 {active.judge_endpoint.model}. 처음 판정은 100명(평가 약 1,400건) 기준 2~4분 걸리고, 이후엔 저장된 판정을 쓴다.
-          {active.judge_endpoint.external && (active.judge_endpoint.external_allowed
-            ? <b> 이 서버는 실데이터의 평가 원문도 이곳으로 보내도록 허용돼 있다(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1).</b>
-            : " 실데이터(가상이 아닌 묶음)는 서버가 외부 전송을 허용(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1)하지 않으면 보내지 않고 항목 점수를 쓴다. 사내 LLM은 서버의 TEAMWEAVER_REVIEW_BASE_URL로 지정한다.")}
-        </p>
+      {showRecords && (
+        <RecordsPanel adminToken={adminToken} onLoginRequired={onLoginRequired} onOpened={onRecordOpened}
+                      onExportCurrent={onExportCurrent} activeRecordId={active?.record_id ?? null} />
       )}
-      {demos.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-          <p className="text-xs font-medium text-slate-500">시연 데이터 고르기(가상)</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <select aria-label="시연 데이터" value={demo} onChange={(e) => { setDemo(e.target.value); setConfirmDemo(false); }}
-                    className="rounded-md border border-slate-300 px-2 py-1">
-              {demos.map((d) => (
-                <option key={d.name} value={d.name}>
-                  {d.title
-                    ? `${d.title} · 사업 ${d.projects ?? "?"}건 (${d.name})`
-                    : `${d.name} · ${SCENARIO_LABEL[d.scenario] ?? d.scenario} · ${d.people ?? "?"}명 · 사업 ${d.projects ?? "?"}건`}
-                </option>
-              ))}
-            </select>
-            {/* 업로드 보관본을 지우는 동작이라 한 번 더 확인한다(브라우저 확인 창 대신 두 단계 버튼) */}
-            {!confirmDemo ? (
-              <button onClick={() => setConfirmDemo(true)} disabled={!demo || busy}
-                      className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium
-                                 text-slate-700 hover:bg-slate-50 disabled:text-slate-400">
-                이 시연 데이터로 전환
-              </button>
-            ) : (
+
+      <section className="panel" aria-labelledby="data-upload">
+        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 id="data-upload" className="text-base font-semibold text-slate-900">인력·사업 데이터 올리기</h2>
+            <p className="mt-0.5 text-[13px] text-slate-500">
+              CSV 묶음(manifest.json 포함 zip)을 올리면 검증한 뒤 작업 데이터로 바꿉니다. 오류가 하나라도 있으면 바꾸지 않고
+              파일·줄·칸을 알려 줍니다. 바꾸면 이 서버를 쓰는 모든 사용자에게 적용되고, 서버를 다시 켜도 유지됩니다.
+            </p>
+          </div>
+        </header>
+        <div className="space-y-4 px-5 py-4">
+          <div className="rounded-md bg-slate-50 px-4 py-3 text-sm">
+            <p className="text-xs font-medium text-slate-500">지금 작업 데이터</p>
+            {active ? (
               <>
-                <button onClick={switchDemo} disabled={busy}
-                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700">
-                  {busy ? "전환 중…" : "전환 확인"}
-                </button>
-                <button onClick={() => setConfirmDemo(false)} className="text-sm text-slate-600 underline">취소</button>
+                <p className="mt-1 text-slate-900">
+                  <span className="font-semibold">{active.record_title ?? active.dataset_id}</span>
+                  {" · "}{SOURCE_LABEL[active.source] ?? active.source}
+                  {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
+                  <span className="num">{" · "}{active.people}명 · 사업 {active.projects}건</span>
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  평가 글 판정:{" "}
+                  {active.review_judge === "fixture" ? "가상 데이터 생성 때 LLM이 매긴 값"
+                    : active.review_judge === "items" ? "LLM 실패 — 항목 점수로 대신함"
+                    : active.review_judge === "blocked" ? "외부 전송이 허용되지 않아 판정하지 않음 — 항목 점수로 대신함"
+                    : active.review_judge === "record" ? `기록에 담긴 판정값(${active.judge_model ?? "LLM"})`
+                    : `LLM ${active.judge_model ?? ""} · ${placeLabel(active.judge_location, active.judge_host)}`}
+                </p>
               </>
+            ) : <p className="mt-1 text-slate-500">불러오는 중…</p>}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border-[1.5px] border-dashed border-slate-300 px-4 py-3.5">
+            <label className="flex-1 text-sm text-slate-700">
+              <b className="block font-semibold text-slate-900">zip 파일 고르기</b>
+              <span className="text-[13px] text-slate-500">manifest.json과 인력·사업·평가 CSV가 든 묶음 · 20MB까지</span>
+              <input type="file" accept=".zip,application/zip" aria-label="묶음 zip 파일"
+                     onChange={(e) => { setFile(e.target.files?.[0] ?? null); setResult(null); }}
+                     className="mt-2 block text-sm" />
+            </label>
+            <button onClick={upload} disabled={!file || busy} className="btn-primary">
+              {busy ? "처리 중…" : "검증 후 전환"}
+            </button>
+            {(active?.source === "upload" || active?.source === "record") && (
+              <button onClick={reset} disabled={busy} className="btn">
+                기본 데이터로 되돌리기
+              </button>
             )}
           </div>
-          {chosenDescription && <p className="mt-2 text-sm text-slate-700">{chosenDescription}</p>}
-          <p className="mt-1 text-xs text-slate-500">
-            "운영 중" 데이터는 대부분이 이미 진행 사업에 있고 신규 제안 2~3개를 남는 인력으로 짜는 장면이다(운영 중 편성 탭).
-            전환하면 서버에 보관된 업로드 데이터는 지워지고, 이전 계산 결과는 비워진다. 리뷰 글을 처음 LLM으로 판정하는
-            묶음이면 전환에 몇 분 걸릴 수 있다(이후 같은 글은 저장된 판정을 쓴다).
-          </p>
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="text-sm text-slate-700">
-          <span className="sr-only">묶음 zip 파일</span>
-          <input type="file" accept=".zip,application/zip" aria-label="묶음 zip 파일"
-                 onChange={(e) => { setFile(e.target.files?.[0] ?? null); setResult(null); }}
-                 className="text-sm" />
-        </label>
-        <button onClick={upload} disabled={!file || busy}
-                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white
-                           hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-          {busy ? "처리 중…" : "검증 후 전환"}
-        </button>
-        {active?.source === "upload" && (
-          <button onClick={reset} disabled={busy}
-                  className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm
-                             font-medium text-slate-700 hover:bg-slate-50 disabled:text-slate-400">
-            기본 데이터로 되돌리기
-          </button>
-        )}
-      </div>
-
       {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       {result && (
@@ -311,6 +234,22 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
           )}
         </div>
       )}
-    </section>
+        </div>
+      </section>
+
+      {active?.judge_endpoint && (
+        <details className="panel px-5 py-3 text-[13px] text-slate-600">
+          <summary className="cursor-pointer font-medium text-slate-700">고급: 평가 글 판정 위치</summary>
+          <p className="mt-2">
+            올린 묶음의 평가 사유(좋은점·나쁜점 글)는 LLM이 읽어 협업 점수에 반영한다. 보내는 곳:{" "}
+            <b>{placeLabel(active.judge_endpoint.location, active.judge_endpoint.host)}</b>
+            {" · "}모델 {active.judge_endpoint.model}. 처음 판정은 100명(평가 약 1,400건) 기준 2~4분 걸리고, 이후엔 저장된 판정을 쓴다.
+            {active.judge_endpoint.external && (active.judge_endpoint.external_allowed
+              ? <b> 이 서버는 실데이터의 평가 원문도 이곳으로 보내도록 허용돼 있다(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1).</b>
+              : " 실데이터(가상이 아닌 묶음)는 서버가 외부 전송을 허용(TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1)하지 않으면 보내지 않고 항목 점수를 쓴다. 사내 LLM은 서버의 TEAMWEAVER_REVIEW_BASE_URL로 지정한다.")}
+          </p>
+        </details>
+      )}
+    </div>
   );
 }

@@ -30,18 +30,24 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
   uv run playwright install chromium
 fi
 
-if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" \
+# 앱 전체 로그인(2026-10-18): 비밀번호를 정하지 않으면 기본 계정 admin / admin1234로 로그인한다(시연용).
+# 다른 사람이 접속하는 주소(HOST=0.0.0.0 등)로 기본 계정을 열지 않는다 -- 비밀번호를 정해야 뜬다(폴백 리뷰 S5).
+if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" && "${TEAMWEAVER_LOGIN:-}" != "off" \
       && -z "${TEAMWEAVER_ADMIN_PASSWORD_HASH:-}${TEAMWEAVER_ADMIN_PASSWORD:-}${TEAMWEAVER_ADMIN_TOKEN:-}" ]]; then
-  echo "경고: $HOST 로 열지만 관리자 비밀번호가 없다 -- 설정 변경·데이터 업로드를 누구나 할 수 있다." >&2
+  echo "중단: $HOST 로 열려면 기본 계정(admin/admin1234) 대신 비밀번호를 정한다:" >&2
+  echo '  TEAMWEAVER_ADMIN_PASSWORD_HASH="$(uv run python scripts/hash_admin_password.py)" scripts/run_poc.sh' >&2
+  exit 1
 fi
+echo "로그인: 아이디 ${TEAMWEAVER_ADMIN_ID:-admin} · 비밀번호는 TEAMWEAVER_ADMIN_PASSWORD(_HASH), 정하지 않았으면 admin1234"
 
 echo "TeamWeaver: http://$HOST:$PORT"
-# 시연 데이터(기본): 실제 시스템 형식의 조직형 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.
-# 계산 안정화 뒤 전환(2026-10-06): 익숙한 쌍 = 최근 3년 중 12개월(사용자 결정), 시드 4개 동시 풀이로 100명 안 A~D가
-# 약 2분(30초 x 4)에 빈자리 없이 나온다(rehearsal/results/n100/pipeline-real.json).
-export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$PWD/demo/org-n100}"
-# 시연 묶음 목록(2026-10-06, 데이터 탭에서 고름): 연초 계획(전원 배치)과 운영 중(대기 인력으로 신규 제안 편성), 100/200/300명.
-# demo/precomputed/에 같은 데이터·같은 설정으로 미리 계산한 결과가 있으면 "미리 계산"으로 바로 보인다(python -m rehearsal.precompute_demo).
+# 시작 데이터(기본): 연말 시점 100명(demo/org-n100-yearend -- 진행 사업·끝나 가는 사업·발주 예정 사업이 섞여 있어
+# 신규 사업 편성·긴급 투입·연간 계획 세 상황을 한 데이터로 보인다, claude-b 요청 3 2026-10-18). 그 묶음이 없으면
+# 연초 계획 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.
+# 시드 4개 동시 풀이로 100명 안 A~D가 약 2분(30초 x 4)에 빈자리 없이 나온다(rehearsal/results/n100/pipeline-real.json).
+if [ -d "$PWD/demo/org-n100-yearend" ]; then _default_bundle="$PWD/demo/org-n100-yearend"; else _default_bundle="$PWD/demo/org-n100"; fi
+export TEAMWEAVER_DEMO_BUNDLE="${TEAMWEAVER_DEMO_BUNDLE-$_default_bundle}"
+# 시연 편성안은 화면의 "편성 기록"에서 demo/records/*.json을 열어 본다(2026-10-18, 예전 시연 고르기·미리 계산 자동 설치를 대체).
 export TEAMWEAVER_DEMO_DIR="${TEAMWEAVER_DEMO_DIR-$PWD/demo}"
 # 동시 탐색 수(이 기기 CPU 코어에 맞춘 값). 1이면 안 B 이후가 품질 하한에 걸려 안 A 하나만 나올 수 있다(실측).
 export TEAMWEAVER_SOLVER_SEEDS="${TEAMWEAVER_SOLVER_SEEDS-4}"

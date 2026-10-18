@@ -62,7 +62,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
     params = req.milp_params.to_milp_params()
     key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version)
 
-    from api.demo_precomputed import forget, precomputed_at, precomputed_stop_reason
+    from api.demo_precomputed import forget, precomputed_at, precomputed_label, precomputed_stop_reason
 
     def _plan_payload(plan, index: int, cached: bool, ub: float, pre_at: str | None = None) -> dict:
         """캐시 히트/미스 두 경로가 같은 모양을 내도록 조립을 한 곳에 모은다."""
@@ -80,6 +80,8 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             "cached": cached,
             # 시연 묶음의 미리 계산 결과면 그 계산 시각(같은 데이터·같은 설정, api/demo_precomputed) -- 화면 표시용
             "precomputed_at": pre_at,
+            # 편성 기록에서 연 결과면 그 기록 제목(api/records) -- 화면 띠가 "기록 «제목»에서 연 결과"로 보인다
+            "precomputed_label": precomputed_label(request.app, key) if pre_at is not None else None,
             # 솔버가 시간 한도에서 멈춘 해(최선 증명 전) -- 화면 배지(claude-a 요청)
             "time_limited": bool(getattr(plan, "time_limited", False)),
             # 계산 신뢰도 배지: 서비스가 내는 해는 모두 독립 검증(C0)을 통과한 해다. 종료 사유·증명 상한·허용 차이.
@@ -150,7 +152,8 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
                     forget(request.app, key)
             # 요청한 대안 수도 싣는다: 조건(품질·미충원·중복·빈 팀, C2)을 만족하는 대안이 모자라면
             # 서버는 억지로 채우지 않고 덜 낸다 -- 화면이 "대안 없음"을 알릴 수 있게.
-            done = {"count": count, "requested_alternatives": req.n_alternatives, "precomputed_at": pre_at}
+            done = {"count": count, "requested_alternatives": req.n_alternatives, "precomputed_at": pre_at,
+                    "precomputed_label": precomputed_label(request.app, key) if pre_at is not None else None}
             if user_stopped():
                 done["stop_reason"] = "user_stopped"            # 사용자가 멈췄다 -- 대안이 모자란 이유
             elif cached is None and outcome.get("stop_reason"):

@@ -43,7 +43,7 @@ describe("RequirementsTab", () => {
     expect(screen.getByRole("button", { name: /최적화/ })).toBeDisabled();
   });
 
-  it("운영 중 데이터면 '전부 다시 짜기'의 한계와 운영 중 편성 탭을 안내한다", () => {
+  it("운영 중 데이터면 '전부 다시 짜기'의 한계와 신규 사업 편성 화면을 안내한다", () => {
     const open = vi.fn();
     const { rerender } = render(<RequirementsTab meta={META} weights={{}} onWeightsChange={() => {}}
                                                  onRun={() => {}} running={false} />);
@@ -51,7 +51,7 @@ describe("RequirementsTab", () => {
     rerender(<RequirementsTab meta={META} weights={{}} onWeightsChange={() => {}} onRun={() => {}} running={false}
                               operating onOpenOperating={open} />);
     expect(screen.getByRole("note")).toHaveTextContent(/빈자리가 남을 수 있다/);
-    fireEvent.click(screen.getByRole("button", { name: "운영 중 편성 탭" }));
+    fireEvent.click(screen.getByRole("button", { name: "신규 사업 편성 화면" }));
     expect(open).toHaveBeenCalled();
   });
 });

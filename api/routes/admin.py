@@ -3,14 +3,15 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from api.admin import (COOKIE, SESSION_SECONDS, THROTTLE, admin_protected, admin_token_required,
-                       cookie_secure, issue_session, password_login_enabled, revoke_sessions,
-                       session_expiry, verify_password)
+from api.admin import (COOKIE, SESSION_SECONDS, THROTTLE, admin_id, admin_protected, admin_token_required,
+                       cookie_secure, default_credentials, issue_session, password_login_enabled,
+                       revoke_sessions, session_expiry, verify_credentials)
 
 router = APIRouter()
 
 
 class LoginIn(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=1024)
 
 
@@ -26,6 +27,9 @@ def admin_status(request: Request) -> dict:
             "protected": admin_protected(),
             "logged_in": expires is not None,
             "expires_at": expires,
+            "user": admin_id() if expires is not None else None,
+            # 기본 계정 사용 여부는 로그인한 사람에게만 알린다(폴백 리뷰 S5 -- 밖에서 "admin1234가 통한다"를 알려 주지 않게)
+            "default_credentials": default_credentials() if expires is not None else False,
             # 하위 호환(K9 화면): 토큰만 설정된 서버
             "token_required": admin_token_required() and not password_login_enabled()}
 
@@ -41,15 +45,15 @@ def login(body: LoginIn, request: Request) -> JSONResponse:
                             detail=f"로그인 시도가 너무 잦다(비밀번호를 여러 번 틀렸거나 처리 중). "
                                    f"{int(wait) + 1}초 뒤 다시 시도할 것.")
     try:
-        ok = verify_password(body.password)
+        ok = verify_credentials(body.username, body.password)
         if not ok:
             THROTTLE.failed(who)
-            raise HTTPException(status_code=401, detail="비밀번호가 맞지 않는다.")
+            raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 맞지 않습니다.")
         THROTTLE.succeeded(who)
     finally:
         THROTTLE.end(who)
     value, expires = issue_session()
-    res = JSONResponse({"logged_in": True, "expires_at": expires})
+    res = JSONResponse({"logged_in": True, "expires_at": expires, "user": admin_id()})
     res.set_cookie(COOKIE, value, max_age=SESSION_SECONDS, httponly=True, samesite="strict",
                    secure=cookie_secure(request), path="/")
     return res

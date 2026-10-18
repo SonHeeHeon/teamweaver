@@ -242,15 +242,18 @@ describe("OperatingTab — 리뷰 반영", () => {
     })());
     vi.mocked(postStaffingCandidates).mockReset().mockResolvedValue({ note: "", candidates: [] });
     vi.mocked(downloadReport).mockReset().mockResolvedValue(undefined);
-    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} />);
+    const show = vi.fn();
+    render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} onShowReinforce={show} />);
     fireEvent.click(await screen.findByRole("button", { name: "K별 비교 실행" }));
     fireEvent.click(await screen.findByRole("button", { name: "K=1 이동 보기" }));
+    expect(show).not.toHaveBeenCalled();  // 비교 실행이 기준을 비울 때는 화면을 옮기지 않는다(Codex 리뷰 2라운드)
     fireEvent.click(screen.getByRole("button", { name: "K=1 결과 PDF" }));
     await waitFor(() => expect(downloadReport).toHaveBeenCalled());
     const [plan, , , , , , basis] = vi.mocked(downloadReport).mock.calls[0];
     expect(plan.label).toBe("K1");
     expect(basis?.planToken).toBe("tok");
     fireEvent.click(screen.getByRole("button", { name: "이 결과에서 이어서 보강" }));
+    expect(show).toHaveBeenCalled();     // 신규 사업 편성 화면이면 긴급 투입으로 옮긴다(Codex 리뷰 P2)
     expect(screen.getByText(/기준 배치:/)).toHaveTextContent("K=1 결과");
     expect(screen.getByText(/K=1 결과의 팀/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "후보 보기" }));
@@ -264,6 +267,22 @@ describe("OperatingTab — 리뷰 반영", () => {
     expect(screen.getByText(/기준 배치:/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "K별 비교 실행" }));
     await waitFor(() => expect(screen.queryByText(/기준 배치:/)).not.toBeInTheDocument());
+    expect(show).toHaveBeenCalledTimes(2);  // 이어서 보강 두 번만
   });
 });
 
+
+describe("OperatingTab — 3상황 메뉴의 초점(2026-10-18)", () => {
+  beforeEach(() => { vi.mocked(fetchOperatingState).mockResolvedValue(STATE); });
+
+  it("신규 사업 편성은 K 비교만, 긴급 투입은 보강만 보인다(다른 쪽은 숨겨 결과를 남긴다)", async () => {
+    const { rerender } = render(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} focus="new" />);
+    const compare = await screen.findByRole("button", { name: "K별 비교 실행" });
+    const candidates = screen.getByRole("button", { name: "후보 보기" });
+    expect(compare.closest(".hidden")).toBeNull();
+    expect(candidates.closest(".hidden")).not.toBeNull();
+    rerender(<OperatingTab meta={META} params={null} onDatasetChanged={vi.fn()} focus="reinforce" />);
+    expect(screen.getByRole("button", { name: "K별 비교 실행" }).closest(".hidden")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "후보 보기" }).closest(".hidden")).toBeNull();
+  });
+});

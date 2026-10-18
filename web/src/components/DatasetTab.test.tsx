@@ -4,9 +4,11 @@ import { DatasetTab } from "./DatasetTab";
 import type { DatasetInfo } from "../api/types";
 
 vi.mock("../api/client", () => ({ uploadDataset: vi.fn(), resetDataset: vi.fn(), rejudgeDataset: vi.fn(),
-                                  fetchDemos: vi.fn(async () => []), chooseDemo: vi.fn(),
+                                  fetchRecords: vi.fn(async () => []), importRecord: vi.fn(), openRecord: vi.fn(),
+                                  deleteRecord: vi.fn(), recordFileUrl: (id: string) => `/api/records/${id}/file`,
                                   AdminLoginRequiredError: class extends Error {} }));
-import { chooseDemo, fetchDemos, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
+import { fetchRecords, importRecord, openRecord, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
+import type { OpenRecordResult, PlacementRecord } from "../api/types";
 
 const FIXTURE: DatasetInfo = { dataset_id: "fixture-demo-100x20", version: "f".repeat(64),
   source: "fixture", synthetic: true, people: 100, projects: 20,
@@ -95,10 +97,10 @@ describe("DatasetTab — 저장(K13)", () => {
 
 
 describe("DatasetTab — 시연 데이터·오류 문구(claude-a 요청)", () => {
-  it("시연 묶음은 '시연 데이터(실제 형식)'로, 서버가 준 오류 문장은 그대로 보인다", () => {
+  it("시작 데이터 묶음은 '시작 데이터'로, 서버가 준 오류 문장은 그대로 보인다", () => {
     render(<DatasetTab active={{ ...FIXTURE, source: "demo-bundle",
       restore_error: "시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x" } as any} onSwitched={vi.fn()} />);
-    expect(screen.getByText(/시연 데이터\(실제 형식\)/)).toBeInTheDocument();
+    expect(screen.getByText(/시작 데이터/)).toBeInTheDocument();
     expect(screen.getByText("시연 데이터 묶음을 읽지 못해 기본 데이터로 시작했다: x")).toBeInTheDocument();
     expect(screen.queryByText(/저장된 업로드 데이터를 복원하지 못해/)).not.toBeInTheDocument();
   });
@@ -111,7 +113,7 @@ describe("DatasetTab — 평가 사유 LLM 판정(2026-10-06 LLM 통일)", () =>
     render(<DatasetTab active={{ ...FIXTURE, source: "upload", synthetic: false, review_judge: "llm",
       judge_model: "gpt-6-luna", judge_host: "api.openai.com", judge_location: "openai", judge_external: true,
       judge_endpoint: { host: "api.openai.com", location: "openai", external: true, model: "gpt-6-luna" } }} onSwitched={vi.fn()} />);
-    expect(screen.getByText(/평가 사유\(글\) 판정: LLM gpt-6-luna · 외부\(OpenAI\)/)).toBeInTheDocument();
+    expect(screen.getByText(/평가 글 판정: LLM gpt-6-luna · 외부\(OpenAI\)/)).toBeInTheDocument();
     expect(screen.getByText(/TEAMWEAVER_REVIEW_ALLOW_EXTERNAL=1/)).toBeInTheDocument();
   });
 
@@ -167,48 +169,62 @@ describe("DatasetTab — 평가 사유 LLM 판정(2026-10-06 LLM 통일)", () =>
 });
 
 
-describe("DatasetTab — 시연 데이터 고르기", () => {
-  it("운영 중 시연 데이터를 골라 전환한다", async () => {
-    vi.mocked(fetchDemos).mockResolvedValue([
-      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true },
-      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true }]);
-    const next = { ...FIXTURE, source: "demo-bundle" as const, version: "d".repeat(64) };
-    vi.mocked(chooseDemo).mockResolvedValue(next);
-    const onSwitched = vi.fn();
-    render(<DatasetTab active={FIXTURE} onSwitched={onSwitched} />);
-    fireEvent.change(await screen.findByLabelText("시연 데이터"), { target: { value: "org-n100-operating" } });
-    expect(screen.getByText(/운영 중\(대부분 배치됨\) · 100명 · 사업 15건/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "이 시연 데이터로 전환" }));
-    expect(chooseDemo).not.toHaveBeenCalled();                       // 업로드 보관본을 지우므로 한 번 더 확인
-    fireEvent.click(screen.getByRole("button", { name: "전환 확인" }));
-    await waitFor(() => expect(onSwitched).toHaveBeenCalledWith(next));
-    expect(vi.mocked(chooseDemo).mock.calls[0][0]).toBe("org-n100-operating");
-  });
+const REC: PlacementRecord = { id: "a".repeat(16), title: "2026년 10월 연초 편성 · 100명", kind: "planning",
+  exported_at: "2026-10-12T10:00:00+0900", imported_at: "2026-10-18T10:00:00+0900", dataset_id: "org-n100",
+  people: 100, projects: 20, horizon_start: "2026-10", horizon_months: 6, synthetic: true, plans: 4, operating: false,
+  open: false, score_changed: [] };
 
-  it("목록은 장면 제목으로 보이고, 고른 묶음의 설명을 보인다", async () => {
-    vi.mocked(fetchDemos).mockResolvedValue([
-      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true,
-        title: "연초 계획 · 100명 전체 배치", description: "사업 13개를 처음부터 편성한다." },
-      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true,
-        title: "운영 중 · 90명 배치 중, 대기 10명", description: "막 일이 끝난 10명으로 신규 제안 2개를 편성한다." }]);
+describe("DatasetTab — 편성 기록(2026-10-18, 시연 데이터 고르기를 대체)", () => {
+  beforeEach(() => { vi.mocked(fetchRecords).mockReset(); vi.mocked(importRecord).mockReset(); vi.mocked(openRecord).mockReset(); });
+
+  it("시연 데이터 고르기는 없고, 기록이 없으면 불러오기를 안내한다", async () => {
+    vi.mocked(fetchRecords).mockResolvedValue([]);
     render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} />);
-    const select = await screen.findByLabelText("시연 데이터");
-    expect(screen.getByRole("option", { name: /운영 중 · 90명 배치 중, 대기 10명 · 사업 15건 \(org-n100-operating\)/ }))
-      .toBeInTheDocument();
-    expect(screen.getByText("사업 13개를 처음부터 편성한다.")).toBeInTheDocument();
-    fireEvent.change(select, { target: { value: "org-n100-operating" } });
-    expect(screen.getByText("막 일이 끝난 10명으로 신규 제안 2개를 편성한다.")).toBeInTheDocument();
+    expect(await screen.findByText("아직 불러온 편성 기록이 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByText(/시연 데이터 고르기/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "기록 파일 불러오기" })).toBeInTheDocument();
   });
 
-  it("처음 고른 항목은 지금 켜진 시연 묶음이다", async () => {
-    vi.mocked(fetchDemos).mockResolvedValue([
-      { name: "org-n100", dataset_id: "a", people: 100, projects: 13, scenario: "planning", synthetic: true,
-        title: "연초 계획", description: "처음부터 편성." },
-      { name: "org-n100-operating", dataset_id: "b", people: 100, projects: 15, scenario: "operating", synthetic: true,
-        title: "운영 중", description: "신규 제안 편성." }]);
-    render(<DatasetTab active={{ ...FIXTURE, source: "demo-bundle", demo_name: "org-n100-operating" }} onSwitched={vi.fn()} />);
-    expect(await screen.findByText("신규 제안 편성.")).toBeInTheDocument();
-    expect(screen.getByLabelText("시연 데이터")).toHaveValue("org-n100-operating");
+  it("목록에 제목·종류·규모·계획 기간을 보인다", async () => {
+    vi.mocked(fetchRecords).mockResolvedValue([REC, { ...REC, id: "b".repeat(16), kind: "operating", title: "운영 중 기록" }]);
+    render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} />);
+    expect(await screen.findByText(REC.title)).toBeInTheDocument();
+    expect(screen.getByText("연초 계획")).toBeInTheDocument();
+    expect(screen.getByText("운영 중")).toBeInTheDocument();
+    expect(screen.getAllByText("2026-10 ~ 2027-03")).toHaveLength(2);
+  });
+
+  it("기록 파일을 불러오면 확인 결과를 알리고 목록을 새로 읽는다", async () => {
+    vi.mocked(fetchRecords).mockResolvedValueOnce([]).mockResolvedValue([REC]);
+    vi.mocked(importRecord).mockResolvedValue({ record: REC, check: { plans: 4, score_changed: [], operating: false, skipped: [] } });
+    render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("편성 기록 파일"), { target: { files: [new File(["{}"], "r.json")] } });
+    expect(await screen.findByText(/서버가 다시 채점해 기록과 같음을 확인했습니다/)).toBeInTheDocument();
+    expect(await screen.findByText(REC.title)).toBeInTheDocument();
+  });
+
+  it("열기는 한 번 더 확인하고, 열면 결과를 App에 넘긴다", async () => {
+    vi.mocked(fetchRecords).mockResolvedValue([REC]);
+    const res = { dataset: { ...FIXTURE, source: "record" }, record: REC,
+                  request: { weights: {}, milp_params: {}, n_alternatives: 3 }, operating_params: null,
+                  check: { plans: 4, score_changed: [], operating: false, skipped: [] } } as unknown as OpenRecordResult;
+    vi.mocked(openRecord).mockResolvedValue(res);
+    const onRecordOpened = vi.fn();
+    render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} onRecordOpened={onRecordOpened} />);
+    fireEvent.click(await screen.findByRole("button", { name: "열기" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("작업 데이터와 그 결과가 이 기록으로 바뀝니다");
+    expect(openRecord).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole("button", { name: "열기" }).at(-1)!);
+    await waitFor(() => expect(onRecordOpened).toHaveBeenCalledWith(res));
+  });
+
+  it("편성안이 없으면 '지금 작업 내보내기'는 누를 수 없다", async () => {
+    vi.mocked(fetchRecords).mockResolvedValue([]);
+    const { rerender } = render(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} onExportCurrent={null} />);
+    expect(screen.getByRole("button", { name: "지금 작업 내보내기" })).toBeDisabled();
+    const onExport = vi.fn();
+    rerender(<DatasetTab active={FIXTURE} onSwitched={vi.fn()} onExportCurrent={onExport} />);
+    fireEvent.click(screen.getByRole("button", { name: "지금 작업 내보내기" }));
+    expect(onExport).toHaveBeenCalled();
   });
 });
-

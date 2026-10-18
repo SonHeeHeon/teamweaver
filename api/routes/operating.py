@@ -214,10 +214,10 @@ def operating_state(dataset: ActiveDataset = Depends(get_dataset)) -> dict:
         "n_people": len(g.people),
         "note": NOT_CALIBRATED,
         "hint": (None if available and (operating or dataset.scenario.get("bench")) else
-                 "현재 배치가 없는 데이터다. 데이터 탭에서 '운영 중' 시연 데이터를 고르거나 current_assignments.csv가 든 "
+                 "현재 배치가 없는 데이터다. 데이터 화면에서 '운영 중' 편성 기록을 열거나 current_assignments.csv가 든 "
                  "묶음을 올린다." if not available else
-                 "이 데이터는 운영 중 시나리오가 아니다(대기 인력·신규 제안 표시 없음). 비교는 되지만, 데이터 탭에서 "
-                 "'운영 중' 시연 데이터를 고르면 신규 제안 장면을 볼 수 있다."),
+                 "이 데이터는 운영 중 상황이 아니다(대기 인력·신규 제안 표시 없음). 비교는 되지만, 데이터 화면에서 "
+                 "'운영 중' 편성 기록을 열면 신규 제안 장면을 볼 수 있다."),
     }
 
 

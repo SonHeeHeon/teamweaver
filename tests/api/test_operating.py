@@ -161,52 +161,6 @@ def demo_dir(tmp_path, monkeypatch):
     return root
 
 
-def test_demo_list_only_shows_bundles(client, demo_dir):
-    demos = client.get("/api/datasets/demos").json()
-    assert [d["name"] for d in demos] == ["mini"] and demos[0]["people"] == 12
-
-
-def test_choosing_a_demo_switches_and_survives_restart(client, demo_dir):
-    res = client.post("/api/datasets/demo", json={"name": "mini"})
-    assert res.status_code == 200, res.text
-    info = res.json()
-    assert info["source"] == "demo-bundle" and info["people"] == 12 and info["judge_endpoint"]
-    from fastapi.testclient import TestClient
-    from api.main import app
-    with TestClient(app) as again:
-        assert again.get("/api/datasets/active").json()["people"] == 12
-    # 되돌리기는 고른 묶음도 잊는다
-    assert client.post("/api/datasets/reset", json={}).json()["source"] == "fixture"
-    with TestClient(app) as again:
-        assert again.get("/api/datasets/active").json()["source"] == "fixture"
-
-
-@pytest.mark.parametrize("name", ["../demo", "nope", "not-a-bundle"])
-def test_choosing_an_unknown_demo_is_404(client, demo_dir, name):
-    assert client.post("/api/datasets/demo", json={"name": name}).status_code == 404
-
-
-def test_choosing_a_demo_needs_admin(client, demo_dir, monkeypatch):
-    monkeypatch.setenv("TEAMWEAVER_ADMIN_TOKEN", "t0ken")
-    assert client.post("/api/datasets/demo", json={"name": "mini"}).status_code == 401
-
-
-
-def test_broken_demo_changes_nothing(client, demo_dir, tmp_path):
-    from tests.api.test_datasets import ZIP, _zip_dir
-    from core.ingest.synthetic import generate_bundle
-    up = client.post("/api/datasets", content=_zip_dir(generate_bundle(tmp_path / "u", 12, 3, 5)), headers=ZIP).json()
-    (demo_dir / "mini" / "people.csv").write_text("broken\n", "utf-8")
-    res = client.post("/api/datasets/demo", json={"name": "mini"})
-    assert res.status_code == 422 and "읽지 못했다" in res.json()["detail"]
-    active = client.get("/api/datasets/active").json()
-    assert active["source"] == "upload" and active["content_version"] == up["dataset"]["content_version"]
-    from fastapi.testclient import TestClient
-    from api.main import app
-    with TestClient(app) as again:                       # 보관본도 선택 기록도 그대로 -- 재기동해도 업로드
-        assert again.get("/api/datasets/active").json()["source"] == "upload"
-
-
 def test_compare_is_one_at_a_time(op_client):
     from api.routes import operating
     assert operating._COMPARE_SLOT.acquire(blocking=False)
@@ -226,7 +180,6 @@ def test_candidates_report_unfilled_as_seats(op_client):
     rows = op_client.post("/api/staffing/candidates", json={"milp_params": FAST, "project_id": "P1",
                                                              "include_pull": True}).json()["candidates"]
     assert all(isinstance(r["unfilled_seats_delta"], int) for r in rows)
-
 
 
 def test_compare_slot_is_released_after_a_failing_calculation(op_client, monkeypatch):
@@ -260,7 +213,6 @@ def test_compare_streams_each_k_as_it_finishes(op_client, monkeypatch):
     assert kinds[0] == "start" and "row" in kinds and kinds.index("row") < kinds.index("error")
     row = next(d for k, d in events if k == "row")
     assert row["k"] == 0 and "elapsed_total_s" in row and "dataset_version" in row
-
 
 
 def test_compare_rows_are_signed_so_the_pdf_can_verify_them(op_client, monkeypatch, tmp_path):

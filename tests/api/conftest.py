@@ -34,10 +34,13 @@ def _session_private_dirs(tmp_path_factory):
     돌린다. 함수 단위 픽스처(settings_path·data_dir)가 테스트마다 다시 덮는다."""
     import os
     base = tmp_path_factory.mktemp("teamweaver-session")
-    keys = ("TEAMWEAVER_DATA_DIR", "TEAMWEAVER_SETTINGS_PATH")
+    keys = ("TEAMWEAVER_DATA_DIR", "TEAMWEAVER_SETTINGS_PATH", "TEAMWEAVER_LOGIN")
     saved = {k: os.environ.get(k) for k in keys}
     os.environ["TEAMWEAVER_DATA_DIR"] = str(base / "data")
     os.environ["TEAMWEAVER_SETTINGS_PATH"] = str(base / "settings.json")
+    # 앱 전체 로그인(2026-10-18)은 기본이 켜짐(admin/admin1234) -- API 시험은 예전처럼 열린 서버로 돈다.
+    # 로그인 자체는 test_admin_login.py가 이 값을 지우거나 비밀번호를 설정해 잰다.
+    os.environ["TEAMWEAVER_LOGIN"] = "off"
     yield
     for k, v in saved.items():
         if v is None:
@@ -67,8 +70,10 @@ def data_dir(monkeypatch, tmp_path):
     monkeypatch.setenv("TEAMWEAVER_DATA_DIR", str(path))
     monkeypatch.delenv("TEAMWEAVER_PLAN_SECRET", raising=False)
     # 관리자 로그인(K14): 테스트마다 비밀번호 미설정·잠금 초기 상태에서 시작한다.
-    for k in ("TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH", "TEAMWEAVER_ADMIN_TOKEN"):
+    for k in ("TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH", "TEAMWEAVER_ADMIN_TOKEN",
+              "TEAMWEAVER_ADMIN_ID"):
         monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("TEAMWEAVER_LOGIN", "off")
     from api.admin import THROTTLE
     THROTTLE._state.clear()
     THROTTLE._inflight.clear()

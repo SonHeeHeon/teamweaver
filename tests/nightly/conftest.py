@@ -25,6 +25,7 @@ def _isolated(monkeypatch, tmp_path):
     import api.review_judge as rj
     monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "1")
     monkeypatch.setenv("TEAMWEAVER_NIGHTLY", "off")
+    monkeypatch.setenv("TEAMWEAVER_LOGIN", "off")               # 앱 전체 로그인(claude-a 2026-10-18) -- 시험은 끈다
     monkeypatch.setenv("TEAMWEAVER_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("TEAMWEAVER_SETTINGS_PATH", str(tmp_path / "settings.json"))
     for k in ("TEAMWEAVER_PLAN_SECRET", "TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH",

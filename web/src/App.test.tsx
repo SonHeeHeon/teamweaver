@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import App from "./App";
+import Root from "./Root";
 import type { Meta, PlanEvent, WhatifResponse } from "./api/types";
 
 // 실제 네트워크를 타지 않도록 클라이언트 모듈 전체를 목킹한다. postWhatif는
@@ -17,8 +18,12 @@ vi.mock("./api/client", () => ({
   AdminLoginRequiredError: class extends Error {},
   DatasetChangedError: class extends Error {},
   uploadDataset: vi.fn(),
-  fetchDemos: vi.fn(async () => []),
-  chooseDemo: vi.fn(),
+  fetchRecords: vi.fn(async () => []),
+  importRecord: vi.fn(),
+  openRecord: vi.fn(),
+  deleteRecord: vi.fn(),
+  recordFileUrl: (id: string) => `/api/records/${id}/file`,
+  exportRecord: vi.fn(),
   postBaseline: vi.fn(),
   fetchOperatingState: vi.fn(async () => ({ dataset_version: "none", available: false, scenario: null, bench: [],
     proposals: [], current: [], projects: [], expected_s_100: {}, n_people: 0, note: "", hint: "운영 데이터 아님" })),
@@ -142,7 +147,7 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
     const pending = deferred<WhatifResponse>();
     vi.mocked(postWhatif).mockReturnValue(pending.promise);
 
-    render(<App />);
+    render(<App initialTab="annual" />);
 
     // 최적화 실행 -> Plan A, Plan B 도착
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
@@ -192,7 +197,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     vi.mocked(saveSettings).mockResolvedValue({ ...SETTINGS, settings: changed,
                                                 updated_at: "2026-10-05T00:00:00+00:00" });
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(SETTINGS.settings);
@@ -225,10 +230,10 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
-    fireEvent.click(screen.getByRole("button", { name: "요건 설정" }));
+    fireEvent.click(screen.getByRole("button", { name: "연간 계획" }));
     fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -246,7 +251,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
       .mockResolvedValueOnce({ ...SETTINGS, settings: other });         // 실행 직전
     vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(other);
@@ -261,7 +266,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
       .mockResolvedValueOnce(SETTINGS);
     vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(vi.mocked(streamOptimize).mock.calls[0][0].milp_params).toEqual(SETTINGS.settings);
@@ -272,7 +277,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     vi.mocked(fetchSettings).mockRejectedValue(new Error("down"));
     vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     expect(await screen.findByText(/배치 설정을 불러오지 못했다/)).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
@@ -294,7 +299,7 @@ describe("App — 데이터셋 전환(K9)", () => {
       activated: true, dataset: uploaded,
       report: { errors: [], warnings: [], notes: [], row_counts: {} } });
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
 
@@ -304,7 +309,7 @@ describe("App — 데이터셋 전환(K9)", () => {
     fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
     expect(await screen.findByText(/이 데이터로 전환했다/)).toBeInTheDocument();
     await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
-    expect(screen.getByText(/synthetic-n1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/synthetic-n1/).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
     expect(screen.queryByText("Plan A")).not.toBeInTheDocument();
@@ -322,7 +327,7 @@ describe("App — 데이터셋 전환(K9)", () => {
       activated: true, dataset: { ...FIXTURE_INFO, version: "c".repeat(64), source: "upload" },
       report: { errors: [], warnings: [], notes: [], row_counts: {} } });
 
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.click(screen.getByRole("button", { name: "데이터" }));
@@ -345,7 +350,7 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
       yield { event: "plan" as const, data: PLAN_A };
     })());
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(vi.mocked(streamOptimize).mock.calls[0][0].dataset_version).toBe(META.dataset_version);
@@ -368,7 +373,7 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
       throw new DatasetChangedError("바뀌었다");
     });
     vi.mocked(streamOptimize).mockReset().mockImplementation(() => rejected());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/다른 사용자가 데이터셋을 바꿨다/)).toBeInTheDocument();
     await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
@@ -379,7 +384,7 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
     vi.mocked(fetchAdminStatus).mockResolvedValue({ ...OPEN_ADMIN, token_required: true });
     vi.mocked(uploadDataset).mockReset().mockResolvedValue({
       activated: false, detail: "x", report: null });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "데이터" }));
     fireEvent.change(await screen.findByLabelText(/관리자 토큰/), { target: { value: "s3cret" } });
     fireEvent.change(screen.getByLabelText("묶음 zip 파일"),
@@ -406,7 +411,7 @@ describe("App — 교체 적용(K10)", () => {
       yield { event: "plan" as const, data: PLAN_A };
     })());
     vi.mocked(postWhatif).mockReset().mockResolvedValue(CLEAN_REVIEW);
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -513,7 +518,7 @@ describe("App — 교체 적용(K10)", () => {
       yield { event: "plan" as const, data: PLAN_B };
     })());
     vi.mocked(postWhatif).mockReset().mockResolvedValue(CLEAN_REVIEW);
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan B");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -563,7 +568,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     vi.mocked(loadPlanEdits).mockReset().mockResolvedValue(
       { swaps: [STEP.swap], steps: [STEP], updated_at: null, revision: 1 });
     vi.mocked(downloadReport).mockReset();
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/저장해 둔 적용 교체 1건을 불러왔다/)).toBeInTheDocument();
     expect(loadPlanEdits).toHaveBeenCalledWith("tok-A");
@@ -582,7 +587,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -610,7 +615,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockRejectedValue(new Error("disk full"));
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -640,7 +645,7 @@ describe("App — 저장 요청 순서(K13 리뷰 M1)", () => {
     const first = deferred<{ revision: number }>();
     vi.mocked(savePlanEdits).mockReset()
       .mockReturnValueOnce(first.promise).mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -679,7 +684,7 @@ describe("App — 복원과 로컬 적용의 경합(K13 리뷰 S1)", () => {
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -720,7 +725,7 @@ describe("App — 다른 화면이 먼저 저장(서버 revision, Codex 3차)", 
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockRejectedValue(new EditsConflictError(3));
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -747,7 +752,7 @@ describe("App — 다른 화면이 먼저 저장(서버 revision, Codex 3차)", 
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -783,7 +788,7 @@ describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockReturnValue(apply.promise);
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -826,11 +831,11 @@ describe("App — 재실행 뒤 revision이 섞이지 않는다(Opus 검증 M1)"
     vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledWith("tok-A"));
-    fireEvent.click(screen.getByRole("button", { name: "요건 설정" }));
+    fireEvent.click(screen.getByRole("button", { name: "연간 계획" }));
     fireEvent.click(screen.getByRole("button", { name: "최적화 실행" }));
     await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledWith("tok-B"));
     fireEvent.change(await screen.findByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -865,7 +870,7 @@ describe("App — 충돌 뒤 줄 선 저장은 버린다(Opus 검증 S1)", () =>
     vi.mocked(applySwap).mockReset().mockResolvedValue({ ...STEP });
     vi.mocked(savePlanEdits).mockReset().mockReturnValueOnce(first.promise)
       .mockResolvedValue({ revision: 9 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -905,7 +910,7 @@ describe("App — 409 뒤 서버 상태로 맞추기 전에 한 적용(K13 남�
       .mockResolvedValue({ ...STEP, entries: [{ person_id: "p1", project_id: "j1", alloc: 1 }] });
     vi.mocked(savePlanEdits).mockReset().mockRejectedValueOnce(new EditsConflictError(3))
       .mockResolvedValue({ revision: 4 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
@@ -942,7 +947,7 @@ describe("App — 대안 부족 안내(C2)", () => {
       yield { event: "plan" as const, data: PLAN_A };
       yield { event: "done" as const, data: { count: 1, requested_alternatives: 3 } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/조건을 만족하는 대안 없음/)).toBeInTheDocument();
   });
@@ -956,7 +961,7 @@ describe("App — 대안 부족 안내(C2)", () => {
       yield { event: "done" as const,
               data: { count: 1, requested_alternatives: 3, stop_reason: "time_limit" } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/시간 안에 끝나지 않아/)).toBeInTheDocument();
     expect(screen.queryByText(/조건을 만족하는 대안 없음/)).not.toBeInTheDocument();
@@ -970,7 +975,7 @@ describe("App — 대안 부족 안내(C2)", () => {
       yield { event: "plan" as const, data: PLAN_A };
       yield { event: "done" as const, data: { count: 1, requested_alternatives: 0 } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(screen.queryByText(/조건을 만족하는 대안/)).not.toBeInTheDocument();
@@ -993,7 +998,7 @@ describe("App — 사람별 달별 투입률 조정", () => {
       objective_delta: -0.1, feasible: true, objective: 0.9, fulfillment: 1, optimization_ratio: 0.9,
       unfilled: [], warnings: [] });
     vi.mocked(savePlanEdits).mockReset().mockResolvedValue({ revision: 1 });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     expect(screen.getByText(/여러 프로젝트에 나눠 들어가는 사람은/)).toBeInTheDocument();     // 기능 안내
@@ -1019,7 +1024,7 @@ describe("App — 사람별 달별 투입률 조정", () => {
       yield { event: "plan" as const, data: PLAN_A };
     })());
     vi.mocked(applyAlloc).mockReset().mockRejectedValue(new Error("투입률 조정 실패(422)"));
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.click(screen.getByRole("button", { name: "김일번 달별 조정" }));
@@ -1037,26 +1042,26 @@ describe("App — 관리자 로그인(K14)", () => {
                    logged_in: false, expires_at: null };
   const IN = { ...LOCKED, logged_in: true, expires_at: 9999999999 };
 
-  it("로그인 전에는 배치 설정·데이터 탭이 로그인 화면이고, 로그인하면 내용이 보인다", async () => {
+  it("앱 전체 로그인(2026-10-18): 로그인 전에는 앱 대신 로그인 화면이고, 로그인하면 앱이 뜬다", async () => {
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     let loggedIn = false;
     vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
     vi.mocked(adminLogin).mockReset().mockImplementation(async () => { loggedIn = true; });
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
-    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
-    expect(screen.getByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "pw" } });
+    render(<Root />);
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "최적화 실행" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("아이디"), { target: { value: "admin" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "admin1234" } });
     fireEvent.click(screen.getByRole("button", { name: "로그인" }));
-    expect(await screen.findByRole("button", { name: "로그아웃" })).toBeInTheDocument();
-    expect(screen.getByLabelText("묶음 zip 파일")).toBeInTheDocument();
+    await waitFor(() => expect(adminLogin).toHaveBeenCalledWith("admin1234", "admin"));
+    // 로그인하면 첫 화면은 신규 사업 편성(3상황 메뉴, 2026-10-18)
+    expect(await screen.findByRole("heading", { level: 1, name: "신규 사업 편성" })).toBeInTheDocument();
   });
 
   it("요건 설정·결과 화면은 로그인 없이 쓴다", async () => {
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     vi.mocked(fetchAdminStatus).mockReset().mockResolvedValue(LOCKED);
-    render(<App />);
+    render(<App initialTab="annual" />);
     expect(await screen.findByRole("button", { name: "최적화 실행" })).toBeInTheDocument();
   });
 
@@ -1065,11 +1070,11 @@ describe("App — 관리자 로그인(K14)", () => {
     let loggedIn = true;
     vi.mocked(fetchAdminStatus).mockReset().mockImplementation(async () => (loggedIn ? IN : LOCKED));
     vi.mocked(adminLogout).mockReset().mockImplementation(async () => { loggedIn = false; });
-    render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "로그아웃" }));
+    render(<Root />);
+    // 로그아웃은 메뉴 위(휴대폰 폭)와 아래(데스크톱) 두 곳에 있다
+    fireEvent.click((await screen.findAllByRole("button", { name: "로그아웃" }))[0]);
     await waitFor(() => expect(adminLogout).toHaveBeenCalled());
-    fireEvent.click(await screen.findByRole("button", { name: "관리자 로그인" }));
-    expect(await screen.findByRole("heading", { name: "관리자 로그인" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
 
   it("세션이 끝나 저장이 401이면 로그인 화면으로 보낸다", async () => {
@@ -1080,7 +1085,7 @@ describe("App — 관리자 로그인(K14)", () => {
       expired = true;
       throw new AdminLoginRequiredError("x");
     });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "배치 설정" }));
     fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "40" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
@@ -1093,7 +1098,7 @@ describe("App — 관리자 로그인(K14)", () => {
     vi.mocked(fetchMeta).mockReset().mockResolvedValue(META);
     vi.mocked(fetchAdminStatus).mockReset().mockResolvedValue({ ...LOCKED, login_required: false,
                                                                  protected: false });
-    render(<App />);
+    render(<App initialTab="annual" />);
     expect(await screen.findByText(/관리자 비밀번호 미설정/)).toBeInTheDocument();
   });
 });
@@ -1106,7 +1111,7 @@ describe("App — 미리 계산 결과 표시", () => {
       yield { event: "plan" as const, data: { ...PLAN_A, cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" } };
       yield { event: "done" as const, data: { count: 1, precomputed_at: "2026-10-06T14:40:50+00:00" } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/해 둔 것이다\(방금 계산한 것이 아니다\)/)).toBeInTheDocument();
     expect(vi.mocked(streamOptimize).mock.calls[0][0].fresh).toBeUndefined();     // 버튼 이벤트로 켜지지 않는다
@@ -1122,7 +1127,7 @@ describe("App — 미리 계산 결과 표시", () => {
       yield { event: "done" as const, data: { count: 1, requested_alternatives: 3, stop_reason: "time_limit",
                                               precomputed_at: "2026-10-06T14:40:50+00:00" } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     expect(await screen.findByText(/미리 계산 때 대안 계산이 시간 안에 끝나지 않아 0개만 냈다/)).toBeInTheDocument();
     expect(screen.queryByText(/다시 실행하면 더 나올 수 있다/)).not.toBeInTheDocument();
@@ -1140,7 +1145,7 @@ describe("App — 계산 멈추기(2026-10-12)", () => {
       await gate.promise;
       yield { event: "done" as const, data: { count: 1, requested_alternatives: 3, stop_reason: "user_stopped" } };
     })());
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     fireEvent.click(await screen.findByRole("button", { name: "계산 멈추기" }));
@@ -1166,7 +1171,7 @@ describe("App — 계산 멈추기(2026-10-12)", () => {
     vi.mocked(uploadDataset).mockResolvedValue({
       activated: true, dataset: { ...FIXTURE_INFO, version: "c".repeat(64), source: "upload" },
       report: { errors: [], warnings: [], notes: [], row_counts: {} } });
-    render(<App />);
+    render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
     const signal = vi.mocked(streamOptimize).mock.calls[0][1] as AbortSignal;
@@ -1178,5 +1183,20 @@ describe("App — 계산 멈추기(2026-10-12)", () => {
     await screen.findByText(/이 데이터로 전환했다/);
     expect(signal.aborted).toBe(true);
     gate.resolve();
+  });
+});
+
+describe("App — 3상황 메뉴(2026-10-18, claude-b 요청 1)", () => {
+  it("첫 화면은 신규 사업 편성이고, 편성 기록은 메뉴가 따로 있어 데이터 화면에는 없다", async () => {
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 1, name: "신규 사업 편성" })).toBeInTheDocument();
+    for (const name of ["긴급 투입", "연간 계획", "What-if 대시보드", "조직 기술 지도", "편성 기록", "데이터", "배치 설정"]) {
+      expect(screen.getAllByRole("button", { name: new RegExp(`^${name}`) }).length).toBeGreaterThan(0);
+    }
+    fireEvent.click(screen.getByRole("button", { name: "편성 기록" }));
+    expect(await screen.findByRole("heading", { level: 2, name: "편성 기록" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "데이터" }));
+    expect(await screen.findByLabelText("묶음 zip 파일")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "편성 기록" })).not.toBeInTheDocument();
   });
 });

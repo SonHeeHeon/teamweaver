@@ -41,10 +41,16 @@ PORT=8010 scripts/run_poc.sh       # 8000번이 쓰이고 있을 때
 SKIP_SETUP=1 scripts/run_poc.sh    # 준비 단계를 이미 한 번 했을 때
 ```
 
-- 첫 화면은 시연 묶음 `demo/org-n100`(가상 100명·사업 20건)이다. 데이터 탭의 "시연 데이터 고르기"로 100·200·300명 × 연초 계획/운영 중
-  6개 묶음을 고른다. `demo/precomputed/`에 같은 데이터·같은 설정으로 미리 계산한 결과가 있어 바로 뜬다(화면에 "미리 계산"으로 표시).
+- 들어오면 **로그인 화면**이다. 기본 계정은 아이디 `admin` · 비밀번호 `admin1234`(시연용 — 바꾸는 방법은 아래).
+- 시작 데이터는 `demo/org-n100`(가상 100명·사업 20건)이다. **데이터 → 편성 기록 → 기록 파일 불러오기**로 `demo/records/`의 기록 6개
+  (100·200·300명 × 연초 계획/운영 중)를 넣고 **열기**를 누르면 그때의 데이터와 편성안 A~D(운영 중 K 비교 포함)가 바로 뜬다.
+  서버는 기록을 그대로 믿지 않고 지금 규칙으로 다시 채점해 위반이 없는 것만 받아들인다(화면 도장 "재채점 통과").
+- 지금 화면의 편성안은 **What-if 대시보드 → 편성 기록 내보내기**로 JSON 파일 하나(원천 CSV + 편성안 + 계산 설정)로 받는다 —
+  나중에 다시 불러와 "그때 어떻게 짰었지?"를 그대로 본다.
 - 저장소 루트의 `.env`에 `OPENAI_API_KEY`가 있으면 교체 설명·소명 글을 AI가 쓴다. 없으면 정해진 틀(규칙 기반)의 글로 나온다.
-- 다른 사람이 접속하는 주소(`HOST=0.0.0.0`)로 띄울 때는 관리자 비밀번호를 정한다(`scripts/run_poc.sh` 머리말).
+- 다른 사람이 접속하는 주소(`HOST=0.0.0.0`)로 띄울 때는 비밀번호를 반드시 정한다 — 기본 계정 그대로면 `run_poc.sh`가 시작을 거부한다:
+  `TEAMWEAVER_ADMIN_PASSWORD_HASH="$(uv run python scripts/hash_admin_password.py)" HOST=0.0.0.0 scripts/run_poc.sh`
+  (아이디는 `TEAMWEAVER_ADMIN_ID`, 로그인을 끄려면 `TEAMWEAVER_LOGIN=off` — 시험·개발용).
 - 업로드한 묶음·설정·서명 키는 `TEAMWEAVER_DATA_DIR`(기본 `~/.teamweaver`)에 남는다.
 
 ## 개발·검증
@@ -71,7 +77,7 @@ SKIP_SETUP=1 scripts/run_poc.sh    # 준비 단계를 이미 한 번 했을 때
 | `core/kg` | 지식 그래프(소명 글 사실·조직 기술 지도) |
 | `api/` | FastAPI(SSE 최적화, What-if, 운영 중, 데이터셋, 관리자 설정, PDF). `api/rag/`는 교체 설명·소명 글의 AI 호출과 검사 |
 | `web/` | React + TypeScript + Tailwind 화면 |
-| `demo/` | 시연 묶음 6개 + 일부러 틀린 묶음, 미리 계산 결과, 평가 글 판정값 |
+| `demo/` | 시연 묶음 6개 + 일부러 틀린 묶음, 편성 기록 6개(`records/`), 그 원천인 미리 계산 결과·평가 글 판정값 |
 | `rehearsal/` | 규모 리허설·측정 스크립트, `rehearsal/results/`에 측정 보고서 |
 | `experiments/` | Phase 0(정답 대조)·Phase 1(솔버 비교)·초기 실험 |
 | `docs/`, `outputs/` | 설계·결정·시연 문서, 보고서·해설 |

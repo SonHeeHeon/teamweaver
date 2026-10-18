@@ -61,7 +61,8 @@ export function describeChanges(before: PlacementSettings, now: PlacementSetting
   if (b !== n) out.push(`투입률 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
   const wb = before.clique_window_months ?? null, wn = now.clique_window_months ?? null;
   if (wb !== wn) out.push(`반복 협업 조회 기간 ${windowLabel(wb)}→${windowLabel(wn)}`);
+  // 자동·수동 표시만 다르고 실제 계산 시간이 같으면 같은 계산이다(편성 기록은 그때의 실제 시간을 "수동"으로 담는다, 2026-10-18).
   const ab = before.time_limit_auto !== false, an = now.time_limit_auto !== false;
-  if (ab !== an) out.push(`계산 시간 ${ab ? "자동" : "수동"}→${an ? "자동" : "수동"}`);
+  if (ab !== an && before.time_limit !== now.time_limit) out.push(`계산 시간 ${ab ? "자동" : "수동"}→${an ? "자동" : "수동"}`);
   return out;
 }
