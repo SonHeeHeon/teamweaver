@@ -62,7 +62,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
     params = req.milp_params.to_milp_params()
     key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version)
 
-    from api.demo_precomputed import forget, precomputed_at, precomputed_label, precomputed_stop_reason
+    from api.demo_precomputed import forget, precomputed_at, precomputed_label, precomputed_source, precomputed_stop_reason
 
     def _plan_payload(plan, index: int, cached: bool, ub: float, pre_at: str | None = None) -> dict:
         """캐시 히트/미스 두 경로가 같은 모양을 내도록 조립을 한 곳에 모은다."""
@@ -82,6 +82,8 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             "precomputed_at": pre_at,
             # 편성 기록에서 연 결과면 그 기록 제목(api/records) -- 화면 띠가 "기록 «제목»에서 연 결과"로 보인다
             "precomputed_label": precomputed_label(request.app, key) if pre_at is not None else None,
+            # 밤 배치가 풀어 둔 결과면 "nightly"(claude-b 요청 (3)) -- 화면이 "밤사이 계산"으로 보인다
+            "precomputed_source": precomputed_source(request.app, key) if pre_at is not None else None,
             # 솔버가 시간 한도에서 멈춘 해(최선 증명 전) -- 화면 배지(claude-a 요청)
             "time_limited": bool(getattr(plan, "time_limited", False)),
             # 계산 신뢰도 배지: 서비스가 내는 해는 모두 독립 검증(C0)을 통과한 해다. 종료 사유·증명 상한·허용 차이.

@@ -9,10 +9,12 @@ interface Props {
   /** 다시 계산 버튼 옆 안내(예: 걸리는 시간). */
   hint?: string;
   disabled?: boolean;
+  /** "nightly"면 밤 배치가 풀어 둔 결과(claude-b 요청 (3)). */
+  source?: string | null;
 }
 
 /** 결과가 방금 계산한 것이 아님을 밝히고 "다시 계산"을 준다(시연 정직성, claude-a 리허설 요청 2026-10-07). */
-export function PrecomputedNotice({ at, label, onRecompute, hint, disabled }: Props) {
+export function PrecomputedNotice({ at, label, onRecompute, hint, disabled, source }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-sky-200
                     bg-sky-50 px-4 py-2 text-sm text-sky-900">
@@ -20,6 +22,9 @@ export function PrecomputedNotice({ at, label, onRecompute, hint, disabled }: Pr
         {label
           ? <>편성 기록 <b>“{label}”</b>에서 연 결과입니다{at ? <> (계산 <span title={formatPrecomputedAt(at, true)}>{formatPrecomputedAt(at)}</span>)</> : null}.
               서버가 이 데이터로 다시 채점해 규칙 위반이 없음을 확인했습니다.</>
+          : at != null && source === "nightly"
+          ? <>이 결과는 <b>밤사이</b>(<span title={formatPrecomputedAt(at, true)}>{formatPrecomputedAt(at)}</span>) 서버가 시간을 넉넉히 들여 <b>미리 계산</b>해 둔 것이다.
+              서버가 같은 데이터·같은 설정임을 확인했다.</>
           : at != null
           ? <>이 결과는 시연용으로 <b title={formatPrecomputedAt(at, true)}>{formatPrecomputedAt(at)}</b>에 <b>미리 계산</b>해 둔 것이다(방금 계산한 것이 아니다).
               서버가 같은 데이터·같은 설정임을 확인했다.</>

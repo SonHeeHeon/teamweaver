@@ -43,9 +43,11 @@ interface Props {
   /** App이 아는 지금 데이터 버전 -- 다른 화면에서 바뀌면 다시 읽는다 */
   datasetVersion?: string | null;
   onDatasetChanged: () => void;
+  /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19): 확정한 판과 사업(자동 편성은 여러 사업이라 null = 목록)으로 검토 자료 화면을 연다 */
+  onReviewDoc?: (version: string, projectId: string | null) => void;
 }
 
-export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged }: Props) {
+export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged, onReviewDoc }: Props) {
   const [ws, setWs] = useState<Workspace | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [cands, setCands] = useState<Candidates | null>(null);
@@ -56,6 +58,15 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null; seen: string | null } | null>(null);
+  // 다른 화면에서 판이 바뀌면 옛 확정의 버튼은 지운다(이미 만든 자료는 "검토 자료" 목록에서 연다, 리뷰 P3).
+  // 확정 직후에는 App이 아직 옛 판(seen)을 들고 있다 -- 그 값은 "바뀜"이 아니다(Codex 리뷰: 버튼이 바로 사라졌다)
+  useEffect(() => {
+    if (!confirmed || !datasetVersion) return;
+    // 옛 판(seen) 예외는 새 판과 한 번 맞춰질 때까지만 -- 그 뒤 되돌림 등으로 옛 판에 돌아가면 버튼을 지운다(Codex 리뷰 2라운드)
+    if (datasetVersion === confirmed.version) { if (confirmed.seen !== null) setConfirmed({ ...confirmed, seen: null }); }
+    else if (datasetVersion !== confirmed.seen) setConfirmed(null);
+  }, [datasetVersion, confirmed]);
   const [rows, setRows] = useState<SignedRow[]>([]);
   // 자동 편성 결과가 어느 판·설정으로 계산됐는지 -- 확정·소명 요청은 이 값을 쓴다(Codex 리뷰 2026-10-19: 판이 바뀐 뒤 옛 명단이
   // 새 판 번호로 확정될 수 있었다, 설정을 바꾸면 소명 서명이 어긋났다)
@@ -102,12 +113,14 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   }, [ws, selected]);
 
   /** 판을 바꾸는 요청 하나 -- 성공하면 새 작업 데이터로 바꾸고 App에도 알린다. */
-  async function mutate(run: () => Promise<{ workspace: Workspace }>, done: string) {
+  async function mutate(run: () => Promise<{ workspace: Workspace }>, done: string, review?: { projectId: string | null }) {
     setBusy(true);
     setError(null);
+    setConfirmed(null);
     try {
       const res = await run();
       setWs(res.workspace);
+      if (review) setConfirmed({ version: res.workspace.dataset_version, projectId: review.projectId, seen: datasetVersion ?? null });
       setRows([]);
       setAutoState("idle");
       setNotice(withPersistNote(done, res));
@@ -133,7 +146,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       body: `${names}을(를) 넣는다.${pulled.size ? ` 빼 오는 배치 ${pulled.size}건은 원래 사업에서 빠진다.` : ""} 지금 배치가 바뀐 새 판이 된다(되돌릴 수 있다).`,
       run: () => mutate(() => postApply(ws.dataset_version, { entries, source: "manual",
                                                                note: `${project.project_id} 손 편성: ${names}` }),
-                        `${project.name}에 ${draftList.length}명을 넣었다.`),
+                        `${project.name}에 ${draftList.length}명을 넣었다.`, { projectId: project.project_id }),
     });
   }
 
@@ -173,7 +186,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
             `(신규 배치 ${joined}건). 이 안의 변경 전체가 지금 배치가 된다.`,
       run: () => mutate(() => postApply(of.version, { entries: row.entries!, source: "auto",
                                                                note: `자동 편성 확정(K=${row.k}, 최대 ${row.k}명 이동)` }),
-                        `자동 편성 K=${row.k}을(를) 확정했다.`),
+                        `자동 편성 K=${row.k}을(를) 확정했다.`, { projectId: null }),
     });
   }
 
@@ -185,7 +198,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       const j = await postJustification({ dataset_version: of.version, project_id: p.project_id, entries: row.entries,
         base_entries: null, applied_swaps: [], weights: {}, milp_params: of.params, ai: true,
         plan_label: row.plan_label, plan_token: row.plan_token });
-      setJustify({ title: `${p.name} — 인사팀 검토 자료(K=${row.k})`, text: j.text ?? "" });
+      setJustify({ title: `${p.name} — 소명 미리보기(K=${row.k}, 확정 전)`, text: j.text ?? "" });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -210,6 +223,14 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   return (
     <div className="max-w-[1180px] space-y-4">
       {notice && <Notice>{notice}</Notice>}
+      {confirmed && onReviewDoc && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-pine-200 bg-pine-50 px-3 py-2 text-[13px] text-pine-800">
+          확정한 편성의 인사팀 검토 자료(사업별 소명 · 옮겨 온 인력의 원래 사업 영향)를 만듭니다.
+          <button type="button" className="btn-primary" onClick={() => onReviewDoc(confirmed.version, confirmed.projectId)}>
+            인사팀 검토 자료 만들기
+          </button>
+        </div>
+      )}
       {error && <Notice tone="bad">{error}</Notice>}
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <Panel title="신규 사업" sub="발주 예정 · 제안 중 · 수주"
@@ -332,7 +353,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-slate-500">
               <tr><th className="px-5 py-1.5">K</th><th className="text-right">품질</th><th className="text-right">빈자리</th>
-                <th>옮김</th><th>인사팀 검토 자료</th><th /></tr>
+                <th>옮김</th><th>소명 미리보기</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -348,7 +369,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   <td className="text-xs">
                     {r.accepted && r.plan_token && ws.pipeline.map((p) => (
                       <button key={p.project_id} className="btn-ghost px-1.5 py-0.5 text-xs" disabled={busy}
-                              aria-label={`K=${r.k} ${p.name} 인사팀 검토 자료`}
+                              aria-label={`K=${r.k} ${p.name} 소명 미리보기`}
                               onClick={() => void showJustification(r, p)}>{p.project_id}</button>
                     ))}
                   </td>

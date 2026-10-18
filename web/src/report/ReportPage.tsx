@@ -6,6 +6,8 @@ import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly } from "../components/allocFormat";
 import { fallbackText, segmentsOf } from "../components/justification";
+import { ReviewDoc } from "../review/ReviewDoc";
+import type { ReviewDocView } from "../review/reviewApi";
 import { creditedLine } from "../components/skillLabel";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
 
@@ -32,7 +34,22 @@ declare global {
 /** 인쇄 전용 페이지. Playwright가 add_init_script로 window.__REPORT_DATA__를
  *  먼저 심고 이 라우트로 이동한다. 레이아웃이 끝나면 __REPORT_READY__를 세워
  *  "이제 인쇄해도 된다"를 알린다. */
+/** PDF 한 장의 종류: 편성안 보고서(기본) 또는 인사팀 검토 자료(kind="review", 2026-10-19 claude-a -- api/routes/review_docs). */
 export function ReportPage() {
+  return window.__REPORT_DATA__?.kind === "review" ? <ReviewReport doc={window.__REPORT_DATA__.doc} /> : <PlanReport />;
+}
+
+function ReviewReport({ doc }: { doc: ReviewDocView }) {
+  useEffect(() => { window.__REPORT_READY__ = true; }, []);
+  return (
+    <main className="report-root mx-auto max-w-[780px] p-8">
+      <p className="mb-2 text-xs text-slate-500">인사팀 검토 자료 · {new Date().toLocaleString("ko-KR")} 출력</p>
+      <ReviewDoc doc={doc} editable={false} />
+    </main>
+  );
+}
+
+function PlanReport() {
   const data = window.__REPORT_DATA__;
   // 서버가 PDF 요청 시점의 데이터셋으로 만든 meta를 함께 넣어 준다(K9) -- 있으면 그것만
   // 쓴다. 따로 /api/meta를 부르면 렌더 중 전환된 새 데이터의 이름이 옛 명단에 붙는다.

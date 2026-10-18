@@ -45,7 +45,8 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props)
             </dl>
             {p.precomputed_at != null && !p.precomputed_label ? (
               <p className="mt-2 text-xs text-slate-500" title={formatPrecomputedAt(p.precomputed_at, true)}>
-                {edited ? `미리 계산 원안 + 변경 ${edited}건` : `미리 계산 · ${formatPrecomputedAt(p.precomputed_at)}`}
+                {edited ? `미리 계산 원안 + 변경 ${edited}건`
+                  : `${p.precomputed_source === "nightly" ? "밤사이 계산" : "미리 계산"} · ${formatPrecomputedAt(p.precomputed_at)}`}
               </p>
             ) : p.cached && !p.precomputed_label && (
               <p className="mt-2 text-xs text-slate-400" title="같은 조건으로 앞서 계산해 둔 결과를 다시 보여 준다">

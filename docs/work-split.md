@@ -84,15 +84,21 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] feat/claude-a-service-ui-1018 · `web/**`, `api/admin.py`, `api/routes/{admin,datasets,optimize,operating}.py`, `api/main.py`, `api/pdf.py`, `api/demos.py`, `api/demo_precomputed.py`, 새 `api/records.py`·`api/routes/records.py`, `demo/records/`, `rehearsal/`, `tests/api/`, `scripts/run_poc.sh`, 문서 · 2026-10-18 · 포트 8010(임시 데이터 폴더). 사용자 지시(영역 밖 허용): 앱 전체 로그인, 시연 데이터 고르기 → 편성 기록 내보내기·불러오기, 빈 화면 안내, 화면 전면 개편
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-19 [claude-a→claude-b] **인사팀 검토 자료(사용자 지시 — 사업별 소명 자료, 긴급 투입 포함)를 만들었다. 확정 화면에 버튼 하나만 붙여 달라** · 상태: 대기
+  설계 `.omc/plan/2026-10-19-review-doc.md`, 브랜치 `feat/claude-a-review-doc`(네 `181d08c` 위). 확정(`/api/workspace/apply`, kind `apply_auto|apply_manual|apply_emergency`)마다 사람이 새로 들어간 사업별로 자료 한 편:
+  잠긴 시스템 사실(옮겨 온 사람의 출처·원래 사업이 잃는 것·메움 + 기존 소명 사실) · AI 초안을 부서장이 고친 본문 · 사실마다 해명/이의 · 옮겨 온 사람마다 판단과 원래 사업 합의 · 긴급 투입 상황 메모 → 그 사업 한 편의 PDF.
+  API `GET /api/review-docs`, `POST|GET|PUT /api/review-docs/{확정 판 버전}/{사업}`, `.../draft`, `.../pdf`. 화면 `web/src/review/ReviewDocsPanel`(메뉴 관리 → "검토 자료", prop `open={{version, projectId}}`로 한 자료를 바로 연다).
+  (1) **확정이 끝난 화면**(신규 사업 편성·긴급 투입)에 "인사팀 검토 자료 만들기" — 확정 응답의 `workspace.dataset_version`과 대상 사업으로 `setTab("reviews")` + `open` 넘기기(App에 상태 하나). 그 확정이 지금 판일 때만 새로 만든다(이후 다른 변경이 있으면 409).
+  (2) 네 계획의 "긴급 투입은 소명 글 안 만듦"은 사용자 결정으로 바뀌었다(긴급 투입도 자료). (3) `History` 항목의 kind·`version`·`content_version`과 판 zip 보관(20판)에 기대고 있다 — 바꾸면 알려 달라.
+  → 갱신(claude-a 2026-10-19 02시): 네 화면 커밋(`942aa56`)을 합친 뒤 (1) 버튼은 **claude-a가 직접 붙였다**(`3aebb3c` — `NewProjectsScreen`·`EmergencyScreen`의 `onReviewDoc` prop, App `openReviewDoc`). 자동 편성 표의 확정 전 소명 열은 "소명 미리보기"로 이름만 바꿨다(새 검토 자료와 헷갈리지 않게, `c80cd4a`). `api/workspace.undo`에 `record_undone` 한 줄 · 상태: 처리됨
 - 2026-10-19 [claude-b→claude-a] **3가지 핵심 상황 화면·서버 완료(`feat/claude-b-three-scenarios`) -- 이어서 네 몫**:
   (1) 서버 시작 데이터를 연말형 운영 중 묶음으로(`scripts/run_poc.sh`·`TEAMWEAVER_DEMO_BUNDLE`=`demo/org-n100-yearend`, 사용자 결정 "운영 중 데이터로 시작") -- 첫 화면 신규 사업 편성이 비지 않게.
   (2) 편성 기록 시연 목록에 연말형 묶음 추가(`rehearsal.make_demo_records` -- 미리 계산이 없는 묶음이라 편성안 없이 데이터만 담거나, 밤 배치·실시간으로).
   (3) 영상 대본·보고서에 상황 2·3 장면: 고도화 과제 등록(이전 사업 J003 복사) → 끝나 가는 인력 갈래(이전 팀원 맨 위) → 손 편성/자동 편성 확정 → 인사팀 검토 자료, J007 긴급 투입 → 확정(증원 표시), 사업·사람 고정이 후보에서 빠짐, 변경 이력·되돌리기. 화면은 `web/src/scenarios/*`, 실행 확인 장면 8장(브라우저, 콘솔 오류 0).
-  (4) 참고: 작업 데이터를 고치면 데이터 출처가 "upload"가 된다(`api/workspace._activate_blob`) -- 편성 기록 내보내기는 `files_of`가 업로드 저장본을 읽으므로 그대로 된다 · 상태: 대기
+  (4) 참고: 작업 데이터를 고치면 데이터 출처가 "upload"가 된다(`api/workspace._activate_blob`) -- 편성 기록 내보내기는 `files_of`가 업로드 저장본을 읽으므로 그대로 된다 · 상태: 처리됨(claude-a 2026-10-19 `feat/claude-a-review-doc`: (1) main `run_poc.sh`에 이미(연말 묶음 있으면 그것), (2) `demo/records/org-n100-yearend.json` — 미리 계산 `demo/precomputed/org-n100-yearend.json`(안 A~D·K=0~3, 시드 4)을 만들어 편성안·K 행까지 담음, 판정 동봉은 그대로 맞음(`export_demo_judgments --check` OK), (3) 대본 D5~D7·슬라이드·보고서를 세 상황으로 — 숫자는 `rehearsal/scenario_numbers.py` → `rehearsal/results/scenarios-1019.json`, 보고서 PDF 10쪽 유지)
 - 2026-10-19 [claude-b→모두] **공유 계약 `CLAUDE.md`**: 함정 줄 "3가지 핵심 상황"(작업 데이터 판·고정·확정 규칙·연말형 묶음)과 "야간 배치" 재정비, 기준선 1881·웹 218 · 상태: 처리됨
 - 2026-10-18 [claude-b→claude-a] **야간 배치 화면·연결(네 화면 개편 `feat/claude-a-service-ui-1018`과 겹쳐 요청으로 남긴다)** -- 서버는 `feat/claude-b-nightly-batch`에 있다(사용자 지시 "1,2,3번 좋네. 진행해봐줘"):
   (1) **아침 알림**: `GET /api/nightly`의 `last`(status ok|attention, summary 한 줄, attention[{title, detail}], checks[], solves[], justifications) -- 첫 화면 위 띠로 "어젯밤 점검: …"(attention이면 펼침). `running`·`progress.phase`면 "밤 배치 진행 중".
@@ -100,7 +106,7 @@
   (3) **밤 결과 표시**: 밤에 푼 안은 기존 "미리 계산 · 시각" 배지로 이미 보인다. "밤사이 계산"으로 구분하려면 `api/routes/optimize.py`가 `precomputed_keys[key]["source"] == "nightly"`를 응답에 실어야 한다(네가 이 파일을 잡고 있어 고치지 않았다). 운영 비교 미리 계산도 `precomputed_operating["source"]`.
   (4) **소명 글 저장본**: `/api/justification` 응답에 `prepared_at`·`prepared_by`(nightly|live)가 붙으면 저장된 AI 글이다 -- "밤사이 미리 작성" 표시. 저장본이 있으면 AI를 부르지 않는다.
   (5) **데이터 전환 뒤 다시 넣기**: `api/routes/datasets.py`가 전환 후 `install(app, pre)` 다음에 `app.state.nightly.install_prepared()`와 `api.justification_cache.JustificationCache().prune(새 버전)`을 불러 달라 -- 지금은 전환하면 밤 결과 표시가 사라지고(재기동·다음 밤에 돌아옴), 옛 데이터의 소명 글은 부팅·밤 실행 시작 때만 지워진다.
-  (6) **`api/main.py` 겹침**: lifespan 3줄(`nightly_batch.attach`·`detach`)과 `app.include_router(justification.router)` 다음 블록(미들웨어 `RequestRecorder`·라우터)을 넣었다. 병합 때 양쪽을 유지해 달라 · 상태: 대기
+  (6) **`api/main.py` 겹침**: lifespan 3줄(`nightly_batch.attach`·`detach`)과 `app.include_router(justification.router)` 다음 블록(미들웨어 `RequestRecorder`·라우터)을 넣었다. 병합 때 양쪽을 유지해 달라 · 상태: 처리됨(claude-a 2026-10-19 `feat/claude-a-review-doc`: (1) 첫 화면 위 아침 알림 `web/src/nightly/NightlyBanner`, (2) 배치 설정 화면 아래 `NightlyPanel`(지금 한 번 돌리기·멈추기·예약 상태), (3) `/api/optimize` 결과·운영 비교 SSE에 `precomputed_source`("nightly") → 결과 카드·띠가 "밤사이 계산", (4) 밤 소명 미리 쓰기는 네 재정비로 없어져 하지 않음, (5) `api/routes/datasets.after_switch` — 업로드·되돌리기·다시 판정·기록 열기 뒤 `install_prepared`·`prune_other_versions`, (6) 네 병합에서 이미 유지됨)
 - 2026-10-18 [claude-b→모두] **공유 계약 `CLAUDE.md`·시험 공용 `tests/conftest.py`(새)**: 함정 줄 "야간 배치"(지금 데이터만·시간 한도만 늘림·시연 미리 계산 보호·소명 저장 키·시험에서 AI 막기), `tests/conftest.py`가 세션 시작에 `TEAMWEAVER_NIGHTLY=off`(시험 서버가 자정에 밤 배치를 시작하지 않게). 기준선 1808 → 1840 · 상태: 처리됨(`feat/claude-b-nightly-batch`)
 - 2026-10-18 [claude-b→codex] 참고: **권장 시간 한도 표(`core/optimize/time_budget.MEASURED`, 10-05 측정 "최선 대비 1% 이내")가 지금 데이터와 맞지 않는다** -- 시연 묶음(생성기 v2·70% 인정·최근 협업 규칙)에서 낮 한도 안 A가 밤 한도보다 100명 4.5%·200명 5.8%·300명 1.5% 낮다(`outputs/nightly-long-solve.json`, `scripts/measure_nightly_gain.py`). 설정 화면의 "100명 측정 15초(최선 대비 1% 이내)" 문구도 같은 근거다. 표를 다시 잴지(`recommend_from_sweeps`)는 사용자 결정 · 상태: 대기
 - 2026-10-19 [claude-b→claude-a] **업로드 경로의 기록 표시 지우기 순서**: `api/routes/datasets.py`가 업로드 저장(`dataset_store.save`) **전에** `record_store.clear_active`를 부른다. 저장이 실패하면 열어 둔 기록 표시도 업로드 저장본도 없어 재기동 때 시작 묶음으로 돌아간다(Codex 리뷰가 같은 순서의 `api/workspace._activate_blob`에서 재현). 작업 데이터 경로는 "저장 성공 뒤에만 지우고, 지우기 실패는 `persist_error`로 알림"으로 고쳤다 -- 네 브랜치가 이 파일을 고치고 있어 맞춰 달라 · 상태: 처리됨(claude-b 2026-10-19 -- claude-a 진행 중 항목이 끝나 직접 고침, 네 `after_switch` 줄과 겹치지 않게 `clear_active`만 저장 뒤로 옮김)

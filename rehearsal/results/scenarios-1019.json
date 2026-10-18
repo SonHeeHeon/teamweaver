@@ -1,0 +1,187 @@
+{
+ "start": {
+  "pipeline": [
+   [
+    "J014",
+    "[제안] 공공기관 을 데이터 개방 플랫폼",
+    "제안"
+   ],
+   [
+    "J015",
+    "[제안] 계열사 A 데이터 플랫폼 고도화",
+    "예정"
+   ]
+  ],
+  "ending": [
+   "J003",
+   "J006",
+   "J009",
+   "J012"
+  ],
+  "bench": 10
+ },
+ "register": {
+  "project_id": "J016",
+  "copied_from": "J003",
+  "seats": {
+   "특급": {
+    "need": 1,
+    "filled": 0
+   },
+   "고급": {
+    "need": 2,
+    "filled": 0
+   },
+   "중급": {
+    "need": 4,
+    "filled": 0
+   },
+   "초급": {
+    "need": 1,
+    "filled": 0
+   }
+  }
+ },
+ "candidates": {
+  "bench": [
+   {
+    "name": "윤시현",
+    "grade": "중급",
+    "delta": 101.0,
+    "predecessor_team": false,
+    "from": []
+   },
+   {
+    "name": "이가영",
+    "grade": "고급",
+    "delta": 100.61,
+    "predecessor_team": false,
+    "from": []
+   },
+   {
+    "name": "이시현",
+    "grade": "고급",
+    "delta": 100.61,
+    "predecessor_team": false,
+    "from": []
+   }
+  ],
+  "ending": [
+   {
+    "name": "임민서",
+    "grade": "중급",
+    "delta": 101.0,
+    "predecessor_team": true,
+    "from": []
+   },
+   {
+    "name": "장혜진",
+    "grade": "특급",
+    "delta": 101.0,
+    "predecessor_team": true,
+    "from": []
+   },
+   {
+    "name": "류주희",
+    "grade": "고급",
+    "delta": 101.0,
+    "predecessor_team": true,
+    "from": []
+   }
+  ],
+  "pull": []
+ },
+ "manual_confirm": {
+  "people": [
+   "임민서"
+  ],
+  "changes": {
+   "added": [
+    "DP0006@J016"
+   ],
+   "removed": [],
+   "changed": []
+  }
+ },
+ "review_new": {
+  "project": "보험사 B 고도화(J016)",
+  "kind": "new",
+  "joined": [
+   {
+    "name": "임민서",
+    "grade": "중급",
+    "origin": "partly_free",
+    "sources": []
+   }
+  ],
+  "move_facts": [
+   "이 확정으로 J016 사업 점수 0.00 → 1.00, 요구 기술 Data Lake & Data Catalog 충족 0→1명(필요 1명), 데이터 모델링 충족 0→1명(필요 2명), 메타데이터 관리 충족 0→1명(필요 1명), 등급 정원 빈자리 8 → 7석(확정 뒤 정원·요구 기준)",
+   "임민서(중급): 일부 여유(다른 배치는 그대로), J016 투입률 1, 이 사업 요구 기술 중 충족: 메타데이터 관리, 데이터 모델링, Data Lake & Data Catalog"
+  ],
+  "adverse_facts": 2,
+  "facts": 13
+ },
+ "emergency": {
+  "added": [
+   {
+    "person_id": "DP0091",
+    "name": "김서현"
+   }
+  ],
+  "delta": {
+   "total": 1.7149047619047906,
+   "skill": 1.0833333333333357,
+   "synergy": 0.6315714285714282,
+   "overfamiliarity": 0.0,
+   "unfilled": 0.0
+  },
+  "apply_hint": {
+   "headcount_add": {
+    "J007": {
+     "중급": 1
+    }
+   },
+   "budget_add": {
+    "J007": 654
+   },
+   "skills_add": {}
+  },
+  "standby": [
+   "김다현",
+   "윤시현",
+   "서민준"
+  ],
+  "moved": [
+   {
+    "person_id": "DP0091",
+    "from": "J013",
+    "to": [
+     "J007"
+    ]
+   }
+  ]
+ },
+ "review_emergency": {
+  "project": "[실행] 금융사 파2 비정형 데이터 마트 구축(J007)",
+  "kind": "emergency",
+  "joined": [
+   {
+    "name": "김서현",
+    "grade": "중급",
+    "origin": "moved",
+    "sources": [
+     "J013"
+    ]
+   }
+  ],
+  "move_facts": [
+   "이 확정으로 J007 사업 점수 4.99 → 6.12, 요구 기술 ETL 충족 5→6명(필요 2명), 금융 업무 충족 7→8명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "김서현(중급): 진행 사업에서 옮겨 옴, J007 투입률 1, 이 사업 요구 기술 중 충족: 금융 업무, ETL",
+   "김서현: [실행] 공공기관 병 데이터 개방 플랫폼(J013)에서 옮겨 옴 — 그 사업에서 빠짐",
+   "J013 사업(이 확정 전체로 인한 변화): 점수 1.47 → 2.06, 요구 기술 BI Reporting 충족 0→1명(필요 2명), SQL 충족 0→1명(필요 2명), 등급 정원 빈자리 0 → 0석",
+   "J013의 자리를 같은 확정에서 윤시현(중급, 대기 인력)이(가) 채움"
+  ],
+  "adverse_facts": 4,
+  "facts": 34
+ }
+}
