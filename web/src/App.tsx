@@ -37,6 +37,7 @@ import { OperatingTab } from "./components/OperatingTab";
 import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
+import { RecordsPanel } from "./components/RecordsPanel";
 
 
 
@@ -55,9 +56,13 @@ function AdminTokenField({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) {
+export default function App({ onLoggedOut, initialTab = "pipeline" }: {
+  onLoggedOut?: () => void;
+  /** 첫 화면. 기본은 신규 사업 편성(가장 잦은 상황, 2026-10-18) -- 시험은 계산 흐름을 보려고 연간 계획에서 시작한다 */
+  initialTab?: Tab;
+} = {}) {
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [tab, setTab] = useState<Tab>("req");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -180,7 +185,7 @@ export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) 
 
   // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
   useEffect(() => {
-    if (tab === "settings" || tab === "data") refreshAdmin();
+    if (tab === "settings" || tab === "data" || tab === "records") refreshAdmin();
   }, [tab]);
 
   /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
@@ -646,7 +651,7 @@ export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) 
             </button>
           </>
         ) : undefined} />
-        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data") && (
+        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records") && (
           <p role="status" className="mx-4 mt-4 rounded-md bg-amber-50 px-4 py-2 text-[13px] text-amber-700 md:mx-8">
             기본 관리자 계정(admin)과 기본 비밀번호로 들어와 있습니다. 다른 사람이 접속하는 주소로 쓰려면 서버의
             TEAMWEAVER_ADMIN_PASSWORD_HASH로 비밀번호를 바꾸세요.
@@ -661,8 +666,9 @@ export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) 
       <main className="flex-1 px-4 py-6 md:px-8">
         {/* 운영 중 편성 탭은 다른 탭에 가도 사라지지 않게 늘 띄워 두고 숨긴다 -- 35초짜리 비교 결과를 잃지 않게(리뷰) */}
         {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
-        <div className={tab === "operating" ? "" : "hidden"}>
+        <div className={tab === "pipeline" || tab === "emergency" ? "" : "hidden"}>
           <OperatingTab meta={meta} params={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
+                        focus={tab === "emergency" ? "reinforce" : "new"} onShowReinforce={() => setTab("emergency")}
                         onDatasetChanged={() => { void externalSwitch(); }} />
         </div>
         {error && (
@@ -677,18 +683,24 @@ export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) 
         )}
         {/* 편집 중에 세션이 끝났으면(loginReason) 탭 내용을 언마운트하지 않고 위에 로그인을 띄운다 --
             설정 폼에 입력하던 값이 사라지지 않게. 처음 여는 경우엔 로그인 화면이 탭을 대신한다. */}
-        {(tab === "data" || tab === "settings") && needLogin && loginReason && (
+        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && loginReason && (
           <div className="mb-6">
             <AdminLogin reason={loginReason} onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
           </div>
         )}
-        {(tab === "data" || tab === "settings") && needLogin && !loginReason ? (
+        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && !loginReason ? (
           <AdminLogin onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+        ) : tab === "records" ? (
+          <div className="max-w-[1080px] space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
+            <RecordsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} onOpened={recordOpened}
+                          onExportCurrent={current ? () => setExportOpen(true) : null}
+                          activeRecordId={dataset?.record_id ?? null} />
+          </div>
         ) : tab === "data" ? (
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
-            <DatasetTab active={dataset} onSwitched={datasetSwitched} onRecordOpened={recordOpened}
-                        onExportCurrent={current ? () => setExportOpen(true) : null}
+            <DatasetTab active={dataset} onSwitched={datasetSwitched} showRecords={false}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
           </div>
         ) : tab === "settings" ? (
@@ -716,15 +728,15 @@ export default function App({ onLoggedOut }: { onLoggedOut?: () => void } = {}) 
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
             </p>
           )
-        ) : tab === "operating" ? null : tab === "skills" ? (
+        ) : tab === "pipeline" || tab === "emergency" ? null : tab === "skills" ? (
           <SkillMapTab datasetVersion={meta.dataset_version} onDatasetChanged={() => void externalSwitch()} />
-        ) : tab === "req" ? (
+        ) : tab === "annual" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} operating={dataset?.scenario === "operating"}
                            onStop={runId ? () => void stopRunning() : null} stopping={stopping}
-                           onOpenOperating={() => setTab("operating")} />
+                           onOpenOperating={() => setTab("pipeline")} />
         ) : !showResults ? (
-          <WhatifEmpty dataset={dataset} onCompute={() => setTab("req")} onRecords={() => setTab("data")} />
+          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} />
         ) : (
           <div className="space-y-5">
             {plans.length > 0 && planBasis && settings && (

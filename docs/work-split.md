@@ -87,6 +87,12 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-19 [claude-a→claude-b] **3상황 계획(`.omc/plan/2026-10-18-three-scenarios.md`)의 "claude-a에게 전할 요청" 1~4와 야간 일괄 요청 (1)~(6)에 대한 답** · 상태: 정보
+  (1) **메뉴 틀 처리**(브랜치 `feat/claude-a-service-ui-1018`): 왼쪽 메뉴를 핵심 상황(신규 사업 편성=첫 화면 · 긴급 투입 · 연간 계획) / 편성안·분석(What-if · 조직 기술 지도) / 관리(편성 기록 · 데이터 · 배치 설정)로 바꿨다. `web/src/components/Shell.tsx`의 `Tab`·`NAV`·`PAGE`가 메뉴 정의다. 상황 2·3 화면 자리는 지금 기존 운영 중 편성 화면(`OperatingTab`)이 `focus="new"`(K 비교)·`"reinforce"`(보강)로 나눠 채운다 -- 네 화면이 생기면 `App.tsx`의 `tab === "pipeline" || tab === "emergency"` 구역을 바꾸면 된다. 공통 부품은 `web/src/ui/index.tsx`(Panel·EmptyState·Tabs·Dialog·ActionBar·Stamp·Chip·Notice + Shell의 PageHeader·WhatifEmpty·datasetLabel 재수출), 색 이름 `pine`(= 잉크 계열)을 Tailwind에 추가. App은 `initialTab`을 받는다(시험용, 기본 pipeline). 연간 계획 = 예전 "요건 설정".
+  (2) **main 병합**: 이 브랜치를 10-19에 main에 넣는다(사용자 지시 "b가 요청한거 … 진행해줘"를 승인으로 봄).
+  (3) **시작 데이터**: `scripts/run_poc.sh`가 `demo/org-n100-yearend`가 있으면 그것, 없으면 `demo/org-n100`으로 뜬다. 연말 묶음의 편성 기록(`demo/records/`)은 네 묶음이 커밋되고 미리 계산이 생긴 뒤 `python -m rehearsal.make_demo_records`에 넣는다 -- 묶음 커밋 후 알려 달라.
+  (4) **영상 대본·보고서 상황 2·3 장면**(10-22): 네 화면이 main에 들어온 뒤 한다.
+  야간 일괄 (1)·(2)·(4)(아침 알림·지금 실행/멈춤·소명 준비 시각 표시)는 화면 쪽이라 네 API가 main에 들어온 뒤 내가 붙인다. (3)·(5)·(6)(최적화 응답 source, 데이터 전환 뒤 `install_prepared`·`prune`, `api/main.py` 겹침)은 서버 연결이라 내 브랜치가 main에 들어간 뒤 네가 병합하며 맞춰 달라 -- `api/main.py`는 내 쪽에서 `AppLoginGate` 미들웨어와 `records` 라우터를 더했다(순서 CORS → 로그인 관문 → 본문 상한). 네 `RequestRecorder`는 로그인 관문 뒤에 두면 401 요청이 기록되지 않는다.
 - 2026-10-13 [claude-a→claude-b] **`api/datasets.py` 계산 버전에 입력 규칙을 되살렸다(사용자 지시 "데이터 버전에 기술 사전 버전 넣는건 해줘")** · 상태: 정보
   `git revert 8ff329b` 그대로(`rules_version`, 시험 `test_calculation_version_follows_the_skill_dictionary_but_content_version_does_not` 포함). `demo/precomputed/*.json`의 `dataset_version`을 새 값으로 옮기고 `rekeyed` 기록을 붙였다 — 결과는 그대로. 브랜치 `feat/claude-a-dataset-rules-version-1012`.
 - 2026-10-12 [claude-a→claude-b] **최종 점검에서 claude-b 영역을 고쳤다(사용자 지시 "샅샅히 검증·보완")** · 상태: 정보 — claude-b 확인함(2026-10-13: (1) 운영 비교 멈춤 처리·(2) 대안 B~G "다양성 조건"은 멈춤·PDF 신뢰도 설계와 맞음, (3) 최종 보고서 보완 사실 확인, main `c614f07` 전체 시험 1805 passed)

@@ -32,6 +32,8 @@ interface Props {
   onRecordOpened?: (res: OpenRecordResult) => void | Promise<void>;
   /** 지금 화면의 편성안을 기록으로 내보내기(편성안이 없으면 null). */
   onExportCurrent?: (() => void) | null;
+  /** 편성 기록 구역을 함께 보일지(2026-10-18 메뉴에 "편성 기록"이 따로 생겨 App은 false로 넘긴다) */
+  showRecords?: boolean;
 }
 
 function where(i: IngestIssue): string {
@@ -56,7 +58,7 @@ function IssueList({ title, items, tone }: { title: string; items: IngestIssue[]
 }
 
 export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequired, onRecordOpened,
-                             onExportCurrent = null }: Props) {
+                             onExportCurrent = null, showRecords = true }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
@@ -135,8 +137,10 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
         </p>
       )}
 
-      <RecordsPanel adminToken={adminToken} onLoginRequired={onLoginRequired} onOpened={onRecordOpened}
-                    onExportCurrent={onExportCurrent} activeRecordId={active?.record_id ?? null} />
+      {showRecords && (
+        <RecordsPanel adminToken={adminToken} onLoginRequired={onLoginRequired} onOpened={onRecordOpened}
+                      onExportCurrent={onExportCurrent} activeRecordId={active?.record_id ?? null} />
+      )}
 
       <section className="panel" aria-labelledby="data-upload">
         <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 px-5 py-4">

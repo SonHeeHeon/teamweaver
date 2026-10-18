@@ -117,7 +117,8 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.set_default_timeout(60_000)
             page.goto(base + "/")
-            expect(page.get_by_role("heading", name="요건 설정")).to_be_visible()     # 2026-10-18 개편: 왼쪽 메뉴 + 화면 제목
+            # 2026-10-18 개편: 왼쪽 메뉴 + 화면 제목, 첫 화면은 신규 사업 편성(3상황 메뉴)
+            expect(page.get_by_role("heading", name="신규 사업 편성", level=1)).to_be_visible()
 
             # 1) 배치 설정: 최소 투입률 25%로 저장(K8). 반복 협업은 예전 기준(전체 이력 중 6개월)을 화면에서 골라
             #    저장한다 -- 아래 4)의 "첫 교체는 경고가 없다"는 결정적 시나리오가 그 기준에서 만들어졌고, 새 조회 기간
@@ -141,7 +142,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             expect(page.get_by_text("synthetic-n20-p4-s11").first).to_be_visible()
 
             # 3) 최적화(실제 CBC)
-            page.get_by_role("button", name="요건 설정").click()
+            page.get_by_role("button", name="연간 계획").click()
             page.get_by_role("button", name="최적화 실행").click()
             expect(page.get_by_text("Plan A", exact=True)).to_be_visible(timeout=120_000)
             # 대안 계산이 끝날 때까지(대기 문구가 사라질 때까지) 기다린다 -- 교체 검토 자체는
@@ -186,7 +187,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
 
 
 def _optimize(page, expect):
-    page.get_by_role("button", name="요건 설정").click()
+    page.get_by_role("button", name="연간 계획").click()
     page.get_by_role("button", name="최적화 실행").click()
     expect(page.get_by_text("Plan A", exact=True)).to_be_visible(timeout=120_000)
     expect(page.get_by_text(re.compile("대안 계산 중"))).to_have_count(0, timeout=180_000)

@@ -49,8 +49,8 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
             사업 정원·예산이 지금 명단에 맞춰져 있어 200·300명은 계산 시간 안에 빈자리가 남을 수 있다.
             신규 제안 편성·사업 보강은{" "}
             {onOpenOperating
-              ? <button onClick={onOpenOperating} className="font-medium underline">운영 중 편성 탭</button>
-              : "운영 중 편성 탭"}
+              ? <button onClick={onOpenOperating} className="font-medium underline">신규 사업 편성 화면</button>
+              : "신규 사업 편성·긴급 투입 화면"}
             에서 본다.
           </p>
         )}

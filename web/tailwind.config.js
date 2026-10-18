@@ -24,6 +24,7 @@ export default {
         slate,
         indigo: pine,
         sky: pine,
+        pine,
         amber: {
           50: "#FBF1DC", 100: "#F7E6C2", 200: "#EED39A", 300: "#E2BC6A", 400: "#C99A3A",
           500: "#B07E22", 600: "#8A5A0B", 700: "#744B09", 800: "#5E3D08", 900: "#4A3006",
