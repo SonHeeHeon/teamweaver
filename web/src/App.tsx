@@ -38,6 +38,7 @@ import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
+import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
 
 
 
@@ -185,7 +186,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 
   // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
   useEffect(() => {
-    if (tab === "settings" || tab === "data" || tab === "records") refreshAdmin();
+    if (tab === "settings" || tab === "data" || tab === "records" || tab === "reviews") refreshAdmin();
   }, [tab]);
 
   /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
@@ -651,7 +652,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             </button>
           </>
         ) : undefined} />
-        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records") && (
+        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records" || tab === "reviews") && (
           <p role="status" className="mx-4 mt-4 rounded-md bg-amber-50 px-4 py-2 text-[13px] text-amber-700 md:mx-8">
             기본 관리자 계정(admin)과 기본 비밀번호로 들어와 있습니다. 다른 사람이 접속하는 주소로 쓰려면 서버의
             TEAMWEAVER_ADMIN_PASSWORD_HASH로 비밀번호를 바꾸세요.
@@ -683,13 +684,18 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         )}
         {/* 편집 중에 세션이 끝났으면(loginReason) 탭 내용을 언마운트하지 않고 위에 로그인을 띄운다 --
             설정 폼에 입력하던 값이 사라지지 않게. 처음 여는 경우엔 로그인 화면이 탭을 대신한다. */}
-        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && loginReason && (
+        {(tab === "data" || tab === "settings" || tab === "records" || tab === "reviews") && needLogin && loginReason && (
           <div className="mb-6">
             <AdminLogin reason={loginReason} onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
           </div>
         )}
-        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && !loginReason ? (
+        {(tab === "data" || tab === "settings" || tab === "records" || tab === "reviews") && needLogin && !loginReason ? (
           <AdminLogin onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+        ) : tab === "reviews" ? (
+          <div className="space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
+            <ReviewDocsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} />
+          </div>
         ) : tab === "records" ? (
           <div className="max-w-[1080px] space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}

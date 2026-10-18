@@ -223,6 +223,9 @@ app.include_router(_workspace_routes.router)
 app.include_router(_scenario_routes.router)
 app.include_router(skill_map.router)
 app.include_router(records.router)
+# 인사팀 검토 자료(2026-10-19, claude-a): 확정마다 사업별 소명 자료(잠긴 사실 + 부서장 본문·의견·해명·이의) · PDF.
+from api.routes import review_docs as _review_doc_routes  # noqa: E402
+app.include_router(_review_doc_routes.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

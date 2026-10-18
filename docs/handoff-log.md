@@ -46,6 +46,16 @@
 
 ---
 
+## 2026-10-19 · claude-a · 인사팀 검토 자료 — 확정마다 사업별 소명 자료(옮겨 온 인력의 원래 사업 영향 · 부서장 본문·의견·해명·이의 · PDF)
+- 브랜치/커밋: `feat/claude-a-review-doc`(claude-b `181d08c` 위). main 병합은 claude-b 브랜치 다음.
+- 사용자 요청: 부서장이 사업 단위로 확정해 팀장·인사팀 확인을 받으니 사업별 소명 자료가 필요하고, 다른 사업에서 빼 온 사람은 원래 사업에 생기는 영향까지. 숫자만으로는 소명이 안 되니 부서장 의견을 적고 본문을 고칠 수 있게. 결정: 불리한 사실은 잠그고 해명·이의만, 긴급 투입도 자료, A 문서형, 합의 "요청 중"이어도 내보내기, 승인·반려는 만들지 않고 보고서 "실제 도입 시"에(전자결재 연결).
+- 한 일: `core/evaluate/review_moves.py`(출처·원래 사업 득실·메움), `core/kg/justify.py` `fact_key`·`focus_input`, `api/review_docs.py`·`api/routes/review_docs.py`(목록·만들기·조회·편집·AI 초안·PDF), `web/src/review/`(A 문서형 `ReviewDoc`, 메뉴 관리 → "검토 자료"), PDF `kind=review`, 보고서 8.1·8.4.
+- 상대 영향(claude-b): (1) `api/workspace.undo`의 prepare에 `record_undone` 한 줄(되돌림 판정용 기록 `<데이터 폴더>/review_docs/undone.json`) — 네 작업 트리의 `api/workspace.py` 수정과 같은 파일이니 병합 때 확인. (2) 확정 화면 버튼 요청은 work-split 10-19 항목. (3) Shell `Tab`에 `reviews`.
+- 검증: `uv run --group benchmark pytest -q` → 1900 passed, 1 skipped, 20 deselected · `-m slow` → 20 passed · 웹 `npx tsc -b` 통과, `npm test` 215 passed, 빌드 · Claude Opus 폴백 리뷰 2라운드(Codex 한도 소진, 02:32 회복 예정): P1 1·P2 4·P3 7 + 2라운드 새 P2 1 반영.
+- 근거: `.omc/reports/2026-10-19-review-doc.md`
+
+---
+
 ## 2026-10-19 · claude-a · claude-b 3상황 계획 요청 처리: 메뉴 개편(신규 사업 편성 첫 화면 · 긴급 투입 · 연간 계획) · 시작 데이터 연말 묶음 · main 병합
 - 브랜치/커밋: `feat/claude-a-service-ui-1018` `fcb265d`(아래 10-18 항목 위에 쌓음) → main 병합(사용자 지시 "b가 요청한거 검토 후 요청사항 진행해줘").
 - 한 일: claude-b `.omc/plan/2026-10-18-three-scenarios.md`의 "claude-a에게 전할 요청" 1·2·3. 왼쪽 메뉴를 핵심 상황 / 편성안·분석 / 관리로 다시 묶고 첫 화면을 신규 사업 편성으로(예전 "요건 설정" = 연간 계획, "운영 중 편성" = 신규 사업 편성(K 비교)·긴급 투입(보강)으로 나눔, 편성 기록은 데이터 화면에서 따로 메뉴로). 공통 부품 `web/src/ui/index.tsx`. `run_poc.sh`는 `demo/org-n100-yearend`가 있으면 그것으로 시작.

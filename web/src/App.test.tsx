@@ -1190,7 +1190,7 @@ describe("App — 3상황 메뉴(2026-10-18, claude-b 요청 1)", () => {
   it("첫 화면은 신규 사업 편성이고, 편성 기록은 메뉴가 따로 있어 데이터 화면에는 없다", async () => {
     render(<App />);
     expect(await screen.findByRole("heading", { level: 1, name: "신규 사업 편성" })).toBeInTheDocument();
-    for (const name of ["긴급 투입", "연간 계획", "What-if 대시보드", "조직 기술 지도", "편성 기록", "데이터", "배치 설정"]) {
+    for (const name of ["긴급 투입", "연간 계획", "What-if 대시보드", "조직 기술 지도", "검토 자료", "편성 기록", "데이터", "배치 설정"]) {
       expect(screen.getAllByRole("button", { name: new RegExp(`^${name}`) }).length).toBeGreaterThan(0);
     }
     fireEvent.click(screen.getByRole("button", { name: "편성 기록" }));

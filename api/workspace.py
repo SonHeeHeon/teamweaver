@@ -241,7 +241,12 @@ async def undo(request: Request) -> dict:
         raise HTTPException(status_code=409, detail="직전 판의 원천 묶음이 남아 있지 않다.")
     _begin(request)
     try:
-        active, report, persist_error = await _activate_blob(request, data, prepare=lambda _a: hist.pop())
+        def prepare(_a) -> None:
+            hist.pop()
+            # 되돌린 판을 남긴다 -- 인사팀 검토 자료가 "되돌려짐"을 이력 추정이 아니라 이 기록으로 판정한다(claude-a 2026-10-19, 폴백 리뷰)
+            from api.review_docs import record_undone
+            record_undone(str(entries[-1].get("version")))
+        active, report, persist_error = await _activate_blob(request, data, prepare=prepare)
         state.workspace_files = (active.info.version, _read_zip(data))
         return {"dataset": active.info.to_dict(), "report": report, "persisted": persist_error is None,
                 "persist_error": persist_error, "undone": entries[-1]}
