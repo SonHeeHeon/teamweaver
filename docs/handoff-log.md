@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-19 · claude-b · 밤 점검이 편성 기록을 연 데이터도 본다 · claude-a 브랜치와 합친 상태 확인
+- 브랜치/커밋: `feat/claude-b-three-scenarios` `828c70b`. main 병합은 사용자 승인 대기 -- 순서는 이 브랜치 다음 `feat/claude-a-review-doc`.
+- 한 일: `api/nightly.check_precomputed`가 편성 기록을 연 데이터(source "record")를 "편성 기록 결과"로 점검(예전엔 "시연 묶음이 아니다"로 건너뜀). 기록·시연 묶음 모두 등록부 표시가 아니라 결과 캐시에 실제로 남았는지 본다(`ResultCache.has`, 32개 밖으로 밀려난 경우).
+- 상대 영향: `api/cache.ResultCache.has` 추가(읽기 전용). **합친 상태 확인**: `git merge-tree`로 이 브랜치 + `feat/claude-a-review-doc`를 합치면 충돌 없음(`1ca26dc` 기준 임시 worktree에서 서버 1907 passed·1 skipped·20 deselected, 웹 230 passed·tsc). 병합 뒤 기준선은 claude-a CLAUDE.md 줄(1900대)을 따르고 이 브랜치 시험 +4가 더해진다.
+- 검증: `uv run --group benchmark pytest -q` → 1885 passed, 1 skipped, 19 deselected. Codex review gpt-6.1-sol 2라운드(P2 캐시 밀림·P2 등록부 반복 경쟁, 둘 다 반영).
+
+---
+
 ## 2026-10-19 · claude-b · 편성 기록을 연 뒤 작업 데이터를 고치면 재기동해도 고친 판으로 뜬다
 - 브랜치/커밋: `feat/claude-b-three-scenarios`(아래 3상황 항목 다음 커밋). main 병합은 사용자 승인 대기.
 - 사용자 요청: "끝나면 claude-a 작업에 맞춰서 추가로 해야하는거 있으면 추가로 진행해줘" -- claude-a의 편성 기록(재기동 복원 순서 "열어 둔 기록 → 업로드 저장본 → 시작 묶음")과 맞춤.
