@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] feat/claude-a-review-doc(claude-b `942aa56` 합침) · core/evaluate/review_moves.py, core/kg/justify.py(함수 추가), api/review_docs.py, api/routes/review_docs.py, api/main.py(라우터 한 줄), web/src/components/ReviewDoc*.tsx, Shell(메뉴 한 칸), App, report/ReportPage(kind=review) · 2026-10-19 01:20 · 인사팀 검토 자료(사용자 지시, 설계 .omc/plan/2026-10-19-review-doc.md)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
