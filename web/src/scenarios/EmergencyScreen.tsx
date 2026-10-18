@@ -13,9 +13,15 @@ type Group = "bench" | "spare" | "pull";
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
 const fmt = (x: number | undefined) => (x === undefined ? "–" : (x >= 0 ? "+" : "") + x.toFixed(2));
 
-export function EmergencyScreen({ datasetVersion, onDatasetChanged }: {
+export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc }: {
   datasetVersion?: string | null; onDatasetChanged: () => void;
+  /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19 -- 사용자 결정: 긴급 투입도 자료) */
+  onReviewDoc?: (version: string, projectId: string | null) => void;
 }) {
+  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null } | null>(null);
+  useEffect(() => {                                  // 판이 바뀌면 옛 확정의 버튼은 지운다(리뷰 P3)
+    if (confirmed && datasetVersion && datasetVersion !== confirmed.version) setConfirmed(null);
+  }, [datasetVersion, confirmed]);
   const [ws, setWs] = useState<Workspace | null>(null);
   const [projectId, setProjectId] = useState<string>("");
   const [note, setNote] = useState("");
@@ -101,6 +107,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged }: {
       const res = await postApply(plan.dataset_version, { entries: plan.best.entries, source: "emergency",
         note: `${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, ...hint });
       setWs(res.workspace);
+      setConfirmed({ version: res.workspace.dataset_version, projectId: plan.project_id });
       setPlan(null);
       setNotice(`${project?.name ?? projectId}에 ${plan.best.added?.map((a) => a.name).join(", ")}을(를) 넣었다(사업 끝까지).`);
       onDatasetChanged();
@@ -123,6 +130,14 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged }: {
   return (
     <div className="max-w-[1180px] space-y-4">
       {notice && <Notice>{notice}</Notice>}
+      {confirmed && onReviewDoc && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-pine-200 bg-pine-50 px-3 py-2 text-[13px] text-pine-800">
+          긴급 투입의 인사팀 검토 자료(새로 넣은 사람 · 빼 온 사업의 영향 · 상황 메모)를 만듭니다.
+          <button type="button" className="btn-primary" onClick={() => onReviewDoc(confirmed.version, confirmed.projectId)}>
+            인사팀 검토 자료 만들기
+          </button>
+        </div>
+      )}
       {error && <Notice tone="bad">{error}</Notice>}
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
         <Panel title="상황 적기" sub="넣은 사람은 지금부터 사업이 끝날 때까지 배치됩니다.">

@@ -87,7 +87,8 @@ describe("NewProjectsScreen", () => {
       pull: [cand({ person_id: "P1", name: "김민준", source: "pull", pulled_from: ["J003"], category: "pull", predecessor_team: true })] });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: [], removed: [], changed: [] } });
     const changed = vi.fn();
-    render(<NewProjectsScreen milpParams={null} onDatasetChanged={changed} />);
+    const review = vi.fn();
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={changed} onReviewDoc={review} />);
     expect(await screen.findByText("박지훈")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "박지훈 넣기" }));
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
@@ -102,6 +103,9 @@ describe("NewProjectsScreen", () => {
     expect(keys).toEqual(expect.arrayContaining(["P9@J014", "P1@J014", "P2@J003"]));
     expect(keys).not.toContain("P1@J003");                                 // 빼 오는 배치는 빠진다
     expect(changed).toHaveBeenCalled();
+    // 확정 뒤 인사팀 검토 자료로(claude-a 2026-10-19): 확정한 판과 그 사업
+    fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
+    expect(review).toHaveBeenCalledWith(WS.dataset_version, "J014");
   });
 
   it("진행 사업의 사람 한 명을 고정한다", async () => {
@@ -133,7 +137,8 @@ describe("EmergencyScreen", () => {
               delta: { total: 3.1 }, new_violations: [] },
       candidates: { bench: [cand({})], spare: [], pull: [] }, standby: [], apply_hint: hint, note: "" });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P9@J003"], removed: [], changed: [] } });
-    render(<EmergencyScreen onDatasetChanged={vi.fn()} />);
+    const review = vi.fn();
+    render(<EmergencyScreen onDatasetChanged={vi.fn()} onReviewDoc={review} />);
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
     expect(await screen.findByText("밤사이 미리 뽑아 둔 명단")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
@@ -143,6 +148,8 @@ describe("EmergencyScreen", () => {
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());
     const [, body] = vi.mocked(api.postApply).mock.calls[0];
     expect(body).toMatchObject({ source: "emergency", headcount_add: hint.headcount_add, budget_add: hint.budget_add });
+    fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
+    expect(review).toHaveBeenCalledWith(WS.dataset_version, "J003");
   });
 });
 
@@ -206,7 +213,8 @@ describe("대체 리뷰 회귀(2026-10-19)", () => {
     vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: null, note: "", bench: [], ending: [], pull: [] });
     vi.mocked(api.postLock).mockRejectedValue(new api.ApiError("바뀜", 409, { code: "dataset_changed" }));
     const changed = vi.fn();
-    render(<NewProjectsScreen milpParams={null} onDatasetChanged={changed} />);
+    const review = vi.fn();
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={changed} onReviewDoc={review} />);
     fireEvent.click(await screen.findByRole("button", { name: "은행 A 데이터 사업 고정" }));
     await waitFor(() => expect(changed).toHaveBeenCalled());
     expect(vi.mocked(api.fetchWorkspace).mock.calls.length).toBeGreaterThanOrEqual(2);

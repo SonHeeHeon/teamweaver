@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postBaseline, postWhatif, saveSettings, SettingsConflictError,
@@ -65,6 +65,12 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 } = {}) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
+  // 확정 화면에서 "인사팀 검토 자료 만들기"로 넘어온 자료(claude-a 2026-10-19) -- 사업이 없으면(자동 편성) 목록만 연다
+  const [reviewOpen, setReviewOpen] = useState<{ version: string; projectId: string } | null>(null);
+  const openReviewDoc = useCallback((version: string, projectId: string | null) => {
+    setReviewOpen(projectId ? { version, projectId } : null);
+    setTab("reviews");
+  }, []);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -682,10 +688,12 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             확정·등록·고정은 작업 데이터의 새 판을 만들므로 App이 데이터 정보를 다시 읽는다(ownSwitch -- "다른 사용자" 경고 없이). */}
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
-                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }} />
+                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                             onReviewDoc={openReviewDoc} />
         </div>
         <div className={tab === "emergency" ? "" : "hidden"}>
-          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }} />
+          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                           onReviewDoc={openReviewDoc} />
         </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
@@ -709,7 +717,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         ) : tab === "reviews" ? (
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
-            <ReviewDocsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} />
+            <ReviewDocsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} open={reviewOpen}
+                             onOpened={() => setReviewOpen(null)} />
           </div>
         ) : tab === "records" ? (
           <div className="max-w-[1080px] space-y-4">

@@ -8,11 +8,13 @@ import {
 
 /** "검토 자료" 메뉴(2026-10-19, claude-a): 확정(신규 사업 편성·긴급 투입)마다 사업별 인사팀 검토 자료를 만들고 고쳐 PDF로 낸다.
  *  신규 사업 편성·긴급 투입 화면(claude-b)은 확정 뒤 `open`으로 이 화면의 한 자료를 바로 연다. */
-export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = null }: {
+export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = null, onOpened }: {
   adminToken?: string | null;
   onLoginRequired?: (reason: string) => void;
   /** 바로 열 자료(확정 직후 화면이 넘긴다) */
   open?: { version: string; projectId: string } | null;
+  /** open을 한 번 쓴 뒤 부른다 -- App이 비워야 메뉴로 다시 들어올 때 옛 자료가 또 열리지 않는다(리뷰 P2) */
+  onOpened?: () => void;
 }) {
   const [rows, setRows] = useState<ConfirmRow[] | null>(null);
   const [doc, setDoc] = useState<ReviewDocView | null>(null);
@@ -36,7 +38,10 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
     reload();
   });
   useEffect(() => {
-    if (open) void openDoc(open.version, open.projectId, false);   // 만들기는 이미 있으면 그대로 돌려준다
+    if (open) {
+      void openDoc(open.version, open.projectId, false);   // 만들기는 이미 있으면 그대로 돌려준다
+      onOpened?.();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open?.version, open?.projectId]);
 
