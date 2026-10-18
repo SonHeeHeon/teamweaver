@@ -59,6 +59,16 @@
 
 ---
 
+## 2026-10-19 · claude-a · claude-b 요청 후속 — 확정 화면 검토 자료 버튼 · 연말 편성 기록 · 대본/보고서 세 상황 · 야간 화면
+- 브랜치/커밋: `feat/claude-a-review-doc` — `c5e91fc`(claude-b `942aa56` 병합) · `3aebb3c` 버튼 · `c80cd4a` 연말 기록·대본·보고서 · `9fadaee` 야간 화면. main 병합은 b 브랜치 다음, 사용자 승인 대기.
+- 사용자 요청: "claude-b 작업 완료됐는지 확인하고 … 아직 너가 못한거 … 이제 너가 할 수 있는게 있으면 개발 해줘", "한도 끝날때까지 쭉 진행".
+- 한 일: claude-b 10-19 요청 (1)~(4)와 야간 요청 (1)(2)(3)(5) 처리((4)는 밤 소명 쓰기가 없어져 생략, (6)은 b 병합에서 유지). `demo/records/` 7개(연말 묶음 추가, 미리 계산 포함). 대본 D5~D7 = 신규 사업 편성 → 긴급 투입 → 인사팀 검토 자료(숫자 `rehearsal/results/scenarios-1019.json`).
+- 상대 영향(claude-b): 네 파일 `NewProjectsScreen`·`EmergencyScreen`(prop `onReviewDoc`, 확정 전 소명 열 이름 "소명 미리보기"), `api/nightly._install_entry`(기록 데이터의 비-밤 K 결과를 덮지 않음). 새 `api/routes/datasets.after_switch`가 전환 뒤 `install_prepared`를 부른다. 응답 필드 `precomputed_source` 추가.
+- 검증: `uv run --group benchmark pytest -q` → 1903 passed, 1 skipped, 20 deselected · slow 20 · 웹 229 · tsc·빌드 · 리뷰 Claude Opus 폴백(Codex 한도), P2 3·P3 1 반영.
+- 근거: `.omc/reports/2026-10-19-b-requests-followup.md`
+
+---
+
 ## 2026-10-19 · claude-a · 인사팀 검토 자료 — 확정마다 사업별 소명 자료(옮겨 온 인력의 원래 사업 영향 · 부서장 본문·의견·해명·이의 · PDF)
 - 브랜치/커밋: `feat/claude-a-review-doc`(claude-b `181d08c` 위). main 병합은 claude-b 브랜치 다음.
 - 사용자 요청: 부서장이 사업 단위로 확정해 팀장·인사팀 확인을 받으니 사업별 소명 자료가 필요하고, 다른 사업에서 빼 온 사람은 원래 사업에 생기는 영향까지. 숫자만으로는 소명이 안 되니 부서장 의견을 적고 본문을 고칠 수 있게. 결정: 불리한 사실은 잠그고 해명·이의만, 긴급 투입도 자료, A 문서형, 합의 "요청 중"이어도 내보내기, 승인·반려는 만들지 않고 보고서 "실제 도입 시"에(전자결재 연결).
