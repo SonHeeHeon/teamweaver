@@ -194,7 +194,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       const j = await postJustification({ dataset_version: of.version, project_id: p.project_id, entries: row.entries,
         base_entries: null, applied_swaps: [], weights: {}, milp_params: of.params, ai: true,
         plan_label: row.plan_label, plan_token: row.plan_token });
-      setJustify({ title: `${p.name} — 인사팀 검토 자료(K=${row.k})`, text: j.text ?? "" });
+      setJustify({ title: `${p.name} — 소명 미리보기(K=${row.k}, 확정 전)`, text: j.text ?? "" });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -349,7 +349,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-slate-500">
               <tr><th className="px-5 py-1.5">K</th><th className="text-right">품질</th><th className="text-right">빈자리</th>
-                <th>옮김</th><th>인사팀 검토 자료</th><th /></tr>
+                <th>옮김</th><th>소명 미리보기</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -365,7 +365,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   <td className="text-xs">
                     {r.accepted && r.plan_token && ws.pipeline.map((p) => (
                       <button key={p.project_id} className="btn-ghost px-1.5 py-0.5 text-xs" disabled={busy}
-                              aria-label={`K=${r.k} ${p.name} 인사팀 검토 자료`}
+                              aria-label={`K=${r.k} ${p.name} 소명 미리보기`}
                               onClick={() => void showJustification(r, p)}>{p.project_id}</button>
                     ))}
                   </td>

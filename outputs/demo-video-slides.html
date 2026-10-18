@@ -77,9 +77,10 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3>한꺼번에 맞출 조건</h3>
       <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">월별 가용률</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
       <p class="cap">하나만 보면 다른 조건을 어기기 쉽다</p></div>
-    <div class="card"><h3>두 상황</h3><ul>
-      <li><b>연초 계획</b> — 백지에서 6개월 배치</li>
-      <li><b>운영 중 편성</b> — 대부분 이미 일하는 중, 몇 명만 옮겨 신규 사업을 채움</li></ul></div>
+    <div class="card"><h3>세 상황</h3><ul>
+      <li><b>신규 사업 편성</b>(가장 잦음) — 쉬는·끝나 가는 사람, 몇 명만 옮겨 새 사업 팀을 짬</li>
+      <li><b>긴급 투입</b> — 진행 사업에 이슈, 사람을 더 넣고 빼 온 자리까지 메움</li>
+      <li><b>연간 계획</b>(드묾) — 백지에서 6개월 배치</li></ul></div>
     <div class="card"><h3>지금 방식의 어려움</h3><ul>
       <li>조건을 어겼는지 알기 어렵다</li>
       <li>더 나은 배치가 있었는지 모른다</li>
@@ -104,21 +105,21 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3>결정은 수학 최적화</h3>모든 조건을 지키는 배치 가운데 점수가 가장 높은 것을 찾고, 증명된 상한과의 거리까지 보여 준다.</div>
     <div class="card"><h3>글은 검사받는 AI</h3>AI는 배치를 정하지 않는다. 쓴 글은 원문·사실 목록과 대조하고, 어긋나면 버리고 규칙 기반 글을 낸다.</div>
   </div>
-  <div class="banner" style="margin-top:auto">두 상황 — 연초 계획(백지에서 안 A~D) · 운영 중 편성(최대 K명만 이동)</div>
+  <div class="banner" style="margin-top:auto">세 상황 — 신규 사업 편성(최대 K명만 이동) · 긴급 투입(빼 온 자리까지) · 연간 계획(백지에서 안 A~D)</div>
 </section>
 
 <section class="slide">
   <div class="kicker">구현 · 동작 화면 시연</div>
   <h2>시연 흐름</h2>
-  <p class="lead">100명 가상 조직(사업 20건) → 운영 중 상황 → 300명 규모</p>
+  <p class="lead">100명 가상 조직 → 연말 운영 중(신규 사업·긴급 투입) → 300명 규모</p>
   <div class="steps8">
     <div class="card"><h3><span class="n">1</span>데이터 검증</h3>틀린 파일은 오류만 보이고 전환하지 않음</div>
-    <div class="card"><h3><span class="n">2</span>연초 계획</h3>안 A~D · 계산 신뢰도 · 계산 멈추기</div>
+    <div class="card"><h3><span class="n">2</span>연간 계획</h3>안 A~D · 계산 신뢰도 · 계산 멈추기</div>
     <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 근거 사실 연결</div>
     <div class="card"><h3><span class="n">4</span>교체 검토</h3>점수 변화 · AI 설명 · 지어낸 근거 거절</div>
-    <div class="card"><h3><span class="n">5</span>운영 중 편성</h3>최대 K명만 옮길 때 K별 개선</div>
-    <div class="card"><h3><span class="n">6</span>사업 보강</h3>후보 순위 · 최선 2명 · 빼 오기</div>
-    <div class="card"><h3><span class="n">7</span>PDF 보고서</h3>서버가 다시 계산해 찍음</div>
+    <div class="card"><h3><span class="n">5</span>신규 사업 편성</h3>K별 자동 편성 · 고도화 과제 등록 · 이전 팀원</div>
+    <div class="card"><h3><span class="n">6</span>긴급 투입</h3>대기 명단 · 빼 오기와 그 자리 메움</div>
+    <div class="card"><h3><span class="n">7</span>인사팀 검토 자료</h3>잠긴 사실 + 부서장 판단 → PDF</div>
     <div class="card"><h3><span class="n">8</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
   </div>
 </section>
@@ -131,7 +132,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
       <div class="formula">최대화 Σ 기술 적합 + 0.3·협업 − 0.2·익숙한 쌍 − 100·빈자리</div>
       제약: 월 예산 · 월별 가용률 · 등급 정원 · 동시 사업 ≤ 3<br>시드 4개 동시 탐색 · 증명 상한 기록 · 대안은 구성이 다르고 품질 ≥ 95%</div>
     <div class="card"><h3><span class="n">2</span>독립 검증기 · 평가기</h3>
-      솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·보강·미리 계산 확인도 같은 평가기로 채점.<br>운영 중 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
+      솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·보강·미리 계산 확인도 같은 평가기로 채점.<br>신규 사업 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
     <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3><ul>
       <li>평가 글을 읽어 협업 점수에 반영 — 항목만 세는 규칙은 글에 쓴 부정의 88%를 놓친다</li>
       <li>교체 설명 — 인용을 원문과 한 글자씩 대조, 규칙 위반이면 "보류"</li>
@@ -148,7 +149,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><div class="num">+24~31<small>%</small></div><div class="cap">예산·가용률을 지키는 휴리스틱을 같은 시간 돌린 것보다 높은 배치 품질 · 100~300명, 규모가 클수록 차이가 커짐</div></div>
     <div class="card"><div class="num">55<small>%</small></div><div class="cap">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%(점수 제공·1회 수정) · 원자료만 주면 규칙 위반</div></div>
     <div class="card"><div class="num">3.3<small>%</small></div><div class="cap">300명 안 A와 증명된 상한의 거리 · 빈자리 0 · 위반 0</div></div>
-    <div class="card"><div class="num">2 → 0</div><div class="cap">운영 중 편성: 2명만 옮겨 빈자리 2석 해소 · K=0~3 모두 최선 증명</div></div>
+    <div class="card"><div class="num">2 → 0</div><div class="cap">신규 사업 편성: 2명만 옮겨 빈자리 2석 해소 · K=0~3 모두 최선 증명</div></div>
     <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출 · 자동 시험 1,806개</div></div>
     <div class="card"><div class="num">34 → 0</div><div class="cap">나쁘게 평가한 사이가 협업 보상에 든 수 — 항목만 세는 규칙 → 글을 읽는 AI(100명) · 같은 팀 배치 18 → 9</div></div>
   </div>
