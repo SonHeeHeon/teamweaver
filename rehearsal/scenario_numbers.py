@@ -32,11 +32,14 @@ def _brief_doc(doc):
 
 
 def main() -> None:
-    if not os.environ.get("TEAMWEAVER_DATA_DIR"):
+    if not os.environ.get("TEAMWEAVER_DATA_DIR", "").strip():
         # 이 스크립트는 작업 데이터를 바꾼다(등록·확정·검토 자료) -- 지정이 없으면 ~/.teamweaver가 아니라 임시 폴더에(리뷰 P2)
         import tempfile
         os.environ["TEAMWEAVER_DATA_DIR"] = tempfile.mkdtemp(prefix="tw-scenario-numbers-")
     os.environ.setdefault("TEAMWEAVER_LOGIN", "off")
+    # 관리자 비밀번호·토큰이 .env에 있으면 LOGIN=off여도 로그인이 켜진다 -- 이 임시 서버에서는 비운다(빈 값은 .env가 다시 채우지 않는다, Codex 리뷰)
+    for k in ("TEAMWEAVER_ADMIN_PASSWORD", "TEAMWEAVER_ADMIN_PASSWORD_HASH", "TEAMWEAVER_ADMIN_TOKEN"):
+        os.environ[k] = ""
     os.environ.setdefault("TEAMWEAVER_NIGHTLY", "off")
     os.environ.setdefault("TEAMWEAVER_SKIP_WARM", "1")
     os.environ["TEAMWEAVER_DEMO_BUNDLE"] = str(ROOT / "demo" / "org-n100-yearend")
