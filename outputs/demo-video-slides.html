@@ -133,7 +133,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3><span class="n">2</span>독립 검증기 · 평가기</h3>
       솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·보강·미리 계산 확인도 같은 평가기로 채점.<br>운영 중 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
     <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3><ul>
-      <li>평가 글 판정 → 협업 점수에 반영</li>
+      <li>평가 글을 읽어 협업 점수에 반영 — 항목만 세는 규칙은 글에 쓴 부정의 88%를 놓친다</li>
       <li>교체 설명 — 인용을 원문과 한 글자씩 대조, 규칙 위반이면 "보류"</li>
       <li>소명 글(GraphRAG) — AI는 사실 번호만 고르고 숫자는 서버가</li></ul></div>
     <div class="card"><h3><span class="n">4</span>지식 그래프 · 기술 이름 사전</h3>
@@ -145,24 +145,25 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="kicker">성과 · 구현 결과</div>
   <h2>숫자로 본 결과</h2>
   <div class="grid g3" style="margin-top:12px">
-    <div class="card"><div class="num">31.7 → 57.6</div><div class="cap">배치 품질, 단순 규칙(기술 1등 우선) 대비 · 100명 · 같은 점수표</div></div>
+    <div class="card"><div class="num">+24~31<small>%</small></div><div class="cap">예산·가용률을 지키는 휴리스틱을 같은 시간 돌린 것보다 높은 배치 품질 · 100~300명, 규모가 클수록 차이가 커짐</div></div>
     <div class="card"><div class="num">55<small>%</small></div><div class="cap">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%(점수 제공·1회 수정) · 원자료만 주면 규칙 위반</div></div>
     <div class="card"><div class="num">3.3<small>%</small></div><div class="cap">300명 안 A와 증명된 상한의 거리 · 빈자리 0 · 위반 0</div></div>
     <div class="card"><div class="num">2 → 0</div><div class="cap">운영 중 편성: 2명만 옮겨 빈자리 2석 해소 · K=0~3 모두 최선 증명</div></div>
-    <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(조율 데이터 618편 · 처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출</div></div>
-    <div class="card"><div class="num">1,806</div><div class="cap">자동 시험 통과 · 작은 문제 정답 대조 11/11 · 솔버 3종 비교 357칸</div></div>
+    <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출 · 자동 시험 1,806개</div></div>
+    <div class="card"><div class="num">34 → 0</div><div class="cap">나쁘게 평가한 사이가 협업 보상에 든 수 — 항목만 세는 규칙 → 글을 읽는 AI(100명) · 같은 팀 배치 18 → 9</div></div>
   </div>
   <div class="foot">모든 수치는 가상 데이터와 설계한 점수표 안에서 잰 것이다. 사업 효과는 검증 전(NOT_CALIBRATED).</div>
 </section>
 
 <section class="slide">
-  <div class="kicker">성과 · 한계와 맺음</div>
-  <h2>한계</h2>
-  <div class="warnbox" style="margin-top:14px"><ul>
-    <li>실제 성과 자료가 없어 <b>사업 효과는 아직 검증 전</b>이다(NOT_CALIBRATED).</li>
-    <li>계수는 설계값이다 — 협업 0.3 · 익숙한 사이 감점 0.2 · 하위 기술 인정 70%.</li>
-    <li>PoC·과제 제출용이라 <b>실제 인사 자료는 적재하지 않았다.</b></li></ul></div>
-  <div class="banner" style="margin-top:34px">계산이 맞다는 증거는 쌓았다. 현실 성과는 실제 자료로 확인할 다음 질문이다.</div>
+  <div class="kicker">성과 · 가치와 다음 단계</div>
+  <h2>바로 쓸 수 있는 구조, 다음은 실제 성과로</h2>
+  <div class="grid g3 auto" style="margin-top:14px">
+    <div class="card"><div class="num">0<small>원</small></div><div class="cap">솔버 라이선스 — 오픈소스 HiGHS로 300명까지 최선 대비 3.3~5.0%</div></div>
+    <div class="card"><div class="num">$0.4</div><div class="cap">300명 조직의 평가 글 4,012건 판정 + 사업 60건 소명 글 전체 AI 비용</div></div>
+    <div class="card"><div class="num">3<small>개월</small></div><div class="cap">실제 도입 시 첫 단계 — 섀도 운영(실제 편성과 나란히)으로 빈자리·예산 초과·교체 요청을 재고 → 파일럿 → 확대</div></div>
+  </div>
+  <div class="banner" style="margin-top:40px">결정은 최적화가, 읽고 쓰는 일은 검사받는 AI가. 계산의 신뢰는 증명했고, 사업 효과는 실제 도입 때 섀도 운영으로 확인한다.</div>
   <div class="foot" style="font-size:28px;text-align:center;color:var(--ink)">감사합니다</div>
 </section>
 

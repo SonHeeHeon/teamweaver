@@ -81,7 +81,9 @@ JUDGES = ("llm_low", "glmf_low", "glmf_high", "glm_low", "llm", "glm", "jev")
 # 충실한 글)에만 잰다.
 # 시연 원문 A는 생성기 v2(2026-10-11, 아쉬운 점 항목마다·직설형 8%·어긋난 글 5%)로 다시 쟀다 -- 서비스가 쓰는 외부 low만
 # (사용자 결정 2026-10-11: 서비스는 외부 AI, 사내 모델 차이는 최종 보고에서 B(정답 있음) 결과로). 예전 A 기록은 superseded/e4_v1_*.
-SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES, "demo_s300": ("llm_low",)}
+# 2026-10-18 사용자 지시("Jev·규칙·LLM(OpenAI, GLM Flash) 결과로 LLM을 쓰는 이유를 보이게"): 시연 원문에도 사내 Flash low·Jev를 잰다
+# -- 글과 항목이 어긋나는 리뷰(직설형·독함·부드러움)에서 판정기마다 글을 읽는지 보려고(약 $0.04).
+SET_JUDGES = {"probe": JUDGES, "faithful": JUDGES, "demo_s300": ("llm_low", "glmf_low", "jev")}
 N_DEMO_SAMPLE = 300           # 일치율의 95% 구간 반폭 ≤ ±5.7%p(1.96·√(0.25/300))
 # 사내 열 = Z.ai 공식 API의 GLM 5.3을 사내 LLM으로 가정(사용자 결정 2026-10-07: 사내 서버 측정 불가). 표만 인용돼도
 # 무엇을 쟀는지 남게 이름에 Z.ai를 적는다.
