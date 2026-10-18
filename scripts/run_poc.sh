@@ -30,10 +30,15 @@ if [[ "${SKIP_SETUP:-0}" != "1" ]]; then
   uv run playwright install chromium
 fi
 
-if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" \
+# 앱 전체 로그인(2026-10-18): 비밀번호를 정하지 않으면 기본 계정 admin / admin1234로 로그인한다(시연용).
+# 다른 사람이 접속하는 주소(HOST=0.0.0.0 등)로 기본 계정을 열지 않는다 -- 비밀번호를 정해야 뜬다(폴백 리뷰 S5).
+if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" && "${TEAMWEAVER_LOGIN:-}" != "off" \
       && -z "${TEAMWEAVER_ADMIN_PASSWORD_HASH:-}${TEAMWEAVER_ADMIN_PASSWORD:-}${TEAMWEAVER_ADMIN_TOKEN:-}" ]]; then
-  echo "경고: $HOST 로 열지만 관리자 비밀번호가 없다 -- 설정 변경·데이터 업로드를 누구나 할 수 있다." >&2
+  echo "중단: $HOST 로 열려면 기본 계정(admin/admin1234) 대신 비밀번호를 정한다:" >&2
+  echo '  TEAMWEAVER_ADMIN_PASSWORD_HASH="$(uv run python scripts/hash_admin_password.py)" scripts/run_poc.sh' >&2
+  exit 1
 fi
+echo "로그인: 아이디 ${TEAMWEAVER_ADMIN_ID:-admin} · 비밀번호는 TEAMWEAVER_ADMIN_PASSWORD(_HASH), 정하지 않았으면 admin1234"
 
 echo "TeamWeaver: http://$HOST:$PORT"
 # 시연 데이터(기본): 실제 시스템 형식의 조직형 100명(demo/org-n100). 예전 고정 데이터로 뜨려면 TEAMWEAVER_DEMO_BUNDLE= 로 비운다.

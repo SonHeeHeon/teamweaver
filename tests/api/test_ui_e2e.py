@@ -117,7 +117,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             page.on("pageerror", lambda e: errors.append(str(e)))
             page.set_default_timeout(60_000)
             page.goto(base + "/")
-            expect(page.get_by_role("heading", name="TeamWeaver")).to_be_visible()
+            expect(page.get_by_role("heading", name="요건 설정")).to_be_visible()     # 2026-10-18 개편: 왼쪽 메뉴 + 화면 제목
 
             # 1) 배치 설정: 최소 투입률 25%로 저장(K8). 반복 협업은 예전 기준(전체 이력 중 6개월)을 화면에서 골라
             #    저장한다 -- 아래 4)의 "첫 교체는 경고가 없다"는 결정적 시나리오가 그 기준에서 만들어졌고, 새 조회 기간
@@ -138,7 +138,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
                 page.get_by_role("button", name="검증 후 전환").click()
             assert meta_resp.value.ok
             expect(page.get_by_text("이 데이터로 전환했다")).to_be_visible()
-            expect(page.get_by_text("synthetic-n20-p4-s11")).to_be_visible()
+            expect(page.get_by_text("synthetic-n20-p4-s11").first).to_be_visible()
 
             # 3) 최적화(실제 CBC)
             page.get_by_role("button", name="요건 설정").click()
@@ -148,7 +148,8 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             # 대안과 무관하지만, 진행 중 스트림과 겹치지 않게 한다.
             expect(page.get_by_text(re.compile("대안 계산 중"))).to_have_count(0, timeout=180_000)
 
-            # 4) 교체 검토 → 적용(K10). 첫 배치 인력을 첫 대기 인력으로 바꾼다.
+            # 4) 교체 검토 → 적용(K10). 첫 배치 인력을 첫 대기 인력으로 바꾼다(2026-10-18 개편: "교체 검토" 하위 탭).
+            page.get_by_role("tab", name="교체 검토").click()
             out_sel = page.get_by_label("교체 대상")
             out_value = out_sel.locator("option").nth(1).get_attribute("value")
             out_sel.select_option(out_value)
@@ -212,6 +213,7 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
                     page.get_by_role("button", name="검증 후 전환").click()
                 expect(page.get_by_text("이 데이터로 전환했다")).to_be_visible()
                 _optimize(page, expect)
+                page.get_by_role("tab", name="교체 검토").click()
                 out_sel = page.get_by_label("교체 대상")
                 out_sel.select_option(out_sel.locator("option").nth(1).get_attribute("value"))
                 in_sel = page.get_by_label("교체 투입")
@@ -236,7 +238,7 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
                 page.set_default_timeout(60_000)
                 page.goto(base + "/")
                 page.get_by_role("button", name="데이터", exact=True).click()
-                expect(page.get_by_text("synthetic-n20-p4-s11")).to_be_visible()
+                expect(page.get_by_text("synthetic-n20-p4-s11").first).to_be_visible()
                 _optimize(page, expect)
                 expect(page.get_by_text(re.compile("저장해 둔 적용 교체 1건을 불러왔다"))).to_be_visible()
                 expect(page.get_by_text(re.compile("교체 1건 적용"))).to_be_visible()
@@ -255,8 +257,8 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
 
 @pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")
 def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
-    """K14: 비밀번호를 설정한 서버에서는 로그인해야 배치 설정을 저장할 수 있고, 로그아웃하면 다시 막힌다.
-    세션 쿠키는 HttpOnly라 페이지 스크립트가 읽을 수 없다."""
+    """K14 → 2026-10-18 앱 전체 로그인: 비밀번호를 설정한 서버는 들어오자마자 로그인 화면이고, 로그인해야 앱·배치 설정을 쓰며,
+    로그아웃하면 다시 로그인 화면이다. 세션 쿠키는 HttpOnly라 페이지 스크립트가 읽을 수 없다."""
     from playwright.sync_api import expect, sync_playwright
 
     with sync_playwright() as pw:
@@ -266,14 +268,16 @@ def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
                 page = browser.new_page()
                 page.set_default_timeout(60_000)
                 page.goto(base + "/")
-                page.get_by_role("button", name="배치 설정").click()
-                expect(page.get_by_role("heading", name="관리자 로그인")).to_be_visible()
+                expect(page.get_by_role("heading", name="로그인")).to_be_visible()
+                assert page.request.get(base + "/api/meta").status == 401
+                page.get_by_label("아이디").fill("admin")
                 page.get_by_label("비밀번호").fill("wrong")
                 page.get_by_role("button", name="로그인", exact=True).click()
-                expect(page.get_by_role("alert")).to_contain_text("맞지 않는다")
+                expect(page.get_by_role("alert")).to_contain_text("맞지 않습니다")
                 page.get_by_label("비밀번호").fill("correct horse 9")
                 page.get_by_role("button", name="로그인", exact=True).click()
                 expect(page.get_by_role("button", name="로그아웃")).to_be_visible()
+                page.get_by_role("button", name="배치 설정").click()
                 cookies = {c["name"]: c for c in page.context.cookies()}
                 assert cookies["tw_admin"]["httpOnly"] is True
                 assert cookies["tw_admin"]["sameSite"] == "Strict"
@@ -282,7 +286,7 @@ def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
                 page.get_by_role("button", name="저장").click()
                 expect(page.get_by_text("다음 '최적화 실행'부터")).to_be_visible()
                 page.get_by_role("button", name="로그아웃").click()
-                expect(page.get_by_role("button", name="관리자 로그인")).to_be_visible()
+                expect(page.get_by_role("heading", name="로그인")).to_be_visible()
                 status = page.request.put(base + "/api/settings", data={
                     "settings": {"min_alloc": 0.4, "clique_threshold_months": 6, "lam": 0.3,
                                  "mu": 0.2, "time_limit": 120, "gap": 0.05, "max_concurrent_projects": 3, "allocation_mode": "fixed", "time_limit_auto": False},

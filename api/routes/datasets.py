@@ -17,7 +17,6 @@ from pathlib import Path
 import anyio
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
 
 from api.admin import require_admin
 from api.datasets import (ActiveDataset, BundleArchiveError, build_active, bundle_version,
@@ -155,8 +154,9 @@ async def upload_dataset(request: Request):
         async with state.dataset_lock:
             _activate(request, active)
             from api.demo_precomputed import install
-            install(request.app, None)                  # 미리 계산은 시연 묶음만(2026-10-07 claude-a)
+            install(request.app, None)                  # 업로드 데이터의 결과는 새로 계산한다
             state.demo_active_root = None
+            await anyio.to_thread.run_sync(state.record_store.clear_active)   # 편성 기록에서 벗어났다
             # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
             # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
@@ -181,11 +181,12 @@ def active_dataset(request: Request) -> dict:
     # judge_endpoint: 다음에 올릴 묶음의 평가 사유(글)를 어디로 보내 판정하는가(화면 업로드 안내용)
     # demo_name: 지금 켜진 시연 묶음 이름(GET /api/datasets/demos의 name, 아니면 None).
     # precomputed: 시연 묶음의 미리 계산 결과를 쓰는지(쓰지 않은 부분은 skipped에 이유) -- 시연 전 점검용(2026-10-07 claude-a)
-    from api.demos import active_demo_name
-    return _info(request.app.state.dataset,
-                 restore_error=getattr(request.app.state, "dataset_restore_error", None),
-                 demo_name=active_demo_name(request.app),
-                 precomputed=getattr(request.app.state, "precomputed_status", None))
+    state = request.app.state
+    record_id = state.record_store.active_id() if state.dataset.info.source == "record" else None
+    return _info(state.dataset,
+                 restore_error=getattr(state, "dataset_restore_error", None),
+                 record_id=record_id, record_title=getattr(state.dataset, "record_title", None),
+                 precomputed=getattr(state, "precomputed_status", None))
 
 
 @router.post("/api/datasets/reset", dependencies=[Depends(require_admin)])
@@ -200,27 +201,22 @@ async def reset_dataset(request: Request) -> dict:
         raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
     state.dataset_switching = True
     try:
-        # "기본 데이터로 되돌리기"는 고른 시연 묶음도 잊는다(서버 기본 = TEAMWEAVER_DEMO_BUNDLE 또는 고정 fixture).
-        from api.demos import clear_choice
-        from api.storage import data_dir
-        await anyio.to_thread.run_sync(clear_choice, data_dir())
-        fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)   # 잠금 밖(시연 묶음은 LLM 판정)
-        from api.demo_precomputed import install, prepare_for
+        # "기본 데이터로 되돌리기" = 서버 시작 데이터(TEAMWEAVER_DEMO_BUNDLE 또는 고정 fixture). 열어 둔 편성 기록도 닫는다.
+        fixture = await anyio.to_thread.run_sync(request.app.state.build_fixture_dataset)   # 잠금 밖(시작 묶음은 LLM 판정)
+        from api.demo_precomputed import install
         from api.demos import current_demo_root
         root = current_demo_root() if fixture.info.source == "demo-bundle" else None
-        pre = await anyio.to_thread.run_sync(prepare_for, request.app, fixture, root)
         async with state.dataset_lock:
             _activate(request, fixture)
-            install(request.app, pre)
+            install(request.app, None)
             state.demo_active_root = root
             await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
+            await anyio.to_thread.run_sync(state.record_store.clear_active)
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
             # 시연 묶음을 못 읽어 예전 fixture로 되돌아갔으면 그 이유를 알린다(claude-a 요청 -- 조용히 바뀌지 않게).
             err = getattr(request.app.state, "demo_bundle_error", None)
             request.app.state.dataset_restore_error = err
-            from api.demos import active_demo_name
-            return _info(fixture, restore_error=err, demo_name=active_demo_name(request.app),
-                         precomputed=state.precomputed_status)
+            return _info(fixture, restore_error=err, precomputed=state.precomputed_status)
     finally:
         state.dataset_switching = False
 
@@ -232,6 +228,8 @@ async def rejudge_dataset(request: Request) -> dict:
     if ctype != "application/json":
         raise HTTPException(status_code=415, detail="다시 판정은 JSON 요청으로 보낸다(Content-Type: application/json).")
     state = request.app.state
+    if state.dataset.info.source == "record":
+        raise HTTPException(status_code=409, detail="편성 기록에서 연 데이터는 기록된 판정값을 쓴다 -- 다시 판정할 수 없다.")
     if state.dataset_switching:
         raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
     state.dataset_switching = True
@@ -239,74 +237,19 @@ async def rejudge_dataset(request: Request) -> dict:
         new, err = await anyio.to_thread.run_sync(rebuild_active, request.app)              # 잠금 밖(LLM 판정)
         if new is None:
             raise HTTPException(status_code=409, detail=err)
-        from api.demo_precomputed import install, prepare_for
+        from api.demo_precomputed import install
         from api.demos import current_demo_root
         root = current_demo_root() if new.info.source == "demo-bundle" else None
-        pre = await anyio.to_thread.run_sync(prepare_for, request.app, new, root)
         async with state.dataset_lock:
             _activate(request, new)
-            install(request.app, pre)
+            install(request.app, None)
             state.demo_active_root = root
             # 판정이 성공하면 버전이 바뀐다 -- 옛 버전의 교체 기록(사번·명단)을 남기지 않는다(리뷰 S6).
             await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
             if new.info.source != "upload":
                 # 시연 묶음을 못 읽어 예전 fixture가 됐으면 조용히 바뀌지 않게 이유를 알린다(리뷰 S6).
                 state.dataset_restore_error = getattr(state, "demo_bundle_error", None)
-            from api.demos import active_demo_name
             return _info(new, restore_error=getattr(state, "dataset_restore_error", None),
-                         demo_name=active_demo_name(request.app), precomputed=state.precomputed_status)
-    finally:
-        state.dataset_switching = False
-
-
-@router.get("/api/datasets/demos")
-def list_demo_datasets() -> list[dict]:
-    """데이터 탭에서 고를 수 있는 시연 묶음(demo/ 아래 manifest가 있는 폴더). 운영 중 시나리오는 scenario="operating"."""
-    from api.demos import list_demos
-    return list_demos()
-
-
-class DemoChoice(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    name: str
-
-
-@router.post("/api/datasets/demo", dependencies=[Depends(require_admin)])
-async def choose_demo_dataset(body: DemoChoice, request: Request) -> dict:
-    """시연 묶음으로 전환한다. 저장된 업로드 보관본은 지운다("기본 데이터로 되돌리기"와 같은 정리). 고른 이름은 기억해
-    재기동해도 그 묶음으로 뜬다. 이름은 목록(api.demos.list_demos)에 있는 것만 받는다."""
-    from api.demos import demo_root, save_choice
-    from api.storage import data_dir
-    root = demo_root(body.name)
-    if root is None:
-        raise HTTPException(status_code=404, detail=f"시연 데이터 묶음 {body.name!r}이 없다.")
-    state = request.app.state
-    if state.dataset_switching:
-        raise HTTPException(status_code=409, detail="다른 데이터셋 작업을 처리하는 중이다.")
-    state.dataset_switching = True
-    try:
-        # 고른 묶음을 먼저 만든다(잠금 밖, 리뷰 글 판정). 실패하면 아무것도 바꾸지 않는다 -- 업로드 보관본·선택 기록은
-        # 그대로다(리뷰 S3: 예전에는 고정 fixture로 대체하고도 보관본을 지우고 실패한 선택을 기억했다).
-        try:
-            new = await anyio.to_thread.run_sync(state.build_demo_dataset, root)
-        except Exception as exc:                                   # noqa: BLE001 -- 검증 실패 등 이유를 그대로 알린다
-            raise HTTPException(status_code=422, detail=f"시연 데이터 묶음을 읽지 못했다: {str(exc)[:300]}") from exc
-        # 같은 데이터·같은 설정으로 미리 계산한 결과(시연 확장 E, api/demo_precomputed) -- 잠금 밖에서 검증
-        from api.demo_precomputed import install, prepare_for
-        pre = await anyio.to_thread.run_sync(prepare_for, request.app, new, root)
-        try:
-            await anyio.to_thread.run_sync(save_choice, data_dir(), body.name)
-        except OSError as exc:
-            new.retire()                                           # 만든 데이터셋(메모리 SQLite)을 닫고 아무것도 바꾸지 않는다
-            raise HTTPException(status_code=500, detail=f"시연 데이터 선택을 저장하지 못했다: {exc}") from exc
-        async with state.dataset_lock:
-            _activate(request, new)
-            install(request.app, pre)
-            state.demo_active_root = root
-            await anyio.to_thread.run_sync(state.dataset_store.clear)
-            await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
-            state.demo_bundle_error = None
-            state.dataset_restore_error = None
-            return _info(new, restore_error=None, demo_name=body.name, precomputed=state.precomputed_status)
+                         precomputed=state.precomputed_status)
     finally:
         state.dataset_switching = False

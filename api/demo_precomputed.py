@@ -39,10 +39,11 @@ class Precomputed:
     stop_reason: str | None = None           # 대안이 모자란 이유(시간 초과 등) -- 화면이 조건 미충족과 구분한다
     operating: dict | None = None            # {"key": ..., "ks": [...], "rows": [...]}
     skipped: list[str] = field(default_factory=list)
+    label: str | None = None                 # 편성 기록에서 열었으면 그 제목(api/records) -- 화면 띠가 쓴다
 
     def status(self) -> dict:
         return {"preset": self.preset, "computed_at": self.computed_at, "plans": len(self.plans),
-                "operating": self.operating is not None, "skipped": self.skipped}
+                "operating": self.operating is not None, "skipped": self.skipped, "label": self.label}
 
 
 def preset_id(bundle_path: Path) -> str:
@@ -175,7 +176,13 @@ def _check_operating(pre: Precomputed, op, graph, S, C, params: MilpParams, vers
 
 
 def install(app, pre: Precomputed | None) -> None:
-    """검증된 미리 계산 결과를 결과 캐시와 등록부에 넣는다(데이터셋을 바꿀 때마다 다시 부른다)."""
+    """검증된 미리 계산 결과를 결과 캐시와 등록부에 넣는다(데이터셋을 바꿀 때마다 다시 부른다).
+    앞서 넣은 저장 결과는 캐시에서도 지운다 -- 같은 묶음을 같은 판정값으로 다시 올리면 계산 버전이 같아, 남은 기록의 안이
+    출처 표시 없이 "캐시 결과"로 나가던 것을 막는다(폴백 리뷰 S3)."""
+    cache = getattr(app.state, "cache", None)
+    for old in (getattr(app.state, "precomputed_keys", None) or {}):
+        if cache is not None:
+            cache.pop(old)
     app.state.precomputed_keys = {}
     app.state.precomputed_operating = None
     app.state.precomputed_status = pre.status() if pre is not None else None
@@ -183,7 +190,8 @@ def install(app, pre: Precomputed | None) -> None:
         return
     if pre.optimize_key and pre.plans:
         app.state.cache.put(pre.optimize_key, pre.plans)
-        app.state.precomputed_keys[pre.optimize_key] = {"at": pre.computed_at, "stop_reason": pre.stop_reason}
+        app.state.precomputed_keys[pre.optimize_key] = {"at": pre.computed_at, "stop_reason": pre.stop_reason,
+                                                        "label": pre.label}
     app.state.precomputed_operating = pre.operating
     if pre.skipped:
         log.warning("미리 계산 결과(%s) 일부를 쓰지 않는다: %s", pre.preset, "; ".join(pre.skipped))
@@ -191,6 +199,10 @@ def install(app, pre: Precomputed | None) -> None:
 
 def precomputed_at(app, key: str) -> str | None:
     return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("at")
+
+
+def precomputed_label(app, key: str) -> str | None:
+    return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("label")
 
 
 def precomputed_stop_reason(app, key: str) -> str | None:

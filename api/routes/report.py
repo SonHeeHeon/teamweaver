@@ -54,7 +54,7 @@ def _settings() -> PdfSettings:
 # 큰 본문을 보내면 다 읽어 파싱했다). 업로드(/api/datasets)는 자체 상한(api/routes/datasets)이 있어 뺀다.
 JSON_LIMIT_ENV = "TEAMWEAVER_MAX_JSON_BODY_BYTES"
 DEFAULT_MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
-OWN_LIMIT_PATHS = frozenset({"/api/datasets"})
+OWN_LIMIT_PATHS = frozenset({"/api/datasets", "/api/records"})   # 편성 기록 불러오기는 20MB(api/records)
 _BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
 
 

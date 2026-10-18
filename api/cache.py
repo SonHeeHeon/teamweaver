@@ -43,6 +43,9 @@ class ResultCache:
             self._store.move_to_end(key)
         return plans
 
+    def pop(self, key: str) -> None:
+        self._store.pop(key, None)
+
     def put(self, key: str, plans: list) -> None:
         self._store[key] = plans
         self._store.move_to_end(key)
