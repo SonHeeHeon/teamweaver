@@ -326,3 +326,26 @@ def test_nightly_check_reports_an_opened_records_plans(yearend):
         report["checks"].clear()
         run.check_precomputed()
         assert report["checks"][0]["status"] == "warn", report["checks"]
+
+
+def test_a_failed_upload_save_keeps_the_open_record_marker(yearend, monkeypatch):
+    """업로드 경로도 새 업로드가 저장된 뒤에만 열어 둔 기록 표시를 지운다(저장 성공이면 지운다)."""
+    from api.main import app
+    from api.records import files_of
+    from api.workspace import zip_files
+    with TestClient(app) as c:
+        _open_operating_record(c)
+        marker = app.state.record_store.dir / "active.json"
+        blob = zip_files(files_of(app, app.state.dataset))
+        real_save = app.state.dataset_store.save
+
+        def broken_save(*_a, **_k):
+            raise OSError("disk full")
+        monkeypatch.setattr(app.state.dataset_store, "save", broken_save)
+        r = c.post("/api/datasets", content=blob, headers={"Content-Type": "application/zip"})
+        assert r.status_code == 200, r.text
+        assert r.json()["persisted"] is False and marker.exists()
+        monkeypatch.setattr(app.state.dataset_store, "save", real_save)
+        r = c.post("/api/datasets", content=blob, headers={"Content-Type": "application/zip"})
+        assert r.status_code == 200 and r.json()["persisted"] is True, r.text
+        assert not marker.exists()

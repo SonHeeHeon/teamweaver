@@ -156,7 +156,6 @@ async def upload_dataset(request: Request):
             from api.demo_precomputed import install
             install(request.app, None)                  # 업로드 데이터의 결과는 새로 계산한다
             state.demo_active_root = None
-            await anyio.to_thread.run_sync(state.record_store.clear_active)   # 편성 기록에서 벗어났다
             # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
             # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
@@ -168,6 +167,14 @@ async def upload_dataset(request: Request):
                 log.error("업로드 데이터 저장 실패: %s", exc)
                 persist_error = (f"서버에 저장하지 못했다(재기동하면 이전에 저장된 데이터, 없으면 기본 "
                                  f"데이터로 뜬다): {exc}")
+            if persist_error is None:
+                # 편성 기록에서 벗어났다 -- 새 업로드가 저장된 **뒤에만** 열어 둔 기록 표시를 지운다(저장이 실패했는데 지우면
+                # 재기동 때 복원할 곳이 둘 다 없다, api/workspace._activate_blob과 같은 처리). 지우기 실패는 전환을 무르지 않는다.
+                try:
+                    await anyio.to_thread.run_sync(state.record_store.clear_active)
+                except OSError as exc:
+                    log.error("열어 둔 편성 기록 표시를 지우지 못했다: %s", exc)
+                    persist_error = f"열어 둔 편성 기록 표시를 지우지 못했다(재기동하면 그 기록으로 뜬다): {exc}"
             request.app.state.dataset_restore_error = None
             return {"activated": True, "dataset": _info(active), "report": report,
                     "persisted": persist_error is None, "persist_error": persist_error}
