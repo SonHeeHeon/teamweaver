@@ -3,17 +3,20 @@
 
 대상은 **지금 켜져 있는 데이터 한 묶음**(관리자가 올렸거나 고른 시연 묶음)이다. 다른 묶음·옛 데이터는 다루지 않는다.
 
-1. 밤 풀이 -- 아침에 바로 나오지 않는 요청을 낮보다 긴 시간 한도로 풀어 둔다.
-   대상: 기본 요청(안 A~D, 가중치 없음, 관리자 설정), 운영 중 비교(현재 배치가 있는 데이터, K 0~3), 낮에 실제로 보낸 요청
-   (`RequestRecorder`가 남긴 최근 기록 중 캐시에 없는 것). **시간 한도만** 늘리고 키·서명은 낮 설정 그대로 둔다 -- 그래야
-   아침의 같은 요청이 이 결과를 꺼낸다(시연 미리 계산과 같은 원칙, api/demo_precomputed). 결과는 `<데이터 폴더>/nightly/
-   prepared.json`에 남기고 결과 캐시·"미리 계산" 등록부에 넣는다 -- 화면에는 기존 "미리 계산 · 시각" 표시가 그대로 뜬다.
-   **이미 캐시에 있는 요청(시연 미리 계산·부팅 사전계산·낮 결과)은 건너뛴다** -- 영상 대본 숫자의 근거(시연 미리 계산)를 덮지 않는다.
-   넣기 전에 데이터 버전·평가기 재채점·위반 없음을 다시 확인하고, 어긋나면 버린다(재기동 때도 같은 확인).
-2. 소명 글 미리 쓰기 -- 기본 요청 안 A(시간·호출이 남으면 B~D)의 사업별 인사팀 소명 글을 AI로 써서 저장한다
-   (api.justification_cache). 낮 화면·PDF는 같은 조건이면 저장본을 쓴다. AI 규칙은 낮과 같다(api.deps.llm_client_for).
-3. 밤사이 점검 -- 데이터 복원·미리 계산 수용·리뷰 판정 동봉·저장된 교체·모델(Phase 0 소형)·PDF 브라우저·AI 연결·저장 공간을
-   확인하고 보고서를 `<데이터 폴더>/nightly/report.json`(+ history/)에 남긴다. `GET /api/nightly`가 보여 준다.
+(2026-10-18 재정비, 사용자 결정 "축소해서 이번 작업에 합침" -- 3가지 핵심 상황 설계 `.omc/plan/2026-10-18-three-scenarios.md`):
+운영 중에는 "매일 더 나은 배치 찾기"가 아니라 **입력이 바뀐 것만** 미리 해 둔다. 시스템이 스스로 제안을 띄우지 않고, **AI 비용을 쓰지 않는다**
+(소명 글은 부서장이 팀을 확정해 검토로 넘길 때 화면에서 쓴다 -- 쓴 글은 api.justification_cache가 저장해 다시 돈 내지 않는다).
+고정(자물쇠)은 현재 배치의 `locked`라 모든 계산이 자동으로 지킨다.
+
+1. 긴급 대기 명단 -- 진행 사업마다 "지금 바로 넣을 수 있는 사람" 상위 5명(`standby.json`, `GET /api/emergency/standby`).
+2. 밤 풀이 -- 아침에 바로 나오지 않는 요청을 낮보다 긴 시간 한도로 풀어 둔다. **시간 한도만** 늘리고 키·서명은 낮 설정 그대로.
+   - 연간 계획(안 A~D): 현재 배치가 없는 백지 데이터일 때만.
+   - 운영 중 비교(K 0~3): 채울 신규 사업이 있을 때만.
+   - 낮에 실제로 보낸 요청(`RequestRecorder` 기록 중 캐시에 없는 것).
+   결과는 `<데이터 폴더>/nightly/prepared.json` → 결과 캐시·"미리 계산" 등록부. 이미 캐시에 있는 요청(시연 미리 계산 포함)은 건너뛴다.
+   넣기 전·재기동 때 데이터 버전·평가기 재채점·위반 없음을 다시 확인한다. 끝까지 풀지 못한 묶음은 저장하지 않는다.
+3. 밤사이 점검 -- 데이터 복원·미리 계산 수용·리뷰 판정 동봉·저장된 교체·모델(Phase 0 소형)·PDF 브라우저·AI 연결(비용 없는 조회)·
+   저장 공간 → `<데이터 폴더>/nightly/report.json`(+ history/), `GET /api/nightly`.
 
 실행: 서버 안의 예약 실행기가 매일 시간대 시작(기본 00:00)에 돈다(`TEAMWEAVER_NIGHTLY=off`로 끔, 시간대
 `TEAMWEAVER_NIGHTLY_WINDOW=00:00-05:00`). 풀이는 시간대 끝 15분 전까지(멈춤 finish -- 그때까지의 해), 전체는 시간대 안에서 끝낸다.
@@ -42,9 +45,7 @@ log = logging.getLogger(__name__)
 
 ENABLE_ENV = "TEAMWEAVER_NIGHTLY"
 WINDOW_ENV = "TEAMWEAVER_NIGHTLY_WINDOW"
-AI_MAX_ENV = "TEAMWEAVER_NIGHTLY_AI_MAX_CALLS"
 DEFAULT_WINDOW = "00:00-05:00"
-DEFAULT_AI_MAX = 80
 FORMAT = 1
 DIRNAME = "nightly"
 
@@ -55,7 +56,6 @@ NIGHT_MIN_S = 300
 NIGHT_MAX_S = 1800
 SOLVE_MARGIN_S = 15 * 60          # 풀이는 마감 15분 전까지(소명·점검·보고서 몫)
 SOLVE_OVERHEAD_S = 20             # 풀이마다 붙는 준비·보정·검증 시간(모델 만들기·C1·독립 검증) -- 시간 한도 밖이다
-AI_TIMEOUT_MIN_S = 120.0          # 밤에는 AI 글 한 편을 낮(외부 40초)보다 오래 기다린다 -- 사내 Flash p50 60초·p95 162초(E7c-F)
 MAX_RECORDED = 30                 # 낮 요청 기록 수
 MAX_RECORDED_SOLVES = 5           # 한 밤에 다시 풀 낮 요청 수
 RECORD_BODY_MAX = 64 * 1024
@@ -94,13 +94,6 @@ def next_start(now: datetime, win: tuple[dtime, dtime]) -> datetime:
     """now 이후(같은 시각 제외) 가장 가까운 시간대 시작. 시간대 안에서 켜졌으면 다음 날 시작이다."""
     today = datetime.combine(now.date(), win[0])
     return today if now < today else today + timedelta(days=1)
-
-
-def ai_max_calls() -> int:
-    try:
-        return max(0, int(os.environ.get(AI_MAX_ENV, DEFAULT_AI_MAX)))
-    except ValueError:
-        return DEFAULT_AI_MAX
 
 
 def night_limit(day_limit: int, n_solves: int, remaining_s: float, factor: int = NIGHT_FACTOR) -> int | None:
@@ -351,7 +344,7 @@ class Nightly:
                         "deadline": datetime.fromtimestamp(deadline_ts, timezone.utc).isoformat(timespec="seconds"),
                         "dataset": {"id": info.dataset_id, "version": info.version, "source": info.source,
                                     "synthetic": info.synthetic, "people": info.people, "projects": info.projects},
-                        "checks": [], "solves": [], "justifications": None, "stopped": False}
+                        "checks": [], "solves": [], "standby": None, "stopped": False}
         acquired = False
         try:
             dataset.acquire()
@@ -365,11 +358,10 @@ class Nightly:
             run.phase("저장 공간 확인", run.check_disk)
             run.phase("모델 검사", run.check_model)
             run.phase("PDF 준비 확인", run.check_pdf)
-            run.phase("기본 요청 풀이", run.solve_default)
-            run.phase("소명 글(안 A)", lambda: run.justify(("A",)))
+            run.phase("긴급 대기 명단", run.standby)
+            run.phase("연간 계획 풀이", run.solve_default)
             run.phase("운영 중 비교 풀이", run.solve_operating)
             run.phase("낮 요청 다시 풀기", run.solve_recorded)
-            run.phase("소명 글(안 B~D)", lambda: run.justify(("B", "C", "D")))
             run.phase("AI 연결 확인", run.check_ai)
         except Exception as exc:                        # noqa: BLE001 -- 시작하지 못해도 보고서는 남긴다
             log.exception("야간 배치를 시작하지 못했다")
@@ -544,8 +536,6 @@ class _Run:
         self.solve_until = solve_until
         self.deadline = deadline
         self.ai_calls = 0
-        self.jstats = {"plans": [], "projects": 0, "prepared": 0, "already": 0, "fallback": 0, "busy": 0,
-                       "ai_calls": 0, "cost_usd": 0.0, "fallback_reasons": {}, "skipped_reason": None}
 
     # 공통 ----------------------------------------------------------------------------------------------------------
     @property
@@ -711,9 +701,7 @@ class _Run:
         self.check("pdf", "PDF 준비", "ok", "화면 빌드와 PDF용 브라우저 정상")
 
     def check_ai(self) -> None:
-        if self.jstats["prepared"] > 0:
-            self.check("ai", "AI 연결", "ok", f"오늘 밤 AI 소명 글 {self.jstats['prepared']}편 작성 성공")
-            return
+        """설명 글 AI가 아침에 쓸 수 있는지 -- 비용 없는 모델 조회만 한다(글은 쓰지 않는다)."""
         from api.deps import get_openai_client_or_none, llm_client_for
         from api.routes.justification import ai_model
         client, why = llm_client_for(self.dataset, get_openai_client_or_none())
@@ -810,8 +798,14 @@ class _Run:
         return row
 
     def solve_default(self) -> None:
+        """연간 계획(백지 안 A~D)은 현재 배치가 없는 데이터일 때만 -- 운영 중에는 처음부터 다시 짜는 일이 거의 없다
+        (사용자 2026-10-18: "연초라고 백지가 되는 상황은 거의 없을 가능성이 높아")."""
+        if self.dataset.current:
+            self.report["solves"].append({"kind": "optimize", "target": "연간 계획(안 A~D)", "status": "skipped",
+                                          "reason": "운영 중 데이터(현재 배치 있음) -- 연간 계획은 백지 데이터일 때만"})
+            return
         params = _server_params(self.app, self.dataset)
-        self.report["solves"].append(self._solve_entry(target="기본 요청(안 A~D)", weights={}, n_alt=3, params=params))
+        self.report["solves"].append(self._solve_entry(target="연간 계획(안 A~D)", weights={}, n_alt=3, params=params))
 
     def solve_recorded(self) -> None:
         from pydantic import ValidationError
@@ -857,6 +851,9 @@ class _Run:
         row = {"kind": "operating", "target": "운영 중 비교(K 0~3)"}
         if not self.dataset.current:
             self.report["solves"].append({**row, "status": "skipped", "reason": "현재 배치가 없는 데이터다"})
+            return
+        if not (self.dataset.scenario.get("proposals") or []):
+            self.report["solves"].append({**row, "status": "skipped", "reason": "채울 신규 사업이 없다"})
             return
         version = self.dataset.info.version
         params = _operating_params(_server_params(self.app, self.dataset))
@@ -923,84 +920,26 @@ class _Run:
                                       "installed": res.get("status") == "installed",
                                       **({} if res.get("status") == "installed" else {"install_reason": res.get("reason")})})
 
-    # 2. 소명 글 ---------------------------------------------------------------------------------------------------
-    def justify(self, labels: tuple[str, ...]) -> None:
-        from api.cache import ResultCache
-        from api.deps import get_openai_client_or_none, llm_client_for
-        from api.routes import justification as jr
-        js = self.jstats
-        self.report["justifications"] = js
-        if js["skipped_reason"]:
+    # 긴급 대기 명단 --------------------------------------------------------------------------------------------
+    def standby(self) -> None:
+        """진행 사업마다 '지금 바로 넣을 수 있는 사람' 상위 5명(빼 오지 않음)을 뽑아 둔다 -- 사고가 나면 즉시 보이게
+        (3가지 핵심 상황 설계 상황 3). 판마다·날마다 바뀐다(가용률·끝나는 사업). AI 비용 없음."""
+        from api.routes.scenarios import standby_for
+        ongoing = sorted({c.project_id for c in self.dataset.current})
+        if not ongoing:
+            self.report["standby"] = {"projects": 0, "skipped_reason": "현재 배치가 없는 데이터다"}
             return
-        params = _server_params(self.app, self.dataset)
-        key = ResultCache.key({}, params, 3, self.dataset.info.version)
-        plans = self.app.state.cache.get(key)
-        if not plans:
-            js["skipped_reason"] = "기본 요청의 결과가 없다(밤 풀이도 실패)"
+        out: dict[str, list] = {}
+        for pid in ongoing:
+            if self.cancelled or not self.still_active() or time.time() >= self.solve_until:
+                break
+            out[pid] = standby_for(self.app, self.dataset, pid)
+        if not self.still_active():
             return
-        kg = self.dataset.knowledge_graph()
-        if kg is None:
-            js["skipped_reason"] = "CSV 묶음 데이터가 아니라 소명 글을 만들 수 없다"
-            return
-        client, why = llm_client_for(self.dataset, get_openai_client_or_none())
-        if client is None:
-            js["skipped_reason"] = {"no_client": "AI 키가 없다", "external_blocked": "실데이터라 회사 밖 AI로 보내지 않는다"}.get(
-                why, str(why))
-            return
-        timeout = max(jr.ai_timeout_s(), AI_TIMEOUT_MIN_S)
-        # 재시도 없이 -- 한 호출이 timeout 안에 끝나야 마감 계산이 맞는다(다음 밤에 다시 쓴다)
-        timed = jr._client_with_timeout(client, timeout, max_retries=0)
-        graph = self.dataset.graph
-        S, C = _matrices(graph, {})
-        limit = ai_max_calls()
-        reasons: Counter = Counter(js["fallback_reasons"])
-        for plan in plans:
-            if plan.label not in labels:
-                continue
-            js["plans"].append(plan.label)
-            entries = list(plan.entries)
-            projects = [p.id for p in graph.projects if any(e.project_id == p.id for e in entries)]
-            for pid in projects:
-                if self.cancelled or not self.still_active():
-                    return
-                js["projects"] += 1
-                inp = jr.build_input(kg, pid, entries, graph, S, C, params)
-                skey = jr.saved_key(self.dataset, pid, entries, {}, params, client, inp)
-                if jr.load_saved(self.dataset, skey) is not None:
-                    js["already"] += 1
-                    continue
-                if self.ai_calls >= limit:
-                    js["stopped_reason"] = f"한 밤 AI 호출 상한({limit}회)"
-                    return
-                if not self._acquire(jr.AI_SLOTS, min(time.time() + 60, self.deadline - timeout)):
-                    if self.cancelled or not self.still_active():
-                        return
-                    if time.time() + timeout > self.deadline:
-                        js["stopped_reason"] = "마감이 가까워 더 쓰지 않았다"
-                        return
-                    js["busy"] += 1
-                    continue
-                try:
-                    # 자리를 얻은 뒤 다시 확인한다 -- 기다리는 동안 멈춤·데이터 전환·마감이 올 수 있다(Codex 리뷰 2026-10-18)
-                    if self.cancelled or not self.still_active():
-                        return
-                    if time.time() + timeout > self.deadline:
-                        js["stopped_reason"] = "마감이 가까워 더 쓰지 않았다"
-                        return
-                    out = jr.justify_one(self.dataset, kg, pid, entries, graph, S, C, params, timed, ai=True, inp=inp)
-                finally:
-                    jr.AI_SLOTS.release()
-                self.ai_calls += 1
-                js["ai_calls"] = self.ai_calls
-                if not self.still_active():                 # 호출 중 데이터가 바뀌었다 -- 옛 데이터의 글은 저장하지 않는다
-                    return
-                js["cost_usd"] = round(js["cost_usd"] + float(((out.get("usage") or {}).get("cost_usd")) or 0.0), 6)
-                if out.get("method") == "graphrag" and jr.save_ai_text(self.dataset, skey, out, "nightly"):
-                    js["prepared"] += 1
-                else:
-                    js["fallback"] += 1
-                    reasons[str(out.get("fallback_reason"))] += 1
-                    js["fallback_reasons"] = dict(reasons)
+        from api.routes.scenarios import params_fingerprint
+        self.n.store.write("standby.json", {"dataset_version": self.dataset.info.version, "computed_at": _now_iso(),
+                                            "params": params_fingerprint(self.app, self.dataset), "projects": out})
+        self.report["standby"] = {"projects": len(out), "people": sum(len(v) for v in out.values())}
 
 
 def _summarize(report: dict) -> None:
@@ -1008,12 +947,12 @@ def _summarize(report: dict) -> None:
     attention = [c for c in checks if c["status"] in ("warn", "fail")]
     prepared = [s for s in report.get("solves", []) if s.get("status") == "prepared"]
     failed = [s for s in report.get("solves", []) if s.get("status") in ("failed", "incomplete")]
-    js = report.get("justifications") or {}
+    sb = report.get("standby") or {}
     parts = [f"확인 필요 {len(attention) + len(failed)}건" if (attention or failed) else "점검 정상"]
     if prepared:
         parts.append("미리 풀어 둠 " + ", ".join(s["target"] for s in prepared))
-    if js.get("prepared"):
-        parts.append(f"소명 글 {js['prepared']}편 미리 작성")
+    if sb.get("projects"):
+        parts.append(f"긴급 대기 명단 {sb['projects']}개 사업")
     if report.get("stopped"):
         parts.append("중간에 멈춤")
     report["status"] = "attention" if (attention or failed) else "ok"

@@ -66,32 +66,41 @@ def _solve(report, prefix):
     return [s for s in report["solves"] if str(s.get("target", "")).startswith(prefix)]
 
 
+def _record_day_request(app, c, n_alt: int = 1) -> dict:
+    """낮에 보낸 최적화 요청 하나를 기록한다(안 개수만 기본과 다르게 -- 밤에 다시 풀 대상)."""
+    version = c.get("/api/datasets/active").json()["version"]
+    body = {"weights": {}, "milp_params": web_settings(c), "n_alternatives": n_alt, "dataset_version": version}
+    app.state.nightly.remember("optimize", json.dumps(body).encode())
+    return body
+
+
 # --- 밤 풀이 → 아침 즉시 ---------------------------------------------------------------------------------------------
 
 def test_manual_run_prepares_and_the_morning_request_is_instant(boot, fake_solvers, fast_checks):
+    """운영 중 데이터: 연간 계획(백지)은 풀지 않고, 신규 사업이 있으니 운영 중 비교를 미리 풀고, 긴급 대기 명단을 뽑는다.
+    AI는 부르지 않는다(2026-10-18 재정비)."""
     from api.main import app
     with TestClient(app) as c:
         version = c.get("/api/datasets/active").json()["version"]
         report = run_now(app)
-        default = _solve(report, "기본 요청")[0]
-        assert default["status"] == "prepared" and default["installed"] is True
-        assert default["night_time_limit"] >= default["day_time_limit"]
-        assert fake_solvers["plans"] == [default["night_time_limit"]]          # 밤에는 시간 한도만 늘려 푼다
+        annual = _solve(report, "연간 계획")[0]
+        assert annual["status"] == "skipped" and "운영 중" in annual["reason"]
+        assert fake_solvers["plans"] == []                                      # 운영 중에는 백지 계획을 풀지 않는다
         op = _solve(report, "운영 중 비교")[0]
         assert op["status"] == "prepared" and op["installed"] is True
         assert fake_solvers["operating"] and fake_solvers["operating"][0] == op["night_time_limit"]
-
-        body = {"weights": {}, "milp_params": web_settings(c), "n_alternatives": 3, "dataset_version": version}
-        plans = [d for e, d in sse(c.post("/api/optimize", json=body)) if e == "plan"]
-        assert len(plans) == 1 and plans[0]["cached"] is True and plans[0]["precomputed_at"]
+        assert op["night_time_limit"] >= op.get("day_time_limit", 0)
         rows = [d for e, d in sse(c.post("/api/operating/compare",
                                           json={"milp_params": web_settings(c), "dataset_version": version})) if e == "row"]
         assert len(rows) == 4 and all(r["precomputed_at"] for r in rows)
-        assert len(fake_solvers["plans"]) == 1                                  # 아침 요청은 다시 풀지 않았다
+        assert len(fake_solvers["operating"]) == 1                              # 아침 요청은 다시 풀지 않았다
+        sb = c.get("/api/emergency/standby", params={"dataset_version": version}).json()
+        assert sb["source"] == "nightly" and len(sb["projects"]) == report["standby"]["projects"] > 0
+        assert all(len(v) <= 5 for v in sb["projects"].values())
 
         st = c.get("/api/nightly").json()
         assert st["running"] is False and st["last"]["trigger"] == "manual"
-        assert "미리 풀어 둠" in st["last"]["summary"]
+        assert "미리 풀어 둠" in st["last"]["summary"] and "긴급 대기 명단" in st["last"]["summary"]
         ids = {ch["id"] for ch in st["last"]["checks"]}
         assert {"data", "precomputed", "judgments", "plan_edits", "disk", "model", "pdf", "ai"} <= ids
         disk = [ch for ch in st["last"]["checks"] if ch["id"] == "disk"][0]
@@ -104,15 +113,15 @@ def test_restart_reinstalls_and_a_tampered_record_is_refused(boot, fake_solvers,
         run_now(app)
     with TestClient(app) as c:                                  # 재기동: 밤 결과를 다시 확인해 넣는다
         installed = c.get("/api/nightly").json()["installed"]
-        assert [i["status"] for i in installed] == ["installed", "installed"]
+        assert [(i["kind"], i["status"]) for i in installed] == [("operating", "installed")]
     path = _isolated / "data" / "nightly" / "prepared.json"
     data = json.loads(path.read_text("utf-8"))
-    opt = [e for e in data["entries"] if e["kind"] == "optimize"][0]
-    opt["plans"][0]["eval_objective"] += 1.0                     # 기록을 고치면 재채점이 맞지 않는다
+    op = [e for e in data["entries"] if e["kind"] == "operating"][0]
+    op["rows"][1]["objective"] += 1.0                            # 기록을 고치면 재채점이 맞지 않는다
     path.write_text(json.dumps(data), "utf-8")
     with TestClient(app) as c:
         installed = c.get("/api/nightly").json()["installed"]
-        bad = [i for i in installed if i["kind"] == "optimize"][0]
+        bad = [i for i in installed if i["kind"] == "operating"][0]
         assert bad["status"] == "skipped" and "다시 채점" in bad["reason"]
 
 
@@ -151,10 +160,11 @@ def test_demo_precomputed_results_are_not_overwritten(tmp_path, monkeypatch, fak
     monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
     monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
     from api.main import app
-    with TestClient(app):
+    with TestClient(app) as c:
+        _record_day_request(app, c, n_alt=3)                    # 시연 미리 계산과 같은 요청 -- 이미 바로 나온다
         report = run_now(app)
-    default = _solve(report, "기본 요청")[0]
-    assert default["status"] == "skipped" and "이미 아침에" in default["reason"]
+    day = _solve(report, "낮 요청")
+    assert len(day) == 1 and day[0]["status"] == "skipped"
     assert fake_solvers["plans"] == []
     pre = [ch for ch in report["checks"] if ch["id"] == "precomputed"][0]
     assert pre["status"] == "ok"
@@ -165,7 +175,6 @@ def test_demo_precomputed_results_are_not_overwritten(tmp_path, monkeypatch, fak
         report = run_now(app)
     pre = [ch for ch in report["checks"] if ch["id"] == "precomputed"][0]
     assert pre["status"] == "warn" and "시연 대본" in pre["detail"]
-    assert _solve(report, "기본 요청")[0]["status"] == "prepared"
 
 
 # --- 낮 요청 기록 ----------------------------------------------------------------------------------------------------
@@ -221,7 +230,7 @@ def test_recorded_day_request_is_solved_at_night(boot, fake_solvers, fast_checks
 
 # --- 멈춤·관리자 ----------------------------------------------------------------------------------------------------
 
-def test_a_stopped_bundle_is_not_kept_and_the_rest_is_skipped(boot, monkeypatch, fast_checks, _isolated):
+def test_a_stopped_bundle_is_not_kept_and_the_rest_is_skipped(boot, monkeypatch, fake_solvers, fast_checks, _isolated):
     """멈춤으로 끝까지 풀지 못한 묶음은 저장·캐시하지 않는다 -- 아침 결과로 굳고 다음 밤에도 다시 풀지 않게 되므로
     (Opus 대체 리뷰 2026-10-18). 남은 단계는 하지 않는다."""
     import core.optimize.alternatives as alt
@@ -240,6 +249,7 @@ def test_a_stopped_bundle_is_not_kept_and_the_rest_is_skipped(boot, monkeypatch,
     monkeypatch.setattr(alt, "generate_plans_streaming", slow_stream)
     from api.main import app
     with TestClient(app) as c:
+        _record_day_request(app, c)
         assert c.post("/api/nightly/run", json={"minutes": 10}).json()["started"] is True
         assert c.post("/api/nightly/run", json={"minutes": 10}).status_code == 409
         assert yielded.wait(60)
@@ -248,10 +258,11 @@ def test_a_stopped_bundle_is_not_kept_and_the_rest_is_skipped(boot, monkeypatch,
         app.state.nightly._run_thread.join(60)
         report = c.get("/api/nightly").json()["last"]
     assert report["stopped"] is True and "중간에 멈춤" in report["summary"]
-    default = _solve(report, "기본 요청")[0]
-    assert default["status"] == "incomplete" and default["plans"] == 1 and "멈춤" in default["reason"]
-    assert not _solve(report, "운영 중 비교") and report["justifications"] is None
-    assert not (_isolated / "data" / "nightly" / "prepared.json").exists()
+    day = _solve(report, "낮 요청(")[0]
+    assert day["status"] == "incomplete" and day["plans"] == 1 and "멈춤" in day["reason"]
+    assert "ai" not in {ch["id"] for ch in report["checks"]}                  # 남은 단계는 하지 않았다
+    data = json.loads((_isolated / "data" / "nightly" / "prepared.json").read_text("utf-8"))
+    assert [e["kind"] for e in data["entries"]] == ["operating"]              # 멈춘 묶음은 저장하지 않았다
     assert report["status"] == "attention"
 
 
@@ -314,15 +325,14 @@ def test_real_solver_path_on_a_small_dataset(fast_checks):
                                          synthetic=True, judge=False)
         old.retire()
         report = run_now(app)
-        default = _solve(report, "기본 요청")[0]
+        default = _solve(report, "연간 계획")[0]                              # 백지 데이터라 연간 계획을 푼다
         assert default["status"] == "prepared" and default["installed"] is True, default
         assert default["terminations"][0] in ("Optimal", "time_limit_incumbent")
         body = {"weights": {}, "milp_params": web_settings(c), "n_alternatives": 3, "dataset_version": "small-v1"}
         plans = [d for e, d in sse(c.post("/api/optimize", json=body)) if e == "plan"]
         assert plans and all(p["cached"] and p["precomputed_at"] for p in plans)
         assert _solve(report, "운영 중 비교")[0]["status"] == "skipped"            # 현재 배치가 없는 데이터
-        js = report["justifications"]
-        assert js["skipped_reason"]                                                # 원 표(CSV 묶음)가 없다
+        assert report["standby"]["projects"] == 0                                  # 진행 사업이 없다
 
 
 def test_model_check_runs_phase0():
@@ -335,7 +345,7 @@ def test_model_check_runs_phase0():
 
 def test_a_stop_during_preparation_reaches_the_solver(boot, monkeypatch, fast_checks):
     """자리 대기·행렬 계산 중에 온 멈춤도 풀이가 물려받는다(Codex 리뷰 2026-10-18)."""
-    import core.optimize.alternatives as alt
+    import core.evaluate.operating as op_mod
     from core.optimize import interrupt
     from api.main import app
     seen = []
@@ -346,19 +356,19 @@ def test_a_stop_during_preparation_reaches_the_solver(boot, monkeypatch, fast_ch
         app.state.nightly.request_stop("abort")                   # 준비가 끝나기 직전에 멈춤
         return out
 
-    def stream(graph, S, C, params, n, outcome):
+    def compare(graph, S, C, params, current, ks=(0, 1, 2, 3), on_row=None):
         st = interrupt.current()
         seen.append(None if st is None else st.mode)
         if st is not None and st.is_set():
             raise interrupt.SolveCancelled()
-        yield from ()
+        return []
     monkeypatch.setattr(nightly, "_matrices", matrices_then_stop)
-    monkeypatch.setattr(alt, "generate_plans_streaming", stream)
+    monkeypatch.setattr(op_mod, "compare_move_budgets", compare)
     with TestClient(app):
         report = run_now(app)
     assert seen == ["abort"]
-    default = _solve(report, "기본 요청")[0]
-    assert default["status"] == "failed" and report["stopped"] is True
+    op = _solve(report, "운영 중 비교")[0]
+    assert op["status"] == "failed" and report["stopped"] is True
 
 
 def test_failed_bundles_are_not_saved(boot, monkeypatch, fast_checks, _isolated):
@@ -384,9 +394,10 @@ def test_failed_bundles_are_not_saved(boot, monkeypatch, fast_checks, _isolated)
                  "objective": ev.objective.total, "violations": [v.code for v in ev.violations]} for k in ks]
     monkeypatch.setattr(alt, "generate_plans_streaming", failing_stream)
     monkeypatch.setattr(op_mod, "compare_move_budgets", failing_compare)
-    with TestClient(app):
+    with TestClient(app) as c:
+        _record_day_request(app, c)
         report = run_now(app)
-        default = _solve(report, "기본 요청")[0]
+        default = _solve(report, "낮 요청(")[0]
         op = _solve(report, "운영 중 비교")[0]
         assert default["status"] == "incomplete" and "solver_failed" in default["reason"]
         assert op["status"] == "failed" and "2, 3" in op["reason"]

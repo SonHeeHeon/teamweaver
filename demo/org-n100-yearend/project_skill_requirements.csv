@@ -1,0 +1,55 @@
+project_id,skill_name,min_experience_months,headcount
+J001,메타데이터 관리,24,3
+J001,ETL,24,2
+J001,비정형 문서 처리(OCR),24,2
+J001,금융 업무,36,3
+J002,데이터 모델링,12,1
+J002,Data Lake & Data Catalog,60,2
+J003,메타데이터 관리,60,1
+J003,데이터 모델링,36,2
+J003,Data Lake & Data Catalog,12,1
+J004,금융 업무,60,1
+J004,Data Lake & Data Catalog,12,2
+J004,ETL,12,2
+J005,ETL,24,1
+J005,BI Reporting,36,2
+J006,SQL,60,2
+J006,BI Reporting,24,1
+J006,공공 업무,60,2
+J006,ETL,12,2
+J007,Spark,12,1
+J007,Data Lake & Data Catalog,60,2
+J007,데이터 모델링,24,2
+J007,금융 업무,24,1
+J007,ETL,12,2
+J008,Private Cloud,12,2
+J008,Kubernetes,12,1
+J008,Spark,24,2
+J008,Airflow,12,1
+J009,금융 업무,36,1
+J009,비정형 문서 처리(OCR),12,2
+J009,ETL,36,1
+J009,Text Analysis,12,1
+J009,메타데이터 관리,24,2
+J010,Spark,36,2
+J010,Private Cloud,12,2
+J010,Kafka,12,2
+J010,Kubernetes,60,1
+J011,데이터 모델링,12,2
+J011,Data Lake & Data Catalog,24,1
+J011,메타데이터 관리,60,1
+J012,ETL,36,2
+J012,비정형 문서 처리(OCR),24,2
+J012,Text Analysis,60,2
+J013,BI Reporting,60,2
+J013,SQL,36,2
+J013,공공 업무,12,2
+J014,공공 업무,12,2
+J014,SQL,36,1
+J014,BI Reporting,24,1
+J014,ETL,12,2
+J015,Spark,24,2
+J015,Private Cloud,60,2
+J015,Kafka,12,2
+J015,Airflow,24,2
+J015,Kubernetes,12,1

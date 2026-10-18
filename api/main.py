@@ -195,6 +195,10 @@ from api import nightly as _nightly_batch  # noqa: E402
 from api.routes import nightly as _nightly_routes  # noqa: E402
 app.add_middleware(_nightly_batch.RequestRecorder)
 app.include_router(_nightly_routes.router)
+# 3가지 핵심 상황(2026-10-18, claude-b): 작업 데이터 판(신규 사업·고정·확정·되돌리기)과 신규 사업 후보·긴급 투입 API.
+from api.routes import scenarios as _scenario_routes, workspace as _workspace_routes  # noqa: E402
+app.include_router(_workspace_routes.router)
+app.include_router(_scenario_routes.router)
 app.include_router(skill_map.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두

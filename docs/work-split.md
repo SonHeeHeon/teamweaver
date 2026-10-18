@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-b] feat/claude-b-three-scenarios(야간 배치 브랜치 위) · 새 `api/workspace*.py`·`api/routes/{workspace,pipeline,emergency}.py`·`web/src/scenarios/**`·`scripts/make_yearend_demo.py`·`demo/org-n100-yearend/`·`tests/nightly/`, `api/nightly.py`, `api/main.py`(라우터 몇 줄), `web/src/App.tsx`(탭 연결, claude-a 틀 병합 뒤 옮김) · 2026-10-18 21:50 · 사용자 지시: 3가지 핵심 상황(신규 사업 편성·긴급 투입·연간 계획) — 설계 `.omc/plan/2026-10-18-three-scenarios.md`
 - [claude-a] feat/claude-a-service-ui-1018 · `web/**`, `api/admin.py`, `api/routes/{admin,datasets,optimize,operating}.py`, `api/main.py`, `api/pdf.py`, `api/demos.py`, `api/demo_precomputed.py`, 새 `api/records.py`·`api/routes/records.py`, `demo/records/`, `rehearsal/`, `tests/api/`, `scripts/run_poc.sh`, 문서 · 2026-10-18 · 포트 8010(임시 데이터 폴더). 사용자 지시(영역 밖 허용): 앱 전체 로그인, 시연 데이터 고르기 → 편성 기록 내보내기·불러오기, 빈 화면 안내, 화면 전면 개편
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
