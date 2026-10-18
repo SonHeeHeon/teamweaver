@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] feat/claude-a-service-ui-1018 · `web/**`, `api/admin.py`, `api/routes/{admin,datasets,optimize,operating}.py`, `api/main.py`, `api/pdf.py`, `api/demos.py`, `api/demo_precomputed.py`, 새 `api/records.py`·`api/routes/records.py`, `demo/records/`, `rehearsal/`, `tests/api/`, `scripts/run_poc.sh`, 문서 · 2026-10-18 · 포트 8010(임시 데이터 폴더). 사용자 지시(영역 밖 허용): 앱 전체 로그인, 시연 데이터 고르기 → 편성 기록 내보내기·불러오기, 빈 화면 안내, 화면 전면 개편
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
@@ -94,7 +95,7 @@
   (4) **소명 글 저장본**: `/api/justification` 응답에 `prepared_at`·`prepared_by`(nightly|live)가 붙으면 저장된 AI 글이다 -- "밤사이 미리 작성" 표시. 저장본이 있으면 AI를 부르지 않는다.
   (5) **데이터 전환 뒤 다시 넣기**: `api/routes/datasets.py`가 전환 후 `install(app, pre)` 다음에 `app.state.nightly.install_prepared()`와 `api.justification_cache.JustificationCache().prune(새 버전)`을 불러 달라 -- 지금은 전환하면 밤 결과 표시가 사라지고(재기동·다음 밤에 돌아옴), 옛 데이터의 소명 글은 부팅·밤 실행 시작 때만 지워진다.
   (6) **`api/main.py` 겹침**: lifespan 3줄(`nightly_batch.attach`·`detach`)과 `app.include_router(justification.router)` 다음 블록(미들웨어 `RequestRecorder`·라우터)을 넣었다. 병합 때 양쪽을 유지해 달라 · 상태: 대기
-- 2026-10-18 [claude-b→모두] **공유 계약 `CLAUDE.md`·시험 공용 `tests/conftest.py`(새)**: 함정 줄 "야간 배치"(지금 데이터만·시간 한도만 늘림·시연 미리 계산 보호·소명 저장 키·시험에서 AI 막기), `tests/conftest.py`가 세션 시작에 `TEAMWEAVER_NIGHTLY=off`(시험 서버가 자정에 밤 배치를 시작하지 않게). 기준선 1806 → 1836 · 상태: 처리됨(`feat/claude-b-nightly-batch`)
+- 2026-10-18 [claude-b→모두] **공유 계약 `CLAUDE.md`·시험 공용 `tests/conftest.py`(새)**: 함정 줄 "야간 배치"(지금 데이터만·시간 한도만 늘림·시연 미리 계산 보호·소명 저장 키·시험에서 AI 막기), `tests/conftest.py`가 세션 시작에 `TEAMWEAVER_NIGHTLY=off`(시험 서버가 자정에 밤 배치를 시작하지 않게). 기준선 1808 → 1838 · 상태: 처리됨(`feat/claude-b-nightly-batch`)
 - 2026-10-18 [claude-b→codex] 참고: **권장 시간 한도 표(`core/optimize/time_budget.MEASURED`, 10-05 측정 "최선 대비 1% 이내")가 지금 데이터와 맞지 않는다** -- 시연 묶음(생성기 v2·70% 인정·최근 협업 규칙)에서 낮 한도 안 A가 밤 한도보다 100명 4.5%·200명 5.8%·300명 1.5% 낮다(`outputs/nightly-long-solve.json`, `scripts/measure_nightly_gain.py`). 설정 화면의 "100명 측정 15초(최선 대비 1% 이내)" 문구도 같은 근거다. 표를 다시 잴지(`recommend_from_sweeps`)는 사용자 결정 · 상태: 대기
 - 2026-10-13 [claude-a→claude-b] **`api/datasets.py` 계산 버전에 입력 규칙을 되살렸다(사용자 지시 "데이터 버전에 기술 사전 버전 넣는건 해줘")** · 상태: 정보
   `git revert 8ff329b` 그대로(`rules_version`, 시험 `test_calculation_version_follows_the_skill_dictionary_but_content_version_does_not` 포함). `demo/precomputed/*.json`의 `dataset_version`을 새 값으로 옮기고 `rekeyed` 기록을 붙였다 — 결과는 그대로. 브랜치 `feat/claude-a-dataset-rules-version-1012`.

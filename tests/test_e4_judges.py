@@ -109,8 +109,9 @@ def test_e5_glm_cost_counts_cached_input_and_reasoning_as_output():
 def test_e4_sets_keep_the_faithful_texts_and_sample_the_demo():
     s = e4.load_sets()
     assert len(s["faithful"]) == 300 and len(s["demo_s300"]) == e4.N_DEMO_SAMPLE
-    # 시연 원문은 생성기 v2로 외부 low만 다시 잰다(사용자 결정 2026-10-11) -- 성향 정답 보조가 리뷰마다 붙는다
-    assert set(e4.SET_JUDGES["demo_s300"]) == {"llm_low"}
+    # 시연 원문은 생성기 v2로 외부 low를 잰다(사용자 결정 2026-10-11) -- 성향 정답 보조가 리뷰마다 붙는다.
+    # 2026-10-18 사용자 지시로 사내 Flash low·Jev도 잰다(글과 항목이 어긋나는 리뷰에서 판정기별 비교).
+    assert set(e4.SET_JUDGES["demo_s300"]) == {"llm_low", "glmf_low", "jev"}
     assert len(s["demo_s300_style"]) == e4.N_DEMO_SAMPLE and set(s["demo_s300_style"]) <= {"normal", "blunt", "harsh", "soft", "unknown"}
 
 

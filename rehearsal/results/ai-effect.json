@@ -1,0 +1,113 @@
+{
+ "recorded_at": "2026-10-18T18:51:34+0900",
+ "sizes": {
+  "100": {
+   "people": 100,
+   "projects": 20,
+   "reviews": 1372,
+   "text_only_negative_reviews": 145,
+   "rule_only_negative_reviews": 196,
+   "flagged_pairs": 138,
+   "reward_pairs": 200,
+   "flagged_in_reward": {
+    "rule": 34,
+    "ai": 0
+   },
+   "reward_overlap": 161,
+   "time_limit_s": 30,
+   "solver_seeds": 4,
+   "gap": 0.01,
+   "plan_rule": {
+    "elapsed_s": 30.9,
+    "flagged_together": 18,
+    "synergy_under_ai": 18.4187,
+    "total_under_ai": 56.8001,
+    "violations": 0,
+    "assignments": 118
+   },
+   "plan_ai": {
+    "elapsed_s": 30.6,
+    "flagged_together": 9,
+    "synergy_under_ai": 21.348,
+    "total_under_ai": 57.5616,
+    "violations": 0,
+    "assignments": 121
+   },
+   "assignments_only_ai": 68,
+   "assignments_only_rule": 65,
+   "np_check": true
+  },
+  "200": {
+   "people": 200,
+   "projects": 40,
+   "reviews": 2641,
+   "text_only_negative_reviews": 255,
+   "rule_only_negative_reviews": 484,
+   "flagged_pairs": 240,
+   "reward_pairs": 200,
+   "flagged_in_reward": {
+    "rule": 34,
+    "ai": 0
+   },
+   "reward_overlap": 161,
+   "time_limit_s": 60,
+   "solver_seeds": 4,
+   "gap": 0.01,
+   "plan_rule": {
+    "elapsed_s": 62.0,
+    "flagged_together": 27,
+    "synergy_under_ai": 16.8836,
+    "total_under_ai": 106.4321,
+    "violations": 0,
+    "assignments": 244
+   },
+   "plan_ai": {
+    "elapsed_s": 61.8,
+    "flagged_together": 7,
+    "synergy_under_ai": 19.6332,
+    "total_under_ai": 107.2767,
+    "violations": 0,
+    "assignments": 234
+   },
+   "assignments_only_ai": 104,
+   "assignments_only_rule": 114,
+   "np_check": true
+  },
+  "300": {
+   "people": 300,
+   "projects": 60,
+   "reviews": 4012,
+   "text_only_negative_reviews": 346,
+   "rule_only_negative_reviews": 667,
+   "flagged_pairs": 334,
+   "reward_pairs": 200,
+   "flagged_in_reward": {
+    "rule": 22,
+    "ai": 0
+   },
+   "reward_overlap": 158,
+   "time_limit_s": 180,
+   "solver_seeds": 4,
+   "gap": 0.01,
+   "plan_rule": {
+    "elapsed_s": 184.5,
+    "flagged_together": 26,
+    "synergy_under_ai": 20.9687,
+    "total_under_ai": 158.4092,
+    "violations": 0,
+    "assignments": 362
+   },
+   "plan_ai": {
+    "elapsed_s": 184.9,
+    "flagged_together": 19,
+    "synergy_under_ai": 24.8672,
+    "total_under_ai": 166.0835,
+    "violations": 0,
+    "assignments": 343
+   },
+   "assignments_only_ai": 145,
+   "assignments_only_rule": 164,
+   "np_check": true
+  }
+ }
+}

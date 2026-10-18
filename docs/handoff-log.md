@@ -36,11 +36,26 @@
   - `tests/nightly/`(30), `tests/conftest.py`(새, 시험 전체에서 예약 끔), CLAUDE.md 함정 줄·기준선.
 - 상대 영향:
   - claude-a: 화면 개편과 겹치는 연결은 work-split 요청(아침 알림 띠·관리자 실행/멈춤·"밤사이 계산" 표시·소명 `prepared_by` 표시·데이터 전환 뒤 다시 넣기·`api/main.py` 병합 시 양쪽 유지). 서버가 켜져 있으면 **기본으로 매일 00:00에 돈다**(끄려면 `TEAMWEAVER_NIGHTLY=off`).
-  - 모두: 기준선 1806 → 1836. 시험에서 밤 실행을 돌리면 설명 AI를 막아야 한다(`.env` 키 -- 10-18 시험이 실제 외부 AI를 42번 불렀다, 가상 데이터·약 $0.045).
+  - 모두: 기준선 1808(main `fa9be61`) → 1838. 시험에서 밤 실행을 돌리면 설명 AI를 막아야 한다(`.env` 키 -- 10-18 시험이 실제 외부 AI를 42번 불렀다, 가상 데이터·약 $0.045).
   - codex: 권장 시간 한도 표(`core/optimize/time_budget.MEASURED`, "최선 대비 1% 이내")가 지금 데이터와 맞지 않는다(work-split 참고).
-- 검증: `uv run --group benchmark pytest -q` → 1836 passed, 1 skipped, 19 deselected. 실서버 스모크(임시 데이터 폴더, 시연 org-n100, 시드 4): ① 기본 설정 -- 기본 요청은 시연 미리 계산 보호로 건너뜀, 소명 글 실제 AI 20편 모두 통과($0.016) ② 낮 한도 20초로 바꾼 설정 -- 안 A~D를 151초씩 풀어 저장(안 A 59.60), 소명 17번 호출 16편 통과·1편 서버 검사 S4로 틀 대체, 아침 `/api/optimize` 0.16초 "미리 계산", 소명 글 저장본 0.3~0.7초(새로 쓰면 10초).
+- 검증: `uv run --group benchmark pytest -q` → 1836 passed(main `738aa67` 기준), main `fa9be61`을 합친 뒤 **1838 passed, 1 skipped, 19 deselected**. 실서버 스모크(임시 데이터 폴더, 시연 org-n100, 시드 4): ① 기본 설정 -- 기본 요청은 시연 미리 계산 보호로 건너뜀, 소명 글 실제 AI 20편 모두 통과($0.016) ② 낮 한도 20초로 바꾼 설정 -- 안 A~D를 151초씩 풀어 저장(안 A 59.60), 소명 17번 호출 16편 통과·1편 서버 검사 S4로 틀 대체, 아침 `/api/optimize` 0.16초 "미리 계산", 소명 글 저장본 0.3~0.7초(새로 쓰면 10초).
 - Codex: adversarial-review 2라운드(gpt-6.1-sol). 1라운드 3건(준비 중 멈춤 유실·AI 자리 대기 뒤 재확인·소명 키에 평가 코드 누락) → 반영, 2라운드 2건(실패 묶음 영속·늦은 저장이 지금 데이터 저장본 삭제) → 반영. 2라운드 반영분은 재리뷰 없이 시험·Stop 게이트로 확인.
 - 근거: `.omc/reports/2026-10-18-nightly-batch.md`(로컬), 계획 `.omc/plan/2026-10-18-nightly-batch.md`.
+
+---
+
+## 2026-10-18 · claude-a · Codex AI Pro 평가 반영 — E4 비교 정정, 더 강한 비교 상대, AI 판정의 배치 영향, 사업 관점 절
+- 브랜치/커밋: `docs/claude-a-ai-pro-fixes-1018`(main `738aa67`에서 갈라짐) 이 항목 커밋 + 병합 기록 커밋, **main fast-forward 병합(사용자 승인 2026-10-18)**. 앞서 main 병합(`fb783cd..738aa67`)과 원격 브랜치 정리(사용자 실행, 원격은 main만)는 끝났다.
+- 사용자 요청: Codex 평가(브랜치 `feat/codex-ai-pro-review`의 `docs/reviews/2026-10-18-ai-pro-evaluation.md` — 사용자 결정으로 **main에 넣지 않는다**)의 지적을 고치고, E4는 "Jev → 규칙 → LLM(OpenAI·GLM Flash) → 그래서 LLM" 흐름으로, 사업·투자 관점 보완. 틀린 말은 고치되 실적은 앞세우기.
+- 한 일:
+  - 정정: 보고서의 "규칙 기반 17%"는 Jev 값(정답 있는 300건은 정답 = 항목 균형이라 규칙과 비교하는 시험이 아님). "AI가 틀려도 거짓 근거가 나가지 않는다" → 기능별 보장 범위. 대본 "843편 중 99%" → 조율 99.0%·처음 보는 데이터 100%. README "AI는 글만 쓴다" → 읽기·쓰기.
+  - 새 측정 `rehearsal/ai_effect.py`: 규칙 판정이면 나쁘게 쓴 사이 34·34·22쌍(100·200·300명)이 협업 보상 상위 200쌍에 든다(AI 0). 서비스 설정(시드 4·안 A 허용 차이 1%) 안 A에서 그런 사이 같은 팀 18→9 · 27→7 · 26→19.
+  - E4 시연 원문에 GLM-5.3-Flash low·Jev 추가(약 $0.03): 직설·혹평 34건 부정 검출 규칙 4 · Jev 32 · Flash 34 · OpenAI 34.
+  - 새 측정 `rehearsal/strong_baseline.py`: 예산·가용률·동시 사업을 지키고 협업까지 보는 휴리스틱 + 같은 시간 국소 탐색 → MILP 안 A가 +24% · +26% · +31%(둘 다 빈자리·위반 0).
+  - 보고서 9쪽: 3.1 비교 상대 교체, 3.4 새 절, 8장 "사업적 가치와 확장"(측정 비용·가정 표시한 효과 추정·차별점·실제 도입 시 단계), 9장 한계와 다음 단계. 슬라이드 5~7, 대본 T2·T3 갱신.
+- 상대 영향: `experiments/jev/e4_judges.py`의 `SET_JUDGES["demo_s300"]`이 `llm_low`·`glmf_low`·`jev`로 늘었다(시험 갱신). 기록이 있어 보고서 재생성은 API를 부르지 않는다. 코드·계약 변경 없음.
+- 검증: `uv run --group benchmark pytest -q` → 1808 passed, 1 skipped, 19 deselected(새 시험 2개). 보고서 숫자 대조 40항목 일치, PDF 9쪽. Codex 리뷰 2라운드(gpt-6.1-sol) — MUST 1·SHOULD 7 모두 반영.
+- 근거: `.omc/reports/2026-10-18-ai-pro-fixes.md`, `rehearsal/results/ai-effect.json`, `rehearsal/results/strong-baseline.json`, `outputs/review-judge-comparison.html`.
 
 ## 2026-10-14 · claude-a · 제출 가이드에 맞춰 시연 영상 대본·결과 보고서 개편
 - 브랜치/커밋: `docs/claude-a-submission-guide-1014`(main `fb783cd`에서 갈라짐) 이 항목 커밋. main 병합은 사용자 승인 대기.
