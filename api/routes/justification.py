@@ -146,14 +146,21 @@ def apply_names(out: dict, names: dict[str, str]) -> dict:
             "facts": facts, "addendum_groups": groups}
 
 
-def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, C, params, client, *, ai: bool) -> dict:
-    """사업 하나의 소명. client가 None이면 템플릿."""
-    from api.rag.justification import generate_justification
+def build_input(kg, project_id: str, entries, graph, S, C, params):
+    """사업 하나의 소명 재료(사실·불리한 사실·팀). 저장본 키에도 이 재료의 해시가 들어간다."""
     from core.kg.justify import justification_input
     from core.optimize.types import AssignEntry
     roster = [e if isinstance(e, AssignEntry) else AssignEntry(**(e.model_dump() if hasattr(e, "model_dump") else e))
               for e in entries]
-    inp = justification_input(kg, project_id, roster, graph=graph, S=S, C=C, params=params)
+    return justification_input(kg, project_id, roster, graph=graph, S=S, C=C, params=params)
+
+
+def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, C, params, client, *, ai: bool,
+                inp=None) -> dict:
+    """사업 하나의 소명. client가 None이면 템플릿. inp를 이미 만들었으면 넘긴다(저장본 키와 같은 재료)."""
+    from api.rag.justification import generate_justification
+    if inp is None:
+        inp = build_input(kg, project_id, entries, graph, S, C, params)
     out = generate_justification(client if ai else None, ai_model(), inp)
     if not ai:
         out["fallback_reason"] = None          # 화면이 템플릿을 먼저 달라고 했다(실패가 아니다)
@@ -161,14 +168,51 @@ def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, 
     return apply_names(public_view(out), display_names(dataset))
 
 
-def _client_with_timeout(client):
+def _client_with_timeout(client, timeout: float | None = None, max_retries: int = 0):
     if client is None:
         return None
-    timeout = ai_timeout_s()                            # 설정 오류는 감추지 않는다(아래 except가 삼키면 SDK 기본 600초로 돈다)
+    timeout = ai_timeout_s() if timeout is None else timeout   # 설정 오류는 감추지 않는다(아래 except가 삼키면 SDK 기본 600초로 돈다)
     try:
-        return client.with_options(timeout=timeout, max_retries=0)
+        return client.with_options(timeout=timeout, max_retries=max_retries)
     except Exception:                                   # noqa: BLE001 -- 테스트 대역 등
         return client
+
+
+# --- 저장된 AI 글(2026-10-18, 야간 배치 2번 -- api.justification_cache) ----------------------------------------------
+
+def saved_key(dataset: ActiveDataset, project_id: str, entries, weights: dict, params: MilpParams, client,
+              inp) -> str | None:
+    """이 요청의 저장본 키. AI를 쓸 수 없는 요청(client None)은 None -- 저장본도 AI 글이라 같은 AI 조건에서만 꺼낸다.
+    inp(소명 재료)의 해시가 들어가므로 평가기·점수 코드가 바뀌어 사실이 달라지면 옛 글은 쓰이지 않는다."""
+    if client is None:
+        return None
+    from api.justification_cache import ai_fingerprint, input_fingerprint, key_for
+    from api.rag.justification import justification_settings
+    model = ai_model()
+    return key_for(dataset.info.version, project_id, entries, weights, params,
+                   ai_fingerprint(client, model, justification_settings(model)["reasoning_effort"]),
+                   inputs=input_fingerprint(inp))
+
+
+def load_saved(dataset: ActiveDataset, key: str | None) -> dict | None:
+    if key is None:
+        return None
+    from api.justification_cache import JustificationCache
+    return JustificationCache().get(dataset.info.version, key)
+
+
+def save_ai_text(dataset: ActiveDataset, key: str | None, out: dict, source: str) -> bool:
+    """AI 글(graphrag)이면 저장한다. 저장 실패는 응답을 막지 않는다(로그만)."""
+    if key is None or out.get("method") != "graphrag":
+        return False
+    if getattr(dataset, "retired", False):              # 데이터가 바뀐 뒤 끝난 요청 -- 옛 데이터의 글은 남기지 않는다
+        return False
+    from api.justification_cache import JustificationCache
+    try:
+        return JustificationCache().put(dataset.info.version, key, out, source)
+    except OSError as exc:
+        log.warning("소명 글 저장 실패: %s", exc)
+        return False
 
 
 def prepare(dataset: ActiveDataset, weights: dict, milp_params: MilpParamsIn | None):
@@ -197,13 +241,21 @@ async def justification(req: JustificationRequest, dataset: ActiveDataset = Depe
         entries = resolved_entries(dataset.graph, S, C, params, req.weights, req.entries, req.base_entries, req.applied_swaps)
         if not any(e.project_id == req.project_id for e in entries):
             raise HTTPException(status_code=404, detail=f"이 배치에 {req.project_id} 사업의 팀원이 없다")
+        # 같은 명단·설정·AI·생성기로 이미 쓴 AI 글(밤 배치가 미리 썼거나 낮에 쓴 것)이 있으면 그대로 -- AI를 다시 부르지 않는다
+        inp = build_input(kg, req.project_id, entries, dataset.graph, S, C, params)
+        key = saved_key(dataset, req.project_id, entries, req.weights, params, client, inp) if req.ai else None
+        saved = load_saved(dataset, key)
+        if saved is not None:
+            return saved
         use_ai = req.ai and client is not None and AI_SLOTS.acquire(blocking=False)
         try:
             out = justify_one(dataset, kg, req.project_id, entries, dataset.graph, S, C, params,
-                              _client_with_timeout(client) if use_ai else None, ai=bool(use_ai))
+                              _client_with_timeout(client) if use_ai else None, ai=bool(use_ai), inp=inp)
         finally:
             if use_ai:
                 AI_SLOTS.release()
+        if use_ai:
+            save_ai_text(dataset, key, out, "live")
         if req.ai and client is None:
             out["fallback_reason"] = blocked          # no_client | external_blocked
         elif req.ai and not use_ai:
@@ -223,13 +275,20 @@ def justify_projects(dataset: ActiveDataset, entries, weights: dict, milp_params
                for e in entries]
     kg, params, S, C = prepare(dataset, weights, milp_params)
     client, blocked = llm_client_for(dataset, client)
-    client = _client_with_timeout(client)
+    timed = _client_with_timeout(client)
     projects = [p.id for p in dataset.graph.projects if any(e.project_id == p.id for e in entries)]
 
     def one(pid: str) -> dict:
-        out = justify_one(dataset, kg, pid, entries, dataset.graph, S, C, params, client, ai=True)
+        inp = build_input(kg, pid, entries, dataset.graph, S, C, params)
+        key = saved_key(dataset, pid, entries, weights, params, client, inp)
+        saved = load_saved(dataset, key)                # 밤 배치가 미리 쓴 글이면 PDF가 AI를 기다리지 않는다
+        if saved is not None:
+            return saved
+        out = justify_one(dataset, kg, pid, entries, dataset.graph, S, C, params, timed, ai=True, inp=inp)
         if client is None:
             out["fallback_reason"] = blocked
+        else:
+            save_ai_text(dataset, key, out, "live")
         return out
     with ThreadPoolExecutor(max_workers=PDF_WORKERS) as pool:
         return list(pool.map(one, projects))

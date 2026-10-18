@@ -125,6 +125,11 @@ class ActiveDataset:
             self._users -= 1
             self._close_if_idle()
 
+    @property
+    def retired(self) -> bool:
+        """전환으로 물러난 데이터셋인가(늦게 끝난 요청이 지금 데이터의 저장본을 건드리지 않게, api/justification_cache)."""
+        return self._retired
+
     def retire(self) -> None:
         with self._lock:
             self._retired = True

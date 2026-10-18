@@ -114,6 +114,9 @@ async def lifespan(app: FastAPI):
     from api.demos import current_demo_root
     app.state.demo_active_root = (current_demo_root() if app.state.dataset.info.source == "demo-bundle" else None)
     install(app, prepare_for(app, app.state.dataset, app.state.demo_active_root))
+    # 야간 배치(2026-10-18, claude-b): 지금 데이터에 맞는 밤 결과를 검증해 캐시에 넣고, 켜져 있으면 예약을 시작한다(api/nightly).
+    from api import nightly as nightly_batch
+    nightly_batch.attach(app)
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = settings_store
@@ -156,6 +159,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    nightly_batch.detach(app)
     app.state.dataset.retire()
 
 
@@ -186,6 +190,11 @@ app.include_router(admin.router)
 app.include_router(plans.router)
 app.include_router(operating.router)
 app.include_router(justification.router)
+# 야간 배치(2026-10-18, claude-b): 상태·지금 실행·멈춤 API와 낮 요청 기록(최적화·운영 비교 요청 본문, 개인정보 없음).
+from api import nightly as _nightly_batch  # noqa: E402
+from api.routes import nightly as _nightly_routes  # noqa: E402
+app.add_middleware(_nightly_batch.RequestRecorder)
+app.include_router(_nightly_routes.router)
 app.include_router(skill_map.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
