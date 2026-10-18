@@ -95,10 +95,10 @@ def workspace_view(request: Request) -> dict:
             pipeline.append({**item, "stage": stage, "predecessor": pipe.get(j.id, {}).get("predecessor"),
                              "registered_at": pipe.get(j.id, {}).get("registered_at")})
         elif team:
-            # 계획 창 안에서 끝나는가(끝나 가는 사업) -- 실제 종료 달 기준
+            # 계획 창 끝보다 먼저 끝나는가(끝나 가는 사업) -- 실제 종료 달 기준. 창 끝까지 가는 사업은 아니다
             ongoing.append({**item, "locked_all": all(t["locked"] for t in team),
                             "locked_count": sum(1 for t in team if t["locked"]),
-                            "ends_in_horizon": bool(item["end"]) and item["end"] <= (_horizon_last(m) or "")})
+                            "ends_in_horizon": bool(item["end"]) and item["end"] < (_horizon_last(m) or "")})
     entries = History().entries()
     history = list(reversed(entries)) if entries and entries[-1].get("version") == info.version else []
     bench = [person(p) for p in (m.get("bench") or []) if isinstance(p, str)]

@@ -33,7 +33,8 @@ import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
 import { BaselineCard } from "./components/BaselineCard";
-import { OperatingTab } from "./components/OperatingTab";
+import { EmergencyScreen } from "./scenarios/EmergencyScreen";
+import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
@@ -232,6 +233,16 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       const info = await fetchActiveDataset();
       await datasetSwitched(info);
       setError("다른 사용자가 데이터셋을 바꿨다. 화면을 새 데이터로 다시 불러왔으니 다시 실행할 것.");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다. */
+  async function ownSwitch() {
+    try {
+      await datasetSwitched(await fetchActiveDataset());
+      setError(null);
     } catch (e) {
       setError(String(e));
     }
@@ -667,10 +678,14 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       <main className="flex-1 px-4 py-6 md:px-8">
         {/* 운영 중 편성 탭은 다른 탭에 가도 사라지지 않게 늘 띄워 두고 숨긴다 -- 35초짜리 비교 결과를 잃지 않게(리뷰) */}
         {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
-        <div className={tab === "pipeline" || tab === "emergency" ? "" : "hidden"}>
-          <OperatingTab meta={meta} params={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
-                        focus={tab === "emergency" ? "reinforce" : "new"} onShowReinforce={() => setTab("emergency")}
-                        onDatasetChanged={() => { void externalSwitch(); }} />
+        {/* 3가지 핵심 상황(claude-b 2026-10-19): 신규 사업 편성·긴급 투입. 다른 메뉴에 가도 상태가 남게 숨김 방식으로 띄운다.
+            확정·등록·고정은 작업 데이터의 새 판을 만들므로 App이 데이터 정보를 다시 읽는다(ownSwitch -- "다른 사용자" 경고 없이). */}
+        <div className={tab === "pipeline" ? "" : "hidden"}>
+          <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
+                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }} />
+        </div>
+        <div className={tab === "emergency" ? "" : "hidden"}>
+          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }} />
         </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>

@@ -118,16 +118,22 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   연결이 끊기면 abort(시드 프로세스까지 즉시 정리). 멈춤 뒤에는 `HighsPortfolio`가 새 풀이를 시작하지 않고 `SolveCancelled`(RuntimeError 아님) --
   대안 생성기·운영 K 비교가 이것을 "실패"로 삼키지 않게. 풀이 경로에 새 `except Exception`을 넣으면 멈춤이 실패로 바뀐다.
   PDF 계산 신뢰도는 결과·K 행의 서버 서명 `evidence`+`evidence_token`(plan_token에 묶임)이 맞을 때만 찍는다 -- 화면은 `evidence`를 그대로 돌려보낸다(다시 조립하면 서명이 어긋난다).
-- **야간 배치**(2026-10-18, claude-b `api/nightly.py`): 서버가 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만 다룬다 --
-  기본 요청(안 A~D)·운영 중 비교·낮 요청 기록(`RequestRecorder`, 본문만)을 **시간 한도만 늘려** 풀고(키·서명은 낮 설정) `<데이터 폴더>/nightly/prepared.json` → 캐시·"미리 계산" 등록부(`source: nightly`).
-  **이미 캐시에 있는 요청(시연 미리 계산 포함)은 다시 풀지 않는다** -- 영상 대본 숫자를 덮지 않게. 넣을 때·재기동 때 평가기 재채점이 맞아야 쓴다.
-  소명 글은 `api/justification_cache`(키 = 데이터 버전·명단 전체·설정·AI·**생성기 코드 지문**)에 AI 글만 저장해 화면·PDF가 다시 쓴다. 점검 보고서는 `GET /api/nightly`.
-  `TEAMWEAVER_NIGHTLY=off`로 끈다 -- `tests/conftest.py`가 시험 전체에서 끈다. **시험에서 밤 실행을 돌릴 때는 설명 AI를 막는다**(`tests/nightly/conftest.py`:
-  lifespan의 `load_env`가 `.env` 키를 올려 실제 외부 AI를 부른다 -- 10-18에 시험이 42번 불렀다). 서버가 시간대 안에서 켜지면 그날 밤은 돌지 않는다.
+- **3가지 핵심 상황**(2026-10-19, claude-b, 설계 `.omc/plan/2026-10-18-three-scenarios.md`): 신규 사업 편성(`web/src/scenarios/NewProjectsScreen`)·긴급 투입(`EmergencyScreen`)·연간 계획(기존 요건 설정).
+  **작업 데이터 판**(`api/workspace.py`·`workspace_edits.py`·`routes/workspace.py`): 신규 사업 등록·단계(예정/제안/수주)·떨어짐·고정(사업·사람 = `current_assignments.locked`)·확정은
+  모두 원천 CSV 묶음을 고쳐 **업로드와 같은 경로**(`validate_and_build` → `_activate` → `DatasetStore.save`)로 켠다 -- 계산 버전이 바뀐다. 단계·이전 사업은 manifest `pipeline`(CSV 계약은 그대로),
+  "적힌 0명 = 그 등급 금지"라 양식은 네 등급을 다 보낸다. 이력·되돌리기는 `<데이터 폴더>/workspace/`(켜기 **전에** 쓴다). `mapping.json` 묶음은 편집 불가.
+  확정은 평가기로 **새로 생기거나 커진 위반**(한도와의 거리)·잠긴 배치 빼기를 거절한다. 신규 사업 후보는 등록한 정원·예산 그대로 다시 채점(`rescore_unchanged` -- 보강 계산은 자리를 늘린다),
+  "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
+  시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
+- **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
+  긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
+  **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
+  소명 글은 확정 때 화면에서 쓰고 `api/justification_cache`(키 = 데이터 버전·명단·설정·AI·소명 재료 해시·생성기 코드 지문)가 저장해 다시 돈 내지 않는다. 점검 보고서 `GET /api/nightly`.
+  `TEAMWEAVER_NIGHTLY=off`로 끈다 -- `tests/conftest.py`가 시험 전체에서 끈다. **시험에서 밤 실행·소명을 돌릴 때는 설명 AI를 막는다**(`tests/nightly/conftest.py` -- lifespan의 `load_env`가 `.env` 키를 올린다).
 - **인사팀 검토 자료**(2026-10-19, claude-a `api/review_docs.py`·`routes/review_docs.py`·`core/evaluate/review_moves.py`·`web/src/review/`): 확정(`apply_auto|manual|emergency`) × 사람이 새로 들어간 사업마다 한 편.
   전 = 확정 직전 판 zip의 현재 배치, 후 = 확정 판 -- 옮겨 온 사람의 출처·원래 사업이 잃는 것·메움을 평가기로 잰다. **시스템 사실은 만들 때 계산해 자료에 저장**하고(그래서 그 확정이 지금 판일 때만 만든다),
   PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
-  "되돌려짐" = 확정 판은 이력에 없고 직전 판은 있다 -- 다른 데이터로 바꿨거나 20판 밖으로 밀린 것은 되돌림이 아니다(열고 고치고 내보낼 수 있다). 긴급 투입 AI 재료는 `focus_input`(새로 온 사람만).
+  "되돌려짐"은 `api.workspace.undo`가 남기는 기록(`review_docs/undone.json`)으로만 판정한다 -- 다른 데이터로 바꿨거나 20판 밖으로 밀린 것은 "이력 밖"(열고 고치고 내보낼 수 있다). 긴급 투입 AI 재료는 `focus_input`(새로 온 사람만).
   승인·반려는 만들지 않았다 -- 보고서 8.4 "결재 연결(실제 도입 시)".
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
