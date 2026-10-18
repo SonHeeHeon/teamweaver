@@ -94,6 +94,8 @@ async def open_record(rid: str, request: Request):
             install(request.app, pre)
             state.demo_active_root = None
             await anyio.to_thread.run_sync(state.plan_edit_store.prune, active.info.version)
+            from api.routes.datasets import after_switch
+            await anyio.to_thread.run_sync(after_switch, request.app)
             # 포인터를 먼저 쓴다 -- 실패하면 업로드 저장본은 남는다(재기동하면 그 데이터로 뜬다, 폴백 리뷰 N2)
             try:
                 await anyio.to_thread.run_sync(store(request).set_active, rid)

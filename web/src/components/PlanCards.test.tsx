@@ -54,6 +54,12 @@ describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
     expect(screen.queryByText("캐시")).not.toBeInTheDocument();
   });
 
+  it("밤 배치가 풀어 둔 결과는 '밤사이 계산 · 시각'으로 밝힌다(2026-10-19)", () => {
+    const night = { ...plan("A", 0.9), cached: true, precomputed_at: "2026-10-19T01:40:00+00:00", precomputed_source: "nightly" };
+    render(<PlanCards plans={[night]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText(/^밤사이 계산 · \d+월 \d+일 \d\d:\d\d$/)).toBeInTheDocument();
+  });
+
   it("미리 계산 원안에 화면에서 변경을 적용했으면 '원안 + 변경 n건'으로 바꾼다", () => {
     const pre = { ...plan("A", 0.9), cached: true, precomputed_at: "2026-10-06T14:40:50+00:00" };
     render(<PlanCards plans={[pre]} selected="A" onSelect={() => {}} editCounts={{ A: 2 }} />);

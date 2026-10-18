@@ -205,6 +205,16 @@ def precomputed_label(app, key: str) -> str | None:
     return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("label")
 
 
+def precomputed_source(app, key: str) -> str | None:
+    """미리 계산의 출처: "nightly"(밤 배치, api/nightly) 또는 None(시연 미리 계산·편성 기록) -- 화면이 "밤사이 계산"으로 구분한다
+    (claude-b 요청 (3), claude-a 2026-10-19)."""
+    return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("source")
+
+
+def operating_source(app) -> str | None:
+    return (getattr(app.state, "precomputed_operating", None) or {}).get("source")
+
+
 def precomputed_stop_reason(app, key: str) -> str | None:
     return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("stop_reason")
 

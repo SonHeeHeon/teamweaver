@@ -40,6 +40,8 @@ import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, t
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
 import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
+import { NightlyBanner } from "./nightly/NightlyBanner";
+import { NightlyPanel } from "./nightly/NightlyPanel";
 
 
 
@@ -686,6 +688,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
         {/* 3가지 핵심 상황(claude-b 2026-10-19): 신규 사업 편성·긴급 투입. 다른 메뉴에 가도 상태가 남게 숨김 방식으로 띄운다.
             확정·등록·고정은 작업 데이터의 새 판을 만들므로 App이 데이터 정보를 다시 읽는다(ownSwitch -- "다른 사용자" 경고 없이). */}
+        {/* 아침 알림(claude-b 요청 (1)): 첫 화면 위 띠 -- 데이터가 바뀌면 다시 읽는다 */}
+        {tab === "pipeline" && <NightlyBanner refreshKey={dataset?.version ?? ""} />}
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
                              datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
@@ -752,6 +756,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                              throw e;
                            }
                          }} />
+            <NightlyPanel adminToken={adminToken || null} onLoginRequired={adminExpired} />
             </div>
           ) : (
             <p className="text-sm text-slate-500">
@@ -785,6 +790,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {!running && plans.some((p) => p.cached) && (
               <PrecomputedNotice at={plans.find((p) => p.precomputed_at != null)?.precomputed_at ?? null}
                                  label={plans.find((p) => p.precomputed_label)?.precomputed_label ?? null}
+                                 source={plans.find((p) => p.precomputed_at != null)?.precomputed_source ?? null}
                                  onRecompute={() => void run(true)} />
             )}
             {stoppedNote && (

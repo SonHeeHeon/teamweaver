@@ -230,19 +230,22 @@ async def operating_compare(req: CompareRequest, request: Request, dataset: Acti
     ks = sorted(set(req.ks))
     # 같은 데이터·같은 설정·같은 K 목록으로 미리 계산해 검증을 통과한 행이 있으면 계산 없이 그것을 흘린다(시연 확장 E,
     # claude-a 2026-10-07). 행마다 precomputed_at(계산 시각)을 실어 화면이 "미리 계산"으로 보이게 한다.
-    from api.demo_precomputed import operating_rows
+    from api.demo_precomputed import operating_rows, operating_source
     # 미리 계산은 기본 가중치({})로 계산·검증했다 -- 가중치를 바꾼 요청이면 쓰지 않는다(리뷰 MUST)
     pre = None if (req.fresh or req.weights) else operating_rows(request.app, params, ks, dataset.info.version)
     if pre is not None:
         pre_rows, pre_at = pre
+        pre_src = operating_source(request.app)          # "nightly"면 밤사이 계산(claude-b 요청 (3))
 
         async def precomputed_stream():
             yield sse_event("start", {"ks": ks, "n_people": len(dataset.graph.people), "precomputed_at": pre_at,
+                                      "precomputed_source": pre_src,
                                       "expected_s_100": {k: EXPECTED_S_100.get(k) for k in ks}, "note": NOT_CALIBRATED})
             for row in pre_rows:
                 yield sse_event("row", {**_signed(row, req, dataset.info.version), "dataset_version": dataset.info.version,
-                                        "precomputed_at": pre_at})
-            yield sse_event("done", {"elapsed_s": 0.0, "count": len(pre_rows), "precomputed_at": pre_at})
+                                        "precomputed_at": pre_at, "precomputed_source": pre_src})
+            yield sse_event("done", {"elapsed_s": 0.0, "count": len(pre_rows), "precomputed_at": pre_at,
+                                     "precomputed_source": pre_src})
         return StreamingResponse(precomputed_stream(), media_type="text/event-stream")
     S, C = await anyio.to_thread.run_sync(lambda: _matrices(dataset, req.weights))
     from core.evaluate.operating import compare_move_budgets      # 슬롯을 잡기 전에(import 실패로 슬롯이 새지 않게)

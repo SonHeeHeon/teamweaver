@@ -498,11 +498,15 @@ def _install_entry(app, dataset, entry: dict) -> dict:
         marks[key] = {"at": entry.get("computed_at"), "stop_reason": entry.get("stop_reason"), "source": "nightly"}
         return {"kind": kind, "target": label, "status": "installed", "plans": len(plans), "key": key[:12]}
     if kind == "operating":
+        existing = getattr(app.state, "precomputed_operating", None)
+        if existing and existing.get("source") != "nightly" and dataset.info.source == "record":
+            # 편성 기록에서 연 데이터: 기록에 담긴 K 결과(자리는 하나)를 밤 결과로 바꾸지 않는다 -- 기록 설정이 서버 설정과 달라
+            # 키 검사를 통과해도 화면은 기록 설정으로 묻는다(claude-a 2026-10-19, 폴백 리뷰 P2: 기록 열기·부팅 때 덮였다)
+            return {"kind": kind, "status": "skipped", "reason": "편성 기록의 결과를 덮지 않는다"}
         ks = [int(k) for k in entry["ks"]]
         key = operating_key(params, ks, version)
         if key != entry.get("key"):
             return {"kind": kind, "status": "skipped", "reason": "키가 맞지 않는다"}
-        existing = getattr(app.state, "precomputed_operating", None)
         if existing and existing.get("key") == key and existing.get("source") != "nightly":
             return {"kind": kind, "status": "skipped", "reason": "이미 시연 미리 계산이 있다"}
         if existing and existing.get("source") != "nightly":
