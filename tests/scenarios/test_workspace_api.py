@@ -29,7 +29,7 @@ def test_workspace_view_of_the_yearend_bundle(yearend):
     stages = {p["project_id"]: p["stage"] for p in ws["pipeline"]}
     assert stages == {"J014": "제안", "J015": "예정"}
     ending = {o["project_id"] for o in ws["ongoing"] if o["ends_in_horizon"]}
-    assert {"J003", "J006", "J009", "J012"} <= ending
+    assert ending == {"J003", "J006", "J009", "J012"}                          # 계획 창 끝(2027-03)까지 가는 사업은 아니다
     assert len(ws["bench"]) == 10 and ws["bench"][0]["name"] != ws["bench"][0]["person_id"]   # 가상 데이터는 이름
     assert ws["history"] == []
 
