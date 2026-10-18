@@ -153,6 +153,21 @@ def test_base_version_reappearing_does_not_mark_a_live_confirm_reverted(yearend)
         assert doc["revision"] == got["revision"]
 
 
+def test_undone_confirm_stays_reverted_when_its_data_returns_as_a_base_version(yearend):
+    """되돌린 뒤 같은 데이터를 다시 열면 이력의 시작 판(base)이 그 버전이 된다 -- 재확정이 아니므로 여전히 되돌려짐(Codex Stop 훅)."""
+    from api.main import app
+    from api.workspace import History
+    with TestClient(app) as c:
+        v = _confirm(c)
+        _create(c, v)
+        assert c.post("/api/workspace/undo", json={"dataset_version": v}).status_code == 200
+        hist = History()
+        hist.clear()
+        hist.append({"version": v, "content_version": "x", "at": "t", "kind": "base", "note": "시작 데이터", "summary": {}})
+        assert c.get(f"/api/review-docs/{v}/{TGT}").json()["reverted"] is True
+        assert c.post(f"/api/review-docs/{v}/{TGT}/pdf").status_code == 409
+
+
 def test_body_reset_and_judgment_author_kept(yearend):
     from api.main import app
     with TestClient(app) as c:

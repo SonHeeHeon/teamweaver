@@ -167,7 +167,8 @@ def history_state(history_entries: list[dict], confirm: dict) -> str:
     "out_of_history"(다른 데이터로 바꿨거나 20판 밖으로 밀려남 -- 되돌린 것이 아니므로 열고 고치고 내보낼 수 있다).
     이력에 남은 판으로 되돌림을 짐작하면 두 방향으로 틀렸다(폴백 리뷰 2라운드) -- 실제 되돌리기 기록으로만 판정한다.
     같은 명단을 다시 확정하면 같은 판 버전이 이력에 돌아오므로 "in_history"가 된다."""
-    if confirm["version"] in {e.get("version") for e in history_entries}:
+    # 확정 항목(apply_*)으로 있을 때만 "이력에 있음" -- 되돌린 뒤 같은 데이터를 다시 열어 생긴 시작 판(base)은 재확정이 아니다(Codex Stop 훅)
+    if confirm["version"] in {e.get("version") for e in history_entries if e.get("kind") in CONFIRM_KINDS}:
         return "in_history"
     return "reverted" if confirm["version"] in undone_versions() else "out_of_history"
 

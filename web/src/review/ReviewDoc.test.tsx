@@ -62,6 +62,12 @@ describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
     expect(patch.judgments.P1).toEqual({ text: "Java 작업이 거의 끝났다", agreement: { status: "requested", memo: "" } });
   });
 
+  it("요청 중(busy)에는 입력이 잠긴다(Codex Stop 훅)", () => {
+    render(<ReviewDoc doc={DOC} editable busy onSave={vi.fn()} />);
+    expect(screen.getByLabelText("김하준 판단")).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "해명 달기" })[0]).toBeDisabled();
+  });
+
   it("이의는 사유가 없으면 추가할 수 없다", () => {
     render(<ReviewDoc doc={DOC} editable onSave={vi.fn()} />);
     const block = screen.getByText(/일정 관리/).closest("div")!;

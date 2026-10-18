@@ -159,6 +159,8 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
 
   return (
     <article className="review-doc bg-paper text-slate-900" aria-label="인사팀 검토 자료">
+      {/* 저장·AI·PDF 요청 중에는 입력을 잠근다 -- 응답이 오면 자료를 다시 그려 그사이 쓴 글이 사라졌다(Codex Stop 훅) */}
+      <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
       <header className="flex flex-wrap items-end justify-between gap-2 border-b-2 border-ink pb-2">
         <div>
           <h2 className="text-lg font-bold">{doc.project_name} <span className="text-sm font-normal text-slate-500">({doc.project_id})</span></h2>
@@ -305,6 +307,7 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
                             onClick={() => void onPdf()}>PDF 내보내기</button>}
         </div>
       )}
+      </fieldset>
     </article>
   );
 }
