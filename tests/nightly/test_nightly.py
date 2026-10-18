@@ -40,8 +40,8 @@ def test_bad_window_setting_falls_back_to_the_default(monkeypatch):
 def test_night_limit_rules():
     assert nightly.night_limit(30, 4, 4 * 3600) == 300           # 낮 × 10, 최소 300초
     assert nightly.night_limit(180, 4, 4 * 3600) == 1800         # 최대 30분
-    assert nightly.night_limit(180, 4, 1000) == 225              # 남은 시간의 90%에 맞춰 줄인다(낮 한도보다는 길다)
-    assert nightly.night_limit(180, 4, 1000 * 4) == 900
+    assert nightly.night_limit(180, 4, 1000) == 205              # 남은 시간의 90%에서 풀이마다 준비 20초를 빼고 나눈다
+    assert nightly.night_limit(180, 4, 1000 * 4) == 880
     assert nightly.night_limit(30, 4, 100) is None               # 낮 한도보다 짧으면 풀지 않는다
 
 
@@ -170,19 +170,39 @@ def test_demo_precomputed_results_are_not_overwritten(tmp_path, monkeypatch, fak
 
 # --- 낮 요청 기록 ----------------------------------------------------------------------------------------------------
 
-def test_recorder_keeps_recent_unique_bodies_without_fresh(boot, _isolated):
+def test_recorder_keeps_recent_accepted_bodies_without_fresh(boot, fake_solvers, monkeypatch, _isolated):
+    """서버가 받아들인 요청(200)만, fresh를 뺀 본문으로, 같은 것은 하나로 남긴다(Opus 대체 리뷰 2026-10-18: 422 본문을 남기던 것)."""
+    import api.routes.optimize as opt_route
+    import core.optimize.alternatives as alt
+    monkeypatch.setattr(opt_route, "generate_plans_streaming", alt.generate_plans_streaming)   # 가짜 풀이(fake_solvers)
     from api.main import app
     with TestClient(app) as c:
-        bad = {"ks": [9], "milp_params": {}, "fresh": True}
-        assert c.post("/api/operating/compare", json=bad).status_code == 422          # 잘못된 요청도 본문은 남는다
-        assert c.post("/api/operating/compare", json={**bad, "fresh": False}).status_code == 422
+        version = c.get("/api/datasets/active").json()["version"]
+        op = {"milp_params": web_settings(c), "dataset_version": version}
+        assert c.post("/api/operating/compare", json={**op, "fresh": True}).status_code == 200
+        assert c.post("/api/operating/compare", json=op).status_code == 200
+        assert c.post("/api/operating/compare", json={"ks": [9], "milp_params": {}}).status_code == 422   # 남기지 않음
         assert c.post("/api/optimize", json={"n_alternatives": 99}).status_code == 422
-        c.get("/api/nightly")
-        recs = app.state.nightly.recorded()
-    assert [r["kind"] for r in recs] == ["operating", "optimize"]                     # fresh만 다른 것은 하나로
-    assert all("fresh" not in r["body"] for r in recs)
-    saved = json.loads((_isolated / "data" / "nightly" / "requests.json").read_text("utf-8"))
-    assert len(saved) == 2
+        body = {"weights": {}, "milp_params": web_settings(c), "n_alternatives": 1, "dataset_version": version}
+        assert c.post("/api/optimize", json=body).status_code == 200
+        for _ in range(100):                                       # 기록은 별도 스레드에서 쓴다
+            recs = app.state.nightly.recorded()
+            if len(recs) >= 2:
+                break
+            time.sleep(0.05)
+    assert [r["kind"] for r in recs] == ["operating", "optimize"]
+    assert all("fresh" not in r["body"] for r in recs) and recs[1]["body"]["n_alternatives"] == 1
+
+
+def test_install_refuses_when_the_data_changed(boot, fake_solvers, fast_checks):
+    from api.main import app
+    with TestClient(app):
+        run_now(app)
+        data = app.state.nightly.store.read("prepared.json")
+        import copy
+        stale = copy.copy(app.state.dataset)                    # 같은 내용이지만 지금 켜진 데이터가 아닌 객체(전환 뒤 늦은 넣기)
+        res = nightly._install_entry(app, stale, data["entries"][0])
+        assert res["status"] == "skipped" and res["reason"] == "데이터가 바뀌었다"
 
 
 def test_recorded_day_request_is_solved_at_night(boot, fake_solvers, fast_checks):
@@ -201,7 +221,9 @@ def test_recorded_day_request_is_solved_at_night(boot, fake_solvers, fast_checks
 
 # --- 멈춤·관리자 ----------------------------------------------------------------------------------------------------
 
-def test_stop_keeps_the_best_so_far_and_skips_the_rest(boot, monkeypatch, fast_checks):
+def test_a_stopped_bundle_is_not_kept_and_the_rest_is_skipped(boot, monkeypatch, fast_checks, _isolated):
+    """멈춤으로 끝까지 풀지 못한 묶음은 저장·캐시하지 않는다 -- 아침 결과로 굳고 다음 밤에도 다시 풀지 않게 되므로
+    (Opus 대체 리뷰 2026-10-18). 남은 단계는 하지 않는다."""
     import core.optimize.alternatives as alt
     from core.optimize.interrupt import SolveCancelled
     yielded, gate = threading.Event(), threading.Event()
@@ -227,8 +249,10 @@ def test_stop_keeps_the_best_so_far_and_skips_the_rest(boot, monkeypatch, fast_c
         report = c.get("/api/nightly").json()["last"]
     assert report["stopped"] is True and "중간에 멈춤" in report["summary"]
     default = _solve(report, "기본 요청")[0]
-    assert default["status"] == "prepared" and default["plans"] == 1 and default["stop_reason"] == "time_limit"
+    assert default["status"] == "incomplete" and default["plans"] == 1 and "멈춤" in default["reason"]
     assert not _solve(report, "운영 중 비교") and report["justifications"] is None
+    assert not (_isolated / "data" / "nightly" / "prepared.json").exists()
+    assert report["status"] == "attention"
 
 
 def test_run_and_stop_need_the_admin(boot, monkeypatch, fake_solvers, fast_checks):
@@ -354,7 +378,9 @@ def test_failed_bundles_are_not_saved(boot, monkeypatch, fast_checks, _isolated)
         active = app.state.dataset
         entries = current_entries(active)
         ev = evaluated(active, params, entries)
-        return [{"k": k, "accepted": k < 3, "entries": [e.model_dump() for e in entries] if k < 3 else [],
+        # K=2는 풀이에 실패해 직전 해를 이어 썼다(accepted이지만 solve_failed), K=3은 실패 행
+        return [{"k": k, "accepted": k < 3, "solve_failed": k == 2,
+                 "entries": [e.model_dump() for e in entries] if k < 3 else [],
                  "objective": ev.objective.total, "violations": [v.code for v in ev.violations]} for k in ks]
     monkeypatch.setattr(alt, "generate_plans_streaming", failing_stream)
     monkeypatch.setattr(op_mod, "compare_move_budgets", failing_compare)
@@ -362,6 +388,6 @@ def test_failed_bundles_are_not_saved(boot, monkeypatch, fast_checks, _isolated)
         report = run_now(app)
         default = _solve(report, "기본 요청")[0]
         op = _solve(report, "운영 중 비교")[0]
-        assert default["status"] == "failed" and "solver_failed" in default["reason"]
-        assert op["status"] == "failed" and "3" in op["reason"]
+        assert default["status"] == "incomplete" and "solver_failed" in default["reason"]
+        assert op["status"] == "failed" and "2, 3" in op["reason"]
         assert not (_isolated / "data" / "nightly" / "prepared.json").exists()

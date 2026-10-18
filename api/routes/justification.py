@@ -12,7 +12,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import anyio
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from typing import Annotated
 
@@ -201,6 +201,14 @@ def load_saved(dataset: ActiveDataset, key: str | None) -> dict | None:
     return JustificationCache().get(dataset.info.version, key)
 
 
+def prune_other_versions(keep_version: str) -> None:
+    from api.justification_cache import JustificationCache
+    try:
+        JustificationCache().prune(keep_version)
+    except OSError as exc:
+        log.warning("옛 데이터의 소명 글을 지우지 못했다: %s", exc)
+
+
 def save_ai_text(dataset: ActiveDataset, key: str | None, out: dict, source: str) -> bool:
     """AI 글(graphrag)이면 저장한다. 저장 실패는 응답을 막지 않는다(로그만)."""
     if key is None or out.get("method") != "graphrag":
@@ -226,7 +234,7 @@ def prepare(dataset: ActiveDataset, weights: dict, milp_params: MilpParamsIn | N
 
 
 @router.post("/api/justification")
-async def justification(req: JustificationRequest, dataset: ActiveDataset = Depends(get_dataset),
+async def justification(req: JustificationRequest, request: Request, dataset: ActiveDataset = Depends(get_dataset),
                         client=Depends(get_openai_client_or_none)) -> dict:
     check_dataset_version(req.dataset_version, dataset)
     if req.project_id not in dataset.graph.project_index:
@@ -241,6 +249,9 @@ async def justification(req: JustificationRequest, dataset: ActiveDataset = Depe
         entries = resolved_entries(dataset.graph, S, C, params, req.weights, req.entries, req.base_entries, req.applied_swaps)
         if not any(e.project_id == req.project_id for e in entries):
             raise HTTPException(status_code=404, detail=f"이 배치에 {req.project_id} 사업의 팀원이 없다")
+        # 옛 데이터의 글은 지운다(지금 켜진 데이터만 남김) -- 데이터 전환 뒤 첫 소명 요청에서. 전환 경로에서 바로 지우는 것은
+        # claude-a 요청(work-split 2026-10-18 (5)); 부팅·밤 실행 시작 때도 지운다
+        prune_other_versions(request.app.state.dataset.info.version)
         # 같은 명단·설정·AI·생성기로 이미 쓴 AI 글(밤 배치가 미리 썼거나 낮에 쓴 것)이 있으면 그대로 -- AI를 다시 부르지 않는다
         inp = build_input(kg, req.project_id, entries, dataset.graph, S, C, params)
         key = saved_key(dataset, req.project_id, entries, req.weights, params, client, inp) if req.ai else None

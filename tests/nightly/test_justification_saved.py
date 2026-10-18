@@ -276,3 +276,11 @@ def test_boot_prunes_texts_of_other_data(boot_op, _isolated):
     jc.JustificationCache().put("old-version", "k", {"method": "graphrag", "text": "옛 글"}, "live")
     with TestClient(app):
         assert jc.JustificationCache().get("old-version", "k") is None
+
+
+def test_a_justification_request_prunes_texts_of_other_data(boot_op, fake_ai):
+    from api.main import app
+    with TestClient(app) as c:
+        jc.JustificationCache().put("old-version", "k", {"method": "graphrag", "text": "옛 글"}, "live")
+        c.post("/api/justification", json=_request(c, app))
+        assert jc.JustificationCache().get("old-version", "k") is None

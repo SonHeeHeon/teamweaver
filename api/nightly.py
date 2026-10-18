@@ -54,6 +54,7 @@ OPERATING_FACTOR = 5
 NIGHT_MIN_S = 300
 NIGHT_MAX_S = 1800
 SOLVE_MARGIN_S = 15 * 60          # 풀이는 마감 15분 전까지(소명·점검·보고서 몫)
+SOLVE_OVERHEAD_S = 20             # 풀이마다 붙는 준비·보정·검증 시간(모델 만들기·C1·독립 검증) -- 시간 한도 밖이다
 AI_TIMEOUT_MIN_S = 120.0          # 밤에는 AI 글 한 편을 낮(외부 40초)보다 오래 기다린다 -- 사내 Flash p50 60초·p95 162초(E7c-F)
 MAX_RECORDED = 30                 # 낮 요청 기록 수
 MAX_RECORDED_SOLVES = 5           # 한 밤에 다시 풀 낮 요청 수
@@ -107,7 +108,9 @@ def night_limit(day_limit: int, n_solves: int, remaining_s: float, factor: int =
     want = min(max(int(day_limit) * factor, NIGHT_MIN_S), NIGHT_MAX_S)
     # 남은 시간의 90%만 나눈다 -- 풀이마다 준비·검증 시간이 붙어, 꽉 채우면 마지막 풀이가 마감 멈춤에 걸린다(10-18 스모크:
     # 운영 비교 K 4개 × 75초가 마감 직전에 멈춰 저장되지 않았다)
-    fit = int(0.9 * remaining_s / max(1, n_solves))
+    # 풀이마다 준비·검증 시간(SOLVE_OVERHEAD_S)도 뺀다(Opus 대체 리뷰 NIT: 짧은 수동 실행에서 마지막 대안이 마감에 걸려 묶음이 버려진다)
+    n = max(1, n_solves)
+    fit = int((0.9 * remaining_s - SOLVE_OVERHEAD_S * n) / n)
     lim = min(want, fit)
     return lim if lim >= int(day_limit) else None
 
@@ -171,9 +174,9 @@ class RequestRecorder:
         if kind is None:
             return await self.app(scope, receive, send)
         chunks: list[bytes] = []
-        state = {"size": 0, "done": False}
+        state = {"size": 0, "done": False, "recorded": False}
 
-        async def wrapped():
+        async def wrapped_receive():
             msg = await receive()
             if not state["done"] and msg.get("type") == "http.request":
                 body = msg.get("body", b"") or b""
@@ -182,16 +185,23 @@ class RequestRecorder:
                     chunks.append(body)
                 if not msg.get("more_body", False):
                     state["done"] = True
-                    if state["size"] <= RECORD_BODY_MAX:
-                        nightly = getattr(getattr(scope.get("app"), "state", None), "nightly", None)
-                        if nightly is not None:
-                            try:
-                                nightly.remember(kind, b"".join(chunks))
-                            except Exception:           # noqa: BLE001 -- 기록 실패가 요청을 막지 않는다
-                                log.debug("요청 기록 실패", exc_info=True)
             return msg
 
-        return await self.app(scope, wrapped, send)
+        async def wrapped_send(msg):
+            # 서버가 받아들인 요청(200)만 남긴다 -- 401·409·422·429 본문은 기록하지 않는다(Opus 대체 리뷰 2026-10-18).
+            # 파일 쓰기는 이벤트 루프 밖 스레드에서 한다.
+            if (msg.get("type") == "http.response.start" and msg.get("status") == 200 and state["done"]
+                    and not state["recorded"] and state["size"] <= RECORD_BODY_MAX):
+                state["recorded"] = True
+                nightly = getattr(getattr(scope.get("app"), "state", None), "nightly", None)
+                if nightly is not None:
+                    try:
+                        threading.Thread(target=nightly.remember_safe, args=(kind, b"".join(chunks)), daemon=True).start()
+                    except RuntimeError:                # 스레드를 못 띄우면 기록만 포기한다 -- 응답은 그대로
+                        log.debug("요청 기록 스레드를 띄우지 못했다", exc_info=True)
+            await send(msg)
+
+        return await self.app(scope, wrapped_receive, wrapped_send)
 
 
 # --- 실행기 ---------------------------------------------------------------------------------------------------------
@@ -228,6 +238,12 @@ class Nightly:
                                                     ensure_ascii=False) != canon]
             items.append({"kind": kind, "body": body, "at": _now_iso()})
             self.store.write("requests.json", items[-MAX_RECORDED:])
+
+    def remember_safe(self, kind: str, raw: bytes) -> None:
+        try:
+            self.remember(kind, raw)
+        except Exception:                               # noqa: BLE001 -- 기록 실패가 요청을 막지 않는다
+            log.debug("요청 기록 실패", exc_info=True)
 
     def recorded(self) -> list[dict]:
         return [r for r in (self.store.read("requests.json") or []) if isinstance(r, dict) and isinstance(r.get("body"), dict)]
@@ -336,9 +352,11 @@ class Nightly:
                         "dataset": {"id": info.dataset_id, "version": info.version, "source": info.source,
                                     "synthetic": info.synthetic, "people": info.people, "projects": info.projects},
                         "checks": [], "solves": [], "justifications": None, "stopped": False}
-        dataset.acquire()
+        acquired = False
         try:
-            _prune_justifications(info.version)          # 옛 데이터의 소명 글은 남기지 않는다
+            dataset.acquire()
+            acquired = True
+            _prune_justifications(app.state.dataset.info.version)   # 옛 데이터의 소명 글은 남기지 않는다(지금 켜진 데이터 기준)
             run = _Run(self, dataset, report, solve_until, deadline_ts)
             run.phase("데이터 확인", run.check_data)
             run.phase("미리 계산 확인", run.check_precomputed)
@@ -353,8 +371,13 @@ class Nightly:
             run.phase("낮 요청 다시 풀기", run.solve_recorded)
             run.phase("소명 글(안 B~D)", lambda: run.justify(("B", "C", "D")))
             run.phase("AI 연결 확인", run.check_ai)
+        except Exception as exc:                        # noqa: BLE001 -- 시작하지 못해도 보고서는 남긴다
+            log.exception("야간 배치를 시작하지 못했다")
+            report["checks"].append({"id": "start", "title": "시작", "status": "fail",
+                                     "detail": f"{type(exc).__name__}: {str(exc)[:200]}"})
         finally:
-            dataset.release()
+            if acquired:
+                dataset.release()
             self.clear_stop()
             report["stopped"] = self._cancel.is_set()
             report["finished_at"] = _now_iso()
@@ -446,6 +469,8 @@ def _operating_params(params):
 
 DEFAULT_KS = (0, 1, 2, 3)
 FAILED_STOPS = frozenset({"validation_rejected", "solver_failed"})
+# 끝까지 풀지 못한 묶음(대안이 시간 안에 해를 못 찾음 포함) -- 낮의 cacheable()과 같은 기준. 저장하지 않고 다음 밤에 다시 푼다.
+INCOMPLETE_STOPS = FAILED_STOPS | {"time_limit"}
 
 
 def _install_entry(app, dataset, entry: dict) -> dict:
@@ -456,19 +481,24 @@ def _install_entry(app, dataset, entry: dict) -> dict:
     params = MilpParams(**entry["milp_params"])
     kind = entry.get("kind")
     label = entry.get("target")
+    if app.state.dataset is not dataset:
+        return {"kind": kind, "target": label, "status": "skipped", "reason": "데이터가 바뀌었다"}
     if kind == "optimize":
         weights = dict(entry.get("weights") or {})
         key = ResultCache.key(weights, params, int(entry["n_alternatives"]), version)
         if key != entry.get("key"):
             return {"kind": kind, "target": label, "status": "skipped", "reason": "키가 맞지 않는다"}
-        if entry.get("stop_reason") in FAILED_STOPS:
-            return {"kind": kind, "target": label, "status": "skipped", "reason": "실패로 끊긴 묶음이다"}
+        if (entry.get("stop_reason") in INCOMPLETE_STOPS
+                or any(p.get("termination") == "user_interrupt" for p in entry.get("plans", []))):
+            return {"kind": kind, "target": label, "status": "skipped", "reason": "끝까지 풀지 못한 묶음이다"}
         if app.state.cache.get(key) is not None:
             return {"kind": kind, "target": label, "status": "skipped",
                     "reason": "이미 바로 나오는 결과가 있다(시연 미리 계산·이전 결과)"}
         plans, bad = _verify_plans(dataset.graph, weights, params, entry.get("plans", []))
         if bad:
             return {"kind": kind, "target": label, "status": "skipped", "reason": bad}
+        if app.state.dataset is not dataset:                    # 재채점(수 초) 중 데이터가 바뀌었다
+            return {"kind": kind, "target": label, "status": "skipped", "reason": "데이터가 바뀌었다"}
         app.state.cache.put(key, plans)
         marks = getattr(app.state, "precomputed_keys", None)
         if marks is None:
@@ -488,11 +518,15 @@ def _install_entry(app, dataset, entry: dict) -> dict:
             if existing.get("key") == default_key:      # 기본 요청을 덮는 시연 미리 계산은 그대로 둔다
                 return {"kind": kind, "status": "skipped", "reason": "기본 요청의 시연 미리 계산을 덮지 않는다"}
         rows = entry.get("rows", [])
-        if sorted(int(r.get("k")) for r in rows) != sorted(ks) or not all(r.get("accepted") for r in rows):
+        if (sorted(int(r.get("k")) for r in rows) != sorted(ks)
+                or not all(r.get("accepted") and not r.get("solve_failed") and r.get("termination") != "user_interrupt"
+                           for r in rows)):
             return {"kind": kind, "status": "skipped", "reason": "K 행이 모자라거나 풀지 못한 K가 있다"}
         bad = _verify_rows(dataset.graph, params, rows)
         if bad:
             return {"kind": kind, "status": "skipped", "reason": bad}
+        if app.state.dataset is not dataset:                    # 재채점 중 다른 묶음으로 바뀌었다 -- 새 묶음의 미리 계산을 덮지 않는다
+            return {"kind": kind, "status": "skipped", "reason": "데이터가 바뀌었다"}
         app.state.precomputed_operating = {"key": key, "ks": ks, "rows": entry["rows"],
                                            "computed_at": entry.get("computed_at"), "source": "nightly"}
         return {"kind": kind, "status": "installed", "rows": len(entry["rows"]), "key": key[:12]}
@@ -715,20 +749,17 @@ class _Run:
         if not self._acquire(slots, self.solve_until):
             return {**row, "status": "skipped", "reason": "계산 자리가 나지 않았다"}
         graph = self.dataset.graph
-        try:
-            S, C = _matrices(graph, weights)
-        except BaseException:
-            slots.release()
-            raise
-        night = params.model_copy(update={"time_limit": lim})
-        stop = self.n.new_stop()                                    # 준비 중에 온 멈춤은 여기서 물려받는다
-        timer = threading.Timer(max(0.0, self.solve_until - time.time()), stop.request, args=("finish",))
-        timer.daemon = True
-        timer.start()
         outcome: dict = {}
         plans = []
+        stop = timer = None
         t = time.perf_counter()
-        try:
+        try:                                                        # 자리를 얻은 뒤의 모든 경로에서 자리를 돌려준다
+            S, C = _matrices(graph, weights)
+            night = params.model_copy(update={"time_limit": lim})
+            stop = self.n.new_stop()                                # 준비 중에 온 멈춤은 여기서 물려받는다
+            timer = threading.Timer(max(0.0, self.solve_until - time.time()), stop.request, args=("finish",))
+            timer.daemon = True
+            timer.start()
             with watching(stop):
                 for plan in generate_plans_streaming(graph, S, C, night, n_alt, outcome):
                     plans.append(plan)
@@ -737,17 +768,20 @@ class _Run:
         except RuntimeError as exc:                                 # 안 A 실패(해 없음·검증 거절)
             outcome["error"] = str(exc)[:200]
         finally:
-            timer.cancel()
+            if timer is not None:
+                timer.cancel()
             self.n.clear_stop()
             slots.release()
         elapsed = round(time.perf_counter() - t, 1)
         row.update({"night_time_limit": lim, "elapsed_s": elapsed})
-        if stop.aborting or not plans:
+        if stop is None or stop.aborting or not plans:
             return {**row, "status": "failed", "reason": outcome.get("error") or "멈춰서 결과가 없다"}
-        if outcome.get("stop_reason") in FAILED_STOPS:
-            # 대안 풀이가 실패(솔버 실패·검증 거절)로 끊긴 묶음은 저장하지 않는다 -- 저장하면 아침 요청이 모자란 묶음을 받고
-            # 다음 밤에도 같은 키라 다시 풀지 않는다(Codex 리뷰 2026-10-18). 시간(밤 마감)으로 끊긴 것은 유효한 해라 저장한다.
-            return {**row, "status": "failed", "plans": len(plans), "reason": f"대안 풀이 실패({outcome['stop_reason']})"}
+        if stop.mode is not None or outcome.get("stop_reason") in INCOMPLETE_STOPS:
+            # 끝까지 풀지 못한 묶음은 저장하지 않는다 -- 멈춤·마감으로 풀던 안이 "사용자가 멈춤"으로 끝났거나, 대안이 실패·시간
+            # 초과로 모자란 묶음이 아침 결과로 굳고, 다음 밤에도 같은 키라 다시 풀지 않게 된다(Codex 리뷰·Opus 대체 리뷰 2026-10-18).
+            # 낮 경로의 cacheable()과 같은 기준이다. 다음 밤에 다시 푼다.
+            why = "멈춤·마감으로 끝까지 풀지 못했다" if stop.mode is not None else f"대안을 다 풀지 못했다({outcome['stop_reason']})"
+            return {**row, "status": "incomplete", "plans": len(plans), "reason": why}
         recorded, bad = [], None
         for plan in plans:
             ev = evaluate_plan(graph, S, C, params, plan.entries)
@@ -840,35 +874,34 @@ class _Run:
             self.report["solves"].append({**row, "status": "skipped", "reason": "운영 비교 자리가 나지 않았다"})
             return
         graph = self.dataset.graph
-        try:
-            S, C = _matrices(graph, {})
-        except BaseException:
-            op_routes._COMPARE_SLOT.release()
-            raise
-        stop = self.n.new_stop()                                    # 준비 중에 온 멈춤은 여기서 물려받는다
-        timer = threading.Timer(max(0.0, self.solve_until - time.time()), stop.request, args=("finish",))
-        timer.daemon = True
-        timer.start()
+        stop = timer = None
         t = time.perf_counter()
         rows: list[dict] = []
-        try:
+        try:                                                        # 자리를 얻은 뒤의 모든 경로에서 자리를 돌려준다
+            S, C = _matrices(graph, {})
+            stop = self.n.new_stop()                                # 준비 중에 온 멈춤은 여기서 물려받는다
+            timer = threading.Timer(max(0.0, self.solve_until - time.time()), stop.request, args=("finish",))
+            timer.daemon = True
+            timer.start()
             with watching(stop):
                 rows = compare_move_budgets(graph, S, C, params.model_copy(update={"time_limit": lim}),
                                             self.dataset.current, ks=ks)
         except SolveCancelled:
             rows = []
         finally:
-            timer.cancel()
+            if timer is not None:
+                timer.cancel()
             self.n.clear_stop()
             op_routes._COMPARE_SLOT.release()
         elapsed = round(time.perf_counter() - t, 1)
-        if not all(r.get("accepted") for r in rows):
+        if not all(r.get("accepted") and not r.get("solve_failed") for r in rows):
             # K 풀이가 실패한 행이 있으면 저장하지 않는다 -- 다음 밤에 다시 푼다(Codex 리뷰 2026-10-18)
             self.report["solves"].append({**row, "status": "failed", "night_time_limit": lim, "elapsed_s": elapsed,
                                           "reason": "풀지 못한 K가 있다(" + ", ".join(
-                                              str(r.get("k")) for r in rows if not r.get("accepted")) + ")"})
+                                              str(r.get("k")) for r in rows
+                                              if not r.get("accepted") or r.get("solve_failed")) + ")"})
             return
-        if stop.mode is not None or sorted(int(r.get("k")) for r in rows) != ks:
+        if stop is None or stop.mode is not None or sorted(int(r.get("k")) for r in rows) != ks:
             # 멈춘 비교는 K 행이 모자라거나 마지막 K가 덜 풀렸다 -- 미리 계산은 K가 하나씩 맞아야 쓰인다
             self.report["solves"].append({**row, "status": "failed", "night_time_limit": lim, "elapsed_s": elapsed,
                                           "reason": "마감으로 멈춰 K 비교를 끝내지 못했다"})
@@ -974,7 +1007,7 @@ def _summarize(report: dict) -> None:
     checks = report.get("checks", [])
     attention = [c for c in checks if c["status"] in ("warn", "fail")]
     prepared = [s for s in report.get("solves", []) if s.get("status") == "prepared"]
-    failed = [s for s in report.get("solves", []) if s.get("status") == "failed"]
+    failed = [s for s in report.get("solves", []) if s.get("status") in ("failed", "incomplete")]
     js = report.get("justifications") or {}
     parts = [f"확인 필요 {len(attention) + len(failed)}건" if (attention or failed) else "점검 정상"]
     if prepared:
