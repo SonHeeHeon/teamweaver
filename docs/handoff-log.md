@@ -22,6 +22,26 @@
 
 ---
 
+## 2026-10-18 · claude-b · 야간 배치(00~05시): 긴 풀이 미리 해 두기 · 소명 글 미리 쓰기 · 밤사이 점검
+- 브랜치/커밋: `feat/claude-b-nightly-batch`(main `738aa67`에서 갈라짐) -- 기능·측정·문서 커밋. main 병합은 사용자 승인 대기.
+- 사용자 요청: "관리자가 퇴근한 시점인 매일 밤(새벽 00시부터 05시까지) 배치 작업으로 돌만한게 있을까?" → 제안 1·2·3에 "1,2,3번 좋네. 진행해봐줘"(대상은 지금 켜진 데이터 한 묶음).
+- 한 일:
+  - `api/nightly.py`(새): 서버 안 예약 실행기(`TEAMWEAVER_NIGHTLY`·`TEAMWEAVER_NIGHTLY_WINDOW`, 시간대 안에서 켜지면 그날 밤은 돌지 않음). 단계: 점검 → 기본 요청(안 A~D) 풀이 → 소명 글(안 A) → 운영 중 비교 풀이 → 낮 요청 다시 풀기 → 소명 글(B~D) → AI 연결.
+    밤에는 **시간 한도만** 늘리고(낮 × 10, 300~1800초, 남은 시간의 90%를 나눔) 키·서명은 낮 설정 → `<데이터 폴더>/nightly/prepared.json` → 캐시·"미리 계산" 등록부(`source: nightly`). 이미 캐시에 있는 요청(시연 미리 계산 포함)은 건너뜀. 넣을 때·재기동 때 데이터 버전·평가기 재채점·위반·K 행이 맞아야 쓴다. 실패(솔버 실패·검증 거절·풀지 못한 K)로 끊긴 묶음은 저장하지 않는다.
+    새 풀이 자리 1개·운영 비교 단일 자리·AI_SLOTS를 쓰고, 멈춤(`POST /api/nightly/stop`·종료)은 준비 중에 와도 풀이가 물려받는다. 낮 요청 기록은 순수 ASGI `RequestRecorder`(본문만, 최근 30건).
+  - `api/justification_cache.py`(새) + `api/routes/justification.py`: AI 소명 글(graphrag)만 저장해 화면·PDF가 다시 쓴다. 키 = 데이터 버전·사업·명단 전체·가중치·설정·AI(모델·주소·추론 강도)·**소명 재료(JustificationInput) 해시**·생성기 코드 지문. 응답에 `prepared_at`·`prepared_by`. 물러난 데이터셋의 요청은 저장하지 않고, 옛 데이터의 글은 부팅·밤 실행 시작 때 지운다.
+  - `api/routes/nightly.py`(새): `GET /api/nightly`(예약·진행·넣은 밤 결과·마지막 보고서), `POST /api/nightly/run {minutes}`·`/stop`(관리자). `api/cache.py`에 잠금(밤 스레드와 요청 경로), `api/datasets.ActiveDataset.retired`.
+  - `api/main.py`(claude-a 작업과 겹침, 최소): lifespan `attach`/`detach`, `justification.router` 다음에 미들웨어·라우터.
+  - `scripts/measure_nightly_gain.py` + `outputs/nightly-long-solve.json`: 시연 묶음 안 A 낮 대 밤 -- 100명 57.59→60.17(+4.5%, 상한 거리 11.0→5.3%), 200명 107.33→113.52(+5.8%, 7.9→1.8%), 300명 166.19→168.67(+1.5%, 3.2→1.4%). 낮 값은 시연 미리 계산과 같다.
+  - `tests/nightly/`(30), `tests/conftest.py`(새, 시험 전체에서 예약 끔), CLAUDE.md 함정 줄·기준선.
+- 상대 영향:
+  - claude-a: 화면 개편과 겹치는 연결은 work-split 요청(아침 알림 띠·관리자 실행/멈춤·"밤사이 계산" 표시·소명 `prepared_by` 표시·데이터 전환 뒤 다시 넣기·`api/main.py` 병합 시 양쪽 유지). 서버가 켜져 있으면 **기본으로 매일 00:00에 돈다**(끄려면 `TEAMWEAVER_NIGHTLY=off`).
+  - 모두: 기준선 1806 → 1836. 시험에서 밤 실행을 돌리면 설명 AI를 막아야 한다(`.env` 키 -- 10-18 시험이 실제 외부 AI를 42번 불렀다, 가상 데이터·약 $0.045).
+  - codex: 권장 시간 한도 표(`core/optimize/time_budget.MEASURED`, "최선 대비 1% 이내")가 지금 데이터와 맞지 않는다(work-split 참고).
+- 검증: `uv run --group benchmark pytest -q` → 1836 passed, 1 skipped, 19 deselected. 실서버 스모크(임시 데이터 폴더, 시연 org-n100, 시드 4): ① 기본 설정 -- 기본 요청은 시연 미리 계산 보호로 건너뜀, 소명 글 실제 AI 20편 모두 통과($0.016) ② 낮 한도 20초로 바꾼 설정 -- 안 A~D를 151초씩 풀어 저장(안 A 59.60), 소명 17번 호출 16편 통과·1편 서버 검사 S4로 틀 대체, 아침 `/api/optimize` 0.16초 "미리 계산", 소명 글 저장본 0.3~0.7초(새로 쓰면 10초).
+- Codex: adversarial-review 2라운드(gpt-6.1-sol). 1라운드 3건(준비 중 멈춤 유실·AI 자리 대기 뒤 재확인·소명 키에 평가 코드 누락) → 반영, 2라운드 2건(실패 묶음 영속·늦은 저장이 지금 데이터 저장본 삭제) → 반영. 2라운드 반영분은 재리뷰 없이 시험·Stop 게이트로 확인.
+- 근거: `.omc/reports/2026-10-18-nightly-batch.md`(로컬), 계획 `.omc/plan/2026-10-18-nightly-batch.md`.
+
 ## 2026-10-14 · claude-a · 제출 가이드에 맞춰 시연 영상 대본·결과 보고서 개편
 - 브랜치/커밋: `docs/claude-a-submission-guide-1014`(main `fb783cd`에서 갈라짐) 이 항목 커밋. main 병합은 사용자 승인 대기.
 - 사용자 요청: 과제 산출물 가이드 — 시연 영상 최대 10분((개요) 배경·시스템 전반, (구현) 전체 흐름 동작 화면·긴 대기 편집 가능, (기술/성과) 적용 기술·결과), 결과 보고서 최대 10쪽(영상과 중복 최소화·영상으로 확인하기 어려운 내용 중심, 정량/정성 성과, 시스템 구성·적용 기술, 판단에 필요한 상세, 화면 캡처 최소화). 그리고 "GitHub 기본 브랜치를 main으로 바꿨다".
