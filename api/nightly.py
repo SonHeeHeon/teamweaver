@@ -587,20 +587,39 @@ class _Run:
             self.check("data", "데이터", "ok", detail)
 
     def check_precomputed(self) -> None:
-        if self.dataset.info.source != "demo-bundle":
-            self.check("precomputed", "시연 미리 계산", "skipped", "시연 묶음이 아니다")
+        source = self.dataset.info.source
+        if source not in ("demo-bundle", "record"):
+            self.check("precomputed", "시연 미리 계산", "skipped", "시연 묶음·편성 기록이 아니다")
             return
+        # 편성 기록을 열면 기록의 편성안이 같은 등록부에 들어간다(api/routes/records -- demo_precomputed.install)
+        title = "편성 기록 결과" if source == "record" else "시연 미리 계산"
         st = getattr(self.app.state, "precomputed_status", None)
         if not st:
-            self.check("precomputed", "시연 미리 계산", "skipped", "이 묶음의 미리 계산 파일이 없다")
+            self.check("precomputed", title, "skipped",
+                       "기록에 편성안이 없다" if source == "record" else "이 묶음의 미리 계산 파일이 없다")
         elif st.get("skipped"):
-            self.check("precomputed", "시연 미리 계산", "warn",
+            self.check("precomputed", title, "warn",
                        "쓰지 못한 부분이 있다: " + "; ".join(str(s) for s in st["skipped"])[:400])
+        elif source == "record":
+            # 화면은 기록의 계산 요청 그대로 묻는다 -- 서버 설정 키로 찾지 않고, 기록이 넣은 결과가 **결과 캐시에 아직 있는지** 본다
+            # (캐시는 최근 32개만 두므로 등록부 표시가 남아도 결과는 밀려났을 수 있다 -- Codex 리뷰 2026-10-19)
+            # 요청 스레드가 등록부를 바꿀 수 있어 복사본으로 본다(Codex 리뷰 2라운드)
+            marks = dict(getattr(self.app.state, "precomputed_keys", None) or {})
+            cache = getattr(self.app.state, "cache", None)
+            live = [k for k, m in marks.items() if m.get("source") != "nightly" and cache is not None and cache.has(k)]
+            if st.get("plans") and not live:
+                self.check("precomputed", title, "warn",
+                           "기록의 편성안이 결과 캐시에 없다 -- 화면이 기록 요청으로 다시 계산한다")
+            else:
+                self.check("precomputed", title, "ok",
+                           f"안 {st.get('plans', 0)}개" + (" · 운영 중 비교" if st.get("operating") else "") + " 사용 중")
         else:
             from api.cache import ResultCache
             key = ResultCache.key({}, _server_params(self.app, self.dataset), 3, self.dataset.info.version)
             mark = (getattr(self.app.state, "precomputed_keys", None) or {}).get(key)
-            if st.get("plans") and (mark is None or mark.get("source") == "nightly"):
+            cache = getattr(self.app.state, "cache", None)
+            evicted = cache is not None and not cache.has(key)                # 등록부 표시가 남아도 캐시에서 밀려났을 수 있다
+            if st.get("plans") and (mark is None or mark.get("source") == "nightly" or evicted):
                 # 부팅 때는 맞았지만 그 뒤 관리자 설정이 바뀌었거나 "다시 계산"으로 바뀌었다 -- 시연 대본 숫자와 화면이 달라진다(10-18 스모크)
                 self.check("precomputed", "시연 미리 계산", "warn",
                            "기본 요청에 시연 미리 계산이 쓰이지 않고 있다(관리자 설정이 미리 계산 때와 다르거나 다시 계산했다) "

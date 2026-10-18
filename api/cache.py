@@ -47,6 +47,11 @@ class ResultCache:
                 self._store.move_to_end(key)
             return plans
 
+    def has(self, key: str) -> bool:
+        """들어 있는지만 본다(점검용 -- get과 달리 최근 사용 순서를 바꾸지 않는다)."""
+        with self._lock:
+            return key in self._store
+
     def pop(self, key: str) -> None:
         self._store.pop(key, None)
 

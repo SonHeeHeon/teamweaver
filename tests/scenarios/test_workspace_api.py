@@ -306,3 +306,23 @@ def test_a_failed_marker_removal_does_not_fail_the_applied_edit(yearend, monkeyp
         assert body["persisted"] is False and "기록 표시" in body["persist_error"]
         assert body["workspace"]["dataset_version"] != v
         assert _ws(c)["dataset_version"] == body["workspace"]["dataset_version"]
+
+
+def test_nightly_check_reports_an_opened_records_plans(yearend):
+    """편성 기록을 연 데이터에서도 밤 점검이 기록의 편성안이 결과 캐시에 있는지 본다(예전엔 "시연 묶음이 아니다"로 건너뜀)."""
+    import time
+    from api.main import app
+    from api.nightly import Nightly, _Run
+    with TestClient(app) as c:
+        _open_operating_record(c)
+        report: dict = {"checks": []}
+        run = _Run(Nightly(app), app.state.dataset, report, time.time() + 60, time.time() + 60)
+        run.check_precomputed()
+        ch = [x for x in report["checks"] if x["id"] == "precomputed"][0]
+        assert ch["title"] == "편성 기록 결과" and ch["status"] == "ok", ch
+        for i in range(app.state.cache.MAX_ENTRIES):                          # 다른 결과가 쌓여 기록 결과가 캐시에서 밀려나면 알린다
+            app.state.cache.put(f"other-{i}", [])
+        assert all(not app.state.cache.has(k) for k in app.state.precomputed_keys)
+        report["checks"].clear()
+        run.check_precomputed()
+        assert report["checks"][0]["status"] == "warn", report["checks"]
