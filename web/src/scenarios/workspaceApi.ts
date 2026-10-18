@@ -88,7 +88,13 @@ const json = (method: string, body: unknown): RequestInit => ({
   method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
 });
 
-type WithWs = { workspace: Workspace };
+type WithWs = { workspace: Workspace; persisted?: boolean; persist_error?: string | null };
+
+/** 바꾼 판은 켜졌지만 서버에 남기지 못했으면(재기동하면 이전 데이터로 뜬다) 완료 문장 뒤에 알린다. */
+export function withPersistNote(done: string, res: object): string {
+  const r = res as { persisted?: boolean; persist_error?: string | null };
+  return r.persisted === false ? `${done} 주의: ${r.persist_error ?? "서버에 저장하지 못했다."}` : done;
+}
 
 export const fetchWorkspace = () => call<Workspace>("/api/workspace");
 export const fetchProjectForm = (id: string) => call<ProjectForm>(`/api/workspace/projects/${encodeURIComponent(id)}/form`);

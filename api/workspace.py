@@ -184,6 +184,17 @@ async def _activate_blob(request: Request, data: bytes, check=None, prepare=None
         except OSError as exc:
             log.error("작업 데이터 저장 실패: %s", exc)
             persist_error = f"서버에 저장하지 못했다(재기동하면 이전 데이터로 뜬다): {exc}"
+        if persist_error is None:
+            # 편성 기록에서 벗어났다 -- 재기동은 "열어 둔 기록 → 업로드 저장본" 순이라 지우지 않으면 고친 판 대신 옛 기록으로 뜬다.
+            # 새 저장본이 확정된 **뒤에만** 지운다: 저장이 실패했는데 지우면 복원할 곳이 둘 다 없어진다(Codex 리뷰 2026-10-19).
+            # 이미 새 판을 켰으므로 지우기 실패는 요청을 실패시키지 않고 알리기만 한다.
+            record_store = getattr(state, "record_store", None)
+            if record_store is not None:
+                try:
+                    await anyio.to_thread.run_sync(record_store.clear_active)
+                except OSError as exc:
+                    log.error("열어 둔 편성 기록 표시를 지우지 못했다: %s", exc)
+                    persist_error = f"열어 둔 편성 기록 표시를 지우지 못했다(재기동하면 그 기록으로 뜬다): {exc}"
         state.dataset_restore_error = None
         nightly = getattr(state, "nightly", None)
         if nightly is not None:

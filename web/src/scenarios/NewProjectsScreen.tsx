@@ -10,7 +10,7 @@ import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } 
 import { ProjectForm } from "./ProjectForm";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postLock, postProject, postUndo,
-  STAGE_LABEL, type CandidateRow, type Candidates, type OngoingItem, type PipelineItem, type Stage, type Workspace,
+  STAGE_LABEL, withPersistNote, type CandidateRow, type Candidates, type OngoingItem, type PipelineItem, type Stage, type Workspace,
 } from "./workspaceApi";
 
 type Group = "bench" | "ending" | "pull";
@@ -123,7 +123,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       if (review) setConfirmed({ version: res.workspace.dataset_version, projectId: review.projectId, seen: datasetVersion ?? null });
       setRows([]);
       setAutoState("idle");
-      setNotice(done);
+      setNotice(withPersistNote(done, res));
       onDatasetChanged();
     } catch (e) {
       setError((e as Error).message);
@@ -449,7 +449,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                        setFormOpen(false);
                        setWs(res.workspace);
                        setSelected(res.project_id);
-                       setNotice(`${form.name}(${res.project_id})을(를) 등록했다.`);
+                       setNotice(withPersistNote(`${form.name}(${res.project_id})을(를) 등록했다.`, res));
                        onDatasetChanged();
                      }} />
       )}
