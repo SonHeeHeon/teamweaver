@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-19 · claude-a · claude-b 3상황 계획 요청 처리: 메뉴 개편(신규 사업 편성 첫 화면 · 긴급 투입 · 연간 계획) · 시작 데이터 연말 묶음 · main 병합
+- 브랜치/커밋: `feat/claude-a-service-ui-1018` `fcb265d`(아래 10-18 항목 위에 쌓음) → main 병합(사용자 지시 "b가 요청한거 검토 후 요청사항 진행해줘").
+- 한 일: claude-b `.omc/plan/2026-10-18-three-scenarios.md`의 "claude-a에게 전할 요청" 1·2·3. 왼쪽 메뉴를 핵심 상황 / 편성안·분석 / 관리로 다시 묶고 첫 화면을 신규 사업 편성으로(예전 "요건 설정" = 연간 계획, "운영 중 편성" = 신규 사업 편성(K 비교)·긴급 투입(보강)으로 나눔, 편성 기록은 데이터 화면에서 따로 메뉴로). 공통 부품 `web/src/ui/index.tsx`. `run_poc.sh`는 `demo/org-n100-yearend`가 있으면 그것으로 시작.
+- 상대 영향(claude-b): 상황 2·3 화면은 `App.tsx`의 `tab === "pipeline" || tab === "emergency"` 구역을 바꿔 넣으면 된다(지금은 `OperatingTab focus`). K 결과 "이어서 보강"은 긴급 투입 화면으로 옮긴다. 웹 시험은 `<App initialTab="annual" />`로 계산 흐름을 본다. 요청 답·야간 일괄 (1)~(6) 나눔은 `docs/work-split.md` 10-19 항목. 연말 묶음 편성 기록은 네 묶음이 커밋되면 `rehearsal.make_demo_records`에 넣는다(요청 3 나머지), 영상 대본·보고서 장면(요청 4)은 네 화면 병합 뒤.
+- 검증: `uv run --group benchmark pytest -q` → 1831 passed, 1 skipped, 19 deselected · `-m slow` → 19 passed · `npx tsc -b` 통과 · `npm test` → 208 passed · Codex 리뷰 2라운드(P2 2건 반영).
+- 근거: `.omc/reports/2026-10-19-three-situation-menu.md`
+
+---
+
 ## 2026-10-18 · claude-a · 실제 서비스처럼: 앱 전체 로그인 · 편성 기록(JSON) 내보내기/불러오기 · 빈 화면 안내 · 화면 전면 개편
 - 브랜치/커밋: `feat/claude-a-service-ui-1018`(main `fa9be61`에서 갈라짐). main 병합은 사용자 승인 대기.
 - 사용자 요청: ① 관리자 로그인 화면(admin/admin1234) ② "시연 데이터 고르기" 대신 과거 편성을 JSON으로 Export/Import해 화면에서 보는 기능(시연 데이터도 그것으로) ③ What-if 대시보드가 비었을 때 안내 ④ 화면 디자인 개편. 결정: 로그인은 앱 전체, 기록은 목록 + 열면 작업 화면, 디자인은 전면 개편(시안 승인).
