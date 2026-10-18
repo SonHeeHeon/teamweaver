@@ -70,3 +70,16 @@ describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
   });
 });
 
+
+describe("PlanCards — 검증 도장(2026-10-18)", () => {
+  it("화면에서 바꾼 명단에는 '검증 통과' 도장을 달지 않는다", async () => {
+    const { render, screen } = await import("@testing-library/react");
+    const { PlanCards } = await import("./PlanCards");
+    const plan = { label: "A", entries: [], objective: 1, unfilled: [], fulfillment: 0.5, optimization_ratio: 0.5,
+                   index: 1, cached: false, termination: "Optimal" } as never;
+    const { rerender } = render(<PlanCards plans={[plan]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("검증")).toBeInTheDocument();
+    rerender(<PlanCards plans={[plan]} selected="A" onSelect={() => {}} editCounts={{ A: 1 }} />);
+    expect(screen.queryByText("검증")).not.toBeInTheDocument();
+  });
+});

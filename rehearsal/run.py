@@ -105,7 +105,8 @@ def _server(work: Path, llm: bool):
     with socket.socket() as sk:
         sk.bind(("127.0.0.1", 0))
         port = sk.getsockname()[1]
-    env = {**os.environ, "TEAMWEAVER_SKIP_WARM": "1", "TEAMWEAVER_DATA_DIR": str(work / "data"),
+    # 앱 전체 로그인(2026-10-18)은 리허설 서버에서 끈다 -- 계산 경로를 재는 도구다(폴백 리뷰 S6)
+    env = {**os.environ, "TEAMWEAVER_SKIP_WARM": "1", "TEAMWEAVER_LOGIN": "off", "TEAMWEAVER_DATA_DIR": str(work / "data"),
            "TEAMWEAVER_SETTINGS_PATH": str(work / "settings.json")}
     if not llm:
         env["OPENAI_API_KEY"] = ""

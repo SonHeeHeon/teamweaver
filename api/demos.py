@@ -136,12 +136,8 @@ def build_demo(root: Path):
 
 
 def current_demo_root() -> Path | None:
-    """시연 묶음으로 뜰 때 쓰는 위치: 고른 묶음, 없으면 TEAMWEAVER_DEMO_BUNDLE(api/main.build_fixture_dataset과 같은 순서)."""
-    from api.storage import data_dir
-    chosen = load_choice(data_dir())
-    root = demo_root(chosen) if chosen else None
-    if root is not None:
-        return root
+    """시작 데이터 묶음 위치 = TEAMWEAVER_DEMO_BUNDLE(api/main.build_fixture_dataset과 같다). 예전 "시연 데이터 고르기"의 기억
+    (demo_choice.json)은 2026-10-18부터 보지 않는다 -- 남아 있으면 부팅 데이터와 내보내기 원천이 어긋났다(Codex 리뷰 P2)."""
     raw = os.environ.get("TEAMWEAVER_DEMO_BUNDLE", "").strip()
     return Path(raw).expanduser() if raw else None
 

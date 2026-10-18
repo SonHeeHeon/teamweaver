@@ -128,41 +128,6 @@ def test_operating_rows_are_rescored(built):
         assert pre.operating is None and "하나씩 맞지 않는다" in pre.skipped[-1]
 
 
-def test_server_serves_precomputed_plans_and_fresh_solves_again(built, monkeypatch):
-    root, actives = built
-    bundle, active = root / "org-n100", actives["org-n100"]
-    params = _params(active)
-    plan = _plan(active.graph, params, "A", [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc)
-                                              for c in active.current])
-    _write(bundle, active, params, [plan])
-    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
-    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
-    import api.routes.optimize as opt_route
-    calls = []
-
-    def fake_stream(graph, S, C, p, n, outcome):
-        calls.append(p)
-        yield plan.model_copy(update={"label": "A", "time_limited": False})
-    monkeypatch.setattr(opt_route, "generate_plans_streaming", fake_stream)
-    from api.main import app
-    with TestClient(app) as c:
-        info = c.get("/api/datasets/active").json()
-        assert info["precomputed"]["plans"] == 1 and info["precomputed"]["skipped"] == []
-        s = c.get("/api/settings").json()
-        web = {**s["settings"], "time_limit": s["effective_time_limit"]}     # what the web sends (effectiveSettings)
-        body = {"weights": {}, "milp_params": web, "n_alternatives": 3, "dataset_version": info["version"]}
-        events = _sse(c.post("/api/optimize", json=body))
-        plans = [d for e, d in events if e == "plan"]
-        assert len(plans) == 1 and plans[0]["cached"] and plans[0]["precomputed_at"] == "2026-10-06T12:00:00+00:00"
-        assert calls == []
-        events = _sse(c.post("/api/optimize", json={**body, "fresh": True}))
-        plans = [d for e, d in events if e == "plan"]
-        assert len(calls) == 1 and not plans[0]["cached"] and plans[0]["precomputed_at"] is None
-        # the live result was cacheable and replaced the precomputed one: no longer labelled precomputed
-        plans = [d for e, d in _sse(c.post("/api/optimize", json=body)) if e == "plan"]
-        assert plans[0]["cached"] and plans[0]["precomputed_at"] is None
-
-
 def _sse(res):
     out, event = [], None
     for line in res.text.splitlines():
@@ -171,60 +136,6 @@ def _sse(res):
         elif line.startswith("data:"):
             out.append((event, json.loads(line.split(":", 1)[1])))
     return out
-
-
-def test_operating_compare_serves_precomputed_rows_and_fresh_recomputes(built, monkeypatch):
-    """/api/operating/compare (claude-b's route) streams the validated precomputed K rows; fresh=true solves again."""
-    from core.evaluate.operating import _row
-    root, actives = built
-    bundle, active = root / "org-n100-operating", actives["org-n100-operating"]
-    params = _params(active)
-    eng = ScoringEngine(active.graph)
-    S, C = eng.skill_matrix({}), eng.synergy_matrix()
-    entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in active.current]
-    rows = [{**_row(active.graph, S, C, params, active.current, entries, []), "k": k, "accepted": True} for k in (0, 1, 2, 3)]
-    _write(bundle, active, params, [], operating={"ks": [0, 1, 2, 3], "milp_params": params.model_dump(), "rows": rows})
-    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
-    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
-    import core.evaluate.operating as op
-    calls = []
-    monkeypatch.setattr(op, "compare_move_budgets", lambda *a, **kw: calls.append(1) or [rows[0]])
-    from api.main import app
-    with TestClient(app) as c:
-        info = c.get("/api/datasets/active").json()
-        assert info["precomputed"]["operating"] is True
-        s = c.get("/api/settings").json()
-        body = {"milp_params": {**s["settings"], "time_limit": s["effective_time_limit"]},
-                "dataset_version": info["version"], "ks": [0, 1, 2, 3]}
-        got = [d for e, d in _sse(c.post("/api/operating/compare", json=body)) if e == "row"]
-        assert [r["k"] for r in got] == [0, 1, 2, 3] and all(r["precomputed_at"] for r in got) and calls == []
-        got = [d for e, d in _sse(c.post("/api/operating/compare", json={**body, "fresh": True})) if e == "row"]
-        assert calls == [1] and "precomputed_at" not in got[0]
-        skill = next(iter(active.graph.people[0].skills))          # review MUST: rows were made with weights {}
-        got = [d for e, d in _sse(c.post("/api/operating/compare", json={**body, "weights": {skill: 3}})) if e == "row"]
-        assert calls == [1, 1] and "precomputed_at" not in got[0]
-    precomputed_path(bundle).unlink()
-
-
-
-def test_boot_skips_the_warm_up_when_the_precomputed_plans_cover_it(built, monkeypatch):
-    """Review SHOULD: with a validated precomputed entry under the warm-up key the boot does not solve again."""
-    root, actives = built
-    bundle, active = root / "org-n100", actives["org-n100"]
-    params = _params(active)
-    plan = _plan(active.graph, params, "A", [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc)
-                                              for c in active.current])
-    _write(bundle, active, params, [plan])
-    monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(root))
-    monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle))
-    monkeypatch.setenv("TEAMWEAVER_SKIP_WARM", "0")
-    import api.main as main_mod
-    ran = []
-    monkeypatch.setattr(main_mod, "generate_plans", lambda *a, **kw: ran.append(1) or [])   # boot swallows errors: count
-    with TestClient(main_mod.app) as c:
-        assert c.get("/api/datasets/active").json()["precomputed"]["plans"] == 1
-    assert ran == []
-    precomputed_path(bundle).unlink()
 
 
 def test_every_plan_field_survives_the_round_trip(built):

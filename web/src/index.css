@@ -1,3 +1,29 @@
+@import "@fontsource/ibm-plex-sans-kr/400.css";
+@import "@fontsource/ibm-plex-sans-kr/500.css";
+@import "@fontsource/ibm-plex-sans-kr/600.css";
+@import "@fontsource/ibm-plex-sans-kr/700.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-canvas text-[#1C2321]; font-size: 14px; line-height: 1.55; word-break: keep-all; }
+  /* 숫자는 자리 맞춤(표·카드의 값이 흔들리지 않게) */
+  td, th, .num { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid theme("colors.ink"); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+}
+
+@layer components {
+  /* PDF(/report)는 시스템 한글 글꼴로 찍는다 -- 웹 글꼴(IBM Plex Sans KR)로 찍으면 PDF에서 글자가 한 자씩 떨어져 추출돼
+     복사·검색이 나빠진다(느린 PDF 시험 실측 2026-10-18). 화면 글꼴과 다른 것은 의도다. */
+  .report-root { font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif; }
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line bg-paper px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn border-ink bg-ink text-white hover:bg-slate-800; }
+  .btn-ghost { @apply btn border-transparent bg-transparent hover:bg-slate-100; }
+  .panel { @apply rounded-lg border border-line bg-paper; }
+  .field { @apply block w-full rounded-md border border-line bg-[#FBFCFB] px-3 py-2 text-sm; }
+  .seal { @apply inline-block rounded-[2px] border-2 border-seal bg-seal-soft px-1.5 pb-0.5 pt-1 text-center text-xs font-bold leading-tight text-seal; outline: 1px solid theme("colors.seal.DEFAULT"); outline-offset: 2px; transform: rotate(-5deg); }
+}

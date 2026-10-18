@@ -19,6 +19,10 @@ interface Props {
   meta: Meta;
   params: PlacementSettings | null;
   onDatasetChanged: () => void;
+  /** 2026-10-18 3상황 메뉴: 신규 사업 편성 = K 비교(new), 긴급 투입 = 보강(reinforce). 숨김만 하고 둘 다 남긴다(결과 유지). */
+  focus?: "new" | "reinforce";
+  /** K 결과를 기준 배치로 이어서 보강할 때 보강 화면(긴급 투입)으로 옮긴다 -- 숨긴 채면 눌러도 아무 변화가 안 보인다(Codex 리뷰 P2) */
+  onShowReinforce?: () => void;
 }
 
 const SOURCE_LABEL: Record<string, string> = { bench: "대기 인력", partly_free: "일부 여유", pull: "다른 사업에서 빼 옴" };
@@ -31,7 +35,7 @@ function signed(x: number | null | undefined, digits = 2): string {
   return `${x > 0 ? "+" : ""}${x.toFixed(digits)}`;
 }
 
-export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
+export function OperatingTab({ meta, params, onDatasetChanged, focus, onShowReinforce }: Props) {
   const [state, setState] = useState<OperatingState | null>(null);
   const [base, setBase] = useState<Base | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +86,7 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
   if (!state.available) {
     return (
       <section className="max-w-3xl rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">
-        <h2 className="mb-1 text-lg font-semibold text-slate-900">운영 중 편성</h2>
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">{focus === "reinforce" ? "긴급 투입" : "신규 사업 편성"}</h2>
         <p>{state.hint}</p>
       </section>
     );
@@ -94,11 +98,15 @@ export function OperatingTab({ meta, params, onDatasetChanged }: Props) {
       </p>
       {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {/* key: 데이터셋이 바뀌면 하위 상태(비교 결과·후보·넣기/빼기 묶음)를 모두 버린다(리뷰 S4) */}
-      <MoveBudget key={`m-${state.dataset_version}`} state={state} common={common} who={who} proj={proj} fail={fail}
-                  onUseAsBase={setBase} />
+      <div className={focus === "reinforce" ? "hidden" : ""}>
+        <MoveBudget key={`m-${state.dataset_version}`} state={state} common={common} who={who} proj={proj} fail={fail}
+                    onUseAsBase={(b) => { setBase(b); if (b) onShowReinforce?.(); }} />
+      </div>
       {/* key에 기준 배치를 넣는다 -- 기준이 바뀌면 보강의 넣기·빼기·결과를 모두 새로 시작한다 */}
-      <Reinforce key={`r-${state.dataset_version}-${base?.id ?? "now"}`} state={state} common={common} who={who}
-                 proj={proj} fail={fail} base={base} onClearBase={() => setBase(null)} />
+      <div className={focus === "new" ? "hidden" : ""}>
+        <Reinforce key={`r-${state.dataset_version}-${base?.id ?? "now"}`} state={state} common={common} who={who}
+                   proj={proj} fail={fail} base={base} onClearBase={() => setBase(null)} />
+      </div>
     </div>
   );
 }

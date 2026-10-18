@@ -9,7 +9,7 @@ interface Props {
 export function WeightSlider({ skill, value, onChange }: Props) {
   return (
     <div className="flex items-center gap-3 py-1">
-      <label htmlFor={`w-${skill}`} className="w-28 shrink-0 text-sm text-slate-700">
+      <label htmlFor={`w-${skill}`} className="w-32 shrink-0 truncate text-[13px] text-slate-700" title={skill}>
         {skill}
       </label>
       <input
@@ -21,7 +21,7 @@ export function WeightSlider({ skill, value, onChange }: Props) {
         step={1}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-slate-800"
+        className="min-w-0 flex-1 accent-[#15372F]"
       />
       <span className="w-6 text-right text-sm tabular-nums text-slate-900">{value}</span>
     </div>

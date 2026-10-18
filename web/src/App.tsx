@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import {
   adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postBaseline, postWhatif, saveSettings, SettingsConflictError,
-  stopRun, streamOptimize,
+  stopRun, streamOptimize, exportRecord,
 } from "./api/client";
 import type {
+  OpenRecordResult, RecordRequest,
   AllocChange, AssignEntry,  AppliedStep, AppliedSwap, DatasetInfo, Meta, PlacementSettings, PlanEvent, SettingsResponse, Swap,
   WhatifResponse,
 } from "./api/types";
@@ -34,8 +35,10 @@ import { describeChanges } from "./components/settingsFields";
 import { BaselineCard } from "./components/BaselineCard";
 import { OperatingTab } from "./components/OperatingTab";
 import { effectiveSettings, stepBody } from "./api/types";
+import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { ExportRecordDialog } from "./components/ExportRecordDialog";
+import { RecordsPanel } from "./components/RecordsPanel";
 
-type Tab = "req" | "whatif" | "operating" | "skills" | "settings" | "data";
 
 
 
@@ -53,9 +56,13 @@ function AdminTokenField({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-export default function App() {
+export default function App({ onLoggedOut, initialTab = "pipeline" }: {
+  onLoggedOut?: () => void;
+  /** 첫 화면. 기본은 신규 사업 편성(가장 잦은 상황, 2026-10-18) -- 시험은 계산 흐름을 보려고 연간 계획에서 시작한다 */
+  initialTab?: Tab;
+} = {}) {
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [tab, setTab] = useState<Tab>("req");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -92,7 +99,12 @@ export default function App() {
   // 기본값으로 계산했다.
   const [planBasis, setPlanBasis] =
     useState<{ params: PlacementSettings | null; weights: Record<string, number>;
-               datasetVersion: string } | null>(null);
+               datasetVersion: string; nAlternatives?: number } | null>(null);
+  // What-if 대시보드 아래쪽 하위 탭(2026-10-18 개편)과 "편성 기록 내보내기" 창
+  const [subTab, setSubTab] = useState<SubTab>("roster");
+  const [exportOpen, setExportOpen] = useState(false);
+  // 편성 기록을 열었고 그 기록에 운영 중 K 비교가 있으면, 운영 중 편성 탭이 기록 당시 설정으로 묻는다(저장 결과가 바로 나오게).
+  const [recordOperating, setRecordOperating] = useState<PlacementSettings | null>(null);
   // 관리자 토큰(K9): 서버가 TEAMWEAVER_ADMIN_TOKEN을 요구할 때만 입력받는다. 메모리에만 둔다.
   // 관리자 상태(K14). 토큰만 설정된 서버(스크립트용)면 예전처럼 토큰 입력칸을 쓴다.
   const [admin, setAdmin] = useState<AdminStatus | null>(null);
@@ -145,7 +157,7 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null);
   // 요청한 대안 중 조건을 만족해 나온 수(C2). 모자라면 "대안 없음" 안내를 플랜 카드 아래에 둔다.
   const [altShortfall, setAltShortfall] =
-    useState<{ found: number; requested: number; solverFailed: boolean; precomputed: boolean } | null>(null);
+    useState<{ found: number; requested: number; solverFailed: boolean; precomputed: boolean; recorded?: boolean } | null>(null);
   // 적용 요청의 세대. 플랜 전환·재실행·되돌리기·선택 변경이면 올려, 늦게 온 응답(성공·409
   // 모두)을 버리고 버튼 잠금도 바로 푼다 -- 늦은 409가 더 최신 실행의 플랜을 지우지 않게.
   const applyGen = useRef(0);
@@ -173,7 +185,7 @@ export default function App() {
 
   // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
   useEffect(() => {
-    if (tab === "settings" || tab === "data") refreshAdmin();
+    if (tab === "settings" || tab === "data" || tab === "records") refreshAdmin();
   }, [tab]);
 
   /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
@@ -196,6 +208,8 @@ export default function App() {
     setPlanBasis(null);
     setWeights({});
     setRunning(false);
+    setRecordOperating(null);
+    setSubTab("roster");
     // 인원이 바뀌면 자동 계산 시간도 바뀐다 -- 설정 탭이 이전 데이터 기준 값을 보이지 않게 다시 읽는다(리뷰 S2).
     fetchSettings().then(setSettings).catch(() => {});
     try {
@@ -222,8 +236,9 @@ export default function App() {
     }
   }
 
-  /** fresh: 캐시·미리 계산 결과를 쓰지 않고 다시 푼다("다시 계산"). 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다. */
-  async function run(fresh?: unknown) {
+  /** fresh: 캐시·저장 결과를 쓰지 않고 다시 푼다("다시 계산"). 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다.
+   *  record: 편성 기록을 열었을 때 -- 기록의 요청(가중치·설정·대안 수) 그대로 보내면 서버가 기록의 편성안을 캐시에서 바로 낸다. */
+  async function run(fresh?: unknown, record?: { request: RecordRequest; datasetVersion: string }) {
     const recompute = fresh === true;
     const gen = ++runGen.current;
     runAbort.current?.abort();                  // 이전 실행이 아직 돌고 있으면 끊는다(서버가 중단)
@@ -257,14 +272,18 @@ export default function App() {
     } catch (e) {
       setSettingsError(String(e));
     }
-    if (gen !== runGen.current || !meta) return;   // 설정을 읽는 사이 데이터셋이 바뀌었다
-    const datasetVersion = meta.dataset_version;
-    setPlanBasis({ params, weights, datasetVersion });
+    if (record) params = record.request.milp_params as unknown as PlacementSettings;   // 기록 당시 설정
+    if (gen !== runGen.current || (!meta && !record)) return;   // 설정을 읽는 사이 데이터셋이 바뀌었다
+    const datasetVersion = record ? record.datasetVersion : meta!.dataset_version;
+    const useWeights = record ? record.request.weights : weights;
+    setPlanBasis({ params, weights: useWeights, datasetVersion,
+                   nAlternatives: record ? record.request.n_alternatives : 3 });
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
       for await (const ev of streamOptimize(
-          { weights, dataset_version: datasetVersion, ...(recompute ? { fresh: true } : {}),
+          { weights: useWeights, dataset_version: datasetVersion, ...(recompute ? { fresh: true } : {}),
+            ...(record ? { n_alternatives: record.request.n_alternatives } : {}),
             ...(params ? { milp_params: { ...params } } : {}) }, abort.signal)) {
         if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
         if (ev.event === "start") {
@@ -284,7 +303,8 @@ export default function App() {
               : `계산을 멈췄다. 받은 안 ${ev.data.count}개 — 멈출 때 계산 중이던 안은 그때까지 찾은 가장 좋은 배치다(최선 증명 전).`);
           } else if (requested !== undefined && found < requested)
             setAltShortfall({ found, requested, solverFailed: ev.data.stop_reason === "time_limit",
-                              precomputed: ev.data.precomputed_at != null });
+                              precomputed: ev.data.precomputed_at != null,
+                              recorded: !!(ev.data as { precomputed_label?: string | null }).precomputed_label });
         } else if (ev.event === "error") {
           setError(ev.data.message);
         }
@@ -299,6 +319,39 @@ export default function App() {
         setStopping(false);
       }
     }
+  }
+
+  /** 편성 기록을 열었다: 데이터가 바뀌었으니 화면을 새 데이터로 다시 불러오고, 기록의 요청 그대로 계산을 요청한다 --
+   *  서버가 기록의 편성안을 캐시에 넣어 두었으므로 바로 나온다(서명도 그 경로가 붙인다). */
+  async function recordOpened(res: OpenRecordResult) {
+    await datasetSwitched(res.dataset);
+    setWeights(res.request.weights);
+    setRecordOperating((res.operating_params as unknown as PlacementSettings | null) ?? null);
+    setTab("whatif");
+    await run(false, { request: res.request, datasetVersion: res.dataset.version });
+  }
+
+  async function downloadPdf() {
+    if (!current) return;
+    setPdfBusy(true);
+    try {
+      await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null,
+                           planBasis?.datasetVersion ?? null,
+                           edit && original
+                             ? { base: original.entries,
+                                 swaps: edit.history.map(stepBody) }
+                             : null,
+                           { weights: planBasis?.weights ?? weights,
+                             planToken: original?.plan_token ?? null,
+                             // 원안의 서명된 계산 신뢰도 -- PDF 배지(교체를 적용했으면 "원안 기준"으로 찍힌다)
+                             evidence: original ? evidenceOf(original) : null },
+                           pdfJustify && kgData);
+    }
+    catch (e) {
+      if (e instanceof DatasetChangedError) await externalSwitch();
+      else setError(String(e));
+    }
+    finally { setPdfBusy(false); }
   }
 
   /** "계산 멈추기": 지금 푸는 안은 그때까지의 해로 끝내고 다음 대안은 시작하지 않는다. 결과는 같은 스트림으로 온다. */
@@ -573,64 +626,49 @@ export default function App() {
   // 화면·교체 검토·PDF가 쓰는 명단은 적용한 교체가 있으면 그 결과다(K10).
   const shown = (p: PlanEvent) => edits[p.label]?.stack.at(-1)?.plan ?? p;
   // 지식 그래프(인사팀 소명)는 CSV 묶음 데이터(업로드·시연 데이터)에서만 만들 수 있다
-  const kgData = dataset?.source === "upload" || dataset?.source === "demo-bundle";
+  const kgData = dataset?.source === "upload" || dataset?.source === "demo-bundle" || dataset?.source === "record";
   const original = plans.find((p) => p.label === selected) ?? null;
   const current = original ? shown(original) : null;
   const edit = selected ? edits[selected] : undefined;
 
+  const pageContext = tab === "whatif" && dataset
+    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건`
+    : undefined;
+  const showResults = plans.length > 0 || running;
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">TeamWeaver</h1>
-            <p className="text-sm text-slate-500">지식 그래프 · LLM 기반 지능형 인력 배치</p>
-          </div>
-          <div className="text-sm">
-            {admin?.login_required && (admin.logged_in ? (
-              <span className="text-slate-600">
-                관리자{" · "}
-                <button className="underline" onClick={async () => {
-                  try { await adminLogout(); } catch (e) { setError(String(e)); }
-                  setLoginReason(null); refreshAdmin();
-                }}>로그아웃</button>
-              </span>
-            ) : (
-              <button className="rounded-md border border-slate-300 px-3 py-1 text-slate-700"
-                      onClick={() => setTab("settings")}>관리자 로그인</button>
-            ))}
-            {admin && !admin.protected && (
-              <span role="status" className="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800">
-                관리자 비밀번호 미설정 — 누구나 배치 설정·데이터를 바꿀 수 있다
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-canvas md:flex-row">
+      <Sidebar tab={tab} onTab={setTab} dataset={dataset} user={admin?.user ?? null}
+               onLogout={admin?.login_required && admin.logged_in ? () => {
+                 adminLogout().catch(() => {}).finally(() => (onLoggedOut ? onLoggedOut() : window.location.reload()));
+               } : null} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PageHeader tab={tab} context={pageContext} actions={tab === "whatif" && current ? (
+          <>
+            <button className="btn" onClick={() => setExportOpen(true)}>편성 기록 내보내기</button>
+            <button className="btn-primary" disabled={pdfBusy} onClick={() => void downloadPdf()}>
+              {pdfBusy ? (pdfJustify && kgData ? "PDF 생성 중…(사업별 소명 포함, 1~2분)" : "PDF 생성 중…") : "PDF 내려받기"}
+            </button>
+          </>
+        ) : undefined} />
+        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records") && (
+          <p role="status" className="mx-4 mt-4 rounded-md bg-amber-50 px-4 py-2 text-[13px] text-amber-700 md:mx-8">
+            기본 관리자 계정(admin)과 기본 비밀번호로 들어와 있습니다. 다른 사람이 접속하는 주소로 쓰려면 서버의
+            TEAMWEAVER_ADMIN_PASSWORD_HASH로 비밀번호를 바꾸세요.
+          </p>
+        )}
+        {admin && !admin.protected && (
+          <p role="status" className="mx-4 mt-4 rounded-md bg-amber-50 px-4 py-2 text-[13px] text-amber-700 md:mx-8">
+            관리자 비밀번호 미설정(로그인이 꺼진 서버) — 누구나 배치 설정·데이터를 바꿀 수 있습니다.
+          </p>
+        )}
 
-      <nav className="flex gap-1 border-b border-slate-200 bg-white px-8">
-        {([["req", "요건 설정"], ["whatif", "What-if 대시보드"], ["operating", "운영 중 편성"],
-           ["skills", "조직 기술 지도"], ["settings", "배치 설정"], ["data", "데이터"]] as const)
-          .map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`-mb-px border-b-2 px-4 py-3 text-sm font-medium ${
-              tab === id
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      <main className="p-8">
+      <main className="flex-1 px-4 py-6 md:px-8">
         {/* 운영 중 편성 탭은 다른 탭에 가도 사라지지 않게 늘 띄워 두고 숨긴다 -- 35초짜리 비교 결과를 잃지 않게(리뷰) */}
         {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
-        <div className={tab === "operating" ? "" : "hidden"}>
-          <OperatingTab meta={meta} params={settings ? effectiveSettings(settings) : null}
+        <div className={tab === "pipeline" || tab === "emergency" ? "" : "hidden"}>
+          <OperatingTab meta={meta} params={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
+                        focus={tab === "emergency" ? "reinforce" : "new"} onShowReinforce={() => setTab("emergency")}
                         onDatasetChanged={() => { void externalSwitch(); }} />
         </div>
         {error && (
@@ -645,17 +683,24 @@ export default function App() {
         )}
         {/* 편집 중에 세션이 끝났으면(loginReason) 탭 내용을 언마운트하지 않고 위에 로그인을 띄운다 --
             설정 폼에 입력하던 값이 사라지지 않게. 처음 여는 경우엔 로그인 화면이 탭을 대신한다. */}
-        {(tab === "data" || tab === "settings") && needLogin && loginReason && (
+        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && loginReason && (
           <div className="mb-6">
             <AdminLogin reason={loginReason} onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
           </div>
         )}
-        {(tab === "data" || tab === "settings") && needLogin && !loginReason ? (
+        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && !loginReason ? (
           <AdminLogin onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+        ) : tab === "records" ? (
+          <div className="max-w-[1080px] space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
+            <RecordsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} onOpened={recordOpened}
+                          onExportCurrent={current ? () => setExportOpen(true) : null}
+                          activeRecordId={dataset?.record_id ?? null} />
+          </div>
         ) : tab === "data" ? (
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
-            <DatasetTab active={dataset} onSwitched={datasetSwitched}
+            <DatasetTab active={dataset} onSwitched={datasetSwitched} showRecords={false}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
           </div>
         ) : tab === "settings" ? (
@@ -683,22 +728,24 @@ export default function App() {
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
             </p>
           )
-        ) : tab === "operating" ? null : tab === "skills" ? (
+        ) : tab === "pipeline" || tab === "emergency" ? null : tab === "skills" ? (
           <SkillMapTab datasetVersion={meta.dataset_version} onDatasetChanged={() => void externalSwitch()} />
-        ) : tab === "req" ? (
+        ) : tab === "annual" ? (
           <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
                            onRun={run} running={running} operating={dataset?.scenario === "operating"}
                            onStop={runId ? () => void stopRunning() : null} stopping={stopping}
-                           onOpenOperating={() => setTab("operating")} />
+                           onOpenOperating={() => setTab("pipeline")} />
+        ) : !showResults ? (
+          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {plans.length > 0 && planBasis && settings && (
               planBasis.params === null
               || describeChanges(planBasis.params, effectiveSettings(settings)).length > 0) && (
-              <p role="status" className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2
+              <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2
                                          text-sm text-amber-800">
                 {planBasis.params
-                  ? `이 결과는 이전 설정으로 계산됐다(바뀐 설정: ${
+                  ? `이 결과는 지금과 다른 설정으로 계산됐다(바뀐 설정: ${
                       describeChanges(planBasis.params, effectiveSettings(settings)).join(", ")}). `
                   : "이 결과는 배치 설정 없이 서버 모델 기본값으로 계산됐다. "}
                 현재 설정을 반영하려면 요건 설정 탭에서 다시 실행할 것.
@@ -707,68 +754,8 @@ export default function App() {
             )}
             {!running && plans.some((p) => p.cached) && (
               <PrecomputedNotice at={plans.find((p) => p.precomputed_at != null)?.precomputed_at ?? null}
+                                 label={plans.find((p) => p.precomputed_label)?.precomputed_label ?? null}
                                  onRecompute={() => void run(true)} />
-            )}
-            <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan}
-                       editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))} />
-            {altShortfall && (
-              <p className="mt-2 text-xs text-slate-500">
-                {altShortfall.solverFailed
-                  ? altShortfall.precomputed
-                    // 미리 계산 결과는 다시 실행해도 같은 결과가 나온다 -- "다시 계산"만 새로 푼다(리뷰 S1)
-                    ? `미리 계산 때 대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 위의 '다시 계산'으로 새로 풀면 더 나올 수 있다.`
-                    : `대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 다시 실행하면 더 나올 수 있다.`
-                  : <>
-                      {altShortfall.found === 0
-                        ? "조건을 만족하는 대안 없음"
-                        : `조건을 만족하는 대안 ${altShortfall.found}개(요청 ${altShortfall.requested}개)`}
-                      {" — 대안은 Plan A와 구성이 달라야 하고, 품질이 A의 95% 이상이며, 미충원이 A보다 많지 않아야 한다."}
-                    </>}
-              </p>
-            )}
-            {current && (
-              <button
-                disabled={pdfBusy}
-                onClick={async () => {
-                  setPdfBusy(true);
-                  try {
-                    await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null,
-                                         planBasis?.datasetVersion ?? null,
-                                         edit && original
-                                           ? { base: original.entries,
-                                               swaps: edit.history.map(stepBody) }
-                                           : null,
-                                         { weights: planBasis?.weights ?? weights,
-                                           planToken: original?.plan_token ?? null,
-                                           // 원안의 서명된 계산 신뢰도 -- PDF 배지(교체를 적용했으면 "원안 기준"으로 찍힌다)
-                                           evidence: original ? evidenceOf(original) : null },
-                                         pdfJustify && kgData);
-                  }
-                  catch (e) {
-                    if (e instanceof DatasetChangedError) await externalSwitch();
-                    else setError(String(e));
-                  }
-                  finally { setPdfBusy(false); }
-                }}
-                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm
-                           font-medium text-slate-700 hover:bg-slate-50
-                           disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                {pdfBusy ? (pdfJustify && kgData ? "PDF 생성 중…(사업별 소명 포함, 1~2분)" : "PDF 생성 중…") : "PDF 내려받기"}
-              </button>
-            )}
-            {current && kgData && (
-              <label className="ml-3 inline-flex items-center gap-1.5 text-xs text-slate-600">
-                <input type="checkbox" checked={pdfJustify} onChange={(e) => setPdfJustify(e.target.checked)} />
-                PDF에 사업별 인사팀 소명 포함
-              </label>
-            )}
-            {current && kgData && planBasis && (
-              <JustificationPanel
-                meta={meta} datasetVersion={planBasis.datasetVersion} entries={current.entries}
-                applied={edit && original ? { base: original.entries, steps: edit.history.map(stepBody) } : null}
-                weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
-                planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
             )}
             {stoppedNote && (
               <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
@@ -789,15 +776,25 @@ export default function App() {
                 )}
               </p>
             )}
+            <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan}
+                       editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))} />
+            {altShortfall && (
+              <p className="mt-2 text-xs text-slate-500">
+                {altShortfall.solverFailed
+                  ? altShortfall.precomputed
+                    // 저장 결과는 다시 실행해도 같은 결과가 나온다 -- "다시 계산"만 새로 푼다(리뷰 S1)
+                    ? `${altShortfall.recorded ? "기록 당시" : "미리 계산 때"} 대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 위의 '다시 계산'으로 새로 풀면 더 나올 수 있다.`
+                    : `대안 계산이 시간 안에 끝나지 않아 ${altShortfall.found}개만 냈다(요청 ${altShortfall.requested}개). 다시 실행하면 더 나올 수 있다.`
+                  : <>
+                      {altShortfall.found === 0
+                        ? "조건을 만족하는 대안 없음"
+                        : `조건을 만족하는 대안 ${altShortfall.found}개(요청 ${altShortfall.requested}개)`}
+                      {" — 대안은 Plan A와 구성이 달라야 하고, 품질이 A의 95% 이상이며, 미충원이 A보다 많지 않아야 한다."}
+                    </>}
+              </p>
+            )}
             {notice && (
               <p role="status" className="rounded-md bg-indigo-50 px-4 py-2 text-sm text-indigo-900">{notice}</p>
-            )}
-            {current && (
-              <BaselineCard key={`${current.label}-${edit?.history.length ?? 0}`} entries={current.entries}
-                            onDatasetChanged={() => { void externalSwitch(); }}
-                            load={(e) => postBaseline({ dataset_version: meta.dataset_version,
-                                                        milp_params: planBasis?.params ?? null }, e,
-                                                      planBasis?.weights ?? weights)} />
             )}
             {current && edit && (
               <AppliedPanel label={current.label} history={edit.history}
@@ -805,32 +802,75 @@ export default function App() {
                             people={meta.people} onUndo={undoApply} onReset={resetApply} />
             )}
             {current && (
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-6">
+              <>
+                <SubTabs value={subTab} onChange={setSubTab} showJustify={kgData && !!planBasis}
+                         right={kgData ? (
+                           <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                             <input type="checkbox" checked={pdfJustify} onChange={(e) => setPdfJustify(e.target.checked)} />
+                             PDF에 사업별 인사팀 소명 포함
+                           </label>
+                         ) : undefined} />
+                <div className={subTab === "roster" ? "" : "hidden"}>
+                  <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
+                                   projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
+                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} />
+                </div>
+                <div className={subTab === "swap" ? "grid gap-5 lg:grid-cols-2" : "hidden"}>
+                  <div className="space-y-5">
+                    <SwapControl key={`${current.label}-${edit?.history.length ?? 0}`}
+                                 people={meta.people} onSelectionChange={selectionChanged}
+                                 entries={current.entries}
+                                 onSwap={runSwap} busy={whatifBusy} />
+                    <BriefingPanel result={whatif} loading={whatifBusy}
+                                   nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
+                    <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap
+                                    ? `${lastSwap.out_person_id}-${lastSwap.in_person_id}` : ""}`}
+                                  result={whatifBusy ? null : whatif} swap={lastSwap}
+                                  nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id}
+                                  busy={applyBusy} onApply={applyReviewedSwap} />
+                  </div>
                   <NetworkGraph people={meta.people} coworks={meta.coworks}
                                 entries={current.entries} highlight={highlighted} />
-                  {/* key로 remount -- 플랜이 바뀌면 이전 플랜에서 고른
-                      교체 대상/투입이 남아 있으면 안 된다. */}
-                  <SwapControl key={`${current.label}-${edit?.history.length ?? 0}`}
-                               people={meta.people} onSelectionChange={selectionChanged}
-                               entries={current.entries}
-                               onSwap={runSwap} busy={whatifBusy} />
-                  <BriefingPanel result={whatif} loading={whatifBusy}
-                                 nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
-                  <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap
-                                  ? `${lastSwap.out_person_id}-${lastSwap.in_person_id}` : ""}`}
-                                result={whatifBusy ? null : whatif} swap={lastSwap}
-                                nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id}
-                                busy={applyBusy} onApply={applyReviewedSwap} />
                 </div>
-                <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
-                                 projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
-                                 minAlloc={planBasis?.params?.min_alloc ?? 0.2} />
-              </div>
+                {kgData && planBasis && (
+                  <div className={subTab === "justify" ? "" : "hidden"}>
+                    <JustificationPanel
+                      meta={meta} datasetVersion={planBasis.datasetVersion} entries={current.entries}
+                      applied={edit && original ? { base: original.entries, steps: edit.history.map(stepBody) } : null}
+                      weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
+                      planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
+                  </div>
+                )}
+                <div className={subTab === "baseline" ? "" : "hidden"}>
+                  <BaselineCard key={`${current.label}-${edit?.history.length ?? 0}`} entries={current.entries}
+                                onDatasetChanged={() => { void externalSwitch(); }}
+                                load={(e) => postBaseline({ dataset_version: meta.dataset_version,
+                                                            milp_params: planBasis?.params ?? null }, e,
+                                                          planBasis?.weights ?? weights)} />
+                </div>
+              </>
             )}
           </div>
         )}
       </main>
+      </div>
+      {exportOpen && current && planBasis && (
+        <ExportRecordDialog
+          editedCount={Object.values(edits).reduce((n, e) => n + e.stack.length, 0)}
+          defaultTitle={`${datasetLabel(dataset)} 편성 · ${new Date().toISOString().slice(0, 10)}`}
+          onClose={() => setExportOpen(false)}
+          onExport={async (title) => {
+            try {
+              await exportRecord({ title, weights: planBasis.weights,
+                                   milp_params: planBasis.params as unknown as Record<string, unknown> | null,
+                                   n_alternatives: planBasis.nAlternatives ?? 3,
+                                   dataset_version: planBasis.datasetVersion, plans });
+            } catch (e) {
+              if (e instanceof DatasetChangedError) { setExportOpen(false); await externalSwitch(); return; }
+              throw e;
+            }
+          }} />
+      )}
     </div>
   );
 }
