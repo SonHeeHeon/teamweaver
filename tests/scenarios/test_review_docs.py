@@ -50,6 +50,7 @@ def test_confirm_lists_target_and_doc_has_locked_move_facts(yearend):
         loss = next(f for f in doc["facts"] if f["kind"] == "MOVE_LOSS")
         assert loss["adverse"] is True and SRC in loss["text"]
         assert "NOT_CALIBRATED" in doc["disclaimer"]
+        assert doc["milp_params"]["min_alloc"] > 0         # 만들 때의 평가 설정을 남긴다(초안도 같은 기준, Codex 리뷰)
         assert not any("크다" in f["text"] or "더 낫" in f["text"] for f in doc["facts"])   # 결론은 서버가 쓰지 않는다
         # 두 번 만들면 같은 자료(편집 보존)
         assert _create(c, v)["created_at"] == doc["created_at"]

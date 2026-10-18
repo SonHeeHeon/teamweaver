@@ -264,7 +264,9 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]
     return {"confirm": confirm, "project_id": project_id, "project_name": project.name, "revision": 0, "created_at": now(),
-            "facts": facts, "moves": moves, "team": list(inp.team), "names": dict(sorted(names.items())),
+            "facts": facts, "moves": moves, "team": list(inp.team),
+            # 만들 때의 평가 설정 -- AI 초안도 같은 기준으로 쓴다(설정을 바꾼 뒤 초안이 잠긴 사실과 다르게 쓰였다, Codex 리뷰)
+            "milp_params": params.model_dump(mode="json"), "names": dict(sorted(names.items())),
             "disclaimer": DISCLAIMER, "body_ai": None, "body_ai_method": None, "body": None, "notes": [], "judgments": {},
             "situation_memo": "", "status": "draft", "exported_at": None, "exported_facts": None}
 

@@ -88,7 +88,8 @@ describe("NewProjectsScreen", () => {
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: [], removed: [], changed: [] } });
     const changed = vi.fn();
     const review = vi.fn();
-    render(<NewProjectsScreen milpParams={null} onDatasetChanged={changed} onReviewDoc={review} />);
+    // App은 확정 응답 뒤에야 새 판을 받는다 -- 그 사이 옛 판("v0")을 들고 있어도 버튼이 남아야 한다(Codex 리뷰)
+    const { rerender } = render(<NewProjectsScreen milpParams={null} datasetVersion="v0" onDatasetChanged={changed} onReviewDoc={review} />);
     expect(await screen.findByText("박지훈")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "박지훈 넣기" }));
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
@@ -106,6 +107,11 @@ describe("NewProjectsScreen", () => {
     // 확정 뒤 인사팀 검토 자료로(claude-a 2026-10-19): 확정한 판과 그 사업
     fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
     expect(review).toHaveBeenCalledWith(WS.dataset_version, "J014");
+    rerender(<NewProjectsScreen milpParams={null} datasetVersion={WS.dataset_version} onDatasetChanged={changed} onReviewDoc={review} />);
+    expect(screen.getByRole("button", { name: "인사팀 검토 자료 만들기" })).toBeInTheDocument();
+    // 맞춰진 뒤 옛 판으로 돌아가면(되돌리기) 버튼은 사라진다(Codex 리뷰 2라운드)
+    rerender(<NewProjectsScreen milpParams={null} datasetVersion="v0" onDatasetChanged={changed} onReviewDoc={review} />);
+    await waitFor(() => expect(screen.queryByRole("button", { name: "인사팀 검토 자료 만들기" })).not.toBeInTheDocument());
   });
 
   it("진행 사업의 사람 한 명을 고정한다", async () => {

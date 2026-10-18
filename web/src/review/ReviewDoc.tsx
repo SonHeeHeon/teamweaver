@@ -126,7 +126,8 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
   const [bodyText, setBodyText] = useState("");
   useEffect(() => { setD(draftOf(doc)); setEditingBody(false); }, [doc]);
   const can = editable && !doc.reverted;
-  const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(doc));
+  // 본문 편집창이 열려 있으면(아직 "본문 반영" 전) 그것도 저장 안 한 변경이다 -- PDF·AI가 응답으로 편집을 덮지 않게(Codex 리뷰)
+  const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(doc)) || editingBody;
   const name = (id: string) => doc.names[id] ?? id;
   const emergency = doc.confirm.kind === "emergency";
   const notesFor = (key: string) => d.notes.filter((n) => n.key === key);
@@ -298,7 +299,8 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
       {can && (
         <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-paper py-3">
           {dirty && <span className="text-[12.5px] text-amber-700">저장하지 않은 변경이 있습니다</span>}
-          <button type="button" className="btn-primary" disabled={busy || !dirty || editingBody} onClick={() => void save()}>저장</button>
+          <button type="button" className="btn-primary" disabled={busy || editingBody || JSON.stringify(d) === JSON.stringify(draftOf(doc))}
+                  onClick={() => void save()}>저장</button>
           {onPdf && <button type="button" className="btn" disabled={busy || dirty} title={dirty ? "먼저 저장합니다" : undefined}
                             onClick={() => void onPdf()}>PDF 내보내기</button>}
         </div>

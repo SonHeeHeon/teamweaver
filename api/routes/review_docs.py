@@ -241,7 +241,8 @@ def _draft(request: Request, version: str, project_id: str, client, force: bool)
         raise HTTPException(status_code=409, detail="이후 다른 변경이 있어 초안을 새로 만들 수 없다(이미 쓴 본문은 고칠 수 있다).")
     kg = dataset.knowledge_graph()
     _, after = confirm_entries(_history(), doc["confirm"], dataset.graph)
-    params = dataset_params(request.app, dataset)
+    from core.optimize.milp import MilpParams
+    params = MilpParams(**doc["milp_params"]) if doc.get("milp_params") else dataset_params(request.app, dataset)
     eng = ScoringEngine(dataset.graph)
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
     inp = build_input(kg, project_id, after, dataset.graph, S, C, params)
@@ -283,6 +284,9 @@ async def pdf_review_doc(version: str, project_id: str, request: Request) -> Res
     from api.routes.report import render_review_pdf
     payload = {"kind": "review", "doc": _names_view(doc, history=state, active=False)}
     pdf = await render_review_pdf(request, payload)
+    _, state = _load(version, project_id)               # 그리는 동안 되돌렸으면 내보내지 않는다(Codex 리뷰)
+    if state == "reverted":
+        raise HTTPException(status_code=409, detail="PDF를 만드는 동안 이 확정이 되돌려졌다 -- 내보내지 않았다.")
 
     def mark(d: dict) -> None:
         d["status"], d["exported_at"], d["exported_facts"] = "exported", now(), d["facts"]

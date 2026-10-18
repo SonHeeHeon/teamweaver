@@ -18,9 +18,12 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
   /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19 -- 사용자 결정: 긴급 투입도 자료) */
   onReviewDoc?: (version: string, projectId: string | null) => void;
 }) {
-  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null } | null>(null);
+  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null; seen: string | null } | null>(null);
   useEffect(() => {                                  // 판이 바뀌면 옛 확정의 버튼은 지운다(리뷰 P3)
-    if (confirmed && datasetVersion && datasetVersion !== confirmed.version) setConfirmed(null);
+    if (!confirmed || !datasetVersion) return;
+    // 옛 판(seen) 예외는 새 판과 한 번 맞춰질 때까지만 -- 그 뒤 되돌림 등으로 옛 판에 돌아가면 버튼을 지운다(Codex 리뷰 2라운드)
+    if (datasetVersion === confirmed.version) { if (confirmed.seen !== null) setConfirmed({ ...confirmed, seen: null }); }
+    else if (datasetVersion !== confirmed.seen) setConfirmed(null);
   }, [datasetVersion, confirmed]);
   const [ws, setWs] = useState<Workspace | null>(null);
   const [projectId, setProjectId] = useState<string>("");
@@ -107,7 +110,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
       const res = await postApply(plan.dataset_version, { entries: plan.best.entries, source: "emergency",
         note: `${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, ...hint });
       setWs(res.workspace);
-      setConfirmed({ version: res.workspace.dataset_version, projectId: plan.project_id });
+      setConfirmed({ version: res.workspace.dataset_version, projectId: plan.project_id, seen: datasetVersion ?? null });
       setPlan(null);
       setNotice(`${project?.name ?? projectId}에 ${plan.best.added?.map((a) => a.name).join(", ")}을(를) 넣었다(사업 끝까지).`);
       onDatasetChanged();

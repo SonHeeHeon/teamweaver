@@ -58,10 +58,14 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null } | null>(null);
-  // 다른 화면에서 판이 바뀌면 옛 확정의 버튼은 지운다(이미 만든 자료는 "검토 자료" 목록에서 연다, 리뷰 P3)
+  const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null; seen: string | null } | null>(null);
+  // 다른 화면에서 판이 바뀌면 옛 확정의 버튼은 지운다(이미 만든 자료는 "검토 자료" 목록에서 연다, 리뷰 P3).
+  // 확정 직후에는 App이 아직 옛 판(seen)을 들고 있다 -- 그 값은 "바뀜"이 아니다(Codex 리뷰: 버튼이 바로 사라졌다)
   useEffect(() => {
-    if (confirmed && datasetVersion && datasetVersion !== confirmed.version) setConfirmed(null);
+    if (!confirmed || !datasetVersion) return;
+    // 옛 판(seen) 예외는 새 판과 한 번 맞춰질 때까지만 -- 그 뒤 되돌림 등으로 옛 판에 돌아가면 버튼을 지운다(Codex 리뷰 2라운드)
+    if (datasetVersion === confirmed.version) { if (confirmed.seen !== null) setConfirmed({ ...confirmed, seen: null }); }
+    else if (datasetVersion !== confirmed.seen) setConfirmed(null);
   }, [datasetVersion, confirmed]);
   const [rows, setRows] = useState<SignedRow[]>([]);
   // 자동 편성 결과가 어느 판·설정으로 계산됐는지 -- 확정·소명 요청은 이 값을 쓴다(Codex 리뷰 2026-10-19: 판이 바뀐 뒤 옛 명단이
@@ -116,7 +120,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     try {
       const res = await run();
       setWs(res.workspace);
-      if (review) setConfirmed({ version: res.workspace.dataset_version, projectId: review.projectId });
+      if (review) setConfirmed({ version: res.workspace.dataset_version, projectId: review.projectId, seen: datasetVersion ?? null });
       setRows([]);
       setAutoState("idle");
       setNotice(done);

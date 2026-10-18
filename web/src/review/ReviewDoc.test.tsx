@@ -85,6 +85,7 @@ describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
     render(<ReviewDoc doc={DOC} editable onSave={onSave} onPdf={vi.fn()} />);
     expect(screen.getByRole("button", { name: "PDF 내보내기" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "본문 고치기" }));
+    expect(screen.getByRole("button", { name: "PDF 내보내기" })).toBeDisabled();   // 편집창이 열려 있으면 잠김(Codex 리뷰)
     fireEvent.change(screen.getByLabelText("본문"), { target: { value: "완전히 새로 쓴 사유." } });
     fireEvent.click(screen.getByRole("button", { name: "본문 반영" }));
     expect(screen.getByRole("button", { name: "PDF 내보내기" })).toBeDisabled();

@@ -66,13 +66,14 @@ def main() -> None:
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "manual",
                                                  "note": f"{pid} 손 편성"})
         r.raise_for_status()
-        v1 = r.json()["workspace"]["dataset_version"]
-        out["manual_confirm"] = {"people": [x["name"] for x in chosen], "changes": r.json()["changes"]}
+        applied = r.json()
+        v1 = applied["workspace"]["dataset_version"]
+        out["manual_confirm"] = {"people": [x["name"] for x in chosen], "changes": applied["changes"]}
         r = c.post(f"/api/review-docs/{v1}/{pid}")
         r.raise_for_status()
         doc = r.json()
         out["review_new"] = _brief_doc(doc)
-        ws = r.json()["workspace"]
+        ws = applied["workspace"]                    # 확정 응답(바로 위 r은 검토 자료 응답이다, Codex 리뷰)
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": "J007", "n": 1,
                                                 "pull_budget": 1, "note": "장애 대응"})
         r.raise_for_status()
