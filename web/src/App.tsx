@@ -37,6 +37,7 @@ import { EmergencyScreen } from "./scenarios/EmergencyScreen";
 import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
 import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
@@ -651,8 +652,9 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   const current = original ? shown(original) : null;
   const edit = selected ? edits[selected] : undefined;
 
+  const horizon = meta ? horizonRange(meta.horizon_start, meta.horizon_months ?? 6) : "";
   const pageContext = tab === "whatif" && dataset
-    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건`
+    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건${horizon ? ` · 계획 기간 ${horizon}` : ""}`
     : undefined;
   const showResults = plans.length > 0 || running;
 
@@ -835,7 +837,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {current && edit && (
               <AppliedPanel label={current.label} history={edit.history}
                             violations={edit.stack.at(-1)?.violations ?? []}
-                            people={meta.people} onUndo={undoApply} onReset={resetApply} />
+                            people={meta.people} horizonStart={meta.horizon_start} onUndo={undoApply} onReset={resetApply} />
             )}
             {current && (
               <>
@@ -849,14 +851,15 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                 <div className={subTab === "roster" ? "" : "hidden"}>
                   <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
                                    projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
-                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} />
+                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start} />
                 </div>
                 <div className={subTab === "swap" ? "grid gap-5 lg:grid-cols-2" : "hidden"}>
                   <div className="space-y-5">
                     <SwapControl key={`${current.label}-${edit?.history.length ?? 0}`}
                                  people={meta.people} onSelectionChange={selectionChanged}
                                  entries={current.entries}
-                                 onSwap={runSwap} busy={whatifBusy} />
+                                 onSwap={runSwap} busy={whatifBusy}
+                                 projects={meta.projects} horizonStart={meta.horizon_start} />
                     <BriefingPanel result={whatif} loading={whatifBusy}
                                    nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
                     <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap

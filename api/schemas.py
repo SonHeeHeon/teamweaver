@@ -1,5 +1,6 @@
 from typing import Annotated, Literal, Union
 
+from core.domain.models import MAX_HORIZON_MONTHS
 from pydantic import (BaseModel, ConfigDict, Discriminator, Field, Tag, field_validator, model_serializer,
                       model_validator)
 
@@ -25,6 +26,9 @@ class PersonOut(BaseModel):
     # 하위 기술 경력에서 인정된 기술(claude-a 계약 Person.skill_credit, 사용자 결정 2026-10-11 "구분해서 표시").
     # {기술: {source, months, depth, own_months}} -- 인정분이 경력을 정한 기술만, 없으면 빈 사전
     skill_credit: dict[str, dict] = {}
+    # 계획 달마다 가용률(0~1)·휴직 정보(2026-10-19): 화면이 그 달이 걸린 사업에 투입할 수 없는 사람을 비활성화하고 사유를 보인다
+    availability: list[float] = []
+    leave: dict | None = None
 
 
 class ProjectOut(BaseModel):
@@ -54,6 +58,9 @@ class MetaResponse(BaseModel):
     # 이 meta가 나온 활성 데이터셋(K9). 화면은 계산 요청에 이 값을 실어 보내고, 서버는
     # 그사이 데이터셋이 바뀌었으면 409로 거부한다(옛 이름·명단과 새 결과가 섞이지 않게).
     dataset_version: str
+    # 계획 기간(2026-10-19 계획기간 1년 확장): 달 순번 0..n-1이 실제로 어느 달인지. 시작 달은 CSV 묶음에만 있다(fixture는 None)
+    horizon_start: str | None = None
+    horizon_months: int = 6
 
 
 class EvidenceOut(BaseModel):
@@ -215,8 +222,8 @@ class EntryIn(BaseModel):
     person_id: str
     project_id: str
     alloc: float = Field(ge=0.0, le=1.0)
-    # 월별 투입률(키 = 프로젝트 진행 달 0~5). 없으면 모든 진행 달이 alloc(core/optimize/types.AssignEntry와 같은 뜻).
-    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] | None = None
+    # 월별 투입률(키 = 프로젝트 진행 달 0~11 -- 계획 기간 6|12개월, 실제 사업 달과 맞는지는 평가기가 본다). 없으면 모든 진행 달이 alloc(core/optimize/types.AssignEntry와 같은 뜻).
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=MAX_HORIZON_MONTHS - 1)], Annotated[float, Field(ge=0.0, le=1.0)]] | None = None
 
     @field_validator("monthly_alloc")
     @classmethod
@@ -248,12 +255,12 @@ class SwapIn(BaseModel):
 
 class AllocChangeIn(BaseModel):
     """적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정, 2026-10-05).
-    monthly_alloc은 그 프로젝트의 진행 달 전부(키 0~5). 모든 달이 같으면 일반 항목으로 정리된다."""
+    monthly_alloc은 그 프로젝트의 진행 달 전부(키 0~11, 12개월 계획까지). 모든 달이 같으면 일반 항목으로 정리된다."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["alloc"] = "alloc"
     person_id: str
     project_id: str
-    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=MAX_HORIZON_MONTHS - 1)], Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
         min_length=1)
 
 

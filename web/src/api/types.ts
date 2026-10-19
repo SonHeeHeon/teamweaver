@@ -8,6 +8,9 @@ export interface Person {
   skills: Record<string, number>;
   /** 하위 기술 경력에서 인정된 기술(사용자 결정 "구분해서 표시"). 예: Java {source: "Spring", months: 12, ...}. */
   skill_credit?: Record<string, { source: string; months: number; depth: number; own_months: number }>;
+  /** 계획 달마다 가용률(0~1)과 휴직 정보(2026-10-19). 0인 달이 걸린 사업에는 넣을 수 없다(components/availability). */
+  availability?: number[];
+  leave?: { kind: string; start: string; months: number } | null;
 }
 
 export interface Project {
@@ -36,6 +39,9 @@ export interface Meta {
   coworks: Cowork[];
   /** 이 meta가 나온 활성 데이터셋(K9). 계산 요청에 실어 보내 서버가 불일치를 409로 막는다. */
   dataset_version: string;
+  /** 계획 시작 달("2026-10")·개월 수(6 또는 12, 2026-10-19 계획기간 1년 확장). 시작 달은 CSV 묶음에만 있다. */
+  horizon_start?: string | null;
+  horizon_months?: number;
 }
 
 export interface AssignEntry {
@@ -43,7 +49,7 @@ export interface AssignEntry {
   project_id: string;
   /** 월별 투입률이면 진행 달 평균. */
   alloc: number;
-  /** 월별 투입률(키 = 진행 달 0~5). 없으면 모든 진행 달이 alloc. */
+  /** 월별 투입률(키 = 진행 달 0~11, 계획 기간 6|12개월). 없으면 모든 진행 달이 alloc. */
   monthly_alloc?: Record<string, number>;
 }
 
@@ -207,7 +213,7 @@ export interface AppliedSwap {
   warnings: string[];
 }
 
-/** 적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정). 키 = 진행 달(0~5). */
+/** 적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정). 키 = 진행 달(0~11). */
 export interface AllocChange {
   kind: "alloc";
   person_id: string;

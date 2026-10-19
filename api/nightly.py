@@ -40,6 +40,7 @@ from datetime import time as dtime
 from pathlib import Path
 
 from api.storage import atomic_write, data_dir, ensure_private_dir
+from api.settings import horizon_months_of
 
 log = logging.getLogger(__name__)
 
@@ -451,7 +452,8 @@ def _verify_rows(graph, params, rows: list[dict]) -> str | None:
 
 
 def _server_params(app, dataset):
-    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people))
+    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people),
+                                                                         months=horizon_months_of(dataset.graph))
 
 
 def _operating_params(params):

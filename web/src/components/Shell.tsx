@@ -124,7 +124,7 @@ export function WhatifEmpty({ dataset, onCompute, onRecords }: {
           <div className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-line px-4 py-3.5">
             <div>
               <b className="block font-semibold">새로 계산하기</b>
-              <span className="text-[13px] text-slate-500">연간 계획에서 기술 가중치를 정하고 최적화를 실행합니다. 100명 기준 약 30초입니다.</span>
+              <span className="text-[13px] text-slate-500">연간 계획에서 기술 가중치를 정하고 최적화를 실행합니다. 안 하나에 100명 6개월 기준 약 30초(12개월 계획은 약 4배)입니다.</span>
             </div>
             <button className="btn-primary" onClick={onCompute}>연간 계획으로</button>
           </div>

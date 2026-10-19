@@ -3,7 +3,8 @@ import {
   DndContext, KeyboardSensor, PointerSensor, useDraggable, useDroppable,
   useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
-import type { AssignEntry, Person, Swap } from "../api/types";
+import type { AssignEntry, Person, Project, Swap } from "../api/types";
+import { allMonths, blockedMonths, blockedReason } from "./availability";
 import { entryKey, parseEntryKey, resolveDrop, type DropSlot } from "./swapRules";
 
 interface Props {
@@ -14,10 +15,22 @@ interface Props {
   /** 선택이 바뀌면 부른다. 이전 선택으로 검토한 결과는 더 이상 화면의 선택과 맞지 않으므로
    *  App이 버린다(검토하지 않은 교체가 적용되는 것을 막는다, K10). */
   onSelectionChange?: () => void;
+  /** 사업 기간(투입 불가 판정용)과 계획 시작 달(사유의 달 표시). 없으면 판정하지 않는다(예전 동작). */
+  projects?: Project[];
+  horizonStart?: string | null;
 }
 
-function PersonChip({ id, label }: { id: string; label: string }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+function PersonChip({ id, label, blocked }: { id: string; label: string; blocked?: string | null }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, disabled: !!blocked });
+  if (blocked) {
+    // 투입 불가(휴직 등): 보이되 끌 수 없다. 사유는 아래 빨간 목록과 마우스 설명에
+    return (
+      <span ref={setNodeRef} aria-disabled="true" title={blocked}
+            className="cursor-not-allowed rounded-full border border-red-200 bg-slate-100 px-2 py-0.5 text-xs text-slate-400 line-through">
+        {label}
+      </span>
+    );
+  }
   return (
     <button
       ref={setNodeRef} type="button" {...listeners} {...attributes}
@@ -48,7 +61,7 @@ function DropSlotBox({ id, title, value }: { id: DropSlot; title: string; value:
   );
 }
 
-export function SwapControl({ people, entries, onSwap, busy, onSelectionChange }: Props) {
+export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, projects, horizonStart }: Props) {
   // 교체 대상은 (사람, 프로젝트) 쌍으로 식별한다 -- swapRules.entryKey 주석 참고.
   const [outKey, setOutKeyState] = useState("");
   const [inId, setInIdState] = useState("");
@@ -59,12 +72,28 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange }
   const bench = people.filter((p) => !placed.has(p.id));
   const outEntry = entries.find((e) => entryKey(e.person_id, e.project_id) === outKey);
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
+  // 투입 불가 판정(2026-10-19): 교체 대상을 골랐으면 그 사업 기간, 아니면 계획 기간 전체가 막힌 사람만
+  const target = outEntry ? projects?.find((j) => j.id === outEntry.project_id) : undefined;
+  const targetMonths = target ? Array.from({ length: target.end_month - target.start_month + 1 }, (_, k) => target.start_month + k) : null;
+  const blockedOf = (p: Person): string | null => {
+    if (!projects) return null;
+    if (targetMonths) return blockedReason(p, targetMonths, horizonStart);
+    const all = allMonths(p);
+    return all.length > 0 && blockedMonths(p, all).length === all.length ? blockedReason(p, all, horizonStart) : null;
+  };
+  /** 막히지는 않았지만 계획 기간 중 휴직 달이 있는 사람(교체 대상을 고르기 전 안내) */
+  const partlyOf = (p: Person): string | null =>
+    !projects || targetMonths || blockedOf(p) ? null : blockedReason(p, allMonths(p), horizonStart);
+  const blockedIn = bench.map((p) => [p, blockedOf(p)] as const).filter(([, r]) => r);
+  const partlyIn = bench.map((p) => [p, partlyOf(p)] as const).filter(([, r]) => r);
+  const inBlocked = inId ? blockedOf(byId.get(inId) as Person) : null;
 
   function handleDragEnd(ev: DragEndEvent) {
     const over = ev.over?.id;
     if (over !== "out" && over !== "in") return;
     const hit = resolveDrop(String(ev.active.id), over);
     if (!hit) return;
+    if (hit.slot === "in" && byId.get(hit.value) && blockedOf(byId.get(hit.value) as Person)) return;
     (hit.slot === "out" ? setOutKey : setInId)(hit.value);
   }
 
@@ -106,9 +135,14 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange }
             className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
           >
             <option value="">선택…</option>
-            {bench.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} ({p.grade})</option>
-            ))}
+            {bench.map((p) => {
+              const why = blockedOf(p);
+              return (
+                <option key={p.id} value={p.id} disabled={!!why}>
+                  {p.name} ({p.grade}){why ? ` · ${why}` : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -134,14 +168,29 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange }
           <div>
             <p className="mb-1 text-xs text-slate-500">대기 인력</p>
             <div className="flex max-h-24 flex-wrap gap-1 overflow-y-auto">
-              {bench.map((p) => <PersonChip key={p.id} id={`in::${p.id}`} label={p.name} />)}
+              {bench.map((p) => <PersonChip key={p.id} id={`in::${p.id}`} label={p.name} blocked={blockedOf(p)} />)}
             </div>
+            {blockedIn.length > 0 && (
+              <ul className="mt-1 space-y-0.5 text-xs text-red-600" aria-label="투입 불가 인력">
+                {blockedIn.map(([p, why]) => <li key={p.id}>{p.name}: {why}</li>)}
+              </ul>
+            )}
+            {partlyIn.length > 0 && (
+              <ul className="mt-1 space-y-0.5 text-xs text-red-600" aria-label="휴직 달이 있는 인력">
+                {partlyIn.map(([p, why]) => <li key={p.id}>{p.name}: {why} — 그 달이 걸린 사업에는 넣을 수 없다</li>)}
+              </ul>
+            )}
           </div>
         </div>
       </DndContext>
 
+      {inBlocked && (
+        <p role="alert" className="mt-3 text-xs font-medium text-red-600">
+          {byId.get(inId)?.name}: {inBlocked} — 이 사업({outEntry?.project_id}) 기간과 겹쳐 교체 투입할 수 없다
+        </p>
+      )}
       <button
-        disabled={busy || !outEntry || !inId}
+        disabled={busy || !outEntry || !inId || !!inBlocked}
         onClick={() => outEntry && onSwap({
           out_person_id: outEntry.person_id, in_person_id: inId,
           project_id: outEntry.project_id,

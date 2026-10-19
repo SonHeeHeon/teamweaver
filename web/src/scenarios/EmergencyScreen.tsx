@@ -4,6 +4,7 @@
  *  늘어난 새 판이 된다(서버가 계산한 apply_hint 그대로). */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
+import { UnavailableList } from "./UnavailableList";
 import {
   fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
   withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
@@ -252,6 +253,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                     </tbody>
                   </table>
                 )}
+                <UnavailableList rows={plan.unavailable} />
               </div>
             </Panel>
           )}

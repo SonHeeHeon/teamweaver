@@ -36,7 +36,7 @@ def run(preset: dict, root: Path) -> dict:
     from api.demo_precomputed import FORMAT
     from core.evaluate.plan_eval import evaluate_plan
     from api.demos import build_demo
-    from api.settings import SettingsStore, default_settings_path
+    from api.settings import SettingsStore, default_settings_path, horizon_months_of
     from core.evaluate.operating import compare_move_budgets
     from core.optimize.alternatives import generate_plans_streaming
     from core.optimize.milp import effective_seeds
@@ -47,7 +47,8 @@ def run(preset: dict, root: Path) -> dict:
     graph = active.graph
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
-    params = SettingsStore(default_settings_path()).current().settings.to_milp_params(n_people=len(graph.people))
+    params = SettingsStore(default_settings_path()).current().settings.to_milp_params(n_people=len(graph.people),
+                                                                                        months=horizon_months_of(graph))
     out = {"format": FORMAT, "preset": preset["name"], "dataset_id": active.info.dataset_id,
            "dataset_version": active.info.version, "review_judge": active.info.review_judge,
            "computed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "commit": _commit(),

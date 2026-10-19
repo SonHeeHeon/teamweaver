@@ -179,7 +179,7 @@ def judge_cache_path(synthetic: bool = False) -> Path:
 
 
 def scenario_of(manifest: dict | None) -> dict:
-    """manifest에서 운영 중 시나리오 정보만(scenario·bench·proposals). 형식이 다르면 버린다."""
+    """manifest에서 운영 중 시나리오 정보(scenario·bench·proposals)와 계획 시작 달만. 형식이 다르면 버린다."""
     m = manifest or {}
     out: dict = {}
     if isinstance(m.get("scenario"), str):
@@ -187,6 +187,14 @@ def scenario_of(manifest: dict | None) -> dict:
     for key in ("bench", "proposals"):
         if isinstance(m.get(key), list) and all(isinstance(x, str) for x in m[key]):
             out[key] = list(m[key])
+    # 계획 시작 달(화면이 달 순번을 실제 달로 보이게, 2026-10-19 계획기간 1년 확장). 개월 수는 가용률 길이에서 읽는다
+    if isinstance(m.get("horizon_start"), str) and len(m["horizon_start"]) == 7:
+        out["horizon_start"] = m["horizon_start"]
+    # 휴직·휴가 가정(2026-10-19, 생성기 manifest `leave`) -- 투입 불가 사유 표시용(api/unavailable)
+    from api.unavailable import leave_of
+    leave = leave_of(m)
+    if leave:
+        out["leave"] = leave
     return out
 
 

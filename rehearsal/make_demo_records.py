@@ -16,7 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "demo"
 OUT = DEMO / "records"
-BUNDLES = ("org-n100", "org-n100-operating", "org-n100-yearend", "org-n200", "org-n200-operating", "org-n300", "org-n300-operating")
+BUNDLES = ("org-n100", "org-n100-annual", "org-n100-operating", "org-n100-yearend", "org-n200", "org-n200-operating", "org-n300",
+           "org-n300-operating")
 
 
 def _files(root: Path) -> dict[str, str]:
@@ -34,6 +35,8 @@ def _title(manifest: dict, people: int) -> str:
     kind = "운영 중 편성" if manifest.get("scenario") == "operating" else "연초 편성"
     if "yearend" in str(manifest.get("dataset_id", "")):
         kind = "연말 운영 중 편성(신규 사업 발주·끝나 가는 사업)"     # 3상황 시연 묶음(claude-b, 2026-10-19)
+    if manifest.get("horizon_months") == 12:
+        kind = "연간 편성(12개월, 백지)"                              # 계획기간 1년 확장(claude-b, 2026-10-19)
     return f"{when}{kind} · {people}명"
 
 

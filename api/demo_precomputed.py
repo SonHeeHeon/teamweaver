@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from api.cache import ResultCache
+from api.settings import horizon_months_of
 from core.evaluate.plan_eval import evaluate_plan
 from core.optimize.milp import MilpParams
 from core.optimize.types import AssignEntry, PlanAssignment
@@ -237,7 +238,8 @@ def prepare_for(app, active, bundle_path: Path | None) -> Precomputed | None:
     if active.info.source != "demo-bundle" or bundle_path is None:
         return None
     try:
-        params = app.state.settings_store.current().settings.to_milp_params(n_people=len(active.graph.people))
+        params = app.state.settings_store.current().settings.to_milp_params(n_people=len(active.graph.people),
+                                                                         months=horizon_months_of(active.graph))
         return load_precomputed(bundle_path, active, params)
     except Exception as exc:                        # noqa: BLE001 -- 미리 계산이 깨져도 전환·부팅은 된다
         log.error("미리 계산 결과를 확인하지 못했다(%s): %s", bundle_path, exc)
