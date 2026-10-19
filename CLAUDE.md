@@ -184,6 +184,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **진행 중 사업 기술 경력은 이 서비스가 늘린다**(2026-10-19 사용자 질문 "달이 지나가면 … 기술 개월수를 업데이트가 돼야하지않나?", `core/ingest/aging.py`): 로더가 검증 뒤
   진행 중 업무에 등록된 기술(선택 표 `work_skills.csv`)만 그 경력의 `last_used_month` 다음 달 ~ 계획 직전 달(업무 기간 안)을 더한다 -- 원천이 이미 갱신했으면 두 번 세지 않는다.
   별칭 행은 행마다 따로(합칠 때 최대). 업무별 기술 표가 없으면 데이터가 계획 직전 달보다 오래됐을 때만 경고.
+  어디까지 셌는지(마지막 사용 달·as_of) 모르는 행은 늘리지 않고 경고, 10년 창 밖에서 마지막으로 쓴 행은 최근 달만 경력으로 남긴다(Codex 종료 리뷰 -- 이중 계산·옛 경력 되살림).
   manifest `skill_months_owner`="source"면 늘리지 않는다(설정 화면 "데이터 원천"에서 관리자가 바꿈 → 새 판). 규칙 표지 `aging.AGING_RULES`가 계산 버전에 들어간다.
   계획 기간 안에서 달마다 올리지는 않는다. 시연 묶음은 `as_of` = 계획 직전 달·경력이 그 달까지 세어져 늘어나는 달 0(숫자 그대로, 미리 계산은 버전만 옮김).
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
@@ -200,7 +201,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 인사 시스템 API 받기·진행 중 사업 기술 경력 늘리기(claude-a, main `ad5a7cd` 위) **2032 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 261 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 인사 시스템 API 받기·진행 중 사업 기술 경력 늘리기(claude-a, main `ad5a7cd` 위) **2034 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 261 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

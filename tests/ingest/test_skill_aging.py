@@ -111,6 +111,28 @@ def test_alias_rows_catch_up_from_their_own_months():
     assert rec["skills"] == 1 and rec["max_months"] == 6
 
 
+def test_unknown_counted_month_holds_the_row_and_warns():
+    """Codex 종료 리뷰(2026-10-19): 마지막 사용 달도 데이터 기준월도 없으면 기존 9개월에 업무 11개월을 다 더해 20이 됐다 -- 늘리지 않고 경고.
+    경력 행이 없는 기술(Kafka)은 이중 계산이 없으니 업무 시작부터 센다."""
+    t, r = _tables(), IngestReport()
+    t["person_skills.csv"] = [{"person_id": "P1", "skill_name": "Spark", "experience_months": 9, "last_used_month": None, "__row__": 1}]
+    rec = age_ongoing_skills({}, t, _horizon(), r)
+    rows = {x["skill_name"]: x for x in t["person_skills.csv"]}
+    assert rows["Spark"]["experience_months"] == 9 and rows["Kafka"]["experience_months"] == 11
+    assert rec["skills"] == 1 and any("어디까지 셌는지" in i.message for i in r.warnings)
+
+
+def test_months_outside_the_ten_year_window_do_not_come_back():
+    """Codex 종료 리뷰(2026-10-19): 2012년에 마지막으로 쓴 120개월 경력(입력 단계가 버림)에 최근 2개월을 더하며 되살리면 122개월·레벨 5였다 --
+    최근에 쓴 달만 경력으로 남긴다."""
+    t = _tables()
+    t["work_history.csv"][0]["start_date"] = D(2026, 10, 1)
+    t["person_skills.csv"][0].update(experience_months=120, last_used_month=D(2012, 6, 1))
+    t["work_skills.csv"] = t["work_skills.csv"][:1]
+    age_ongoing_skills({"as_of": "2026-09"}, t, _horizon(), IngestReport())
+    assert t["person_skills.csv"][0]["experience_months"] == 2 and t["person_skills.csv"][0]["last_used_month"] == D(2026, 11, 1)
+
+
 def test_loader_applies_the_aging_and_checks_the_manifest(tmp_path):
     """묶음 단위: 로더가 검증 뒤 늘리고(bundle.aging), as_of·skill_months_owner 형식이 틀리면 오류."""
     import json

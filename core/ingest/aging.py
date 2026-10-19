@@ -100,7 +100,10 @@ def age_ongoing_skills(manifest: dict, tables: dict, horizon: list[dt.date], rep
                 live[key].add(m)
                 m = _add(m, 1)
             raw_name.setdefault(key, sk)
+    from core.ingest.convert import lookback_start
+    since = lookback_start(horizon[0])                             # 최근 10년 창의 첫 달(입력 단계와 같은 창)
     added: dict[tuple[str, str], int] = {}
+    unknown = []
     for key, span in sorted(live.items()):
         hits = index.get(key)
         if hits:
@@ -108,17 +111,28 @@ def age_ongoing_skills(manifest: dict, tables: dict, horizon: list[dt.date], rep
             n = 0
             for r in hits:
                 done = _month(r["last_used_month"]) if r.get("last_used_month") else as_of
-                more = sorted(m for m in span if done is None or m > done)
-                if more:
+                if done is None:                                   # 어디까지 셌는지 모른다 -- 업무 기간 전체를 더하면 이중 계산(Codex 종료 리뷰)
+                    unknown.append(r)
+                    continue
+                more = sorted(m for m in span if m > done)
+                if not more:
+                    continue
+                if done < since:
+                    # 10년 창 밖에서 마지막으로 쓴 경력은 입력 단계가 버린다 -- 최근 달을 더하며 되살리지 않고 최근 경력만 남긴다(Codex 종료 리뷰)
+                    r["experience_months"] = len(more)
+                else:
                     r["experience_months"] = int(r["experience_months"]) + len(more)
-                    r["last_used_month"] = max(r.get("last_used_month") or more[-1], more[-1])
-                    n = max(n, len(more))
+                r["last_used_month"] = max(r.get("last_used_month") or more[-1], more[-1])
+                n = max(n, len(more))
             if n:
                 added[key] = n
         elif span:                                                 # 진행 중 사업에서 처음 쓴 기술 -- 새 경력 행(업무 시작 달부터)
             rows.append({"person_id": key[0], "skill_name": raw_name[key], "skill_category": None, "project_count": 1,
                          "experience_months": len(span), "last_used_month": max(span), "__row__": None})
             added[key] = len(span)
+    if unknown:
+        report.warn("person_skills.csv", f"진행 중 업무에 등록된 기술 경력 {len(unknown)}건은 원천이 어디까지 셌는지(마지막 사용 달·데이터 기준월 as_of) "
+                    f"몰라 늘리지 않았다(예: {unknown[0]['person_id']} {unknown[0]['skill_name']}) -- last_used_month나 manifest as_of를 채워 달라")
     if not added:
         return out
     people = {k[0] for k in added}
