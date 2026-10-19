@@ -135,8 +135,11 @@ describe("AssignmentTable 동시 수행 표시", () => {
                { id: "P2", name: "이서연", grade: "중급", skills: {} }]}
       projects={[{ id: "J003", name: "은행 A", sector: "대외금융", phase: "실행", start_month: 0, end_month: 5, grade_headcount: {}, monthly_budget: 1 },
                  { id: "J007", name: "마트", sector: "대외금융", phase: "실행", start_month: 2, end_month: 5, grade_headcount: {}, monthly_budget: 1 }]} />);
-    expect(screen.getAllByText("동시 수행 · 기술 지원")).toHaveLength(2);
-    expect(screen.queryByText(/이서연.*동시 수행/)).not.toBeInTheDocument();
+    // 이름표(2026-10-20 압축): "동시 수행" 표지 + 허용 사유는 마우스를 올리면·기술 창에
+    expect(screen.getAllByText("동시 수행")).toHaveLength(2);
+    const chips = screen.getAllByRole("button", { name: "김민준 기술 보기" });
+    expect(chips[0]).toHaveAttribute("title", "프로젝트 동시 수행 · 허용 사유: 기술 지원");
+    expect(screen.getByRole("button", { name: "이서연 기술 보기" })).not.toHaveTextContent("동시 수행");
   });
 });
 

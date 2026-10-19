@@ -35,21 +35,21 @@ describe("BriefingPanel", () => {
 
   it("델타 부호를 명확히 보인다", () => {
     render(<BriefingPanel result={RESULT} loading={false} />);
-    expect(screen.getByText(/-0\.0833/)).toBeInTheDocument();
+    expect(screen.getByText(/-0\.08/)).toBeInTheDocument();
   });
 
   it("델타를 재최적화가 아닌 현행 점수 기준 참고값으로 표기한다", () => {
     render(<BriefingPanel result={RESULT} loading={false} />);
-    expect(screen.getByText(/현행 점수 기준 변화/)).toBeInTheDocument();
+    expect(screen.getByText(/교체하면 종합 점수/)).toBeInTheDocument();
     expect(screen.getByText(/재최적화 아님/)).toBeInTheDocument();
     expect(screen.queryByText(/목적함수 변화/)).not.toBeInTheDocument();
   });
 
   it("항목별 변화를 보인다", () => {
     render(<BriefingPanel result={RESULT} loading={false} />);
-    expect(screen.getByText("기술 적합도")).toBeInTheDocument();
-    expect(screen.getByText("-0.1000")).toBeInTheDocument();
-    expect(screen.getByText("+0.0167")).toBeInTheDocument();
+    expect(screen.getByText("기술 적합")).toBeInTheDocument();
+    expect(screen.getByText("-0.10")).toBeInTheDocument();
+    expect(screen.getByText("+0.02")).toBeInTheDocument();
   });
 
   it("교체로 새로 생긴 제약 위반을 경고한다", () => {
@@ -104,5 +104,13 @@ describe("BriefingPanel — 근거(K5)", () => {
                                text: "공유가 늦다" }] } }} />);
     expect(screen.getByText("요약")).toBeInTheDocument();
     expect(screen.getByText(/김일번 리뷰 · rv:p1>p2#1:neg/)).toBeInTheDocument();
+  });
+});
+
+describe("근거 표시 번호(화면 친절하게 2026-10-20)", () => {
+  it("본문의 [rv:…] 내부 ID 대신 근거 번호", async () => {
+    const { numberMarkers } = await import("./evidenceMarkers");
+    expect(numberMarkers("일정 지연이 있었다 [rv:a>b#1:neg].", [{ source_id: "rv:a>b#1:neg" }])).toBe("일정 지연이 있었다 [근거 1].");
+    expect(numberMarkers("x [rv:zz]", [])).toBe("x [동료 평가]");
   });
 });

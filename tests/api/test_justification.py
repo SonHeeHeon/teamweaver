@@ -140,6 +140,8 @@ def test_pdf_includes_a_justification_per_staffed_project(jc, monkeypatch, tmp_p
     staffed = {e["project_id"] for e in body["entries"]}
     assert {j["project_id"] for j in js} == staffed and all(j["text"] and j["facts"] for j in js)
     assert all("llm_text" not in j for j in js) and all(j["fallback_reason"] == "no_client" for j in js)
+    # 요약도 PDF까지 간다(2026-10-20, Codex: 허용 칸에 없어 버려졌다) -- AI 없으면 규칙 요약
+    assert all("summary" in j for j in js) and any(j["summary"] and j["summary_method"] == "rule" for j in js)
     assert c.post("/api/report", json={**req, "include_justifications": False}).status_code == 200
     assert "justifications" not in seen[1] or not seen[1].get("justifications")
 

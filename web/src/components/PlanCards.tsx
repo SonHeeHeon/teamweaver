@@ -37,10 +37,10 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props)
               )}
             </div>
             <dl className="num mt-3 grid grid-cols-[1fr_auto] gap-y-0.5 text-[13px]">
-              <dt className="text-slate-500">전체 목적값</dt>
+              <dt className="cursor-help text-slate-500" title="종합 점수 = 기술 적합 + 협업 보상 − 오래 함께한 사이 감점 − 빈자리 감점(1자리 100). 높을수록 좋은 편성안입니다.">종합 점수 ⓘ</dt>
               <dd className="text-lg font-semibold text-slate-900">{p.objective.toFixed(2)}</dd>
-              <dt className="text-slate-500">기술 적합(최적화율)</dt><dd className="font-semibold">{pct(p.optimization_ratio)}</dd>
-              <dt className="text-slate-500">충족률</dt><dd>{pct(p.fulfillment)}</dd>
+              <dt className="cursor-help text-slate-500" title="기술만 놓고 이론상 가장 잘 맞출 수 있는 값(상한) 대비 이 편성안이 얻은 비율. 100%에 가까울수록 기술이 잘 맞습니다.">기술 적합(최적화율) ⓘ</dt><dd className="font-semibold">{pct(p.optimization_ratio)}</dd>
+              <dt className="cursor-help text-slate-500" title="사업이 요구한 기술·레벨을 배치된 사람이 실제로 채운 비율(보조 지표). 요구가 까다로울수록 낮게 나옵니다.">충족률 ⓘ</dt><dd>{pct(p.fulfillment)}</dd>
               <dt className="text-slate-500">배치</dt><dd>{p.entries.length}건</dd>
             </dl>
             {p.precomputed_at != null && !p.precomputed_label ? (

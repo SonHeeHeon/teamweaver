@@ -23,7 +23,8 @@ import { PrecomputedNotice } from "./components/PrecomputedNotice";
 import { JustificationPanel } from "./components/JustificationPanel";
 import { SkillMapTab } from "./components/SkillMapTab";
 import { AssignmentTable } from "./components/AssignmentTable";
-import { NetworkGraph } from "./components/NetworkGraph";
+import { TeamRelations } from "./components/TeamRelations";
+import type { SwapPick } from "./components/SwapControl";
 import { SwapControl } from "./components/SwapControl";
 import { BriefingPanel } from "./components/BriefingPanel";
 import { SettingsTab } from "./components/SettingsTab";
@@ -40,6 +41,7 @@ import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, t
 import { withPeople } from "./components/headcount";
 import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
+import { Dialog } from "./ui";
 import { RecordsPanel } from "./components/RecordsPanel";
 import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
 import { ConcurrencyPanel } from "./scenarios/ConcurrencyPanel";
@@ -94,10 +96,12 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   const [pdfBusy, setPdfBusy] = useState(false);
   // PDF에 사업별 인사팀 소명 글을 넣을지(사업마다 AI 글이라 1~2분 더 걸린다)
   const [pdfJustify, setPdfJustify] = useState(false);
+  // PDF 내려받기를 누르면 소명 포함 여부를 묻는다(사용자 2026-10-20 -- 하위 탭 옆 체크박스 대신)
+  const [pdfAsk, setPdfAsk] = useState(false);
   // 그래프에서 강조할 인물. 교체 "투입" 대상은 아직 배치 전이라 그래프에
   // 노드가 없다 -- 강조해도 보이지 않는다. 그래서 빠지는 쪽(out)을 강조해
   // "이 사람을 빼면 협업망 어디에 구멍이 나는지"를 보여준다.
-  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [swapPick, setSwapPick] = useState<SwapPick | null>(null);
   // 진행 중인 what-if 요청이 지금 보고 있는 플랜에 속하는지 판별하는 세대
   // 카운터. selectPlan과 runSwap 시작 시 증가시키고, await 이후 세대가
   // 바뀌었으면(다른 플랜으로 넘어갔거나 새 스왑이 시작됐으면) 응답을 버린다
@@ -217,7 +221,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
-    setHighlighted(null);
     setWhatifBusy(false);
     setPlanBasis(null);
     setWeights({});
@@ -282,7 +285,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setSelected(null);
     setWhatif(null);
     setLastSwap(null);
-    setHighlighted(null);
     setWhatifBusy(false);
     // 실행할 때마다 서버 설정을 다시 읽는다: 페이지를 연 뒤 다른 관리자가 바꾼
     // 설정도 반영하고, 첫 로딩이 끝나기 전에 눌러도 모델 기본값으로 새지 않는다.
@@ -355,8 +357,10 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     await run(false, { request: res.request, datasetVersion: res.dataset.version });
   }
 
-  async function downloadPdf() {
+  async function downloadPdf(withJustify: boolean) {
     if (!current) return;
+    setPdfAsk(false);
+    setPdfJustify(withJustify);
     setPdfBusy(true);
     try {
       await downloadReport(current, whatif, lastSwap, planBasis?.params ?? null,
@@ -369,7 +373,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                              planToken: original?.plan_token ?? null,
                              // 원안의 서명된 계산 신뢰도 -- PDF 배지(교체를 적용했으면 "원안 기준"으로 찍힌다)
                              evidence: original ? evidenceOf(original) : null },
-                           pdfJustify && kgData);
+                           withJustify && kgData);
     }
     catch (e) {
       if (e instanceof DatasetChangedError) await externalSwitch();
@@ -399,7 +403,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setSelected(label);
     setWhatif(null);
     setLastSwap(null);
-    setHighlighted(null);
     setWhatifBusy(false);
   }
 
@@ -410,7 +413,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     const gen = ++swapGen.current;
     const base = current.entries;
     setWhatifBusy(true);
-    setHighlighted(swap.out_person_id);
     try {
       const res = await postWhatif(current.entries, swap, planBasis?.weights ?? weights,
                                    planBasis?.params ?? null, planBasis?.datasetVersion ?? null);
@@ -556,7 +558,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       persistEdits(label, nextEdit.history);
       setWhatif(null);            // 검토 결과는 적용으로 소비됐다 -- 새 명단에서 다시 검토한다
       setLastSwap(null);
-      setHighlighted(null);
     } catch (e) {
       if (gen !== applyGen.current) return;          // 취소된 요청의 오류(늦은 409 포함)는 무시
       if (e instanceof DatasetChangedError) { await externalSwitch(); return; }
@@ -602,7 +603,6 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       persistEdits(label, nextEdit.history);
       setWhatif(null);            // 명단이 바뀌었으니 진행 중 검토 결과는 무효
       setLastSwap(null);
-      setHighlighted(null);
       return true;
     } catch (e) {
       if (gen !== applyGen.current) return false;
@@ -671,7 +671,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         <PageHeader tab={tab} context={pageContext} actions={tab === "whatif" && current ? (
           <>
             <button className="btn" onClick={() => setExportOpen(true)}>편성 기록 내보내기</button>
-            <button className="btn-primary" disabled={pdfBusy} onClick={() => void downloadPdf()}>
+            <button className="btn-primary" disabled={pdfBusy} onClick={() => (kgData ? setPdfAsk(true) : void downloadPdf(false))}>
               {pdfBusy ? (pdfJustify && kgData ? "PDF 생성 중…(사업별 소명 포함, 1~2분)" : "PDF 생성 중…") : "PDF 내려받기"}
             </button>
           </>
@@ -698,11 +698,11 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
                              datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
-                             onReviewDoc={openReviewDoc} />
+                             onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
         </div>
         <div className={tab === "emergency" ? "" : "hidden"}>
           <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
-                           onReviewDoc={openReviewDoc} />
+                           onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
         </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
@@ -847,20 +847,15 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             )}
             {current && (
               <>
-                <SubTabs value={subTab} onChange={setSubTab} showJustify={kgData && !!planBasis}
-                         right={kgData ? (
-                           <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-                             <input type="checkbox" checked={pdfJustify} onChange={(e) => setPdfJustify(e.target.checked)} />
-                             PDF에 사업별 인사팀 소명 포함
-                           </label>
-                         ) : undefined} />
+                <SubTabs value={subTab} onChange={setSubTab} showJustify={kgData && !!planBasis} />
                 <div className={subTab === "roster" ? "" : "hidden"}>
                   {/* 전일 투입(2026-10-19 서비스 기본)은 투입률이 100%뿐이라 달별 조정이 없다 */}
                   <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
                                    projects={meta.projects}
                                    onAdjust={planBasis?.params?.allocation_mode === "full" ? undefined : applyAllocChange}
                                    busy={applyBusy}
-                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start} />
+                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start}
+                                   unfilled={current.unfilled} />
                   {planBasis?.params?.allocation_mode === "full" && current.unfilled.length > 0 && (
                     <div className="mt-4">
                       <ConcurrencyPanel datasetVersion={planBasis.datasetVersion} entries={current.entries}
@@ -877,7 +872,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                                  people={meta.people} onSelectionChange={selectionChanged}
                                  entries={current.entries}
                                  onSwap={runSwap} busy={whatifBusy}
-                                 projects={meta.projects} horizonStart={meta.horizon_start} />
+                                 projects={meta.projects} horizonStart={meta.horizon_start} onPick={setSwapPick} />
                     <BriefingPanel result={whatif} loading={whatifBusy}
                                    nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
                     <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap
@@ -886,8 +881,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                                   nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id}
                                   busy={applyBusy} onApply={applyReviewedSwap} />
                   </div>
-                  <NetworkGraph people={meta.people} coworks={meta.coworks}
-                                entries={current.entries} highlight={highlighted} />
+                  <TeamRelations people={meta.people} projects={meta.projects} coworks={meta.coworks}
+                                 entries={current.entries} pick={swapPick} />
                 </div>
                 {kgData && planBasis && (
                   <div className={subTab === "justify" ? "" : "hidden"}>
@@ -900,6 +895,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                 )}
                 <div className={subTab === "baseline" ? "" : "hidden"}>
                   <BaselineCard key={`${current.label}-${edit?.history.length ?? 0}`} entries={current.entries}
+                                active={subTab === "baseline"}
                                 onDatasetChanged={() => { void externalSwitch(); }}
                                 load={(e) => postBaseline({ dataset_version: meta.dataset_version,
                                                             milp_params: planBasis?.params ?? null }, e,
@@ -911,6 +907,17 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         )}
       </main>
       </div>
+      {pdfAsk && current && (
+        <Dialog title="PDF 내려받기" labelId="pdf-ask-title"
+                actions={<>
+                  <button className="btn-ghost" onClick={() => setPdfAsk(false)}>취소</button>
+                  <button className="btn" onClick={() => void downloadPdf(false)}>소명 빼고 받기</button>
+                  <button className="btn-primary" onClick={() => void downloadPdf(true)}>소명 포함해 받기</button>
+                </>}>
+          배치 명단·점수·교체 이력이 담긴 PDF를 만듭니다. 사업마다 "왜 이 팀인가"를 설명하는 <b>인사팀 소명</b>을 함께 넣을까요?
+          넣으면 AI가 사업마다 글을 써서 1~2분 더 걸립니다(이미 써 둔 글은 다시 쓰지 않습니다).
+        </Dialog>
+      )}
       {exportOpen && current && planBasis && (
         <ExportRecordDialog
           editedCount={Object.values(edits).reduce((n, e) => n + e.stack.length, 0)}

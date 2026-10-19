@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ScoreSplitNote } from "../components/ScoreSplitNote";
+import { PersonName, ProjectCodes } from "../components/PersonName";
+import type { Person, Project } from "../api/types";
 import { hasSplit, seatsText, signedPts, splitText } from "../components/scoreSplit";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
@@ -21,8 +23,10 @@ const GRANT_MEMO_MAX = 200;
 const clip = (s: string, n: number) => Array.from(s).slice(0, n).join("");
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
 
-export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc }: {
+export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc, people, projects }: {
   datasetVersion?: string | null; onDatasetChanged: () => void;
+  /** 이름을 누르면 기술 창, 사업 코드에 마우스를 올리면 이름(2026-10-20 화면 친절하게) -- 없으면 이름·코드만 */
+  people?: Person[]; projects?: Project[];
   /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19 -- 사용자 결정: 긴급 투입도 자료) */
   onReviewDoc?: (version: string, projectId: string | null) => void;
 }) {
@@ -172,6 +176,9 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
   }
   const rows: CandidateRow[] = plan ? plan.candidates[group] : [];
   const pulled = plan?.best.diff?.moved ?? [];
+  const pById = new Map((people ?? []).map((p) => [p.id, p]));
+  // 전일 투입이면 모두 100% -- 투입률 칸은 100%가 아닌 후보가 있을 때만(사용자 2026-10-20 "100프로는 빼도")
+  const splitAlloc = (plan ? Object.values(plan.candidates).flat() : []).some((r) => Math.abs(r.alloc - 1) > 1e-9);
   return (
     <div className="max-w-[1180px] space-y-4">
       {notice && <Notice>{notice}</Notice>}
@@ -242,7 +249,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
         </Panel>
 
         <div className="space-y-4">
-          <Panel title="지금 바로 넣을 수 있는 사람" sub={standby?.source === "nightly" ? "밤사이 미리 뽑아 둔 명단" : "지금 계산한 명단"}>
+          <Panel title="지금 바로 넣을 수 있는 사람" sub={`${standby?.source === "nightly" ? "밤사이 미리 뽑아 둔" : "지금 계산한"} 순위 — 다른 사업에서 빼 오지 않고 규칙 위반 없이 넣을 수 있는 상위 5명`}>
             {!projectId ? <EmptyState title="사업을 고르면 바로 보입니다" />
               : !standby ? <p className="px-5 py-4 text-sm text-slate-500">불러오는 중…</p>
               : standby.rows.length === 0 ? <EmptyState title="빼 오지 않고 넣을 수 있는 사람이 없습니다" body="빼 오기를 허용해 후보를 찾으세요." />
@@ -250,8 +257,8 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                 <ul className="flex flex-wrap gap-2 px-5 py-4" aria-label="대기 명단">
                   {standby.rows.map((r) => (
                     <li key={r.person_id} className="rounded-md border border-line px-3 py-1.5 text-sm">
-                      <Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip> {r.name}
-                      <span className="num ml-1.5 text-xs text-slate-500">{Math.round(r.alloc * 100)}% · {splitText(r)}</span>
+                      <Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip> <PersonName name={r.name} person={pById.get(r.person_id)} />
+                      <span className="num ml-1.5 text-xs text-slate-500">{Math.abs(r.alloc - 1) > 1e-9 ? `${Math.round(r.alloc * 100)}% · ` : ""}{splitText(r)}</span>
                     </li>
                   ))}
                 </ul>
@@ -265,7 +272,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                 {!plan.best.accepted ? <p className="text-amber-700">조건에 맞는 조합을 찾지 못했습니다(빼 오기·등급 조건을 바꿔 보세요).</p> : (
                   <>
                     <p>넣을 사람: <b>{plan.best.added?.map((a) => a.name).join(", ") || "없음"}</b>
-                      <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 추가 월 비용 {plan.best.added_cost ?? 0}</span></p>
+                      <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 월 비용 +{(plan.best.added_cost ?? 0).toLocaleString()}(가상 비용 점수)</span></p>
                     {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.name ?? m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
                     {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반이 있어 확정할 수 없습니다.</Notice>}
                     {plan.apply_hint && (Object.keys(plan.apply_hint.headcount_add).length > 0 || Object.keys(plan.apply_hint.budget_add).length > 0) && (
@@ -281,16 +288,16 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                       } ${plan.candidates[g].length}`])} />
                 {rows.length === 0 ? <p className="text-slate-500">이 갈래에는 후보가 없습니다.</p> : (
                   <table className="w-full">
-                    <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th><th className="text-right">투입률</th>
+                    <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th>{splitAlloc && <th className="text-right">투입률</th>}
                       <th className="text-right">빈자리</th><th className="pr-3 text-right">기술·협업 점수</th><th>비고</th></tr></thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.person_id} className="border-t border-slate-100">
-                          <td className="py-1.5">{r.name}</td><td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
-                          <td className="num text-right">{Math.round(r.alloc * 100)}%</td>
+                          <td className="py-1.5"><PersonName name={r.name} person={pById.get(r.person_id)} /></td><td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
+                          {splitAlloc && <td className="num text-right">{Math.round(r.alloc * 100)}%</td>}
                           <td className={`num text-right text-xs ${(r.unfilled_seats_delta ?? 0) < 0 ? "text-amber-700" : ""}`}>{seatsText(r.unfilled_seats_delta)}</td>
                           <td className="num pr-3 text-right">{signedPts(hasSplit(r) ? r.delta_excl_unfilled : r.delta_total)}</td>
-                          <td className="text-xs text-slate-500">{r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : ""}
+                          <td className="text-xs text-slate-500">{r.pulled_from.length ? <><ProjectCodes ids={r.pulled_from} projects={projects} />에서 빼 옴</> : ""}
                             {r.source === "concurrent" && <span>원래 사업 유지{r.needs_grant ? " · 허용 필요" : ""}</span>}
                             {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
                             {r.source === "concurrent" && r.new_violations.length === 0 && r.apply_hint && (

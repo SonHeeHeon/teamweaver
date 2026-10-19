@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-20 · claude-a · What-if 대시보드 정리 + 화면 전반 친절하게(b 영역 포함) · b `feat/claude-b-walk-fixes` main 병합
+- 브랜치/커밋: main에 b 점검 수정 병합 `1ee3143`(사용자 승인 "그 브랜치는 main에 합치고 작업해주고") → `feat/claude-a-ui-friendly`
+  `512d323`(교체 데려오기·맞바꾸기·meta 평가 극성) · `bd8332d`(소명 요약) · `a7a48f1`(화면) · 이 커밋(문서). main 미병합.
+- 사용자: 배치 명단 압축·정렬·100% 빼기·기술 창, 사업 코드 + 마우스 올리면 이름, 교체 투입에 기존 사업 인력, 놓을 수 없는 칸 안내·섹션 경계, 관계망 → "작은 목록", 소명 너무 길다(출처 사실만 + 검증),
+  단순 규칙 비교 기본 표시, PDF 소명 체크박스 → 내려받을 때 창, 화면 전반 친절하게, 여러 쌍 동시 교체는 "사이드 이펙트가 큰거면 빼자"(뺌). **"b의 영역이지만 … 왠만해선 너가 작업을 다 하는걸로"**.
+- 한 일: CLAUDE.md "What-if 대시보드 정리·화면 친절하게" 항목 참고(`AssignmentTable`·`SwapControl`·`TeamRelations`·`PersonName`·`ui.ProjectCode/Term`·`whatif._swapped_entries`·`justify.verify_summary`·`generate_summary`).
+- 상대 영향(claude-b): **b 영역(`web/`·`api/`)을 claude-a가 고쳤다**(사용자 지시). 공유 계약: `SwapIn`에 `in_from_project_id`·`exchange`(기본값은 직렬화 안 함 -- 예전 저장 교체 그대로),
+  `CoworkOut.review`(가상 데이터만), 소명 응답에 `summary`·`summary_method`. `NetworkGraph` 화면 부품 삭제(PDF `StaticNetwork`는 그대로). 버튼 "브리핑 생성" → "교체 효과 보기"(E2E 시험 고침).
+  기준선 2049 passed·slow 20·웹 275.
+- 검증: `uv run --group benchmark pytest -q` 2049 passed · `-m slow` 20 passed · 웹 275 · `npx tsc -b`·build · 소명 요약 측정 229건 AI 93.0%·규칙 7.0%·무결성 실패 0($0.12) · 브라우저로 What-if·교체 검토(데려오기 실제 실행)·신규 사업·긴급 투입·설정 화면 확인.
+- 리뷰: Codex 적대적 1라운드 needs-attention 2건(교체 단계 본문이 데려오기 칸을 버림 high · PDF가 소명 요약을 버림 medium) 반영·시험 →
+  2라운드는 Codex 주간 한도 소진(10-25 16:31까지)으로 실행 실패 → 사용자 지시("스스로 리뷰하면 되잖아")대로 직접 리뷰(결함 없음), Stop 게이트 끔(사용자 허용).
+- 근거: `.omc/reports/2026-10-20-ui-friendly.md`, 설계 `.omc/plan/2026-10-20-ui-friendly.md`.
+
+---
+
 ## 2026-10-20 · claude-a · `feat/claude-a-hr-source` **main 병합(사용자 승인 "main 병합해줘")**
 - 커밋: `e6a47dc`(merge --no-ff, main `ad5a7cd` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
 - 들어간 것: 인사 시스템 API 받기(기본)·CSV(대체)·밤 배치 첫 단계·설정 "데이터 원천", 진행 중 사업 기술 경력 늘리기(`work_skills.csv`·manifest `as_of`/`skill_months_owner`), 리뷰 반영(아래 10-19 항목).

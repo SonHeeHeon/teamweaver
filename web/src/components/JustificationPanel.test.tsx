@@ -121,5 +121,15 @@ describe("JustificationPanel", () => {
     expect(await screen.findByText(/AI 글 쓰는 중…\(약 60초\)/)).toBeInTheDocument();
     release(base({ method: "graphrag" }));
   });
-});
 
+  it("요약이 있으면 먼저 보이고 전체 소명은 접는다(사용자 2026-10-20 \"너무 길어서 읽을수가 없어\")", async () => {
+    vi.mocked(postJustification).mockResolvedValue(base({ method: "graphrag", summary: "요구 기술은 요구 Python 미달[F2]입니다.",
+                                                           summary_method: "graphrag", ai_available: false }));
+    panel();
+    const box = await screen.findByLabelText("소명 요약");
+    expect(box.textContent).toContain("핵심 요약 · AI 구성");
+    expect(box.textContent).toContain("요구 Python 미달");
+    const details = screen.getByText(/전체 소명 보기/).closest("details")!;
+    expect(details.open).toBe(false);
+  });
+});

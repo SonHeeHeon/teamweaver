@@ -90,6 +90,10 @@ export function SkillMapTab({ datasetVersion, onDatasetChanged }: { datasetVersi
         <input aria-label="기술 검색" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="기술 이름"
                className="rounded-md border border-slate-300 px-2 py-1" />
       </div>
+      <p className="mt-2 text-xs text-slate-500">
+        회사가 가진 기술 인력(공급)과 사업이 요구하는 인원(수요)을 비교합니다. "공급/수요"가 1배에 가까울수록 그 기술 사람이 모자랍니다.
+        열 이름에 마우스를 올리면 뜻이 나옵니다.
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[56rem] text-sm">
           <thead className="text-left text-xs text-slate-500">

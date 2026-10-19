@@ -70,7 +70,8 @@ export function DataSourcePanel({ adminToken = null, datasetVersion, onSwitched,
       ) : (
         <p className="mt-1 text-[13px] text-slate-500">
           인사 시스템 연결이 설정돼 있지 않아 CSV 묶음(데이터 탭 업로드)으로 받습니다. 기술 이력·동료 평가 서비스가 있는 회사는
-          서버에 <code>TEAMWEAVER_HR_API_URL</code>·<code>TEAMWEAVER_HR_API_TOKEN</code>을 두면 매일 자동으로 받습니다.
+          서버 관리자에게 인사 시스템 연결을 요청하면 매일 자동으로 받습니다
+          <span className="text-slate-400">(서버 설정 <code>TEAMWEAVER_HR_API_URL</code>·<code>TEAMWEAVER_HR_API_TOKEN</code>)</span>.
         </p>
       )}
       {s.config_error && <p role="alert" className="mt-2 text-[13px] text-red-700">{s.config_error}</p>}
