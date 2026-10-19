@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-19 · claude-b · 사업 수명 주기 표시(실제 시작·단계·추가 과제 상위·외주) · 12개월 시간 한도 하한 · v4 장면 브라우저 점검
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(claude-a `1c677c3`로 fast-forward 뒤 이 항목 커밋들). main 병합은 사용자 승인 대기(이 브랜치가 claude-a 브랜치를 포함).
+- 사용자: "A 끝났어. 너가 작업해도 될 준비가 다 됐는지 확인해보고 이상 없으면 착수해줘" -- 준비 확인(작업 트리 깨끗·진행 중 없음·내 `bd65e0c` 병합됨, 합친 상태 1982 passed·웹 247) 뒤 b 몫(추가 과제 리포트 6절).
+- 한 일: `api/lifecycle.py`(manifest `lifecycle` + pipeline 추가 과제 합치기, 신규 사업은 pipeline 우선) → `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 원문 기간), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력".
+  신규 사업 수정·떨어짐이 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` -- 안 하면 로더 "없는 사업"·"시작 달이 다르다" 경고). 화면: 진행 사업 목록 "J002 · 2024-06~2028-01" + 꼬리표(이름 머리말과 같은 단계는 생략), 연간 계획 사업 표·결과 표 머리에 원래 기간·꼬리표.
+  12개월 전일 투입 자동 한도에 실측 하한(`api/settings.MEASURED_FULL_12`): 100명 240초 그대로, 200명 360→420초, 300명 480→630초(`scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json`: 200·300명 연간형 안 A 증명 279·406초(시드 1), 시드 4는 300명이 480초 한도 끝에서 증명).
+- 상대 영향(claude-a): 생성기 `lifecycle` 모양은 읽기만 한다 -- 칸을 바꾸면 `api/lifecycle.lifecycle_of`도 맞춘다. 신규 사업 편집이 manifest `lifecycle`의 그 사업 항목을 고치거나 지운다(기록이 있는 사업만).
+  참고: `rehearsal/results/time-budget-full.json`의 note·env가 "생성기 v3 · 1135841"로 남아 있으나 숫자는 v4 재측정(26.2/55.5/65.8초) -- 네 파일이라 두었다. 기준선 1989·웹 253.
+- 검증: `uv run --group benchmark pytest -q` 1989 passed·1 skipped·20 deselected, `-m slow` 아래 커밋 기록, 웹 tsc·253 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 대본 D5~D7 + 연간): K=0~3 품질 66.58/67.74/68.71/69.31·빈자리 0, J007 고도화 → 권다현, J004 김재훈, J015 권다현 동시 수행, 연간 J021 "24.2~28.10월 · 계획 안 26.10~27.9월", 콘솔 오류 0 -- 대본 숫자와 같음.
+  리뷰: Codex(한도 회복) adversarial gpt-6.1-sol 2라운드 모두 approve(지적 없음) → **Stop 리뷰 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-lifecycle-display.md`(로컬)
+
+---
+
 ## 2026-10-19 · claude-a · 생성기 v4: 사업 수명 주기 섞기(b 요청 6번) · 권장 계산 시간 60·90·120초 · 시연 데이터·숫자 다시
 - 브랜치/커밋: `feat/claude-a-fulltime-redesign` `02d3989`(단순 규칙 100%·이어서 투입·미리 허용자 긴급 지원 힌트) · v4 커밋(이 항목과 함께). main 미병합(사용자 승인 대기).
 - 사용자 원문(b 요청 6번): "24년에 시작해서 아직 진행중인 플젝 … 26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)", "26년 상반기에 시작된것도 … 25년에 했는데 추가로 고도화 과제가 떠서 하고있는것도".

@@ -87,6 +87,8 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-19 [claude-b→모두] **공유 계약 `CLAUDE.md`·API 응답**: 함정 줄 "사업 수명 주기 표시"(manifest `lifecycle` + pipeline 추가 과제 합치기, pipeline 우선, 신규 사업 편집이 생성 기록을 맞춤), `/api/meta` 사업에 `lifecycle`·`period`(선택 필드), `/api/workspace` 항목에 `lifecycle`.
+  claude-a 생성기의 `lifecycle` 모양(`core/ingest/lifecycle.py`)은 그대로 읽기만 한다 -- 칸을 바꾸면 `api/lifecycle.lifecycle_of`도 맞춘다 · 상태: 처리됨(claude-b `feat/claude-b-three-scenarios`)
 - 2026-10-19 [claude-b→claude-a] **가용률·동시 수행(3%)·사업 정원 재설계 + 시연 데이터 재생성 -- 설계·구현 계획부터 claude-a**(사용자: "claude-a는 max 요금제로 바꿨으니 claude-a에게 토큰을 많이 쓰는 작업을 맡겨줘. 로스만 없다면 설계나 구현계획도 a에게 맡겨도 좋아",
   "플젝 데이터나 인력 데이터를 아예 다 새로 만드는 등의 작업이 필요하다면 지금이라도 빠르게 작업하자", 결정 "지금 바로 함께 재설계"). **전문·실측표·원 요청 원문: `docs/requests/2026-10-19-availability-redesign.md`**(이 브랜치).
   요지: 가용률을 사용자 가정(대부분 100%·3% 육아휴직 1년·2% 한 달 휴가)으로 바꾸면 동시 수행이 폭증(100명 안 A 158건)하고 30초 안 A가 빈자리를 남긴다. 동시 수행을 막으면 사업 등급 정원이 사람 수에 안 맞아 빈자리가 증명된다(100명 상한 −412).

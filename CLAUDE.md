@@ -148,7 +148,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   사업 정원은 등급·달마다 (가용률 1.0인 그 등급 인원)의 85% 이하(`org_profile.shrink_to_supply` -- 예전 전체 85%는 등급을 안 봐 쪼개 넣어야 채워졌다), 예산 = 기준 단가 × 정원 × 1.0~1.25(`budget_of`),
   연초 현재 배치 100%·겹침 없음, 운영 중은 휴직 달이 걸린 사람을 진행 사업·대기에서 빼고 신규 제안 정원 = 대기 인력의 등급 구성(한 명 여유).
   **사람·이력·평가 글 난수열은 그대로**라 판정 동봉이 그대로 쓰인다(`export_demo_judgments.py --check`). 연간·연말형 도구(`scripts/make_{annual,yearend}_demo.py`)가 같은 함수를 쓴다.
-  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`.
+  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`. 전일 투입은 12개월 실측 하한(`MEASURED_FULL_12`, 100·200·300명 78·279·406초 × 1.5)과
+  큰 값이라 240·420·630초(claude-b 2026-10-19, `scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json` -- ×4만으로는 300명·시드 4가 한도 끝에서 증명).
 - **생성기 v4 = 사업 수명 주기 섞기**(2026-10-19 사용자 원문 -- b 요청 6번, claude-a 설계 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`): 별도 난수열(`org_profile.lifecycle_seed`)이라 사람·이력·평가 글은 v3와 바이트까지 같다.
   연초 계획은 기존 사업(J001~) 뒤에 장기 사업(25명당 1개: 2024 `[운영]` 내부 2~3명·계획 뒤까지 / 2025 `[고도화]` / 2026 상반기)과 운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값)를 붙이고,
   운영 중은 진행 사업마다 수명 주기(운영 = 팀 2~3명) + 신규 제안 중 추가 과제 1개(**b의 `pipeline` 모양** parent·external_headcount). 실제 시작 달은 `projects.csv start_month`
@@ -167,6 +168,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **별도 사업 행** + manifest `pipeline[id].parent`·`external_headcount`(외주, 참고값 -- 계산에 안 씀). 고도화 과제(`predecessor`, 끝난 이전 사업)와 함께 못 고른다.
   상위 사업은 등록·상위 변경 때 "현재 배치가 있는 진행 사업", 과제 기간은 상위 기간 안(`_check_parent`, 원문 달 공백 정규화 `_period`). 추가 과제 칸은 추가 과제에만 쓴다 --
   일반 등록의 manifest 모양(데이터 버전)이 그대로. 후보는 상위 사업 팀원 `parent_team` 맨 위. 시연 데이터의 사업 수명 주기는 생성기 v4가 같은 모양으로 만든다(아래 생성기 v4 -- 연말형 J020이 J011에 붙은 추가 과제).
+- **사업 수명 주기 표시**(2026-10-19, claude-b `api/lifecycle.py`·`web/src/components/{lifecycle.ts,LifecycleChips.tsx}`): manifest `lifecycle`(생성기 v4)과 `pipeline` 추가 과제를 합쳐
+  `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 사업의 원문 기간 -- `start_month`·`end_month`는 계획 안으로 자른 달 순번), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력"에 싣는다.
+  신규 사업은 **pipeline이 원본**(화면에서 고친 상위·외주가 이긴다, pipeline에서 상위를 풀면 생성 기록의 연결은 무시). 신규 사업 수정·떨어짐은 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` --
+  안 하면 로더가 "없는 사업"·"시작 달이 다르다" 경고를 남긴다), 기록이 없는 사업엔 칸을 만들지 않는다. 계산(MILP·평가기)은 읽지 않는다. 꼬리표는 이름 머리말("[운영]")과 같은 단계를 다시 쓰지 않는다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -181,7 +186,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v4 + b `bd65e0c`(추가 과제) 병합(claude-a) **1980 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 247 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v4 + 사업 수명 주기 표시(claude-b, a `1c677c3` 위) **1989 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 253 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
