@@ -181,6 +181,16 @@ def test_twelve_month_data_gets_a_longer_automatic_time_limit(annual):
     assert "12개월" in body["recommended_time_full"]["basis"] and "12개월" in body["recommended_time"]["basis"]
 
 
+def test_twelve_month_full_time_limits_have_a_measured_floor():
+    """claude-b 실측(2026-10-19, rehearsal/results/time-budget-annual.json): 200·300명 12개월 안 A 증명 279·406초(시드 1) --
+    ×4(360·480초)는 여유가 1.3·1.2배뿐이라 6개월 표와 같은 규칙(× 1.5, 30초 단위)의 하한을 둔다. 100명·6개월·예전 방식은 그대로."""
+    from api.settings import recommended_seconds
+    assert [recommended_seconds(n, "full", 12) for n in (100, 200, 300)] == [240, 420, 630]
+    assert [recommended_seconds(n, "full", 6) for n in (100, 200, 300)] == [60, 90, 120]
+    assert recommended_seconds(200, "fixed", 12) == 4 * recommended_seconds(200, "fixed", 6)
+    assert recommended_seconds(10_000, "full", 12) <= 900
+
+
 def test_second_half_monthly_allocations_pass_the_api(annual):
     """Codex 리뷰(2026-10-19, high): API 입력의 달 키 상한이 5로 남아 12개월 하반기 달별 투입률(키 6~11)이 422였다."""
     from api.main import app

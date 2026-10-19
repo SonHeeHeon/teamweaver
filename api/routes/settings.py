@@ -22,7 +22,8 @@ def _body(state: SettingsState, request: Request) -> dict:
     def rec(mode: str) -> dict:
         tb = recommend(n, allocation_mode=mode)
         per = recommended_seconds(n, mode, months)
-        basis = tb.basis + (f" · 12개월 계획 ×{HORIZON_TIME_FACTOR[12]}(100명 실측)" if months == 12 else "")
+        basis = tb.basis + ((" · 12개월 계획: 6개월 권장 ×4와 12개월 실측(100·200·300명 78·279·406초 × 여유 1.5) 중 큰 값"
+                             if mode == "full" else f" · 12개월 계획 ×{HORIZON_TIME_FACTOR[12]}(100명 실측)") if months == 12 else "")
         return {"n_people": n, "per_solve_s": per, "worst_case_total_s": 4 * per,
                 "measured": tb.measured, "basis": basis}
     return {"settings": state.settings.model_dump(),

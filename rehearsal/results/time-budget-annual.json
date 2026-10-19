@@ -1,0 +1,81 @@
+{
+ "generated_at": "2026-10-19T08:14:00+00:00",
+ "env": {
+  "commit": "1c677c3 (+ claude-b 작업 트리: 수명 주기 표시, 계산 코드 변경 없음)",
+  "python": "3.12.13",
+  "machine": "arm64",
+  "system": "Darwin 25.5.0",
+  "started_at": "2026-10-19T07:50:00+00:00"
+ },
+ "note": "생성기 v4 원본(org-n200·n300)으로 만든 12개월 연간형 묶음(scripts/make_annual_demo.make), 서비스 기본(전일 투입·초기해), 안 A만. 동시 수행 허용 0명. 한도는 측정 당시 자동 한도(6개월 권장 × 4: 360·480초). 같은 맥미니에서 차례로 실행(측정 초반에 Codex 리뷰의 가벼운 로컬 명령이 함께 돌았다). 100명 12개월은 rehearsal/results/time-budget-full.json(org-n100-annual, claude-a).",
+ "runs": [
+  {
+   "bundle": "org-n200-annual",
+   "people": 200,
+   "projects": 89,
+   "months": 12,
+   "seeds": 1,
+   "time_limit": 360,
+   "elapsed_s": 278.6,
+   "accepted": true,
+   "termination": "Optimal",
+   "best_bound": 295.695,
+   "warm_start_unfilled": 6,
+   "objective": 283.261,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "gap": 0.0439
+  },
+  {
+   "bundle": "org-n200-annual",
+   "people": 200,
+   "projects": 89,
+   "months": 12,
+   "seeds": 4,
+   "time_limit": 360,
+   "elapsed_s": 321.7,
+   "accepted": true,
+   "termination": "Optimal",
+   "best_bound": 295.695,
+   "warm_start_unfilled": 6,
+   "objective": 283.261,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "gap": 0.0439
+  },
+  {
+   "bundle": "org-n300-annual",
+   "people": 300,
+   "projects": 133,
+   "months": 12,
+   "seeds": 1,
+   "time_limit": 480,
+   "elapsed_s": 406.2,
+   "accepted": true,
+   "termination": "Optimal",
+   "best_bound": 433.62,
+   "warm_start_unfilled": 3,
+   "objective": 420.226,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "gap": 0.0319
+  },
+  {
+   "bundle": "org-n300-annual",
+   "people": 300,
+   "projects": 133,
+   "months": 12,
+   "seeds": 4,
+   "time_limit": 480,
+   "elapsed_s": 485.0,
+   "accepted": true,
+   "termination": "Optimal",
+   "best_bound": 431.085,
+   "warm_start_unfilled": 3,
+   "objective": 419.56,
+   "unfilled_seats": 0,
+   "violations": 0,
+   "gap": 0.0275
+  }
+ ]
+}

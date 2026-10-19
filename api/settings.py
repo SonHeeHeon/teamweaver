@@ -48,6 +48,11 @@ TIME_LIMIT_MAX = 900
 # 재설계 뒤(전일 투입·생성기 v3, claude-a 2026-10-19 rehearsal/results/time-budget-full.json): 연간 100명은 30초에도 빈자리 0, 최선 증명은
 # 시드 1 83초·시드 4 61초 -- 6개월 권장 30초 × 4 = 120초 안이라 배수를 그대로 둔다. 200·300명 12개월은 재지 않았다(측정 범위 밖 추정).
 HORIZON_TIME_FACTOR = {6: 1, 12: 4}
+# 12개월 전일 투입 실측(안 A 최선 증명까지, 허용 차이 5%, 시드 1) -- 6개월 표(MEASURED_FULL)와 같은 규칙(× 1.5, 30초 단위 올림)으로 하한을 둔다.
+# 100명: claude-a v4 연간 시연 78초(rehearsal/results/time-budget-full.json). 200·300명: claude-b 2026-10-19, org-n200·n300으로 연간형 묶음을
+# 만들어(scripts/make_annual_demo.make, 사업 89·133개) 279·406초(시드 4는 322·485초 -- ×4 한도 480초 끝에서야 증명). 결과 rehearsal/results/time-budget-annual.json.
+# ×4만으로는 200·300명 여유가 1.3배·1.2배라 실측 하한을 더한다. 100명은 ×4(240초)가 더 커서 그대로다(연간 시연 기록·캐시 키 불변).
+MEASURED_FULL_12: dict[int, int | None] = {100: 78, 200: 279, 300: 406}
 
 
 def horizon_months_of(graph) -> int:
@@ -58,6 +63,8 @@ def horizon_months_of(graph) -> int:
 def recommended_seconds(n_people: int, allocation_mode: str = "fixed", months: int = 6) -> int:
     from core.optimize.time_budget import recommend
     s = recommend(n_people, allocation_mode=allocation_mode).per_solve_s * HORIZON_TIME_FACTOR.get(months, 1)
+    if months == 12 and allocation_mode == "full":
+        s = max(s, recommend(n_people, table=MEASURED_FULL_12, allocation_mode="full").per_solve_s)
     return min(s, TIME_LIMIT_MAX)
 
 
