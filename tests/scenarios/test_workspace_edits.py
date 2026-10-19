@@ -167,3 +167,23 @@ def test_concurrency_grant_cannot_go_below_the_current_overlap(files):
     assert we.concurrency_of(we.read_manifest(ok))[0]["max_projects"] == 3
     with pytest.raises(we.EditError, match="허용된 프로젝트 동시 수행이 없다"):
         we.set_concurrency(files, pid, False)
+
+
+def test_revoke_sees_overlap_through_padded_months(files):
+    """Codex Stop 리뷰(2026-10-19): 달 칸 공백("2026-12 ")을 원문 그대로 비교하면 두 사업이 겹치는데도 동시 수행 해제가 승인됐다."""
+    h, rows = we.read_table(files, we.PROJECTS)
+    for r in rows:
+        if r["project_id"] == "J007":
+            r["end_month"] = "2026-12"
+        if r["project_id"] == "J019":
+            r["start_month"] = "2026-12 "                                        # 로더는 공백을 걷어 읽는다
+    files = {**files}
+    we.write_table(files, we.PROJECTS, h, rows)
+    ch, cur = we.current_table(files)
+    person = next(r["person_id"] for r in cur if r["project_id"] == "J007")
+    we.write_table(files, we.CURRENT, ch, cur + [{**next(r for r in cur if r["person_id"] == person), "project_id": "J019",
+                                                  "locked": "N"}])
+    assert we._overlaps(files, person) == 2
+    granted = we.set_concurrency(files, person, True, reason="기술 지원")
+    with pytest.raises(we.EditError):
+        we.set_concurrency(granted, person, False)                            # 같은 달(2026-12) 두 사업 -- 해제 거절

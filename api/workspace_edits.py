@@ -422,10 +422,12 @@ def set_concurrency(files: Files, person_id: str, allow: bool, *, max_projects: 
 
 
 def _overlaps(files: Files, person_id: str) -> int:
-    """그 사람의 현재 배치가 같은 달에 몇 개까지 겹치는가(달력 달 기준)."""
+    """그 사람의 현재 배치가 같은 달에 몇 개까지 겹치는가(달력 달 기준). 달은 `_period`로 공백을 걷어 읽는다 --
+    원문 그대로 비교하면 "2026-12 " 시작과 "2026-12" 종료의 겹침을 놓쳐 해제가 승인됐다(Codex Stop 리뷰 2026-10-19).
+    읽지 못하는 달이면 EditError(허용 해제·낮추기를 거절하는 쪽으로 닫힌다)."""
     _, cur = current_table(files)
     _, projects = read_table(files, PROJECTS)
-    span = {r["project_id"]: (r["start_month"], r["end_month"]) for r in projects}
+    span = {r["project_id"]: _period(r) for r in projects}
     mine = [span[r["project_id"]] for r in cur if r.get("person_id") == person_id and r.get("project_id") in span]
     months = {mo for a, _ in mine for mo in (a,)} | {b for _, b in mine}
     return max((sum(1 for a, b in mine if a <= mo <= b) for mo in months), default=0)
