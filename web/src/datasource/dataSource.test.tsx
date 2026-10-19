@@ -68,6 +68,12 @@ describe("데이터 원천(2026-10-19 인사 시스템 API 기본·CSV 대체)",
     expect(await screen.findByText(/서버에 저장하지 못했다.*디스크 가득/)).toBeInTheDocument();
   });
 
+  it("어디까지 셌는지 몰라 못 늘린 경력은 '최신'으로 보이지 않는다", async () => {
+    mockFetch(() => json({ ...BASE, aging: { ...BASE.aging, as_of: null, skipped: "unknown_counted_month", held: 3 } }));
+    render(<DataSourcePanel datasetVersion="v1" onSwitched={() => {}} />);
+    expect(await screen.findByText(/어디까지 셌는지.*경력 3건을 늘리지 못함/)).toBeInTheDocument();
+  });
+
   it("다른 곳에서 받는 중이면 끝날 때까지 다시 읽고, 새 판이 켜졌으면 화면에 알린다", async () => {
     let n = 0;
     const changed = vi.fn();

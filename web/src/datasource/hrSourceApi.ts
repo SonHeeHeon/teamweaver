@@ -25,7 +25,9 @@ export interface Aging {
   skills: number;
   max_months: number;
   /** "no_work_skills" = 업무별 사용 기술 표가 없어 늘리지 못함("이미 최신"과 다르다) */
-  skipped?: "no_work_skills" | null;
+  skipped?: "no_work_skills" | "unknown_counted_month" | null;
+  /** 어디까지 셌는지 몰라 늘리지 않은 경력 행 수 */
+  held?: number;
 }
 
 export interface HrSourceStatus {

@@ -33,7 +33,7 @@ def test_ongoing_skills_grow_from_the_data_month_to_the_month_before_the_plan():
     assert rows["Java"]["experience_months"] == 30
     assert rows["Kafka"]["experience_months"] == 11 and rows["Kafka"]["last_used_month"] == D(2026, 11, 1)
     assert rec == {"owner": "service", "as_of": "2026-09", "as_of_from": "manifest as_of", "cutoff": "2026-11",
-                   "people": 1, "skills": 2, "max_months": 11, "skipped": None}
+                   "people": 1, "skills": 2, "max_months": 11, "skipped": None, "held": 0}
     assert r.notes and "최대 +11개월" in r.notes[0]
 
 
@@ -119,7 +119,13 @@ def test_unknown_counted_month_holds_the_row_and_warns():
     rec = age_ongoing_skills({}, t, _horizon(), r)
     rows = {x["skill_name"]: x for x in t["person_skills.csv"]}
     assert rows["Spark"]["experience_months"] == 9 and rows["Kafka"]["experience_months"] == 11
-    assert rec["skills"] == 1 and any("어디까지 셌는지" in i.message for i in r.warnings)
+    assert rec["skills"] == 1 and rec["held"] == 1 and any("어디까지 셌는지" in i.message for i in r.warnings)
+    # 늘린 것이 하나도 없으면 화면이 "최신"으로 읽지 않게 이유를 남긴다(폴백 리뷰)
+    t, r = _tables(), IngestReport()
+    t["person_skills.csv"] = [{"person_id": "P1", "skill_name": "Spark", "experience_months": 9, "last_used_month": None, "__row__": 1}]
+    t["work_skills.csv"] = t["work_skills.csv"][:1]
+    rec = age_ongoing_skills({}, t, _horizon(), r)
+    assert rec["skills"] == 0 and rec["skipped"] == "unknown_counted_month" and rec["held"] == 1
 
 
 def test_months_outside_the_ten_year_window_do_not_come_back():
@@ -131,6 +137,17 @@ def test_months_outside_the_ten_year_window_do_not_come_back():
     t["work_skills.csv"] = t["work_skills.csv"][:1]
     age_ongoing_skills({"as_of": "2026-09"}, t, _horizon(), IngestReport())
     assert t["person_skills.csv"][0]["experience_months"] == 2 and t["person_skills.csv"][0]["last_used_month"] == D(2026, 11, 1)
+
+
+def test_the_ten_year_window_boundary():
+    """폴백 리뷰(2026-10-19): 12월 계획의 창 첫 달은 2016-12 -- 그 달에 마지막으로 쓴 경력은 창 안(120+2=122), 한 달 앞이면 창 밖(최근 2달만)."""
+    for last, want in ((D(2016, 12, 1), 122), (D(2016, 11, 1), 2)):
+        t = _tables()
+        t["work_history.csv"][0]["start_date"] = D(2026, 10, 1)
+        t["person_skills.csv"][0].update(experience_months=120, last_used_month=last)
+        t["work_skills.csv"] = t["work_skills.csv"][:1]
+        age_ongoing_skills({"as_of": "2026-09"}, t, _horizon(), IngestReport())
+        assert t["person_skills.csv"][0]["experience_months"] == want, last
 
 
 def test_loader_applies_the_aging_and_checks_the_manifest(tmp_path):

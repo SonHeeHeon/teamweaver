@@ -20,7 +20,7 @@ import datetime as dt
 from collections import defaultdict
 
 # 계산 버전(api/datasets.rules_version)에 들어간다 -- 늘리는 규칙을 바꾸면 같은 원천이라도 캐시·미리 계산이 옛 경력으로 쓰이지 않게 바꾼다
-AGING_RULES = "2026-10-19:ongoing-work-skills-after-last-used"
+AGING_RULES = "2026-10-19:ongoing-work-skills-after-last-used;hold-unknown;window-reset"
 OWNERS = ("service", "source")
 ONGOING = "진행중"
 
@@ -59,7 +59,8 @@ def age_ongoing_skills(manifest: dict, tables: dict, horizon: list[dt.date], rep
     as_of, how = data_as_of(manifest, tables)
     out = {"owner": owner, "as_of": as_of.strftime("%Y-%m") if as_of else None, "as_of_from": how,
            "cutoff": None, "people": 0, "skills": 0, "max_months": 0,
-           "skipped": None}                              # "no_work_skills" = 업무별 사용 기술 표가 없어 늘리지 못함(화면이 "최신"과 구분)
+           "skipped": None,                              # "no_work_skills" = 업무별 사용 기술 표가 없어 늘리지 못함(화면이 "최신"과 구분)
+           "held": 0}                                    # 어디까지 셌는지 몰라 늘리지 않은 경력 행 수
     if not horizon:
         return out
     cutoff = _add(horizon[0], -1)
@@ -117,7 +118,7 @@ def age_ongoing_skills(manifest: dict, tables: dict, horizon: list[dt.date], rep
                 more = sorted(m for m in span if m > done)
                 if not more:
                     continue
-                if done < since:
+                if r.get("last_used_month") and done < since:      # 행 자신의 마지막 사용 달로만 판정(입력 단계도 그것으로 버린다)
                     # 10년 창 밖에서 마지막으로 쓴 경력은 입력 단계가 버린다 -- 최근 달을 더하며 되살리지 않고 최근 경력만 남긴다(Codex 종료 리뷰)
                     r["experience_months"] = len(more)
                 else:
@@ -130,6 +131,9 @@ def age_ongoing_skills(manifest: dict, tables: dict, horizon: list[dt.date], rep
             rows.append({"person_id": key[0], "skill_name": raw_name[key], "skill_category": None, "project_count": 1,
                          "experience_months": len(span), "last_used_month": max(span), "__row__": None})
             added[key] = len(span)
+    out["held"] = len(unknown)
+    if unknown and not added:
+        out["skipped"] = "unknown_counted_month"
     if unknown:
         report.warn("person_skills.csv", f"진행 중 업무에 등록된 기술 경력 {len(unknown)}건은 원천이 어디까지 셌는지(마지막 사용 달·데이터 기준월 as_of) "
                     f"몰라 늘리지 않았다(예: {unknown[0]['person_id']} {unknown[0]['skill_name']}) -- last_used_month나 manifest as_of를 채워 달라")

@@ -126,8 +126,10 @@ export function DataSourcePanel({ adminToken = null, datasetVersion, onSwitched,
                     업무별 사용 기술 표가 없어 늘리지 못함{a.as_of && a.cutoff && a.as_of < a.cutoff
                       ? ` — 데이터 기준월 ${a.as_of} 뒤 ${a.cutoff}까지의 경력이 빠져 있다` : ""}
                   </span>
-                : a.skills > 0 ? `늘린 경력 ${a.skills}건(${a.people}명, 최대 +${a.max_months}개월)`
-                  : "늘릴 달 없음(원천이 계획 직전 달까지 셌다)"}
+                : a.skipped === "unknown_counted_month"
+                  ? <span className="text-amber-700">원천이 어디까지 셌는지(마지막 사용 달·데이터 기준월) 몰라 경력 {a.held ?? 0}건을 늘리지 못함</span>
+                  : a.skills > 0 ? `늘린 경력 ${a.skills}건(${a.people}명, 최대 +${a.max_months}개월)${a.held ? ` · ${a.held}건은 어디까지 셌는지 몰라 보류` : ""}`
+                    : "늘릴 달 없음(원천이 계획 직전 달까지 셌다)"}
           </p>
         )}
         {!s.editable && s.not_editable_reason && <p className="mt-1 text-[12.5px] text-slate-500">{s.not_editable_reason}</p>}

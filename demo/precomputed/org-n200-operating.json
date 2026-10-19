@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n200-operating",
  "dataset_id": "org-n200-s2026-operating",
- "dataset_version": "0554402c76e58ce5100456cd73db8c925652e76e144d13869c7dec78db077a48",
+ "dataset_version": "57228341be5975db2be5156af35358ee281684e38bb33eb25b11c86cb7e1a8ba",
  "review_judge": "llm",
  "computed_at": "2026-10-19T10:29:20+00:00",
  "commit": "ce15782",
@@ -9408,8 +9408,8 @@
   ]
  },
  "rekeyed": {
-  "at": "2026-10-19T12:27:04+00:00",
-  "from_dataset_version": "9f3c3971aa209856418126ea7fe227a1e61c6dc96ce9e36bae67a2841259d8b3",
-  "reason": "bundle gained the optional work_skills.csv and manifest as_of / skill_months_owner, and the calculation version now carries the ongoing-skill aging rules (HR source and aging, 2026-10-19); the demo skill rows were counted up to the month before the plan, so no skill months grew and the model input is unchanged -- results were not re-solved, and the server still re-scores every plan on load"
+  "at": "2026-10-19T13:19:16+00:00",
+  "from_dataset_version": "0554402c76e58ce5100456cd73db8c925652e76e144d13869c7dec78db077a48",
+  "reason": "the ongoing-skill aging rules marker changed (rows with an unknown counted month are held, rows last used before the 10-year window keep only the new months -- review fixes 2026-10-19); the demo skill rows were counted up to the month before the plan, so no skill months grew and the model input is unchanged -- results were not re-solved, and the server still re-scores every plan on load"
  }
 }
