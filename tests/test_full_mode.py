@@ -172,3 +172,12 @@ def test_a_person_whose_project_ends_before_the_target_is_not_concurrent():
     entries = [AssignEntry(person_id="p0", project_id="j0", alloc=1.0)]
     rows = {r["person_id"]: r for r in rank_candidates(graph, S, C, FULL, entries, "j2", top=None)}
     assert rows["p0"]["source"] == "bench" and rows["p0"]["needs_grant"] is False
+
+
+def test_simple_rule_in_full_mode_assigns_whole_people_without_double_booking():
+    from core.optimize.greedy import solve_greedy
+    graph, S, C = _fixture()
+    plan = solve_greedy(graph, S, full=True)
+    assert plan.entries and all(e.alloc == 1.0 for e in plan.entries)
+    assert all(_count(plan.entries, p) <= 1 for p in ("p0", "p1", "p2")) and _count(plan.entries, "p3") == 0
+    assert not {v.code for v in evaluate_plan(graph, S, C, FULL, plan.entries).violations} - {"budget"}

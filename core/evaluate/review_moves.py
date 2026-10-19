@@ -53,8 +53,8 @@ def mover_effects(graph, S, C, params, kg, before, after, target: str) -> dict:
     """대상 사업(target)에 새로 들어온 사람마다 출처와 득실. 형식은 구현 계획 Task 1 Interfaces.
 
     옮겨 온 사람(origin="moved") = 전에 대상 밖 다른 사업 배치가 있었고, 후에 그 배치가 빠졌거나 투입률이 줄었다.
-    전에 배치가 없었으면 대기 인력(origin="bench"), 다른 배치가 그대로 남은 동시 수행이면 일부 여유(origin="partly_free" --
-    운영 화면의 후보 갈래와 같은 말). 출처 사업이 여럿이면 출처마다 적는다."""
+    전에 배치가 없었으면 대기 인력(origin="bench"), 기간이 겹치는 다른 배치가 그대로 남았으면 일부 여유(origin="partly_free" --
+    전일 투입이면 프로젝트 동시 수행), 남은 배치가 대상 사업 전에 끝나면 이어서 투입(origin="follow_on"). 출처 사업이 여럿이면 출처마다 적는다."""
     b_alloc, a_alloc = _alloc_of(before), _alloc_of(after)
     grade_of = {p.id: p.grade.value if hasattr(p.grade, "value") else str(p.grade) for p in graph.people}
     name_of = {j.id: j.name for j in graph.projects}
@@ -85,7 +85,15 @@ def mover_effects(graph, S, C, params, kg, before, after, target: str) -> dict:
                             "alloc_before": round(alloc_b, 4), "alloc_after": round(alloc_a, 4),
                             "left": (p, j) not in a_alloc,
                             **_delta(state("b", j), state("a", j)), "backfill": backfill})
+        kept = [graph.projects[graph.project_index[j]] for (q, j) in a_alloc
+                if q == p and j != target and (p, j) in b_alloc and j in graph.project_index]
+        tgt = graph.projects[graph.project_index[target]] if target in graph.project_index else None
+        # 남은 다른 배치가 **모두 대상 사업 시작 전에 끝나면** 그 사업을 마친 뒤 이어서 들어오는 것(follow_on, 2026-10-19 --
+        # 전일 투입에서 "일부 여유"는 틀린 말이었다). 겹치거나 대상 사업 뒤에 시작하면 예전처럼 일부 여유(겹치면 전일 투입의 동시 수행).
+        # 시간 순서를 본다 -- 겹치지 않기만 보면 "대상 사업을 먼저 하고 다음 배치로 간다"도 이어서 투입으로 찍혔다(폴백 리뷰 M4)
+        follow = bool(kept) and tgt is not None and max(k.end_month for k in kept) < tgt.start_month
+        origin = ("moved" if sources else "follow_on" if follow
+                  else "partly_free" if any(q == p for (q, _) in b_alloc) else "bench")
         joined.append({"person_id": p, "grade": grade_of.get(p), "alloc": round(a_alloc[(p, target)], 4),
-                       "origin": "moved" if sources else ("partly_free" if any(q == p for (q, _) in b_alloc) else "bench"),
-                       "sources": sources})
+                       "origin": origin, "sources": sources})
     return {"target": target, "joined": joined, "target_gain": _delta(state("b", target), state("a", target))}

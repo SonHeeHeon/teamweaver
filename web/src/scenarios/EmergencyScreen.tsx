@@ -141,12 +141,13 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
         entries: [...currentEntries(ws), { person_id: row.person_id, project_id: pid, alloc: 1 }], source: "emergency",
         note: `${pid} 긴급 투입(프로젝트 동시 수행 지원)${note ? `: ${note}` : ""}`,
         ...row.apply_hint,                      // 서버가 이 사람으로 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술)
-        concurrency_add: [{ person_id: row.person_id, memo: note || `${pid} 긴급 투입` }],
+        // 이미 허용된 사람은 기존 허용 기록(사유·메모)을 그대로 둔다 -- 새 허용이 필요할 때만 긴급 지원으로 적는다
+        ...(row.needs_grant ? { concurrency_add: [{ person_id: row.person_id, memo: note || `${pid} 긴급 투입` }] } : {}),
       });
       setWs(res.workspace);
       setConfirmed({ version: res.workspace.dataset_version, projectId: pid, seen: datasetVersion ?? null });
       setPlan(null);
-      setNotice(withPersistNote(`${row.name}이(가) 원래 사업은 그대로 두고 ${project?.name ?? pid}도 함께 맡는다(프로젝트 동시 수행, 사유 긴급 지원).`, res));
+      setNotice(withPersistNote(`${row.name}이(가) 원래 사업은 그대로 두고 ${project?.name ?? pid}도 함께 맡는다(프로젝트 동시 수행, ${row.needs_grant ? "사유 긴급 지원" : "이미 허용됨"}).`, res));
       onDatasetChanged();
     } catch (e) {
       setError((e as Error).message);

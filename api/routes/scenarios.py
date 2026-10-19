@@ -228,9 +228,10 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
             # 일반 후보와 한 목록에 섞지 않는다(폴백 리뷰 P2: 빼 오기·대기 후보가 밀려났다)
             concurrent = (rank_candidates(graph, S, C, params, entries, body.project_id, top=10, locked=locked,
                                           offer_concurrency=True) if params.allocation_mode == "full" else [])
-            # 행마다 확정할 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) -- 화면이 직접 정하면 빈자리가 남거나 예산이 이중으로 늘었다(폴백 리뷰 P2)
+            # 행마다 확정할 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) -- 화면이 직접 정하면 빈자리가 남거나 예산이 이중으로 늘었다(폴백 리뷰 P2).
+            # 이미 허용된 사람의 동시 수행 행(일반 후보 rows의 source="concurrent")에도 붙인다 -- 없으면 화면이 지원 버튼을 못 띄웠다(Codex 리뷰 2026-10-19)
             from core.optimize.types import AssignEntry
-            for r in concurrent:
+            for r in [x for x in rows if x.get("source") == "concurrent"] + concurrent:
                 after = entries + [AssignEntry(person_id=r["person_id"], project_id=body.project_id, alloc=r["alloc"])]
                 r["apply_hint"] = _apply_hint(graph, body.project_id, entries, after, extra, 1)
             standby = rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=False, top=5,

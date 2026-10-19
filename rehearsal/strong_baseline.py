@@ -11,6 +11,7 @@
 
     uv run --group benchmark python -m rehearsal.strong_baseline
 결과: rehearsal/results/strong-baseline.json
+2026-10-19: 미리 계산의 설정을 따른다 -- 전일 투입이면 휴리스틱도 100%만(투입률 올리기·옮기기 없음, 같은 등급 바꾸기만).
 """
 from __future__ import annotations
 
@@ -104,7 +105,9 @@ def heuristic(graph, S, C, params, seconds: float, seed: int = 0) -> tuple[list,
     rng = random.Random(seed)
     st = State(graph, S, C, params)
     ppl, projs = graph.people, graph.projects
-    lo = params.min_alloc
+    # 전일 투입(2026-10-19 서비스 기본): 투입률은 1.0뿐 -- 가용률 남은 양(rem)이 겹침·휴직을 막는다(허용 0명 기준). 투입률 올리기·옮기기는 없다
+    full = getattr(params, "allocation_mode", "fixed") == "full"
+    lo = 1.0 if full else params.min_alloc
     by_grade: dict = {}
     for i, pp in enumerate(ppl):
         by_grade.setdefault(pp.grade, []).append(i)
@@ -126,6 +129,8 @@ def heuristic(graph, S, C, params, seconds: float, seed: int = 0) -> tuple[list,
                     st.add(bi, j, lo)
 
     def raise_allocs():
+        if full:
+            return
         moved = True
         while moved:
             moved = False
@@ -172,7 +177,7 @@ def heuristic(graph, S, C, params, seconds: float, seed: int = 0) -> tuple[list,
         if (i, j) not in st.alloc:
             keys = list(st.alloc)
             continue
-        if rng.random() < 0.6:                       # 같은 등급 사람 바꾸기(투입률 그대로)
+        if full or rng.random() < 0.6:               # 같은 등급 사람 바꾸기(투입률 그대로) -- 전일 투입은 이것만
             a = st.alloc[(i, j)]
             k = rng.choice(by_grade[ppl[i].grade])
             if k == i or not st.can_join(k, j) or st.free(k, j) < a - TOL:
@@ -237,7 +242,8 @@ def main() -> None:
                     "unfilled_seats": sum(s.missing for s in ev.shortfalls),
                     "violations": dict(Counter(v.code for v in ev.violations)), "assignments": len(entries)}
         milp = score([AssignEntry(**e) for e in pre["optimize"]["plans"][0]["entries"]])
-        simple = score(list(solve_greedy(g, S, params.max_concurrent_projects, min_alloc=params.min_alloc).entries))
+        simple = score(list(solve_greedy(g, S, params.max_concurrent_projects, min_alloc=params.min_alloc,
+                                         full=params.allocation_mode == "full").entries))
         t0 = time.perf_counter()
         ents, stats = heuristic(g, S, C, params, seconds=params.time_limit)
         strong = score(ents)

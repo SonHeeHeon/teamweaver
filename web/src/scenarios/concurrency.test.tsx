@@ -96,6 +96,30 @@ describe("EmergencyScreen 동시 수행으로 지원", () => {
   });
 });
 
+describe("EmergencyScreen 미리 허용된 사람의 지원", () => {
+  it("허용이 이미 있으면 확정에 허용을 다시 적지 않는다(기존 사유 유지, Codex 리뷰)", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchSkillDictionary).mockResolvedValue([]);
+    vi.mocked(api.fetchStandby).mockResolvedValue({ source: null, computed_at: null, projects: {} });
+    const row: CandidateRow = { person_id: "P1", name: "김민준", grade: "고급", alloc: 1, source: "concurrent", pulled_from: [],
+      delta_total: 1.2, delta: {}, new_violations: [], category: "pull", predecessor_team: false, monthly_cost: 1300, needs_grant: false,
+      apply_hint: { headcount_add: { J007: { 고급: 1 } }, budget_add: { J007: 900 }, skills_add: {} } };
+    vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J007", skills: [], added_requirements: [],
+      best: { accepted: false }, candidates: { bench: [], spare: [row], pull: [] }, standby: [], apply_hint: null, note: "" });
+    vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P1@J007"], removed: [], changed: [] } });
+    render(<EmergencyScreen onDatasetChanged={vi.fn()} />);
+    fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J007" } });
+    fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
+    fireEvent.click(await screen.findByRole("tab", { name: /동시 수행으로 지원 1/ }));
+    fireEvent.click(screen.getByRole("button", { name: "김민준 동시 수행으로 지원" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
+    await waitFor(() => expect(api.postApply).toHaveBeenCalled());
+    const [, body] = vi.mocked(api.postApply).mock.calls[0];
+    expect(body).toMatchObject({ headcount_add: { J007: { 고급: 1 } } });
+    expect(body.concurrency_add).toBeUndefined();
+  });
+});
+
 describe("AssignmentTable 동시 수행 표시", () => {
   it("같은 달 두 사업인 사람에게 '동시 수행'과 허용 사유를 붙인다", () => {
     render(<AssignmentTable

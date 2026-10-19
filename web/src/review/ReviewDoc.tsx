@@ -10,7 +10,8 @@ import type {
 export const AGREEMENT_LABEL: Record<AgreementStatus, string> = {
   agreed: "합의함", requested: "요청 중", hr_assigned: "인사팀 사전 배정",
 };
-const ORIGIN_LABEL = { moved: "진행 사업에서 옮겨 옴", partly_free: "일부 여유", bench: "대기 인력" } as const;
+const ORIGIN_LABEL = { moved: "진행 사업에서 옮겨 옴", partly_free: "일부 여유", bench: "대기 인력",
+                       follow_on: "지금 사업이 끝난 뒤 이어서 투입" } as const;
 
 /** 문장 단위로 나눈다(마침표·물음표·느낌표 뒤 공백·줄바꿈). */
 export function sentences(text: string | null | undefined): string[] {

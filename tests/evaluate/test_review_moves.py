@@ -88,3 +88,23 @@ def test_unchanged_side_job_is_not_a_source(world):
     after = before + [AssignEntry(person_id=p.person_id, project_id="J014", alloc=0.5)]
     m = _run(world, before, after)["joined"][0]
     assert m["origin"] == "partly_free" and m["sources"] == []
+
+
+def test_a_person_whose_kept_project_ends_before_the_target_is_follow_on(world):
+    """2026-10-19: 남은 배치가 대상 사업 전에 끝나면 '일부 여유'가 아니라 이어서 투입(follow_on), 겹치면 일부 여유(동시 수행)."""
+    from dataclasses import replace
+    g = world["g"]
+    projects = [p.model_copy(update={"end_month": 2}) if p.id == "J005"
+                else p.model_copy(update={"start_month": 3}) if p.id == "J013" else p for p in g.projects]
+    w = {**world, "g": replace(g, projects=projects, _within_cache={})}
+    j005 = next(e.person_id for e in world["current"] if e.project_id == "J005")
+    j002 = next(e.person_id for e in world["current"] if e.project_id == "J002")
+    follow = world["current"] + [AssignEntry(person_id=j005, project_id="J013", alloc=1.0)]
+    overlap = world["current"] + [AssignEntry(person_id=j002, project_id="J013", alloc=1.0)]
+    assert _run(w, world["current"], follow, "J013")["joined"][0]["origin"] == "follow_on"
+    assert _run(w, world["current"], overlap, "J013")["joined"][0]["origin"] == "partly_free"
+    # 반대 순서(대상 사업을 먼저 하고 남은 배치로 간다)는 이어서 투입이 아니다(폴백 리뷰 M4)
+    first = [p.model_copy(update={"start_month": 3}) if p.id == "J005"
+             else p.model_copy(update={"start_month": 0, "end_month": 2}) if p.id == "J013" else p for p in g.projects]
+    w2 = {**world, "g": replace(g, projects=first, _within_cache={})}
+    assert _run(w2, world["current"], follow, "J013")["joined"][0]["origin"] == "partly_free"

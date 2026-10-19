@@ -191,3 +191,26 @@ def test_concurrent_support_rows_carry_the_server_hint_that_confirms_cleanly(yea
                                                                              "alloc": 1.0}],
                                                  "concurrency_add": [{"person_id": row["person_id"]}], **hint})
         assert r.status_code == 200, r.text
+
+
+def test_a_pre_granted_person_gets_a_hint_and_keeps_the_grant(yearend):
+    """Codex 리뷰(2026-10-19): 미리 허용받은 사람은 일반 후보에 source="concurrent"·needs_grant=False로 나온다 -- 그 행에도 확정 힌트가
+    있어야 화면이 지원을 확정할 수 있고, 확정해도 원래 허용 기록(사유·메모)은 그대로다."""
+    from api.main import app
+    with TestClient(app) as c:
+        ws = _ws(c)
+        pid, own, other, grade = _member_and_overlap(ws)
+        r = c.post("/api/workspace/concurrency", json={"dataset_version": ws["dataset_version"], "person_id": pid, "allow": True,
+                                                       "reason": "기술 지원", "memo": "미리 허용"})
+        assert r.status_code == 200, r.text
+        ws = r.json()["workspace"]
+        plan = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": other, "n": 1}).json()
+        row = next((x for x in plan["candidates"]["spare"] if x["person_id"] == pid), None)
+        assert row is not None and row["source"] == "concurrent" and row["needs_grant"] is False
+        assert set(row["apply_hint"]) == {"headcount_add", "budget_add", "skills_add"}
+        r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "source": "emergency",
+                                                 "entries": _entries(ws) + [{"person_id": pid, "project_id": other, "alloc": 1.0}],
+                                                 **row["apply_hint"]})
+        assert r.status_code == 200, r.text
+        grant = next(g for g in r.json()["workspace"]["concurrency"] if g["person_id"] == pid)
+        assert grant["reason"] == "기술 지원" and grant["memo"] == "미리 허용"

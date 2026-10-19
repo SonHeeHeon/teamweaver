@@ -208,7 +208,8 @@ def move_facts(moves: dict, evidence: dict, grants: dict | None = None) -> list[
         mine = met_by.get(p) or []
         grant = (grants or {}).get(p) if j["origin"] == "partly_free" else None
         origin = ("프로젝트 동시 수행(원래 사업 유지)" if grant else
-                  {"bench": "대기 인력", "partly_free": "일부 여유(다른 배치는 그대로)", "moved": "진행 사업에서 옮겨 옴"}[j["origin"]])
+                  {"bench": "대기 인력", "partly_free": "일부 여유(다른 배치는 그대로)", "moved": "진행 사업에서 옮겨 옴",
+                   "follow_on": "지금 사업이 끝난 뒤 이어서 투입"}[j["origin"]])
         out.append(_fact("MOVE_WHO", f"{p}({j['grade']}): {origin}, {target} 투입률 {j['alloc']:g}"
                          + (f", 이 사업 요구 기술 중 충족: {', '.join(mine)}" if mine else ", 이 사업 요구 기술 중 충족하는 것 없음"),
                          (p,), adverse=not mine, section="move"))
