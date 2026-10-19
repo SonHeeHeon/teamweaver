@@ -141,6 +141,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
   "되돌려짐"은 `api.workspace.undo`가 남기는 기록(`review_docs/undone.json`)으로만 판정하고, "이력에 있음"은 확정(apply_*) 항목만 센다(시작 판 base는 재확정이 아니다) -- 다른 데이터로 바꿨거나 20판 밖으로 밀린 것은 "이력 밖"(열고 고치고 내보낼 수 있다). 긴급 투입 AI 재료는 `focus_input`(새로 온 사람만).
   승인·반려는 만들지 않았다 -- 보고서 8.4 "결재 연결(실제 도입 시)".
+  긴급 투입 화면의 "무슨 일인지"는 확정 요청 `situation`(300자, 긴급 투입만 이력 summary에 남김) → `confirms()`의 `situation` → 긴급 투입 자료 `situation_memo` 처음 값이다
+  (2026-10-19 부서장 점검 f6, claude-b). 저장된 자료의 `confirm`에는 넣지 않는다(고친 메모와 원문이 둘로 남지 않게). AI 재료가 아니다 -- note를 잘라 쓰지 않는다.
 - **계획 기간 6|12개월**(2026-10-19 사용자 "계획기간 1년 확장도 하자", claude-b): `Dataset`이 모든 사람의 가용률 길이가 같고(`HORIZON_CHOICES` 6·12) 사업이 그 안에
   있는지 본다 -- 기간은 저장 필드가 아니라 가용률 길이(`Dataset.horizon_months`)라 기존 데이터 버전·캐시 키는 그대로. manifest `horizon_months` 6|12, 계산 모델은 원래 달 수 일반형.
   연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`: org-n100과 같은 사람·평가 글, 상반기 사업 그대로 + 하반기 신규 사업, 휴직 가정 가용률, 현재 배치 없음 = 밤 배치 연간 계획 대상).
@@ -190,7 +192,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5·현재 팀 감점 제외(claude-a) + 수명 주기 표시·후보 점수 나눔·12개월 한도(claude-b `006b70f`) 병합 **2009 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 256 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5·현재 팀 감점 제외(claude-a) + 수명 주기 표시·후보 점수 나눔·12개월 한도(claude-b `006b70f`) 병합 2009 → 부서장 점검 작은 것 4건(claude-b `feat/claude-b-walk-fixes`) **2012 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 258 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
