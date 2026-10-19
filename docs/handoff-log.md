@@ -22,6 +22,36 @@
 
 ---
 
+## 2026-10-19 · claude-a · 생성기 v4: 사업 수명 주기 섞기(b 요청 6번) · 권장 계산 시간 60·90·120초 · 시연 데이터·숫자 다시
+- 브랜치/커밋: `feat/claude-a-fulltime-redesign` `02d3989`(단순 규칙 100%·이어서 투입·미리 허용자 긴급 지원 힌트) · v4 커밋(이 항목과 함께). main 미병합(사용자 승인 대기).
+- 사용자 원문(b 요청 6번): "24년에 시작해서 아직 진행중인 플젝 … 26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)", "26년 상반기에 시작된것도 … 25년에 했는데 추가로 고도화 과제가 떠서 하고있는것도".
+- 한 일: `core/ingest/org_profile.py` GENERATOR v4(별도 난수열 `lifecycle_seed` -- 사람·이력·평가 글 바이트 그대로), 연초 계획은 기존 사업 뒤에 장기 사업(25명당 1개: 2024 `[운영]` 내부 2~3명·계획 뒤까지 / 2025 `[고도화]` / 2026 상반기 개발)과
+  운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 3~6명 참고값)를 붙인다. 운영 중은 진행 사업마다 수명 주기(운영 30%·팀 2~3명), 신규 제안 + 추가 과제 1개(대기 인력 2명, **b의 pipeline 모양**: parent·external_headcount).
+  실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름 -- `core/ingest/convert.py`), 단계는 이름 머리말 + manifest `lifecycle`(`core/ingest/lifecycle.py` 검사, 경고만). CSV 계약·`ProjectPhase` 그대로.
+  `time_budget.MEASURED_FULL` v4 재측정 27·56·66초 → 권장 60·90·120초(12개월 240초). 묶음 9개·미리 계산 8개·기록 8개·숫자·대본·슬라이드·보고서(PDF 10쪽) 다시.
+- 상대 영향(claude-b): **v4 사업 번호** -- 운영 중·연말형 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016, 등록 새 번호 J021, 연간 첫 하반기 신규 사업 J026.
+  연초 100명 사업 25개(J021~J025 장기·추가 과제). `scripts/make_{annual,yearend}_demo.py`를 고쳤다(b 소유, 이번 재설계로 넘겨받은 범위). 네 `test_addon_task.py`는 병합 때 v4 번호로 맞춘다.
+  서비스 기본 자동 계산 시간이 100명 60초·300명 120초로 늘었다(화면 권장 표시도). 시험 두 개가 고정 투입률 표와 우연히 같은 값으로 통과하고 있어 전일 투입 기준으로 고쳤다(`tests/api/test_settings.py`·`tests/scenarios/test_annual_horizon.py`).
+- 검증: 전체 시험(아래 커밋 기록), 생성기 277, 웹 243, 미리 계산 모두 빈자리 0, `export_demo_judgments.py --check` OK. 리뷰: Codex 2라운드(MUST 2 반영 → approve).
+- 근거: 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`, `.omc/reports/2026-10-19-lifecycle-mix.md`.
+
+---
+
+## 2026-10-19 · claude-a · 전일 투입 · 사람 단위 프로젝트 동시 수행 · 생성기 v3 · 시연 데이터·숫자 전부 재생성 (b 요청 처리)
+- 브랜치/커밋: `feat/claude-a-fulltime-redesign`(b `c150f84` 위) `f53a7e5`(모델) · `168dea0`(b 병합) · `1135841`(생성기·서비스·데이터) · 숫자·문서 커밋(이 항목과 함께). origin push, main 미병합(사용자 승인 대기 -- b 브랜치 다음).
+- 사용자 결정: 전일 투입(들어가면 100%), 예산 1.0~1.25배, **"프로젝트 동시 수행"은 부서장이 사람 단위로 사유와 함께 허용**(전체 3% 상한 아님, 기본 0명), 숫자 갱신은 구현 뒤 한 번에. 용어는 "동시 수행"(회사 규정 -- 다른 이름을 쓰지 않는다).
+  요구들이 사용자의 직접 수행 경험에서 나왔다는 점을 보고서 1.5에 남겼다(사용자 지시).
+- 한 일: `MilpParams.allocation_mode="full"`(+`Person.max_concurrent`, 검증기·평가기·보정·지표·Phase 0 13/13, 탐욕 초기해), 서비스 기본 full, 생성기 v3(`core/ingest/leave.py` 휴직 창·등급별 정원 85%·예산 1.0~1.25·운영 중 휴직 제외·제안 정원 = 대기 등급 구성),
+  manifest `concurrency` → `POST /api/workspace/concurrency`·확정 `concurrency_add`·`POST /api/concurrency/candidates`·긴급 "동시 수행으로 지원"(행별 apply_hint)·검토 자료 `MOVE_CONCURRENT`·"이어서 투입"(follow_on), 화면(설정·배지·허용 목록·빈자리 후보·긴급 지원),
+  시연 묶음 9개·미리 계산 8개·편성 기록 8개 재생성(모든 안·K 행 빈자리 0), 대본·슬라이드·보고서(PDF 10쪽) 숫자.
+- 상대 영향(claude-b): **b 파일을 고쳤다**(b가 넘긴 범위) -- `api/{settings,schemas,datasets,review_docs,workspace_edits,main}.py`·`api/routes/{workspace,scenarios,settings,plans,report,meta,concurrency}.py`, `web/src/**`(설정·긴급·신규 사업·배지·패널), `scripts/make_{annual,yearend}_demo.py`(생성기 함수 사용, 연말형 끝나는 사업 J005·J006·J008·J009·신규 제안 번호 manifest에서).
+  **v3 사업 번호가 바뀌었다**(운영 중·연말형 신규 제안 J013·J014) -- 시험 기대값을 맞췄다. 서비스 기본이 full이라 예전에 저장한 `settings.json`(fixed)은 그대로 남는다.
+  기준선 1962 passed · slow 20 · 웹 242.
+- 검증: 위 기준선, Phase 0 PASS 13, 미리 계산·편성 기록 검증 통과, `export_demo_judgments.py --check` OK. 리뷰: Codex 2라운드(모델) + Codex 한도 소진 중 Claude Opus 폴백 3라운드.
+- 근거: 루트 `.omc/plan/2026-10-19-concurrency.md`(2판)·`.impl.md`, `.omc/reports/2026-10-19-fulltime-redesign.md`, `rehearsal/results/{concurrency-compare,time-budget-full,plan-scenes-1019,scenarios-1019,strong-baseline,ai-effect}.json`.
+
+---
+
 ## 2026-10-19 · claude-b · 계획 기간 1년(6|12개월) · 연간 시연 묶음 · 투입 불가 인력 표시 · 가용률·겸직 재설계는 claude-a에게
 - 브랜치/커밋: `feat/claude-b-three-scenarios` (claude-a `1b921ea`를 먼저 합침 `5bc1289`, 이 작업 커밋은 이 항목 다음). main 병합은 사용자 승인 대기.
 - 한 일: 사용자 "계획기간 1년 확장도 하자" -- 데이터마다 계획 기간 6|12개월(`core/domain/models.py` `HORIZON_CHOICES`·`Dataset.horizon_months`, manifest `horizon_months`), 화면 달 표시를 실제 달로("27.4월"), 계획 기간 표시(헤더·PDF).

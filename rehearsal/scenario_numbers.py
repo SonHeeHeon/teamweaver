@@ -3,9 +3,9 @@
 
     uv run python -m rehearsal.scenario_numbers      # → rehearsal/results/scenarios-1019.json (데이터 폴더를 안 주면 임시 폴더)
 
-흐름: 고도화 과제 등록(이전 사업 J005 복사 -- 생성기 v3 연말형에서 올해 말에 끝나는 사업) → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
-손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J007 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료 →
-J002 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
+흐름: 고도화 과제 등록(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업) → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
+손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J004 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료 →
+J015 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
 """
 from __future__ import annotations
 
@@ -17,8 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "rehearsal" / "results" / "scenarios-1019.json"
 
 
-PREDECESSOR = "J005"       # 연말형(생성기 v3)에서 올해 말 끝나는 사업 -- 고도화 과제의 이전 사업
-SUPPORT = "J002"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀)
+PREDECESSOR = "J007"       # 연말형(생성기 v4)에서 올해 말 끝나는 개발 사업 -- 고도화 과제의 이전 사업
+SUPPORT = "J015"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀, v4 고도화 9명)
+EMERGENCY = "J004"         # 긴급 투입 장면의 진행 사업(끝나지 않는 9명 개발 사업 -- v4에서 J007은 올해 말에 끝난다)
 
 
 def _entries(ws):
@@ -83,7 +84,7 @@ def main() -> None:
         doc = r.json()
         out["review_new"] = _brief_doc(doc)
         ws = applied["workspace"]                    # 확정 응답(바로 위 r은 검토 자료 응답이다, Codex 리뷰)
-        r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": "J007", "n": 1,
+        r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": 1,
                                                 "pull_budget": 1, "note": "장애 대응"})
         r.raise_for_status()
         plan = r.json()
@@ -91,14 +92,14 @@ def main() -> None:
                             "standby": [x.get("name") for x in plan.get("standby", [])[:3]],
                             "moved": plan["best"].get("diff", {}).get("moved")}
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": plan["best"]["entries"],
-                                                 "source": "emergency", "note": "J007 장애 대응", **plan["apply_hint"]})
+                                                 "source": "emergency", "note": f"{EMERGENCY} 장애 대응", **plan["apply_hint"]})
         r.raise_for_status()
         v2 = r.json()["workspace"]["dataset_version"]
-        r = c.post(f"/api/review-docs/{v2}/J007")
+        r = c.post(f"/api/review-docs/{v2}/{EMERGENCY}")
         r.raise_for_status()
         doc = r.json()
         out["review_emergency"] = _brief_doc(doc)
-        # 프로젝트 동시 수행으로 지원(원래 사업 유지): J002 긴급 투입 후보 중 허용이 필요한 첫 사람 -- 확정이 허용(긴급 지원)을 함께 적는다
+        # 프로젝트 동시 수행으로 지원(원래 사업 유지): SUPPORT 긴급 투입 후보 중 허용이 필요한 첫 사람 -- 확정이 허용(긴급 지원)을 함께 적는다
         ws = r_ws = c.get("/api/workspace").json()
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": SUPPORT, "n": 1,
                                                 "note": "기술 지원 요청"})
@@ -109,15 +110,14 @@ def main() -> None:
             x = spare[0]
             entries = _entries(r_ws) + [{"person_id": x["person_id"], "project_id": SUPPORT, "alloc": 1.0}]
             r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "emergency",
-                                                     "note": f"{SUPPORT} 기술 지원(프로젝트 동시 수행)",
-                                                     "headcount_add": {SUPPORT: {x["grade"]: 1}},
-                                                     "budget_add": {SUPPORT: int(-(-x["monthly_cost"] // 1))},
+                                                     "note": f"{SUPPORT} 기술 지원(프로젝트 동시 수행)", **x["apply_hint"],
                                                      "concurrency_add": [{"person_id": x["person_id"], "memo": "기술 지원 요청"}]})
             r.raise_for_status()
             ws3 = r.json()["workspace"]
             out["concurrent_support"].update({"person": x["name"], "keeps": x.get("current_projects"),
                                               "grant": [g for g in ws3["concurrency"] if g["person_id"] == x["person_id"]],
-                                              "monthly_cost": x["monthly_cost"], "delta": round(x["delta_total"], 2)})
+                                              "monthly_cost": x["monthly_cost"], "delta": round(x["delta_total"], 2),
+                                              "apply_hint": x["apply_hint"]})
             r = c.post(f"/api/review-docs/{ws3['dataset_version']}/{SUPPORT}")
             r.raise_for_status()
             out["review_concurrent"] = _brief_doc(r.json())

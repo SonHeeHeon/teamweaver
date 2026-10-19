@@ -77,9 +77,13 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
     for p in projects:
         if p["project_id"] == FLAGSHIP["project_id"]:
             p["end_month"] = months[-1]
-        span[p["project_id"]] = (idx[p["start_month"]], idx[p["end_month"]])
+        # 생성기 v4: 계획 전에 시작했거나(장기 사업) 계획 뒤에 끝나는(운영 사업) 사업은 계획 기간으로 자른다 -- 로더와 같은 규칙
+        span[p["project_id"]] = (idx.get(p["start_month"], 0 if p["start_month"] < months[0] else MONTHS - 1),
+                                 idx.get(p["end_month"], MONTHS - 1 if p["end_month"] > months[-1] else 0))
     used = {p["project_name"] for p in projects}
-    n_old = len(projects) - 1                                  # 대표 사업을 뺀 상반기 사업 수
+    life = m.get("lifecycle") or {}
+    n_old = sum(1 for p in projects if p["project_id"] != FLAGSHIP["project_id"] and p["project_id"] not in life)
+    # ↑ 대표 사업·장기 사업(v4 lifecycle)을 뺀 상반기 사업 수 -- 하반기 신규 사업 수가 v3와 같게
     n_prop = round(n_old * 0.35)
     types = PROJECT_TYPES["DP"]
     new: list[dict] = []

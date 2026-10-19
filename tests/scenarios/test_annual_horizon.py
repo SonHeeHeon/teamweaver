@@ -148,13 +148,13 @@ def test_people_on_parental_leave_are_listed_as_unavailable_with_the_reason(annu
     with TestClient(app) as c:
         meta = c.get("/api/meta").json()
         v = meta["dataset_version"]
-        late = c.get("/api/pipeline/J021/candidates", params={"dataset_version": v}).json()   # 하반기 신규 사업
+        late = c.get("/api/pipeline/J026/candidates", params={"dataset_version": v}).json()   # 하반기 신규 사업
         early = c.get("/api/pipeline/J002/candidates", params={"dataset_version": v}).json()  # 2026-12 한 달
     dp4 = next(p for p in meta["people"] if p["id"] == "DP0004")
     assert dp4["leave"] == {"kind": "육아휴직", "start": "2026-12", "months": 12}
     assert dp4["availability"][:2] == [1.0, 1.0] and set(dp4["availability"][2:]) == {0.0}
     blocked = {u["person_id"]: u for u in late["unavailable"]}
-    j021 = next(j for j in meta["projects"] if j["id"] == "J021")
+    j021 = next(j for j in meta["projects"] if j["id"] == "J026")   # v4: 장기 사업 J021~J025 뒤 첫 하반기 신규 사업
     months = list(range(j021["start_month"], j021["end_month"] + 1))
     assert months[0] >= 6 and blocked["DP0004"]["months"] == months     # 하반기 사업 기간 전체가 휴직과 겹친다
     assert blocked["DP0004"]["reason"].startswith("육아휴직 — 27.") and blocked["DP0004"]["reason"].endswith("월 투입 불가")
@@ -175,9 +175,10 @@ def test_twelve_month_data_gets_a_longer_automatic_time_limit(annual):
     assert PlacementSettings().to_milp_params(n_people=300, months=12).time_limit <= 900
     with TestClient(app) as c:
         body = c.get("/api/settings").json()
-    assert body["effective_time_limit"] == recommended_seconds(100, "fixed", 12)
-    assert body["recommended_time"]["per_solve_s"] == body["effective_time_limit"]
-    assert "12개월" in body["recommended_time"]["basis"]
+    # 서비스 기본은 전일 투입 -- 고정 투입률 표와 값이 같아 통과하던 비교를 바로잡았다(v4 측정으로 전일 100명이 60초가 되며 드러남)
+    assert body["effective_time_limit"] == recommended_seconds(100, "full", 12) == 240
+    assert body["recommended_time_full"]["per_solve_s"] == body["effective_time_limit"]
+    assert "12개월" in body["recommended_time_full"]["basis"] and "12개월" in body["recommended_time"]["basis"]
 
 
 def test_second_half_monthly_allocations_pass_the_api(annual):

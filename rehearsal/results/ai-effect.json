@@ -1,9 +1,9 @@
 {
- "recorded_at": "2026-10-18T18:51:34+0900",
+ "recorded_at": "2026-10-19T15:08:36+0900",
  "sizes": {
   "100": {
    "people": 100,
-   "projects": 20,
+   "projects": 25,
    "reviews": 1372,
    "text_only_negative_reviews": 145,
    "rule_only_negative_reviews": 196,
@@ -14,32 +14,32 @@
     "ai": 0
    },
    "reward_overlap": 161,
-   "time_limit_s": 30,
+   "time_limit_s": 60,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 30.9,
-    "flagged_together": 18,
-    "synergy_under_ai": 18.4187,
-    "total_under_ai": 56.8001,
+    "elapsed_s": 60.6,
+    "flagged_together": 9,
+    "synergy_under_ai": 5.1783,
+    "total_under_ai": 68.613,
     "violations": 0,
-    "assignments": 118
+    "assignments": 82
    },
    "plan_ai": {
-    "elapsed_s": 30.6,
-    "flagged_together": 9,
-    "synergy_under_ai": 21.348,
-    "total_under_ai": 57.5616,
+    "elapsed_s": 60.5,
+    "flagged_together": 1,
+    "synergy_under_ai": 7.7914,
+    "total_under_ai": 70.783,
     "violations": 0,
-    "assignments": 121
+    "assignments": 82
    },
-   "assignments_only_ai": 68,
-   "assignments_only_rule": 65,
+   "assignments_only_ai": 46,
+   "assignments_only_rule": 46,
    "np_check": true
   },
   "200": {
    "people": 200,
-   "projects": 40,
+   "projects": 50,
    "reviews": 2641,
    "text_only_negative_reviews": 255,
    "rule_only_negative_reviews": 484,
@@ -50,32 +50,32 @@
     "ai": 0
    },
    "reward_overlap": 161,
-   "time_limit_s": 60,
+   "time_limit_s": 90,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 62.0,
-    "flagged_together": 27,
-    "synergy_under_ai": 16.8836,
-    "total_under_ai": 106.4321,
+    "elapsed_s": 91.5,
+    "flagged_together": 14,
+    "synergy_under_ai": 12.1517,
+    "total_under_ai": 161.2832,
     "violations": 0,
-    "assignments": 244
+    "assignments": 185
    },
    "plan_ai": {
-    "elapsed_s": 61.8,
-    "flagged_together": 7,
-    "synergy_under_ai": 19.6332,
-    "total_under_ai": 107.2767,
+    "elapsed_s": 92.1,
+    "flagged_together": 5,
+    "synergy_under_ai": 15.2611,
+    "total_under_ai": 163.7051,
     "violations": 0,
-    "assignments": 234
+    "assignments": 185
    },
-   "assignments_only_ai": 104,
-   "assignments_only_rule": 114,
+   "assignments_only_ai": 91,
+   "assignments_only_rule": 91,
    "np_check": true
   },
   "300": {
    "people": 300,
-   "projects": 60,
+   "projects": 74,
    "reviews": 4012,
    "text_only_negative_reviews": 346,
    "rule_only_negative_reviews": 667,
@@ -86,27 +86,27 @@
     "ai": 0
    },
    "reward_overlap": 158,
-   "time_limit_s": 180,
+   "time_limit_s": 120,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 184.5,
-    "flagged_together": 26,
-    "synergy_under_ai": 20.9687,
-    "total_under_ai": 158.4092,
+    "elapsed_s": 122.9,
+    "flagged_together": 12,
+    "synergy_under_ai": 14.2232,
+    "total_under_ai": 243.682,
     "violations": 0,
-    "assignments": 362
+    "assignments": 284
    },
    "plan_ai": {
-    "elapsed_s": 184.9,
-    "flagged_together": 19,
-    "synergy_under_ai": 24.8672,
-    "total_under_ai": 166.0835,
+    "elapsed_s": 111.2,
+    "flagged_together": 7,
+    "synergy_under_ai": 18.9402,
+    "total_under_ai": 246.3967,
     "violations": 0,
-    "assignments": 343
+    "assignments": 284
    },
-   "assignments_only_ai": 145,
-   "assignments_only_rule": 164,
+   "assignments_only_ai": 117,
+   "assignments_only_rule": 117,
    "np_check": true
   }
  }

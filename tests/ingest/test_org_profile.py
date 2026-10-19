@@ -30,7 +30,8 @@ def test_group_composition_matches_the_size(bundle):
     for row in b.tables["people.csv"]:
         groups[row["person_id"][:2]] = groups.get(row["person_id"][:2], 0) + 1
     assert groups == {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}[size]
-    assert len(ds.projects) == size // 5
+    # v4(2026-10-19): 사람 5명당 사업 1개 + 계획 전에 시작한 장기 사업(25명당 1개) + 운영 사업의 추가 과제(100명 1 · 200·300명 2)
+    assert len(ds.projects) == size // 5 + size // 25 + {100: 1, 200: 2, 300: 2}[size]
 
 
 def test_flagship_keeps_its_internal_seats(bundle):
@@ -69,8 +70,8 @@ def test_projects_mix_execution_and_proposal_with_labels(bundle):
     _, _, b, _, _ = bundle
     rows = b.tables["projects.csv"]
     phases = [r["phase"] for r in rows]
-    assert 0.25 <= phases.count("제안") / len(phases) <= 0.45
-    assert all(re.match(r"^\[(제안|실행)\] ", r["project_name"]) for r in rows[1:])
+    assert 0.2 <= phases.count("제안") / len(phases) <= 0.45
+    assert all(re.match(r"^\[(제안|실행|운영|고도화|추가 과제)\] ", r["project_name"]) for r in rows[1:])
 
 
 def test_generation_is_deterministic(tmp_path):
@@ -267,7 +268,10 @@ def test_operating_scenario_matches_the_described_situation(tmp_path):
     m = json.loads((root / "manifest.json").read_text("utf-8"))
     b, report = load_bundle(root)
     ds, _ = to_dataset(b, report)
-    assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 2
+    # v4(2026-10-19): 신규 제안 2개 + 운영 사업에 붙은 추가 과제 1개(작업 데이터 pipeline 모양)
+    assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 3
+    addon = m["proposals"][-1]
+    assert m["pipeline"][addon]["parent"] in {j for j, e in m["lifecycle"].items() if e["stage"] == "운영"}
     on = {c.person_id for c in ds.current}
     # 생성기 v3(2026-10-19): 계획 기간에 육아휴직 달이 걸린 사람은 진행 사업·대기 인력 어디에도 없다
     away = {p.id for p in ds.people if min(p.availability) < 1.0}
@@ -364,7 +368,8 @@ def test_v3_keeps_people_history_and_review_tables_byte_identical_to_v1(tmp_path
     """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 사람·이력·평가 표는 바이트 단위로 같다.
     항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰).
     v3(2026-10-19)는 가용률·사업 정원·예산·현재 배치만 바꾼다(전일 투입 재설계) -- 그 표는 이 비교에서 뺀다. 리뷰 판정 동봉이 그대로 쓰이는 근거."""
-    v3_changed = {"availability.csv", "projects.csv", "project_grade_requirements.csv", "current_assignments.csv"}
+    v3_changed = {"availability.csv", "projects.csv", "project_grade_requirements.csv", "current_assignments.csv",
+                  "project_skill_requirements.csv"}                         # v4(2026-10-19): 장기 사업·추가 과제의 기술 요구가 붙는다
     v1 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
           "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
           "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
@@ -441,3 +446,74 @@ def test_v3_current_roster_is_full_time_without_overlap_or_leave(tmp_path):
             busy[(c.person_id, m)] = c.project_id
     for j, p in projects.items():
         assert sum(people[c.person_id].monthly_rate for c in ds.current if c.project_id == j) <= p.monthly_budget
+
+
+# ---------------------------------------------------------------- 2026-10-19 생성기 v4: 사업 수명 주기 섞기(b 요청 6번, 사용자 원문)
+@pytest.mark.parametrize("scenario", ["planning", "operating"])
+def test_v4_mixes_long_running_projects_and_add_on_tasks(tmp_path, scenario):
+    """사용자: 24년 시작 운영 사업(내부 소수), 25년 고도화, 26년 상반기 시작, 운영 사업에 붙은 추가 과제(회사 인력 2명·6달, 외주 여러 명)."""
+    import csv
+    root = generate_org_bundle(tmp_path / scenario, 100, seed=2026, scenario=scenario)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    b, report = load_bundle(root)
+    ds, _ = to_dataset(b, report)
+    assert report.errors == [] and report.warnings == []          # 계획 전 시작·계획 뒤 끝은 경고 없이 자른다
+    rows = {r["project_id"]: r for r in csv.DictReader(open(root / "projects.csv", encoding="utf-8"))}
+    hc = {j.id: sum(j.grade_headcount.values()) for j in ds.projects}
+    life = m["lifecycle"]
+    stages = {e["stage"] for e in life.values()}
+    assert {"운영", "고도화", "개발", "추가 과제"} <= stages
+    first = m["horizon_start"]
+    for pid, e in life.items():
+        assert rows[pid]["start_month"] == e["started"]
+        prefix = {"운영": "[운영] ", "고도화": "[고도화] ", "개발": "[실행] ", "추가 과제": "[추가 과제] "}[e["stage"]]
+        assert rows[pid]["project_name"].startswith(prefix)
+        if e["stage"] == "추가 과제":
+            parent = e["parent"]
+            assert life[parent]["stage"] == "운영" and hc[pid] == 2
+            assert 3 <= e["external_headcount"] <= 6
+            assert rows[parent]["start_month"] <= rows[pid]["start_month"] and rows[pid]["end_month"] <= rows[parent]["end_month"]
+        else:
+            assert e["started"] < first                            # 계획 전에 시작해 지금 진행 중
+        if e["stage"] == "운영":
+            assert hc[pid] <= 3 and rows[pid]["end_month"] > ds_last(m)    # 내부 소수, 계획 뒤까지 운영
+    if scenario == "operating":
+        addon = m["proposals"][-1]
+        assert life[addon]["stage"] == "추가 과제" and m["pipeline"][addon]["parent"] == life[addon]["parent"]
+        assert not [c for c in ds.current if c.project_id == addon]           # 아직 아무도 없다(남는 인력으로 짠다)
+
+
+def ds_last(m: dict) -> str:
+    y, mo = map(int, m["horizon_start"].split("-"))
+    k = y * 12 + mo - 1 + m["horizon_months"] - 1
+    return f"{k // 12}-{k % 12 + 1:02d}"
+
+
+def test_v4_keeps_v3_projects_of_the_planning_bundle():
+    """연초 계획: 기존 사업(J001~J020)은 번호·이름·기간·기술 그대로, 장기 사업은 뒤에 붙는다(별도 난수열)."""
+    import csv
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as tmp:
+        root = generate_org_bundle(Path(tmp) / "p", 100, seed=2026)
+        new = list(csv.DictReader(open(root / "projects.csv", encoding="utf-8")))
+    assert [r["project_id"] for r in new[:20]] == [f"J{k:03d}" for k in range(1, 21)]
+    assert all(r["project_name"].startswith(("[제안]", "[실행]")) for r in new[1:20])
+
+
+@pytest.mark.parametrize("seed,scenario,start", [(14, "planning", "2026-10"), (1, "operating", "2026-10"),
+                                                 (2026, "planning", "2026-01"), (2026, "operating", "2027-03")])
+def test_v4_bundles_load_for_other_seeds_and_horizon_starts(tmp_path, seed, scenario, start):
+    """Codex 리뷰(2026-10-19): 추가 과제가 상위 기술의 클라우드 기술을 또 요구해 시드 14·1이 적재 거부됐고, 시작 연도를 박아 둬
+    2026-01 시작 묶음에 끝보다 늦게 시작하는 사업이 생겼다 -- 장기 사업은 늘 계획 시작 전에 시작하고 기술 요구가 겹치지 않는다."""
+    import csv
+    root = generate_org_bundle(tmp_path / "b", 100, seed=seed, scenario=scenario, horizon_start=start)
+    b, report = load_bundle(root)
+    assert report.errors == [], [i.message for i in report.errors]
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    rows = {r["project_id"]: r for r in csv.DictReader(open(root / "projects.csv", encoding="utf-8"))}
+    for pid, e in m["lifecycle"].items():
+        if e["stage"] != "추가 과제":
+            assert e["started"] < start <= rows[pid]["end_month"]
+    pairs = [(r["project_id"], r["skill_name"]) for r in csv.DictReader(open(root / "project_skill_requirements.csv", encoding="utf-8"))]
+    assert len(pairs) == len(set(pairs))

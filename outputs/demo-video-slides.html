@@ -72,15 +72,15 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 <section class="slide">
   <div class="kicker">개요 · 과제 수행 배경</div>
   <h2>누구를 어느 사업에 넣을까 — 다섯 가지를 한꺼번에</h2>
-  <p class="lead">한 사람이 여러 사업에 걸쳐 일하는 SI 조직의 배치 결정</p>
+  <p class="lead">SI 사업을 직접 수행하며 겪은 현업 규칙 그대로 — 한 사람은 한 사업에 100%, 동시 수행은 부서장이 허용한 사람만, 사업은 운영·고도화·추가 과제가 섞여 있다</p>
   <div class="grid g3">
     <div class="card"><h3>한꺼번에 맞출 조건</h3>
-      <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">월별 가용률</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
+      <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">휴직·쉬는 달</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
       <p class="cap">하나만 보면 다른 조건을 어기기 쉽다</p></div>
     <div class="card"><h3>세 상황</h3><ul>
       <li><b>신규 사업 편성</b>(가장 잦음) — 쉬는·끝나 가는 사람, 몇 명만 옮겨 새 사업 팀을 짬</li>
       <li><b>긴급 투입</b> — 진행 사업에 이슈, 사람을 더 넣고 빼 온 자리까지 메움</li>
-      <li><b>연간 계획</b>(드묾) — 백지에서 6개월 배치</li></ul></div>
+      <li><b>연간 계획</b>(드묾) — 백지에서 6개월·1년 배치</li></ul></div>
     <div class="card"><h3>지금 방식의 어려움</h3><ul>
       <li>조건을 어겼는지 알기 어렵다</li>
       <li>더 나은 배치가 있었는지 모른다</li>
@@ -118,7 +118,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 근거 사실 연결</div>
     <div class="card"><h3><span class="n">4</span>교체 검토</h3>점수 변화 · AI 설명 · 지어낸 근거 거절</div>
     <div class="card"><h3><span class="n">5</span>신규 사업 편성</h3>K별 자동 편성 · 고도화 과제 등록 · 이전 팀원</div>
-    <div class="card"><h3><span class="n">6</span>긴급 투입</h3>대기 명단 · 빼 오기와 그 자리 메움</div>
+    <div class="card"><h3><span class="n">6</span>긴급 투입</h3>대기 명단 · 빼 오기와 그 자리 메움 · 동시 수행으로 지원</div>
     <div class="card"><h3><span class="n">7</span>인사팀 검토 자료</h3>잠긴 사실 + 부서장 판단 → PDF</div>
     <div class="card"><h3><span class="n">8</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
   </div>
@@ -130,7 +130,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="grid g2" style="margin-top:12px">
     <div class="card"><h3><span class="n">1</span>혼합정수계획(MILP) + HiGHS</h3>
       <div class="formula">최대화 Σ 기술 적합 + 0.3·협업 − 0.2·익숙한 쌍 − 100·빈자리</div>
-      제약: 월 예산 · 월별 가용률 · 등급 정원 · 동시 사업 ≤ 3<br>시드 4개 동시 탐색 · 증명 상한 기록 · 대안은 구성이 다르고 품질 ≥ 95%</div>
+      제약: 전일 투입(들어가면 100%) · 쉬는 달 제외 · 월 예산 · 등급 정원 · 동시 수행은 허용된 사람만<br>시드 4개 동시 탐색 · 탐욕 초기해 · 증명 상한 기록 · 대안은 구성이 다르고 품질 ≥ 95%</div>
     <div class="card"><h3><span class="n">2</span>독립 검증기 · 평가기</h3>
       솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·보강·미리 계산 확인도 같은 평가기로 채점.<br>신규 사업 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
     <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3><ul>
@@ -146,12 +146,12 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="kicker">성과 · 구현 결과</div>
   <h2>숫자로 본 결과</h2>
   <div class="grid g3" style="margin-top:12px">
-    <div class="card"><div class="num">+24~31<small>%</small></div><div class="cap">예산·가용률을 지키는 휴리스틱을 같은 시간 돌린 것보다 높은 배치 품질 · 100~300명, 규모가 클수록 차이가 커짐</div></div>
-    <div class="card"><div class="num">55<small>%</small></div><div class="cap">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%(점수 제공·1회 수정) · 원자료만 주면 규칙 위반</div></div>
-    <div class="card"><div class="num">3.3<small>%</small></div><div class="cap">300명 안 A와 증명된 상한의 거리 · 빈자리 0 · 위반 0</div></div>
-    <div class="card"><div class="num">2 → 0</div><div class="cap">신규 사업 편성: 2명만 옮겨 빈자리 2석 해소 · K=0~3 모두 최선 증명</div></div>
-    <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출 · 자동 시험 1,806개</div></div>
-    <div class="card"><div class="num">34 → 0</div><div class="cap">나쁘게 평가한 사이가 협업 보상에 든 수 — 항목만 세는 규칙 → 글을 읽는 AI(100명) · 같은 팀 배치 18 → 9</div></div>
+    <div class="card"><div class="num">+8~10<small>%</small></div><div class="cap">예산·가용률을 지키는 휴리스틱을 같은 시간 돌린 것보다 높은 배치 품질 · 100~300명 · 휴리스틱은 200·300명에서 빈자리가 남음</div></div>
+    <div class="card"><div class="num">55<small>%</small></div><div class="cap">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%(점수 제공·1회 수정, 10-12 데이터) · 원자료만 주면 규칙 위반</div></div>
+    <div class="card"><div class="num">0.8<small>%</small></div><div class="cap">300명 안 A와 증명된 상한의 거리 · 빈자리 0 · 위반 0 · 111초</div></div>
+    <div class="card"><div class="num">+4.1<small>%</small></div><div class="cap">신규 사업 편성: 아무도 옮기지 않아도 빈자리 0, 3명 옮기면 배치 품질 +4.1% · K=0~3 모두 최선 증명</div></div>
+    <div class="card"><div class="num">99.0<small>%</small></div><div class="cap">소명 글 검사 통과(처음 보는 데이터 225편은 100%) · 일부러 넣은 오류 13,316건 모두 검출 · 자동 시험 1,962개</div></div>
+    <div class="card"><div class="num">34 → 0</div><div class="cap">나쁘게 평가한 사이가 협업 보상에 든 수 — 항목만 세는 규칙 → 글을 읽는 AI(100명) · 같은 팀 배치 9 → 1</div></div>
   </div>
   <div class="foot">모든 수치는 가상 데이터와 설계한 점수표 안에서 잰 것이다. 사업 효과는 검증 전(NOT_CALIBRATED).</div>
 </section>
@@ -160,7 +160,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="kicker">성과 · 가치와 다음 단계</div>
   <h2>바로 쓸 수 있는 구조, 다음은 실제 성과로</h2>
   <div class="grid g3 auto" style="margin-top:14px">
-    <div class="card"><div class="num">0<small>원</small></div><div class="cap">솔버 라이선스 — 오픈소스 HiGHS로 300명까지 최선 대비 3.3~5.0%</div></div>
+    <div class="card"><div class="num">0<small>원</small></div><div class="cap">솔버 라이선스 — 오픈소스 HiGHS로 300명 안 A가 최선 대비 0.8%(111초에 증명)</div></div>
     <div class="card"><div class="num">$0.4</div><div class="cap">300명 조직의 평가 글 4,012건 판정 + 사업 60건 소명 글 전체 AI 비용</div></div>
     <div class="card"><div class="num">3<small>개월</small></div><div class="cap">실제 도입 시 첫 단계 — 섀도 운영(실제 편성과 나란히)으로 빈자리·예산 초과·교체 요청을 재고 → 파일럿 → 확대</div></div>
   </div>

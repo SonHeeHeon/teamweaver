@@ -33,7 +33,36 @@ from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS,
 # v3(2026-10-19, 전일 투입 재설계 -- .omc/plan/2026-10-19-concurrency.md 4절): 가용률 = 휴직·휴가 가정(core/ingest/leave, 모든 묶음이 같은 창),
 # 사업 정원 = 등급·달별 (휴직 아닌 그 등급 인원)의 85% 이하(한 사람 한 사업으로 채울 수 있게), 예산 = 기준 단가 × 정원 × 1.0~1.25(사용자 결정),
 # 연초 현재 배치 = 전일(1.0)·겹침 없음, 운영 중 = 휴직 인력은 진행 사업·대기 인력에서 뺀다. 사람·이력·평가 글 난수열은 그대로.
-GENERATOR = "core.ingest.org_profile v3"
+GENERATOR = "core.ingest.org_profile v4"
+# v4(2026-10-19, 설계 .omc/plan/2026-10-19-lifecycle-mix.md): 사업 수명 주기 섞기 -- 사용자 "24년에 시작해서 아직 진행중인 플젝(… 25~26년엔 운영),
+# 26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)", "26년 상반기에 시작된것도 있을거고 25년에 했는데
+# 추가로 고도화 과제가 떠서 하고있는것도". 별도 난수열이라 사람·이력·평가 글·과거 성과는 v3와 바이트까지 같다(동봉 판정 그대로).
+LONG_PER_PEOPLE = 25                # 연초 계획: 사람 25명당 계획 전에 시작한 장기 사업 1개(운영 40% · 고도화 30% · 2026 상반기 개발 30%)
+ADDONS = {100: 1, 200: 2, 300: 2}   # 연초 계획: 운영 사업에 붙는 추가 과제 수(운영 중 묶음은 신규 제안 중 1개)
+ADDON_MONTHS = 6                    # 추가 과제 기간(사용자 "6달만") -- 계획 끝을 넘으면 로더가 자른다
+ADDON_SKILLS = ("Private Cloud", "Kubernetes")       # 클라우드 마이그레이션(+수정 개발) -- 상위 사업 기술 1~2개를 더한다
+EXTERNAL_RANGE = (3, 6)             # 추가 과제 외주 인원(참고값, 계산에 안 씀 -- 사용자 "외주는 여러명")
+OPERATING_LIFE = (("운영", 0.3), ("고도화", 0.2), ("개발2025", 0.2), ("개발2026", 0.3))   # 운영 중 묶음 진행 사업의 수명 주기 비율
+
+
+def lifecycle_seed(seed: int) -> int:
+    """사업 수명 주기 난수열(v4) -- 사람·이력·평가 글을 만드는 난수열과 따로라 v3 묶음과 그 표가 그대로다."""
+    return seed * 6700417 + 17
+
+
+def _life_start(lrng: random.Random, kind: str, first: dt.date) -> str:
+    """수명 주기 종류 → 실제 시작 달(YYYY-MM), **계획 시작 달 기준**: 운영 22~33개월 전, 고도화·개발2025 10~21개월 전, 개발2026 4~9개월 전.
+    2026-10 시작이면 각각 2024년 · 2025년 · 2026년 1~6월이다(같은 난수 하나 -- 예전 연도 고정식과 같은 결과). 계획 시작을 바꿔도 늘 그 전이다
+    (Codex 리뷰: 연도를 박아 두면 2026-01 시작 묶음에서 시작 2026-05 · 끝 2026-03 사업이 생겼다)."""
+    hi, back = {"운영": (12, 34), "고도화": (12, 22), "개발2025": (12, 22), "개발2026": (6, 10)}[kind]
+    return _month_add(first, lrng.randint(1, hi) - back).strftime("%Y-%m")
+
+
+def _life_record(kind: str, started: str) -> dict:
+    return {"stage": {"운영": "운영", "고도화": "고도화"}.get(kind, "개발"), "started": started}
+
+
+LIFE_LABEL = {"운영": "[운영]", "고도화": "[고도화]", "개발2025": "[실행]", "개발2026": "[실행]"}
 PEAK_CAP = 0.85                     # 등급·달별 정원 합 / 그 달 그 등급 가용 인원 상한(예전 전체 85% 규칙을 등급별로)
 BUDGET_RANGE = (1.0, 1.25)          # 예산 = 기준 단가 × 정원 × uniform(BUDGET_RANGE) -- 사용자 결정 2026-10-19(예전 0.9~1.15)
 BLUNT_SHARE, MISMATCH_SHARE = 0.08, 0.05        # 직설형 평가자 비율(평가자 단위) · 항목과 글이 어긋나는 리뷰 비율(claude-b 요청 5~10%)
@@ -420,7 +449,7 @@ def shrink_to_supply(projects: list[dict], grade_supply: dict[str, list[float]],
     그 달 진행 중인 사업 중 그 등급 정원이 가장 큰 사업의 정원을 하나 줄인다(frozen 사업 제외, 사업마다 최소 1석).
     구간 그래프 성질상 같은 등급 사람이 그 기간 내내 있으면 "달마다 수요 ≤ 공급"이 곧 동시 수행 없이 다 채울 수 있다는 뜻이다 --
     휴직자 때문에 여유를 15% 둔다. 돌려주는 값 = 남은 최대 비율(manifest peak_demand_ratio)."""
-    frozen = frozen or (lambda p: p["_flagship"])
+    frozen = frozen or (lambda p: p["_flagship"] or p.get("_addon", False))     # 추가 과제는 내부 2명 그대로(v4)
 
     def ratio(m: int, g: str) -> float:
         demand = sum(p["_hc"].get(g, 0) for p in projects if p["_start"] <= m <= p["_end"])
@@ -451,7 +480,8 @@ def budget_of(rng: random.Random, hc: dict[str, int]) -> str:
     return str(max(1, int(sum(BASE_RATE[g] * k for g, k in hc.items()) * rng.uniform(*BUDGET_RANGE))))
 
 
-def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date], grade_supply: dict[str, list[float]]):
+def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date], grade_supply: dict[str, list[float]],
+              lrng: random.Random | None = None, size: int = 100):
     projects, grade_reqs, skill_reqs = [], [], []
     # flagship: always in execution for the whole horizon; DP seats always, AI seats only with the AI group
     seats = defaultdict(int)
@@ -499,12 +529,86 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
                                    "min_experience_months": str(rng.choice([m for m in (12, 24, 36, 60) if m <= cap])),
                                    "headcount": str(rng.randint(1, 2))})
 
+    if lrng is not None:                        # v4: 기존 사업 뒤에 장기 사업·추가 과제를 덧붙인다(기존 번호·이름·기간·기술 그대로)
+        j = _long_running(lrng, groups, horizon, projects, skill_reqs, used_clients, j, size)
     peak = shrink_to_supply(projects, grade_supply, HORIZON_MONTHS)
     for p in projects:
         p["monthly_budget"] = budget_of(rng, p["_hc"])
         grade_reqs += [{"project_id": p["project_id"], "career_grade": g, "headcount": str(k)}
                        for g, k in p["_hc"].items() if k > 0]
     return projects, grade_reqs, skill_reqs, peak
+
+
+def _skill_rows_for(lrng: random.Random, skills) -> list[dict]:
+    out = []
+    for skill in lrng.sample(skills, lrng.randint(max(2, len(skills) - 2), len(skills))):
+        cap = 24 if skill in LLM_ERA else 60
+        out.append({"skill_name": skill, "min_experience_months": str(lrng.choice([m for m in (12, 24, 36, 60) if m <= cap])),
+                    "headcount": str(lrng.randint(1, 2))})
+    return out
+
+
+def _addon_skills(lrng: random.Random, parent_skills: list[str]) -> list[dict]:
+    """추가 과제 기술: 클라우드 이전 기술 + 상위 사업 기술 1~2개(수정 개발)."""
+    # 상위 기술 중 클라우드 이전 기술과 같은 것은 빼고 고른다 -- 겹치면 같은 기술 요구가 두 행이라 로더가 거부했다(Codex 리뷰, 시드 14·1에서 재현)
+    rest = [sk for sk in parent_skills if sk not in ADDON_SKILLS]
+    picks = list(ADDON_SKILLS) + lrng.sample(rest, min(len(rest), lrng.randint(1, 2)))
+    return [{"skill_name": sk, "min_experience_months": str(lrng.choice((12, 24))), "headcount": "1"} for sk in picks]
+
+
+def _addon_months(horizon: list[dt.date], start: int) -> tuple[str, str, int]:
+    """추가 과제 실제 기간(ADDON_MONTHS개월) -- 계획 끝을 넘는 끝 달은 CSV에 그대로 쓰고 모델 기간만 자른다."""
+    end_text = _month_add(horizon[0], start + ADDON_MONTHS - 1).strftime("%Y-%m")
+    return horizon[start].strftime("%Y-%m"), end_text, min(len(horizon) - 1, start + ADDON_MONTHS - 1)
+
+
+def _long_running(lrng: random.Random, groups: dict[str, int], horizon: list[dt.date], projects: list[dict],
+                  skill_reqs: list[dict], used_clients: set, j: int, size: int) -> int:
+    """연초 계획(v4): 계획 전에 시작한 장기 사업과 운영 사업의 추가 과제를 덧붙인다. 운영 사업은 내부 2~3명이고 계획 뒤까지 이어진다."""
+    n_people = sum(groups.values())
+    n_long = max(1, n_people // LONG_PER_PEOPLE)
+    n_op = max(1, round(0.4 * n_long))
+    n_up = round(0.3 * n_long)
+    kinds = ["운영"] * n_op + ["고도화"] * n_up + ["개발2026"] * (n_long - n_op - n_up)
+    names = list(groups)
+    operating: list[tuple[dict, list[str]]] = []
+    for kind in kinds:
+        g = lrng.choices(names, weights=[groups[x] for x in names])[0]
+        types = PROJECT_TYPES[g]
+        name, sector, clients, skills, _ = lrng.choices(types, weights=[t[4] for t in types])[0]
+        client = next((c for c in lrng.sample(clients, len(clients)) if (c, name) not in used_clients), clients[0])
+        used_clients.add((client, name))
+        j += 1
+        pid = f"J{j:03d}"
+        started = _life_start(lrng, kind, horizon[0])
+        if kind == "운영":
+            end, end_text = len(horizon) - 1, _month_add(horizon[0], lrng.randint(12, 24)).strftime("%Y-%m")
+            hc = {"고급": 1, "중급": lrng.randint(1, 2)}
+        else:
+            end = lrng.randint(2, len(horizon) - 1)
+            end_text = horizon[end].strftime("%Y-%m")
+            hc = ({"고급": 1, "중급": lrng.randint(1, 2), "초급": lrng.randint(1, 2)} if kind == "고도화" else
+                  {"특급": lrng.randint(0, 1), "고급": 1, "중급": lrng.randint(1, 3), "초급": lrng.randint(0, 1)})
+        rows = _skill_rows_for(lrng, skills)
+        projects.append({"project_id": pid, "project_name": f"{LIFE_LABEL[kind]} {name.format(c=client)}", "sector": sector,
+                         "phase": "실행", "start_month": started, "end_month": end_text, "_start": 0, "_end": end,
+                         "_hc": hc, "_flagship": False, "_life": _life_record(kind, started)})
+        skill_reqs.extend({"project_id": pid, **r} for r in rows)
+        if kind == "운영":
+            operating.append((projects[-1], [r["skill_name"] for r in rows]))
+    for parent, pskills in operating[:ADDONS.get(size, 1)]:
+        j += 1
+        pid = f"J{j:03d}"
+        start = lrng.randint(0, 2)
+        s_text, e_text, end = _addon_months(horizon, start)
+        base = parent["project_name"].removeprefix("[운영] ")
+        projects.append({"project_id": pid, "project_name": f"[추가 과제] {base} 클라우드 마이그레이션·수정 개발",
+                         "sector": parent["sector"], "phase": "실행", "start_month": s_text, "end_month": e_text,
+                         "_start": start, "_end": end, "_hc": {"고급": 1, "중급": 1}, "_flagship": False, "_addon": True,
+                         "_life": {"stage": "추가 과제", "started": s_text, "parent": parent["project_id"],
+                                   "external_headcount": lrng.randint(*EXTERNAL_RANGE)}})
+        skill_reqs.extend({"project_id": pid, **r} for r in _addon_skills(lrng, pskills))
+    return j
 
 
 BENCH_SHARE = 0.10                 # 운영 중 시나리오: 최근 사업이 끝나 남는 인력 비율(사용자 설명 "100명 중 10명 내외")
@@ -516,7 +620,7 @@ def _rate(person: dict) -> float:
 
 
 def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str, int], horizon: list[dt.date],
-                        size: int, windows: dict[str, dict] | None = None):
+                        size: int, windows: dict[str, dict] | None = None, lrng: random.Random | None = None):
     """운영 중 시점(2026-10-06 사용자: "이미 배정돼 있는 인력이 대부분 … 신규 제안 2~3개에 투입할 인력은 최근 끝난 10명
     내외"). 진행 중 사업은 계획 기간 내내 이어지고 정원 = 현재 명단(투입률 1.0), 남는 인력 ~10%, 신규 제안 2~3개
     (계획 둘째 달 시작, 필요 인원 ≈ 남는 인력). 현재 명단은 기술이 대체로 맞게 꾸리되 무작위성을 둬 개선 여지가 자연스럽게
@@ -542,10 +646,14 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
     def overlap(person, skills):
         return len(set(person["_pool"]) & set(skills)) + rng.random() * 1.5     # 대체로 맞게, 완벽하지는 않게
 
-    def add_project(pid, name, sector, phase, start, end, members, hc, skills_rows, flagship=False, priced=None):
+    def add_project(pid, name, sector, phase, start, end, members, hc, skills_rows, flagship=False, priced=None,
+                    texts=None, life=None):
+        s_text, e_text = texts or (horizon[start].strftime("%Y-%m"), horizon[end].strftime("%Y-%m"))
         projects.append({"project_id": pid, "project_name": name, "sector": sector, "phase": phase,
-                         "start_month": horizon[start].strftime("%Y-%m"), "end_month": horizon[end].strftime("%Y-%m"),
+                         "start_month": s_text, "end_month": e_text,
                          "_start": start, "_end": end, "_hc": hc, "_flagship": flagship})
+        if life:
+            projects[-1]["_life"] = life
         skill_reqs.extend({"project_id": pid, **r} for r in skills_rows)
         priced = members or priced                       # 신규 제안은 그 자리를 채울 수 있는 대기 인력의 실제 단가로(v3)
         cost = sum(_rate(m) for m in priced) if priced else sum(BASE_RATE[g] * k for g, k in hc.items())
@@ -591,20 +699,39 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
         used.add((client, name))
         return name.format(c=client), sector, skills
 
-    for g, remaining in working.items():                 # 진행 중 사업: 남은 인원을 4~9명 팀으로 모두 배치
+    # v4: 진행 사업마다 수명 주기(별도 난수열) -- 운영(2024 시작, 내부 2~3명, 계획 뒤까지) · 고도화(2025) · 개발(2025 · 2026 상반기).
+    # 첫 진행 사업은 운영으로 둬 추가 과제의 상위 사업이 늘 있게 한다. lrng가 없으면 v3 그대로(모두 계획 첫 달 시작).
+    life_kinds, life_weights = [k for k, _ in OPERATING_LIFE], [w for _, w in OPERATING_LIFE]
+    operating_parents: list[tuple[dict, list[str]]] = []
+    for g, remaining in working.items():                 # 진행 중 사업: 남은 인원을 4~9명 팀(운영은 2~3명)으로 모두 배치
         remaining = remaining[:]
         while remaining:
             j += 1
             name, sector, skills = pick_type(g)
-            k = rng.randint(4, 9)
-            if len(remaining) - k < 4:
+            kind = None
+            if lrng is not None:
+                kind = "운영" if not operating_parents and not any("_life" in p for p in projects) else \
+                    lrng.choices(life_kinds, weights=life_weights)[0]
+            small = kind == "운영"
+            k = rng.randint(4, 9) if not small else lrng.randint(2, 3)
+            if len(remaining) - k < (2 if small else 4):
                 k = len(remaining)
             team = sorted(remaining, key=lambda p: -overlap(p, skills))[:k]
             remaining = [p for p in remaining if p not in team]
             hc = defaultdict(int)
             for m in team:
                 hc[m["career_grade"]] += 1
-            add_project(f"J{j:03d}", f"[실행] {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), skill_rows(skills))
+            rows = skill_rows(skills)
+            if kind is None:
+                add_project(f"J{j:03d}", f"[실행] {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows)
+                continue
+            started = _life_start(lrng, kind, horizon[0])
+            end_text = (_month_add(horizon[0], lrng.randint(12, 24)).strftime("%Y-%m") if small
+                        else horizon[HORIZON_MONTHS - 1].strftime("%Y-%m"))
+            add_project(f"J{j:03d}", f"{LIFE_LABEL[kind]} {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows,
+                        texts=(started, end_text), life=_life_record(kind, started))
+            if small:
+                operating_parents.append((projects[-1], [r["skill_name"] for r in rows]))
     order = [g for g in ("DP", "AI", "AU") if groups.get(g)]
     n_prop = PROPOSALS.get(size, 2)
     # v3(2026-10-19, 전일 투입): 신규 제안 정원 = 대기 인력의 **등급 구성** 그대로(한 명 여유) -- 예전 {고급 1, 중급 n-2, 초급 1}은
@@ -615,6 +742,14 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
         most = max(GRADES, key=lambda g: (sum(1 for p in pool if p["career_grade"] == g), -GRADES.index(g)))
         drop = next(p for p in reversed(pool) if p["career_grade"] == most)
         pool = [p for p in pool if p is not drop]
+    addon = []
+    if lrng is not None and operating_parents:            # v4: 추가 과제 1개 -- 대기 인력 중 고급·중급 한 명씩(없으면 앞의 두 명)
+        for grade in ("고급", "중급"):
+            pick = next((p for p in pool if p["career_grade"] == grade and p not in addon), None)
+            if pick is not None:
+                addon.append(pick)
+        addon += [p for p in pool if p not in addon][:max(0, 2 - len(addon))]
+        pool = [p for p in pool if p not in addon]
     dealt = [pool[k::n_prop] for k in range(n_prop)]
     proposal_ids = []
     for k in range(n_prop):
@@ -627,6 +762,24 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
         add_project(f"J{j:03d}", f"[제안] {name}", sector, "제안", 1, HORIZON_MONTHS - 1, [], dict(hc), skill_rows(skills),
                     priced=dealt[k])
         proposal_ids.append(f"J{j:03d}")
+    addons = {}
+    if addon:
+        parent, pskills = lrng.choice(operating_parents)
+        j += 1
+        pid = f"J{j:03d}"
+        s_text, e_text, end = _addon_months(horizon, 1)
+        hc = defaultdict(int)
+        for p in addon:
+            hc[p["career_grade"]] += 1
+        base = parent["project_name"].removeprefix("[운영] ")
+        external = lrng.randint(*EXTERNAL_RANGE)
+        add_project(pid, f"[추가 과제] {base} 클라우드 마이그레이션·수정 개발", parent["sector"], "제안", 1, end, [], dict(hc),
+                    _addon_skills(lrng, pskills), priced=addon, texts=(s_text, e_text),
+                    life={"stage": "추가 과제", "started": s_text, "parent": parent["project_id"], "external_headcount": external})
+        proposal_ids.append(pid)
+        # 작업 데이터 화면의 추가 과제 모양(claude-b c531b4b: pipeline[id].parent · external_headcount)
+        addons[pid] = {"stage": "제안", "predecessor": None, "parent": parent["project_id"], "external_headcount": external,
+                       "registered_at": f"{horizon[0]:%Y-%m}-01"}
     availability, avail = [], defaultdict(list)
     for p in people:
         for m in horizon:
@@ -634,7 +787,8 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
             avail[p["person_id"]].append(mm)
             availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": f"{mm:.1f}"})
     demand = sum(sum(p["_hc"].values()) for p in projects) / max(1, len(people))
-    return projects, grade_reqs, skill_reqs, roster, availability, avail, [b["person_id"] for b in bench], proposal_ids, demand
+    return (projects, grade_reqs, skill_reqs, roster, availability, avail, [b["person_id"] for b in bench], proposal_ids, demand,
+            addons)
 
 
 def _current_roster(rng: random.Random, people: list[dict], projects: list[dict], avail: dict) -> list[dict]:
@@ -708,11 +862,13 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     extra = {}
     if scenario == "planning":
         projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon,
-                                                           grade_supply_of(people, avail, HORIZON_MONTHS))
+                                                           grade_supply_of(people, avail, HORIZON_MONTHS),
+                                                           random.Random(lifecycle_seed(seed)), size)
     else:
         (projects, grade_reqs, skill_reqs, roster, availability, avail, bench, proposals,
-         peak) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size, windows)
-        extra = {"scenario": "operating", "bench": bench, "proposals": proposals}
+         peak, addons) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size, windows,
+                                             random.Random(lifecycle_seed(seed)))
+        extra = {"scenario": "operating", "bench": bench, "proposals": proposals, **({"pipeline": addons} if addons else {})}
     for name, share in (("blunt_share", blunt_share), ("mismatch_share", mismatch_share)):
         if not 0 <= share <= 1:
             raise ValueError(f"{name}는 0~1이어야 한다: {share}")
@@ -740,6 +896,7 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
                 "flagship_project": FLAGSHIP["project_id"],
                 "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
                 "peak_demand_ratio": round(peak, 4), **extra, "leave": manifest_section(windows),
+                "lifecycle": {p["project_id"]: p["_life"] for p in projects if "_life" in p},
                 "review_style": review_style, "files": hashes}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return out_dir

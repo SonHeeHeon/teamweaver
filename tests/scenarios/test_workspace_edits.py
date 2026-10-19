@@ -31,13 +31,13 @@ def _valid(files) -> None:
 
 def test_add_project_writes_rows_and_pipeline_and_passes_ingest(files):
     new, pid = we.add_project(files, _form(), registered_at="2026-10-18")
-    assert pid == "J015"
+    assert pid == "J021"                                                    # v4: J018·J019 + 추가 과제 J020 다음
     _, rows = we.read_table(new, we.PROJECTS)
-    row = next(r for r in rows if r["project_id"] == "J015")
+    row = next(r for r in rows if r["project_id"] == "J021")
     assert row["phase"] == "제안" and row["end_month"] == "2028-12"             # 실제 종료 달 그대로(계산은 창 안으로 자름)
     m = we.read_manifest(new)
-    assert "J015" in m["proposals"] and m["pipeline"]["J015"]["predecessor"] == "J003"
-    assert files != new and "J015" not in files[we.PROJECTS]                   # 원본은 그대로
+    assert "J021" in m["proposals"] and m["pipeline"]["J021"]["predecessor"] == "J003"
+    assert files != new and "J021" not in files[we.PROJECTS]                   # 원본은 그대로
     _valid(new)
 
 
@@ -71,9 +71,9 @@ def test_stage_change_and_copy_form(files):
 
 def test_remove_project_frees_its_team_to_bench(files):
     _, cur = we.read_table(files, we.CURRENT)
-    team = sorted({r["person_id"] for r in cur if r["project_id"] == "J014"})
-    new, freed = we.remove_project(files, "J014")
-    others = {r["person_id"] for r in cur if r["project_id"] != "J014"}
+    team = sorted({r["person_id"] for r in cur if r["project_id"] == "J019"})
+    new, freed = we.remove_project(files, "J019")                              # v4: 예정 신규 사업
+    others = {r["person_id"] for r in cur if r["project_id"] != "J019"}
     assert freed == sorted(p for p in team if p not in others)
     assert set(freed) <= set(we.read_manifest(new)["bench"])
     with pytest.raises(we.EditError):

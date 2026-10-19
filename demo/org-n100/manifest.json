@@ -6,13 +6,13 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v3",
+ "generator": "core.ingest.org_profile v4",
  "groups": {
   "DP": 100
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.8333,
+ "peak_demand_ratio": 0.8478,
  "leave": {
   "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
   "calibrated": false,
@@ -48,6 +48,30 @@
     "months": 1
    }
   ]
+ },
+ "lifecycle": {
+  "J021": {
+   "stage": "운영",
+   "started": "2024-02"
+  },
+  "J022": {
+   "stage": "운영",
+   "started": "2024-11"
+  },
+  "J023": {
+   "stage": "고도화",
+   "started": "2025-08"
+  },
+  "J024": {
+   "stage": "개발",
+   "started": "2026-05"
+  },
+  "J025": {
+   "stage": "추가 과제",
+   "started": "2026-12",
+   "parent": "J021",
+   "external_headcount": 3
+  }
  },
  "review_style": {
   "blunt_share": 0.08,
@@ -255,12 +279,12 @@
   "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
   "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
   "availability.csv": "29a5d98f302826aac845bd28b2e2953e7e26fef06c38b437aed2d80a564397ff",
-  "projects.csv": "6fc4d56504985a0e5815a919cc854f9f6fb744f9c1b15fc32a9e7aa8d358cce9",
-  "project_grade_requirements.csv": "c5a0089d1fd85e314edc2818680f2d209bed5d933edfa53e6a607ef91fd86019",
-  "project_skill_requirements.csv": "223c8c8c68c8e00aaedb35f94f15efab89cc76ac1f68cc649736f2bf9f38ae28",
+  "projects.csv": "e2abcbb122964109d7d78f82977626dc192bbc913ba980e3ddb7d8e7099524ca",
+  "project_grade_requirements.csv": "8c504d151ccfcdbbf65c7b048f3fec3143dc4ceee0c99429432a2cc2cce271bf",
+  "project_skill_requirements.csv": "cbba85d68ab40fa9be9a544a8ff4dad367842f4d2489d9122f15c3264deedfe6",
   "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
   "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
-  "current_assignments.csv": "2be7af4f514bb0ad6e899c8415617972a8d585a5e7a75efe38840252771593c9",
+  "current_assignments.csv": "f6081fc9b0fd57373e7f240108f52d5163146590986348473f5ef921095d389e",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
  }

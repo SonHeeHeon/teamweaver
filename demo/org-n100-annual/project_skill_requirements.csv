@@ -69,75 +69,91 @@ J020,Data Lake & Data Catalog,12,2
 J020,금융 업무,24,2
 J020,ETL,36,1
 J020,데이터 모델링,36,1
-J021,Data Lake & Data Catalog,60,1
-J021,금융 업무,12,2
-J021,데이터 모델링,60,1
-J021,Spark,36,1
-J021,ETL,24,1
-J022,ETL,36,2
-J022,메타데이터 관리,36,1
-J022,Text Analysis,12,1
-J022,비정형 문서 처리(OCR),60,2
-J022,금융 업무,24,1
-J023,데이터 모델링,60,2
-J023,Data Lake & Data Catalog,12,2
-J023,메타데이터 관리,36,2
-J024,메타데이터 관리,12,1
-J024,Data Lake & Data Catalog,36,1
+J021,금융 업무,36,2
+J021,ETL,12,2
+J021,비정형 문서 처리(OCR),36,2
+J022,공공 업무,36,1
+J022,BI Reporting,36,1
+J022,ETL,36,1
+J023,BI Reporting,36,2
+J023,ETL,60,2
+J023,공공 업무,24,2
+J023,SQL,60,2
+J024,Data Lake & Data Catalog,60,2
 J024,데이터 모델링,12,2
-J025,메타데이터 관리,60,2
-J025,비정형 문서 처리(OCR),36,2
-J025,ETL,24,2
-J025,Text Analysis,36,2
-J026,메타데이터 관리,36,1
-J026,데이터 모델링,12,2
-J027,Data Lake & Data Catalog,60,2
-J027,데이터 모델링,24,1
-J027,ETL,12,2
-J027,Spark,60,1
-J027,금융 업무,12,1
-J028,Data Lake & Data Catalog,36,2
-J028,Spark,36,2
-J028,금융 업무,36,1
-J029,비정형 문서 처리(OCR),24,1
-J029,금융 업무,60,1
-J029,메타데이터 관리,60,1
-J029,Text Analysis,60,1
-J029,ETL,12,2
-J030,ETL,60,1
-J030,비정형 문서 처리(OCR),60,2
-J030,금융 업무,24,1
-J030,Text Analysis,12,2
-J030,메타데이터 관리,36,1
-J031,ETL,60,2
-J031,Text Analysis,24,2
-J031,금융 업무,12,1
-J031,메타데이터 관리,12,2
-J031,비정형 문서 처리(OCR),12,2
-J032,데이터 모델링,60,2
-J032,메타데이터 관리,24,2
+J024,메타데이터 관리,24,2
+J025,Private Cloud,12,1
+J025,Kubernetes,24,1
+J025,비정형 문서 처리(OCR),12,1
+J026,Data Lake & Data Catalog,60,1
+J026,금융 업무,12,2
+J026,데이터 모델링,60,1
+J026,Spark,36,1
+J026,ETL,24,1
+J027,ETL,36,2
+J027,메타데이터 관리,36,1
+J027,Text Analysis,12,1
+J027,비정형 문서 처리(OCR),60,2
+J027,금융 업무,24,1
+J028,데이터 모델링,60,2
+J028,Data Lake & Data Catalog,12,2
+J028,메타데이터 관리,36,2
+J029,메타데이터 관리,12,1
+J029,Data Lake & Data Catalog,36,1
+J029,데이터 모델링,12,2
+J030,메타데이터 관리,60,2
+J030,비정형 문서 처리(OCR),36,2
+J030,ETL,24,2
+J030,Text Analysis,36,2
+J031,메타데이터 관리,36,1
+J031,데이터 모델링,12,2
 J032,Data Lake & Data Catalog,60,2
-J033,ETL,24,1
-J033,Text Analysis,24,2
-J033,비정형 문서 처리(OCR),36,1
-J034,금융 업무,24,1
-J034,Spark,24,1
-J034,ETL,60,1
-J034,Data Lake & Data Catalog,12,1
-J034,데이터 모델링,36,1
-J035,Data Lake & Data Catalog,36,1
-J035,데이터 모델링,36,2
-J036,Kafka,60,1
-J036,Airflow,60,1
-J036,Spark,24,1
-J036,Private Cloud,12,1
-J037,Data Lake & Data Catalog,36,2
-J037,데이터 모델링,12,2
-J037,금융 업무,60,1
-J038,메타데이터 관리,12,2
-J038,Data Lake & Data Catalog,12,1
-J038,데이터 모델링,24,2
-J039,BI Reporting,24,1
-J039,공공 업무,60,2
-J039,ETL,12,2
-J039,SQL,60,2
+J032,데이터 모델링,24,1
+J032,ETL,12,2
+J032,Spark,60,1
+J032,금융 업무,12,1
+J033,Data Lake & Data Catalog,36,2
+J033,Spark,36,2
+J033,금융 업무,36,1
+J034,비정형 문서 처리(OCR),24,1
+J034,금융 업무,60,1
+J034,메타데이터 관리,60,1
+J034,Text Analysis,60,1
+J034,ETL,12,2
+J035,ETL,60,1
+J035,비정형 문서 처리(OCR),60,2
+J035,금융 업무,24,1
+J035,Text Analysis,12,2
+J035,메타데이터 관리,36,1
+J036,ETL,60,2
+J036,Text Analysis,24,2
+J036,금융 업무,12,1
+J036,메타데이터 관리,12,2
+J036,비정형 문서 처리(OCR),12,2
+J037,데이터 모델링,60,2
+J037,메타데이터 관리,24,2
+J037,Data Lake & Data Catalog,60,2
+J038,ETL,24,1
+J038,Text Analysis,24,2
+J038,비정형 문서 처리(OCR),36,1
+J039,금융 업무,24,1
+J039,Spark,24,1
+J039,ETL,60,1
+J039,Data Lake & Data Catalog,12,1
+J039,데이터 모델링,36,1
+J040,Data Lake & Data Catalog,36,1
+J040,데이터 모델링,36,2
+J041,Kafka,60,1
+J041,Airflow,60,1
+J041,Spark,24,1
+J041,Private Cloud,12,1
+J042,Data Lake & Data Catalog,36,2
+J042,데이터 모델링,12,2
+J042,금융 업무,60,1
+J043,메타데이터 관리,12,2
+J043,Data Lake & Data Catalog,12,1
+J043,데이터 모델링,24,2
+J044,BI Reporting,24,1
+J044,공공 업무,60,2
+J044,ETL,12,2
+J044,SQL,60,2

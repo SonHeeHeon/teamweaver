@@ -6,13 +6,13 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v3",
+ "generator": "core.ingest.org_profile v4",
  "groups": {
   "DP": 100
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.8333,
+ "peak_demand_ratio": 0.8478,
  "leave": {
   "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
   "calibrated": false,
@@ -48,6 +48,30 @@
     "months": 1
    }
   ]
+ },
+ "lifecycle": {
+  "J021": {
+   "stage": "운영",
+   "started": "2024-02"
+  },
+  "J022": {
+   "stage": "운영",
+   "started": "2024-11"
+  },
+  "J023": {
+   "stage": "고도화",
+   "started": "2025-08"
+  },
+  "J024": {
+   "stage": "개발",
+   "started": "2026-05"
+  },
+  "J025": {
+   "stage": "추가 과제",
+   "started": "2026-12",
+   "parent": "J021",
+   "external_headcount": 3
+  }
  },
  "review_style": {
   "blunt_share": 0.08,
@@ -255,9 +279,9 @@
   "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
   "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
   "availability.csv": "3e5d1620d5cf0e5cc781a44c8c458edafe23efda65fb5246bcdc375d9fe47e42",
-  "projects.csv": "6a63266fd726d5bfd5b079ea667e150e085ef2df2fc7a6ce33e084db3d91d134",
-  "project_grade_requirements.csv": "0f4de3bdd1bda186a3fd46f3def3216fd3ae21232d17495a4fec85b51b81e7b1",
-  "project_skill_requirements.csv": "91dab1f6d798e85918f6a2c247661743fa38457824eb9e0e90992344d0ee2274",
+  "projects.csv": "a4ea862f33be82511514053c33e708af902b624891a1e163f38c36ded936880e",
+  "project_grade_requirements.csv": "ae37761373b037825614002ed1818eb1b53f22713486248757a0313f365faac1",
+  "project_skill_requirements.csv": "4e101871f7c1291bb856fe60df6f6046a3834a5b4bdb9ea8ac601ab6f52229ef",
   "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
   "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
   "current_assignments.csv": "5a21b91d4920b7834e10f92106d7d206c6c43657f474d5585b4b13ad8ed1c31d",
@@ -267,11 +291,6 @@
  "annual": {
   "source": "org-n100",
   "new_projects": [
-   "J021",
-   "J022",
-   "J023",
-   "J024",
-   "J025",
    "J026",
    "J027",
    "J028",
@@ -285,7 +304,12 @@
    "J036",
    "J037",
    "J038",
-   "J039"
+   "J039",
+   "J040",
+   "J041",
+   "J042",
+   "J043",
+   "J044"
   ],
   "note": "연간 계획 시연(상황 1 · 계획기간 1년): org-n100과 같은 사람·이력·평가 글, 기간 12개월. 상반기 사업은 원본과 같고 하반기 신규 사업은 생성기 규칙을 별도 난수열로 옮겼다. 가용률은 휴직·휴가 가정(manifest leave)으로 새로 만들었다. 현재 배치 없음(백지). scripts/make_annual_demo.py가 만든다."
  }

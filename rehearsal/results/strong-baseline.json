@@ -1,114 +1,114 @@
 {
- "recorded_at": "2026-10-18T18:47:01+0900",
+ "recorded_at": "2026-10-19T15:04:05+0900",
  "sizes": {
   "100": {
-   "time_limit_s": 30,
-   "milp_plan_a": {
-    "total": 57.562,
-    "skill": 36.614,
-    "synergy": 21.348,
-    "overfamiliarity": -0.4,
-    "unfilled_seats": 0,
-    "violations": {},
-    "assignments": 121
-   },
-   "simple_rule": {
-    "total": -68.301,
-    "skill": 30.838,
-    "synergy": 1.061,
-    "overfamiliarity": -0.2,
-    "unfilled_seats": 1,
-    "violations": {},
-    "assignments": 72
-   },
-   "strong_heuristic": {
-    "total": 46.423,
-    "skill": 33.627,
-    "synergy": 13.196,
-    "overfamiliarity": -0.4,
-    "unfilled_seats": 0,
-    "violations": {},
-    "assignments": 103,
-    "elapsed_s": 30.1,
-    "tries": 19014827,
-    "accepted": 21,
-    "missing_seats_construct": 0
-   },
-   "milp_best_bound": 64.68255687799606
-  },
-  "200": {
    "time_limit_s": 60,
    "milp_plan_a": {
-    "total": 107.277,
-    "skill": 88.644,
-    "synergy": 19.633,
-    "overfamiliarity": -1.0,
+    "total": 70.783,
+    "skill": 62.992,
+    "synergy": 7.791,
+    "overfamiliarity": -0.0,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 234
+    "assignments": 82
    },
    "simple_rule": {
-    "total": -32.647,
-    "skill": 68.388,
-    "synergy": 1.165,
-    "overfamiliarity": -2.2,
-    "unfilled_seats": 1,
-    "violations": {
-     "budget": 1
-    },
-    "assignments": 149
-   },
-   "strong_heuristic": {
-    "total": 85.391,
-    "skill": 74.571,
-    "synergy": 11.821,
-    "overfamiliarity": -1.0,
+    "total": 61.94,
+    "skill": 61.467,
+    "synergy": 0.873,
+    "overfamiliarity": -0.4,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 198,
-    "elapsed_s": 60.1,
-    "tries": 30921105,
-    "accepted": 42,
+    "assignments": 82
+   },
+   "strong_heuristic": {
+    "total": 65.461,
+    "skill": 60.163,
+    "synergy": 5.699,
+    "overfamiliarity": -0.4,
+    "unfilled_seats": 0,
+    "violations": {},
+    "assignments": 82,
+    "elapsed_s": 60.0,
+    "tries": 28579497,
+    "accepted": 4,
     "missing_seats_construct": 0
    },
-   "milp_best_bound": 116.57635705694538
+   "milp_best_bound": 72.4293267191144
+  },
+  "200": {
+   "time_limit_s": 90,
+   "milp_plan_a": {
+    "total": 163.705,
+    "skill": 148.844,
+    "synergy": 15.261,
+    "overfamiliarity": -0.4,
+    "unfilled_seats": 0,
+    "violations": {},
+    "assignments": 185
+   },
+   "simple_rule": {
+    "total": 140.196,
+    "skill": 140.442,
+    "synergy": 3.554,
+    "overfamiliarity": -3.8,
+    "unfilled_seats": 0,
+    "violations": {
+     "budget": 3
+    },
+    "assignments": 184
+   },
+   "strong_heuristic": {
+    "total": -151.207,
+    "skill": 142.059,
+    "synergy": 8.534,
+    "overfamiliarity": -1.8,
+    "unfilled_seats": 3,
+    "violations": {},
+    "assignments": 184,
+    "elapsed_s": 90.1,
+    "tries": 46747841,
+    "accepted": 7,
+    "missing_seats_construct": 3
+   },
+   "milp_best_bound": 165.59675258502364
   },
   "300": {
-   "time_limit_s": 180,
+   "time_limit_s": 120,
    "milp_plan_a": {
-    "total": 166.083,
-    "skill": 143.016,
-    "synergy": 24.867,
-    "overfamiliarity": -1.8,
+    "total": 246.397,
+    "skill": 227.856,
+    "synergy": 18.94,
+    "overfamiliarity": -0.4,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 343
+    "assignments": 284
    },
    "simple_rule": {
-    "total": -186.829,
-    "skill": 114.892,
-    "synergy": 0.479,
-    "overfamiliarity": -2.2,
-    "unfilled_seats": 3,
+    "total": 214.839,
+    "skill": 217.696,
+    "synergy": 0.942,
+    "overfamiliarity": -3.8,
+    "unfilled_seats": 0,
     "violations": {
-     "budget": 2
+     "budget": 5
     },
-    "assignments": 226
+    "assignments": 281
    },
    "strong_heuristic": {
-    "total": 127.019,
-    "skill": 113.248,
-    "synergy": 14.97,
-    "overfamiliarity": -1.2,
-    "unfilled_seats": 0,
+    "total": 24.339,
+    "skill": 217.804,
+    "synergy": 7.335,
+    "overfamiliarity": -0.8,
+    "unfilled_seats": 2,
     "violations": {},
-    "assignments": 308,
-    "elapsed_s": 180.2,
-    "tries": 80564463,
-    "accepted": 65,
-    "missing_seats_construct": 0
+    "assignments": 283,
+    "elapsed_s": 120.2,
+    "tries": 59914312,
+    "accepted": 7,
+    "missing_seats_construct": 2
    },
-   "milp_best_bound": 171.66752240959607
+   "milp_best_bound": 248.28473165047714
   }
  }
 }

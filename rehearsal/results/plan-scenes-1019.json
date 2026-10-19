@@ -1,0 +1,156 @@
+{
+ "D2": {
+  "bundle": "org-n100",
+  "plans": [
+   {
+    "label": "A",
+    "objective": 70.78,
+    "eval_objective": 70.78,
+    "assignments": 82,
+    "people": 73,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.836,
+    "fulfillment": 0.489,
+    "termination": "time_limit_incumbent",
+    "time_limited": true,
+    "gap_to_bound": 0.023,
+    "elapsed_s": 60.64
+   },
+   {
+    "label": "B",
+    "objective": 70.33,
+    "eval_objective": 70.33,
+    "assignments": 82,
+    "people": 74,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.836,
+    "fulfillment": 0.476,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.037,
+    "elapsed_s": 92.53
+   },
+   {
+    "label": "C",
+    "objective": 70.45,
+    "eval_objective": 70.45,
+    "assignments": 82,
+    "people": 73,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.846,
+    "fulfillment": 0.491,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.049,
+    "elapsed_s": 117.19
+   },
+   {
+    "label": "D",
+    "objective": 70.31,
+    "eval_objective": 70.31,
+    "assignments": 82,
+    "people": 73,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.836,
+    "fulfillment": 0.478,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.039,
+    "elapsed_s": 146.43
+   }
+  ]
+ },
+ "D3": {
+  "project": "J001",
+  "team": [
+   "김경민",
+   "박나연",
+   "박은지",
+   "지준우",
+   "강시윤",
+   "전다은",
+   "차서준",
+   "하예준"
+  ],
+  "facts": 86,
+  "adverse_facts": 6
+ },
+ "D4": {
+  "out": "박나연",
+  "in": "이시현",
+  "grade": "고급",
+  "delta_total": -0.263,
+  "delta_skill": -0.042,
+  "delta_synergy": -0.221,
+  "violations": []
+ },
+ "D8": {
+  "bundle": "org-n300.zip",
+  "plans": [
+   {
+    "label": "A",
+    "objective": 246.4,
+    "eval_objective": 246.4,
+    "assignments": 284,
+    "people": 250,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.896,
+    "fulfillment": 0.603,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.008,
+    "elapsed_s": 110.87
+   },
+   {
+    "label": "B",
+    "objective": 246.01,
+    "eval_objective": 246.01,
+    "assignments": 284,
+    "people": 250,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.898,
+    "fulfillment": 0.603,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.024,
+    "elapsed_s": 177.02
+   },
+   {
+    "label": "C",
+    "objective": 246.28,
+    "eval_objective": 246.28,
+    "assignments": 284,
+    "people": 251,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.898,
+    "fulfillment": 0.608,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.022,
+    "elapsed_s": 262.37
+   },
+   {
+    "label": "D",
+    "objective": 246.19,
+    "eval_objective": 246.19,
+    "assignments": 284,
+    "people": 250,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.899,
+    "fulfillment": 0.606,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.024,
+    "elapsed_s": 339.99
+   }
+  ]
+ }
+}

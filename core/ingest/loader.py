@@ -349,6 +349,8 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     _check_rules(tables, horizon, report)
     from core.ingest import concurrency          # 프로젝트 동시 수행 허용(manifest, 2026-10-19)
     concurrency.check(manifest, {r["person_id"] for r in tables.get("people.csv", [])}, report)
+    from core.ingest import lifecycle            # 사업 수명 주기(manifest, 2026-10-19 v4) -- 계산에 안 쓰는 기록이라 경고만
+    lifecycle.check(manifest, tables.get("projects.csv", []), report)
     return Bundle(manifest=manifest, horizon=horizon, tables=tables), report
 
 

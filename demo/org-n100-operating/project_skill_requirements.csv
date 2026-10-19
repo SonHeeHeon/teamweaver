@@ -4,45 +4,71 @@ J001,ETL,24,2
 J001,비정형 문서 처리(OCR),24,2
 J001,금융 업무,36,3
 J002,Spark,24,1
-J002,ETL,36,2
-J002,Data Lake & Data Catalog,12,2
-J002,금융 업무,12,1
-J003,Text Analysis,24,2
-J003,ETL,60,1
-J003,비정형 문서 처리(OCR),36,2
-J004,BI Reporting,12,1
-J004,SQL,36,2
-J004,ETL,24,1
-J004,공공 업무,12,2
-J005,Text Analysis,60,1
-J005,비정형 문서 처리(OCR),12,1
-J005,금융 업무,24,2
-J005,ETL,36,2
-J006,SQL,60,2
-J006,BI Reporting,24,1
-J006,공공 업무,60,2
-J006,ETL,12,2
-J007,Data Lake & Data Catalog,12,1
-J007,ETL,60,2
-J007,금융 업무,24,2
+J002,금융 업무,24,1
+J002,데이터 모델링,12,2
+J003,공공 업무,60,1
+J003,SQL,60,1
+J004,ETL,36,2
+J004,데이터 모델링,12,1
+J004,Data Lake & Data Catalog,12,1
+J004,금융 업무,36,2
+J004,Spark,24,1
+J005,데이터 모델링,24,1
+J005,Data Lake & Data Catalog,36,2
+J005,금융 업무,60,1
+J006,메타데이터 관리,36,2
+J006,비정형 문서 처리(OCR),12,1
+J006,ETL,60,1
+J006,Text Analysis,36,2
+J007,ETL,24,2
+J007,금융 업무,12,2
+J007,비정형 문서 처리(OCR),24,1
+J008,금융 업무,24,2
+J008,ETL,12,1
 J008,데이터 모델링,24,2
-J008,Data Lake & Data Catalog,60,2
-J009,메타데이터 관리,36,2
+J008,Data Lake & Data Catalog,24,2
+J008,Spark,60,2
+J009,금융 업무,24,2
 J009,ETL,60,1
-J009,비정형 문서 처리(OCR),12,2
-J010,메타데이터 관리,24,2
-J010,금융 업무,12,2
-J010,비정형 문서 처리(OCR),36,1
-J010,Text Analysis,36,2
-J010,ETL,12,2
-J011,데이터 모델링,36,1
-J011,Data Lake & Data Catalog,12,2
-J012,금융 업무,60,1
-J012,ETL,36,2
-J012,Data Lake & Data Catalog,24,2
-J013,공공 업무,36,2
-J013,SQL,36,2
-J014,Data Lake & Data Catalog,36,1
-J014,ETL,36,2
-J014,금융 업무,36,2
-J014,Spark,36,1
+J009,비정형 문서 처리(OCR),36,2
+J009,메타데이터 관리,24,1
+J009,Text Analysis,60,2
+J010,Text Analysis,24,2
+J010,ETL,60,1
+J010,금융 업무,24,1
+J010,비정형 문서 처리(OCR),60,1
+J010,메타데이터 관리,36,2
+J011,ETL,36,2
+J011,BI Reporting,36,2
+J011,SQL,36,1
+J011,공공 업무,60,2
+J012,데이터 모델링,24,2
+J012,메타데이터 관리,60,1
+J013,Data Lake & Data Catalog,24,1
+J013,메타데이터 관리,24,2
+J013,데이터 모델링,36,1
+J014,Text Analysis,36,2
+J014,ETL,60,1
+J014,비정형 문서 처리(OCR),36,2
+J015,ETL,36,2
+J015,Text Analysis,60,2
+J015,메타데이터 관리,24,1
+J016,Kafka,60,1
+J016,Kubernetes,60,1
+J016,Private Cloud,36,1
+J016,Airflow,60,1
+J017,Data Lake & Data Catalog,60,1
+J017,데이터 모델링,60,1
+J017,메타데이터 관리,60,2
+J018,금융 업무,24,1
+J018,비정형 문서 처리(OCR),12,1
+J018,ETL,60,2
+J018,메타데이터 관리,12,2
+J019,Kubernetes,12,1
+J019,Private Cloud,24,2
+J019,Airflow,60,1
+J019,Spark,36,2
+J019,Kafka,24,2
+J020,Private Cloud,24,1
+J020,Kubernetes,24,1
+J020,BI Reporting,12,1

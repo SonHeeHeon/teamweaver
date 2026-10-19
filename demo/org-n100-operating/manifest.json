@@ -6,7 +6,7 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v3",
+ "generator": "core.ingest.org_profile v4",
  "groups": {
   "DP": 100
  },
@@ -27,9 +27,19 @@
   "DP0085"
  ],
  "proposals": [
-  "J013",
-  "J014"
+  "J018",
+  "J019",
+  "J020"
  ],
+ "pipeline": {
+  "J020": {
+   "stage": "제안",
+   "predecessor": null,
+   "parent": "J011",
+   "external_headcount": 6,
+   "registered_at": "2026-10-01"
+  }
+ },
  "leave": {
   "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
   "calibrated": false,
@@ -65,6 +75,78 @@
     "months": 1
    }
   ]
+ },
+ "lifecycle": {
+  "J002": {
+   "stage": "운영",
+   "started": "2024-06"
+  },
+  "J003": {
+   "stage": "운영",
+   "started": "2024-11"
+  },
+  "J004": {
+   "stage": "개발",
+   "started": "2026-02"
+  },
+  "J005": {
+   "stage": "운영",
+   "started": "2024-02"
+  },
+  "J006": {
+   "stage": "운영",
+   "started": "2024-07"
+  },
+  "J007": {
+   "stage": "개발",
+   "started": "2026-02"
+  },
+  "J008": {
+   "stage": "개발",
+   "started": "2025-03"
+  },
+  "J009": {
+   "stage": "고도화",
+   "started": "2025-01"
+  },
+  "J010": {
+   "stage": "개발",
+   "started": "2025-12"
+  },
+  "J011": {
+   "stage": "운영",
+   "started": "2024-09"
+  },
+  "J012": {
+   "stage": "운영",
+   "started": "2024-03"
+  },
+  "J013": {
+   "stage": "고도화",
+   "started": "2025-12"
+  },
+  "J014": {
+   "stage": "개발",
+   "started": "2026-05"
+  },
+  "J015": {
+   "stage": "고도화",
+   "started": "2025-02"
+  },
+  "J016": {
+   "stage": "고도화",
+   "started": "2025-05"
+  },
+  "J017": {
+   "stage": "고도화",
+   "started": "2025-02"
+  },
+  "J020": {
+   "stage": "추가 과제",
+   "started": "2026-11",
+   "parent": "J011",
+   "external_headcount": 6
+  }
  },
  "review_style": {
   "blunt_share": 0.08,
@@ -272,12 +354,12 @@
   "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
   "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
   "availability.csv": "29a5d98f302826aac845bd28b2e2953e7e26fef06c38b437aed2d80a564397ff",
-  "projects.csv": "0e2658c5a93dd1f6e7631f066ca92a761972609a6758ec819c165d1fc7f5a6a2",
-  "project_grade_requirements.csv": "af5a3d9ffd198f67426a42ff361a2f01c380b1aac405cae0da66f7dddaa07097",
-  "project_skill_requirements.csv": "2e95aacf40f857f71e87e583de9dd9456500488e9622f67c419fa9adf7887faf",
+  "projects.csv": "e48e0a87464bd6d4073ee71cfcf7ce27a5320ebe0adb14e86adb0c229eb9bdaf",
+  "project_grade_requirements.csv": "d03e6259913b9db2eb45fead2b551e74575a6f9bd40808f29ad4e7ef2d5bd243",
+  "project_skill_requirements.csv": "114c15185e376f2353592b4cc15b12ba9402b0dabf65bafa590cdabd16126cfd",
   "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
   "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
-  "current_assignments.csv": "e78bb63723513bd57a5f249e58e23143277313fdc90b59ed8ab578e88a576616",
+  "current_assignments.csv": "cf7a3452a74624bd0f4927a6b70c36818e31089a8f07e1f9adec0799f05a034a",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
  }

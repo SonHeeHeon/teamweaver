@@ -41,5 +41,5 @@ def test_the_measured_table_gives_the_rehearsal_recommendations():
 
 
 def test_full_time_table_from_the_2026_10_19_measurement():
-    """전일 투입(서비스 기본): 100명 18초·200명 48초·300명 58초 × 여유 1.5 → 30초 단위로 올림."""
-    assert [recommend(n, allocation_mode="full").per_solve_s for n in (100, 200, 300)] == [30, 90, 90]
+    """전일 투입(서비스 기본): v4 100명 27초·200명 56초·300명 66초 × 여유 1.5 → 30초 단위로 올림(v3는 18·48·58초 → 30·90·90)."""
+    assert [recommend(n, allocation_mode="full").per_solve_s for n in (100, 200, 300)] == [60, 90, 120]   # v4 측정 27·56·66초 × 1.5

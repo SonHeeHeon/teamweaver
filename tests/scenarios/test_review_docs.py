@@ -1,12 +1,13 @@
-"""인사팀 검토 자료(api/routes/review_docs, 2026-10-19 claude-a): 연말형 묶음에서 진행 사업 J010의 한 명을 빼 오고 대기 인력 한 명을 더해
-신규 사업 J013(제안)을 확정한 뒤 자료를 만들고 고친다. AI는 가짜 client로만(외부 호출 없음).
-사람·사업 번호는 생성기 v3(2026-10-19) 연말형 묶음 기준 -- 신규 제안이 J013·J014, J010 팀·대기 인력이 바뀌었다."""
+"""인사팀 검토 자료(api/routes/review_docs, 2026-10-19 claude-a): 연말형 묶음에서 진행 사업 J004의 한 명을 빼 오고 대기 인력 한 명을 더해
+신규 사업 J018(제안)을 확정한 뒤 자료를 만들고 고친다. AI는 가짜 client로만(외부 호출 없음).
+사람·사업 번호는 생성기 v4(2026-10-19, 사업 수명 주기) 연말형 묶음 기준 -- 신규 제안 J018·J019 + 추가 과제 J020."""
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
-PULLED, BENCH, SRC, TGT = "DP0042", "DP0023", "J010", "J013"
+PULLED, BENCH, SRC, TGT = "DP0043", "DP0053", "J004", "J018"
+BENCH2, TGT2 = "DP0048", "J019"                          # 둘째 신규 사업(예정, 특급 1·중급 2)
 
 
 def _ws(c):
@@ -64,8 +65,8 @@ def test_edit_notes_judgments_and_locks(yearend):
         doc = _create(c, v)
         loss = next(f for f in doc["facts"] if f["kind"] == "MOVE_LOSS")
         body = {"revision": doc["revision"], "body": "부서장이 쓴 사유.",
-                "notes": [{"key": loss["key"], "type": "reply", "text": "J010은 막바지라 한 명이면 된다."}],
-                "judgments": {PULLED: {"text": "J010 Java 작업이 거의 끝났다.", "agreement": {"status": "requested", "memo": "인사팀 경유"}}}}
+                "notes": [{"key": loss["key"], "type": "reply", "text": "J004는 막바지라 한 명이면 된다."}],
+                "judgments": {PULLED: {"text": "J004 Java 작업이 거의 끝났다.", "agreement": {"status": "requested", "memo": "인사팀 경유"}}}}
         r = c.put(f"/api/review-docs/{v}/{TGT}", json=body)
         assert r.status_code == 200, r.text
         out = r.json()
@@ -179,7 +180,7 @@ def test_body_reset_and_judgment_author_kept(yearend):
         at = out["judgments"][PULLED]["at"]
         out = c.put(f"/api/review-docs/{v}/{TGT}", json={"revision": out["revision"], "body": "", "judgments": j}).json()
         assert out["body"] is None and out["judgments"][PULLED]["at"] == at     # 빈 글 = AI 초안으로, 같은 판단은 시각 유지
-        assert c.get("/api/review-docs/../J014").status_code in (404, 422)
+        assert c.get("/api/review-docs/../J019").status_code in (404, 422)
 
 
 def test_create_only_while_the_confirm_is_active(yearend):
@@ -199,16 +200,16 @@ def test_list_has_one_doc_per_target_project(yearend):
     with TestClient(app) as c:
         ws = _ws(c)
         entries = [e for e in _entries(ws) if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
-        entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": "J014", "alloc": 1.0}]
+        entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH2, "project_id": TGT2, "alloc": 1.0}]
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "auto"})
         assert r.status_code == 200, r.text
         v = r.json()["workspace"]["dataset_version"]
         row = c.get("/api/review-docs").json()["confirms"][0]
-        assert [p["project_id"] for p in row["projects"]] == ["J013", "J014"]
-        d14 = c.post(f"/api/review-docs/{v}/J013").json()
-        d15 = c.post(f"/api/review-docs/{v}/J014").json()
+        assert [p["project_id"] for p in row["projects"]] == [TGT, TGT2]
+        d14 = c.post(f"/api/review-docs/{v}/{TGT}").json()
+        d15 = c.post(f"/api/review-docs/{v}/{TGT2}").json()
         assert [j["person_id"] for j in d14["moves"]["joined"]] == [PULLED]
-        assert [j["person_id"] for j in d15["moves"]["joined"]] == [BENCH]
+        assert [j["person_id"] for j in d15["moves"]["joined"]] == [BENCH2]
 
 
 def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
