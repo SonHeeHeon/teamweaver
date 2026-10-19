@@ -3,7 +3,7 @@ import type { ProjectForm as Form } from "./workspaceApi";
 
 export function emptyForm(start: string | null | undefined): Form {
   return { name: "", sector: "대외금융", start_month: start ?? "", end_month: start ?? "", monthly_budget: 5000,
-           stage: "예정", predecessor: null, grades: { 특급: 0, 고급: 1, 중급: 1, 초급: 0 }, skills: [] };
+           stage: "예정", predecessor: null, parent: null, external_headcount: 0, grades: { 특급: 0, 고급: 1, 중급: 1, 초급: 0 }, skills: [] };
 }
 
 /** 단계별로 막을 것(서버와 같은 규칙의 일부). 빈 배열이면 다음으로. */

@@ -1,5 +1,7 @@
 /** 신규 사업 등록 양식(2026-10-19, claude-b) -- 사용자 요청 "추가하는건 항상 동일한 양식대로 … 추가하는게 쉽도록".
- *  다섯 단계: 기본 → 이전 사업(고도화 과제면 요구를 복사) → 필요 인원(등급별) → 필요 기술(사전에서 고르기) → 확인.
+ *  다섯 단계: 기본 → 연결 사업(고도화 과제면 이전 사업 요구를 복사, 추가 과제면 진행 중인 상위 사업에서 미리 채움) → 필요 인원(등급별)
+ *  → 필요 기술(사전에서 고르기) → 확인. 추가 과제(사용자 예: 운영 중 사업의 클라우드 마이그레이션, 내부 2명·6개월, 외주 여러 명)는
+ *  상위 사업 기간 안이어야 하고 외주 인원은 참고로만 남는다.
  *  서버(POST /api/workspace/projects)가 같은 규칙으로 다시 검사한다 -- 여기서는 빈칸·순서만 미리 막는다. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emptyForm, formProblems, normalizeGrades } from "./formRules";
@@ -8,17 +10,21 @@ import {
   type ProjectForm as Form, type SkillDictEntry, type Stage,
 } from "./workspaceApi";
 
-const STEPS = ["기본", "이전 사업", "필요 인원", "필요 기술", "확인"] as const;
+const STEPS = ["기본", "연결 사업", "필요 인원", "필요 기술", "확인"] as const;
 const MONTH_CHOICES = [12, 24, 36, 60];
 
 interface Props {
   start: string | null | undefined;
   predecessors: { project_id: string; name: string; end: string | null }[];
+  /** 추가 과제를 붙일 수 있는 진행 사업 */
+  parents?: { project_id: string; name: string; start: string | null; end: string | null }[];
+  /** 진행 사업 행의 "추가 과제 붙이기"로 열면 그 사업 -- 열자마자 미리 채운다 */
+  initialParent?: string | null;
   onSubmit: (form: Form) => Promise<void>;
   onCancel: () => void;
 }
 
-export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) {
+export function ProjectForm({ start, predecessors, parents = [], initialParent = null, onSubmit, onCancel }: Props) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(() => emptyForm(start));
   const [dict, setDict] = useState<SkillDictEntry[]>([]);
@@ -27,7 +33,12 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { fetchSkillDictionary().then(setDict).catch(() => setDict([])); }, []);
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
-  const problems = formProblems(form, step);
+  const parentRow = parents.find((x) => x.project_id === form.parent);
+  // 추가 과제 기간은 상위 사업 기간 안(서버도 같은 규칙으로 거절한다)
+  const parentProblem = parentRow && parentRow.start && parentRow.end
+    && (form.start_month < parentRow.start || form.end_month > parentRow.end)
+    ? `추가 과제 기간은 상위 사업 기간(${parentRow.start}~${parentRow.end}) 안이어야 한다` : null;
+  const problems = [...formProblems(form, step), ...(parentProblem && step >= 1 ? [parentProblem] : [])];
   const known = useMemo(() => new Set(dict.flatMap((d) => [d.name, ...d.aliases].map((n) => n.toLowerCase()))), [dict]);
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -39,7 +50,7 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
   const [copying, setCopying] = useState(false);
   async function copyPredecessor(id: string | null) {
     const gen = ++copyGen.current;              // 늦게 온 복사 응답이 그사이 바꾼 선택을 덮지 않게(Codex 리뷰 2026-10-19)
-    set({ predecessor: id });
+    set({ predecessor: id, ...(id ? { parent: null } : {}) });
     setError(null);
     if (!id) { setCopying(false); return; }
     setCopying(true);
@@ -55,6 +66,31 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
       if (gen === copyGen.current) setCopying(false);
     }
   }
+
+  /** 추가 과제: 상위 진행 사업에서 이름·분야·기술·기간(6개월, 상위 기간 안)·내부 인원을 미리 채운다. 사업명을 이미 적었으면 둔다. */
+  async function chooseParent(id: string | null) {
+    const gen = ++copyGen.current;
+    set({ parent: id, ...(id ? { predecessor: null } : { external_headcount: 0 }) });
+    setError(null);
+    if (!id) { setCopying(false); return; }
+    setCopying(true);
+    try {
+      const pre = await fetchProjectForm(id, { start: form.start_month || start });
+      if (gen !== copyGen.current) return;
+      setForm((f) => ({ ...f, parent: id, predecessor: null, name: f.name.trim() ? f.name : pre.name, sector: pre.sector,
+                        start_month: pre.start_month, end_month: pre.end_month, monthly_budget: pre.monthly_budget,
+                        grades: normalizeGrades(pre.grades), skills: pre.skills }));
+    } catch (e) {
+      if (gen === copyGen.current) setError(`상위 사업을 읽지 못했다: ${(e as Error).message}`);
+    } finally {
+      if (gen === copyGen.current) setCopying(false);
+    }
+  }
+  const opened = useRef(false);
+  useEffect(() => {
+    if (initialParent && !opened.current) { opened.current = true; void chooseParent(initialParent); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialParent]);
 
   function addSkill(name: string) {
     const n = name.trim();
@@ -80,7 +116,7 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
          className="fixed inset-0 z-40 flex justify-end bg-black/30" onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>
       <div className="flex h-full w-full max-w-[560px] flex-col bg-paper shadow-xl">
         <header className="border-b border-line px-6 py-4">
-          <h2 id="project-form-title" className="text-lg font-semibold text-slate-900">신규 사업 등록</h2>
+          <h2 id="project-form-title" className="text-lg font-semibold text-slate-900">{form.parent ? "추가 과제 등록" : "신규 사업 등록"}</h2>
           <ol className="mt-3 flex flex-wrap gap-1 text-xs" aria-label="단계">
             {STEPS.map((s, i) => (
               <li key={s} aria-current={i === step ? "step" : undefined}
@@ -90,7 +126,8 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
             ))}
           </ol>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
+        {/* 미리 채우기(이전·상위 사업) 응답을 기다리는 동안 입력을 잠근다 -- 늦은 응답이 그사이 고친 값을 덮지 않게(Codex 리뷰 2026-10-19) */}
+        <fieldset disabled={copying} aria-busy={copying} className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
           {step === 0 && (
             <>
               <label className="block">사업명
@@ -139,6 +176,26 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
                   ))}
                 </select>
               </label>
+              {parents.length > 0 && (
+                <>
+                  <p className="pt-2">진행 중인 사업에 붙는 <b>추가 과제</b>(예: 운영 중 사업의 클라우드 마이그레이션)면 상위 사업을 고른다.
+                    기간은 상위 사업 안이어야 하고, 상위 사업 팀원이 후보 맨 위에 온다.</p>
+                  <label className="block">상위 사업(추가 과제)
+                    <select className="field mt-1" value={form.parent ?? ""} onChange={(e) => void chooseParent(e.target.value || null)}>
+                      <option value="">없음</option>
+                      {parents.map((p) => (
+                        <option key={p.project_id} value={p.project_id}>{p.project_id} {p.name}{p.start && p.end ? ` (${p.start}~${p.end})` : ""}</option>
+                      ))}
+                    </select>
+                  </label>
+                  {form.parent && (
+                    <label className="block">외주 인원(참고 — 계산에는 쓰지 않는다)
+                      <input type="number" min={0} max={500} className="field mt-1" value={form.external_headcount ?? 0}
+                             onChange={(e) => set({ external_headcount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
+                    </label>
+                  )}
+                </>
+              )}
             </>
           )}
           {step === 2 && (
@@ -207,27 +264,28 @@ export function ProjectForm({ start, predecessors, onSubmit, onCancel }: Props) 
               <dt className="text-slate-500">월 예산</dt><dd className="num">{form.monthly_budget.toLocaleString()}</dd>
               <dt className="text-slate-500">단계</dt><dd>{STAGE_LABEL[form.stage]}</dd>
               <dt className="text-slate-500">이전 사업</dt><dd>{form.predecessor ?? "없음"}</dd>
+              {form.parent && <><dt className="text-slate-500">상위 사업</dt><dd>{form.parent}(추가 과제) · 외주 {form.external_headcount ?? 0}명(참고)</dd></>}
               <dt className="text-slate-500">필요 인원</dt>
               <dd>{GRADES.filter((g) => form.grades[g] !== undefined).map((g) => `${g} ${form.grades[g]}`).join(" · ")}</dd>
               <dt className="text-slate-500">필요 기술</dt>
               <dd>{form.skills.length ? form.skills.map((s) => `${s.name}(${s.min_months / 12}년·${s.headcount}명)`).join(", ") : "없음"}</dd>
             </dl>
           )}
-          {problems.length > 0 && step !== 1 && (
+          {problems.length > 0 && (step !== 1 || parentProblem) && (
             <ul role="alert" className="rounded-md bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
               {problems.map((p) => <li key={p}>{p}</li>)}
             </ul>
           )}
           {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">{error}</p>}
-        </div>
+        </fieldset>
         <footer className="flex items-center justify-between border-t border-line px-6 py-3">
           <button className="btn-ghost" onClick={onCancel}>닫기</button>
           <div className="flex gap-2">
             {step > 0 && <button className="btn" disabled={copying} onClick={() => setStep(step - 1)}>이전</button>}
             {step < STEPS.length - 1
-              ? <button className="btn-primary" disabled={copying || (problems.length > 0 && step !== 1)} onClick={() => setStep(step + 1)}>
+              ? <button className="btn-primary" disabled={copying || (problems.length > 0 && (step !== 1 || !!parentProblem))} onClick={() => setStep(step + 1)}>
                   {copying ? "복사하는 중…" : "다음"}</button>
-              : <button className="btn-primary" disabled={busy || copying || formProblems(form, 4).length > 0} onClick={() => void submit()}>
+              : <button className="btn-primary" disabled={busy || copying || formProblems(form, 4).length > 0 || !!parentProblem} onClick={() => void submit()}>
                   {busy ? "등록하는 중…" : "등록"}
                 </button>}
           </div>

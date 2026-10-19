@@ -55,6 +55,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [group, setGroup] = useState<Group>("bench");
   const [draft, setDraft] = useState<Record<string, CandidateRow>>({});
   const [formOpen, setFormOpen] = useState(false);
+  /** 진행 사업 행의 "추가 과제 붙이기"로 연 양식의 상위 사업(2026-10-19) */
+  const [formParent, setFormParent] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | { title: string; body: string; run: () => Promise<void> }>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -209,6 +211,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
   const predecessors = useMemo(() => (ws ? [...ws.ongoing, ...ws.pipeline].map((p) => ({ project_id: p.project_id, name: p.name, end: p.end })) : []),
                                [ws]);
+  const parents = useMemo(() => (ws ? ws.ongoing.map((o) => ({ project_id: o.project_id, name: o.name, start: o.start, end: o.end })) : []),
+                          [ws]);
 
   if (!ws) return error ? <Notice tone="bad">{error}</Notice> : <p className="text-sm text-slate-500">작업 데이터를 불러오는 중…</p>;
   if (!ws.editable) {
@@ -235,7 +239,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       {error && <Notice tone="bad">{error}</Notice>}
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <Panel title="신규 사업" sub="발주 예정 · 제안 중 · 수주"
-               actions={<button className="btn-primary" onClick={() => setFormOpen(true)}>신규 사업 등록</button>}>
+               actions={<button className="btn-primary" onClick={() => { setFormParent(null); setFormOpen(true); }}>신규 사업 등록</button>}>
           {ws.pipeline.length === 0
             ? <EmptyState title="등록된 신규 사업이 없습니다" body="발주 예정 소식이 들어오면 정해진 양식으로 등록하세요." />
             : (
@@ -251,6 +255,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                         <span className="num">{p.project_id} · {p.start}~{p.end}</span>
                         {p.predecessor && <span>이전 사업 {p.predecessor}</span>}
+                        {p.parent && <span>추가 과제 — 상위 {p.parent}{p.external_headcount ? ` · 외주 ${p.external_headcount}명(참고)` : ""}</span>}
                       </div>
                       <div className="mt-1.5"><Seats seats={p.seats} /></div>
                     </button>
@@ -285,6 +290,12 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-slate-500">자리</span><Seats seats={project.seats} />
                 {project.predecessor && <span className="text-xs text-slate-500">고도화 과제 — 이전 사업 {project.predecessor} 팀원이 후보 맨 위에 옵니다</span>}
+                {project.parent && (
+                  <span className="text-xs text-slate-500">
+                    추가 과제 — 상위 사업 {project.parent} 팀원이 후보 맨 위에 옵니다
+                    {project.external_headcount ? ` · 외주 ${project.external_headcount}명(참고, 계산에 쓰지 않음)` : ""}
+                  </span>
+                )}
               </div>
               <div className="text-sm">
                 <span className="text-slate-500">지금 팀</span>{" "}
@@ -308,7 +319,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       const picked = !!draft[r.person_id];
                       return (
                         <tr key={r.person_id} className="border-t border-slate-100">
-                          <td className="py-1.5">{r.name}{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}</td>
+                          <td className="py-1.5">{r.name}{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}
+                            {r.parent_team && <span className="ml-1.5"><Chip tone="stage">상위 사업 팀원</Chip></span>}</td>
                           <td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
                           <td className="num text-right">{fmt(r.delta_total)}</td>
                           <td className="text-xs text-slate-500">
@@ -396,6 +408,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   <span className="num text-xs text-slate-500">{o.project_id} · ~{o.end} · {o.team.length}명</span>
                   {o.ends_in_horizon && <span className="ml-1.5"><Chip tone="warn">곧 종료 {o.end}</Chip></span>}
                   {o.locked_count > 0 && !o.locked_all && <span className="ml-1.5 text-xs text-slate-500">고정 {o.locked_count}명</span>}
+                  {(o.addons ?? []).map((a) => <span key={a} className="ml-1.5"><Chip tone="stage">추가 과제 {a}</Chip></span>)}
+                </button>
+                <button className="btn ml-auto px-2.5 py-1 text-xs" disabled={busy} aria-label={`${o.name}에 추가 과제 붙이기`}
+                        onClick={() => { setFormParent(o.project_id); setFormOpen(true); }}>
+                  + 추가 과제
                 </button>
                 <button className={`btn px-2.5 py-1 text-xs ${o.locked_all ? "border-ink font-semibold" : ""}`} disabled={busy}
                         aria-pressed={o.locked_all} aria-label={`${o.name} 사업 ${o.locked_all ? "고정 해제" : "고정"}`}
@@ -439,7 +456,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       </Panel>
 
       {formOpen && (
-        <ProjectForm start={ws.horizon_start} predecessors={predecessors} onCancel={() => setFormOpen(false)}
+        <ProjectForm start={ws.horizon_start} predecessors={predecessors} parents={parents} initialParent={formParent}
+                     onCancel={() => { setFormOpen(false); setFormParent(null); }}
                      onSubmit={async (form) => {
                        let res;
                        try {
@@ -449,6 +467,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                          throw e;
                        }
                        setFormOpen(false);
+                       setFormParent(null);
                        setWs(res.workspace);
                        setSelected(res.project_id);
                        setNotice(withPersistNote(`${form.name}(${res.project_id})을(를) 등록했다.`, res));
