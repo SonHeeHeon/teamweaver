@@ -22,6 +22,24 @@
 
 ---
 
+## 2026-10-19 · claude-b · 12개월 시간 한도 여유 2배(200·300명 660·900초) · 후보 점수 변화를 빈자리와 기술·협업으로 나눔
+- 브랜치/커밋: `feat/claude-b-three-scenarios` `66151a4..` `d9ff88e`(점수 나눔·긴급 투입 600초 상한)·`e7d89dd`(12개월 한도)·이 문서 커밋. main 병합 안 함 -- 사용자 "해당 브랜치에서 a도 작업 중이라면 나중에 a가 병합하지뭐"(work-split 요청 [claude-b→claude-a]).
+- 사용자: "1년 계획 계산 시간 리밋은 더 널널하게 둬도 될거같아. 점수 변화는 나눠 보이도록 하자."
+- 한 일:
+  - 12개월 전일 투입 자동 한도의 실측 하한을 **가장 느린 시드 × 여유 2**로 바꿨다(`api/settings.MEASURED_FULL_12` 78·322·485초, `MARGIN_12`, 30초 단위, 상한 900). 100·200·300명은 240·660·900초가 됐다(직전 240·420·630).
+  - 새로 재지는 않았다. claude-a `fd99155` 요청대로 v5 뒤에 다시 잰다. 설정 화면 근거 문구는 상수에서 만든다.
+  - 신규 사업 후보·긴급 투입(후보·대기 명단·최선 조합)·밤 대기 명단 행에 `unfilled_seats_delta`·`delta_excl_unfilled`를 붙였다(`api/routes/scenarios.split_unfilled`). 이름·부호는 운영 중 보강과 같고, `delta_total`·순위는 그대로다.
+  - 화면은 "빈자리(1자리 메움·생김)"와 "기술·협업 점수" 두 칸으로 나눴다(`web/src/components/scoreSplit.ts`·`ScoreSplitNote.tsx`). 나눔 없는 예전 밤 명단은 "점수 +x"로 보인다.
+  - 긴급 투입 최선 조합 풀이는 `OPERATING_TIME_LIMIT_MAX` 600초에서 자른다. 900초 한도가 가벼운 슬롯을 15분 잡던 것을 막는다(폴백 리뷰 SHOULD).
+- 상대 영향(claude-a): v5 `MEASURED_FULL`(30/60/90초)과 합치면 100명 12개월이 max(120, 180) = **180초**로 내려간다. 연간 시연 기록·미리 계산의 계산 요청(지금 240초)을 v5 재생성 때 함께 본다.
+  v5 연간 묶음으로 `scripts/measure_annual_time_budget.py`를 다시 돌려 `MEASURED_FULL_12`만 고치면 된다. `fd99155`를 b 브랜치에 합치지 못해 work-split "진행 중"·"요청" 머리에서 단순 충돌이 날 수 있다(둘 다 남긴다). 기준선 1997·웹 256.
+- 검증: `uv run pytest -q` 1997 passed·1 skipped·20 deselected, `-m slow` 20 passed, 웹 tsc·256 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 연말형 기록): 신규 사업 J018 후보 "1자리 메움 · +1.00", 빼 오기 "— · +0.44 · J017에서 빼 옴", 긴급 투입 J004 빼 오기 "1자리 생김 · +0.67", 최선 조합 "김재훈 · 기술·협업 +1.47", 연간 설정 근거 문구 240초, 콘솔 오류 0.
+  리뷰: Codex 한도 소진 2회 → Stop 게이트 끔, Claude Opus 폴백 approve(SHOULD 1·NIT 1 반영, NIT 2 WON'T) → 2라운드 Codex gpt-6.1-sol(19:09 회복 뒤) 지적 없음 → **Stop 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-score-split-annual-time.md`(로컬)
+
+---
+
 ## 2026-10-19 · claude-b · 사업 수명 주기 표시(실제 시작·단계·추가 과제 상위·외주) · 12개월 시간 한도 하한 · v4 장면 브라우저 점검
 - 브랜치/커밋: `feat/claude-b-three-scenarios`(claude-a `1c677c3`로 fast-forward 뒤 이 항목 커밋들). main 병합은 사용자 승인 대기(이 브랜치가 claude-a 브랜치를 포함).
 - 사용자: "A 끝났어. 너가 작업해도 될 준비가 다 됐는지 확인해보고 이상 없으면 착수해줘" -- 준비 확인(작업 트리 깨끗·진행 중 없음·내 `bd65e0c` 병합됨, 합친 상태 1982 passed·웹 247) 뒤 b 몫(추가 과제 리포트 6절).

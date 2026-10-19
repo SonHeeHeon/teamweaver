@@ -129,6 +129,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   확정은 평가기로 **새로 생기거나 커진 위반**(한도와의 거리)·잠긴 배치 빼기를 거절한다. 신규 사업 후보는 등록한 정원·예산 그대로 다시 채점(`rescore_unchanged` -- 보강 계산은 자리를 늘린다),
   "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
   시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
+  후보 점수는 나눠 보인다(사용자 2026-10-19 "점수 변화는 나눠 보이도록"): `scenarios.split_unfilled`가 `unfilled_seats_delta`(메운 자리, 운영 중 보강과 같은 이름·부호)·`delta_excl_unfilled`(빈자리 몫 뺀 변화)를 붙이고 `delta_total`·순위는 그대로.
+  긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -148,8 +150,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   사업 정원은 등급·달마다 (가용률 1.0인 그 등급 인원)의 85% 이하(`org_profile.shrink_to_supply` -- 예전 전체 85%는 등급을 안 봐 쪼개 넣어야 채워졌다), 예산 = 기준 단가 × 정원 × 1.0~1.25(`budget_of`),
   연초 현재 배치 100%·겹침 없음, 운영 중은 휴직 달이 걸린 사람을 진행 사업·대기에서 빼고 신규 제안 정원 = 대기 인력의 등급 구성(한 명 여유).
   **사람·이력·평가 글 난수열은 그대로**라 판정 동봉이 그대로 쓰인다(`export_demo_judgments.py --check`). 연간·연말형 도구(`scripts/make_{annual,yearend}_demo.py`)가 같은 함수를 쓴다.
-  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`. 전일 투입은 12개월 실측 하한(`MEASURED_FULL_12`, 100·200·300명 78·279·406초 × 1.5)과
-  큰 값이라 240·420·630초(claude-b 2026-10-19, `scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json` -- ×4만으로는 300명·시드 4가 한도 끝에서 증명).
+  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`. 전일 투입은 12개월 실측 하한(`MEASURED_FULL_12`, 100·200·300명 가장 느린 시드 78·322·485초 × 여유 2, 상한 900초)과
+  큰 값이라 240·660·900초(claude-b 2026-10-19, `scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json` -- 사용자 "1년 계획 계산 시간 리밋은 더 널널하게"). v5 연간 묶음이 나오면 다시 잰다.
 - **생성기 v4 = 사업 수명 주기 섞기**(2026-10-19 사용자 원문 -- b 요청 6번, claude-a 설계 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`): 별도 난수열(`org_profile.lifecycle_seed`)이라 사람·이력·평가 글은 v3와 바이트까지 같다.
   연초 계획은 기존 사업(J001~) 뒤에 장기 사업(25명당 1개: 2024 `[운영]` 내부 2~3명·계획 뒤까지 / 2025 `[고도화]` / 2026 상반기)과 운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값)를 붙이고,
   운영 중은 진행 사업마다 수명 주기(운영 = 팀 2~3명) + 신규 제안 중 추가 과제 1개(**b의 `pipeline` 모양** parent·external_headcount). 실제 시작 달은 `projects.csv start_month`
@@ -186,7 +188,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v4 + 사업 수명 주기 표시(claude-b, a `1c677c3` 위) **1989 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 253 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v4 + 사업 수명 주기 표시·후보 점수 나눔(claude-b, a `1c677c3` 위) **1997 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 256 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
