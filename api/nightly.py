@@ -28,6 +28,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -64,6 +65,7 @@ MAX_PREPARED = 12                 # prepared.json에 남기는 풀이 수(지금
 HISTORY_KEEP = 14
 MIN_RUN_S = 60                    # 남은 시간이 이보다 짧으면 시작하지 않는다(잠자기에서 깨어난 아침 등)
 DISK_MIN_FREE = 1 << 30
+HR_SYNC_MAX_S = 3600              # 인사 시스템 받기(받기·검증·새 평가 글 판정) 상한 -- 마감까지 남은 시간이 더 짧으면 그만큼
 
 
 def enabled() -> bool:
@@ -215,6 +217,7 @@ class Nightly:
         self.progress: dict | None = None
         self.next_run_at: datetime | None = None
         self.installed: list[dict] = []
+        self.loop: asyncio.AbstractEventLoop | None = None    # 서버 실행 루프(attach) -- 밤 스레드가 인사 시스템 받기를 맡긴다
 
     # 낮 요청 기록 ----------------------------------------------------------------------------------------------
     def remember(self, kind: str, raw: bytes) -> None:
@@ -334,8 +337,53 @@ class Nightly:
         except Exception:                               # noqa: BLE001 -- 실행 스레드가 조용히 죽지 않게 남긴다
             log.exception("야간 배치가 예기치 않게 끝났다")
 
+    def _hr_sync(self, deadline_ts: float) -> dict | None:
+        """인사 시스템 받기(API 모드일 때만, 2026-10-19 claude-a) -- 밤 작업 맨 앞. 바뀌었으면 새 판으로 켠 뒤 그 데이터로 나머지를 한다.
+        켜기는 업로드와 같은 비동기 경로(api.hr_source.sync → api.workspace.commit)라 서버 실행 루프에 맡기고 끝날 때까지 기다린다."""
+        from api import hr_source
+        cfg, err = hr_source.config()
+        if cfg is None and err is None:
+            return None
+        check = {"id": "hr_sync", "title": "인사 시스템 받기", "status": "fail", "detail": ""}
+        loop = self.loop
+        if loop is None or loop.is_closed():
+            check["detail"] = "서버 실행 루프를 찾지 못해 받지 않았다"
+            return check
+        self.progress = {**(self.progress or {}), "phase": "인사 시스템 받기"}
+        fut = asyncio.run_coroutine_threadsafe(hr_source.sync(self.app, trigger="nightly"), loop)   # 기다림만 끊고 취소는 안 한다
+        give_up = time.time() + max(1.0, min(HR_SYNC_MAX_S, deadline_ts - time.time()))
+        later = " -- 받기는 계속되고 결과는 설정 화면의 '마지막 받기'에 남는다"
+        try:
+            while True:
+                try:
+                    r = fut.result(timeout=1.0)
+                    break
+                except TimeoutError:
+                    # 취소하지 않는다 -- 켜기가 시작됐으면 끝까지 가야 저장본·이력이 어긋나지 않는다(Codex 리뷰 2026-10-19).
+                    # 멈춤 요청·시간 초과면 기다리기만 그만둔다(1초마다 확인 -- 멈추기가 최대 1시간 막히지 않게, Codex 재리뷰)
+                    if self._cancel.is_set():
+                        check.update(status="warn", detail="멈춤 요청으로 기다리지 않았다" + later)
+                        return check
+                    if time.time() >= give_up:
+                        check.update(status="warn", detail="시간 안에 끝나지 않아 기다리지 않고 지금 데이터로 진행했다" + later)
+                        return check
+        except hr_source.SyncBusy:
+            check.update(status="warn", detail="이미 받는 중이라 이번 밤에는 건너뛰었다")
+            return check
+        except Exception as exc:                        # noqa: BLE001 -- 받기가 깨져도 밤 점검은 지금 데이터로 한다
+            log.exception("인사 시스템 받기 실패")
+            check["detail"] = f"{type(exc).__name__}: {str(exc)[:200]}"
+            return check
+        labels = {"applied": "새 판으로 켰다", "unchanged": "원천이 그대로다"}
+        ok = r["status"] in labels
+        check.update(status="ok" if ok else "fail",
+                     detail=(f"{labels[r['status']]} -- {r.get('host')} · 바뀐 표 {len(r.get('changed') or [])}개"
+                             if ok else f"지금 데이터 그대로 -- {r.get('detail')}"))
+        return check
+
     def _run(self, trigger: str, deadline_ts: float) -> None:
         app = self.app
+        hr_check = self._hr_sync(deadline_ts)
         dataset = app.state.dataset
         t0 = time.time()
         total = max(0.0, deadline_ts - t0)
@@ -345,7 +393,7 @@ class Nightly:
                         "deadline": datetime.fromtimestamp(deadline_ts, timezone.utc).isoformat(timespec="seconds"),
                         "dataset": {"id": info.dataset_id, "version": info.version, "source": info.source,
                                     "synthetic": info.synthetic, "people": info.people, "projects": info.projects},
-                        "checks": [], "solves": [], "standby": None, "stopped": False}
+                        "checks": [hr_check] if hr_check else [], "solves": [], "standby": None, "stopped": False}
         acquired = False
         try:
             dataset.acquire()
@@ -1001,6 +1049,10 @@ def attach(app) -> Nightly:
     켜져 있으면 예약을 시작한다."""
     nightly = Nightly(app)
     app.state.nightly = nightly
+    try:
+        nightly.loop = asyncio.get_running_loop()      # lifespan 안 -- 밤 스레드가 인사 시스템 받기를 이 루프에 맡긴다
+    except RuntimeError:
+        nightly.loop = None
     _prune_justifications(app.state.dataset.info.version)
     try:
         nightly.install_prepared()

@@ -44,6 +44,7 @@ import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
 import { ConcurrencyPanel } from "./scenarios/ConcurrencyPanel";
 import { NightlyBanner } from "./nightly/NightlyBanner";
 import { NightlyPanel } from "./nightly/NightlyPanel";
+import { DataSourcePanel } from "./datasource/DataSourcePanel";
 
 
 
@@ -759,6 +760,9 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                              throw e;
                            }
                          }} />
+            <DataSourcePanel adminToken={adminToken || null} datasetVersion={dataset?.version ?? null}
+                             onSwitched={(info) => void datasetSwitched(info)} onExternalChange={() => void externalSwitch()}
+                             onLoginRequired={adminExpired} />
             <NightlyPanel adminToken={adminToken || null} onLoginRequired={adminExpired} />
             </div>
           ) : (
