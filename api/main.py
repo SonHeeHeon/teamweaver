@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.admin import warn_if_unprotected
 from api.cache import ResultCache
+from api.settings import horizon_months_of
 from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
 from api.routes.datasets import validate_and_build
 from api.plan_edits import PlanEditStore
@@ -139,7 +140,8 @@ async def lifespan(app: FastAPI):
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = settings_store
-    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people))
+    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people),
+                                                  months=horizon_months_of(app.state.dataset.graph))
     # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 900초 × Plan A·대안 4회)
     # gap이 작으면(실측: gap 0·120초에서 부팅 377초) 재기동이 오래 멈춘다 -- 기본값
     # 수준(120초 이하, gap 5% 이상)일 때만 한다(기본 설정 실측 ~34초).

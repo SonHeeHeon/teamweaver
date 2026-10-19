@@ -174,7 +174,8 @@ class PayloadTooLarge(RuntimeError):
     pass
 
 
-def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
+def _report_meta(graph: MemoryGraph, version: str, payload: dict, horizon_start: str | None = None,
+                 leave: dict | None = None) -> dict:
     """PDF에 필요한 사람·프로젝트·협업선만 담은 meta(K9 스냅숏을 리포트 범위로 줄임).
     전체 meta는 데이터셋 크기에 비례해 커지므로(업로드 데이터에는 행 수 상한이 없다) 넣지 않는다."""
     people_ids, project_ids = set(), set()
@@ -187,7 +188,7 @@ def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
         else:
             people_ids.update((s["out_person_id"], s["in_person_id"]))
         project_ids.add(s["project_id"])
-    full = build_meta(graph, version).model_dump()
+    full = build_meta(graph, version, horizon_start, leave).model_dump()
     full["people"] = [p for p in full["people"] if p["id"] in people_ids]
     full["projects"] = [j for j in full["projects"] if j["id"] in project_ids]
     full["coworks"] = [c for c in full["coworks"]
@@ -227,7 +228,9 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
     payload["plan_provenance"] = provenance
     payload["solve_evidence"] = _solve_evidence(req, provenance)
     payload.pop("evidence_token", None)
-    payload["meta"] = _report_meta(graph, version, payload)
+    payload["meta"] = _report_meta(graph, version, payload,
+                                   dataset.scenario.get("horizon_start") if dataset is not None else None,
+                                   dataset.scenario.get("leave") if dataset is not None else None)
     size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     if size > MAX_RENDER_PAYLOAD_BYTES:
         raise PayloadTooLarge(f"PDF 데이터가 {size:,}바이트로 상한 {MAX_RENDER_PAYLOAD_BYTES:,}바이트를 넘는다.")

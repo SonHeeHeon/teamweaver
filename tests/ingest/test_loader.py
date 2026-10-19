@@ -140,7 +140,7 @@ def test_review_item_count_outside_1_to_5_is_an_error(tmp_path, positives):
 @pytest.mark.parametrize("patch", [
     {"schema_version": 2},
     {"horizon_start": "2026/10"},
-    {"horizon_months": 12},
+    {"horizon_months": 9},                  # 6·12만 허용(2026-10-19 계획기간 1년 확장)
     {"synthetic": "yes"},
 ])
 def test_manifest_problems_are_errors(tmp_path, patch):

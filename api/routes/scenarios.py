@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.datasets import ActiveDataset
 from api.deps import check_dataset_version, get_dataset
+from api.settings import horizon_months_of
 from core.domain.models import Grade
 
 router = APIRouter()
@@ -34,7 +35,8 @@ def _light(app):
 
 
 def _params(app, dataset):
-    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people))
+    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people),
+                                                                         months=horizon_months_of(dataset.graph))
 
 
 def _entries(dataset):
@@ -128,8 +130,10 @@ async def pipeline_candidates(project_id: str, request: Request, dataset_version
                         predecessor=predecessor)
     async with _light(request.app):
         groups = await anyio.to_thread.run_sync(go)
+    from api.unavailable import unavailable_for
+    # 그 사업 기간에 휴직 등으로 넣을 수 없는 사람 -- 후보 계산은 이미 빼므로 화면이 사유와 함께 비활성으로 보인다(2026-10-19)
     return {"dataset_version": dataset.info.version, "project_id": project_id, "predecessor": predecessor,
-            **groups, "note": NOT_CALIBRATED}
+            **groups, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
 
 
 # --- 긴급 투입 ----------------------------------------------------------------------------------------------------------
@@ -228,6 +232,7 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
         finally:
             if cand is not None:
                 cand.retire()
+    from api.unavailable import unavailable_for
     async with _light(request.app):
         best, rows, standby, hint = await anyio.to_thread.run_sync(go)
     nm = _names(dataset)
@@ -244,6 +249,7 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
                                                                if r["source"] != "pull"],
                            "pull": [r for r in groups["ending"] + groups["pull"] if r["source"] == "pull"]},
             "standby": [{**r, "name": nm.get(r["person_id"], r["person_id"])} for r in standby],
+            "unavailable": unavailable_for(dataset, body.project_id),
             "apply_hint": hint, "note": NOT_CALIBRATED}
 
 

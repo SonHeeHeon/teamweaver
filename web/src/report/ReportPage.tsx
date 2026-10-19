@@ -4,7 +4,7 @@ import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
-import { formatAlloc, formatMonthly } from "../components/allocFormat";
+import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
 import { fallbackText, segmentsOf } from "../components/justification";
 import { ReviewDoc } from "../review/ReviewDoc";
 import type { ReviewDocView } from "../review/reviewApi";
@@ -92,7 +92,11 @@ function PlanReport() {
   return (
     <div className="report-root mx-auto max-w-[760px] bg-white p-8 text-slate-900">
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
-      <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
+      <p className="mt-1 text-sm text-slate-500">
+        Plan {data.plan_label}
+        {meta && horizonRange(meta.horizon_start, meta.horizon_months ?? 6)
+          ? ` · 계획 기간 ${horizonRange(meta.horizon_start, meta.horizon_months ?? 6)}` : ""}
+      </p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
       {meta && data.dataset_version && meta.dataset_version !== data.dataset_version && (
         <p className="mt-1 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800">
@@ -172,7 +176,7 @@ function PlanReport() {
                   s.warnings?.length ? "bg-red-50 text-red-800" : ""}`}>
                   <td className="py-1">{k + 1}</td>
                   <td className="py-1">{s.kind === "alloc"
-                    ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc) || ""}`
+                    ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc, meta?.horizon_start) || ""}`
                     : `${nameOf(s.out_person_id)} → ${nameOf(s.in_person_id)}`}</td>
                   <td className="py-1">{jName.get(s.project_id) ?? s.project_id}</td>
                   <td className="py-1 text-right tabular-nums">
@@ -263,7 +267,7 @@ function PlanReport() {
                 <td className="py-1 text-right tabular-nums">
                   {formatAlloc(e.alloc)}
                   {e.monthly_alloc && (
-                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc)}</span>
+                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc, meta?.horizon_start)}</span>
                   )}
                 </td>
               </tr>

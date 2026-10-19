@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, postJustification, streamOperatingCompare } from "../api/client";
 import type { AssignEntry, OperatingRow, PlacementSettings } from "../api/types";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
+import { UnavailableList } from "./UnavailableList";
 import { ProjectForm } from "./ProjectForm";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postLock, postProject, postUndo,
@@ -327,6 +328,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </tbody>
                 </table>
               )}
+              {cands && <UnavailableList rows={cands.unavailable} />}
               {cands && <p className="text-xs text-slate-400">{cands.note}</p>}
             </div>
           </Panel>

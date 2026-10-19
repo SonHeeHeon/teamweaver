@@ -6,20 +6,22 @@ interface Props {
   history: AppliedStep[];
   violations: string[];
   people: Person[];
+  /** 계획 시작 달("2026-10") -- 달 순번 대신 실제 달로 보인다 */
+  horizonStart?: string | null;
   onUndo: () => void;
   onReset: () => void;
 }
 
 /** 달별 값 요약: 모두 같으면 한 비율, 다르면 구간. */
-function describe(m: Record<string, number>): string {
+function describe(m: Record<string, number>, start?: string | null): string {
   const vals = Object.values(m);
-  return vals.every((v) => v === vals[0]) ? `${formatAlloc(vals[0])}(모든 달)` : formatMonthly(m);
+  return vals.every((v) => v === vals[0]) ? `${formatAlloc(vals[0])}(모든 달)` : formatMonthly(m, start);
 }
 
 const signed = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(4)}`;
 
 /** 적용한 교체 이력(K10). 명단은 최적화 결과가 아니라 사람이 고친 것임을 밝힌다. */
-export function AppliedPanel({ label, history, violations, people, onUndo, onReset }: Props) {
+export function AppliedPanel({ label, history, violations, people, horizonStart, onUndo, onReset }: Props) {
   if (history.length === 0) return null;
   const name = new Map(people.map((p) => [p.id, p.name]));
   const nameOf = (id: string) => name.get(id) ?? id;
@@ -35,7 +37,7 @@ export function AppliedPanel({ label, history, violations, people, onUndo, onRes
         {history.map((h, k) => (
           <li key={k}>
             {isAlloc(h)
-              ? <>투입률 조정: {nameOf(h.person_id)} ({h.project_id}) {describe(h.monthly_alloc)}</>
+              ? <>투입률 조정: {nameOf(h.person_id)} ({h.project_id}) {describe(h.monthly_alloc, horizonStart)}</>
               : <>{nameOf(h.out_person_id)} → {nameOf(h.in_person_id)} ({h.project_id})</>}
             {" "}· Δ {signed(h.objective_delta)}
             {h.warnings.length > 0 && (

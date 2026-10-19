@@ -43,6 +43,23 @@ _REMOVED_FIELDS = ("review_judge",)
 # 요청이 time_limit 3600·대안 6개로 서버를 몇 시간씩 묶을 수 있었다).
 TIME_LIMIT_MAX = 900
 
+# 12개월 계획의 권장 시간 배수(2026-10-19 claude-b 실측, 시드 4, 연간 시연 100명 -- 대부분 100% 가용): 30초면 안 A가
+# 빈자리 62항목(쓸 만한 해를 못 찾음), 120초면 0. 권장표(core/optimize/time_budget, 10-05 6개월 측정)에 곱한다.
+# 200·300명 12개월은 재지 않았다(4배는 측정 범위 밖 추정) -- 재설계 뒤 다시 잰다(docs/requests/2026-10-19-availability-redesign.md).
+HORIZON_TIME_FACTOR = {6: 1, 12: 4}
+
+
+def horizon_months_of(graph) -> int:
+    people = getattr(graph, "people", None) or []
+    return len(people[0].availability) if people else 6
+
+
+def recommended_seconds(n_people: int, allocation_mode: str = "fixed", months: int = 6) -> int:
+    from core.optimize.time_budget import recommend
+    s = recommend(n_people, allocation_mode=allocation_mode).per_solve_s * HORIZON_TIME_FACTOR.get(months, 1)
+    return min(s, TIME_LIMIT_MAX)
+
+
 class PlacementSettings(BaseModel):
     """관리자가 바꿀 수 있는 배치 규칙. 범위는 화면 검사에도 그대로 쓰인다(bounds()).
 
@@ -89,13 +106,12 @@ class PlacementSettings(BaseModel):
             data = {k: v for k, v in data.items() if k not in _REMOVED_FIELDS}
         return data
 
-    def to_milp_params(self, n_people: int | None = None) -> MilpParams:
+    def to_milp_params(self, n_people: int | None = None, months: int = 6) -> MilpParams:
         """n_people을 주고 자동이 켜져 있으면 권장 시간으로 바꿔 쓴다(부팅 사전계산). 화면 요청은 이미 실제
-        시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다."""
+        시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다. months = 데이터의 계획 기간(6|12)."""
         data = self.model_dump(exclude=NON_SOLVER_FIELDS)
         if self.time_limit_auto and n_people is not None:
-            from core.optimize.time_budget import recommend
-            data["time_limit"] = recommend(n_people, allocation_mode=self.allocation_mode).per_solve_s
+            data["time_limit"] = recommended_seconds(n_people, self.allocation_mode, months)
         return MilpParams(**data)
 
     @classmethod

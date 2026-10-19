@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.admin import require_admin
 from api.deps import check_dataset_version
+from api.settings import horizon_months_of
 from api.schemas import MAX_PLAN_ENTRIES, EntryIn
 from api.workspace import History, WorkspaceUnavailable, commit, current_files, undo
 from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, pipeline_of,
@@ -101,7 +102,8 @@ def workspace_view(request: Request) -> dict:
                             "ends_in_horizon": bool(item["end"]) and item["end"] < (_horizon_last(m) or "")})
     entries = History().entries()
     history = list(reversed(entries)) if entries and entries[-1].get("version") == info.version else []
-    bench = [person(p) for p in (m.get("bench") or []) if isinstance(p, str)]
+    from api.unavailable import horizon_reason
+    bench = [person(p, unavailable=horizon_reason(dataset, p)) for p in (m.get("bench") or []) if isinstance(p, str)]
     return {**base, "editable": True, "horizon_start": horizon[0] if horizon else None,
             "horizon_last": _horizon_last(m), "pipeline": pipeline, "ongoing": ongoing, "bench": bench,
             "history": history}
@@ -111,9 +113,11 @@ def _horizon_last(m: dict) -> str | None:
     start = m.get("horizon_start")
     if not isinstance(start, str) or len(start) != 7:
         return None
-    from core.domain.models import HORIZON_MONTHS
+    from core.domain.models import HORIZON_CHOICES, HORIZON_MONTHS
+    n = m.get("horizon_months")                     # 데이터마다 6 또는 12(2026-10-19 "계획기간 1년 확장")
+    n = n if type(n) is int and n in HORIZON_CHOICES else HORIZON_MONTHS
     y, mo = int(start[:4]), int(start[5:])
-    mo += HORIZON_MONTHS - 1
+    mo += n - 1
     y += (mo - 1) // 12
     mo = (mo - 1) % 12 + 1
     return f"{y:04d}-{mo:02d}"
@@ -228,7 +232,8 @@ def _violations(app, dataset, entries) -> dict[tuple[str, str], object]:
 
 
 def dataset_params(app, dataset):
-    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people))
+    return app.state.settings_store.current().settings.to_milp_params(n_people=len(dataset.graph.people),
+                                                                         months=horizon_months_of(dataset.graph))
 
 
 def _entries_of(dataset) -> list[dict]:

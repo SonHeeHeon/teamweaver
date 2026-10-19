@@ -1,7 +1,11 @@
 from enum import StrEnum
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-HORIZON_MONTHS = 6
+HORIZON_MONTHS = 6                    # 기본 계획 기간(예전 고정값). 기존 묶음·fixture는 모두 6개월
+# 데이터마다 고를 수 있는 계획 기간(2026-10-19 사용자 지시 "계획기간 1년 확장"). 한 데이터 안에서는 모두 같은 길이 --
+# Dataset이 확인한다. 계산 모델은 달 수를 len(person.availability)·project.months에서 읽는다.
+HORIZON_CHOICES = (6, 12)
+MAX_HORIZON_MONTHS = max(HORIZON_CHOICES)
 
 class Grade(StrEnum):
     SPECIAL = "특급"; SENIOR = "고급"; MID = "중급"; JUNIOR = "초급"
@@ -49,8 +53,8 @@ class Person(BaseModel):
     @field_validator("availability")
     @classmethod
     def _avail(cls, v):
-        if len(v) != HORIZON_MONTHS or any(not 0.0 <= a <= 1.0 for a in v):
-            raise ValueError(f"availability must be {HORIZON_MONTHS} values in [0,1]")
+        if len(v) not in HORIZON_CHOICES or any(not 0.0 <= a <= 1.0 for a in v):
+            raise ValueError(f"availability must be {' or '.join(map(str, HORIZON_CHOICES))} values in [0,1]")
         return v
 
 class SkillRequirement(BaseModel):
@@ -60,8 +64,8 @@ class SkillRequirement(BaseModel):
 
 class Project(BaseModel):
     id: str; name: str; sector: Sector; phase: ProjectPhase
-    start_month: int = Field(ge=0, lt=HORIZON_MONTHS)
-    end_month: int = Field(ge=0, lt=HORIZON_MONTHS)
+    start_month: int = Field(ge=0, lt=MAX_HORIZON_MONTHS)   # 데이터 기간 안인지는 Dataset이 본다
+    end_month: int = Field(ge=0, lt=MAX_HORIZON_MONTHS)
     grade_headcount: dict[Grade, int]
     requirements: list[SkillRequirement]
     monthly_budget: int = Field(gt=0)
@@ -119,3 +123,20 @@ class Dataset(BaseModel):
     coworks: list[CoworkRecord]
     reviews: list[PeerReview]
     current: list[CurrentAssignment] = []       # optional current roster; empty = plan every seat from scratch
+
+    @model_validator(mode="after")
+    def _one_horizon(self):
+        """모든 사람의 가용률이 같은 길이(= 계획 기간)이고 사업이 그 안에 있어야 한다. 기간은 저장 필드가 아니라
+        가용률 길이에서 읽는다 -- 직렬화 모양이 그대로라 기존 데이터 버전·캐시 키가 바뀌지 않는다."""
+        lengths = {len(p.availability) for p in self.people}
+        if len(lengths) > 1:
+            raise ValueError(f"people must share one planning horizon, got availability lengths {sorted(lengths)}")
+        n = self.horizon_months
+        late = [j.id for j in self.projects if j.end_month >= n]
+        if late:
+            raise ValueError(f"projects end after the {n}-month horizon: {late[:5]}")
+        return self
+
+    @property
+    def horizon_months(self) -> int:
+        return len(self.people[0].availability) if self.people else HORIZON_MONTHS

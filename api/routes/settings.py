@@ -15,12 +15,16 @@ router = APIRouter()
 
 def _body(state: SettingsState, request: Request) -> dict:
     # 인원 수만 읽는다 -- 데이터셋을 잡지(acquire) 않는다. 설정 저장이 데이터셋 전환과 얽히면 안 된다.
+    from api.settings import HORIZON_TIME_FACTOR, horizon_months_of, recommended_seconds
     n = len(request.app.state.dataset.graph.people)
+    months = horizon_months_of(request.app.state.dataset.graph)
 
     def rec(mode: str) -> dict:
         tb = recommend(n, allocation_mode=mode)
-        return {"n_people": n, "per_solve_s": tb.per_solve_s, "worst_case_total_s": tb.worst_case_total_s,
-                "measured": tb.measured, "basis": tb.basis}
+        per = recommended_seconds(n, mode, months)
+        basis = tb.basis + (f" · 12개월 계획 ×{HORIZON_TIME_FACTOR[12]}(100명 실측)" if months == 12 else "")
+        return {"n_people": n, "per_solve_s": per, "worst_case_total_s": 4 * per,
+                "measured": tb.measured, "basis": basis}
     return {"settings": state.settings.model_dump(),
             "defaults": PlacementSettings().model_dump(),
             "bounds": PlacementSettings.bounds(),
@@ -29,7 +33,7 @@ def _body(state: SettingsState, request: Request) -> dict:
             # 지금 데이터 규모의 권장 계산 시간(claude-a 리허설 측정, core/optimize/time_budget). 화면 안내용.
             # 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원·방식 기준 권장값, 아니면 수동값). 화면은 이 값을
             # time_limit으로 보낸다 -- 서명·캐시·PDF가 숫자 하나로 같게 묶인다.
-            "effective_time_limit": state.settings.to_milp_params(n_people=n).time_limit,
+            "effective_time_limit": state.settings.to_milp_params(n_people=n, months=months).time_limit,
             "effective_solver_seeds": _effective_seeds(),
             "recommended_time": rec("fixed"),
             # 월별 투입률은 더 오래 걸린다(실측 2~4배) -- 화면이 고른 방식에 맞춰 보여 준다.

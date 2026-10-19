@@ -9,7 +9,9 @@ export const GRADES = ["특급", "고급", "중급", "초급"] as const;
 export type Grade = (typeof GRADES)[number];
 export const SECTORS = ["대내", "대외금융", "대외공공"] as const;
 
-export interface Member { person_id: string; name: string; grade: Grade | null; alloc?: number; locked?: boolean }
+export interface Member { person_id: string; name: string; grade: Grade | null; alloc?: number; locked?: boolean;
+                         /** 계획 기간 중 투입할 수 없는 달이 있으면 그 사유(쉬는 인력 목록) */
+                         unavailable?: string | null }
 export interface Seats { [grade: string]: { need: number; filled: number } }
 export interface ProjectItem {
   project_id: string; name: string; start: string | null; end: string | null; monthly_budget: number;
@@ -35,8 +37,10 @@ export interface CandidateRow {
   pulled_from: string[]; delta_total: number; delta: Record<string, number>; new_violations: unknown[];
   category: "bench" | "ending" | "pull"; predecessor_team: boolean; monthly_cost?: number;
 }
+/** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
+export interface UnavailableRow { person_id: string; name: string; grade: Grade; months: number[]; reason: string }
 export interface Candidates { project_id: string; predecessor: string | null; bench: CandidateRow[]; ending: CandidateRow[];
-                              pull: CandidateRow[]; note: string }
+                              pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string }
 
 export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number }
 export interface ApplyHint {
@@ -49,7 +53,7 @@ export interface EmergencyPlan {
           diff?: { moved?: { person_id: string; from: string; to: string[] }[] };
           delta?: Record<string, number>; added_cost?: number; new_violations?: unknown[]; termination?: string | null };
   candidates: { bench: CandidateRow[]; spare: CandidateRow[]; pull: CandidateRow[] };
-  standby: StandbyRow[]; apply_hint: ApplyHint | null; note: string;
+  standby: StandbyRow[]; unavailable?: UnavailableRow[]; apply_hint: ApplyHint | null; note: string;
 }
 export interface SkillDictEntry { name: string; aliases: string[]; category?: string }
 

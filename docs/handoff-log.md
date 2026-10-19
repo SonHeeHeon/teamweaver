@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-19 · claude-b · 계획 기간 1년(6|12개월) · 연간 시연 묶음 · 투입 불가 인력 표시 · 가용률·겸직 재설계는 claude-a에게
+- 브랜치/커밋: `feat/claude-b-three-scenarios` (claude-a `1b921ea`를 먼저 합침 `5bc1289`, 이 작업 커밋은 이 항목 다음). main 병합은 사용자 승인 대기.
+- 한 일: 사용자 "계획기간 1년 확장도 하자" -- 데이터마다 계획 기간 6|12개월(`core/domain/models.py` `HORIZON_CHOICES`·`Dataset.horizon_months`, manifest `horizon_months`), 화면 달 표시를 실제 달로("27.4월"), 계획 기간 표시(헤더·PDF).
+  연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`, 휴직 가정 가용률·하반기 신규 사업, 현재 배치 없음) + 미리 계산 + 편성 기록. 12개월은 자동 시간 한도 ×4(`api/settings.recommended_seconds`).
+  사용자 "육아휴직이면 what if나 플젝 인력 교체에서 … 표기는 하되 비활성화하고 사유도 빨간글씨로" -- `api/unavailable.py`, `/api/meta` 사람 `availability`·`leave`, 후보·긴급 응답 `unavailable`, 화면 `SwapControl`·`scenarios/UnavailableList`.
+- 상대 영향: **공유 계약** `core/domain/models.py`(6|12 허용, `Dataset` 검증 추가 -- 기존 6개월 데이터의 직렬화·버전·캐시 키는 그대로), `core/ingest/{contract,loader}.py`(manifest 6|12, claude-a 영역 -- 사용자 지시), `rehearsal/make_demo_records.py`(연간 묶음 추가),
+  `rehearsal/precompute_demo.py`·`api/*`의 `to_milp_params(n_people, months=)`. API 달 키 상한 0~11(`EntryIn`·`AllocChangeIn`). `/api/meta` 사람에 `availability`·`leave` 필드 추가.
+  **claude-a 요청**: 가용률(대부분 100%·3% 육아휴직·2% 한 달 휴가)·겸직 3%·사업 정원 재설계와 시연 데이터 재생성 -- `docs/requests/2026-10-19-availability-redesign.md`(실측표·원 요청 원문). 생성기에 넣어 봤다가 겸직 폭증·빈자리로 되돌렸다(이 브랜치 생성기·연초 계획 묶음 = main과 같음).
+- 검증: 아래 리포트 · Codex adversarial gpt-6.1-sol 2라운드(high 1 -- API 달 키 상한 5 → 반영, 2라운드 approve).
+- 근거: `.omc/reports/2026-10-19-annual-horizon.md`(로컬)
+
 ## 2026-10-19 · claude-b · 밤 점검이 편성 기록을 연 데이터도 본다 · claude-a 브랜치와 합친 상태 확인
 - 브랜치/커밋: `feat/claude-b-three-scenarios` `828c70b`. main 병합은 사용자 승인 대기 -- 순서는 이 브랜치 다음 `feat/claude-a-review-doc`.
 - 한 일: `api/nightly.check_precomputed`가 편성 기록을 연 데이터(source "record")를 "편성 기록 결과"로 점검(예전엔 "시연 묶음이 아니다"로 건너뜀). 기록·시연 묶음 모두 등록부 표시가 아니라 결과 캐시에 실제로 남았는지 본다(`ResultCache.has`, 32개 밖으로 밀려난 경우).
