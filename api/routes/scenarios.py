@@ -53,7 +53,8 @@ def _names(dataset) -> dict[str, str]:
     return display_names(dataset)
 
 
-def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | None = None) -> dict[str, list[dict]]:
+def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | None = None,
+             parent: str | None = None) -> dict[str, list[dict]]:
     """후보 행을 세 갈래로: bench(지금 배치 없음) · ending(지금 사업이 모두 대상 사업 시작 전에 끝남 -- 끝나 가는 인력)
     · pull(그 밖: 진행 사업에 계속 있음). 이전 사업 팀원은 갈래마다 맨 위."""
     g = dataset.graph
@@ -65,6 +66,8 @@ def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | N
         j = g.projects[g.project_index[c.project_id]]
         ends.setdefault(c.person_id, []).append((c.project_id, j.end_month))
     pred_team = {c.person_id for c in dataset.current if predecessor and c.project_id == predecessor}
+    # 추가 과제(2026-10-19): 상위 진행 사업의 팀원 -- 그 시스템을 아는 사람이라 맨 위에 보인다
+    parent_team = {c.person_id for c in dataset.current if parent and c.project_id == parent}
     names = _names(dataset)
     out: dict[str, list[dict]] = {"bench": [], "ending": [], "pull": []}
     for r in rows:
@@ -78,9 +81,10 @@ def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | N
         else:
             cat = "pull"
         out[cat].append({**r, "name": names.get(pid, pid), "category": cat, "predecessor_team": pid in pred_team,
+                         "parent_team": pid in parent_team,
                          "current_projects": [{"project_id": p, "end_month_index": e} for p, e in mine]})
     for cat in out:
-        out[cat].sort(key=lambda x: (not x["predecessor_team"], -x["delta_total"]))
+        out[cat].sort(key=lambda x: (not (x["predecessor_team"] or x["parent_team"]), -x["delta_total"]))
     return out
 
 
@@ -112,13 +116,14 @@ async def pipeline_candidates(project_id: str, request: Request, dataset_version
     from core.evaluate.staffing_sim import rank_candidates
     from core.scoring.engine import ScoringEngine
     params = _params(request.app, dataset)
-    predecessor = None
+    predecessor = parent = None
     try:
         from api.workspace import current_files
         from api.workspace_edits import pipeline_of, read_manifest
-        predecessor = pipeline_of(read_manifest(current_files(request.app, dataset))).get(project_id, {}).get("predecessor")
-    except Exception:                                   # noqa: BLE001 -- 원천 묶음이 없는 데이터(fixture)면 이전 사업 표시만 없다
-        predecessor = None
+        entry = pipeline_of(read_manifest(current_files(request.app, dataset))).get(project_id, {})
+        predecessor, parent = entry.get("predecessor"), entry.get("parent")
+    except Exception:                                   # noqa: BLE001 -- 원천 묶음이 없는 데이터(fixture)면 이전·상위 사업 표시만 없다
+        predecessor = parent = None
 
     def go():
         eng = ScoringEngine(dataset.graph)
@@ -127,12 +132,12 @@ async def pipeline_candidates(project_id: str, request: Request, dataset_version
         rows = rank_candidates(dataset.graph, S, C, params, entries, project_id, include_pull=True, top=top,
                                locked=_locked(dataset))
         return classify(dataset, project_id, rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows),
-                        predecessor=predecessor)
+                        predecessor=predecessor, parent=parent)
     async with _light(request.app):
         groups = await anyio.to_thread.run_sync(go)
     from api.unavailable import unavailable_for
     # 그 사업 기간에 휴직 등으로 넣을 수 없는 사람 -- 후보 계산은 이미 빼므로 화면이 사유와 함께 비활성으로 보인다(2026-10-19)
-    return {"dataset_version": dataset.info.version, "project_id": project_id, "predecessor": predecessor,
+    return {"dataset_version": dataset.info.version, "project_id": project_id, "predecessor": predecessor, "parent": parent,
             **groups, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
 
 

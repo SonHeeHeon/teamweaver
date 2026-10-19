@@ -17,8 +17,12 @@ export interface ProjectItem {
   project_id: string; name: string; start: string | null; end: string | null; monthly_budget: number;
   seats: Seats; team: Member[];
 }
-export interface PipelineItem extends ProjectItem { stage: Stage; predecessor: string | null; registered_at?: string | null }
-export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean }
+export interface PipelineItem extends ProjectItem {
+  stage: Stage; predecessor: string | null; registered_at?: string | null;
+  /** 추가 과제(2026-10-19): 진행 중인 상위 사업과 외주 인원(참고값, 계산에 안 씀) */
+  parent?: string | null; external_headcount?: number;
+}
+export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean; addons?: string[] }
 export interface HistoryEntry { version: string; at: string; kind: string; note: string }
 /** 프로젝트 동시 수행 허용 사유(2026-10-19 사용자 결정 -- 사람 단위, 사유 필수). core/ingest/concurrency.REASONS와 같다. */
 export const CONCURRENCY_REASONS = ["인력 부족", "기술 지원", "긴급 지원", "기타"] as const;
@@ -36,12 +40,13 @@ export interface SkillNeed { name: string; min_months: number; headcount: number
 export interface ProjectForm {
   name: string; sector: (typeof SECTORS)[number]; start_month: string; end_month: string; monthly_budget: number;
   stage: Stage; predecessor: string | null; grades: Partial<Record<Grade, number>>; skills: SkillNeed[];
+  parent?: string | null; external_headcount?: number;
 }
 
 export interface CandidateRow {
   person_id: string; name: string; grade: Grade; alloc: number; source: "bench" | "partly_free" | "pull" | "concurrent";
   pulled_from: string[]; delta_total: number; delta: Record<string, number>; new_violations: unknown[];
-  category: "bench" | "ending" | "pull"; predecessor_team: boolean; monthly_cost?: number;
+  category: "bench" | "ending" | "pull"; predecessor_team: boolean; parent_team?: boolean; monthly_cost?: number;
   /** 전일 투입: 원래 사업을 유지한 채 들어오려면 프로젝트 동시 수행 허용이 필요하다(확정 때 함께 적는다) */
   needs_grant?: boolean;
   /** 동시 수행 지원 행: 이 사람으로 확정할 때 서버가 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) */
@@ -49,7 +54,7 @@ export interface CandidateRow {
 }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
 export interface UnavailableRow { person_id: string; name: string; grade: Grade; months: number[]; reason: string }
-export interface Candidates { project_id: string; predecessor: string | null; bench: CandidateRow[]; ending: CandidateRow[];
+export interface Candidates { project_id: string; predecessor: string | null; parent?: string | null; bench: CandidateRow[]; ending: CandidateRow[];
                               pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string }
 
 export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number }
@@ -111,7 +116,10 @@ export function withPersistNote(done: string, res: object): string {
 }
 
 export const fetchWorkspace = () => call<Workspace>("/api/workspace");
-export const fetchProjectForm = (id: string) => call<ProjectForm>(`/api/workspace/projects/${encodeURIComponent(id)}/form`);
+/** 사업 양식. addon이면 그 진행 사업에 붙일 추가 과제 미리 채우기(start = 시작 달, 없으면 상위 시작). */
+export const fetchProjectForm = (id: string, addon?: { start?: string | null }) =>
+  call<ProjectForm>(`/api/workspace/projects/${encodeURIComponent(id)}/form`
+    + (addon ? `?as=addon${addon.start ? `&start=${encodeURIComponent(addon.start)}` : ""}` : ""));
 export const fetchSkillDictionary = () => call<SkillDictEntry[]>("/api/skills/dictionary");
 export const postProject = (v: string, project: ProjectForm) =>
   call<WithWs & { project_id: string }>("/api/workspace/projects", json("POST", { dataset_version: v, project }));

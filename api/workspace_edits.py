@@ -138,6 +138,10 @@ class NewProject(BaseModel):
     monthly_budget: int = Field(ge=1, le=10_000_000)
     stage: Literal["예정", "제안", "수주"] = "예정"
     predecessor: str | None = Field(default=None, max_length=32)
+    # 추가 과제(2026-10-19 사용자 예: "26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)"):
+    # 진행 중인 상위 사업에 붙는 과제. 별도 사업 행으로 두고(정원이 기간 중 바뀌는 사업을 모델이 표현하지 못한다) 연결만 manifest에 남긴다.
+    parent: str | None = Field(default=None, max_length=32)
+    external_headcount: int = Field(default=0, ge=0, le=500)    # 외주 인원 -- 참고값, 최적화·예산에 쓰지 않는다
     grades: dict[Literal["특급", "고급", "중급", "초급"], Annotated[int, Field(ge=0, le=50)]]
     skills: list[SkillNeed] = Field(default=[], max_length=30)
 
@@ -154,6 +158,8 @@ class NewProject(BaseModel):
             raise ValueError("종료 달이 시작 달보다 앞이다")
         if sum(self.grades.values()) < 1:
             raise ValueError("등급별 인원이 한 명 이상이어야 한다")
+        if self.predecessor and self.parent:
+            raise ValueError("고도화 과제(이전 사업)와 추가 과제(상위 사업)는 함께 고를 수 없다")
         names = [s.name.strip().lower() for s in self.skills]
         if len(names) != len(set(names)):
             raise ValueError("같은 기술이 두 번 들어 있다")
@@ -184,18 +190,61 @@ def _put_project_rows(files: Files, pid: str, form: NewProject) -> None:
     write_table(files, SKILL_REQS, sh, srows)
 
 
+def _period(row: dict) -> tuple[str, str]:
+    """사업 행의 시작·종료 달 -- 입력 검증(core.ingest)처럼 앞뒤 공백을 걷는다(Codex 리뷰 2026-10-19: 원문 비교로 기간 검사가 뚫렸다)."""
+    a, b = str(row.get("start_month") or "").strip(), str(row.get("end_month") or "").strip()
+    if not (_MONTH.match(a) and _MONTH.match(b)):
+        raise EditError(f"{row.get('project_id')}의 기간을 읽지 못했다({a!r}~{b!r})")
+    return a, b
+
+
+def _check_parent(files: Files, form: NewProject, self_id: str | None = None, *, require_running: bool = True) -> None:
+    """추가 과제의 상위 사업: 지금 진행 중(현재 배치가 있고 신규 사업이 아님)이고, 과제 기간이 상위 사업 기간 안.
+    require_running=False(이미 붙은 연결을 그대로 두는 단계 바꾸기·양식 고치기): 상위 사업의 팀이 지금 비어 있어도 된다 --
+    예: 상위 팀원을 모두 추가 과제로 옮긴 뒤에도 그 과제의 단계를 바꿀 수 있어야 한다(폴백 리뷰 2026-10-19)."""
+    if not form.parent:
+        return
+    _, rows = read_table(files, PROJECTS)
+    row = next((r for r in rows if r.get("project_id") == form.parent), None)
+    if row is None:
+        raise EditError(f"상위 사업 {form.parent}이(가) 지금 데이터에 없다")
+    m = read_manifest(files)
+    if form.parent == self_id or form.parent in pipeline_of(m) or form.parent in (m.get("proposals") or []):
+        raise EditError(f"{form.parent}은(는) 신규 사업이다 -- 추가 과제는 진행 중인 사업에 붙인다")
+    _, cur = current_table(files)
+    if require_running and not any(r.get("project_id") == form.parent for r in cur):
+        raise EditError(f"{form.parent}에 지금 배치된 사람이 없다 -- 진행 중인 사업에만 추가 과제를 붙인다")
+    first, last = _period(row)
+    if form.start_month < first or form.end_month > last:
+        raise EditError(f"추가 과제 기간({form.start_month}~{form.end_month})은 상위 사업 기간({first}~{last}) 안이어야 한다")
+
+
+def _pipe_entry(form: NewProject, registered_at: str | None = None, old: dict | None = None) -> dict:
+    out = {**(old or {}), "stage": form.stage, "predecessor": form.predecessor}
+    if registered_at is not None:
+        out["registered_at"] = registered_at
+    # 추가 과제 칸은 있을 때만 -- 예전 묶음의 manifest 모양(그리고 그 데이터 버전)을 바꾸지 않는다
+    for k in ("parent", "external_headcount"):
+        out.pop(k, None)
+    if form.parent:
+        out["parent"] = form.parent
+        out["external_headcount"] = form.external_headcount
+    return out
+
+
 def add_project(files: Files, form: NewProject, *, registered_at: str = "") -> tuple[Files, str]:
     files = _copy(files)
     _, rows = read_table(files, PROJECTS)
     if form.predecessor and form.predecessor not in {r.get("project_id") for r in rows}:
         raise EditError(f"이전 사업 {form.predecessor}이(가) 지금 데이터에 없다")
+    _check_parent(files, form)
     pid = next_project_id(rows)
     _put_project_rows(files, pid, form)
     m = read_manifest(files)
     m.setdefault("scenario", "operating")
     m["proposals"] = [p for p in (m.get("proposals") or []) if p != pid] + [pid]
     pipe = pipeline_of(m)
-    pipe[pid] = {"stage": form.stage, "predecessor": form.predecessor, "registered_at": registered_at}
+    pipe[pid] = _pipe_entry(form, registered_at)
     m["pipeline"] = pipe
     write_manifest(files, m)
     rehash(files)
@@ -210,15 +259,54 @@ def project_form(files: Files, pid: str) -> NewProject:
         raise EditError(f"없는 사업: {pid}")
     _, grows = read_table(files, GRADE_REQS)
     _, srows = read_table(files, SKILL_REQS)
-    stage = pipeline_of(read_manifest(files)).get(pid, {}).get("stage")
+    entry = pipeline_of(read_manifest(files)).get(pid, {})
+    stage = entry.get("stage")
     if stage not in STAGES:
         stage = "수주" if row.get("phase") == "실행" else "제안"
+    ext = entry.get("external_headcount")
     return NewProject(name=row["project_name"], sector=row["sector"], start_month=row["start_month"],
                       end_month=row["end_month"], monthly_budget=int(row["monthly_budget"]), stage=stage,
-                      predecessor=pipeline_of(read_manifest(files)).get(pid, {}).get("predecessor"),
+                      predecessor=entry.get("predecessor"),
+                      parent=entry.get("parent") if isinstance(entry.get("parent"), str) else None,
+                      external_headcount=ext if type(ext) is int and ext >= 0 else 0,
                       grades={r["career_grade"]: int(r["headcount"]) for r in grows if r.get("project_id") == pid},
                       skills=[SkillNeed(name=r["skill_name"], min_months=int(r["min_experience_months"]),
                                         headcount=int(r["headcount"])) for r in srows if r.get("project_id") == pid])
+
+
+def _add_months(month: str, k: int) -> str:
+    y, mo = int(month[:4]), int(month[5:]) - 1 + k
+    return f"{y + mo // 12:04d}-{mo % 12 + 1:02d}"
+
+
+def addon_form(files: Files, parent: str, start: str | None = None) -> NewProject:
+    """진행 사업 parent에 붙일 추가 과제 양식 미리 채우기: 이름·분야·기술 복사, 기간 = start(없으면 상위 시작)부터 6개월(상위 기간 안),
+    내부 인원 고급 1·중급 1(사용자 예 "회사 인력은 2명만 추가" -- 부서장이 고친다), 월 예산 = 그 인원의 단가 합."""
+    _, rows = read_table(files, PROJECTS)
+    row = next((r for r in rows if r.get("project_id") == parent), None)
+    if row is None:
+        raise EditError(f"없는 사업: {parent}")
+    _, srows = read_table(files, SKILL_REQS)
+    p_first, p_last = _period(row)
+    first = min(max(start or p_first, p_first), p_last)
+    last = min(_add_months(first, 5), p_last)
+    grades = {"특급": 0, "고급": 1, "중급": 1, "초급": 0}
+    rate: dict[str, int] = {}
+    if "rate_card.csv" in files:
+        _, cards = read_table(files, "rate_card.csv")
+        for r in cards:
+            try:
+                if r.get("role_type") == "개발" and r.get("career_grade"):
+                    rate[r["career_grade"]] = int(float(r.get("monthly_rate") or 0))
+            except ValueError:
+                continue                                      # 읽지 못하는 단가는 건너뛴다(예산은 부서장이 고친다)
+    budget = sum(rate.get(g, 0) * n for g, n in grades.items()) or 2000
+    suffix = " 추가 과제"
+    name = row["project_name"].strip()[:120 - len(suffix)] + suffix      # 사업명 상한 120자(긴 이름이면 500이 났다, 폴백 리뷰)
+    return NewProject(name=name, sector=row["sector"], start_month=first, end_month=last,
+                      monthly_budget=budget, stage="예정", parent=parent, grades=grades,
+                      skills=[SkillNeed(name=r["skill_name"], min_months=int(r["min_experience_months"]), headcount=1)
+                              for r in srows if r.get("project_id") == parent])
 
 
 def update_project(files: Files, pid: str, *, stage: str | None = None, form: NewProject | None = None) -> Files:
@@ -233,8 +321,9 @@ def update_project(files: Files, pid: str, *, stage: str | None = None, form: Ne
         if stage not in STAGES:
             raise EditError(f"단계는 {', '.join(STAGES)} 중 하나")
         new = new.model_copy(update={"stage": stage})
+    _check_parent(files, new, self_id=pid, require_running=new.parent != pipe.get(pid, {}).get("parent"))
     _put_project_rows(files, pid, new)
-    pipe[pid] = {**pipe.get(pid, {}), "stage": new.stage, "predecessor": new.predecessor}
+    pipe[pid] = _pipe_entry(new, old=pipe.get(pid, {}))
     m["pipeline"] = pipe
     write_manifest(files, m)
     rehash(files)

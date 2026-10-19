@@ -19,7 +19,7 @@ from dataclasses import asdict
 from typing import Annotated, Literal
 
 import anyio
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from api.admin import require_admin
@@ -89,7 +89,9 @@ def workspace_view(request: Request) -> dict:
         filled: dict[str, int] = {}
         for t in team:
             filled[t["grade"]] = filled.get(t["grade"], 0) + 1
-        item = {"project_id": j.id, "name": j.name, "start": row.get("start_month"), "end": row.get("end_month"),
+        # 원문 달의 공백을 걷는다 -- 화면이 추가 과제 기간을 이 값과 비교한다(Codex 리뷰 2라운드 2026-10-19)
+        item = {"project_id": j.id, "name": j.name, "start": (row.get("start_month") or "").strip() or None,
+                "end": (row.get("end_month") or "").strip() or None,
                 "monthly_budget": j.monthly_budget,
                 "seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in GRADE_ORDER
                           if need.get(g, 0) or filled.get(g, 0)},
@@ -97,10 +99,13 @@ def workspace_view(request: Request) -> dict:
         if j.id in proposals or j.id in pipe:
             stage = pipe.get(j.id, {}).get("stage") or ("수주" if j.phase.value == "실행" else "제안")
             pipeline.append({**item, "stage": stage, "predecessor": pipe.get(j.id, {}).get("predecessor"),
+                             "parent": pipe.get(j.id, {}).get("parent"),
+                             "external_headcount": pipe.get(j.id, {}).get("external_headcount") or 0,
                              "registered_at": pipe.get(j.id, {}).get("registered_at")})
         elif team:
             # 계획 창 끝보다 먼저 끝나는가(끝나 가는 사업) -- 실제 종료 달 기준. 창 끝까지 가는 사업은 아니다
-            ongoing.append({**item, "locked_all": all(t["locked"] for t in team),
+            ongoing.append({**item, "addons": sorted(k for k, v in pipe.items() if v.get("parent") == j.id),
+                            "locked_all": all(t["locked"] for t in team),
                             "locked_count": sum(1 for t in team if t["locked"]),
                             "ends_in_horizon": bool(item["end"]) and item["end"] < (_horizon_last(m) or "")})
     entries = History().entries()
@@ -136,8 +141,13 @@ async def get_workspace(request: Request) -> dict:
 
 
 @router.get("/api/workspace/projects/{project_id}/form")
-def get_project_form(project_id: str, request: Request) -> dict:
+def get_project_form(project_id: str, request: Request, as_: Literal["copy", "addon"] = Query("copy", alias="as"),
+                     start: str | None = Query(None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$")) -> dict:
+    """copy = 그 사업 양식(고도화 과제의 이전 사업 복사·양식 고치기), addon = 그 진행 사업에 붙일 추가 과제 미리 채우기(2026-10-19)."""
     files = _files(request)
+    if as_ == "addon":
+        from api.workspace_edits import addon_form
+        return _edit(addon_form, files, project_id, start).model_dump()
     return _edit(project_form, files, project_id).model_dump()
 
 
