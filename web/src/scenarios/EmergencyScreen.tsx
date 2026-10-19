@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ScoreSplitNote } from "../components/ScoreSplitNote";
-import { hasSplit, seatsText, signedPts, splitText } from "../components/scoreSplit";
+import { seatsText, signedPts, splitText } from "../components/scoreSplit";
+import { partnersText, skillCollab, violationReasons } from "./pickView";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
   withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
@@ -267,7 +268,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                     <p>넣을 사람: <b>{plan.best.added?.map((a) => a.name).join(", ") || "없음"}</b>
                       <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 추가 월 비용 {plan.best.added_cost ?? 0}</span></p>
                     {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.name ?? m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
-                    {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반이 있어 확정할 수 없습니다.</Notice>}
+                    {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반({violationReasons(plan.best.new_violations ?? [])})이 있어 확정할 수 없습니다.</Notice>}
                     {plan.apply_hint && (Object.keys(plan.apply_hint.headcount_add).length > 0 || Object.keys(plan.apply_hint.budget_add).length > 0) && (
                       <p className="text-xs text-slate-500">확정하면 사업 정원
                         {Object.values(plan.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
@@ -282,24 +283,28 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                 {rows.length === 0 ? <p className="text-slate-500">이 갈래에는 후보가 없습니다.</p> : (
                   <table className="w-full">
                     <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th><th className="text-right">투입률</th>
-                      <th className="text-right">빈자리</th><th className="pr-3 text-right">기술·협업 점수</th><th>비고</th></tr></thead>
+                      <th className="text-right" title="모든 사업 빈자리 합의 변화 -- 아래 설명">빈자리 변화 ⓘ</th>
+                      <th className="text-right" title="이 사업 요구 기술에 맞는 정도">기술</th>
+                      <th className="pr-3 text-right" title="두 사람 사이 점수 -- 이 사업 팀원과의 쌍만 셉니다">협업 ⓘ</th><th>비고</th></tr></thead>
                     <tbody>
-                      {rows.map((r) => (
-                        <tr key={r.person_id} className="border-t border-slate-100">
+                      {rows.map((r) => { const sc = skillCollab(r); const who = partnersText(r); return (
+                        <tr key={r.person_id} className="border-t border-slate-100 align-top">
                           <td className="py-1.5">{r.name}</td><td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
                           <td className="num text-right">{Math.round(r.alloc * 100)}%</td>
                           <td className={`num text-right text-xs ${(r.unfilled_seats_delta ?? 0) < 0 ? "text-amber-700" : ""}`}>{seatsText(r.unfilled_seats_delta)}</td>
-                          <td className="num pr-3 text-right">{signedPts(hasSplit(r) ? r.delta_excl_unfilled : r.delta_total)}</td>
+                          <td className="num text-right">{signedPts(sc.skill)}</td>
+                          <td className="pr-3 text-right"><span className="num">{sc.collab === undefined ? "–" : signedPts(sc.collab)}</span>
+                            {who && <div className="text-[11px] text-slate-500">{who}</div>}</td>
                           <td className="text-xs text-slate-500">{r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : ""}
                             {r.source === "concurrent" && <span>원래 사업 유지{r.needs_grant ? " · 허용 필요" : ""}</span>}
-                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
+                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>}
                             {r.source === "concurrent" && r.new_violations.length === 0 && r.apply_hint && (
                               <button type="button" className="ml-2 rounded border border-violet-300 px-1.5 py-0.5 text-violet-800"
                                       aria-label={`${r.name} 동시 수행으로 지원`}
                                       disabled={busy} onClick={() => setSupport(r)}>동시 수행으로 지원</button>
                             )}</td>
                         </tr>
-                      ))}
+                      ); })}
                     </tbody>
                   </table>
                 )}

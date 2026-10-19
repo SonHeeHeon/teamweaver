@@ -36,6 +36,8 @@ export interface Workspace {
   pipeline: PipelineItem[]; ongoing: OngoingItem[]; bench: Member[]; history: HistoryEntry[];
   /** 프로젝트 동시 수행을 허용받은 사람(사유와 함께) */
   concurrency?: ConcurrencyGrant[];
+  /** 지금 데이터에 미리 계산된 운영 중 비교 K 목록(없으면 빈 목록) -- 화면 기본 "최대 K"를 맞춘다 */
+  operating_ks?: number[];
 }
 
 export interface SkillNeed { name: string; min_months: number; headcount: number }
@@ -55,11 +57,27 @@ export interface CandidateRow {
   needs_grant?: boolean;
   /** 동시 수행 지원 행: 이 사람으로 확정할 때 서버가 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) */
   apply_hint?: ApplyHint;
+  /** 사업별 정원 변화(2026-10-20): change > 0 = 그 사업 빈자리를 채움, < 0 = 빈자리가 생김(빼 온 사람의 원래 사업) */
+  seat_effects?: SeatEffect[];
+  /** 점수 변화 중 기술 적합 몫 · 협업 몫(협업 시너지 + 익숙한 쌍 감점, 모든 사업) */
+  skill_delta?: number; collab_delta?: number;
+  /** 이 사업에서 함께하게 될 사람과의 쌍 중 계산에 들어가는 것(협업은 두 사람 사이 값이다) */
+  partners?: (PairTerm & { person_id: string; name: string })[];
 }
+export interface SeatEffect { project_id: string; name: string; change: number }
+/** synergy = 협업 시너지(함께 일한 경력·서로 남긴 평가, 상위 쌍만), familiar = 최근 너무 오래 함께해 익숙한 쌍 감점 */
+export interface PairTerm { kind: "synergy" | "familiar"; value: number; c?: number }
+/** "넣기"로 고른 사람 전체를 넣었을 때(확정 전 미리 계산, 2026-10-20) */
+export interface DraftSummary {
+  seats: PipelineItem["seats"]; seat_effects: SeatEffect[]; delta_total: number; skill_delta: number; collab_delta: number;
+  unfilled_seats_delta: number; new_violations: string[];
+  pairs: (PairTerm & { a: string; a_name: string; b: string; b_name: string })[];
+}
+export interface Pick { person_id: string; alloc: number; pulled_from: string[] }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
 export interface UnavailableRow { person_id: string; name: string; grade: Grade; months: number[]; reason: string }
 export interface Candidates { project_id: string; predecessor: string | null; parent?: string | null; bench: CandidateRow[]; ending: CandidateRow[];
-                              pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string }
+                              pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string; draft?: DraftSummary | null }
 
 export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number;
                              unfilled_seats_delta?: number; delta_excl_unfilled?: number }
@@ -157,8 +175,11 @@ export const fetchConcurrencyCandidates = (v: string, entries: AssignEntry[], we
   call<{ dataset_version: string; shortfalls: ShortfallHint[] }>("/api/concurrency/candidates",
                                                                json("POST", { dataset_version: v, entries, weights }));
 export const postUndo = (v: string) => call<WithWs>("/api/workspace/undo", json("POST", { dataset_version: v }));
-export const fetchCandidates = (id: string, v: string) =>
-  call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates?dataset_version=${encodeURIComponent(v)}`);
+/** 후보 세 갈래. picks(넣기로 고른 사람)가 있으면 그 사람들을 팀원으로 친 다시 채점 + 고른 사람 전체 미리 계산(draft) -- 데이터는 바뀌지 않는다. */
+export const fetchCandidates = (id: string, v: string, picks: Pick[] = []) =>
+  picks.length
+    ? call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates`, json("POST", { dataset_version: v, picks }))
+    : call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates?dataset_version=${encodeURIComponent(v)}`);
 export const postEmergency = (body: { dataset_version: string; project_id: string; n: number; grade: Grade | null;
   skills: string[]; pull_budget: number; note: string }) => call<EmergencyPlan>("/api/emergency/plan", json("POST", body));
 export const fetchStandby = (v: string, projectId: string) =>

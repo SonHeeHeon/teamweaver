@@ -11,7 +11,7 @@
 1. 긴급 대기 명단 -- 진행 사업마다 "지금 바로 넣을 수 있는 사람" 상위 5명(`standby.json`, `GET /api/emergency/standby`).
 2. 밤 풀이 -- 아침에 바로 나오지 않는 요청을 낮보다 긴 시간 한도로 풀어 둔다. **시간 한도만** 늘리고 키·서명은 낮 설정 그대로.
    - 연간 계획(안 A~D): 현재 배치가 없는 백지 데이터일 때만.
-   - 운영 중 비교(K 0~3): 채울 신규 사업이 있을 때만.
+   - 운영 중 비교(K 0~5, 2026-10-20): 채울 신규 사업이 있을 때만.
    - 낮에 실제로 보낸 요청(`RequestRecorder` 기록 중 캐시에 없는 것).
    결과는 `<데이터 폴더>/nightly/prepared.json` → 결과 캐시·"미리 계산" 등록부. 이미 캐시에 있는 요청(시연 미리 계산 포함)은 건너뛴다.
    넣기 전·재기동 때 데이터 버전·평가기 재채점·위반 없음을 다시 확인한다. 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -509,7 +509,7 @@ def _operating_params(params):
     return params.model_copy(update={"time_limit": min(params.time_limit, OPERATING_TIME_LIMIT_MAX)})
 
 
-DEFAULT_KS = (0, 1, 2, 3)
+DEFAULT_KS = (0, 1, 2, 3, 4, 5)     # = api.routes.operating.OPERATING_KS(화면 기본과 같은 목록, 2026-10-20 K 최대 5 -- 시험이 맞춘다)
 FAILED_STOPS = frozenset({"validation_rejected", "solver_failed"})
 # 끝까지 풀지 못한 묶음(대안이 시간 안에 해를 못 찾음 포함) -- 낮의 cacheable()과 같은 기준. 저장하지 않고 다음 밤에 다시 푼다.
 INCOMPLETE_STOPS = FAILED_STOPS | {"time_limit"}
@@ -921,7 +921,7 @@ class _Run:
         from api.routes import operating as op_routes
         from core.evaluate.operating import compare_move_budgets
         from core.optimize.interrupt import SolveCancelled, watching
-        row = {"kind": "operating", "target": "운영 중 비교(K 0~3)"}
+        row = {"kind": "operating", "target": f"운영 중 비교(K 0~{op_routes.OPERATING_KS[-1]})"}
         if not self.dataset.current:
             self.report["solves"].append({**row, "status": "skipped", "reason": "현재 배치가 없는 데이터다"})
             return

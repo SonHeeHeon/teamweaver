@@ -92,7 +92,11 @@ def test_manual_run_prepares_and_the_morning_request_is_instant(boot, fake_solve
         assert op["night_time_limit"] >= op.get("day_time_limit", 0)
         rows = [d for e, d in sse(c.post("/api/operating/compare",
                                           json={"milp_params": web_settings(c), "dataset_version": version})) if e == "row"]
-        assert len(rows) == 4 and all(r["precomputed_at"] for r in rows)
+        assert len(rows) == 6 and all(r["precomputed_at"] for r in rows)       # 기본 K 0~5(2026-10-20 사용자 "k는 최대 5까지")
+        # 화면에서 "최대 3명"을 고르면 밤 결과(0~5)의 앞부분을 그대로 받는다
+        few = [d for e, d in sse(c.post("/api/operating/compare", json={"milp_params": web_settings(c), "dataset_version": version,
+                                                                          "ks": [0, 1, 2, 3]})) if e == "row"]
+        assert [r["k"] for r in few] == [0, 1, 2, 3] and all(r["precomputed_at"] for r in few)
         assert len(fake_solvers["operating"]) == 1                              # 아침 요청은 다시 풀지 않았다
         sb = c.get("/api/emergency/standby", params={"dataset_version": version}).json()
         assert sb["source"] == "nightly" and len(sb["projects"]) == report["standby"]["projects"] > 0

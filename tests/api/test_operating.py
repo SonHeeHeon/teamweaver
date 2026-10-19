@@ -171,7 +171,9 @@ def test_compare_is_one_at_a_time(op_client):
 
 
 def test_inputs_are_capped(op_client):
-    assert op_client.post("/api/operating/compare", json={"ks": [4]}).status_code == 422
+    # K 상한 5(2026-10-20 사용자 "k는 최대 5까지") -- 6은 거절, 목록은 6개까지
+    assert op_client.post("/api/operating/compare", json={"ks": [6]}).status_code == 422
+    assert op_client.post("/api/operating/compare", json={"ks": [0, 1, 2, 3, 4, 5, 5]}).status_code == 422
     many = [{"person_id": "p3", "project_id": "P1", "alloc": 1.0}] * 21
     assert op_client.post("/api/staffing/simulate", json={"project_id": "P1", "adds": many}).status_code == 422
 

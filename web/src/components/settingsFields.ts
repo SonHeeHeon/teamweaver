@@ -27,7 +27,7 @@ export const FIELDS: { key: Key; label: string; unit: string; percent?: boolean;
   { key: "clique_threshold_months", label: "반복 협업 기준", unit: "개월", integer: true,
     help: "아래 '반복 협업 조회 기간' 안에서 이 개월 이상 함께 일한 두 사람이 또 같은 프로젝트에 배치되면 감점한다." },
   { key: "lam", label: "협업 시너지 가중", unit: "",
-    help: "협업 점수를 배치 점수에 얼마나 반영할지. 설계값이며 실제 성과로 보정되지 않았다." },
+    help: "협업 점수(한 사람의 점수가 아니라 두 사람 사이 점수 -- 함께 일한 개월·서로 남긴 평가)를 배치 점수에 얼마나 반영할지. 설계값이며 실제 성과로 보정되지 않았다." },
   { key: "mu", label: "반복 협업 감점", unit: "",
     help: "반복 협업 쌍 하나당 감점. 설계값이며 실제 성과로 보정되지 않았다." },
   { key: "time_limit", label: "계산 시간 한도", unit: "초", integer: true,

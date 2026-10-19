@@ -36,7 +36,12 @@ router = APIRouter()
 
 NOT_CALIBRATED = "계산상 개선(같은 평가 기준) -- 사업 효과는 검증 전(NOT_CALIBRATED)"
 # 100명 실측(claude-a rehearsal/results/operating-check.json): K=0..3 각 0.5 / 1.2 / 11 / 28초. 화면 안내용.
-EXPECTED_S_100 = {0: 0.5, 1: 1.2, 2: 11.0, 3: 28.0}
+# K 4·5(2026-10-20 사용자 "k는 최대 5까지"): 연말형 100명 시드 4에서 K 하나씩 약 7·9초(0~5 누적 44초, 0~3 누적 28초) -- 0~3과
+# 잰 데이터·시점이 달라 같은 기준이 아니다(화면 안내용 어림값).
+EXPECTED_S_100 = {0: 0.5, 1: 1.2, 2: 11.0, 3: 28.0, 4: 7.0, 5: 9.5}
+# 운영 중 비교의 기본 K 목록(화면 기본·밤 배치·시연 미리 계산이 같은 목록 -- 작은 K 요청은 그 앞부분 행을 받는다, api.demo_precomputed.operating_rows)
+OPERATING_KS = (0, 1, 2, 3, 4, 5)
+K_MAX = OPERATING_KS[-1]
 PROGRESS_EVERY_S = 2.0
 # 운영 경로의 풀이 시간 상한(초, K 하나·호출 하나당). 공개 엔드포인트라 요청 하나가 CPU를 오래 잡지 않게(리뷰 S2).
 # 100명 K=3이 약 25초, 300명 실측은 rehearsal/results/operating-check.json -- 그보다 넉넉하게.
@@ -55,7 +60,7 @@ class _Base(BaseModel):
 
 
 class CompareRequest(_Base):
-    ks: list[Annotated[int, Field(ge=0, le=3)]] = Field(default=[0, 1, 2, 3], min_length=1, max_length=4)
+    ks: list[Annotated[int, Field(ge=0, le=K_MAX)]] = Field(default=list(OPERATING_KS), min_length=1, max_length=len(OPERATING_KS))
     # 시연 묶음의 미리 계산 행을 쓰지 않고 다시 푼다(claude-a 2026-10-07, api/demo_precomputed -- 화면의 "다시 계산")
     fresh: bool = False
 
