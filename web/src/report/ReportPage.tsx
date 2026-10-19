@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchMeta } from "../api/client";
 import type { Meta } from "../api/types";
-import { StaticNetwork } from "./StaticNetwork";
+import { TeamNetworks } from "./TeamNetworks";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers, numberMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
@@ -62,25 +62,12 @@ function PlanReport() {
     fetchMeta().then(setMeta).catch(() => setMeta(null));
   }, []);
 
-  const graph = useMemo(() => {
-    if (!meta || !data) return { nodes: [], links: [] };
-    const placed = new Set<string>((data.entries ?? []).map((e: any) => e.person_id));
-    const byId = new Map(meta.people.map((p) => [p.id, p]));
-    return {
-      nodes: [...placed].filter((id) => byId.has(id))
-        .map((id) => ({ id, name: byId.get(id)!.name })),
-      links: meta.coworks
-        .filter((c) => placed.has(c.a_id) && placed.has(c.b_id))
-        .map((c) => ({ source: c.a_id, target: c.b_id, co_months: c.co_months })),
-    };
-  }, [meta, data]);
-
   useEffect(() => {
-    // meta와 data가 모두 있고 그래프 좌표까지 계산된 뒤에야 준비 완료다.
+    // meta와 data가 모두 있어야 준비 완료다(팀별 협업 지도는 시뮬레이션 없이 바로 그린다).
     // data 없이 __REPORT_READY__를 세우면 "리포트 데이터가 없다"는 빈 페이지도
     // 정상 완료로 신호하게 돼, Playwright가 그걸 그대로 PDF로 찍어낸다.
     if (meta && data) window.__REPORT_READY__ = true;
-  }, [meta, data, graph]);
+  }, [meta, data]);
 
   if (!data) return <p className="p-8">리포트 데이터가 없다.</p>;
 
@@ -206,8 +193,8 @@ function PlanReport() {
       )}
 
       <section className="mt-6">
-        <h2 className="mb-2 text-base font-semibold">협업 네트워크</h2>
-        <StaticNetwork nodes={graph.nodes} links={graph.links} />
+        <h2 className="mb-1 text-base font-semibold">팀별 협업 관계</h2>
+        <TeamNetworks entries={data.entries ?? []} people={meta?.people ?? []} projects={meta?.projects ?? []} coworks={meta?.coworks ?? []} />
       </section>
 
       {data.briefing && (

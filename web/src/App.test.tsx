@@ -48,12 +48,6 @@ vi.mock("./api/client", () => ({
   },
 }));
 
-// NetworkGraph는 react-force-graph-2d를 통해 <canvas>를 그리는데 jsdom에는
-// canvas 구현이 없다 -- NetworkGraph.test.tsx와 같은 방식으로 목킹한다.
-vi.mock("react-force-graph-2d", () => ({
-  default: () => <div data-testid="fg" />,
-}));
-
 import {
   fetchActiveDataset, fetchAdminStatus, fetchMeta, fetchSettings, saveSettings, stopRun, streamOptimize,
   postWhatif, downloadReport, uploadDataset, DatasetChangedError, applySwap, applyAlloc,
