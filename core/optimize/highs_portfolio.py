@@ -116,6 +116,8 @@ def _solve_exported(model: dict, seed: int, stop_event=None) -> dict:
         for name, value in model["options"].items():
             h.setOptionValue(name, value)
         h.setOptionValue("random_seed", int(seed))
+        if error is None and model.get("start") is not None:
+            _set_start(h, model["start"])
         if error is None and h.run() == highspy.HighsStatus.kError:
             error = f"run failed ({h.modelStatusToString(h.getModelStatus())})"
         info = h.getInfo()
@@ -131,6 +133,23 @@ def _solve_exported(model: dict, seed: int, stop_event=None) -> dict:
     except Exception as exc:                            # noqa: BLE001 -- 한 시드의 실패가 다른 시드를 막지 않게
         return {"seed": seed, "error": f"{type(exc).__name__}: {exc}", "model_status": -1, "feasible": False,
                 "objective": None, "dual_bound": None, "col_value": None}
+
+
+def _set_start(h, values) -> None:
+    """초기해(2026-10-19, 전일 투입): 열 순서의 값. 가능하지 않은 시작이면 HiGHS가 쓰지 않는다 -- 풀이는 그대로 이어진다."""
+    import highspy
+    sol = highspy.HighsSolution()
+    sol.col_value = [float(v) for v in values]
+    sol.value_valid = True
+    h.setSolution(sol)
+
+
+def start_vector(lp, start: dict[str, float]) -> np.ndarray:
+    """변수 이름 → 값 사전을 PuLP가 HiGHS에 넘긴 열 순서(var.index)로. 없는 변수는 0."""
+    values = np.zeros(len(lp.variables()), dtype=float)
+    for var in lp.variables():
+        values[var.index] = float(start.get(var.name, 0.0))
+    return values
 
 
 def _seed_worker(seed: int, model_conn, out_conn, stop_event=None) -> None:
@@ -239,9 +258,10 @@ class HighsPortfolio(pulp.HiGHS):
     """`pulp.HiGHS`와 같은 인자 + seeds. 풀이 뒤 `self.portfolio`에 시드별 결과 요약과 상한을 남긴다
     (seeds=1이면 None). 상한·목적은 PuLP 쪽 방향(최대화면 최대화)이고 목적식 상수를 포함한다."""
 
-    def __init__(self, seeds: int = 1, **kwargs):
+    def __init__(self, seeds: int = 1, start: dict[str, float] | None = None, **kwargs):
         super().__init__(**kwargs)
         self.seeds = max(1, int(seeds))
+        self.start = start                              # 초기해(변수 이름 → 값), 시드마다 같은 시작
         self.portfolio: dict | None = None
         self.interrupted = False                        # 멈춤(finish)으로 끝난 풀이인가 -- milp가 종료 사유를 user_interrupt로
 
@@ -260,6 +280,12 @@ class HighsPortfolio(pulp.HiGHS):
             if stop is not None and stop.aborting:
                 raise SolveCancelled("멈춤(abort) -- 풀이 결과를 버렸다")
 
+    def callSolver(self, lp):
+        # 한 프로세스 경로(시드 1·포트폴리오 실패 시 한 번 풀기): PuLP가 모델을 넘긴 뒤 풀기 직전에 초기해를 싣는다
+        if self.start:
+            _set_start(lp.solverModel, start_vector(lp, self.start))
+        super().callSolver(lp)
+
     def _solve(self, lp, stop):
         if self.seeds <= 1:
             return super().actualSolve(lp)
@@ -267,6 +293,8 @@ class HighsPortfolio(pulp.HiGHS):
         self.createAndConfigureSolver(lp)
         self.buildSolverModel(lp)
         model = _export(lp.solverModel, dict(self.optionsDict))
+        if self.start:
+            model["start"] = start_vector(lp, self.start)
         lp.solverModel.clearModel()                     # 부모는 배열만 있으면 된다(300명이면 사본 하나가 수백 MB)
         optimal = int(highspy.HighsModelStatus.kOptimal)
         limit = model["options"].get("time_limit")

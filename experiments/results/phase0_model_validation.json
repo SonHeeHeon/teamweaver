@@ -43,7 +43,7 @@
     "objective_components": {
      "skill": 0.9,
      "synergy": 0.0,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -0.0,
      "total": 0.9
     },
@@ -52,10 +52,10 @@
      "constraints": 8
     },
     "timings_seconds": {
-     "build": 0.00016449997201561928,
-     "solve": 0.0029233330860733986,
-     "validate": 5.241716280579567e-05,
-     "total": 0.005078917136415839
+     "build": 0.0001598329981788993,
+     "solve": 0.0037603750024572946,
+     "validate": 6.204099918249995e-05,
+     "total": 0.005878042000404093
     },
     "passed": true
    },
@@ -72,7 +72,7 @@
     "objective_components": {
      "skill": 0.315,
      "synergy": 0.0,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -100.0,
      "total": -99.685
     },
@@ -81,10 +81,10 @@
      "constraints": 8
     },
     "timings_seconds": {
-     "build": 0.00021700002253055573,
-     "solve": 0.0066505419090390205,
-     "validate": 4.458380863070488e-05,
-     "total": 0.008929207921028137
+     "build": 0.0002759589988272637,
+     "solve": 0.006714750001265202,
+     "validate": 5.858400254510343e-05,
+     "total": 0.009113041996897664
     },
     "passed": true
    },
@@ -110,10 +110,10 @@
      "constraints": 11
     },
     "timings_seconds": {
-     "build": 0.000259332824498415,
-     "solve": 0.0060603751335293055,
-     "validate": 5.112495273351669e-05,
-     "total": 0.008451583096757531
+     "build": 0.0002715420050662942,
+     "solve": 0.006196207999892067,
+     "validate": 5.7249999372288585e-05,
+     "total": 0.008627874994999729
     },
     "passed": true
    },
@@ -130,7 +130,7 @@
     "objective_components": {
      "skill": 1.2802897977306156,
      "synergy": 0.17270570707355803,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -0.0,
      "total": 1.4529955048041736
     },
@@ -139,10 +139,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.00029720808379352093,
-     "solve": 0.005056500202044845,
-     "validate": 6.808387115597725e-05,
-     "total": 0.008763458812609315
+     "build": 0.00028787500195903704,
+     "solve": 0.005097957997350022,
+     "validate": 8.279200119432062e-05,
+     "total": 0.008764458005316556
     },
     "passed": true
    },
@@ -159,7 +159,7 @@
     "objective_components": {
      "skill": 1.207102830653369,
      "synergy": 0.12044950728700723,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -0.0,
      "total": 1.3275523379403764
     },
@@ -168,10 +168,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.0002520829439163208,
-     "solve": 0.0048722499050199986,
-     "validate": 6.60410150885582e-05,
-     "total": 0.008470791857689619
+     "build": 0.000273083001957275,
+     "solve": 0.0051233330013928935,
+     "validate": 8.108300244202837e-05,
+     "total": 0.008745957995415665
     },
     "passed": true
    },
@@ -188,7 +188,7 @@
     "objective_components": {
      "skill": 0.9836753964959528,
      "synergy": 0.21776080344501111,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -0.0,
      "total": 1.201436199940964
     },
@@ -197,10 +197,10 @@
      "constraints": 23
     },
     "timings_seconds": {
-     "build": 0.00024420791305601597,
-     "solve": 0.004936499986797571,
-     "validate": 6.349990144371986e-05,
-     "total": 0.00844395812600851
+     "build": 0.0002719160038395785,
+     "solve": 0.00504120800178498,
+     "validate": 7.899999764049426e-05,
+     "total": 0.008650416995806154
     },
     "passed": true
    },
@@ -217,7 +217,7 @@
     "objective_components": {
      "skill": 1.207102830653369,
      "synergy": 0.12044950728700723,
-     "overfamiliarity": -0.0,
+     "overfamiliarity": 0.0,
      "unfilled": -0.0,
      "total": 1.3275523379403764
     },
@@ -226,10 +226,68 @@
      "constraints": 17
     },
     "timings_seconds": {
-     "build": 0.00028600008226931095,
-     "solve": 0.005302957957610488,
-     "validate": 5.7124998420476913e-05,
-     "total": 0.008806416997686028
+     "build": 0.0002731670028879307,
+     "solve": 0.005440042004920542,
+     "validate": 7.787499635014683e-05,
+     "total": 0.00908516700292239
+    },
+    "passed": true
+   },
+   {
+    "name": "full_time_no_concurrency",
+    "data_source": "synthetic_handcrafted",
+    "cbc_status": "Optimal",
+    "cbc_objective": -198.35,
+    "oracle_objective": -198.35,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 64,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 1.5,
+     "synergy": 0.15,
+     "overfamiliarity": 0.0,
+     "unfilled": -200.0,
+     "total": -198.35
+    },
+    "model_size": {
+     "variables": 14,
+     "constraints": 24
+    },
+    "timings_seconds": {
+     "build": 0.00024112499522743747,
+     "solve": 0.001534957998956088,
+     "validate": 7.787500362610444e-05,
+     "total": 0.0021464579986059107
+    },
+    "passed": true
+   },
+   {
+    "name": "full_time_one_permitted",
+    "data_source": "synthetic_handcrafted",
+    "cbc_status": "Optimal",
+    "cbc_objective": -97.55,
+    "oracle_objective": -97.55,
+    "objective_difference": 0.0,
+    "oracle_enumerated_assignments": 64,
+    "validation_valid": true,
+    "validation_issues": [],
+    "objective_components": {
+     "skill": 2.3,
+     "synergy": 0.15,
+     "overfamiliarity": 0.0,
+     "unfilled": -100.0,
+     "total": -97.55
+    },
+    "model_size": {
+     "variables": 14,
+     "constraints": 23
+    },
+    "timings_seconds": {
+     "build": 0.00025916699814843014,
+     "solve": 0.006374584001605399,
+     "validate": 8.108399924822152e-05,
+     "total": 0.007042207995255012
     },
     "passed": true
    }
@@ -275,14 +333,14 @@
     "constraints": 7054
    },
    "timings_seconds": {
-    "solve": 0.1821502090897411,
-    "total": 0.19315141695551574
+    "solve": 0.18601904200477293,
+    "total": 0.19839162500284147
    },
    "passed": true
   },
   "failures": [],
-  "completed_cases": 11,
-  "elapsed_seconds": 0.5212162910029292,
+  "completed_cases": 13,
+  "elapsed_seconds": 0.5706084580015158,
   "calculation_status": "PASS"
  }
 }

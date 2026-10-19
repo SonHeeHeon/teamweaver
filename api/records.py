@@ -167,7 +167,7 @@ def _check_operating_row(graph, current, entries, k: int) -> None:
         if a is None:
             if c.locked:
                 raise ValueError(f"잠긴 배치 {c.person_id}·{c.project_id}가 빠졌다")
-            moved.add(c.person_id)                       # 현재 배치가 하나라도 빠지면 옮긴 사람(겸직을 더하는 것은 이동이 아니다)
+            moved.add(c.person_id)                       # 현재 배치가 하나라도 빠지면 옮긴 사람(동시 수행을 더하는 것은 이동이 아니다)
         elif abs(a - float(c.alloc)) > 0.011:
             raise ValueError(f"유지한 배치 {c.person_id}·{c.project_id}의 투입률이 바뀌었다")
     if len(moved) > k:

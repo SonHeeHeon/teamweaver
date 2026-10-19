@@ -28,6 +28,9 @@ class Person(BaseModel):
     availability: list[float]
     # 선택(2026-10-11): 레벨을 하위 기술 인정분이 정한 기술만. 비어 있으면 모든 기술이 본인 경력(예전 동작 그대로)
     skill_credit: dict[str, SkillCredit] = Field(default_factory=dict)
+    # 선택(2026-10-19 사용자 결정 "동시 수행은 사람 단위로"): 전일 투입(allocation_mode="full")에서 같은 달에 맡을 수 있는 사업 수.
+    # 1 = 동시 수행 불가(기본), 2~3 = 부서장이 사유와 함께 허용(원천 manifest `concurrency`). 예전 투입률 방식은 이 값을 보지 않는다.
+    max_concurrent: int = Field(default=1, ge=1, le=3)
 
     @field_validator("skills")
     @classmethod

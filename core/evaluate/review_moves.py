@@ -53,7 +53,7 @@ def mover_effects(graph, S, C, params, kg, before, after, target: str) -> dict:
     """대상 사업(target)에 새로 들어온 사람마다 출처와 득실. 형식은 구현 계획 Task 1 Interfaces.
 
     옮겨 온 사람(origin="moved") = 전에 대상 밖 다른 사업 배치가 있었고, 후에 그 배치가 빠졌거나 투입률이 줄었다.
-    전에 배치가 없었으면 대기 인력(origin="bench"), 다른 배치가 그대로 남은 겸직이면 일부 여유(origin="partly_free" --
+    전에 배치가 없었으면 대기 인력(origin="bench"), 다른 배치가 그대로 남은 동시 수행이면 일부 여유(origin="partly_free" --
     운영 화면의 후보 갈래와 같은 말). 출처 사업이 여럿이면 출처마다 적는다."""
     b_alloc, a_alloc = _alloc_of(before), _alloc_of(after)
     grade_of = {p.id: p.grade.value if hasattr(p.grade, "value") else str(p.grade) for p in graph.people}
@@ -77,7 +77,7 @@ def mover_effects(graph, S, C, params, kg, before, after, target: str) -> dict:
                 continue
             alloc_a = a_alloc.get((p, j), 0.0)
             if alloc_a >= alloc_b - 1e-9:
-                continue                                   # 그대로 남은 겸직은 출처가 아니다
+                continue                                   # 그대로 남은 동시 수행은 출처가 아니다
             # 그 사업에 이 확정으로 새로 들어온 사람 = 메움(같은 확정 안에서)
             backfill = [{"person_id": r, "grade": grade_of.get(r), "from_bench": not any(rq == r for (rq, _) in b_alloc)}
                         for (r, jj) in sorted(a_alloc) if jj == j and (r, j) not in b_alloc]

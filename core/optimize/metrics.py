@@ -86,6 +86,8 @@ def _skill_relaxation_upper_bound(graph: MemoryGraph, S: np.ndarray, params: Mil
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), 0.0, 1.0)  # relaxed (was Binary)
     if getattr(params, "allocation_mode", "fixed") == "monthly":
         return _monthly_skill_upper_bound(graph, S, params, prob, z)
+    if getattr(params, "allocation_mode", "fixed") == "full":
+        return _full_skill_upper_bound(graph, S, prob, z)
     a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
              for j, pj in enumerate(projects) for g in pj.grade_headcount}
@@ -109,6 +111,34 @@ def _skill_relaxation_upper_bound(graph: MemoryGraph, S: np.ndarray, params: Mil
         prob += pulp.lpSum(people[i].monthly_rate * a[i][j] for i in range(nP)) \
                 <= pj.monthly_budget
 
+    prob.solve(pulp.PULP_CBC_CMD(msg=0))
+    status = pulp.LpStatus[prob.status]
+    if status != "Optimal":
+        raise RuntimeError(f"skill-relaxation LP failed: {status}")
+    return float(pulp.value(prob.objective))
+
+
+def _full_skill_upper_bound(graph, S, prob, z) -> float:
+    """전일 투입 정식의 LP 완화(2026-10-19): 투입률 = z(연속 완화), 자격 없는 쌍 0, 같은 달 Σz ≤ 사람별 상한, 예산 Σ 단가·z."""
+    from core.optimize.milp import full_eligible
+    people, projects = graph.people, graph.projects
+    nP, nJ = len(people), len(projects)
+    slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
+             for j, pj in enumerate(projects) for g in pj.grade_headcount}
+    prob += pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
+    for i, person in enumerate(people):
+        for j, project in enumerate(projects):
+            if not full_eligible(person, project):
+                prob += z[i][j] == 0
+        for m in range(len(person.availability)):
+            active = [j for j, pj in enumerate(projects) if m in pj.months]
+            if active:
+                prob += pulp.lpSum(z[i][j] for j in active) <= getattr(person, "max_concurrent", 1)
+    for j, pj in enumerate(projects):
+        for g, need in pj.grade_headcount.items():
+            members = [i for i, pe in enumerate(people) if pe.grade == g]
+            prob += pulp.lpSum(z[i][j] for i in members) + slack[(j, g)] == need
+        prob += pulp.lpSum(people[i].monthly_rate * z[i][j] for i in range(nP)) <= pj.monthly_budget
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
     status = pulp.LpStatus[prob.status]
     if status != "Optimal":

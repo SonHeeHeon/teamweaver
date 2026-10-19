@@ -190,11 +190,17 @@ def validate_raw_solution(
         if not math.isfinite(error) or error > tol:
             issues.append(ValidationIssue(code, location, actual, limit, error))
 
+    # 전일 투입(allocation_mode="full", 2026-10-19): 투입률 = z, 같은 달 사업 수 ≤ 사람별 max_concurrent, 들어간 달은 가용률 1.0.
+    # 서비스 모델(milp.full_eligible)을 빌리지 않고 원자료로 다시 센다.
+    full = getattr(params, "allocation_mode", "fixed") == "full"
     for i in range(n_people):
         for j in range(n_projects):
             z_value = solution.z[(i, j)]
             a_value = solution.a[(i, j)]
             equality("binary_assignment", f"z[{i},{j}]", z_value, round(z_value))
+            if full:
+                equality("full_time_allocation", f"a[{i},{j}]=z", a_value, z_value)
+                continue
             upper("allocation_upper", f"a[{i},{j}]<=z", a_value, z_value)
             lower(
                 "allocation_lower",
@@ -220,17 +226,24 @@ def validate_raw_solution(
 
     for i, person in enumerate(people):
         for month, availability in enumerate(person.availability):
+            count = sum(
+                solution.z[(i, j)]
+                for j, project in enumerate(projects)
+                if month in project.months
+            )
+            if full:
+                # 가용률 1.0 미만인 달에는 아무 사업도(전일 투입 자격), 그 밖에는 사람별 상한까지
+                upper("availability", f"person={person.id},month={month}",      # 문턱 1−1e-9 = milp.FULL_TIME_MIN_AVAILABILITY
+                      count if availability < 1.0 - 1e-9 else 0.0, 0.0)
+                upper("concurrent_projects", f"person={person.id},month={month}", count,
+                      float(getattr(person, "max_concurrent", 1)))
+                continue
             load = sum(
                 month_alloc(i, j, month)
                 for j, project in enumerate(projects)
                 if month in project.months
             )
             upper("availability", f"person={person.id},month={month}", load, availability)
-            count = sum(
-                solution.z[(i, j)]
-                for j, project in enumerate(projects)
-                if month in project.months
-            )
             upper(
                 "concurrent_projects",
                 f"person={person.id},month={month}",
@@ -374,7 +387,10 @@ def validate_raw_solution(
     for i, person in enumerate(people):
         for month, availability in enumerate(person.availability):
             load = sum(v for (pi, _j, m), v in returned.items() if pi == i and m == month)
-            upper("plan_availability", f"person={person.id},month={month}", load, availability)
+            # 전일 투입: 동시 수행 허용자는 그 달 사업마다 100%라 합이 상한까지 갈 수 있다(가용률 1.0인 달만)
+            limit = (availability * getattr(person, "max_concurrent", 1) if availability >= 1.0 - 1e-9 else 0.0) \
+                if full else availability
+            upper("plan_availability", f"person={person.id},month={month}", load, limit)
     for j, project in enumerate(projects):
         for month in project.months:
             cost = sum(people[pi].monthly_rate * v for (pi, pj, m), v in returned.items() if pj == j and m == month)

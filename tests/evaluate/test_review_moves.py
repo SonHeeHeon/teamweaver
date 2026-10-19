@@ -73,7 +73,7 @@ def test_backfill_and_partial_reduction(world):
 def test_mover_with_two_sources(world):
     base = [e for e in world["current"]]
     p = _team(base, "J003")[0]
-    # 겸직자로 만든 전 배치: J003 0.5 + J004 0.5 -> 둘 다 빠져 J014로
+    # 동시 수행자로 만든 전 배치: J003 0.5 + J004 0.5 -> 둘 다 빠져 J014로
     before = [e for e in base if e is not p] + [AssignEntry(person_id=p.person_id, project_id="J003", alloc=0.5),
                                                 AssignEntry(person_id=p.person_id, project_id="J004", alloc=0.5)]
     after = [e for e in before if e.person_id != p.person_id] + [AssignEntry(person_id=p.person_id, project_id="J014", alloc=1.0)]

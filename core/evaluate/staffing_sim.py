@@ -21,7 +21,7 @@ from core.evaluate.operating import exact, project_contributions
 from core.evaluate.plan_eval import evaluate_plan
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.incremental import move_budget_constraints, moves_from
-from core.optimize.milp import MilpParams, solve_milp_assessment
+from core.optimize.milp import MilpParams, full_eligible, full_mode, solve_milp_assessment
 from core.optimize.types import AssignEntry
 
 
@@ -52,6 +52,19 @@ def _free_alloc(graph: MemoryGraph, entries: list[AssignEntry], person_id: str, 
             if m in used:
                 used[m] += e.monthly_alloc.get(m, e.alloc) if e.monthly_alloc else e.alloc
     return min(graph.people[pi].availability[m] - used[m] for m in months)
+
+
+def _busy_months(graph: MemoryGraph, entries: list[AssignEntry], person_id: str, project_id: str) -> int:
+    """대상 사업 진행 달 중 그 사람이 다른 배치로 맡고 있는 사업 수의 최댓값."""
+    months = graph.projects[graph.project_index[project_id]].months
+    load = {m: 0 for m in months}
+    for e in entries:
+        if e.person_id != person_id or e.project_id == project_id:
+            continue
+        for m in graph.projects[graph.project_index[e.project_id]].months:
+            if m in load:
+                load[m] += 1
+    return max(load.values(), default=0)
 
 
 def _parts(evaluation) -> dict:
@@ -118,6 +131,7 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
 
     rate = {p.id: p.monthly_rate for p in graph.people}
     spent = sum(rate[e.person_id] * e.alloc for e in entries if e.project_id == project_id)
+    full = full_mode(params)
     screened = []
     for person in graph.people:
         pid = person.id
@@ -129,8 +143,15 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         def option(subset: tuple[str, ...]):
             """subset 사업에서 빼 오면: (근사 점수, 빼는 배치, 투입률). 최소 투입률을 못 채우면 None."""
             rest = [e for e in entries if not (e.person_id == pid and e.project_id in subset)]
-            alloc = math.floor(min(1.0, _free_alloc(graph, rest, pid, project_id)) * 10_000) / 10_000   # 내림: 반올림하면 남은 가용률을 넘을 수 있다
-            if budget_add is not None:                             # 정해진 추가 예산 안으로 투입률을 맞춘다
+            if full:
+                # 전일 투입(2026-10-19): 대상 사업 기간 가용률 1.0이고 그 기간 남은 배치 수가 사람별 상한보다 작으면 100%로 넣는다.
+                # 예산을 정해 줘도 투입률을 낮추지 않는다(초과는 위반으로 보인다) -- Codex 리뷰 P2(동시 수행 허용자가 후보에서 빠짐)
+                if not full_eligible(person, graph.projects[j]) or _busy_months(graph, rest, pid, project_id) >= person.max_concurrent:
+                    return None
+                alloc = 1.0
+            else:
+                alloc = math.floor(min(1.0, _free_alloc(graph, rest, pid, project_id)) * 10_000) / 10_000   # 내림: 반올림하면 남은 가용률을 넘을 수 있다
+            if budget_add is not None and not full:                # 정해진 추가 예산 안으로 투입률을 맞춘다
                 room = (graph.projects[j].monthly_budget + int(budget_add) - spent) / person.monthly_rate
                 if room >= params.min_alloc - 1e-9:
                     alloc = min(alloc, math.floor(room * 10_000) / 10_000)
@@ -148,7 +169,7 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         if best is None:
             if not (elsewhere and include_pull):
                 continue                                  # 남는 가용률이 없다 -- 빼 오기 허용일 때만 후보
-            # 겸직자는 필요한 사업에서만 빼 온다(잠긴 배치는 그대로) -- 예전엔 모든 사업에서 빼 빈자리·점수가 틀렸다(Codex 감사 2026-10-12)
+            # 동시 수행자는 필요한 사업에서만 빼 온다(잠긴 배치는 그대로) -- 예전엔 모든 사업에서 빼 빈자리·점수가 틀렸다(Codex 감사 2026-10-12)
             pullable = [p for p in elsewhere if (pid, p) not in locked]
             opts = [o for size in range(1, len(pullable) + 1) for sub in itertools.combinations(pullable, size)
                     if (o := option(sub)) is not None]
@@ -169,7 +190,8 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         i = graph.pid_index[pid]
         out.append({
             "person_id": pid, "grade": person.grade.value, "alloc": alloc,
-            "source": "pull" if removes else ("partly_free" if elsewhere else "bench"),
+            # 전일 투입에서 다른 배치를 그대로 두고 들어오면 프로젝트 동시 수행(허용된 사람만)
+            "source": "pull" if removes else (("concurrent" if full else "partly_free") if elsewhere else "bench"),
             "pulled_from": [p for _, p in removes],
             "delta_total": round(sim["delta"]["total"], 4),
             "delta": {k: round(v, 4) for k, v in sim["delta"].items()},
@@ -222,7 +244,7 @@ def best_additions(graph: MemoryGraph, S, C, params: MilpParams, entries: list[A
     # 달별 투입률이 있는 기준 배치(K 결과·달별 조정)는 달마다 그대로 지킨다 -- 그러려면 달별 변수(monthly)로 푼다(Codex 감사 2026-10-12)
     profiles = {(e.person_id, e.project_id): dict(e.monthly_alloc) for e in entries if e.monthly_alloc}
     solve_params = exact(params)
-    if profiles and solve_params.allocation_mode != "monthly":
+    if profiles and solve_params.allocation_mode == "fixed":    # 전일 투입은 투입률이 1.0뿐이라 바꾸지 않는다(Codex 리뷰 P2)
         solve_params = solve_params.model_copy(update={"allocation_mode": "monthly"})
     base_cb = move_budget_constraints(g2, current, pull_budget, extra_seats={project_id: n}, cap_unstaffed=True,
                                       movers_to=project_id, fill_open_seats=False, monthly_alloc=profiles)

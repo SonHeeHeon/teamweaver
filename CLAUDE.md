@@ -54,6 +54,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `experiments/phase1/solvers.py::_build_model`(벤치, 3솔버 공용), 그리고 C1 보정 LP `core/optimize/numerics.py::_allocation_lp`(가용률·예산 행)와
   독립 검증기 `core/optimize/validation.py`(목적값 재계산), 평가기 `core/evaluate/plan_eval.py`. 목적식·제약을 바꾸면 모두
   고치고 Phase 0 검증(`uv run --group benchmark python -m experiments.bench.phase0_model`)을 다시 돌려야 한다.
+- **전일 투입 `allocation_mode="full"`**(2026-10-19 사용자 결정, claude-a 설계 `.omc/plan/2026-10-19-concurrency.md`): 투입률 변수 없음(a = z, 100%),
+  사업 기간 가용률 1.0인 사람만 자격(`milp.full_eligible`, 문턱 `FULL_TIME_MIN_AVAILABILITY` -- 검증기·오라클은 같은 값을 따로 적는다), 같은 달 사업 수 ≤ `Person.max_concurrent`
+  (기본 1, 부서장이 사람 단위로 허용한 **프로젝트 동시 수행**만 2~3, 사업마다 예산 전액). 용어는 "동시 수행" -- 회사 겸직 금지 조항 때문에 그 단어를 쓰지 않는다(사용자 지시).
+  예전 fixed·monthly는 그대로(시험·옛 기록). full에서만 탐욕 초기해(`greedy.warm_start_full` → HiGHS `setSolution`), C1 보정은 건너뛴다.
 - **HiGHS 경계 잔차**: HiGHS는 z=1.0000000000000007 같은 값을 돌려주고, 독립 검증기(C0)는 범위를 조금이라도
   넘으면 거절한다. `milp._snap_bounds`가 1e-9 안쪽 잔차만 경계로 옮긴다(원본은 native_capture에 보존).
   이 처리가 없으면 HiGHS 해가 전부 "검증 실패"가 된다(2026-10-05 리허설에서 실측).
@@ -71,8 +75,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   시작 인자로 넘기면 자식이 시작 중 죽을 때 부모가 영원히 멈춘다(main 가드 없는 스크립트에서 실측). HiGHS 증명 상한은 `SolverEvidence.best_bound`.
 - **운영 중 편성은 갭 0으로 푼다**(`core/evaluate/operating.exact`, 2026-10-06): 빈자리 감점(자리당 100)이 섞인 목적에서 5% 갭은
   1~2명 이동의 개선(1~2점)을 통째로 가린다(실측: 빼 오기 허용이 더 나쁜 모순). 변경 예산 제약은 `core/optimize/incremental.py` --
-  옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
-  K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 겸직자 한 명이 2로 셌다).
+  옮긴 사람은 "원래 없던 사업"에 들어가야 한다(동시 수행자가 기존 동시 수행으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
+  K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 동시 수행자 한 명이 2로 셌다).
   **추가 제약 콜백이 새 변수를 만들면 정수형(0/1)만** 쓴다: `milp`가 그 풀이 값을 고정해 `numerics.project_additive_constraints`에 넘겨야
   C1 보정·추가 행 독립 검증이 켜진다. 연속 보조 변수나 기존 변수를 바꾸면 "모델 변형"으로 보정·검증이 조용히 꺼진다(실측: 추가 행 0개).
   시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
