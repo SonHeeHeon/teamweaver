@@ -56,6 +56,29 @@
 
 ---
 
+## 2026-10-19 · claude-b · 부서장 점검표 + 점검에서 찾은 작은 것 4건(이름·긴급 투입 상황 메모·인원 중복·PDF 배치 수)
+- 브랜치/커밋: `feat/claude-b-walk-fixes`(main `ad5a7cd`에서) `3e38d89`(코드·시험) · 이 문서 커밋. main 미병합.
+- 사용자: "실제 부서장 입장에서 상황에 따른 프로세스들을 정리해주면 … 추가 개발해야할게 없는지 검토해볼게", 4건 먼저 고치기에 "좋아".
+- 한 일:
+  - 부서장 점검표(claude.ai artifact, 상황 6개·단계 34개·미리 찾은 점 15건, 메모·결정이 artifact 저장소 `notes`·`findings`에 남음). 시험 서버로 다섯 흐름을 끝까지 눌러 보고 만들었다.
+  - 그중 4건을 고쳤다:
+    - What-if·데이터 화면 "100명" 중복(`web/src/components/headcount.ts`).
+    - 계획 PDF 배치 인원 "82명 · 134건".
+    - 긴급 투입 "무슨 일인지" → 확정 `situation`(긴급 투입만 이력 summary에) → 검토 자료 상황 메모 처음 값(저장된 confirm에는 없음, AI 재료 아님).
+    - 긴급 투입 빼 오는 사람·고정 이력의 사번 → 표시 이름(실데이터는 사번 그대로, K5).
+    - 긴 상황 글로 확정이 422 나던 것(note 300·허용 메모 200)도 글자 단위로 잘라 보낸다.
+- 상대 영향(claude-a):
+  - `api/review_docs.py`(`confirms`에 `situation`, `build_doc`이 그것을 `situation_memo` 처음 값으로)와 `POST /api/workspace/apply`의 선택 칸 `situation`을 더했다. 저장된 옛 자료·옛 이력은 빈 값으로 읽힌다.
+  - 네 `feat/claude-a-hr-source`와는 `web/src/App.tsx` import 줄만 가깝다(네 줄 47, 내 줄 39-40) -- 병합 때 확인.
+  - 기준선 2012·웹 258.
+  - 점검표에서 찾은 검토 자료 쪽 점(f1 다른 데이터를 열면 목록 사업 이름이 바뀜 `api/routes/review_docs.py` 81행, f10 "옮겨 온 인력" 용어, f11 "[불리]"가 위반 대안 비교에도 붙음, f12 본문 한 문단)은 사용자 점검 결과를 받고 정한다.
+- 검증: `uv run pytest -q` 2012 passed·1 skipped·20 deselected · `-m slow` 20 passed · 웹 258 · `npx tsc -b`·build 통과 · oxlint 경고 7(모두 main에 있던 것) ·
+  브라우저(연말형·연간 기록, 콘솔 오류 0).
+- 리뷰: Codex 한도 소진 2회(22:2x, 다음 00:10) → Stop 게이트 끔 → Claude Opus 폴백 2라운드 approve(S1 상황 글 숨은 칸·S2 422·NIT 반영).
+- 근거: 루트 `.omc/plan/2026-10-19-walk-fixes.md`, `.omc/reports/2026-10-19-walk-fixes.md`.
+
+---
+
 ## 2026-10-19 · claude-a · b `006b70f` 병합 · 12개월 한도 v5 재측정 · 계산 버전에 모델 규칙 표지 · **main 병합(사용자 승인)**
 - 커밋: `40e61be`(계산 버전 = 원천 + 사전 + `milp.OBJECTIVE_RULES` -- 감점 예외처럼 규칙이 바뀌면 같은 원천도 버전이 달라져 야간 결과·캐시가 예전 증명으로 복원되지 않는다, Codex Stop 리뷰 P1. 미리 계산 8개는 이미 새 규칙으로 풀어 `rekeyed`로 버전만 옮김) ·
   `0e6d1e1`(b `006b70f` 병합: 수명 주기 표시·후보 점수 나눔·12개월 한도 규칙. 문서 충돌 3곳 양쪽 유지, 네 표시 시험 연간 번호 v5로) · 이 커밋(분담표·일지) → main 병합.

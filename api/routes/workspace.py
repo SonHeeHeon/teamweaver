@@ -211,12 +211,19 @@ class LockIn(_Versioned):
     locked: bool = True
 
 
+def _who(dataset, people: list[str]) -> str:
+    """변경 이력에 남길 사람 목록: 표시 이름(가상 데이터만, 실데이터는 사번 -- K5) 다섯 명까지 + "외 N명"(2026-10-19 부서장 점검 f7)."""
+    names, people = _names(dataset), list(dict.fromkeys(people))
+    shown = ", ".join(names.get(p, p) for p in people[:5])
+    return shown + (f" 외 {len(people) - 5}명" if len(people) > 5 else "")
+
+
 @router.post("/api/workspace/lock", dependencies=[Depends(require_admin)])
 async def post_lock(body: LockIn, request: Request) -> dict:
     check_dataset_version(body.dataset_version, request.app.state.dataset)
     before = _files(request)
     files = _edit(set_lock, before, body.project_id, body.people, body.locked)
-    who = "사업 전체" if body.people is None else ", ".join(body.people[:5])
+    who = "사업 전체" if body.people is None else _who(request.app.state.dataset, body.people)
     out = await commit(request, before, files, kind="lock" if body.locked else "unlock",
                        note=f"{body.project_id} {'고정' if body.locked else '고정 해제'}: {who}",
                        summary={"project_id": body.project_id, "people": body.people, "locked": body.locked})
@@ -272,6 +279,9 @@ class SkillAdd(BaseModel):
 class ApplyIn(_Versioned):
     entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     note: str = Field(default="", max_length=300)
+    # 긴급 투입 화면의 "무슨 일인지" 원문(2026-10-19 부서장 점검 f6): 이력 summary에 남겨 인사팀 검토 자료의 상황 메모 처음 값으로 쓴다.
+    # note에 섞인 문장을 잘라 쓰지 않으려고 따로 받는다. AI에는 보내지 않는다(상황 메모와 같음).
+    situation: str = Field(default="", max_length=300)
     source: Literal["auto", "manual", "emergency", "plan"] = "manual"
     headcount_add: dict[str, dict[Literal["특급", "고급", "중급", "초급"], Annotated[int, Field(ge=0, le=10)]]] = {}
     budget_add: dict[str, Annotated[int, Field(ge=0, le=10_000_000)]] = {}
@@ -348,7 +358,9 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
     out = await commit(request, before, files, kind=f"apply_{body.source}", note=note,
                        summary={**changes, "headcount_add": body.headcount_add, "budget_add": body.budget_add,
                                 "skills_add": {p: [s.name for s in v] for p, v in body.skills_add.items()},
-                                "concurrency_add": [g.model_dump() for g in body.concurrency_add]},
+                                "concurrency_add": [g.model_dump() for g in body.concurrency_add],
+                                # 긴급 투입만 -- 다른 확정의 검토 자료에는 상황 메모 칸이 없어 보이지 않는 값으로 남는다(폴백 리뷰 S1)
+                                "situation": body.situation.strip() if body.source == "emergency" else ""},
                        check=check)
     return await _done(request, out, changes=changes)
 

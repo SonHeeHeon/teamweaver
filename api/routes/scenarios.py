@@ -279,6 +279,10 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
         added = sorted({e.person_id for e in best["entries"] if e.project_id == body.project_id} - members_before)
         best = {**best, "entries": [e.model_dump() for e in best["entries"]],
                 "added": [{"person_id": p, "name": nm.get(p, p)} for p in added],
+                # 빼 오는 사람 표시 이름(부서장 점검 f7 -- 화면이 사번을 보였다). 실데이터는 사번 그대로(K5)
+                **({"diff": {**best["diff"], "moved": [{**m, "name": nm.get(m["person_id"], m["person_id"])}
+                                                       for m in best["diff"].get("moved", [])]}}
+                   if isinstance(best.get("diff"), dict) else {}),
                 "new_violations": [list(v) for v in best["new_violations"]]}
     return {"dataset_version": dataset.info.version, "project_id": body.project_id, "skills": names,
             "added_requirements": extra, "best": best,

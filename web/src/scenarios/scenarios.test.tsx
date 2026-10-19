@@ -159,7 +159,8 @@ describe("EmergencyScreen", () => {
     const hint = { headcount_add: { J003: { 고급: 1 } }, budget_add: { J003: 900 }, skills_add: {} };
     vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J003", skills: [], added_requirements: [],
       best: { accepted: true, entries: [{ person_id: "P9", project_id: "J003", alloc: 1 }], added: [{ person_id: "P9", name: "박지훈" }],
-              delta: { total: 3.1, unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 3.1, new_violations: [] },
+              delta: { total: 3.1, unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 3.1, new_violations: [],
+              diff: { moved: [{ person_id: "P8", name: "김소율", from: "J008", to: ["J003"] }] } },
       candidates: { bench: [cand({})], spare: [], pull: [] }, standby: [], apply_hint: hint, note: "" });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P9@J003"], removed: [], changed: [] } });
     const review = vi.fn();
@@ -167,15 +168,18 @@ describe("EmergencyScreen", () => {
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
     expect(await screen.findByText("밤사이 미리 뽑아 둔 명단")).toBeInTheDocument();
     expect(screen.getByText(/100% · 점수 \+3\.10/)).toBeInTheDocument();            // 나눔 없는 예전 밤 명단은 합계 그대로
+    fireEvent.change(screen.getByLabelText(/무슨 일인지/), { target: { value: "  운영 이관 중 장애  " } });
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
     expect(screen.getByText(/기술·협업 \+3\.10 · 추가 월 비용/)).toBeInTheDocument();
+    expect(screen.getByText("빼 오는 사람: 김소율(J008→J003)")).toBeInTheDocument();   // 사번이 아니라 이름(부서장 점검 f7)
     expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("1자리 메움")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "이 조합 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());
     const [, body] = vi.mocked(api.postApply).mock.calls[0];
-    expect(body).toMatchObject({ source: "emergency", headcount_add: hint.headcount_add, budget_add: hint.budget_add });
+    expect(body).toMatchObject({ source: "emergency", headcount_add: hint.headcount_add, budget_add: hint.budget_add,
+                                 situation: "운영 이관 중 장애" });                      // 검토 자료 상황 메모의 처음 값(부서장 점검 f6)
     fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
     expect(review).toHaveBeenCalledWith(WS.dataset_version, "J003");
   });

@@ -13,6 +13,12 @@ import {
 } from "./workspaceApi";
 
 type Group = "bench" | "spare" | "pull";
+// 확정 요청 한도(api/routes/workspace.ApplyIn.note 300 · GrantIn.memo 200). 상황 글(300자)에 머리말이 붙으면 넘쳐 확정이 422였다 --
+// 원문은 situation으로 따로 가니 이 둘은 잘라 보낸다(폴백 리뷰 S2, 2026-10-19)
+const NOTE_MAX = 300;
+const GRANT_MEMO_MAX = 200;
+/** 글자(코드 포인트) 단위로 자른다 -- UTF-16 단위로 자르면 이모지가 경계에서 반쪽이 되어 서버가 422로 거절한다(2라운드 리뷰 NIT) */
+const clip = (s: string, n: number) => Array.from(s).slice(0, n).join("");
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
 
 export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc }: {
@@ -113,7 +119,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
       const hint = plan.apply_hint ?? { headcount_add: {}, budget_add: {}, skills_add: {} };
       // 결과를 계산한 판·사업 그대로 확정한다
       const res = await postApply(plan.dataset_version, { entries: plan.best.entries, source: "emergency",
-        note: `${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, ...hint });
+        note: clip(`${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...hint });
       setWs(res.workspace);
       setConfirmed({ version: res.workspace.dataset_version, projectId: plan.project_id, seen: datasetVersion ?? null });
       setPlan(null);
@@ -140,10 +146,10 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
       const pid = plan.project_id;
       const res = await postApply(ws.dataset_version, {
         entries: [...currentEntries(ws), { person_id: row.person_id, project_id: pid, alloc: 1 }], source: "emergency",
-        note: `${pid} 긴급 투입(프로젝트 동시 수행 지원)${note ? `: ${note}` : ""}`,
+        note: clip(`${pid} 긴급 투입(프로젝트 동시 수행 지원)${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(),
         ...row.apply_hint,                      // 서버가 이 사람으로 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술)
         // 이미 허용된 사람은 기존 허용 기록(사유·메모)을 그대로 둔다 -- 새 허용이 필요할 때만 긴급 지원으로 적는다
-        ...(row.needs_grant ? { concurrency_add: [{ person_id: row.person_id, memo: note || `${pid} 긴급 투입` }] } : {}),
+        ...(row.needs_grant ? { concurrency_add: [{ person_id: row.person_id, memo: clip(note || `${pid} 긴급 투입`, GRANT_MEMO_MAX) }] } : {}),
       });
       setWs(res.workspace);
       setConfirmed({ version: res.workspace.dataset_version, projectId: pid, seen: datasetVersion ?? null });
@@ -260,7 +266,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                   <>
                     <p>넣을 사람: <b>{plan.best.added?.map((a) => a.name).join(", ") || "없음"}</b>
                       <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 추가 월 비용 {plan.best.added_cost ?? 0}</span></p>
-                    {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
+                    {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.name ?? m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
                     {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반이 있어 확정할 수 없습니다.</Notice>}
                     {plan.apply_hint && (Object.keys(plan.apply_hint.headcount_add).length > 0 || Object.keys(plan.apply_hint.budget_add).length > 0) && (
                       <p className="text-xs text-slate-500">확정하면 사업 정원

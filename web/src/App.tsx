@@ -37,6 +37,7 @@ import { EmergencyScreen } from "./scenarios/EmergencyScreen";
 import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { withPeople } from "./components/headcount";
 import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
@@ -656,7 +657,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 
   const horizon = meta ? horizonRange(meta.horizon_start, meta.horizon_months ?? 6) : "";
   const pageContext = tab === "whatif" && dataset
-    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건${horizon ? ` · 계획 기간 ${horizon}` : ""}`
+    ? `${withPeople(datasetLabel(dataset), dataset.people)} · 사업 ${dataset.projects}건${horizon ? ` · 계획 기간 ${horizon}` : ""}`
     : undefined;
   const showResults = plans.length > 0 || running;
 

@@ -87,6 +87,7 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-19 [claude-b→모두] **공유 계약 `CLAUDE.md`·API**: 함정 줄 "인사팀 검토 자료"에 긴급 투입 상황 글 한 줄 -- `POST /api/workspace/apply`에 선택 칸 `situation`(300자, 긴급 투입만 이력 summary에 남김) → `review_docs.confirms`의 `situation` → 긴급 투입 자료 `situation_memo` 처음 값(저장된 `confirm`에는 없음, AI 재료 아님). 긴급 투입 응답 `best.diff.moved[].name`(표시 이름). 고정 이력 note는 표시 이름. 기준선 2012·웹 258. claude-a `feat/claude-a-hr-source`와는 `web/src/App.tsx` import 줄만 가깝다 · 상태: 정보
 - 2026-10-19 [claude-a→claude-b] **생성기 v5로 연초 계획·연간 묶음이 다시 바뀐다(사용자 지시)** -- 연초 계획 실행 사업 대부분이 "계획 전에 시작한 진행 사업"이 되고 v4의 덧붙인 장기 사업(J021~J025)은 없어진다. 추가 과제 번호도 바뀐다. 운영 중·연말형 묶음의 사업·번호(J002·J011·J020 등)는 그대로, 이력·평가·기술 경력은 바뀐다(진행 사업 경력 잇기). manifest `lifecycle` 모양은 그대로. (1) 네 수명 주기 표시 시험의 연초 계획·연간 번호(J021·J025 등)는 v5 커밋 뒤 맞춰 달라. (2) 12개월 시간 배수 측정(`api/settings.py`)은 v5 연간 묶음이 나온 뒤에 해 달라 -- 지금 묶음으로 재면 곧 낡는다 · 상태: 대기 -- v5 데이터 나옴(claude-a 후속 커밋): 연초 100명 진행 사업 J010·J011·J014·J015(운영)·J013·J019(고도화)·J012·J017(개발), 추가 과제 J021(상위 J010), 연간 첫 하반기 J022. 이제 해도 된다 -- 처리됨(claude-a가 12개월 재측정까지 함, 아래 b 요청 (2))
 - 2026-10-19 [claude-b→모두] **공유 계약 `CLAUDE.md`·API 응답**: 함정 줄 "사업 수명 주기 표시"(manifest `lifecycle` + pipeline 추가 과제 합치기, pipeline 우선, 신규 사업 편집이 생성 기록을 맞춤), `/api/meta` 사업에 `lifecycle`·`period`(선택 필드), `/api/workspace` 항목에 `lifecycle`.
   claude-a 생성기의 `lifecycle` 모양(`core/ingest/lifecycle.py`)은 그대로 읽기만 한다 -- 칸을 바꾸면 `api/lifecycle.lifecycle_of`도 맞춘다 · 상태: 처리됨(claude-b `feat/claude-b-three-scenarios`)

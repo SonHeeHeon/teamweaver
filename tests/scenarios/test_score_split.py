@@ -49,6 +49,9 @@ def test_pipeline_and_emergency_rows_carry_the_split(yearend):
         assert all(r["unfilled_seats_delta"] <= 0 for r in plan["candidates"]["pull"])
         assert plan["standby"] and all(_adds_up(r) for r in plan["standby"])
         best = plan["best"]
+        # 빼 오는 사람은 이름과 함께 온다(부서장 점검 f7 -- 화면이 "DP0075(J013→J007)"처럼 사번을 보였다)
+        names = {p["id"]: p["name"] for p in c.get("/api/meta").json()["people"]}
+        assert best["diff"]["moved"] and all(m["name"] == names[m["person_id"]] != m["person_id"] for m in best["diff"]["moved"])
         assert best["accepted"] and abs(best["delta"]["total"]
                                         - (best["unfilled_seats_delta"] * PENALTY + best["delta_excl_unfilled"])) < 1e-3
 

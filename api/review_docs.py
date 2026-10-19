@@ -106,7 +106,8 @@ def confirms(history_entries: list[dict]) -> list[dict]:
             out.append({"version": e["version"], "content_version": e["content_version"],
                         "before_version": history_entries[i - 1].get("version"),
                         "before_content_version": history_entries[i - 1]["content_version"],
-                        "kind": kind, "at": e.get("at"), "note": e.get("note", "")})
+                        "kind": kind, "at": e.get("at"), "note": e.get("note", ""),
+                        "situation": (e.get("summary") or {}).get("situation", "")})
     return out
 
 
@@ -277,12 +278,16 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
     facts = move_facts(moves, inp.evidence, grants) + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None)
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]
-    return {"confirm": confirm, "project_id": project_id, "project_name": project.name, "revision": 0, "created_at": now(),
+    # 검토 자료 안에서는 상황 글을 상황 메모(부서장이 고치는 칸) 한 곳에만 둔다 -- 고치거나 지운 뒤에도 confirm에 원문이 따로
+    # 남지 않게(폴백 리뷰 S1). 확정 note(머리말+잘린 글)와 이력 summary.situation(원천)은 변경 기록이라 그대로다
+    return {"confirm": {k: v for k, v in confirm.items() if k != "situation"}, "project_id": project_id, "project_name": project.name, "revision": 0, "created_at": now(),
             "facts": facts, "moves": moves, "team": list(inp.team),
             # 만들 때의 평가 설정 -- AI 초안도 같은 기준으로 쓴다(설정을 바꾼 뒤 초안이 잠긴 사실과 다르게 쓰였다, Codex 리뷰)
             "milp_params": params.model_dump(mode="json"), "names": dict(sorted(names.items())),
             "disclaimer": DISCLAIMER, "body_ai": None, "body_ai_method": None, "body": None, "notes": [], "judgments": {},
-            "situation_memo": "", "status": "draft", "exported_at": None, "exported_facts": None}
+            # 긴급 투입 화면에 적은 상황 글을 처음 값으로(부서장 점검 f6 -- 같은 말을 두 번 적었다). 부서장이 고칠 수 있고 AI에는 보내지 않는다
+            "situation_memo": confirm.get("situation", "") if confirm["kind"] == "emergency" else "",
+            "status": "draft", "exported_at": None, "exported_facts": None}
 
 
 def view(doc: dict, *, reverted: bool, active: bool, history: str = "in_history") -> dict:

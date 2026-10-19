@@ -82,6 +82,8 @@ describe("EmergencyScreen 동시 수행으로 지원", () => {
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P1@J007"], removed: [], changed: [] } });
     render(<EmergencyScreen onDatasetChanged={vi.fn()} />);
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J007" } });
+    const long = "장애 대응 ".repeat(50).slice(0, 290);                   // 머리말을 붙이면 300자, 허용 메모는 200자를 넘는다
+    fireEvent.change(screen.getByLabelText(/무슨 일인지/), { target: { value: long } });
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     fireEvent.click(await screen.findByRole("tab", { name: /동시 수행으로 지원 1/ }));
     expect(screen.getByText(/원래 사업 유지 · 허용 필요/)).toBeInTheDocument();
@@ -93,6 +95,10 @@ describe("EmergencyScreen 동시 수행으로 지원", () => {
     expect(body.entries).toEqual(expect.arrayContaining([{ person_id: "P1", project_id: "J003", alloc: 1 },
                                                          { person_id: "P1", project_id: "J007", alloc: 1 }]));
     expect(body.concurrency_add).toEqual([expect.objectContaining({ person_id: "P1" })]);
+    // 확정 요청 한도 안으로 잘라 보내고(422 방지), 원문은 상황 메모 처음 값으로 따로(폴백 리뷰 S2, 부서장 점검 f6)
+    expect(body.note!.length).toBeLessThanOrEqual(300);
+    expect(body.concurrency_add![0].memo!.length).toBeLessThanOrEqual(200);
+    expect(body.situation).toBe(long.trim());
   });
 });
 
