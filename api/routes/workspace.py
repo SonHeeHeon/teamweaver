@@ -24,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from api.admin import require_admin
 from api.deps import check_dataset_version
+from api.lifecycle import lifecycle_of
 from api.settings import horizon_months_of
 from api.schemas import MAX_PLAN_ENTRIES, EntryIn
 from api.workspace import History, WorkspaceUnavailable, commit, current_files, undo
@@ -66,6 +67,7 @@ def workspace_view(request: Request) -> dict:
                 "history": []}
     m = read_manifest(files)
     pipe = pipeline_of(m)
+    lifecycle = lifecycle_of(m)                    # 단계·실제 시작·추가 과제 상위·외주(표시용, api/lifecycle)
     proposals = [p for p in (m.get("proposals") or []) if isinstance(p, str)]
     _, prow = read_table(files, PROJECTS)
     real = {r["project_id"]: r for r in prow}
@@ -95,7 +97,7 @@ def workspace_view(request: Request) -> dict:
                 "monthly_budget": j.monthly_budget,
                 "seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in GRADE_ORDER
                           if need.get(g, 0) or filled.get(g, 0)},
-                "team": team}
+                "team": team, "lifecycle": lifecycle.get(j.id)}
         if j.id in proposals or j.id in pipe:
             stage = pipe.get(j.id, {}).get("stage") or ("수주" if j.phase.value == "실행" else "제안")
             pipeline.append({**item, "stage": stage, "predecessor": pipe.get(j.id, {}).get("predecessor"),
@@ -104,7 +106,7 @@ def workspace_view(request: Request) -> dict:
                              "registered_at": pipe.get(j.id, {}).get("registered_at")})
         elif team:
             # 계획 창 끝보다 먼저 끝나는가(끝나 가는 사업) -- 실제 종료 달 기준. 창 끝까지 가는 사업은 아니다
-            ongoing.append({**item, "addons": sorted(k for k, v in pipe.items() if v.get("parent") == j.id),
+            ongoing.append({**item, "addons": sorted(k for k, v in lifecycle.items() if v.get("parent") == j.id),
                             "locked_all": all(t["locked"] for t in team),
                             "locked_count": sum(1 for t in team if t["locked"]),
                             "ends_in_horizon": bool(item["end"]) and item["end"] < (_horizon_last(m) or "")})

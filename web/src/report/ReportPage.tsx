@@ -5,6 +5,7 @@ import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
+import { lifecycleTags, projectPeriod } from "../components/lifecycle";
 import { fallbackText, segmentsOf } from "../components/justification";
 import { ReviewDoc } from "../review/ReviewDoc";
 import type { ReviewDocView } from "../review/reviewApi";
@@ -86,6 +87,8 @@ function PlanReport() {
   const pct = (v: number | null) => (v === null ? "산정 불가(제약 위반)" : `${((v ?? 0) * 100).toFixed(1)}%`);
   const byId = new Map((meta?.people ?? []).map((p) => [p.id, p]));
   const jName = new Map((meta?.projects ?? []).map((j) => [j.id, j.name]));
+  // 사업 이력(2026-10-19): 수명 주기 기록이 있거나 계획 밖까지 이어지는 사업만
+  const lifecycleRows = (meta?.projects ?? []).filter((j) => j.lifecycle || j.period);
   const nameOf = (id: string) => byId.get(id)?.name ?? id;
   const generatedAt = new Date().toLocaleString("ko-KR");
 
@@ -277,6 +280,24 @@ function PlanReport() {
           </tbody>
         </table>
       </section>
+
+      {lifecycleRows.length > 0 && (
+        <section className="mt-6" aria-label="사업 이력">
+          <h2 className="mb-1 text-base font-semibold">사업 이력</h2>
+          <p className="mb-2 text-xs text-slate-500">계획 기간 밖에서 시작했거나 이어지는 사업, 추가 과제의 상위 사업·외주 인원이다. 외주 인원은 참고값 -- 배치 계산은 회사 인력만 다룬다.</p>
+          <table className="w-full text-sm">
+            <tbody>
+              {lifecycleRows.map((j) => (
+                <tr key={j.id} className="border-b border-slate-100">
+                  <td className="py-1">{j.name}({j.id})</td>
+                  <td className="py-1 text-slate-600">{lifecycleTags(j.lifecycle, "").join(" · ")}</td>
+                  <td className="py-1 text-right text-xs text-slate-600">{projectPeriod(j, meta?.horizon_start)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {data.justifications_note && (
         <p className="mt-6 text-xs text-slate-500">{data.justifications_note}</p>

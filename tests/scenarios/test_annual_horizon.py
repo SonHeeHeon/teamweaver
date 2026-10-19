@@ -179,6 +179,19 @@ def test_twelve_month_data_gets_a_longer_automatic_time_limit(annual):
     assert body["effective_time_limit"] == recommended_seconds(100, "full", 12) == 120
     assert body["recommended_time_full"]["per_solve_s"] == body["effective_time_limit"]
     assert "12개월" in body["recommended_time_full"]["basis"] and "12개월" in body["recommended_time"]["basis"]
+    # 근거 문구는 실측표·여유 상수에서 만든다(폴백 리뷰 NIT -- v5 재측정 때 글이 숫자와 어긋나지 않게)
+    assert "100·200·300명 가장 느린 시드 52·186·312초 × 여유 2, 최대 900초" in body["recommended_time_full"]["basis"]
+
+
+def test_twelve_month_full_time_limits_have_a_measured_floor():
+    """claude-b 규칙(2026-10-19): 12개월 안 A 증명 가장 느린 시드 × 여유 2(30초 단위, 상한 900초)와 6개월 권장 × 4 중 큰 값 -- 사용자
+    "1년 계획 계산 시간 리밋은 더 널널하게". claude-a가 생성기 v5 연간 묶음으로 다시 잼(rehearsal/results/time-budget-annual.json):
+    100·200·300명 52·186·312초 → 120·390·630초. 6개월 권장은 v5 30·60·90초."""
+    from api.settings import recommended_seconds
+    assert [recommended_seconds(n, "full", 12) for n in (100, 200, 300)] == [120, 390, 630]
+    assert [recommended_seconds(n, "full", 6) for n in (100, 200, 300)] == [30, 60, 90]
+    assert recommended_seconds(200, "fixed", 12) == 4 * recommended_seconds(200, "fixed", 6)
+    assert recommended_seconds(10_000, "full", 12) <= 900
 
 
 def test_second_half_monthly_allocations_pass_the_api(annual):
@@ -211,3 +224,26 @@ def test_six_month_data_rejects_month_keys_past_its_horizon(yearend):
         res = c.post("/api/plans/apply-alloc", json={"entries": [e], "change": {"person_id": g.people[0].id, "project_id": j.id,
                                                                                  "monthly_alloc": {8: 0.5}}})
         assert res.status_code == 422                                     # 500이 아니라 거절
+
+
+def test_emergency_best_plan_solve_is_capped_like_the_operating_route(yearend, monkeypatch):
+    """12개월 자동 한도가 900초까지 늘어(2026-10-19) 긴급 투입 최선 조합(갭 0 풀이)이 가벼운 계산 슬롯을 15분까지 잡을 수 있었다 --
+    운영 중 보강·밤 배치처럼 OPERATING_TIME_LIMIT_MAX(600초)에서 자른다(폴백 리뷰 SHOULD). 대기 명단 지문용 설정은 그대로다."""
+    from api.main import app
+    from api.routes import scenarios
+    from api.routes.operating import OPERATING_TIME_LIMIT_MAX
+    from core.evaluate import staffing_sim
+    seen = {}
+    real = scenarios._params
+    monkeypatch.setattr(scenarios, "_params", lambda a, d: real(a, d).model_copy(update={"time_limit": 900}))
+
+    def fake_best(graph, S, C, params, *a, **kw):
+        seen["time_limit"] = params.time_limit
+        return {"accepted": False}
+    monkeypatch.setattr(staffing_sim, "best_additions", fake_best)
+    with TestClient(app) as c:
+        v = c.get("/api/workspace").json()["dataset_version"]
+        r = c.post("/api/emergency/plan", json={"dataset_version": v, "project_id": "J007", "n": 1})
+    assert r.status_code == 200, r.text
+    assert seen["time_limit"] == OPERATING_TIME_LIMIT_MAX == 600
+    assert r.json()["best"]["accepted"] is False

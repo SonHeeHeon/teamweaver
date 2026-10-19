@@ -203,6 +203,11 @@ def scenario_of(manifest: dict | None) -> dict:
     allowed = grants(m)
     if allowed:
         out["concurrency"] = allowed
+    # 사업 수명 주기(2026-10-19, manifest `lifecycle` + pipeline 추가 과제) -- 화면 표시용(api/lifecycle, 계산에 안 씀)
+    from api.lifecycle import lifecycle_of
+    lifecycle = lifecycle_of(m)
+    if lifecycle:
+        out["lifecycle"] = lifecycle
     return out
 
 
@@ -270,8 +275,14 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index
     evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
+    scenario = scenario_of(manifest)
+    # 계획 기간 밖으로 이어지는 사업의 원문 기간(로더가 계획 안으로 자른다) -- 화면이 "2024.06~2028.01"로 보인다
+    from api.lifecycle import original_periods
+    periods = original_periods(bundle, [j.id for j in ds.projects])
+    if periods:
+        scenario["periods"] = periods
     return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence,
-                         current=ds.current, scenario=scenario_of(manifest),
+                         current=ds.current, scenario=scenario,
                          kg_source=(bundle, ds, parsed) if bundle is not None else None)
 
 

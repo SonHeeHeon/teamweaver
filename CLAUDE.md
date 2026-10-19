@@ -129,6 +129,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   확정은 평가기로 **새로 생기거나 커진 위반**(한도와의 거리)·잠긴 배치 빼기를 거절한다. 신규 사업 후보는 등록한 정원·예산 그대로 다시 채점(`rescore_unchanged` -- 보강 계산은 자리를 늘린다),
   "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
   시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
+  후보 점수는 나눠 보인다(사용자 2026-10-19 "점수 변화는 나눠 보이도록"): `scenarios.split_unfilled`가 `unfilled_seats_delta`(메운 자리, 운영 중 보강과 같은 이름·부호)·`delta_excl_unfilled`(빈자리 몫 뺀 변화)를 붙이고 `delta_total`·순위는 그대로.
+  긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -148,7 +150,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   사업 정원은 등급·달마다 (가용률 1.0인 그 등급 인원)의 85% 이하(`org_profile.shrink_to_supply` -- 예전 전체 85%는 등급을 안 봐 쪼개 넣어야 채워졌다), 예산 = 기준 단가 × 정원 × 1.0~1.25(`budget_of`),
   연초 현재 배치 100%·겹침 없음, 운영 중은 휴직 달이 걸린 사람을 진행 사업·대기에서 빼고 신규 제안 정원 = 대기 인력의 등급 구성(한 명 여유).
   **사람·이력·평가 글 난수열은 그대로**라 판정 동봉이 그대로 쓰인다(`export_demo_judgments.py --check`). 연간·연말형 도구(`scripts/make_{annual,yearend}_demo.py`)가 같은 함수를 쓴다.
-  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`.
+  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`. 전일 투입은 12개월 실측 하한(`MEASURED_FULL_12`, v5 100·200·300명 가장 느린 시드 52·186·312초 × 여유 2, 상한 900초)과
+  큰 값이라 120·390·630초(claude-b 규칙 2026-10-19, claude-a v5 재측정, `scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json` -- 사용자 "1년 계획 계산 시간 리밋은 더 널널하게"). 사업 구성을 바꾸면 다시 잰다.
 - **생성기 v4·v5 = 사업 수명 주기 섞기 + 진행 사업 경력 잇기**(2026-10-19 사용자 원문 -- b 요청 6번 · 사용자 "기존 사업 20개는 여전히 전부 하반기 시작 … 잘못", "진행해야겠어"(선택 "갈아 끼우고 평가도 새로"), claude-a 설계 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`·`-v5.md`):
   연초 계획은 실행 사업의 약 75%(`RUNNING_SHARE`)가 계획 전에 시작한 진행 사업이고, 운영 중은 진행 사업마다 수명 주기를 붙인다. 비율은 둘 다 운영 30%·고도화 20%·개발(2025) 20%·개발(2026 상반기) 30%이고, 운영 = 내부 2~3명·계획 뒤까지(사용자 "16개 중 6개면 적절", "2-3명이 평균").
   운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값 -- 연초 100명 1·200·300명 2, 운영 중은 신규 제안 중 1개, **b의 `pipeline` 모양** parent·external_headcount)를 붙인다.
@@ -169,6 +172,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **별도 사업 행** + manifest `pipeline[id].parent`·`external_headcount`(외주, 참고값 -- 계산에 안 씀). 고도화 과제(`predecessor`, 끝난 이전 사업)와 함께 못 고른다.
   상위 사업은 등록·상위 변경 때 "현재 배치가 있는 진행 사업", 과제 기간은 상위 기간 안(`_check_parent`, 원문 달 공백 정규화 `_period`). 추가 과제 칸은 추가 과제에만 쓴다 --
   일반 등록의 manifest 모양(데이터 버전)이 그대로. 후보는 상위 사업 팀원 `parent_team` 맨 위. 시연 데이터의 사업 수명 주기는 생성기 v4가 같은 모양으로 만든다(아래 생성기 v4 -- 연말형 J020이 J011에 붙은 추가 과제).
+- **사업 수명 주기 표시**(2026-10-19, claude-b `api/lifecycle.py`·`web/src/components/{lifecycle.ts,LifecycleChips.tsx}`): manifest `lifecycle`(생성기 v4)과 `pipeline` 추가 과제를 합쳐
+  `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 사업의 원문 기간 -- `start_month`·`end_month`는 계획 안으로 자른 달 순번), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력"에 싣는다.
+  신규 사업은 **pipeline이 원본**(화면에서 고친 상위·외주가 이긴다, pipeline에서 상위를 풀면 생성 기록의 연결은 무시). 신규 사업 수정·떨어짐은 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` --
+  안 하면 로더가 "없는 사업"·"시작 달이 다르다" 경고를 남긴다), 기록이 없는 사업엔 칸을 만들지 않는다. 계산(MILP·평가기)은 읽지 않는다. 꼬리표는 이름 머리말("[운영]")과 같은 단계를 다시 쓰지 않는다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -183,7 +190,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5 + 현재 팀 익숙한 쌍 감점 제외(claude-a) **1992 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 247 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5·현재 팀 감점 제외(claude-a) + 수명 주기 표시·후보 점수 나눔·12개월 한도(claude-b `006b70f`) 병합 **2009 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 256 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

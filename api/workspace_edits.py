@@ -20,6 +20,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from api.lifecycle import ADDON
+
 Files = dict[str, str]
 GRADES = ("특급", "고급", "중급", "초급")
 SECTORS = ("대내", "대외금융", "대외공공")
@@ -232,6 +234,32 @@ def _pipe_entry(form: NewProject, registered_at: str | None = None, old: dict | 
     return out
 
 
+def _sync_lifecycle(m: dict, pid: str, form: NewProject | None) -> None:
+    """생성 때 적힌 manifest `lifecycle`(claude-a 생성기 v4, 예: 연말형 추가 과제 J020)을 신규 사업 편집에 맞춘다(form=None은 떨어짐).
+    안 맞추면 로더가 '없는 사업'·'시작 달이 다르다'·'상위 기간 밖' 경고를 남긴다. 기록이 없는 사업은 건드리지 않는다(manifest 모양 그대로)."""
+    lc = m.get("lifecycle")
+    if not isinstance(lc, dict):
+        return
+    if form is None:
+        lc.pop(pid, None)
+        for e in lc.values():
+            if isinstance(e, dict) and e.get("parent") == pid:
+                e.pop("parent", None)
+                e.pop("external_headcount", None)
+    elif isinstance(lc.get(pid), dict):
+        e = lc[pid]
+        if form.parent:
+            e.update(stage=ADDON, started=form.start_month, parent=form.parent, external_headcount=form.external_headcount)
+        elif e.get("stage") == ADDON:
+            del lc[pid]                                   # 추가 과제를 풀었다 -- 단계 기록도 함께 뺀다
+        else:
+            e["started"] = form.start_month
+            e.pop("parent", None)
+            e.pop("external_headcount", None)
+    if not lc:
+        del m["lifecycle"]
+
+
 def add_project(files: Files, form: NewProject, *, registered_at: str = "") -> tuple[Files, str]:
     files = _copy(files)
     _, rows = read_table(files, PROJECTS)
@@ -325,6 +353,7 @@ def update_project(files: Files, pid: str, *, stage: str | None = None, form: Ne
     _put_project_rows(files, pid, new)
     pipe[pid] = _pipe_entry(new, old=pipe.get(pid, {}))
     m["pipeline"] = pipe
+    _sync_lifecycle(m, pid, new)
     write_manifest(files, m)
     rehash(files)
     return files
@@ -351,6 +380,7 @@ def remove_project(files: Files, pid: str) -> tuple[Files, list[str]]:
     pipe = pipeline_of(m)
     pipe.pop(pid, None)
     m["pipeline"] = pipe
+    _sync_lifecycle(m, pid, None)
     _refresh_bench(files, m)
     write_manifest(files, m)
     rehash(files)

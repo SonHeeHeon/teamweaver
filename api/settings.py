@@ -48,6 +48,22 @@ TIME_LIMIT_MAX = 900
 # 재설계 뒤(전일 투입·생성기 v3, claude-a 2026-10-19 rehearsal/results/time-budget-full.json): 연간 100명은 30초에도 빈자리 0, 최선 증명은
 # 시드 1 83초·시드 4 61초 -- 6개월 권장 30초 × 4 = 120초 안이라 배수를 그대로 둔다. 200·300명 12개월은 재지 않았다(측정 범위 밖 추정).
 HORIZON_TIME_FACTOR = {6: 1, 12: 4}
+# 12개월 전일 투입 실측(안 A 최선 증명까지, 허용 차이 5%) -- **가장 느린 시드** 값에 여유 2배(MARGIN_12, 30초 단위 올림, 상한 TIME_LIMIT_MAX)를
+# 하한으로 둔다(사용자 2026-10-19 "1년 계획 계산 시간 리밋은 더 널널하게 둬도 될거같아" -- 직전 규칙은 시드 1 × 1.5라 300명 시드 4(485초) 대비 1.3배뿐).
+# 100명: claude-a v4 연간 시연 78초(시드 1만, rehearsal/results/time-budget-full.json). 200·300명: claude-b 2026-10-19, org-n200·n300으로 연간형 묶음을
+# 만들어(scripts/make_annual_demo.make, 사업 89·133개) 시드 1 279·406초, 시드 4 322·485초. 결과 rehearsal/results/time-budget-annual.json.
+# 결과 100·200·300명 240(×4가 더 큼)·660·900초(상한)였다. claude-a 2026-10-19 생성기 v5 연간 묶음(진행 사업 위주·진행 사업 경력 이음·현재 팀 감점 제외)으로
+# 다시 잼(시드 1·4, 사업 40·81·121개): 가장 느린 시드 52·186·312초 → 120(×4와 같음)·390·630초. rehearsal/results/time-budget-annual.json.
+MEASURED_FULL_12: dict[int, int | None] = {100: 52, 200: 186, 300: 312}
+MARGIN_12 = 2.0
+
+
+def _measured_floor_12(n_people: int) -> int:
+    """12개월 전일 투입 하한: n 이상인 첫 측정 크기(없으면 가장 큰 크기)의 실측 × MARGIN_12, 30초 단위 올림."""
+    from core.optimize.time_budget import STEP_S
+    sizes = sorted(k for k, v in MEASURED_FULL_12.items() if v)
+    size = next((k for k in sizes if n_people <= k), sizes[-1])
+    return int(-(-MEASURED_FULL_12[size] * MARGIN_12 // STEP_S) * STEP_S)
 
 
 def horizon_months_of(graph) -> int:
@@ -58,6 +74,8 @@ def horizon_months_of(graph) -> int:
 def recommended_seconds(n_people: int, allocation_mode: str = "fixed", months: int = 6) -> int:
     from core.optimize.time_budget import recommend
     s = recommend(n_people, allocation_mode=allocation_mode).per_solve_s * HORIZON_TIME_FACTOR.get(months, 1)
+    if months == 12 and allocation_mode == "full":
+        s = max(s, _measured_floor_12(n_people))
     return min(s, TIME_LIMIT_MAX)
 
 

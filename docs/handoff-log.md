@@ -38,6 +38,39 @@
 
 ---
 
+## 2026-10-19 · claude-b · 12개월 시간 한도 여유 2배(200·300명 660·900초) · 후보 점수 변화를 빈자리와 기술·협업으로 나눔
+- 브랜치/커밋: `feat/claude-b-three-scenarios` `66151a4..` `d9ff88e`(점수 나눔·긴급 투입 600초 상한)·`e7d89dd`(12개월 한도)·이 문서 커밋. main 병합 안 함 -- 사용자 "해당 브랜치에서 a도 작업 중이라면 나중에 a가 병합하지뭐"(work-split 요청 [claude-b→claude-a]).
+- 사용자: "1년 계획 계산 시간 리밋은 더 널널하게 둬도 될거같아. 점수 변화는 나눠 보이도록 하자."
+- 한 일:
+  - 12개월 전일 투입 자동 한도의 실측 하한을 **가장 느린 시드 × 여유 2**로 바꿨다(`api/settings.MEASURED_FULL_12` 78·322·485초, `MARGIN_12`, 30초 단위, 상한 900). 100·200·300명은 240·660·900초가 됐다(직전 240·420·630).
+  - 새로 재지는 않았다. claude-a `fd99155` 요청대로 v5 뒤에 다시 잰다. 설정 화면 근거 문구는 상수에서 만든다.
+  - 신규 사업 후보·긴급 투입(후보·대기 명단·최선 조합)·밤 대기 명단 행에 `unfilled_seats_delta`·`delta_excl_unfilled`를 붙였다(`api/routes/scenarios.split_unfilled`). 이름·부호는 운영 중 보강과 같고, `delta_total`·순위는 그대로다.
+  - 화면은 "빈자리(1자리 메움·생김)"와 "기술·협업 점수" 두 칸으로 나눴다(`web/src/components/scoreSplit.ts`·`ScoreSplitNote.tsx`). 나눔 없는 예전 밤 명단은 "점수 +x"로 보인다.
+  - 긴급 투입 최선 조합 풀이는 `OPERATING_TIME_LIMIT_MAX` 600초에서 자른다. 900초 한도가 가벼운 슬롯을 15분 잡던 것을 막는다(폴백 리뷰 SHOULD).
+- 상대 영향(claude-a): v5 `MEASURED_FULL`(30/60/90초)과 합치면 100명 12개월이 max(120, 180) = **180초**로 내려간다. 연간 시연 기록·미리 계산의 계산 요청(지금 240초)을 v5 재생성 때 함께 본다.
+  v5 연간 묶음으로 `scripts/measure_annual_time_budget.py`를 다시 돌려 `MEASURED_FULL_12`만 고치면 된다. `fd99155`를 b 브랜치에 합치지 못해 work-split "진행 중"·"요청" 머리에서 단순 충돌이 날 수 있다(둘 다 남긴다). 기준선 1997·웹 256.
+- 검증: `uv run pytest -q` 1997 passed·1 skipped·20 deselected, `-m slow` 20 passed, 웹 tsc·256 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 연말형 기록): 신규 사업 J018 후보 "1자리 메움 · +1.00", 빼 오기 "— · +0.44 · J017에서 빼 옴", 긴급 투입 J004 빼 오기 "1자리 생김 · +0.67", 최선 조합 "김재훈 · 기술·협업 +1.47", 연간 설정 근거 문구 240초, 콘솔 오류 0.
+  리뷰: Codex 한도 소진 2회 → Stop 게이트 끔, Claude Opus 폴백 approve(SHOULD 1·NIT 1 반영, NIT 2 WON'T) → 2라운드 Codex gpt-6.1-sol(19:09 회복 뒤) 지적 없음 → **Stop 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-score-split-annual-time.md`(로컬)
+
+---
+
+## 2026-10-19 · claude-b · 사업 수명 주기 표시(실제 시작·단계·추가 과제 상위·외주) · 12개월 시간 한도 하한 · v4 장면 브라우저 점검
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(claude-a `1c677c3`로 fast-forward 뒤 이 항목 커밋들). main 병합은 사용자 승인 대기(이 브랜치가 claude-a 브랜치를 포함).
+- 사용자: "A 끝났어. 너가 작업해도 될 준비가 다 됐는지 확인해보고 이상 없으면 착수해줘" -- 준비 확인(작업 트리 깨끗·진행 중 없음·내 `bd65e0c` 병합됨, 합친 상태 1982 passed·웹 247) 뒤 b 몫(추가 과제 리포트 6절).
+- 한 일: `api/lifecycle.py`(manifest `lifecycle` + pipeline 추가 과제 합치기, 신규 사업은 pipeline 우선) → `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 원문 기간), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력".
+  신규 사업 수정·떨어짐이 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` -- 안 하면 로더 "없는 사업"·"시작 달이 다르다" 경고). 화면: 진행 사업 목록 "J002 · 2024-06~2028-01" + 꼬리표(이름 머리말과 같은 단계는 생략), 연간 계획 사업 표·결과 표 머리에 원래 기간·꼬리표.
+  12개월 전일 투입 자동 한도에 실측 하한(`api/settings.MEASURED_FULL_12`): 100명 240초 그대로, 200명 360→420초, 300명 480→630초(`scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json`: 200·300명 연간형 안 A 증명 279·406초(시드 1), 시드 4는 300명이 480초 한도 끝에서 증명).
+- 상대 영향(claude-a): 생성기 `lifecycle` 모양은 읽기만 한다 -- 칸을 바꾸면 `api/lifecycle.lifecycle_of`도 맞춘다. 신규 사업 편집이 manifest `lifecycle`의 그 사업 항목을 고치거나 지운다(기록이 있는 사업만).
+  참고: `rehearsal/results/time-budget-full.json`의 note·env가 "생성기 v3 · 1135841"로 남아 있으나 숫자는 v4 재측정(26.2/55.5/65.8초) -- 네 파일이라 두었다. 기준선 1989·웹 253.
+- 검증: `uv run --group benchmark pytest -q` 1989 passed·1 skipped·20 deselected, `-m slow` 아래 커밋 기록, 웹 tsc·253 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 대본 D5~D7 + 연간): K=0~3 품질 66.58/67.74/68.71/69.31·빈자리 0, J007 고도화 → 권다현, J004 김재훈, J015 권다현 동시 수행, 연간 J021 "24.2~28.10월 · 계획 안 26.10~27.9월", 콘솔 오류 0 -- 대본 숫자와 같음.
+  리뷰: Codex(한도 회복) adversarial gpt-6.1-sol 2라운드 모두 approve(지적 없음) → **Stop 리뷰 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-lifecycle-display.md`(로컬)
+
+---
+
 ## 2026-10-19 · claude-a · 생성기 v4: 사업 수명 주기 섞기(b 요청 6번) · 권장 계산 시간 60·90·120초 · 시연 데이터·숫자 다시
 - 브랜치/커밋: `feat/claude-a-fulltime-redesign` `02d3989`(단순 규칙 100%·이어서 투입·미리 허용자 긴급 지원 힌트) · v4 커밋(이 항목과 함께). main 미병합(사용자 승인 대기).
 - 사용자 원문(b 요청 6번): "24년에 시작해서 아직 진행중인 플젝 … 26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)", "26년 상반기에 시작된것도 … 25년에 했는데 추가로 고도화 과제가 떠서 하고있는것도".
