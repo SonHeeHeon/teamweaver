@@ -26,15 +26,15 @@ def _confirm(c, *, source: str, situation: str) -> str:
 
 
 def test_emergency_situation_prefills_the_review_memo_and_never_reaches_the_ai(yearend, monkeypatch):
-    from api import deps
     from api.main import app
     calls = []
 
-    def fake_generate(client, model, inp, **kw):
+    def fake_summary(client, model, inp, **kw):          # 검토 자료 초안은 요약(2026-10-20) -- 재료(inp)만 본다
         calls.append(inp)
-        return {"project_id": inp.project_id, "method": "graphrag", "text": "AI 초안.", "facts": [], "addendum": None}
-    monkeypatch.setattr("api.rag.justification.generate_justification", fake_generate)
-    app.dependency_overrides[deps.get_openai_client_or_none] = lambda: SimpleNamespace()
+        return {"summary": None, "summary_method": None}
+    monkeypatch.setattr("api.rag.justification.generate_summary", fake_summary)
+    from api.routes import review_docs as rd       # 라우트가 쥔 의존성 함수(api.deps를 다시 불러온 시험이 있어도 맞게)
+    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
     try:
         with TestClient(app) as c:
             v = _confirm(c, source="emergency", situation=f"  {SITUATION}  ")

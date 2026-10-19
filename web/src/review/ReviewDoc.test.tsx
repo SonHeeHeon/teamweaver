@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ReviewDoc, sentences } from "./ReviewDoc";
+import { fallbackLabel } from "./reviewApi";
 import type { ReviewDocView } from "./reviewApi";
 
 const LOSS = { key: "k-loss", kind: "MOVE_LOSS", text: "J010 사업: 점수 3.00 → 2.40, 요구 기술 Java 충족 2→1명(필요 2명)",
@@ -27,6 +28,15 @@ const DOC: ReviewDocView = {
 };
 
 describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
+  it("규칙 요약으로 바뀐 까닭을 나눠 말한다(대체 리뷰 S3)", () => {
+    expect(fallbackLabel("graphrag", null)).toBe("AI 요약");
+    expect(fallbackLabel("rule", "no_client")).toBe("규칙 요약(AI 없이)");
+    expect(fallbackLabel("rule", "ai_busy")).toBe("규칙 요약(AI가 다른 글을 쓰는 중이라)");
+    expect(fallbackLabel("rule", "verify:S2")).toBe("규칙 요약(AI 요약이 검사에 걸려)");
+    expect(fallbackLabel("rule", "llm_error:APITimeoutError")).toBe("규칙 요약(AI 호출이 실패해)");
+    expect(fallbackLabel(null, "verify:Y3")).toBe("요약 없음(AI 요약이 검사에 걸려) -- 규칙 본문");
+  });
+
   it("문장 나누기", () => {
     expect(sentences("가. 나! 다?\n라")).toEqual(["가.", "나!", "다?", "라"]);
   });
@@ -40,6 +50,21 @@ describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
     expect(screen.queryByRole("button", { name: "저장" })).not.toBeInTheDocument();
     expect(screen.getByText(/근거 사실이 바뀐 해명·이의/)).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();      // 인쇄: 입력 칸 없음
+  });
+
+  it("AI 요약의 사실 검사 기록을 본문 아래에 보인다(2026-10-20 사용자 요청 6번)", () => {
+    const check = { ok: true, method: "graphrag", fallback_reason: null, facts_total: 12,
+                    rules: "S1 없는 사실 · S2 허용 밖 말 · 3문장 이하 · 근거 2~4개 · 불리한 사실 포함",
+                    cited: [{ id: "F1", text: "J014 요구 기술 Spring 충족", adverse: false },
+                            { id: "F7", text: "한지우 Kafka 경력 부족", adverse: true }] };
+    render(<ReviewDoc doc={{ ...DOC, body_ai_check: check }} editable={false} />);
+    expect(screen.getByText("✓ AI 초안 사실 검사 통과")).toBeInTheDocument();
+    expect(screen.getByText(/부서장이 고친 문장은 검사 대상이 아님/)).toBeInTheDocument();          // DOC는 본문을 고쳤다
+    expect(screen.getByText(/AI 요약 · 인용한 사실 2개\(이 사업 사실 12개 중\)/)).toBeInTheDocument();
+    expect(screen.getByText(/한지우 Kafka 경력 부족/)).toBeInTheDocument();
+    expect(screen.getByText("(불리한 사실)")).toBeInTheDocument();
+    render(<ReviewDoc doc={{ ...DOC, body_ai_check: { ...check, method: "rule", fallback_reason: "verify:S2" } }} editable={false} />);
+    expect(screen.getByText(/규칙 요약\(AI 요약이 검사에 걸려\)/)).toBeInTheDocument();
   });
 
   it("해명을 달고 판단·합의를 적어 저장하면 편집만 보낸다(사실은 보내지 않는다)", async () => {

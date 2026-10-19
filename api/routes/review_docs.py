@@ -226,7 +226,7 @@ def edit_review_doc(version: str, project_id: str, body: EditIn, request: Reques
 
 
 def _draft(request: Request, version: str, project_id: str, client, force: bool) -> dict:
-    from api.routes.justification import AI_SLOTS, _client_with_timeout, build_input, justify_one
+    from api.routes.justification import AI_SLOTS, _client_with_timeout, build_input
     from api.routes.workspace import dataset_params
     from core.kg.justify import focus_input
     from core.scoring.engine import ScoringEngine
@@ -250,20 +250,66 @@ def _draft(request: Request, version: str, project_id: str, client, force: bool)
         inp = focus_input(inp, {j["person_id"] for j in doc["moves"]["joined"]})
     use_ai = client is not None and AI_SLOTS.acquire(blocking=False)
     try:
-        out = justify_one(dataset, kg, project_id, after, dataset.graph, S, C, params,
-                          _client_with_timeout(client) if use_ai else None, ai=bool(use_ai), inp=inp)
+        summary = draft_summary(dataset, inp, _client_with_timeout(client) if use_ai else None,
+                                busy=client is not None and not use_ai)
+        out = None if summary["text"] else _rule_body(dataset, inp)
     finally:
         if use_ai:
             AI_SLOTS.release()
 
     def apply(d: dict) -> None:
-        # 응답 글은 이미 표시 이름으로 바뀌어 있다(justify_one) -- 부서장이 고치는 본문과 같은 꼴로 저장한다
-        text = out.get("text") or ""
-        d["body_ai"], d["body_ai_method"] = text, out.get("method")
-        if out.get("addendum"):
-            d["body_ai_addendum"] = out["addendum"]
+        # 응답 글은 표시 이름으로 바꿔 저장한다 -- 부서장이 고치는 본문과 같은 꼴
+        if summary["text"]:
+            d["body_ai"], d["body_ai_method"], d["body_ai_check"] = summary["text"], summary["method"], summary["check"]
+            d.pop("body_ai_addendum", None)
+        else:                               # 요약을 만들 사실이 모자라면(규칙 요약도 검사에 걸림) 예전 규칙 본문 -- 요약 실패 사유는 남긴다
+            d["body_ai"], d["body_ai_method"] = out.get("text") or "", out.get("method")
+            d["body_ai_check"] = summary["check"]
+            if out.get("addendum"):
+                d["body_ai_addendum"] = out["addendum"]
         d["revision"] += 1
     return store.update(version, project_id, apply)
+
+
+def _rule_body(dataset, inp) -> dict:
+    """요약을 만들 수 없을 때의 예전 규칙 본문(AI 없음, 요약을 다시 부르지 않는다)."""
+    from api.rag.justification import generate_justification
+    from api.routes.justification import ai_model, apply_names, display_names, public_view
+    return apply_names(public_view(generate_justification(None, ai_model(), inp)), display_names(dataset))
+
+
+CHECK_RULES = "S1 없는 사실 · S2 허용 밖 말 · 3문장 이하 · 근거 2~4개 · 불리한 사실 포함"
+
+
+def draft_summary(dataset, inp, client, *, busy: bool = False) -> dict:
+    """검토 자료 AI 초안 = 짧은 요약 + 사실 검사(2026-10-20 사용자 "간단 명료하게 요약하여 제공하되 사실 외 정보를 쓰면 안되고 요약 작성된걸 다시
+    사실에 근거한 정보만 있는지 검토하는 프로세스까지"). What-if 소명 요약과 같은 코드(claude-a `api.rag.justification.generate_summary`):
+    AI는 사실 번호 {F#}와 정해진 연결 말만 쓰고 숫자·충족 여부 문구는 서버가 채운다. 생성 단계에서 `verify_summary`가 문장마다 검사해 걸리면
+    규칙 요약으로 바꾼다(거르기). 저장 전에 **저장할 글 자체**를 다시 확인한다(기록): 검사를 통과한 원문을 다시 채우면 저장 글과 똑같은지,
+    채운 글에 자리표시가 남거나 근거 칩 수가 다르지 않은지(`render_ok`), 원문이 검사를 통과하는지 -- 셋 다 맞아야 ok(대체 리뷰 S1).
+    긴 본문은 부르지 않는다(AI 한 번). busy = AI 자리가 없어 AI 없이 만든 경우(사유 ai_busy).
+    반환: {text(표시 이름) 또는 None, method: graphrag|rule|None, check: 검사 기록}."""
+    from api.rag.justification import generate_summary
+    from api.routes.justification import ai_model, display_names, with_names
+    from core.kg.justify import render, render_ok, rule_summary_raw, verify_summary
+    out = generate_summary(client, ai_model(), inp)
+    reason = "ai_busy" if busy and out.get("summary_fallback_reason") == "no_client" else out.get("summary_fallback_reason")
+    facts = {f.id: f for f in inp.facts}
+    names = display_names(dataset)
+    check = {"ok": False, "method": out.get("summary_method"), "fallback_reason": reason, "cited": [],
+             "facts_total": len(inp.facts), "rules": CHECK_RULES}
+    text = out.get("summary")
+    if not text:                                          # 규칙 요약도 검사를 통과하지 못했다(사실이 모자람 등) -- 사유만 남긴다
+        return {"text": None, "method": None, "check": check}
+    raw = out.get("summary_raw") or rule_summary_raw(inp) or ""
+    ver = verify_summary(raw, inp)
+    same = render(raw, inp) == text and render_ok(raw, text)          # 검사한 원문이 저장할 글을 만든 원문인가
+    check.update(ok=bool(ver["ok"] and same),
+                 cited=[{"id": fid, "text": with_names(facts[fid].text, names), "adverse": facts[fid].adverse}
+                        for fid in ver["cited"] if fid in facts])
+    if not check["ok"]:                                   # 저장할 글이 검사와 맞지 않으면 쓰지 않는다
+        return {"text": None, "method": None, "check": {**check, "fallback_reason": "recheck_failed"}}   # 재확인 실패가 먼저(리뷰 NIT)
+    return {"text": with_names(text, names), "method": out.get("summary_method"), "check": check}
 
 
 @router.post("/api/review-docs/{version}/{project_id}/draft", dependencies=[Depends(require_admin)])
