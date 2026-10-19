@@ -190,6 +190,16 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   (Codex 종료 리뷰 -- 이중 계산·옛 경력 되살림). **늘리는 규칙을 바꾸면 `AGING_RULES`를 바꾸고 미리 계산 버전을 옮긴다**(시연은 늘어난 달 0이라 `rekeyed`).
   manifest `skill_months_owner`="source"면 늘리지 않는다(설정 화면 "데이터 원천"에서 관리자가 바꿈 → 새 판). 규칙 표지 `aging.AGING_RULES`가 계산 버전에 들어간다.
   계획 기간 안에서 달마다 올리지는 않는다. 시연 묶음은 `as_of` = 계획 직전 달·경력이 그 달까지 세어져 늘어나는 달 0(숫자 그대로, 미리 계산은 버전만 옮김).
+- **What-if 대시보드 정리·화면 친절하게**(2026-10-20 사용자 점검, claude-a -- b 영역 포함, 설계 `.omc/plan/2026-10-20-ui-friendly.md`):
+  배치 명단은 사업 카드(머리 한 줄 + 이름표 줄, 2~3열, 정렬·사람 찾기, 100%는 숨김, 이름표를 누르면 기술 창 -- `AssignmentTable`). 사업 코드는 코드 그대로 + 마우스를 올리면 이름(`ui.ProjectCode`·`PersonName.ProjectCodes`).
+  **교체 검토 데려오기·맞바꾸기**: `SwapIn.in_from_project_id`(그 사업에서 뺌)·`exchange`(나간 사람이 그 자리로) -- `whatif._swapped_entries` 한 곳이 whatif·적용·저장 재생·PDF 재생을 모두 맡고,
+  기본값 칸은 저장 모양에 나오지 않는다(예전 교체 서명 그대로). 원래 사업의 빈자리는 서버가 위험 항목 맨 앞에 정해진 문장으로 붙인다(`source_loss_notes` -- AI 지시문은 안 바꿈).
+  AI 설명에 넘기는 점수 변화는 소수 둘째 자리로 반올림한다. 끌어 놓기는 섹션 밖으로 못 나가고(DragOverlay + 경계 modifier) 못 놓는 칸이면 이유를 띄운다.
+  오른쪽 협업 관계망은 **팀원과의 관계 목록**(`TeamRelations`)으로 바꿨다 -- `/api/meta` coworks `review`(두 사람 평가 극성)는 **가상 데이터만**(`build_meta(reveal_reviews=)`, 실데이터 K5).
+  **인사팀 소명 요약**(`core/kg/justify.verify_summary`·`rule_summary_raw`, `api/rag/justification.generate_summary`): 본문과 같은 자리표시 문법·검사 + 맺음말 빼고 3문장·자리표시 2~4개·불리한 사실 하나 이상(Y1~Y4),
+  걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
+  요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
+  단순 규칙 비교는 탭이 보일 때 저절로 계산(`BaselineCard active`), PDF 소명 포함은 내려받을 때 창으로 묻는다(하위 탭 옆 체크박스 없앰).
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -204,7 +214,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 인사 시스템 API 받기(claude-a) + 부서장 점검 작은 것 4건(claude-b `feat/claude-b-walk-fixes`) 병합 **2038 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 264 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 What-if 정리·화면 친절하게(claude-a, b 점검 수정 병합 위) **2049 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 275 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
