@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n100-yearend",
  "dataset_id": "org-n100-s2026-yearend",
- "dataset_version": "ecf34d85c99158542ad5d69f443eb3a0181fddc883c8c9aa15bf5f2048ec788e",
+ "dataset_version": "a34090c7a4191c64dfcd2958b71890f82e85f1749e3d79977862e19eea4c27eb",
  "review_judge": "llm",
  "computed_at": "2026-10-19T10:25:16+00:00",
  "commit": "ce15782",
@@ -4899,5 +4899,10 @@
     }
    }
   ]
+ },
+ "rekeyed": {
+  "at": "2026-10-19T11:12:54+00:00",
+  "from_dataset_version": "ecf34d85c99158542ad5d69f443eb3a0181fddc883c8c9aa15bf5f2048ec788e",
+  "reason": "calculation version now includes the model rules marker (model:2026-10-19:full-time-1.0;familiar-exempt-current-teams); computed with these rules (same bundle, review judgments and rules as when computed) -- results were not re-solved, and the server still re-scores every plan on load"
  }
 }

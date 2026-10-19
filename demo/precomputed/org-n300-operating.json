@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n300-operating",
  "dataset_id": "org-n300-s2026-operating",
- "dataset_version": "34386e5668e039ebb7d5fdd4720d2465c29e2c0b6e3ed7d4824e1cd364eb1162",
+ "dataset_version": "b71b053ff31905496082bb76c4c9f23e3b3f6ab81c9108174f6bff3ad033a9eb",
  "review_judge": "llm",
  "computed_at": "2026-10-19T10:34:44+00:00",
  "commit": "ce15782",
@@ -13973,5 +13973,10 @@
     }
    }
   ]
+ },
+ "rekeyed": {
+  "at": "2026-10-19T11:12:56+00:00",
+  "from_dataset_version": "34386e5668e039ebb7d5fdd4720d2465c29e2c0b6e3ed7d4824e1cd364eb1162",
+  "reason": "calculation version now includes the model rules marker (model:2026-10-19:full-time-1.0;familiar-exempt-current-teams); computed with these rules (same bundle, review judgments and rules as when computed) -- results were not re-solved, and the server still re-scores every plan on load"
  }
 }

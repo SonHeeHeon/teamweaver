@@ -322,6 +322,12 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int,
     return result
 
 
+# 목적·제약 규칙 표지 -- 계산 버전(api/datasets.rules_version)에 들어간다. 규칙을 바꾸면 올린다: 같은 원천이라도 예전 규칙으로 푼
+# 결과(야간 결과·결과 캐시·미리 계산)가 새 규칙의 "최선 증명"으로 다시 쓰이지 않게(Codex Stop 리뷰 2026-10-19: 감점 예외를 넣고 올리지
+# 않아 예전 해 1.8이 새 최적 1.9 대신 Optimal·상한 1.8로 복원됐다).
+OBJECTIVE_RULES = "2026-10-19:full-time-1.0;familiar-exempt-current-teams"
+
+
 def familiar_exempt(graph: MemoryGraph) -> frozenset:
     """익숙한 쌍 감점에서 빼는 (p, q, 사업): 지금 그 사업에 함께 있는 두 사람(그 사업에 계속 있을 때만 -- 다른 사업에 함께 넣으면 감점).
     2026-10-19 사용자 결정. 독립 검증기·Phase 0 오라클은 graph.current_teams를 직접 읽는다(같은 원자료)."""

@@ -561,3 +561,13 @@ def test_calculation_version_follows_the_skill_dictionary_but_content_version_do
     monkeypatch.setattr(skills, "load_dictionary", lambda path=None: SimpleNamespace(version=real.version, narrower_credit=0.5))
     c = rules_version("abc")
     assert len({a, b, c}) == 3 and rules_version("abd") != a
+
+
+def test_calculation_version_follows_the_model_rules(monkeypatch):
+    """Codex Stop 리뷰(2026-10-19): 감점 예외처럼 목적·제약 규칙이 바뀌면 같은 원천이라도 계산 버전이 달라져야 한다 -- 아니면 예전 규칙으로
+    푼 야간 결과·캐시가 새 규칙의 Optimal·상한으로 복원됐다."""
+    import core.optimize.milp as milp
+    from api.datasets import rules_version
+    a = rules_version("abc")
+    monkeypatch.setattr(milp, "OBJECTIVE_RULES", milp.OBJECTIVE_RULES + ";next")
+    assert rules_version("abc") != a

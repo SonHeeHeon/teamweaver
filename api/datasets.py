@@ -162,10 +162,13 @@ def dir_version(root: Path, names: list[str] | None = None) -> str:
 
 
 def rules_version(content: str) -> str:
-    """원천 파일 해시 + 입력 단계 규칙(core.ingest.skills 사전 버전·인정 비율) → 계산 버전."""
+    """원천 파일 해시 + 입력 단계 규칙(core.ingest.skills 사전 버전·인정 비율) + 계산 규칙 표지(milp.OBJECTIVE_RULES) → 계산 버전.
+    규칙 표지가 바뀌면 같은 원천이라도 버전이 달라져 캐시·미리 계산·야간 결과가 예전 규칙의 증명으로 쓰이지 않는다(2026-10-19)."""
     from core.ingest.skills import load_dictionary
+    from core.optimize.milp import OBJECTIVE_RULES
     d = load_dictionary()
-    return hashlib.sha256(f"{content}|skills:{d.version}|credit:{d.narrower_credit}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{content}|skills:{d.version}|credit:{d.narrower_credit}|model:{OBJECTIVE_RULES}"
+                          .encode("utf-8")).hexdigest()
 
 
 def bundle_version(root: Path) -> str:
