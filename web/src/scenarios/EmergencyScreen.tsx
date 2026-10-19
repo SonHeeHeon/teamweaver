@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import {
-  fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
+  currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
   withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
 } from "./workspaceApi";
 
@@ -42,6 +42,8 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
   const [group, setGroup] = useState<Group>("bench");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // 프로젝트 동시 수행으로 지원(2026-10-19 사용자 결정): 원래 사업은 그대로 두고 이 사업에도 100% -- 확정이 허용(사유 "긴급 지원")을 함께 적는다
+  const [support, setSupport] = useState<CandidateRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -65,6 +67,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
     setPlan(null);
     setStandby(null);
     setConfirming(false);
+    setSupport(null);                            // 옛 결과의 동시 수행 지원 대화창이 다시 뜨지 않게(폴백 리뷰 P3)
     setBusy(false);                              // 진행 중이던 검색은 버렸다 -- "찾는 중"에 멈추지 않게(대체 리뷰 MUST)
     if (!ws || !projectId) return;
     let live = true;
@@ -121,6 +124,36 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
     } finally {
       setBusy(false);
       setConfirming(false);
+    }
+  }
+
+  async function applySupport(row: CandidateRow) {
+    // 지금 결과의 후보인지(옛 결과·다른 사업의 행이 아닌지) 확인한다(폴백 리뷰 P3)
+    if (!ws || !plan || plan.dataset_version !== ws.dataset_version || plan.project_id !== projectId
+        || !plan.candidates.spare.some((r) => r.person_id === row.person_id) || !row.apply_hint) {
+      setSupport(null);
+      return;
+    }
+    setBusy(true);
+    try {
+      const pid = plan.project_id;
+      const res = await postApply(ws.dataset_version, {
+        entries: [...currentEntries(ws), { person_id: row.person_id, project_id: pid, alloc: 1 }], source: "emergency",
+        note: `${pid} 긴급 투입(프로젝트 동시 수행 지원)${note ? `: ${note}` : ""}`,
+        ...row.apply_hint,                      // 서버가 이 사람으로 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술)
+        concurrency_add: [{ person_id: row.person_id, memo: note || `${pid} 긴급 투입` }],
+      });
+      setWs(res.workspace);
+      setConfirmed({ version: res.workspace.dataset_version, projectId: pid, seen: datasetVersion ?? null });
+      setPlan(null);
+      setNotice(withPersistNote(`${row.name}이(가) 원래 사업은 그대로 두고 ${project?.name ?? pid}도 함께 맡는다(프로젝트 동시 수행, 사유 긴급 지원).`, res));
+      onDatasetChanged();
+    } catch (e) {
+      setError((e as Error).message);
+      if (isDatasetChanged(e)) { setPlan(null); reloadWorkspace(); onDatasetChanged(); }
+    } finally {
+      setBusy(false);
+      setSupport(null);
     }
   }
 
@@ -235,7 +268,9 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                   </>
                 )}
                 <Tabs label="후보 갈래" value={group} onChange={setGroup}
-                      items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${GROUP_LABEL[g]} ${plan.candidates[g].length}`])} />
+                      items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${
+                        g === "spare" && plan.candidates.spare.some((r) => r.source === "concurrent") ? "동시 수행으로 지원" : GROUP_LABEL[g]
+                      } ${plan.candidates[g].length}`])} />
                 {rows.length === 0 ? <p className="text-slate-500">이 갈래에는 후보가 없습니다.</p> : (
                   <table className="w-full">
                     <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th><th className="text-right">투입률</th>
@@ -247,7 +282,13 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                           <td className="num text-right">{Math.round(r.alloc * 100)}%</td>
                           <td className="num text-right">{fmt(r.delta_total)}</td>
                           <td className="text-xs text-slate-500">{r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : ""}
-                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}</td>
+                            {r.source === "concurrent" && <span>원래 사업 유지{r.needs_grant ? " · 허용 필요" : ""}</span>}
+                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
+                            {r.source === "concurrent" && r.new_violations.length === 0 && r.apply_hint && (
+                              <button type="button" className="ml-2 rounded border border-violet-300 px-1.5 py-0.5 text-violet-800"
+                                      aria-label={`${r.name} 동시 수행으로 지원`}
+                                      disabled={busy} onClick={() => setSupport(r)}>동시 수행으로 지원</button>
+                            )}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -263,6 +304,19 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
         <ActionBar note="확정하면 지금 배치가 바뀐 새 판이 됩니다(변경 이력에서 되돌릴 수 있음).">
           <button className="btn-primary" disabled={busy} onClick={() => setConfirming(true)}>이 조합 확정</button>
         </ActionBar>
+      )}
+      {support && plan && (
+        <Dialog title={`${project?.name ?? projectId} — 프로젝트 동시 수행으로 지원`} actions={<>
+          <button className="btn-ghost" onClick={() => setSupport(null)} disabled={busy}>취소</button>
+          <button className="btn-primary" disabled={busy} onClick={() => void applySupport(support)}>{busy ? "처리 중…" : "확정"}</button>
+        </>}>
+          {support.name}은(는) 지금 사업을 그대로 하면서 이 사업도 사업 끝까지 100%로 맡습니다(두 사업 모두 100%, 예산도 각각 전액).
+          {support.needs_grant ? " 확정하면 이 사람에게 프로젝트 동시 수행 허용(사유: 긴급 지원)이 함께 기록됩니다." : ""}
+          {support.apply_hint && (Object.keys(support.apply_hint.headcount_add).length > 0 || Object.keys(support.apply_hint.budget_add).length > 0)
+            ? <> 확정하면 사업 정원{Object.values(support.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
+                {Object.values(support.apply_hint.budget_add).map((b) => ` · 월 예산 +${b.toLocaleString()}`)}이(가) 함께 늘어납니다.</>
+            : " 지금 정원·예산 안에서 들어갑니다."}
+        </Dialog>
       )}
       {confirming && plan && (
         <Dialog title={`${project?.name ?? projectId} 긴급 투입 확정`} actions={<>

@@ -56,7 +56,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   고치고 Phase 0 검증(`uv run --group benchmark python -m experiments.bench.phase0_model`)을 다시 돌려야 한다.
 - **전일 투입 `allocation_mode="full"`**(2026-10-19 사용자 결정, claude-a 설계 `.omc/plan/2026-10-19-concurrency.md`): 투입률 변수 없음(a = z, 100%),
   사업 기간 가용률 1.0인 사람만 자격(`milp.full_eligible`, 문턱 `FULL_TIME_MIN_AVAILABILITY` -- 검증기·오라클은 같은 값을 따로 적는다), 같은 달 사업 수 ≤ `Person.max_concurrent`
-  (기본 1, 부서장이 사람 단위로 허용한 **프로젝트 동시 수행**만 2~3, 사업마다 예산 전액). 용어는 "동시 수행" -- 회사 겸직 금지 조항 때문에 그 단어를 쓰지 않는다(사용자 지시).
+  (기본 1, 부서장이 사람 단위로 허용한 **프로젝트 동시 수행**만 2~3, 사업마다 예산 전액). 용어는 "프로젝트 동시 수행"(동시 수행)으로 통일한다(사용자 지시 2026-10-19 -- 회사 규정상 다른 이름을 쓰지 않는다).
   예전 fixed·monthly는 그대로(시험·옛 기록). full에서만 탐욕 초기해(`greedy.warm_start_full` → HiGHS `setSolution`), C1 보정은 건너뛴다.
 - **HiGHS 경계 잔차**: HiGHS는 z=1.0000000000000007 같은 값을 돌려주고, 독립 검증기(C0)는 범위를 조금이라도
   넘으면 거절한다. `milp._snap_bounds`가 1e-9 안쪽 잔차만 경계로 옮긴다(원본은 native_capture에 보존).
@@ -79,7 +79,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 동시 수행자 한 명이 2로 셌다).
   **추가 제약 콜백이 새 변수를 만들면 정수형(0/1)만** 쓴다: `milp`가 그 풀이 값을 고정해 `numerics.project_additive_constraints`에 넘겨야
   C1 보정·추가 행 독립 검증이 켜진다. 연속 보조 변수나 기존 변수를 바꾸면 "모델 변형"으로 보정·검증이 조용히 꺼진다(실측: 추가 행 0개).
-  시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
+  시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(생성기 v3: 87명 배치 중·대기 10명·육아휴직 3명·신규 제안 2), 같은 사람.
   생성기 v2(2026-10-11): 가상 이름(`core/ingest/names.py`, ID별 고정·중복 없음), 아쉬운 점 항목마다 문장·직설형 평가자 8%·어긋난 글 5%(manifest `review_style`) --
   고른 항목의 난수열은 그대로라 글만 바뀐다. 글을 바꾸면 `python -m rehearsal.make_demo`(+`make_broken_demo`) → 판정·미리 계산·판정 동봉을 한 데이터 폴더에서 이어서 만든다.
   운영 중 묶음을 "전부 다시 짜기"(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남는다(정원·예산이 현재 명단에 맞춰짐) -- K 비교로 쓴다.
@@ -143,10 +143,17 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   있는지 본다 -- 기간은 저장 필드가 아니라 가용률 길이(`Dataset.horizon_months`)라 기존 데이터 버전·캐시 키는 그대로. manifest `horizon_months` 6|12, 계산 모델은 원래 달 수 일반형.
   연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`: org-n100과 같은 사람·평가 글, 상반기 사업 그대로 + 하반기 신규 사업, 휴직 가정 가용률, 현재 배치 없음 = 밤 배치 연간 계획 대상).
   화면 달 표시는 `/api/meta`의 `horizon_start`로 실제 달("27.4월", `allocFormat.monthLabel`) -- 12개월에서 순번 "1~12월"은 달력 달처럼 읽힌다.
-- **가용률 휴직·휴가 가정은 연간 묶음에만**(2026-10-19 사용자 가정 "대부분 100%, 3%는 1년 육아휴직(해를 걸침), 2%는 한 달 휴가(사업이 자체 감당)", `scripts/make_annual_demo.leave_windows`):
-  연초 계획 묶음(생성기 무작위 가용률, 0%가 사람·달마다 10%)에 넣어 보니 겸직이 폭증하고(100명 안 A 158건) 30초 안 A가 빈자리를 남겼다 -- 겸직을 막으면 사업 등급 정원이 사람 수에 안 맞는다.
-  가용률·겸직 3%·사업 정원 재설계는 claude-a 요청(`docs/requests/2026-10-19-availability-redesign.md`, 실측표). **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`,
-  연간 100명 30초: 빈자리 62항목, 120초: 0) -- `to_milp_params(n_people, months=)`에 계획 기간을 넘긴다.
+- **생성기 v3 = 휴직·휴가 가정 + 등급별 정원 + 전일 비용 예산**(2026-10-19 사용자 가정·결정, claude-a 재설계 -- b 요청 `docs/requests/2026-10-19-availability-redesign.md`, 설계 루트 `.omc/plan/2026-10-19-concurrency.md`):
+  가용률은 **모든 묶음**(연초·운영 중·연말형·연간)이 같은 창 -- `core/ingest/leave.py`(대부분 100%, 3% 육아휴직 12개월 해를 걸침 → 그 달 0, 2% 한 달 휴가는 가용률 그대로·manifest `leave`에만).
+  사업 정원은 등급·달마다 (가용률 1.0인 그 등급 인원)의 85% 이하(`org_profile.shrink_to_supply` -- 예전 전체 85%는 등급을 안 봐 쪼개 넣어야 채워졌다), 예산 = 기준 단가 × 정원 × 1.0~1.25(`budget_of`),
+  연초 현재 배치 100%·겹침 없음, 운영 중은 휴직 달이 걸린 사람을 진행 사업·대기에서 빼고 신규 제안 정원 = 대기 인력의 등급 구성(한 명 여유).
+  **사람·이력·평가 글 난수열은 그대로**라 판정 동봉이 그대로 쓰인다(`export_demo_judgments.py --check`). 연간·연말형 도구(`scripts/make_{annual,yearend}_demo.py`)가 같은 함수를 쓴다.
+  v3 사업 번호: 운영 중·연말형 신규 제안 J013(제안)·J014(예정), 연말형 끝나는 사업 J005·J006·J008·J009. **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`.
+  전일 투입 권장표 `time_budget.MEASURED_FULL`(100/200/300명 18/48/58초에 최선 증명, `rehearsal/results/time-budget-full.json`).
+- **프로젝트 동시 수행 허용**(2026-10-19 사용자 결정 "사람 단위로, 사유와 함께"): manifest `concurrency`(`core/ingest/concurrency.py` 검사 → `Person.max_concurrent`),
+  `POST /api/workspace/concurrency`(사유 필수 · 지금 겹침보다 낮게 다시 걸기·허용 없는 해제는 거절), 확정 `concurrency_add`(긴급 투입 "동시 수행으로 지원" -- 같은 판, 되돌리면 함께),
+  `POST /api/concurrency/candidates`(빈자리마다 허용 후보, 다시 풀지 않음), 긴급 투입 `rank_candidates(offer_concurrency=True)`는 **허용이 필요한 후보만** 따로(섞으면 빼 오기·대기 후보가 밀려났다),
+  검토 자료 사실 `MOVE_CONCURRENT`. 시연 데이터는 허용 0명. 예전 실험(experiments/jev·c6)은 fixed로 고정.
 - **투입 불가 인력 표시**(2026-10-19 사용자 지시, `api/unavailable.py`·`web/src/components/availability.ts`·`scenarios/UnavailableList`): 사업 기간에 가용률 0인 달(육아휴직 등)이 있으면
   교체 검토·신규 사업 후보·긴급 투입에서 **보이되 고를 수 없게**, 사유를 빨간 글씨로("육아휴직 — 27.4~27.7월 투입 불가"). 계산(MILP·평가기·보강 계산)은 원래 달마다 가용률을 지킨다 -- 화면 표시만 더했다.
   `/api/meta` 사람에 `availability`·`leave`, 후보·긴급 응답에 `unavailable`.
@@ -164,7 +171,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 계획 기간 1년·투입 불가 표시(claude-b) **1922 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 237 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 전일 투입·동시 수행·생성기 v3(claude-a, b `c150f84` 위) **1960 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 242 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

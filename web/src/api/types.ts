@@ -11,6 +11,9 @@ export interface Person {
   /** 계획 달마다 가용률(0~1)과 휴직 정보(2026-10-19). 0인 달이 걸린 사업에는 넣을 수 없다(components/availability). */
   availability?: number[];
   leave?: { kind: string; start: string; months: number } | null;
+  /** 프로젝트 동시 수행(2026-10-19): 같은 달 최대 사업 수(1 = 동시 수행 없음)와 부서장의 허용 기록 */
+  max_concurrent?: number;
+  concurrency?: { reason: string; memo?: string; granted_at?: string; max_projects?: number } | null;
 }
 
 export interface Project {
@@ -261,8 +264,8 @@ export interface PlacementSettings {
   gap: number;
   /** 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6). */
   max_concurrent_projects: number;
-  /** 투입률 방식: fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
-  allocation_mode: "fixed" | "monthly";
+  /** 투입 방식: full = 전일 투입(들어가면 100%, 2026-10-19 서비스 기본), fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
+  allocation_mode: "full" | "fixed" | "monthly";
   /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
   time_limit_auto?: boolean;
   /** 동시 탐색 수(서버 자원). null = 서버 기본(환경 변수, 없으면 1). 요청 계산에는 쓰이지 않고 저장값만 서버에 반영된다. */
@@ -285,6 +288,7 @@ export interface SettingsResponse {
   recommended_time?: TimeHint | null;
   /** 월별 투입률 기준 권장 시간(더 길다). */
   recommended_time_monthly?: TimeHint | null;
+  recommended_time_full?: TimeHint | null;
   /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
   effective_time_limit?: number | null;
   /** 지금 계산이 쓰는 동시 탐색 수. */

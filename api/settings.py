@@ -44,8 +44,9 @@ _REMOVED_FIELDS = ("review_judge",)
 TIME_LIMIT_MAX = 900
 
 # 12개월 계획의 권장 시간 배수(2026-10-19 claude-b 실측, 시드 4, 연간 시연 100명 -- 대부분 100% 가용): 30초면 안 A가
-# 빈자리 62항목(쓸 만한 해를 못 찾음), 120초면 0. 권장표(core/optimize/time_budget, 10-05 6개월 측정)에 곱한다.
-# 200·300명 12개월은 재지 않았다(4배는 측정 범위 밖 추정) -- 재설계 뒤 다시 잰다(docs/requests/2026-10-19-availability-redesign.md).
+# 빈자리 62항목(쓸 만한 해를 못 찾음), 120초면 0. 권장표(core/optimize/time_budget)에 곱한다.
+# 재설계 뒤(전일 투입·생성기 v3, claude-a 2026-10-19 rehearsal/results/time-budget-full.json): 연간 100명은 30초에도 빈자리 0, 최선 증명은
+# 시드 1 83초·시드 4 61초 -- 6개월 권장 30초 × 4 = 120초 안이라 배수를 그대로 둔다. 200·300명 12개월은 재지 않았다(측정 범위 밖 추정).
 HORIZON_TIME_FACTOR = {6: 1, 12: 4}
 
 
@@ -93,7 +94,9 @@ class PlacementSettings(BaseModel):
     # 투입률 방식(월별 투입률, 사용자 결정 2026-10-05). 기본 "fixed": 조직형 데이터 측정(outputs/c6-monthly-scale*.json)에서
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
-    allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # 2026-10-19 사용자 결정(전일 투입): 서비스 기본 "full" -- 들어가면 그 사업 기간 100%, 프로젝트 동시 수행은 부서장이 사람 단위로 허용한 사람만
+    # (Person.max_concurrent, 원천 manifest concurrency). full이면 최소 투입률·동시 프로젝트 최대 칸은 쓰지 않는다(예전 방식에서만).
+    allocation_mode: Literal["full", "fixed", "monthly"] = "full"
     # 동시 탐색 수(시드 포트폴리오): 같은 문제를 시드만 바꿔 동시에 푸는 프로세스 수 = 쓰는 CPU 코어 수.
     # None = 서버 기본(환경 변수 TEAMWEAVER_SOLVER_SEEDS, 없으면 1; 시연 run_poc.sh는 4). 권장 4(코어 4개 이상).
     # 실측(claude-a 2026-10-06, 100명 30초): 1이면 대안이 품질 하한에 걸려 안 A만, 4면 안 A~D 모두.

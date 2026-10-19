@@ -224,11 +224,20 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
                                   pull_budget=body.pull_budget, locked=locked)
             rows = rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=body.pull_budget > 0,
                                    top=20, locked=locked)
+            # 전일 투입이면 아직 허용되지 않은 사람의 "동시 수행으로 지원(원래 사업 유지)" 후보를 따로(needs_grant -- 확정 때 허용을 함께 적는다).
+            # 일반 후보와 한 목록에 섞지 않는다(폴백 리뷰 P2: 빼 오기·대기 후보가 밀려났다)
+            concurrent = (rank_candidates(graph, S, C, params, entries, body.project_id, top=10, locked=locked,
+                                          offer_concurrency=True) if params.allocation_mode == "full" else [])
+            # 행마다 확정할 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) -- 화면이 직접 정하면 빈자리가 남거나 예산이 이중으로 늘었다(폴백 리뷰 P2)
+            from core.optimize.types import AssignEntry
+            for r in concurrent:
+                after = entries + [AssignEntry(person_id=r["person_id"], project_id=body.project_id, alloc=r["alloc"])]
+                r["apply_hint"] = _apply_hint(graph, body.project_id, entries, after, extra, 1)
             standby = rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=False, top=5,
                                       locked=locked)
             hint = (_apply_hint(graph, body.project_id, entries, best["entries"], extra, body.n)
                     if best.get("accepted") else None)
-            return best, rows, standby, hint
+            return best, rows + concurrent, standby, hint
         finally:
             if cand is not None:
                 cand.retire()

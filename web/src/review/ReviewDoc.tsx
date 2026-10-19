@@ -237,7 +237,8 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
               <div className="font-semibold">
                 {name(j.person_id)} <span className="font-normal text-slate-500">({j.grade ?? "-"})</span>
                 <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] ${j.origin === "moved" ? "bg-amber-100 text-amber-800" : "bg-pine-100 text-pine-800"}`}>
-                  {j.origin === "moved" ? `${j.sources.map((s) => s.project_id).join("·")}에서 옮겨 옴` : ORIGIN_LABEL[j.origin]}
+                  {j.origin === "moved" ? `${j.sources.map((s) => s.project_id).join("·")}에서 옮겨 옴`
+                    : j.concurrency ? `프로젝트 동시 수행(${j.concurrency.reason})` : ORIGIN_LABEL[j.origin]}
                 </span>
               </div>
               {facts.map(factBlock)}

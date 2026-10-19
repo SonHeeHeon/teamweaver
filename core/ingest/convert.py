@@ -149,6 +149,8 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
         if a["month"] in month_index:
             avail[a["person_id"]][a["month"]] = a["available_mm"]
 
+    from core.ingest.concurrency import limits as concurrency_limits
+    concurrent = concurrency_limits(bundle.manifest)          # 부서장이 허용한 프로젝트 동시 수행(2026-10-19) -- 나머지는 1
     people = []
     for p in t["people.csv"]:
         rate = rates.get((p["career_grade"], p["role_type"]))
@@ -162,7 +164,8 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
             continue
         people.append(Person(id=p["person_id"], name=p["display_name"], grade=Grade(p["career_grade"]),
                              monthly_rate=rate, skills=skills[p["person_id"]], skill_credit=credits[p["person_id"]],
-                             availability=[avail[p["person_id"]][m] for m in bundle.horizon]))
+                             availability=[avail[p["person_id"]][m] for m in bundle.horizon],
+                             max_concurrent=concurrent.get(p["person_id"], 1)))
 
     grade_req = defaultdict(dict)
     for g in t["project_grade_requirements.csv"]:

@@ -41,6 +41,7 @@ import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
 import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
+import { ConcurrencyPanel } from "./scenarios/ConcurrencyPanel";
 import { NightlyBanner } from "./nightly/NightlyBanner";
 import { NightlyPanel } from "./nightly/NightlyPanel";
 
@@ -849,9 +850,21 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                            </label>
                          ) : undefined} />
                 <div className={subTab === "roster" ? "" : "hidden"}>
+                  {/* 전일 투입(2026-10-19 서비스 기본)은 투입률이 100%뿐이라 달별 조정이 없다 */}
                   <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
-                                   projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
+                                   projects={meta.projects}
+                                   onAdjust={planBasis?.params?.allocation_mode === "full" ? undefined : applyAllocChange}
+                                   busy={applyBusy}
                                    minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start} />
+                  {planBasis?.params?.allocation_mode === "full" && current.unfilled.length > 0 && (
+                    <div className="mt-4">
+                      <ConcurrencyPanel datasetVersion={planBasis.datasetVersion} entries={current.entries}
+                                        weights={planBasis.weights}
+                                        projectName={(id) => meta.projects.find((j) => j.id === id)?.name ?? id}
+                                        onGranted={(msg) => { void ownSwitch().then(() => setNotice(msg)); }}
+                                        onStale={() => void externalSwitch()} />
+                    </div>
+                  )}
                 </div>
                 <div className={subTab === "swap" ? "grid gap-5 lg:grid-cols-2" : "hidden"}>
                   <div className="space-y-5">

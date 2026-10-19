@@ -158,3 +158,17 @@ def test_full_time_threshold_is_the_same_in_model_validator_and_evaluator():
     assert all(e.person_id != "p0" for e in raw.plan.entries)
     forced = replace(raw, z=raw.z | {(0, 0): 1.0}, a=raw.a | {(0, 0): 1.0})
     assert "availability" in {i.code for i in validate_raw_solution(graph, S, C, FULL, forced).issues}
+
+
+def test_a_person_whose_project_ends_before_the_target_is_not_concurrent():
+    """폴백 리뷰 2라운드 P2: 기간이 겹치지 않는 다른 배치는 동시 수행이 아니다(그 기간엔 비어 있다)."""
+    from core.evaluate.staffing_sim import rank_candidates
+    graph, S, C = _fixture()
+    late = Project(id="j2", name="늦은 사업", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION, start_month=4, end_month=5,
+                   grade_headcount={Grade.MID: 1}, requirements=[SkillRequirement(skill="Python", min_level=1, headcount=1)],
+                   monthly_budget=10_000)
+    graph = _graph(list(graph.people), list(graph.projects) + [late])
+    S = np.hstack([S, np.full((4, 1), 0.5)])
+    entries = [AssignEntry(person_id="p0", project_id="j0", alloc=1.0)]
+    rows = {r["person_id"]: r for r in rank_candidates(graph, S, C, FULL, entries, "j2", top=None)}
+    assert rows["p0"]["source"] == "bench" and rows["p0"]["needs_grant"] is False

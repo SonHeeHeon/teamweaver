@@ -23,12 +23,19 @@ from pathlib import Path
 
 from core.ingest.contract import GRADES, HORIZON_MONTHS, SCHEMA_VERSION
 from core.ingest.convert import LOOKBACK_MONTHS
+from core.ingest.leave import available_mm, leave_seed, leave_windows, manifest_section
 from core.ingest.names import virtual_name
 from core.ingest.review_text import ORG_REVIEW_ITEMS, org_review_prose, positive_text
 from core.ingest.synthetic import (BASE_RATE, CONSULTING_PREMIUM, GRADE_WEIGHTS, _month_add, _month_end, _months,
                                    _review_rounds, _write_csv)
 
-GENERATOR = "core.ingest.org_profile v2"          # v2(2026-10-11): 가상 이름, 아쉬운 점 항목마다 문장·직설형 평가자·어긋난 글
+# v2(2026-10-11): 가상 이름, 아쉬운 점 항목마다 문장·직설형 평가자·어긋난 글.
+# v3(2026-10-19, 전일 투입 재설계 -- .omc/plan/2026-10-19-concurrency.md 4절): 가용률 = 휴직·휴가 가정(core/ingest/leave, 모든 묶음이 같은 창),
+# 사업 정원 = 등급·달별 (휴직 아닌 그 등급 인원)의 85% 이하(한 사람 한 사업으로 채울 수 있게), 예산 = 기준 단가 × 정원 × 1.0~1.25(사용자 결정),
+# 연초 현재 배치 = 전일(1.0)·겹침 없음, 운영 중 = 휴직 인력은 진행 사업·대기 인력에서 뺀다. 사람·이력·평가 글 난수열은 그대로.
+GENERATOR = "core.ingest.org_profile v3"
+PEAK_CAP = 0.85                     # 등급·달별 정원 합 / 그 달 그 등급 가용 인원 상한(예전 전체 85% 규칙을 등급별로)
+BUDGET_RANGE = (1.0, 1.25)          # 예산 = 기준 단가 × 정원 × uniform(BUDGET_RANGE) -- 사용자 결정 2026-10-19(예전 0.9~1.15)
 BLUNT_SHARE, MISMATCH_SHARE = 0.08, 0.05        # 직설형 평가자 비율(평가자 단위) · 항목과 글이 어긋나는 리뷰 비율(claude-b 요청 5~10%)
 SIZES = {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}
 # the export keeps only the last LOOKBACK_MONTHS (10 years, same constant as the loader) -- careers can be longer
@@ -398,7 +405,53 @@ def _person_skills(work_skills) -> list[dict]:
             for (pid, skill), a in sorted(acc.items())]
 
 
-def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date], supply: list[float]):
+def grade_supply_of(people: list[dict], avail: dict, n_months: int) -> dict[str, list[float]]:
+    """등급·달별 가용 인원(가용률 1.0인 사람 수 -- 전일 투입 기준)."""
+    out = {g: [0.0] * n_months for g in GRADES}
+    for p in people:
+        for m, mm in enumerate(avail.get(p["person_id"], [])[:n_months]):
+            if mm >= 1.0:
+                out[p["career_grade"]][m] += 1.0
+    return out
+
+
+def shrink_to_supply(projects: list[dict], grade_supply: dict[str, list[float]], n_months: int, frozen=None) -> float:
+    """모든 달·등급에서 (진행 사업의 그 등급 정원 합) ≤ PEAK_CAP × 그 달 그 등급 가용 인원이 될 때까지, 가장 넘친 칸에서
+    그 달 진행 중인 사업 중 그 등급 정원이 가장 큰 사업의 정원을 하나 줄인다(frozen 사업 제외, 사업마다 최소 1석).
+    구간 그래프 성질상 같은 등급 사람이 그 기간 내내 있으면 "달마다 수요 ≤ 공급"이 곧 동시 수행 없이 다 채울 수 있다는 뜻이다 --
+    휴직자 때문에 여유를 15% 둔다. 돌려주는 값 = 남은 최대 비율(manifest peak_demand_ratio)."""
+    frozen = frozen or (lambda p: p["_flagship"])
+
+    def ratio(m: int, g: str) -> float:
+        demand = sum(p["_hc"].get(g, 0) for p in projects if p["_start"] <= m <= p["_end"])
+        supply = grade_supply.get(g, [0.0] * n_months)[m]
+        return demand / supply if supply > 0 else (math.inf if demand > 0 else 0.0)
+
+    cells = [(m, g) for m in range(n_months) for g in GRADES]
+    blocked: set[tuple[int, str]] = set()           # 줄일 사업이 없는 칸(대표 사업만 남음) -- 그 칸만 빼고 다른 칸은 계속(폴백 리뷰 P3)
+    while True:
+        open_cells = [c for c in cells if c not in blocked]
+        if not open_cells:
+            break
+        m, g = max(open_cells, key=lambda c: ratio(*c))
+        if ratio(m, g) <= PEAK_CAP + 1e-12:
+            break
+        cand = [p for p in projects if not frozen(p) and p["_start"] <= m <= p["_end"] and p["_hc"].get(g, 0) > 0
+                and sum(p["_hc"].values()) > 1]
+        if not cand:
+            blocked.add((m, g))
+            continue
+        p = max(cand, key=lambda p: (p["_hc"][g], sum(p["_hc"].values()), p["project_id"]))
+        p["_hc"][g] -= 1
+    finite = [r for r in (ratio(*c) for c in cells) if math.isfinite(r)]
+    return max(finite, default=0.0)
+
+
+def budget_of(rng: random.Random, hc: dict[str, int]) -> str:
+    return str(max(1, int(sum(BASE_RATE[g] * k for g, k in hc.items()) * rng.uniform(*BUDGET_RANGE))))
+
+
+def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date], grade_supply: dict[str, list[float]]):
     projects, grade_reqs, skill_reqs = [], [], []
     # flagship: always in execution for the whole horizon; DP seats always, AI seats only with the AI group
     seats = defaultdict(int)
@@ -446,25 +499,9 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
                                    "min_experience_months": str(rng.choice([m for m in (12, 24, 36, 60) if m <= cap])),
                                    "headcount": str(rng.randint(1, 2))})
 
-    def peak_ratio():
-        return max((sum(sum(p["_hc"].values()) for p in projects if p["_start"] <= m <= p["_end"]) / supply[m]
-                    for m in range(HORIZON_MONTHS) if supply[m] > 0), default=0.0)
-    def peak_month():
-        return max((m for m in range(HORIZON_MONTHS) if supply[m] > 0),
-                   key=lambda m: sum(sum(p["_hc"].values()) for p in projects if p["_start"] <= m <= p["_end"]) / supply[m])
-    while peak_ratio() > 0.85:
-        # shrink only projects running in the peak month (others do not lower the peak), never the flagship
-        m = peak_month()
-        p = max((p for p in projects if not p["_flagship"] and p["_start"] <= m <= p["_end"]
-                 and sum(p["_hc"].values()) > 1), key=lambda p: sum(p["_hc"].values()), default=None)
-        if p is None:
-            break
-        g = max(p["_hc"], key=p["_hc"].get)
-        p["_hc"][g] -= 1
-    peak = peak_ratio()
+    peak = shrink_to_supply(projects, grade_supply, HORIZON_MONTHS)
     for p in projects:
-        budget = sum(BASE_RATE[g] * k for g, k in p["_hc"].items())
-        p["monthly_budget"] = str(max(1, int(budget * rng.uniform(0.9, 1.15))))
+        p["monthly_budget"] = budget_of(rng, p["_hc"])
         grade_reqs += [{"project_id": p["project_id"], "career_grade": g, "headcount": str(k)}
                        for g, k in p["_hc"].items() if k > 0]
     return projects, grade_reqs, skill_reqs, peak
@@ -479,14 +516,19 @@ def _rate(person: dict) -> float:
 
 
 def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str, int], horizon: list[dt.date],
-                        size: int):
+                        size: int, windows: dict[str, dict] | None = None):
     """운영 중 시점(2026-10-06 사용자: "이미 배정돼 있는 인력이 대부분 … 신규 제안 2~3개에 투입할 인력은 최근 끝난 10명
     내외"). 진행 중 사업은 계획 기간 내내 이어지고 정원 = 현재 명단(투입률 1.0), 남는 인력 ~10%, 신규 제안 2~3개
     (계획 둘째 달 시작, 필요 인원 ≈ 남는 인력). 현재 명단은 기술이 대체로 맞게 꾸리되 무작위성을 둬 개선 여지가 자연스럽게
     남는다. 신규 제안의 요구 기술은 카탈로그에서 그대로 뽑는다 -- 결과를 맞추려 남는 인력과 어긋나게 만들지 않는다."""
+    # v3: 계획 기간에 육아휴직 달이 걸린 사람은 진행 사업·대기 인력에서 뺀다(전일 투입 -- 그 기간 내내 일할 수 없다)
+    windows = windows or {}
+    on_leave = {pid for pid, w in windows.items()
+                if any(available_mm(w, m.strftime("%Y-%m")) < 1.0 for m in horizon)}
     by_group = defaultdict(list)
     for p in people:
-        by_group[p["_group"]].append(p)
+        if p["person_id"] not in on_leave:
+            by_group[p["_group"]].append(p)
     bench = []
     working = {}
     for g, ps in by_group.items():
@@ -500,12 +542,13 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
     def overlap(person, skills):
         return len(set(person["_pool"]) & set(skills)) + rng.random() * 1.5     # 대체로 맞게, 완벽하지는 않게
 
-    def add_project(pid, name, sector, phase, start, end, members, hc, skills_rows, flagship=False):
+    def add_project(pid, name, sector, phase, start, end, members, hc, skills_rows, flagship=False, priced=None):
         projects.append({"project_id": pid, "project_name": name, "sector": sector, "phase": phase,
                          "start_month": horizon[start].strftime("%Y-%m"), "end_month": horizon[end].strftime("%Y-%m"),
                          "_start": start, "_end": end, "_hc": hc, "_flagship": flagship})
         skill_reqs.extend({"project_id": pid, **r} for r in skills_rows)
-        cost = sum(_rate(m) for m in members) if members else sum(BASE_RATE[g] * k for g, k in hc.items())
+        priced = members or priced                       # 신규 제안은 그 자리를 채울 수 있는 대기 인력의 실제 단가로(v3)
+        cost = sum(_rate(m) for m in priced) if priced else sum(BASE_RATE[g] * k for g, k in hc.items())
         projects[-1]["monthly_budget"] = str(max(1, int(cost * rng.uniform(1.02, 1.12))))
         grade_reqs.extend({"project_id": pid, "career_grade": g, "headcount": str(k)} for g, k in hc.items() if k > 0)
         for m in members:
@@ -564,22 +607,32 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
             add_project(f"J{j:03d}", f"[실행] {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), skill_rows(skills))
     order = [g for g in ("DP", "AI", "AU") if groups.get(g)]
     n_prop = PROPOSALS.get(size, 2)
-    seats_left = max(3 * n_prop, len(bench) - 1)          # 필요 인원 ≈ 남는 인력(한 명 여유)
+    # v3(2026-10-19, 전일 투입): 신규 제안 정원 = 대기 인력의 **등급 구성** 그대로(한 명 여유) -- 예전 {고급 1, 중급 n-2, 초급 1}은
+    # 등급이 대기 인력과 맞지 않아 아무도 옮기지 않으면(K=0) 피할 수 없는 빈자리가 생겼다(폴백 리뷰 P2: 100명 1·200명 4·300명 12석).
+    # 등급 순으로 늘어놓고 한 명씩 돌려 나눠 사업마다 등급이 섞이게 한다. 예산은 그 사람들의 실제 단가 기준(1.02~1.12배, 진행 사업과 같은 규칙).
+    pool = sorted(bench, key=lambda p: (GRADES.index(p["career_grade"]), p["person_id"]))
+    if len(pool) > n_prop:                                 # 한 명 여유: 가장 많은 등급에서 한 명을 뺀다
+        most = max(GRADES, key=lambda g: (sum(1 for p in pool if p["career_grade"] == g), -GRADES.index(g)))
+        drop = next(p for p in reversed(pool) if p["career_grade"] == most)
+        pool = [p for p in pool if p is not drop]
+    dealt = [pool[k::n_prop] for k in range(n_prop)]
     proposal_ids = []
     for k in range(n_prop):
         j += 1
         g = order[k % len(order)]
         name, sector, skills = pick_type(g)
-        n = seats_left // (n_prop - k)
-        seats_left -= n
-        hc = {"고급": 1, "중급": max(1, n - 2), "초급": 1 if n >= 3 else 0}
-        add_project(f"J{j:03d}", f"[제안] {name}", sector, "제안", 1, HORIZON_MONTHS - 1, [], hc, skill_rows(skills))
+        hc = defaultdict(int)
+        for p in dealt[k]:
+            hc[p["career_grade"]] += 1
+        add_project(f"J{j:03d}", f"[제안] {name}", sector, "제안", 1, HORIZON_MONTHS - 1, [], dict(hc), skill_rows(skills),
+                    priced=dealt[k])
         proposal_ids.append(f"J{j:03d}")
     availability, avail = [], defaultdict(list)
     for p in people:
         for m in horizon:
-            avail[p["person_id"]].append(1.0)
-            availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": "1.0"})
+            mm = available_mm(windows.get(p["person_id"]), m.strftime("%Y-%m"))
+            avail[p["person_id"]].append(mm)
+            availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": f"{mm:.1f}"})
     demand = sum(sum(p["_hc"].values()) for p in projects) / max(1, len(people))
     return projects, grade_reqs, skill_reqs, roster, availability, avail, [b["person_id"] for b in bench], proposal_ids, demand
 
@@ -587,8 +640,10 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
 def _current_roster(rng: random.Random, people: list[dict], projects: list[dict], avail: dict) -> list[dict]:
     """Who is already on a running execution project at the start of the plan (continuity input).
     70% of the execution projects running in month 0 (the flagship always) get 50-100% of their seats filled
-    with people of the right grade who still have capacity in every month of the project; 10% are locked."""
-    remaining = {p["person_id"]: list(avail[p["person_id"]]) for p in people}
+    with people of the right grade; 10% are locked. v3(2026-10-19, 전일 투입): 투입률 1.0, 그 사업 기간 가용률 1.0인 사람만,
+    기간이 겹치는 다른 현재 배치가 없는 사람만(동시 수행 없음), 사업 예산 안에서만(잠긴 배치가 예산을 넘기면 풀 수 없다)."""
+    busy = {p["person_id"]: set() for p in people}
+    rate = {p["person_id"]: _rate(p) for p in people}
     by_grade = defaultdict(list)
     for p in people:
         by_grade[p["career_grade"]].append(p["person_id"])
@@ -597,18 +652,18 @@ def _current_roster(rng: random.Random, people: list[dict], projects: list[dict]
     for j in running:
         if not j["_flagship"] and rng.random() > 0.7:
             continue
-        months = range(j["_start"], j["_end"] + 1)
+        months = set(range(j["_start"], j["_end"] + 1))
+        left = float(j["monthly_budget"])
         for grade, seats in j["_hc"].items():
             want = round(seats * rng.uniform(0.5, 1.0))
-            cands = [pid for pid in by_grade[grade] if min(remaining[pid][m] for m in months) >= 0.3]
+            cands = [pid for pid in by_grade[grade]
+                     if all(avail[pid][m] >= 1.0 for m in months) and not (busy[pid] & months)]
             for pid in rng.sample(cands, min(want, len(cands))):
-                cap = min(remaining[pid][m] for m in months)
-                alloc = round(min(cap, rng.choice((0.3, 0.5, 0.5, 0.7, 1.0, 1.0))), 1)
-                if alloc < 0.3:
+                if rate[pid] > left:
                     continue
-                for m in months:
-                    remaining[pid][m] -= alloc
-                rows.append({"person_id": pid, "project_id": j["project_id"], "alloc": f"{alloc:.1f}",
+                busy[pid] |= months
+                left -= rate[pid]
+                rows.append({"person_id": pid, "project_id": j["project_id"], "alloc": "1.0",
                              "locked": "Y" if rng.random() < 0.1 else "N"})
     return rows
 
@@ -639,20 +694,24 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
         del w["_ws"]                              # indices into the pre-filter list; stale from here on
     works, work_skills = _apply_lookback(works, work_skills, last)
     _describe_works(works, last)
-    availability, supply = [], [0.0] * HORIZON_MONTHS
+    # v3: 휴직·휴가 창(core/ingest/leave) -- 같은 사람·같은 시드면 연초·운영 중·연간 묶음이 같은 창을 쓴다
+    windows = leave_windows([p["person_id"] for p in people], horizon_start, leave_seed(seed))
+    availability = []
     avail = defaultdict(list)
     for p in people if scenario == "planning" else []:
         for k, m in enumerate(horizon):
-            mm = rng.choices((1.0, 0.7, 0.5, 0.3, 0.0), weights=(0.6, 0.1, 0.15, 0.05, 0.1))[0]
+            # v2의 무작위 가용률 난수는 그대로 뽑아 버린다 -- 뒤따르는 사업 이름·기간·기술 요구가 v2와 같게 남는다
+            rng.choices((1.0, 0.7, 0.5, 0.3, 0.0), weights=(0.6, 0.1, 0.15, 0.05, 0.1))
+            mm = available_mm(windows.get(p["person_id"]), m.strftime("%Y-%m"))
             avail[p["person_id"]].append(mm)
-            supply[k] += mm
             availability.append({"person_id": p["person_id"], "month": m.strftime("%Y-%m"), "available_mm": f"{mm:.1f}"})
     extra = {}
     if scenario == "planning":
-        projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon, supply)
+        projects, grade_reqs, skill_reqs, peak = _projects(rng, groups, horizon,
+                                                           grade_supply_of(people, avail, HORIZON_MONTHS))
     else:
         (projects, grade_reqs, skill_reqs, roster, availability, avail, bench, proposals,
-         peak) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size)
+         peak) = _operating_scenario(random.Random(seed * 31337 + 11), people, groups, horizon, size, windows)
         extra = {"scenario": "operating", "bench": bench, "proposals": proposals}
     for name, share in (("blunt_share", blunt_share), ("mismatch_share", mismatch_share)):
         if not 0 <= share <= 1:
@@ -680,6 +739,7 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
                 "synthetic": True, "seed": seed, "generator": GENERATOR, "groups": groups,
                 "flagship_project": FLAGSHIP["project_id"],
                 "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
-                "peak_demand_ratio": round(peak, 4), **extra, "review_style": review_style, "files": hashes}
+                "peak_demand_ratio": round(peak, 4), **extra, "leave": manifest_section(windows),
+                "review_style": review_style, "files": hashes}
     (out_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return out_dir

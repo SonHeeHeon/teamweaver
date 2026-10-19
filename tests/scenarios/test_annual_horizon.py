@@ -100,7 +100,7 @@ def test_the_annual_bundle_is_the_n100_organisation_over_twelve_months(tmp_path)
 
 def test_annual_availability_is_full_time_except_parental_leave():
     """연간 묶음 가용률(사용자 가정 2026-10-19): 100%와 육아휴직 달의 0%뿐. 3%는 육아휴직(12개월 연속, 해를 걸침), 2%는 한 달 휴가(가용률은 그대로)."""
-    from scripts.make_annual_demo import _offset
+    from core.ingest.leave import offset as _offset          # 휴직 창은 생성기 v3의 core.ingest.leave(2026-10-19 claude-a)
     m = json.loads((ANNUAL / "manifest.json").read_text("utf-8"))
     leave = {x["person_id"]: x for x in m["leave"]["people"]}
     kinds = [x["kind"] for x in leave.values()]

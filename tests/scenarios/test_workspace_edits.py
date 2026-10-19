@@ -31,13 +31,13 @@ def _valid(files) -> None:
 
 def test_add_project_writes_rows_and_pipeline_and_passes_ingest(files):
     new, pid = we.add_project(files, _form(), registered_at="2026-10-18")
-    assert pid == "J016"
+    assert pid == "J015"
     _, rows = we.read_table(new, we.PROJECTS)
-    row = next(r for r in rows if r["project_id"] == "J016")
+    row = next(r for r in rows if r["project_id"] == "J015")
     assert row["phase"] == "제안" and row["end_month"] == "2028-12"             # 실제 종료 달 그대로(계산은 창 안으로 자름)
     m = we.read_manifest(new)
-    assert "J016" in m["proposals"] and m["pipeline"]["J016"]["predecessor"] == "J003"
-    assert files != new and "J016" not in files[we.PROJECTS]                   # 원본은 그대로
+    assert "J015" in m["proposals"] and m["pipeline"]["J015"]["predecessor"] == "J003"
+    assert files != new and "J015" not in files[we.PROJECTS]                   # 원본은 그대로
     _valid(new)
 
 
@@ -146,3 +146,24 @@ def test_first_apply_on_a_bundle_without_current_assignments(files):
     new, changes = we.apply_entries(files, [{"person_id": people[0]["person_id"], "project_id": "J001", "alloc": 1.0}])
     assert changes["added"] == [f"{people[0]['person_id']}@J001"]
     assert we.read_table(new, we.CURRENT)[0] == we.CURRENT_HEADER
+
+
+def test_concurrency_grant_cannot_go_below_the_current_overlap(files):
+    """프로젝트 동시 수행(2026-10-19): 같은 달 세 사업에 있는 사람을 최대 2로 다시 걸면 거절(폴백 리뷰 P2), 허용 없는 해제도 거절."""
+    _, cur = we.read_table(files, we.CURRENT)
+    _, projects = we.read_table(files, we.PROJECTS)
+    pid = cur[0]["person_id"]
+    span = {r["project_id"]: (r["start_month"], r["end_month"]) for r in projects}
+    mine = {r["project_id"] for r in cur if r["person_id"] == pid}
+    a, b = span[next(iter(mine))]
+    others = [j for j, (s, e) in span.items() if j not in mine and s <= b and a <= e][:2]
+    entries = [{"person_id": r["person_id"], "project_id": r["project_id"], "alloc": 1.0} for r in cur]
+    entries += [{"person_id": pid, "project_id": j, "alloc": 1.0} for j in others]
+    three, _ = we.apply_entries(files, entries)
+    assert we._overlaps(three, pid) == 3
+    with pytest.raises(we.EditError, match="줄일 수 없다"):
+        we.set_concurrency(three, pid, True, max_projects=2, reason="인력 부족")
+    ok = we.set_concurrency(three, pid, True, max_projects=3, reason="인력 부족")
+    assert we.concurrency_of(we.read_manifest(ok))[0]["max_projects"] == 3
+    with pytest.raises(we.EditError, match="허용된 프로젝트 동시 수행이 없다"):
+        we.set_concurrency(files, pid, False)

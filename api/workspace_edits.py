@@ -290,6 +290,58 @@ def set_lock(files: Files, pid: str, people: list[str] | None, locked: bool) -> 
     return files
 
 
+# --- 프로젝트 동시 수행 허용(2026-10-19 사용자 결정 -- 사람 단위, 사유 필수) -------------------------------------------
+
+def concurrency_of(m: dict) -> list[dict]:
+    return [e for e in (m.get("concurrency") or []) if isinstance(e, dict) and isinstance(e.get("person_id"), str)]
+
+
+def set_concurrency(files: Files, person_id: str, allow: bool, *, max_projects: int = 2, reason: str | None = None,
+                    memo: str = "", granted_at: str = "") -> Files:
+    """부서장이 그 사람에게 프로젝트 동시 수행을 허용(사유 필수)하거나 해제한다 -- manifest `concurrency`.
+    해제는 그 사람이 지금 같은 달 두 사업 이상에 있으면 거절한다(먼저 한 사업에서 빼야 데이터가 맞는다)."""
+    from core.ingest.concurrency import MAX_PROJECTS, REASONS
+    files = _copy(files)
+    _, people = read_table(files, "people.csv")
+    if person_id not in {p["person_id"] for p in people}:
+        raise EditError(f"없는 사람: {person_id}")
+    m = read_manifest(files)
+    had = next((e for e in concurrency_of(m) if e["person_id"] == person_id), None)
+    grants = [e for e in concurrency_of(m) if e["person_id"] != person_id]
+    if allow:
+        if reason not in REASONS:
+            raise EditError(f"사유를 골라야 한다: {', '.join(REASONS)}")
+        if max_projects not in MAX_PROJECTS:
+            raise EditError(f"최대 동시 사업 수는 {list(MAX_PROJECTS)} 중 하나")
+        # 지금 겹침보다 낮게 다시 걸면 위반이 있는 판이 켜진다(폴백 리뷰 P2) -- 먼저 사업에서 빼야 한다
+        if _overlaps(files, person_id) > max_projects:
+            raise EditError(f"{person_id}는 지금 같은 달 {_overlaps(files, person_id)}개 사업에 있다 -- 최대 {max_projects}개로 줄일 수 없다")
+        grants.append({"person_id": person_id, "max_projects": int(max_projects), "reason": reason,
+                       "memo": memo or "", "granted_at": granted_at or ""})
+    else:
+        if had is None:
+            raise EditError(f"{person_id}에게 허용된 프로젝트 동시 수행이 없다")       # 바뀐 것 없는 빈 판을 만들지 않는다
+        if _overlaps(files, person_id) > 1:
+            raise EditError(f"{person_id}는 지금 같은 달 두 사업 이상에 있다 -- 먼저 한 사업에서 빼고 해제한다")
+    if grants:
+        m["concurrency"] = sorted(grants, key=lambda e: e["person_id"])
+    else:
+        m.pop("concurrency", None)
+    write_manifest(files, m)
+    rehash(files)
+    return files
+
+
+def _overlaps(files: Files, person_id: str) -> int:
+    """그 사람의 현재 배치가 같은 달에 몇 개까지 겹치는가(달력 달 기준)."""
+    _, cur = current_table(files)
+    _, projects = read_table(files, PROJECTS)
+    span = {r["project_id"]: (r["start_month"], r["end_month"]) for r in projects}
+    mine = [span[r["project_id"]] for r in cur if r.get("person_id") == person_id and r.get("project_id") in span]
+    months = {mo for a, _ in mine for mo in (a,)} | {b for _, b in mine}
+    return max((sum(1 for a, b in mine if a <= mo <= b) for mo in months), default=0)
+
+
 # --- 확정 -----------------------------------------------------------------------------------------------------------
 
 def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str, dict[str, int]] | None = None,

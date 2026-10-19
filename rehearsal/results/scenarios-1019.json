@@ -2,27 +2,28 @@
  "start": {
   "pipeline": [
    [
-    "J014",
-    "[제안] 공공기관 을 데이터 개방 플랫폼",
+    "J013",
+    "[제안] 공공기관 병 데이터 개방 플랫폼",
     "제안"
    ],
    [
-    "J015",
-    "[제안] 계열사 A 데이터 플랫폼 고도화",
+    "J014",
+    "[제안] 금융사 파 비정형 데이터 마트 구축",
     "예정"
    ]
   ],
   "ending": [
-   "J003",
+   "J005",
    "J006",
-   "J009",
-   "J012"
+   "J008",
+   "J009"
   ],
   "bench": 10
  },
  "register": {
-  "project_id": "J016",
-  "copied_from": "J003",
+  "project_id": "J015",
+  "copied_from": "J005",
+  "name": "금융사 하 비정형 문서 메타데이터 전환 고도화",
   "seats": {
    "특급": {
     "need": 1,
@@ -33,11 +34,11 @@
     "filled": 0
    },
    "중급": {
-    "need": 4,
+    "need": 3,
     "filled": 0
    },
    "초급": {
-    "need": 1,
+    "need": 2,
     "filled": 0
    }
   }
@@ -45,45 +46,45 @@
  "candidates": {
   "bench": [
    {
-    "name": "윤시현",
-    "grade": "중급",
+    "name": "이보람",
+    "grade": "특급",
     "delta": 101.0,
     "predecessor_team": false,
     "from": []
    },
    {
-    "name": "이가영",
-    "grade": "고급",
-    "delta": 100.61,
+    "name": "주경민",
+    "grade": "특급",
+    "delta": 101.0,
     "predecessor_team": false,
     "from": []
    },
    {
-    "name": "이시현",
-    "grade": "고급",
-    "delta": 100.61,
+    "name": "전다은",
+    "grade": "중급",
+    "delta": 100.94,
     "predecessor_team": false,
     "from": []
    }
   ],
   "ending": [
    {
-    "name": "임민서",
-    "grade": "중급",
-    "delta": 101.0,
-    "predecessor_team": true,
-    "from": []
-   },
-   {
-    "name": "장혜진",
+    "name": "노민준",
     "grade": "특급",
     "delta": 101.0,
     "predecessor_team": true,
     "from": []
    },
    {
-    "name": "류주희",
-    "grade": "고급",
+    "name": "권다현",
+    "grade": "중급",
+    "delta": 101.0,
+    "predecessor_team": true,
+    "from": []
+   },
+   {
+    "name": "김유찬",
+    "grade": "중급",
     "delta": 101.0,
     "predecessor_team": true,
     "from": []
@@ -93,68 +94,68 @@
  },
  "manual_confirm": {
   "people": [
-   "임민서"
+   "노민준"
   ],
   "changes": {
    "added": [
-    "DP0006@J016"
+    "DP0028@J015"
    ],
    "removed": [],
    "changed": []
   }
  },
  "review_new": {
-  "project": "보험사 B 고도화(J016)",
+  "project": "금융사 하 비정형 문서 메타데이터 전환 고도화(J015)",
   "kind": "new",
   "joined": [
    {
-    "name": "임민서",
-    "grade": "중급",
+    "name": "노민준",
+    "grade": "특급",
     "origin": "partly_free",
     "sources": []
    }
   ],
   "move_facts": [
-   "이 확정으로 J016 사업 점수 0.00 → 1.00, 요구 기술 Data Lake & Data Catalog 충족 0→1명(필요 1명), 데이터 모델링 충족 0→1명(필요 2명), 메타데이터 관리 충족 0→1명(필요 1명), 등급 정원 빈자리 8 → 7석(확정 뒤 정원·요구 기준)",
-   "임민서(중급): 일부 여유(다른 배치는 그대로), J016 투입률 1, 이 사업 요구 기술 중 충족: 메타데이터 관리, 데이터 모델링, Data Lake & Data Catalog"
+   "이 확정으로 J015 사업 점수 0.00 → 1.00, 요구 기술 ETL 충족 0→1명(필요 2명), Text Analysis 충족 0→1명(필요 1명), 금융 업무 충족 0→1명(필요 2명), 비정형 문서 처리(OCR) 충족 0→1명(필요 1명), 등급 정원 빈자리 8 → 7석(확정 뒤 정원·요구 기준)",
+   "노민준(특급): 일부 여유(다른 배치는 그대로), J015 투입률 1, 이 사업 요구 기술 중 충족: Text Analysis, 비정형 문서 처리(OCR), 금융 업무, ETL"
   ],
-  "adverse_facts": 2,
-  "facts": 13
+  "adverse_facts": 3,
+  "facts": 15
  },
  "emergency": {
   "added": [
    {
-    "person_id": "DP0091",
-    "name": "김서현"
+    "person_id": "DP0081",
+    "name": "이가영"
    }
   ],
   "delta": {
-   "total": 1.7149047619047906,
-   "skill": 1.0833333333333357,
-   "synergy": 0.6315714285714282,
-   "overfamiliarity": 0.0,
+   "total": 1.5823333333335086,
+   "skill": 0.7083333333333286,
+   "synergy": 0.4740000000000002,
+   "overfamiliarity": 0.3999999999999999,
    "unfilled": 0.0
   },
   "apply_hint": {
    "headcount_add": {
     "J007": {
-     "중급": 1
+     "고급": 1
     }
    },
    "budget_add": {
-    "J007": 654
+    "J007": 239
    },
    "skills_add": {}
   },
   "standby": [
-   "김다현",
-   "윤시현",
-   "서민준"
+   "황유찬",
+   "박나연",
+   "윤시현"
   ],
   "moved": [
    {
-    "person_id": "DP0091",
-    "from": "J013",
+    "person_id": "DP0081",
+    "from": "J001",
     "to": [
      "J007"
     ]
@@ -166,22 +167,86 @@
   "kind": "emergency",
   "joined": [
    {
-    "name": "김서현",
-    "grade": "중급",
+    "name": "이가영",
+    "grade": "고급",
     "origin": "moved",
     "sources": [
-     "J013"
+     "J001"
     ]
    }
   ],
   "move_facts": [
-   "이 확정으로 J007 사업 점수 4.99 → 6.12, 요구 기술 ETL 충족 5→6명(필요 2명), 금융 업무 충족 7→8명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
-   "김서현(중급): 진행 사업에서 옮겨 옴, J007 투입률 1, 이 사업 요구 기술 중 충족: 금융 업무, ETL",
-   "김서현: [실행] 공공기관 병 데이터 개방 플랫폼(J013)에서 옮겨 옴 — 그 사업에서 빠짐",
-   "J013 사업(이 확정 전체로 인한 변화): 점수 1.47 → 2.06, 요구 기술 BI Reporting 충족 0→1명(필요 2명), SQL 충족 0→1명(필요 2명), 등급 정원 빈자리 0 → 0석",
-   "J013의 자리를 같은 확정에서 윤시현(중급, 대기 인력)이(가) 채움"
+   "이 확정으로 J007 사업 점수 6.78 → 8.09, 요구 기술 ETL 충족 1→2명(필요 2명), 금융 업무 충족 9→10명(필요 2명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "이가영(고급): 진행 사업에서 옮겨 옴, J007 투입률 1, 이 사업 요구 기술 중 충족: ETL, 금융 업무",
+   "이가영: 대형 시중은행 A AI 에이전트 개발(데이터플랫폼·AI 공동)(J001)에서 옮겨 옴 — 그 사업에서 빠짐",
+   "J001 사업(이 확정 전체로 인한 변화): 점수 7.48 → 7.75, 요구 기술 비정형 문서 처리(OCR) 충족 8→7명(필요 2명), 등급 정원 빈자리 0 → 0석",
+   "J001의 자리를 같은 확정에서 박나연(고급, 대기 인력)이(가) 채움"
   ],
-  "adverse_facts": 4,
-  "facts": 34
+  "adverse_facts": 3,
+  "facts": 31
+ },
+ "concurrent_support": {
+  "candidates": [
+   {
+    "name": "권다현",
+    "grade": "중급",
+    "delta": 1.37,
+    "predecessor_team": false,
+    "from": []
+   },
+   {
+    "name": "김소율",
+    "grade": "특급",
+    "delta": 1.24,
+    "predecessor_team": false,
+    "from": []
+   },
+   {
+    "name": "최혜진",
+    "grade": "중급",
+    "delta": 0.88,
+    "predecessor_team": false,
+    "from": []
+   }
+  ],
+  "person": "권다현",
+  "keeps": [
+   {
+    "project_id": "J005",
+    "end_month_index": 2
+   }
+  ],
+  "grant": [
+   {
+    "person_id": "DP0035",
+    "name": "권다현",
+    "grade": "중급",
+    "max_projects": 2,
+    "reason": "긴급 지원",
+    "memo": "기술 지원 요청",
+    "granted_at": "2026-10-19"
+   }
+  ],
+  "monthly_cost": 1000.0,
+  "delta": 1.37
+ },
+ "review_concurrent": {
+  "project": "[실행] 금융사 마 비정형 데이터 마트 구축(J002)",
+  "kind": "emergency",
+  "joined": [
+   {
+    "name": "권다현",
+    "grade": "중급",
+    "origin": "partly_free",
+    "sources": []
+   }
+  ],
+  "move_facts": [
+   "이 확정으로 J002 사업 점수 6.43 → 7.80, 요구 기술 ETL 충족 3→4명(필요 2명), Spark 충족 5→6명(필요 1명), 금융 업무 충족 8→9명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "권다현(중급): 프로젝트 동시 수행(원래 사업 유지), J002 투입률 1, 이 사업 요구 기술 중 충족: Spark, ETL, 금융 업무",
+   "권다현: 프로젝트 동시 수행 허용 — 사유 긴급 지원 · 기술 지원 요청 (2026-10-19), 같은 달 최대 2개 사업(사업마다 100%)"
+  ],
+  "adverse_facts": 3,
+  "facts": 30
  }
 }

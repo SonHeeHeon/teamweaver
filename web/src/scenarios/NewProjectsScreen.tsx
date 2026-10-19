@@ -8,9 +8,11 @@ import { DatasetChangedError, postJustification, streamOperatingCompare } from "
 import type { AssignEntry, OperatingRow, PlacementSettings } from "../api/types";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
+import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { ProjectForm } from "./ProjectForm";
 import {
-  currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postLock, postProject, postUndo,
+  currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postConcurrency, postLock,
+  postProject, postUndo,
   STAGE_LABEL, withPersistNote, type CandidateRow, type Candidates, type OngoingItem, type PipelineItem, type Stage, type Workspace,
 } from "./workspaceApi";
 
@@ -312,7 +314,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                           <td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
                           <td className="num text-right">{fmt(r.delta_total)}</td>
                           <td className="text-xs text-slate-500">
-                            {r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : r.source === "partly_free" ? "남는 시간으로" : ""}
+                            {r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : r.source === "partly_free" ? "남는 시간으로"
+                              : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
                             {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
                           </td>
                           <td className="text-right">
@@ -383,7 +386,36 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
             </tbody>
           </table>
         )}
+        {(() => {
+          // 전일 투입에서 가장 큰 K까지 풀어도 빈자리가 남으면 -- 동시 수행 허용 후보(2026-10-19 사용자 결정, 사람 단위)
+          const last = [...rows].reverse().find((r) => r.accepted && (r.unfilled_seats ?? 0) > 0 && r.entries);
+          // K 행을 계산한 설정으로 정한다(지금 설정이 아니라, 폴백 리뷰 P3)
+          return last?.entries && (autoOf.current?.params ?? milpParams)?.allocation_mode === "full" ? (
+            <div className="px-5 pb-4">
+              <ConcurrencyPanel datasetVersion={ws.dataset_version} entries={last.entries}
+                                projectName={(id) => [...ws.pipeline, ...ws.ongoing].find((p) => p.project_id === id)?.name ?? id}
+                                onGranted={(msg) => { setRows([]); setAutoState("idle"); void load(); onDatasetChanged(); setNotice(msg); }}
+                                onStale={() => { void load(); onDatasetChanged(); }} />
+            </div>
+          ) : null;
+        })()}
       </Panel>
+
+      {(ws.concurrency?.length ?? 0) > 0 && (
+        <Panel title="프로젝트 동시 수행 허용 인력" sub="부서장이 사유와 함께 허용한 사람만 같은 달 여러 사업을 맡습니다(사업마다 100%).">
+          <ul className="divide-y divide-slate-100">
+            {ws.concurrency!.map((g) => (
+              <li key={g.person_id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-2 text-sm">
+                <span>{g.name} <span className="text-xs text-slate-500">({g.grade}) · 최대 {g.max_projects}개 · {g.reason}
+                  {g.memo ? ` · ${g.memo}` : ""}{g.granted_at ? ` · ${g.granted_at}` : ""}</span></span>
+                <button className="btn px-2 py-0.5 text-xs" disabled={busy} aria-label={`${g.name} 동시 수행 해제`}
+                        onClick={() => void mutate(() => postConcurrency(ws.dataset_version, g.person_id, false),
+                                                   `${g.name}의 프로젝트 동시 수행을 해제했다.`)}>해제</button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       <Panel title="진행 사업 — 고정" sub="자물쇠를 채운 사업·사람은 어떤 계산도 빼 가지 않습니다(사람을 더 넣는 것은 됩니다).">
         <ul className="divide-y divide-slate-100">

@@ -1,6 +1,6 @@
 """연말형 운영 중 시연 묶음을 만든다(2026-10-18, claude-b -- 3가지 핵심 상황 설계, 사용자 결정 "연말형 묶음을 따로 만듦").
 
-`demo/org-n100-operating`(100명, 90명 배치·대기 10명·신규 제안 J014·J015)을 복사해, 진행 사업 몇 개가 올해 말(2026-12)에 끝나게 한다.
+`demo/org-n100-operating`(100명, 생성기 v3: 87명 배치·대기 10명·육아휴직 3명·신규 제안 J013·J014)을 복사해, 진행 사업 몇 개가 올해 말(2026-12)에 끝나게 한다.
 그 팀원은 "끝나 가는 인력"(2027-01부터 비어 있음)이 되고, 끝나는 사업 하나는 "고도화 과제" 등록의 이전 사업이 된다.
 사람·이력·평가 글은 그대로라 리뷰 글 판정 동봉(demo/review_judgments.json)이 그대로 쓰인다 -- AI를 다시 부르지 않는다.
 생성기(core/ingest, claude-a)는 고치지 않는다. 미리 계산은 만들지 않는다(운영 중 K 비교 100명 실시간 약 45초, 밤 배치가 채운다).
@@ -20,8 +20,9 @@ if str(ROOT) not in sys.path:
 
 SRC = ROOT / "demo" / "org-n100-operating"
 DST = ROOT / "demo" / "org-n100-yearend"
-# 팀이 작은 사업과 큰 사업을 섞어 끝나게 한다(4·4·8·8명) -- 끝나 가는 인력 24명
-ENDING = ("J006", "J009", "J003", "J012")
+# 팀이 작은 사업과 큰 사업을 섞어 끝나게 한다(4·4·8·8명) -- 끝나 가는 인력 24명.
+# 2026-10-19 생성기 v3(claude-a): 운영 중 묶음의 팀이 바뀌어 같은 크기(4·4·8·8)인 사업으로 다시 골랐다(예전 J006·J009·J003·J012).
+ENDING = ("J006", "J008", "J005", "J009")
 END_MONTH = "2026-12"
 
 
@@ -39,8 +40,10 @@ def make(src: Path = SRC, dst: Path = DST, ending=ENDING, end_month: str = END_M
     write_table(files, PROJECTS, h, rows)
     m = read_manifest(files)
     m["dataset_id"] = "org-n100-s2026-yearend"
-    m["pipeline"] = {"J014": {"stage": "제안", "predecessor": None, "registered_at": "2026-10-01"},
-                     "J015": {"stage": "예정", "predecessor": None, "registered_at": "2026-10-10"}}
+    # 신규 제안은 원본 manifest의 proposals에서(생성기 v3에서 번호가 J013·J014로 바뀌었다) -- 첫째 제안, 둘째 예정
+    first, second = m["proposals"][:2]
+    m["pipeline"] = {first: {"stage": "제안", "predecessor": None, "registered_at": "2026-10-01"},
+                     second: {"stage": "예정", "predecessor": None, "registered_at": "2026-10-10"}}
     m["yearend"] = {"ending_projects": list(ending), "end_month": end_month,
                     "note": "연말형 시연(3가지 핵심 상황): 진행 사업 일부가 올해 말에 끝나 그 팀원이 '끝나 가는 인력'이 된다. "
                             "scripts/make_yearend_demo.py가 org-n100-operating에서 만든다 -- 사람·평가 글은 같다."}

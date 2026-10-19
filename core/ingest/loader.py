@@ -347,6 +347,8 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     _check_hashes(root, manifest, report)
     _check_keys_and_refs(tables, report)
     _check_rules(tables, horizon, report)
+    from core.ingest import concurrency          # 프로젝트 동시 수행 허용(manifest, 2026-10-19)
+    concurrency.check(manifest, {r["person_id"] for r in tables.get("people.csv", [])}, report)
     return Bundle(manifest=manifest, horizon=horizon, tables=tables), report
 
 

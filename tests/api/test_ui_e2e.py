@@ -124,6 +124,9 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             #    저장한다 -- 아래 4)의 "첫 교체는 경고가 없다"는 결정적 시나리오가 그 기준에서 만들어졌고, 새 조회 기간
             #    칸을 포함한 저장이 실제 브라우저에서 통과하는지도 본다(2026-10-06: 이 칸이 빠져 저장이 422였다, Opus 리뷰 MUST).
             page.get_by_role("button", name="배치 설정").click()
+            # 2026-10-19 서비스 기본은 전일 투입 -- 최소 투입률 칸은 예전 방식(기간 내내 한 비율)에서만 보인다.
+            # 이 시나리오(첫 교체는 경고 없음)는 예전 방식에서 만들어졌으므로 그 방식을 골라 저장한다.
+            page.get_by_label("기간 내내 한 비율").check()
             page.get_by_label(re.compile("최소 투입률")).fill("25")
             page.get_by_label("전체 이력(예전 방식)").check()
             page.get_by_label(re.compile("반복 협업 기준")).fill("6")
@@ -283,6 +286,7 @@ def test_admin_login_guards_settings_in_a_real_browser(tmp_path):
                 assert cookies["tw_admin"]["httpOnly"] is True
                 assert cookies["tw_admin"]["sameSite"] == "Strict"
                 assert page.evaluate("document.cookie").find("tw_admin") == -1
+                page.get_by_label("기간 내내 한 비율").check()          # 최소 투입률 칸은 예전 방식에서만 보인다(2026-10-19)
                 page.get_by_label(re.compile("최소 투입률")).fill("35")
                 page.get_by_role("button", name="저장").click()
                 expect(page.get_by_text("다음 '최적화 실행'부터")).to_be_visible()

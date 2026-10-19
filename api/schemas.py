@@ -29,6 +29,9 @@ class PersonOut(BaseModel):
     # 계획 달마다 가용률(0~1)·휴직 정보(2026-10-19): 화면이 그 달이 걸린 사업에 투입할 수 없는 사람을 비활성화하고 사유를 보인다
     availability: list[float] = []
     leave: dict | None = None
+    # 프로젝트 동시 수행(2026-10-19): 같은 달 최대 사업 수(1 = 동시 수행 없음)와 허용 기록(사유·메모·시각)
+    max_concurrent: int = 1
+    concurrency: dict | None = None
 
 
 class ProjectOut(BaseModel):
@@ -140,7 +143,7 @@ class MilpParamsIn(BaseModel):
     gap: float | None = Field(default=None, ge=0.0, le=1.0)
     max_pairs: int | None = Field(default=None, ge=1, le=5000)
     max_concurrent_projects: int | None = Field(default=None, ge=1, le=6)
-    allocation_mode: Literal["fixed", "monthly"] | None = None
+    allocation_mode: Literal["full", "fixed", "monthly"] | None = None
     # 관리자 설정의 "자동(인원 기준)" 표시. 계산에는 쓰지 않는다(화면이 실제 시간을 time_limit으로 보낸다).
     # 받기만 하고 계산에는 쓰지 않는다. 자동 시간은 GET /api/settings의 effective_time_limit을
     # time_limit으로 보내야 적용된다 -- 이 칸만 true로 보내면 time_limit 기본값(120초)이 쓰인다.
@@ -174,6 +177,7 @@ class SettingsBody(BaseModel):
     load_error: str | None
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
+    recommended_time_full: dict | None = None           # 전일 투입(2026-10-19 서비스 기본)
     effective_time_limit: int | None = None
     # 지금 계산이 쓰는 동시 탐색 수(설정, 없으면 서버 환경 변수, 없으면 1)
     effective_solver_seeds: int | None = None

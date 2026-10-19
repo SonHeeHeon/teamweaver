@@ -97,12 +97,17 @@ SCREEN = 40          # 빠른 근사 점수로 거른 뒤 정확히 채점할 �
 
 def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[AssignEntry], project_id: str, *,
                     include_pull: bool = False, budget_add: int | None = None, top: int | None = 10,
-                    screen: int | None = SCREEN, locked: set[tuple[str, str]] = frozenset()) -> list[dict]:
+                    screen: int | None = SCREEN, locked: set[tuple[str, str]] = frozenset(),
+                    offer_concurrency: bool = False) -> list[dict]:
     """대상 사업에 한 명씩 넣어 본 점수 변화 순위. include_pull이면 다른 사업 사람도(그 사업에서 빼 온다).
 
     budget_add가 None이면 후보의 월 비용만큼 대상 사업 예산을 늘린다(보강에는 예산이 따라붙는다) -- 필요한 예산은
     결과의 monthly_cost로 보인다. 숫자를 주면 그 금액만 늘리고, 투입률을 남는 예산에 맞춰 낮춘다(최소 투입률 밑이면 그대로
     두어 예산 초과가 위반으로 보이게). locked: (사람, 사업) 잠긴 배치 -- 빼 오지 않는다.
+
+    offer_concurrency(전일 투입, 2026-10-19 사용자 결정): **허용이 필요한 동시 수행 후보만** 낸다 -- 지금 다른 사업에 있고 상한에 닿은
+    사람을 "원래 사업 유지 + 이 사업 100%"로(같은 달 2곳까지로 보고 채점, 행에 needs_grant). 대기·빼 오기·이미 허용된 사람은 일반 호출이
+    낸다(따로 부른다 -- 한 목록에 섞으면 상위 자리를 차지해 빼 오기·대기 후보가 사라졌다, 폴백 리뷰 P2). 고르면 확정이 허용(사유 "긴급 지원")을 함께 적는다.
 
     2단계(2026-10-06 실측: 후보마다 전체 평가면 300명 62초): 모든 후보를 빠른 근사 점수(기술 적합×투입률 + 팀 협업 보상
     − 익숙한 쌍 감점 − 빼 오면 생기는 정원 빈자리)로 거르고, 상위 screen명만 평가기로 정확히 채점한다. screen=None이면 전부."""
@@ -146,7 +151,13 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
             if full:
                 # 전일 투입(2026-10-19): 대상 사업 기간 가용률 1.0이고 그 기간 남은 배치 수가 사람별 상한보다 작으면 100%로 넣는다.
                 # 예산을 정해 줘도 투입률을 낮추지 않는다(초과는 위반으로 보인다) -- Codex 리뷰 P2(동시 수행 허용자가 후보에서 빠짐)
-                if not full_eligible(person, graph.projects[j]) or _busy_months(graph, rest, pid, project_id) >= person.max_concurrent:
+                busy = _busy_months(graph, rest, pid, project_id)
+                if not full_eligible(person, graph.projects[j]):
+                    return None
+                if offer_concurrency:              # 허용이 필요한 사람만: 원래 사업 유지(빼 오기 없음), 지금 상한에 닿음, 2곳까지
+                    if subset or busy < person.max_concurrent or busy >= max(person.max_concurrent, 2):
+                        return None
+                elif busy >= person.max_concurrent:
                     return None
                 alloc = 1.0
             else:
@@ -167,7 +178,7 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
 
         best = option(())
         if best is None:
-            if not (elsewhere and include_pull):
+            if not (elsewhere and include_pull) or offer_concurrency:
                 continue                                  # 남는 가용률이 없다 -- 빼 오기 허용일 때만 후보
             # 동시 수행자는 필요한 사업에서만 빼 온다(잠긴 배치는 그대로) -- 예전엔 모든 사업에서 빼 빈자리·점수가 틀렸다(Codex 감사 2026-10-12)
             pullable = [p for p in elsewhere if (pid, p) not in locked]
@@ -183,6 +194,11 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
     for quick, person, pid, elsewhere, removes, alloc in (screened if screen is None else screened[:screen]):
         extra_budget = int(-(-person.monthly_rate * alloc // 1)) if budget_add is None else int(budget_add)
         g2 = graph_with_extra_seats(graph, project_id, {person.grade: 1}, extra_budget)
+        rest = [e for e in entries if (e.person_id, e.project_id) not in set(removes)]
+        needs_grant = bool(full and not removes and _busy_months(graph, rest, pid, project_id) >= person.max_concurrent)
+        if needs_grant:                          # 허용을 함께 적는다고 보고 채점한다(그 사람만 같은 달 2곳까지)
+            g2 = replace(g2, people=[p.model_copy(update={"max_concurrent": 2}) if p.id == pid else p for p in g2.people],
+                         _within_cache={})
         sim = simulate(graph, S, C, params, entries, adds=[AssignEntry(person_id=pid, project_id=project_id, alloc=alloc)],
                        removes=removes, graph_after=g2)
         contrib = project_contributions(g2, S, C, params, sim["entries"]).get(project_id, {})
@@ -190,8 +206,12 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         i = graph.pid_index[pid]
         out.append({
             "person_id": pid, "grade": person.grade.value, "alloc": alloc,
-            # 전일 투입에서 다른 배치를 그대로 두고 들어오면 프로젝트 동시 수행(허용된 사람만)
-            "source": "pull" if removes else (("concurrent" if full else "partly_free") if elsewhere else "bench"),
+            # 전일 투입에서 기간이 겹치는 다른 배치를 그대로 두고 들어오면 프로젝트 동시 수행(허용된 사람만). 겹치지 않으면(그 사업이
+            # 먼저 끝남) 그 기간에는 비어 있는 사람이다 -- 동시 수행이 아니다(폴백 리뷰 P2)
+            "source": "pull" if removes else (
+                ("concurrent" if _busy_months(graph, entries, pid, project_id) > 0 else "bench") if full
+                else ("partly_free" if elsewhere else "bench")),
+            "needs_grant": needs_grant,
             "pulled_from": [p for _, p in removes],
             "delta_total": round(sim["delta"]["total"], 4),
             "delta": {k: round(v, 4) for k, v in sim["delta"].items()},

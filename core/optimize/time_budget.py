@@ -25,6 +25,10 @@ MEASURED: dict[int, int | None] = {100: 15, 200: 30, 300: 120}
 # 시간(outputs/c6-monthly-scale*.json: 100명 16초, 200명 120초 한도에서 76초, 300명 360초 한도에서 309초).
 # 권장 시간 안에서 못 끝내면 고정 투입률보다 낮을 수 있다(300명 180초: −1.6%), 끝내면 +15~20%.
 MEASURED_MONTHLY: dict[int, int | None] = {100: 16, 200: 77, 300: 309}
+# 전일 투입(allocation_mode="full", 2026-10-19 claude-a): 생성기 v3 연초 묶음(6개월), 초기해 포함, 시드 1, 안 A가 gap 5% 안 최선 증명으로
+# 끝난 시간 -- 100명 18초, 200명 48초, 300명 58초(30초 한도면 200명 빈자리 1·300명 2가 남았다). 시드 4도 같았다(200명은 31초).
+# 근거 rehearsal/results/time-budget-full.json(`python -m rehearsal.time_budget_full`). 12개월은 api/settings.HORIZON_TIME_FACTOR.
+MEASURED_FULL: dict[int, int | None] = {100: 18, 200: 48, 300: 58}
 # Margin over the measured minimum: plan A is solved with a stricter 1 % gap in the service, and real data may be
 # harder than the synthetic bundles. Rounded up to 30 s steps.
 MARGIN = 1.5
@@ -64,7 +68,8 @@ def recommend_from_sweeps(results_dir: Path, solver: str = "highs",
 def recommend(n_people: int, table: dict[int, int | None] | None = None,
               fallback_s: int = 120, allocation_mode: str = "fixed") -> TimeBudget:
     if table is None:
-        table = MEASURED_MONTHLY if allocation_mode == "monthly" else MEASURED
+        table = (MEASURED_MONTHLY if allocation_mode == "monthly" else MEASURED_FULL if allocation_mode == "full"
+                 else MEASURED)
     sizes = sorted(s for s, v in table.items() if v is not None)
     if not sizes:
         return TimeBudget(fallback_s, 4 * fallback_s, False, "측정값 없음 — 기본값")
@@ -73,7 +78,7 @@ def recommend(n_people: int, table: dict[int, int | None] | None = None,
             v = _with_margin(table[s])
             return TimeBudget(v, 4 * v, True,
                               f"{s}명 측정 {table[s]}초"
-                              f"({'월별 투입률, gap 5% 안 종료' if allocation_mode == 'monthly' else 'HiGHS, 최선 대비 1% 이내'})"
+                              f"({'월별 투입률, gap 5% 안 종료' if allocation_mode == 'monthly' else '전일 투입, 빈자리 0' if allocation_mode == 'full' else 'HiGHS, 최선 대비 1% 이내'})"
                               f" × 여유 {MARGIN}")
     v = _with_margin(table[sizes[-1]])
     return TimeBudget(v, 4 * v, False, f"{sizes[-1]}명보다 큼 — 측정 범위 밖, 최소 {v}초 이상 권장")

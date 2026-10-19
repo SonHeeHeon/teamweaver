@@ -124,8 +124,8 @@ def test_tampered_records_are_refused(client, raw, tamper, word):
 
 def test_a_plan_that_breaks_a_rule_is_refused(client, raw):
     rec = json.loads(raw)
-    rec["optimize"]["plans"][0]["entries"][0]["alloc"] = 1.0        # 가용률·예산을 넘기는 명단
-    rec["optimize"]["plans"][0]["entries"][1]["alloc"] = 1.0
+    # 규칙을 깨는 명단: 전일 투입(2026-10-19 기본)에서 투입률 0.5는 허용 범위 밖
+    rec["optimize"]["plans"][0]["entries"][0]["alloc"] = 0.5
     res = _import(client, json.dumps(rec).encode())
     assert res.status_code == 422 and "위반" in res.json()["detail"]
 

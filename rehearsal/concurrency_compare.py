@@ -363,7 +363,7 @@ def main() -> None:
         graph = MemoryGraph.build(ds, parsed)
         eng = ScoringEngine(graph)
         S, C = eng.skill_matrix({}), eng.synergy_matrix()
-        params = PlacementSettings().to_milp_params()
+        params = PlacementSettings(allocation_mode="fixed").to_milp_params()     # "지금" = 예전 투입률 방식(비교 기준)
         key = f"{n}+budget{args.budget_shift:g}" if args.budget_shift else str(n)
         data[key] = {"source": str(args.demo / f"org-n{n}"), "digest": _digest(root), "budget_shift": args.budget_shift,
                         "people": len(graph.people), "projects": len(graph.projects),

@@ -1,11 +1,12 @@
 """인사팀 검토 자료(api/routes/review_docs, 2026-10-19 claude-a): 연말형 묶음에서 진행 사업 J010의 한 명을 빼 오고 대기 인력 한 명을 더해
-신규 사업 J014를 확정한 뒤 자료를 만들고 고친다. AI는 가짜 client로만(외부 호출 없음)."""
+신규 사업 J013(제안)을 확정한 뒤 자료를 만들고 고친다. AI는 가짜 client로만(외부 호출 없음).
+사람·사업 번호는 생성기 v3(2026-10-19) 연말형 묶음 기준 -- 신규 제안이 J013·J014, J010 팀·대기 인력이 바뀌었다."""
 from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
-PULLED, BENCH, SRC, TGT = "DP0074", "DP0032", "J010", "J014"
+PULLED, BENCH, SRC, TGT = "DP0042", "DP0023", "J010", "J013"
 
 
 def _ws(c):
@@ -198,14 +199,14 @@ def test_list_has_one_doc_per_target_project(yearend):
     with TestClient(app) as c:
         ws = _ws(c)
         entries = [e for e in _entries(ws) if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
-        entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": "J015", "alloc": 1.0}]
+        entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": "J014", "alloc": 1.0}]
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "auto"})
         assert r.status_code == 200, r.text
         v = r.json()["workspace"]["dataset_version"]
         row = c.get("/api/review-docs").json()["confirms"][0]
-        assert [p["project_id"] for p in row["projects"]] == ["J014", "J015"]
-        d14 = c.post(f"/api/review-docs/{v}/J014").json()
-        d15 = c.post(f"/api/review-docs/{v}/J015").json()
+        assert [p["project_id"] for p in row["projects"]] == ["J013", "J014"]
+        d14 = c.post(f"/api/review-docs/{v}/J013").json()
+        d15 = c.post(f"/api/review-docs/{v}/J014").json()
         assert [j["person_id"] for j in d14["moves"]["joined"]] == [PULLED]
         assert [j["person_id"] for j in d15["moves"]["joined"]] == [BENCH]
 

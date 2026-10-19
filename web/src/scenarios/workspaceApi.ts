@@ -20,10 +20,16 @@ export interface ProjectItem {
 export interface PipelineItem extends ProjectItem { stage: Stage; predecessor: string | null; registered_at?: string | null }
 export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean }
 export interface HistoryEntry { version: string; at: string; kind: string; note: string }
+/** 프로젝트 동시 수행 허용 사유(2026-10-19 사용자 결정 -- 사람 단위, 사유 필수). core/ingest/concurrency.REASONS와 같다. */
+export const CONCURRENCY_REASONS = ["인력 부족", "기술 지원", "긴급 지원", "기타"] as const;
+export type ConcurrencyReason = (typeof CONCURRENCY_REASONS)[number];
+export interface ConcurrencyGrant extends Member { max_projects: number; reason: ConcurrencyReason; memo: string; granted_at: string }
 export interface Workspace {
   dataset_version: string; dataset_id: string; synthetic: boolean | null; editable: boolean; reason?: string;
   horizon_start?: string | null; horizon_last?: string | null;
   pipeline: PipelineItem[]; ongoing: OngoingItem[]; bench: Member[]; history: HistoryEntry[];
+  /** 프로젝트 동시 수행을 허용받은 사람(사유와 함께) */
+  concurrency?: ConcurrencyGrant[];
 }
 
 export interface SkillNeed { name: string; min_months: number; headcount: number }
@@ -33,9 +39,13 @@ export interface ProjectForm {
 }
 
 export interface CandidateRow {
-  person_id: string; name: string; grade: Grade; alloc: number; source: "bench" | "partly_free" | "pull";
+  person_id: string; name: string; grade: Grade; alloc: number; source: "bench" | "partly_free" | "pull" | "concurrent";
   pulled_from: string[]; delta_total: number; delta: Record<string, number>; new_violations: unknown[];
   category: "bench" | "ending" | "pull"; predecessor_team: boolean; monthly_cost?: number;
+  /** 전일 투입: 원래 사업을 유지한 채 들어오려면 프로젝트 동시 수행 허용이 필요하다(확정 때 함께 적는다) */
+  needs_grant?: boolean;
+  /** 동시 수행 지원 행: 이 사람으로 확정할 때 서버가 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술) */
+  apply_hint?: ApplyHint;
 }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
 export interface UnavailableRow { person_id: string; name: string; grade: Grade; months: number[]; reason: string }
@@ -113,9 +123,23 @@ export const dropProject = (v: string, id: string) =>
 export const postLock = (v: string, projectId: string, people: string[] | null, locked: boolean) =>
   call<WithWs>("/api/workspace/lock", json("POST", { dataset_version: v, project_id: projectId, people, locked }));
 export const postApply = (v: string, body: { entries: AssignEntry[]; note?: string;
-  source: "auto" | "manual" | "emergency" | "plan" } & Partial<ApplyHint>) =>
+  source: "auto" | "manual" | "emergency" | "plan";
+  concurrency_add?: { person_id: string; memo?: string; reason?: ConcurrencyReason }[] } & Partial<ApplyHint>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
     "/api/workspace/apply", json("POST", { dataset_version: v, ...body }));
+export const postConcurrency = (v: string, personId: string, allow: boolean, reason?: ConcurrencyReason, memo?: string,
+                                maxProjects: 2 | 3 = 2) =>
+  call<WithWs>("/api/workspace/concurrency", json("POST", { dataset_version: v, person_id: personId, allow,
+                                                            ...(allow ? { reason, memo: memo ?? "", max_projects: maxProjects } : {}) }));
+
+export interface ConcurrencyCandidate { person_id: string; name: string; grade: Grade; skill_fit: number; monthly_cost: number;
+                                        busy_with: string[]; already_allowed: boolean; needs_more: boolean }
+export interface ShortfallHint { project_id: string; grade: Grade; missing: number; budget_left: number; free_eligible: number;
+                                 candidates: ConcurrencyCandidate[] }
+/** 빈자리마다 프로젝트 동시 수행 허용 후보(다시 풀지 않는다). */
+export const fetchConcurrencyCandidates = (v: string, entries: AssignEntry[], weights: Record<string, number> = {}) =>
+  call<{ dataset_version: string; shortfalls: ShortfallHint[] }>("/api/concurrency/candidates",
+                                                               json("POST", { dataset_version: v, entries, weights }));
 export const postUndo = (v: string) => call<WithWs>("/api/workspace/undo", json("POST", { dataset_version: v }));
 export const fetchCandidates = (id: string, v: string) =>
   call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates?dataset_version=${encodeURIComponent(v)}`);

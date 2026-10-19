@@ -269,7 +269,10 @@ def test_operating_scenario_matches_the_described_situation(tmp_path):
     ds, _ = to_dataset(b, report)
     assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 2
     on = {c.person_id for c in ds.current}
-    assert len(on) == 90 and set(m["bench"]) == {p.id for p in ds.people} - on
+    # 생성기 v3(2026-10-19): 계획 기간에 육아휴직 달이 걸린 사람은 진행 사업·대기 인력 어디에도 없다
+    away = {p.id for p in ds.people if min(p.availability) < 1.0}
+    assert away and not (away & on) and not (away & set(m["bench"]))
+    assert len(m["bench"]) == 10 and set(m["bench"]) == {p.id for p in ds.people} - on - away
     for p in ds.projects:
         team = [c for c in ds.current if c.project_id == p.id]
         if p.id in m["proposals"]:
@@ -357,9 +360,11 @@ def test_review_style_shares_are_checked(tmp_path):
         generate_org_bundle(tmp_path / "x", 100, seed=5, blunt_share=1.5)
 
 
-def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp_path):
-    """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 표는 바이트 단위로 같다.
-    항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰)."""
+def test_v3_keeps_people_history_and_review_tables_byte_identical_to_v1(tmp_path):
+    """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 사람·이력·평가 표는 바이트 단위로 같다.
+    항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰).
+    v3(2026-10-19)는 가용률·사업 정원·예산·현재 배치만 바꾼다(전일 투입 재설계) -- 그 표는 이 비교에서 뺀다. 리뷰 판정 동봉이 그대로 쓰이는 근거."""
+    v3_changed = {"availability.csv", "projects.csv", "project_grade_requirements.csv", "current_assignments.csv"}
     v1 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
           "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
           "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
@@ -373,7 +378,7 @@ def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp
           "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"}
     root = generate_org_bundle(tmp_path / "v2", 100, seed=2026)                   # v1 manifest의 seed(시연 묶음)
     files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
-    assert {k: files[k] for k in v1} == v1
+    assert {k: files[k] for k in v1 if k not in v3_changed} == {k: v for k, v in v1.items() if k not in v3_changed}
     v1_n300 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",   # AI·AU 그룹까지(436aa9a demo/org-n300.zip)
                "person_skills.csv": "9aaf017b68cfda60f6a13d08655ac1f089c7146e3eedb7359489a64c06475338",
                "work_history.csv": "6463a3fa274bb266b973464bfd7e7f3a0f47c76674d1de544602973b96448c47",
@@ -387,4 +392,52 @@ def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp
                "replacements.csv": "7c52ecaf8ea4a3db93cccf78f5f18fe19148f83d0688f2c16632a41918a9220a"}
     root = generate_org_bundle(tmp_path / "v2-n300", 300, seed=2026)
     files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
-    assert {k: files[k] for k in v1_n300} == v1_n300
+    assert {k: files[k] for k in v1_n300 if k not in v3_changed} == {k: v for k, v in v1_n300.items() if k not in v3_changed}
+
+
+# ---------------------------------------------------------------- 2026-10-19: 생성기 v3(전일 투입 재설계, 설계 .omc/plan/2026-10-19-concurrency.md 4절)
+@pytest.mark.parametrize("n", [100, 200, 300])
+def test_v3_headcounts_fit_each_grade_without_project_concurrency(tmp_path, n):
+    """등급·달마다 정원 합 ≤ 0.85 × 그 달 일할 수 있는(가용률 1.0) 그 등급 인원, 예산 ≥ 가장 싼 사람으로 전일 채운 비용."""
+    from core.ingest.org_profile import PEAK_CAP
+    b, report = load_bundle(generate_org_bundle(tmp_path / f"n{n}", n, seed=2026))
+    ds, _ = to_dataset(b, report)
+    months = len(ds.people[0].availability)
+    for m in range(months):
+        for g in {p.grade for p in ds.people}:
+            supply = sum(1 for p in ds.people if p.grade == g and p.availability[m] >= 1.0)
+            demand = sum(p.grade_headcount.get(g, 0) for p in ds.projects if m in p.months)
+            assert demand <= PEAK_CAP * supply + 1e-9, (m, g, demand, supply)
+    cheapest = {g: min(p.monthly_rate for p in ds.people if p.grade == g) for g in {p.grade for p in ds.people}}
+    assert all(p.monthly_budget >= sum(cheapest[g] * k for g, k in p.grade_headcount.items()) for p in ds.projects)
+
+
+def test_v3_leave_is_the_same_people_in_every_scenario(tmp_path):
+    """육아휴직 3%(가용률 0인 달)·한 달 휴가 2%(가용률 그대로), 연초·운영 중이 같은 사람·같은 창."""
+    plan = generate_org_bundle(tmp_path / "plan", 100, seed=2026)
+    op = generate_org_bundle(tmp_path / "op", 100, seed=2026, scenario="operating")
+    mp, mo = (json.loads((r / "manifest.json").read_text("utf-8")) for r in (plan, op))
+    assert mp["leave"] == mo["leave"] and mp["leave"]["calibrated"] is False
+    kinds = [x["kind"] for x in mp["leave"]["people"]]
+    assert kinds.count("육아휴직") == 3 and kinds.count("한 달 휴가") == 2
+    b, report = load_bundle(plan)
+    ds, _ = to_dataset(b, report)
+    parental = {x["person_id"] for x in mp["leave"]["people"] if x["kind"] == "육아휴직"}
+    assert {a for p in ds.people for a in p.availability} <= {0.0, 1.0}
+    assert {p.id for p in ds.people if min(p.availability) < 1.0} <= parental
+
+
+def test_v3_current_roster_is_full_time_without_overlap_or_leave(tmp_path):
+    b, report = load_bundle(generate_org_bundle(tmp_path / "plan", 100, seed=2026))
+    ds, _ = to_dataset(b, report)
+    people = {p.id: p for p in ds.people}
+    projects = {p.id: p for p in ds.projects}
+    assert ds.current and all(c.alloc == 1.0 for c in ds.current)
+    busy: dict = {}
+    for c in ds.current:
+        for m in projects[c.project_id].months:
+            assert people[c.person_id].availability[m] == 1.0
+            assert (c.person_id, m) not in busy                                  # 동시 수행 없음
+            busy[(c.person_id, m)] = c.project_id
+    for j, p in projects.items():
+        assert sum(people[c.person_id].monthly_rate for c in ds.current if c.project_id == j) <= p.monthly_budget

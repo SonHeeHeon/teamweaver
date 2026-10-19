@@ -6,11 +6,12 @@
 - 가용률은 사용자 가정(2026-10-19)으로 12개월 전체를 새로 만든다: 대부분 100%, 3%는 12개월 육아휴직(해를 걸침 -- 지난해 8월~올해 8월처럼,
   그 달 0%), 2%는 한 달 휴가(신혼여행·리프레시 -- 사업이 자체 감당하므로 가용률은 그대로, manifest `leave`에만 남긴다). 근거 없는 가정값(NOT_CALIBRATED).
   원본 6개월 묶음의 무작위 가용률(사람·달마다 0%가 10%)은 12개월 사업에 1년 내내 가능한 고급을 18명 중 1명으로 만들어 쓰지 않는다.
-  연초 계획 묶음(6개월)·생성기에 같은 가정을 넣는 일은 겸직·사업 정원과 함께 재설계한다(claude-a 요청, docs/requests/2026-10-19-availability-redesign.md).
+  연초 계획 묶음(6개월)·생성기에 같은 가정을 넣는 일은 동시 수행·사업 정원과 함께 재설계한다(claude-a 요청, docs/requests/2026-10-19-availability-redesign.md).
 - 대표 사업(J001)은 생성기 규칙대로 기간 끝까지 이어진다. 하반기 신규 사업은 생성기의 사업 규칙(종류·고객·기술·정원·예산)을
   6개월 뒤로 옮겨 같은 수만큼 만든다. 월 최대 수요는 생성기와 같은 85% 상한(하반기 신규 사업만 줄인다 -- 상반기는 원본 그대로).
 - 현재 배치는 비운다(백지). 밤 배치는 현재 배치가 없는 데이터에서만 연간 계획(안 A~D)을 미리 푼다.
-생성기(core/ingest, claude-a)는 고치지 않는다.
+2026-10-19 claude-a(생성기 v3, b가 넘긴 재설계): 휴직 창·등급별 정원 상한·예산 범위를 생성기 함수(`core.ingest.leave`·`org_profile.shrink_to_supply`·
+`budget_of`)로 쓴다 -- 원본 묶음과 같은 규칙·같은 창이 되게. 하반기 신규 사업만 줄이고 상반기·대표 사업은 원본 그대로.
 
     uv run python scripts/make_annual_demo.py            # demo/org-n100-annual 을 다시 만든다
 """
@@ -30,37 +31,6 @@ SRC = ROOT / "demo" / "org-n100"
 DST = ROOT / "demo" / "org-n100-annual"
 MONTHS = 12
 SEED = 2026 * 7919 + 12            # 하반기 사업용 난수열(원본 생성기 난수열과 섞이지 않는다)
-LEAVE_SEED = 2026 * 2750159 + 13   # 휴직·휴가 난수열
-PEAK_CAP = 0.85                    # 생성기와 같은 월 최대 수요 비율 상한
-PARENTAL_SHARE, PARENTAL_MONTHS = 0.03, 12
-SHORT_LEAVE_SHARE = 0.02
-
-
-def _offset(first: str, month: str) -> int:
-    return (int(month[:4]) - int(first[:4])) * 12 + int(month[5:]) - int(first[5:])
-
-
-def leave_windows(people: list[dict], first: str, seed: int = LEAVE_SEED) -> dict[str, dict]:
-    """사람별 휴직·휴가(달력 달 기준). 육아휴직: 12개월 연속, 계획 시작 11개월 전 ~ 11개월 뒤 사이에 시작(해를 걸친다).
-    한 달 휴가: 계획 12개월 중 한 달."""
-    rng = random.Random(seed)
-    ids = [p["person_id"] for p in people]
-    n_par, n_short = round(len(ids) * PARENTAL_SHARE), round(len(ids) * SHORT_LEAVE_SHARE)
-    chosen = rng.sample(ids, n_par + n_short)
-    out = {pid: {"kind": "육아휴직", "start": _month(first, rng.randint(-11, 11)), "months": PARENTAL_MONTHS}
-           for pid in chosen[:n_par]}
-    out.update({pid: {"kind": "한 달 휴가", "start": _month(first, rng.randint(0, 11)), "months": 1} for pid in chosen[n_par:]})
-    return out
-
-
-def available_mm(window: dict | None, month: str) -> float:
-    """육아휴직 달만 0 -- 한 달 휴가는 사업이 자체 감당한다고 보고(사용자 설명) 깎지 않는다."""
-    if not window or window["kind"] != "육아휴직":
-        return 1.0
-    k = _offset(window["start"], month)
-    return 0.0 if 0 <= k < window["months"] else 1.0
-
-
 def _month(first: str, k: int) -> str:
     y, m = int(first[:4]), int(first[5:]) - 1 + k
     return f"{y + m // 12:04d}-{m % 12 + 1:02d}"
@@ -69,8 +39,9 @@ def _month(first: str, k: int) -> str:
 def make(src: Path = SRC, dst: Path = DST) -> Path:
     from api.workspace_edits import (CURRENT, GRADE_REQS, PROJECTS, SKILL_REQS, read_manifest, read_table, rehash,
                                      write_manifest, write_table)
-    from core.ingest.org_profile import FLAGSHIP, LLM_ERA, PROJECT_TYPES
-    from core.ingest.synthetic import BASE_RATE
+    from core.ingest.contract import GRADES
+    from core.ingest.leave import available_mm, leave_seed, leave_windows, manifest_section
+    from core.ingest.org_profile import FLAGSHIP, LLM_ERA, PROJECT_TYPES, budget_of, shrink_to_supply
 
     files = {p.name: p.read_text("utf-8") for p in sorted(src.iterdir()) if p.is_file()}
     m = read_manifest(files)
@@ -82,15 +53,16 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
 
     # 1) 가용률 -- 휴직·휴가 가정(사람 순서 = people.csv 순서)
     _, people = read_table(files, "people.csv")
-    leaves = leave_windows(people, first)
+    leaves = leave_windows([p["person_id"] for p in people], first, leave_seed(int(m["seed"])))
     ah, _ = read_table(files, "availability.csv")
-    rows, supply = [], [0.0] * MONTHS
+    rows, supply = [], {g: [0.0] * MONTHS for g in GRADES}
     for person in people:
         pid = person["person_id"]
         for k, mo in enumerate(months):
-            mm = f"{available_mm(leaves.get(pid), mo):.1f}"
-            rows.append({"person_id": pid, "month": mo, "available_mm": mm})
-            supply[k] += float(mm)
+            mm = available_mm(leaves.get(pid), mo)
+            rows.append({"person_id": pid, "month": mo, "available_mm": f"{mm:.1f}"})
+            if mm >= 1.0:
+                supply[person["career_grade"]][k] += 1.0
     write_table(files, "availability.csv", ah, rows)
 
     # 2) 사업: 대표 사업은 끝까지, 하반기 신규 사업 추가
@@ -141,25 +113,12 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
                            "headcount": str(rng.randint(1, 2))})
     new_ids = {p["project_id"] for p in new}
 
-    def demand(mo: int) -> int:
-        return sum(sum(hc_of[pid].values()) for pid, (s, e) in span.items() if s <= mo <= e)
-
-    def ratio(mo: int) -> float:
-        return demand(mo) / supply[mo] if supply[mo] > 0 else 0.0
-
-    while True:
-        peak = max(range(MONTHS), key=ratio)
-        if ratio(peak) <= PEAK_CAP:
-            break
-        cand = [pid for pid in new_ids if span[pid][0] <= peak <= span[pid][1] and sum(hc_of[pid].values()) > 1]
-        if not cand:
-            break                                              # 상반기·대표 사업만 남았다(원본 그대로 둔다)
-        pid = max(cand, key=lambda x: sum(hc_of[x].values()))
-        g = max(hc_of[pid], key=hc_of[pid].get)
-        hc_of[pid][g] -= 1
+    # 생성기와 같은 등급·달별 정원 상한(하반기 신규 사업만 줄인다)
+    shaped = [{"project_id": pid, "_start": a, "_end": b, "_hc": hc_of[pid], "_flagship": pid not in new_ids}
+              for pid, (a, b) in span.items()]
+    peak = shrink_to_supply(shaped, supply, MONTHS)
     for p in new:
-        budget = sum(BASE_RATE[g] * k for g, k in hc_of[p["project_id"]].items())
-        p["monthly_budget"] = str(max(1, int(budget * rng.uniform(0.9, 1.15))))
+        p["monthly_budget"] = budget_of(rng, hc_of[p["project_id"]])
         grades += [{"project_id": p["project_id"], "career_grade": g, "headcount": str(k)}
                    for g, k in hc_of[p["project_id"]].items() if k > 0]
     write_table(files, PROJECTS, ph, projects + new)
@@ -172,10 +131,8 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
 
     m["dataset_id"] = "org-n100-s2026-annual"
     m["horizon_months"] = MONTHS
-    m["peak_demand_ratio"] = round(max(ratio(k) for k in range(MONTHS)), 4)
-    m["leave"] = {"model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
-                  "calibrated": False,
-                  "people": [{"person_id": pid, **w} for pid, w in sorted(leaves.items())]}
+    m["peak_demand_ratio"] = round(peak, 4)
+    m["leave"] = manifest_section(leaves)
     m["annual"] = {"source": "org-n100", "new_projects": [p["project_id"] for p in new],
                    "note": "연간 계획 시연(상황 1 · 계획기간 1년): org-n100과 같은 사람·이력·평가 글, 기간 12개월. "
                            "상반기 사업은 원본과 같고 하반기 신규 사업은 생성기 규칙을 별도 난수열로 옮겼다. 가용률은 휴직·휴가 가정(manifest leave)으로 새로 만들었다. "

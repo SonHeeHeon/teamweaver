@@ -6,30 +6,66 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v2",
+ "generator": "core.ingest.org_profile v3",
  "groups": {
   "DP": 100
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.99,
+ "peak_demand_ratio": 0.96,
  "scenario": "operating",
  "bench": [
+  "DP0023",
+  "DP0048",
+  "DP0055",
+  "DP0003",
+  "DP0031",
+  "DP0069",
   "DP0032",
-  "DP0078",
-  "DP0088",
-  "DP0041",
-  "DP0081",
-  "DP0046",
-  "DP0079",
-  "DP0100",
-  "DP0026",
-  "DP0031"
+  "DP0071",
+  "DP0053",
+  "DP0085"
  ],
  "proposals": [
-  "J014",
-  "J015"
+  "J013",
+  "J014"
  ],
+ "leave": {
+  "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
+  "calibrated": false,
+  "people": [
+   {
+    "person_id": "DP0004",
+    "kind": "육아휴직",
+    "start": "2026-12",
+    "months": 12
+   },
+   {
+    "person_id": "DP0007",
+    "kind": "한 달 휴가",
+    "start": "2027-03",
+    "months": 1
+   },
+   {
+    "person_id": "DP0011",
+    "kind": "육아휴직",
+    "start": "2025-11",
+    "months": 12
+   },
+   {
+    "person_id": "DP0067",
+    "kind": "육아휴직",
+    "start": "2026-05",
+    "months": 12
+   },
+   {
+    "person_id": "DP0070",
+    "kind": "한 달 휴가",
+    "start": "2027-09",
+    "months": 1
+   }
+  ]
+ },
  "review_style": {
   "blunt_share": 0.08,
   "mismatch_share": 0.05,
@@ -235,13 +271,13 @@
   "rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
   "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
   "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
-  "availability.csv": "67b5890b22425aadfa1aabe0fb9f50bcd443f423170b3fe9955584fb73efa7e5",
-  "projects.csv": "42579e66f5851bff809d2b2566c113d3aa5826b671cc155ae3ef84aca5addf1e",
-  "project_grade_requirements.csv": "3a76bea4a287aba6ea87d2b52d190cb443fd6884298bd458358018ca822beac3",
-  "project_skill_requirements.csv": "cccdbb206babe2d34d03c2887a4728365b6a81e3df49c1bd7c06c12b967e1bbe",
+  "availability.csv": "29a5d98f302826aac845bd28b2e2953e7e26fef06c38b437aed2d80a564397ff",
+  "projects.csv": "0e2658c5a93dd1f6e7631f066ca92a761972609a6758ec819c165d1fc7f5a6a2",
+  "project_grade_requirements.csv": "af5a3d9ffd198f67426a42ff361a2f01c380b1aac405cae0da66f7dddaa07097",
+  "project_skill_requirements.csv": "2e95aacf40f857f71e87e583de9dd9456500488e9622f67c419fa9adf7887faf",
   "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
   "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
-  "current_assignments.csv": "d264b6feb0d6a8f4d5a587045742d25724651a8baf6ab10d9e73ff4bc5196b74",
+  "current_assignments.csv": "e78bb63723513bd57a5f249e58e23143277313fdc90b59ed8ab578e88a576616",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
  }

@@ -3,8 +3,9 @@
 
     uv run python -m rehearsal.scenario_numbers      # → rehearsal/results/scenarios-1019.json (데이터 폴더를 안 주면 임시 폴더)
 
-흐름: 고도화 과제 등록(이전 사업 J003 복사) → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) → 손 편성 확정(끝나 가는 사람 + 빼 오는 사람) →
-인사팀 검토 자료 → J007 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료.
+흐름: 고도화 과제 등록(이전 사업 J005 복사 -- 생성기 v3 연말형에서 올해 말에 끝나는 사업) → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
+손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J007 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료 →
+J002 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
 """
 from __future__ import annotations
 
@@ -14,6 +15,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "rehearsal" / "results" / "scenarios-1019.json"
+
+
+PREDECESSOR = "J005"       # 연말형(생성기 v3)에서 올해 말 끝나는 사업 -- 고도화 과제의 이전 사업
+SUPPORT = "J002"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀)
 
 
 def _entries(ws):
@@ -52,12 +57,13 @@ def main() -> None:
         ws = c.get("/api/workspace").json()
         out["start"] = {"pipeline": [(p["project_id"], p["name"], p["stage"]) for p in ws["pipeline"]],
                         "ending": [o["project_id"] for o in ws["ongoing"] if o["ends_in_horizon"]], "bench": len(ws["bench"])}
-        pred = c.get("/api/workspace/projects/J003/form").json()
-        form = {**pred, "name": "보험사 B 고도화", "start_month": "2027-01", "end_month": "2028-06", "stage": "예정", "predecessor": "J003"}
+        pred = c.get(f"/api/workspace/projects/{PREDECESSOR}/form").json()
+        form = {**pred, "name": pred["name"].replace("[실행] ", "") + " 고도화", "start_month": "2027-01", "end_month": "2028-06",
+                "stage": "예정", "predecessor": PREDECESSOR}
         r = c.post("/api/workspace/projects", json={"dataset_version": ws["dataset_version"], "project": form})
         r.raise_for_status()
         pid, ws = r.json()["project_id"], r.json()["workspace"]
-        out["register"] = {"project_id": pid, "copied_from": "J003", "seats": next(p for p in ws["pipeline"] if p["project_id"] == pid)["seats"]}
+        out["register"] = {"project_id": pid, "copied_from": PREDECESSOR, "name": form["name"], "seats": next(p for p in ws["pipeline"] if p["project_id"] == pid)["seats"]}
         cands = c.get(f"/api/pipeline/{pid}/candidates", params={"dataset_version": ws["dataset_version"]}).json()
         pick = lambda rows: [{"name": x["name"], "grade": x["grade"], "delta": round(x["delta_total"], 2),   # noqa: E731
                               "predecessor_team": x.get("predecessor_team"), "from": x.get("pulled_from")} for x in rows[:3]]
@@ -92,6 +98,29 @@ def main() -> None:
         r.raise_for_status()
         doc = r.json()
         out["review_emergency"] = _brief_doc(doc)
+        # 프로젝트 동시 수행으로 지원(원래 사업 유지): J002 긴급 투입 후보 중 허용이 필요한 첫 사람 -- 확정이 허용(긴급 지원)을 함께 적는다
+        ws = r_ws = c.get("/api/workspace").json()
+        r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": SUPPORT, "n": 1,
+                                                "note": "기술 지원 요청"})
+        r.raise_for_status()
+        spare = [x for x in r.json()["candidates"]["spare"] if x.get("needs_grant") and not x["new_violations"]]
+        out["concurrent_support"] = {"candidates": pick(spare)}
+        if spare:
+            x = spare[0]
+            entries = _entries(r_ws) + [{"person_id": x["person_id"], "project_id": SUPPORT, "alloc": 1.0}]
+            r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "emergency",
+                                                     "note": f"{SUPPORT} 기술 지원(프로젝트 동시 수행)",
+                                                     "headcount_add": {SUPPORT: {x["grade"]: 1}},
+                                                     "budget_add": {SUPPORT: int(-(-x["monthly_cost"] // 1))},
+                                                     "concurrency_add": [{"person_id": x["person_id"], "memo": "기술 지원 요청"}]})
+            r.raise_for_status()
+            ws3 = r.json()["workspace"]
+            out["concurrent_support"].update({"person": x["name"], "keeps": x.get("current_projects"),
+                                              "grant": [g for g in ws3["concurrency"] if g["person_id"] == x["person_id"]],
+                                              "monthly_cost": x["monthly_cost"], "delta": round(x["delta_total"], 2)})
+            r = c.post(f"/api/review-docs/{ws3['dataset_version']}/{SUPPORT}")
+            r.raise_for_status()
+            out["review_concurrent"] = _brief_doc(r.json())
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), "utf-8")
     print(json.dumps(out, ensure_ascii=False, indent=1)[:6000])
 

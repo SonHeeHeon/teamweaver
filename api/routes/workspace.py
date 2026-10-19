@@ -6,6 +6,7 @@
 - PATCH  /api/workspace/projects/{id}      단계 바꾸기·양식 고치기 → 새 판
 - DELETE /api/workspace/projects/{id}      떨어짐·취소(팀원은 대기) → 새 판
 - POST   /api/workspace/lock               고정/해제(사업 전체 또는 지정 사람) → 새 판
+- POST   /api/workspace/concurrency        프로젝트 동시 수행 허용(사유 필수)/해제(사람 단위, 2026-10-19 claude-a) → 새 판
 - POST   /api/workspace/apply              확정(자동 편성 행·손 편성·긴급 투입 결과) → 새 위반이 없을 때만 새 판
 - POST   /api/workspace/undo               직전 판으로
 - GET    /api/skills/dictionary            양식의 기술 검색(대표 이름·별칭)
@@ -26,8 +27,9 @@ from api.deps import check_dataset_version
 from api.settings import horizon_months_of
 from api.schemas import MAX_PLAN_ENTRIES, EntryIn
 from api.workspace import History, WorkspaceUnavailable, commit, current_files, undo
-from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, pipeline_of,
-                                 project_form, read_manifest, read_table, remove_project, set_lock, update_project)
+from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, concurrency_of,
+                                 pipeline_of, project_form, read_manifest, read_table, remove_project, set_concurrency,
+                                 set_lock, update_project)
 
 router = APIRouter()
 GRADE_ORDER = ("특급", "고급", "중급", "초급")
@@ -60,7 +62,8 @@ def workspace_view(request: Request) -> dict:
     try:
         files = current_files(app, dataset)
     except WorkspaceUnavailable as exc:
-        return {**base, "editable": False, "reason": str(exc), "pipeline": [], "ongoing": [], "bench": [], "history": []}
+        return {**base, "editable": False, "reason": str(exc), "pipeline": [], "ongoing": [], "bench": [], "concurrency": [],
+                "history": []}
     m = read_manifest(files)
     pipe = pipeline_of(m)
     proposals = [p for p in (m.get("proposals") or []) if isinstance(p, str)]
@@ -104,9 +107,13 @@ def workspace_view(request: Request) -> dict:
     history = list(reversed(entries)) if entries and entries[-1].get("version") == info.version else []
     from api.unavailable import horizon_reason
     bench = [person(p, unavailable=horizon_reason(dataset, p)) for p in (m.get("bench") or []) if isinstance(p, str)]
+    # 프로젝트 동시 수행 허용 인력(사람 단위, 사유와 함께) -- 화면 목록·해제
+    concurrency = [person(e["person_id"], max_projects=e.get("max_projects"), reason=e.get("reason"),
+                          memo=e.get("memo") or "", granted_at=e.get("granted_at") or "")
+                   for e in concurrency_of(m)]
     return {**base, "editable": True, "horizon_start": horizon[0] if horizon else None,
             "horizon_last": _horizon_last(m), "pipeline": pipeline, "ongoing": ongoing, "bench": bench,
-            "history": history}
+            "concurrency": concurrency, "history": history}
 
 
 def _horizon_last(m: dict) -> str | None:
@@ -204,6 +211,45 @@ async def post_lock(body: LockIn, request: Request) -> dict:
     return await _done(request, out)
 
 
+ConcurrencyReason = Literal["인력 부족", "기술 지원", "긴급 지원", "기타"]     # core.ingest.concurrency.REASONS와 같다
+
+
+class ConcurrencyIn(_Versioned):
+    person_id: str = Field(min_length=1, max_length=32)
+    allow: bool = True
+    max_projects: Literal[2, 3] = 2
+    reason: ConcurrencyReason | None = None
+    memo: str = Field(default="", max_length=200)
+
+
+@router.post("/api/workspace/concurrency", dependencies=[Depends(require_admin)])
+async def post_concurrency(body: ConcurrencyIn, request: Request) -> dict:
+    """프로젝트 동시 수행 허용·해제(2026-10-19 사용자 결정 "사람 단위로", 사유 필수). 허용한 사람만 전일 투입 계산에서 같은 달 여러 사업."""
+    check_dataset_version(body.dataset_version, request.app.state.dataset)
+    if body.allow and body.reason is None:
+        raise HTTPException(status_code=422, detail="프로젝트 동시 수행을 허용하려면 사유를 골라야 한다")
+    before = _files(request)
+    from datetime import date
+    files = _edit(set_concurrency, before, body.person_id, body.allow, max_projects=body.max_projects,
+                  reason=body.reason, memo=body.memo, granted_at=date.today().isoformat())
+    name = _names(request.app.state.dataset).get(body.person_id, body.person_id)
+    out = await commit(request, before, files, kind="concurrency" if body.allow else "concurrency_off",
+                       note=(f"{name} 프로젝트 동시 수행 허용({body.reason})" if body.allow
+                             else f"{name} 프로젝트 동시 수행 해제"),
+                       summary={"person_id": body.person_id, "allow": body.allow, "max_projects": body.max_projects,
+                                "reason": body.reason, "memo": body.memo})
+    return await _done(request, out)
+
+
+class GrantIn(BaseModel):
+    """확정과 함께 기록하는 동시 수행 허용(긴급 투입 '동시 수행으로 지원')."""
+    model_config = ConfigDict(extra="forbid")
+    person_id: str = Field(min_length=1, max_length=32)
+    max_projects: Literal[2, 3] = 2
+    reason: ConcurrencyReason = "긴급 지원"
+    memo: str = Field(default="", max_length=200)
+
+
 class SkillAdd(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=80)
@@ -218,6 +264,7 @@ class ApplyIn(_Versioned):
     headcount_add: dict[str, dict[Literal["특급", "고급", "중급", "초급"], Annotated[int, Field(ge=0, le=10)]]] = {}
     budget_add: dict[str, Annotated[int, Field(ge=0, le=10_000_000)]] = {}
     skills_add: dict[str, list[SkillAdd]] = Field(default={}, max_length=10)
+    concurrency_add: list[GrantIn] = Field(default=[], max_length=20)
 
 
 def _violations(app, dataset, entries) -> dict[tuple[str, str], object]:
@@ -249,7 +296,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
     ids_p, ids_j = dataset.graph.pid_index, dataset.graph.project_index
     bad = sorted({e.person_id for e in body.entries if e.person_id not in ids_p}
                  | {e.project_id for e in body.entries if e.project_id not in ids_j}
-                 | {p for p in list(body.headcount_add) + list(body.budget_add) + list(body.skills_add) if p not in ids_j})
+                 | {p for p in list(body.headcount_add) + list(body.budget_add) + list(body.skills_add) if p not in ids_j}
+                 | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
     before = _files(request)
@@ -257,6 +305,16 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
                            budget_add=dict(body.budget_add),
                            skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()})
+    if body.concurrency_add:
+        # 동시 수행으로 지원하는 사람의 허용(사유)을 같은 판에 함께 적는다 -- 되돌리면 둘 다 사라진다(설계 3.5).
+        # 이미 그만큼 허용된 사람은 기존 기록(사유·메모·시각)을 그대로 둔다(폴백 리뷰 P2: 기본값으로 덮어썼다)
+        from datetime import date
+        existing = {e["person_id"]: e for e in concurrency_of(read_manifest(files))}
+        for g in body.concurrency_add:
+            if existing.get(g.person_id, {}).get("max_projects", 1) >= g.max_projects:
+                continue
+            files = _edit(set_concurrency, files, g.person_id, True, max_projects=g.max_projects, reason=g.reason,
+                          memo=g.memo, granted_at=date.today().isoformat())
     if not any(changes.values()) and not (body.headcount_add or body.budget_add or body.skills_add):
         raise HTTPException(status_code=422, detail="바뀐 배치가 없다")
     old = _violations(request.app, dataset, _entries_of(dataset))
@@ -277,7 +335,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                          "plan": "연간 계획 확정"}[body.source]
     out = await commit(request, before, files, kind=f"apply_{body.source}", note=note,
                        summary={**changes, "headcount_add": body.headcount_add, "budget_add": body.budget_add,
-                                "skills_add": {p: [s.name for s in v] for p, v in body.skills_add.items()}},
+                                "skills_add": {p: [s.name for s in v] for p, v in body.skills_add.items()},
+                                "concurrency_add": [g.model_dump() for g in body.concurrency_add]},
                        check=check)
     return await _done(request, out, changes=changes)
 

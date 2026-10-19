@@ -84,6 +84,17 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
     list.push(e);
     byProject.set(e.project_id, list);
   }
+  // 같은 달에 두 사업 이상인 사람 = 프로젝트 동시 수행(전일 투입에서는 부서장이 허용한 사람만, 2026-10-19)
+  const concurrent = new Set<string>();
+  const spans = new Map<string, [number, number][]>();
+  for (const e of entries) {
+    const j = jById.get(e.project_id);
+    if (!j) continue;
+    const mine = spans.get(e.person_id) ?? [];
+    if (mine.some(([a, b]) => a <= j.end_month && j.start_month <= b)) concurrent.add(e.person_id);
+    mine.push([j.start_month, j.end_month]);
+    spans.set(e.person_id, mine);
+  }
   return (
     <div className="space-y-4">
       {onAdjust && (
@@ -113,6 +124,12 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
                     <span className="text-slate-900">
                       {p?.name ?? e.person_id}
                       <span className="ml-2 text-xs text-slate-500">{p?.grade}</span>
+                      {concurrent.has(e.person_id) && (
+                        <span className="ml-2 rounded-full bg-violet-100 px-1.5 py-0.5 text-[11px] text-violet-800"
+                              title={p?.concurrency ? `허용 사유: ${p.concurrency.reason}${p.concurrency.memo ? ` · ${p.concurrency.memo}` : ""}` : undefined}>
+                          동시 수행{p?.concurrency ? ` · ${p.concurrency.reason}` : ""}
+                        </span>
+                      )}
                       {p && Object.keys(p.skills).length > 0 && (
                         <button type="button" onClick={() => setSkillsOf(skillsOf === key ? null : key)}
                                 aria-expanded={skillsOf === key} aria-label={`${p.name} 기술 보기`}

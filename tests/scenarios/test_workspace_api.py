@@ -9,9 +9,9 @@ def _ws(c):
 
 
 def _form(c, **kw):
-    pred = c.get("/api/workspace/projects/J003/form").json()                  # 고도화 과제: 이전 사업 복사
+    pred = c.get("/api/workspace/projects/J005/form").json()                  # 고도화 과제: 이전 사업 복사
     return {**pred, "name": "보험사 B 고도화", "start_month": "2027-01", "end_month": "2028-06", "stage": "예정",
-            "predecessor": "J003", **kw}
+            "predecessor": "J005", **kw}
 
 
 def _entries(ws):
@@ -27,9 +27,9 @@ def test_workspace_view_of_the_yearend_bundle(yearend):
         ws = _ws(c)
     assert ws["editable"] is True
     stages = {p["project_id"]: p["stage"] for p in ws["pipeline"]}
-    assert stages == {"J014": "제안", "J015": "예정"}
+    assert stages == {"J013": "제안", "J014": "예정"}            # 생성기 v3(2026-10-19): 신규 제안 J013·J014
     ending = {o["project_id"] for o in ws["ongoing"] if o["ends_in_horizon"]}
-    assert ending == {"J003", "J006", "J009", "J012"}                          # 계획 창 끝(2027-03)까지 가는 사업은 아니다
+    assert ending == {"J005", "J006", "J008", "J009"}                          # 계획 창 끝(2027-03)까지 가는 사업은 아니다
     assert len(ws["bench"]) == 10 and ws["bench"][0]["name"] != ws["bench"][0]["person_id"]   # 가상 데이터는 이름
     assert ws["history"] == []
 
@@ -41,34 +41,34 @@ def test_register_lock_candidates_apply_undo_remove(yearend):
         r = c.post("/api/workspace/projects", json={"dataset_version": v0, "project": _form(c)})
         assert r.status_code == 200, r.text
         pid, ws = r.json()["project_id"], r.json()["workspace"]
-        assert pid == "J016" and ws["dataset_version"] != v0
+        assert pid == "J015" and ws["dataset_version"] != v0
         item = next(p for p in ws["pipeline"] if p["project_id"] == pid)
-        assert item["stage"] == "예정" and item["predecessor"] == "J003" and item["team"] == []
+        assert item["stage"] == "예정" and item["predecessor"] == "J005" and item["team"] == []
         assert [h["kind"] for h in ws["history"]] == ["add_project", "base"]
         # 옛 판으로 다시 쓰면 409
         assert c.post("/api/workspace/projects", json={"dataset_version": v0, "project": _form(c)}).status_code == 409
 
-        # 고정: J005 전체 + J001 한 사람
+        # 고정: J002 전체 + J001 한 사람
         j001 = next(o for o in ws["ongoing"] if o["project_id"] == "J001")
         one = next(t["person_id"] for t in j001["team"] if not t["locked"])
-        ws = c.post("/api/workspace/lock", json={"dataset_version": ws["dataset_version"], "project_id": "J005",
+        ws = c.post("/api/workspace/lock", json={"dataset_version": ws["dataset_version"], "project_id": "J002",
                                                  "locked": True}).json()["workspace"]
         ws = c.post("/api/workspace/lock", json={"dataset_version": ws["dataset_version"], "project_id": "J001",
                                                  "people": [one], "locked": True}).json()["workspace"]
-        j005 = next(o for o in ws["ongoing"] if o["project_id"] == "J005")
-        assert j005["locked_all"] is True
+        j002 = next(o for o in ws["ongoing"] if o["project_id"] == "J002")
+        assert j002["locked_all"] is True
         assert next(t for o in ws["ongoing"] if o["project_id"] == "J001" for t in o["team"]
                     if t["person_id"] == one)["locked"] is True
 
-        # 후보 세 갈래: 고정한 사람은 빼 오기에 없다, J003(이전 사업, 올해 말 종료) 팀원은 '끝나 가는 인력' 맨 위
+        # 후보 세 갈래: 고정한 사람은 빼 오기에 없다, J005(이전 사업, 올해 말 종료) 팀원은 '끝나 가는 인력' 맨 위
         cand = c.get(f"/api/pipeline/{pid}/candidates", params={"dataset_version": ws["dataset_version"]}).json()
-        assert cand["predecessor"] == "J003" and cand["bench"]
+        assert cand["predecessor"] == "J005" and cand["bench"]
         pulled = {r["person_id"] for r in cand["pull"]} | {r["person_id"] for r in cand["ending"] if r["source"] == "pull"}
-        locked_people = {t["person_id"] for t in j005["team"]} | {one}
+        locked_people = {t["person_id"] for t in j002["team"]} | {one}
         assert not (pulled & locked_people)
         assert cand["ending"] and cand["ending"][0]["predecessor_team"] is True
 
-        # 확정: 쉬는 사람 한 명을 J016에 넣는다
+        # 확정: 쉬는 사람 한 명을 J015에 넣는다
         newbie = cand["bench"][0]["person_id"]
         entries = _entries(ws) + [{"person_id": newbie, "project_id": pid, "alloc": 1.0}]
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries,
@@ -80,7 +80,7 @@ def test_register_lock_candidates_apply_undo_remove(yearend):
         assert newbie not in {b["person_id"] for b in ws["bench"]}
 
         # 고정한 배치를 빼는 확정은 거절
-        bad = [e for e in _entries(ws) if e["project_id"] != "J005"]
+        bad = [e for e in _entries(ws) if e["project_id"] != "J002"]
         assert c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"],
                                                     "entries": bad}).status_code == 422
         # 새 위반(가용률 초과)이 생기는 확정은 거절
@@ -139,7 +139,7 @@ def test_emergency_plan_and_apply(yearend):
         assert added in {t["person_id"] for t in j007["team"]}
         assert ws2["history"][0]["kind"] == "apply_emergency"
         # 진행 사업이 아니면 422
-        assert c.post("/api/emergency/plan", json={"dataset_version": ws2["dataset_version"], "project_id": "J015",
+        assert c.post("/api/emergency/plan", json={"dataset_version": ws2["dataset_version"], "project_id": "J014",
                                                    "n": 1}).status_code == 422
 
 
@@ -234,7 +234,7 @@ def test_pipeline_candidates_fill_existing_seats(yearend):
     from api.main import app
     with TestClient(app) as c:
         v = _ws(c)["dataset_version"]
-        cand = c.get("/api/pipeline/J015/candidates", params={"dataset_version": v}).json()
+        cand = c.get("/api/pipeline/J014/candidates", params={"dataset_version": v}).json()
     rows = cand["bench"] + cand["ending"] + cand["pull"]
     assert rows and all(r["budget_added"] == 0 for r in rows)
     assert any(r["delta"].get("unfilled", 0) > 0 for r in cand["bench"])

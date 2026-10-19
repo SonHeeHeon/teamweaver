@@ -195,6 +195,11 @@ def scenario_of(manifest: dict | None) -> dict:
     leave = leave_of(m)
     if leave:
         out["leave"] = leave
+    # 프로젝트 동시 수행 허용(2026-10-19, manifest `concurrency`) -- 사유·메모 표시용(계산은 Person.max_concurrent)
+    from core.ingest.concurrency import grants
+    allowed = grants(m)
+    if allowed:
+        out["concurrency"] = allowed
     return out
 
 

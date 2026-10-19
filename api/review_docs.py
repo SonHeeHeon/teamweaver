@@ -190,7 +190,7 @@ def _num(x: float) -> str:
     return f"{x:.2f}"
 
 
-def move_facts(moves: dict, evidence: dict) -> list[dict]:
+def move_facts(moves: dict, evidence: dict, grants: dict | None = None) -> list[dict]:
     """옮겨 온 인력 카드의 잠긴 사실(설계 2.2). 원래 사업이 잃는 줄은 불리한 사실이다."""
     out: list[dict] = []
     target = moves["target"]
@@ -206,10 +206,18 @@ def move_facts(moves: dict, evidence: dict) -> list[dict]:
     for j in moves["joined"]:
         p = j["person_id"]
         mine = met_by.get(p) or []
-        origin = {"bench": "대기 인력", "partly_free": "일부 여유(다른 배치는 그대로)", "moved": "진행 사업에서 옮겨 옴"}[j["origin"]]
+        grant = (grants or {}).get(p) if j["origin"] == "partly_free" else None
+        origin = ("프로젝트 동시 수행(원래 사업 유지)" if grant else
+                  {"bench": "대기 인력", "partly_free": "일부 여유(다른 배치는 그대로)", "moved": "진행 사업에서 옮겨 옴"}[j["origin"]])
         out.append(_fact("MOVE_WHO", f"{p}({j['grade']}): {origin}, {target} 투입률 {j['alloc']:g}"
                          + (f", 이 사업 요구 기술 중 충족: {', '.join(mine)}" if mine else ", 이 사업 요구 기술 중 충족하는 것 없음"),
                          (p,), adverse=not mine, section="move"))
+        if grant:
+            # 부서장이 사람 단위로 허용한 동시 수행(2026-10-19) -- 사유·메모·시각을 잠긴 사실로(검토자가 근거를 본다)
+            memo = f" · {grant['memo']}" if grant.get("memo") else ""
+            when = f" ({grant['granted_at']})" if grant.get("granted_at") else ""
+            out.append(_fact("MOVE_CONCURRENT", f"{p}: 프로젝트 동시 수행 허용 — 사유 {grant.get('reason')}{memo}{when}, "
+                             f"같은 달 최대 {grant.get('max_projects')}개 사업(사업마다 100%)", (p,), adverse=False, section="move"))
         for s in j["sources"]:
             src = s["project_id"]
             how = "그 사업에서 빠짐" if s["left"] else f"투입률만 줄어듦({s['alloc_before']:g} → {s['alloc_after']:g})"
@@ -261,7 +269,11 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
     inp = build_input(kg, project_id, after, dataset.graph, S, C, params)
     moves = mover_effects(dataset.graph, S, C, params, kg, before, after, project_id)
     joined = {j["person_id"] for j in moves["joined"]}
-    facts = move_facts(moves, inp.evidence) + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None)
+    grants = dataset.scenario.get("concurrency") or {}
+    for j in moves["joined"]:                  # 화면 표시용: 동시 수행 허용으로 들어온 사람
+        if j["origin"] == "partly_free" and j["person_id"] in grants:
+            j["concurrency"] = grants[j["person_id"]]
+    facts = move_facts(moves, inp.evidence, grants) + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None)
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]
     return {"confirm": confirm, "project_id": project_id, "project_name": project.name, "revision": 0, "created_at": now(),

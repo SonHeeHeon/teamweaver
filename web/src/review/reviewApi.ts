@@ -42,6 +42,8 @@ export interface MoveSource {
 export interface Joined {
   person_id: string; grade: string | null; alloc: number;
   origin: "moved" | "partly_free" | "bench";
+  /** 부서장이 허용한 프로젝트 동시 수행으로 들어온 사람(원래 사업 유지) -- 사유·메모 */
+  concurrency?: { reason: string; memo?: string; granted_at?: string; max_projects?: number } | null;
   sources: MoveSource[];
 }
 

@@ -37,7 +37,8 @@ def _body(state: SettingsState, request: Request) -> dict:
             "effective_solver_seeds": _effective_seeds(),
             "recommended_time": rec("fixed"),
             # 월별 투입률은 더 오래 걸린다(실측 2~4배) -- 화면이 고른 방식에 맞춰 보여 준다.
-            "recommended_time_monthly": rec("monthly")}
+            "recommended_time_monthly": rec("monthly"),
+            "recommended_time_full": rec("full")}
 
 
 def _effective_seeds() -> int:
