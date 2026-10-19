@@ -43,6 +43,42 @@ _REMOVED_FIELDS = ("review_judge",)
 # 요청이 time_limit 3600·대안 6개로 서버를 몇 시간씩 묶을 수 있었다).
 TIME_LIMIT_MAX = 900
 
+# 12개월 계획의 권장 시간 배수(2026-10-19 claude-b 실측, 시드 4, 연간 시연 100명 -- 대부분 100% 가용): 30초면 안 A가
+# 빈자리 62항목(쓸 만한 해를 못 찾음), 120초면 0. 권장표(core/optimize/time_budget)에 곱한다.
+# 재설계 뒤(전일 투입·생성기 v3, claude-a 2026-10-19 rehearsal/results/time-budget-full.json): 연간 100명은 30초에도 빈자리 0, 최선 증명은
+# 시드 1 83초·시드 4 61초 -- 6개월 권장 30초 × 4 = 120초 안이라 배수를 그대로 둔다. 200·300명 12개월은 재지 않았다(측정 범위 밖 추정).
+HORIZON_TIME_FACTOR = {6: 1, 12: 4}
+# 12개월 전일 투입 실측(안 A 최선 증명까지, 허용 차이 5%) -- **가장 느린 시드** 값에 여유 2배(MARGIN_12, 30초 단위 올림, 상한 TIME_LIMIT_MAX)를
+# 하한으로 둔다(사용자 2026-10-19 "1년 계획 계산 시간 리밋은 더 널널하게 둬도 될거같아" -- 직전 규칙은 시드 1 × 1.5라 300명 시드 4(485초) 대비 1.3배뿐).
+# 100명: claude-a v4 연간 시연 78초(시드 1만, rehearsal/results/time-budget-full.json). 200·300명: claude-b 2026-10-19, org-n200·n300으로 연간형 묶음을
+# 만들어(scripts/make_annual_demo.make, 사업 89·133개) 시드 1 279·406초, 시드 4 322·485초. 결과 rehearsal/results/time-budget-annual.json.
+# 결과 100·200·300명 240(×4가 더 큼)·660·900초(상한)였다. claude-a 2026-10-19 생성기 v5 연간 묶음(진행 사업 위주·진행 사업 경력 이음·현재 팀 감점 제외)으로
+# 다시 잼(시드 1·4, 사업 40·81·121개): 가장 느린 시드 52·186·312초 → 120(×4와 같음)·390·630초. rehearsal/results/time-budget-annual.json.
+MEASURED_FULL_12: dict[int, int | None] = {100: 52, 200: 186, 300: 312}
+MARGIN_12 = 2.0
+
+
+def _measured_floor_12(n_people: int) -> int:
+    """12개월 전일 투입 하한: n 이상인 첫 측정 크기(없으면 가장 큰 크기)의 실측 × MARGIN_12, 30초 단위 올림."""
+    from core.optimize.time_budget import STEP_S
+    sizes = sorted(k for k, v in MEASURED_FULL_12.items() if v)
+    size = next((k for k in sizes if n_people <= k), sizes[-1])
+    return int(-(-MEASURED_FULL_12[size] * MARGIN_12 // STEP_S) * STEP_S)
+
+
+def horizon_months_of(graph) -> int:
+    people = getattr(graph, "people", None) or []
+    return len(people[0].availability) if people else 6
+
+
+def recommended_seconds(n_people: int, allocation_mode: str = "fixed", months: int = 6) -> int:
+    from core.optimize.time_budget import recommend
+    s = recommend(n_people, allocation_mode=allocation_mode).per_solve_s * HORIZON_TIME_FACTOR.get(months, 1)
+    if months == 12 and allocation_mode == "full":
+        s = max(s, _measured_floor_12(n_people))
+    return min(s, TIME_LIMIT_MAX)
+
+
 class PlacementSettings(BaseModel):
     """관리자가 바꿀 수 있는 배치 규칙. 범위는 화면 검사에도 그대로 쓰인다(bounds()).
 
@@ -76,7 +112,9 @@ class PlacementSettings(BaseModel):
     # 투입률 방식(월별 투입률, 사용자 결정 2026-10-05). 기본 "fixed": 조직형 데이터 측정(outputs/c6-monthly-scale*.json)에서
     # 월별 Plan A는 끝까지 풀면 +15~20%(100/200/300명)지만 시간이 2~4배(300명 309초) 들고, 고정 기준 권장 시간 안에서는
     # 200명 시간 한도 도달·300명 −1.6%였다 -- 계산 시간을 늘릴 수 있을 때 관리자가 고른다(화면이 월별 권장 시간을 보여 준다).
-    allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # 2026-10-19 사용자 결정(전일 투입): 서비스 기본 "full" -- 들어가면 그 사업 기간 100%, 프로젝트 동시 수행은 부서장이 사람 단위로 허용한 사람만
+    # (Person.max_concurrent, 원천 manifest concurrency). full이면 최소 투입률·동시 프로젝트 최대 칸은 쓰지 않는다(예전 방식에서만).
+    allocation_mode: Literal["full", "fixed", "monthly"] = "full"
     # 동시 탐색 수(시드 포트폴리오): 같은 문제를 시드만 바꿔 동시에 푸는 프로세스 수 = 쓰는 CPU 코어 수.
     # None = 서버 기본(환경 변수 TEAMWEAVER_SOLVER_SEEDS, 없으면 1; 시연 run_poc.sh는 4). 권장 4(코어 4개 이상).
     # 실측(claude-a 2026-10-06, 100명 30초): 1이면 대안이 품질 하한에 걸려 안 A만, 4면 안 A~D 모두.
@@ -89,13 +127,12 @@ class PlacementSettings(BaseModel):
             data = {k: v for k, v in data.items() if k not in _REMOVED_FIELDS}
         return data
 
-    def to_milp_params(self, n_people: int | None = None) -> MilpParams:
+    def to_milp_params(self, n_people: int | None = None, months: int = 6) -> MilpParams:
         """n_people을 주고 자동이 켜져 있으면 권장 시간으로 바꿔 쓴다(부팅 사전계산). 화면 요청은 이미 실제
-        시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다."""
+        시간을 숫자로 실어 오므로(웹이 effective를 보냄) n_people 없이 부른다. months = 데이터의 계획 기간(6|12)."""
         data = self.model_dump(exclude=NON_SOLVER_FIELDS)
         if self.time_limit_auto and n_people is not None:
-            from core.optimize.time_budget import recommend
-            data["time_limit"] = recommend(n_people, allocation_mode=self.allocation_mode).per_solve_s
+            data["time_limit"] = recommended_seconds(n_people, self.allocation_mode, months)
         return MilpParams(**data)
 
     @classmethod

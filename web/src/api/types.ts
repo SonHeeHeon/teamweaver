@@ -8,6 +8,20 @@ export interface Person {
   skills: Record<string, number>;
   /** 하위 기술 경력에서 인정된 기술(사용자 결정 "구분해서 표시"). 예: Java {source: "Spring", months: 12, ...}. */
   skill_credit?: Record<string, { source: string; months: number; depth: number; own_months: number }>;
+  /** 계획 달마다 가용률(0~1)과 휴직 정보(2026-10-19). 0인 달이 걸린 사업에는 넣을 수 없다(components/availability). */
+  availability?: number[];
+  leave?: { kind: string; start: string; months: number } | null;
+  /** 프로젝트 동시 수행(2026-10-19): 같은 달 최대 사업 수(1 = 동시 수행 없음)와 부서장의 허용 기록 */
+  max_concurrent?: number;
+  concurrency?: { reason: string; memo?: string; granted_at?: string; max_projects?: number } | null;
+}
+
+/** 사업 수명 주기(2026-10-19, 서버 api/lifecycle -- 표시용, 계산에 안 씀). stage: 개발|운영|고도화|추가 과제. */
+export interface Lifecycle {
+  stage: string;
+  started?: string | null;            // 실제 시작 달 "YYYY-MM"(계획 전일 수 있다)
+  parent?: string | null;             // 추가 과제의 상위 사업
+  external_headcount?: number | null; // 추가 과제의 외주 인원(참고값)
 }
 
 export interface Project {
@@ -15,10 +29,13 @@ export interface Project {
   name: string;
   sector: string;
   phase: string;
-  start_month: number;
+  start_month: number;                // 계획 안으로 자른 달 순번
   end_month: number;
   grade_headcount: Record<string, number>;
   monthly_budget: number;
+  lifecycle?: Lifecycle | null;
+  /** 계획 밖까지 이어지는 사업의 원래 기간("YYYY-MM") -- 없으면 start_month·end_month가 원래 기간 */
+  period?: { start: string; end: string } | null;
 }
 
 export interface Cowork {
@@ -36,6 +53,9 @@ export interface Meta {
   coworks: Cowork[];
   /** 이 meta가 나온 활성 데이터셋(K9). 계산 요청에 실어 보내 서버가 불일치를 409로 막는다. */
   dataset_version: string;
+  /** 계획 시작 달("2026-10")·개월 수(6 또는 12, 2026-10-19 계획기간 1년 확장). 시작 달은 CSV 묶음에만 있다. */
+  horizon_start?: string | null;
+  horizon_months?: number;
 }
 
 export interface AssignEntry {
@@ -43,7 +63,7 @@ export interface AssignEntry {
   project_id: string;
   /** 월별 투입률이면 진행 달 평균. */
   alloc: number;
-  /** 월별 투입률(키 = 진행 달 0~5). 없으면 모든 진행 달이 alloc. */
+  /** 월별 투입률(키 = 진행 달 0~11, 계획 기간 6|12개월). 없으면 모든 진행 달이 alloc. */
   monthly_alloc?: Record<string, number>;
 }
 
@@ -74,6 +94,8 @@ export interface PlanEvent {
   precomputed_at?: string | null;
   /** 편성 기록에서 연 결과면 그 기록 제목(2026-10-18). */
   precomputed_label?: string | null;
+  /** 밤 배치가 풀어 둔 결과면 "nightly"(2026-10-19) -- "밤사이 계산"으로 보인다. */
+  precomputed_source?: string | null;
 }
 
 /** 계산에 실제로 쓸 설정: 자동 계산 시간이면 서버가 정한 값으로 바꿔 넣는다. */
@@ -205,7 +227,7 @@ export interface AppliedSwap {
   warnings: string[];
 }
 
-/** 적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정). 키 = 진행 달(0~5). */
+/** 적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정). 키 = 진행 달(0~11). */
 export interface AllocChange {
   kind: "alloc";
   person_id: string;
@@ -253,8 +275,8 @@ export interface PlacementSettings {
   gap: number;
   /** 한 사람이 같은 달에 맡는 프로젝트 수 상한(C6). */
   max_concurrent_projects: number;
-  /** 투입률 방식: fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
-  allocation_mode: "fixed" | "monthly";
+  /** 투입 방식: full = 전일 투입(들어가면 100%, 2026-10-19 서비스 기본), fixed = 기간 내내 한 비율, monthly = 달마다 따로. */
+  allocation_mode: "full" | "fixed" | "monthly";
   /** 계산 시간 자동(인원 기준). 켜져 있으면 서버가 정한 effective_time_limit을 쓴다. */
   time_limit_auto?: boolean;
   /** 동시 탐색 수(서버 자원). null = 서버 기본(환경 변수, 없으면 1). 요청 계산에는 쓰이지 않고 저장값만 서버에 반영된다. */
@@ -277,6 +299,7 @@ export interface SettingsResponse {
   recommended_time?: TimeHint | null;
   /** 월별 투입률 기준 권장 시간(더 길다). */
   recommended_time_monthly?: TimeHint | null;
+  recommended_time_full?: TimeHint | null;
   /** 지금 설정으로 실제로 쓸 계산 시간(자동이면 인원 기준 권장값). 계산 요청에는 이 값을 보낸다. */
   effective_time_limit?: number | null;
   /** 지금 계산이 쓰는 동시 탐색 수. */

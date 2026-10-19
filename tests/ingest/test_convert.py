@@ -97,7 +97,12 @@ def test_project_outside_the_horizon_is_skipped_and_partial_overlap_is_clipped(t
     ds, _, report = _convert(tmp_path / "again", tables)
     j2 = next(j for j in ds.projects if j.id == "J2")
     assert (j2.start_month, j2.end_month) == (4, 5)
-    assert any(i.level == "warning" and "J2" in i.message for i in report.issues)
+    # 2026-10-19 v4: 계획 기간과 겹치는 사업을 자르는 것은 정상이라 경고하지 않는다(진행 사업마다 경고가 났다)
+    assert not any(i.level == "warning" and "J2" in i.message for i in report.issues)
+    tables["projects.csv"][1].update(start_month="2024-03", end_month="2027-03")
+    ds, _, report = _convert(tmp_path / "long", tables)
+    j2 = next(j for j in ds.projects if j.id == "J2")
+    assert j2.start_month == 0 and not any("J2" in i.message for i in report.issues)
 
 
 def test_project_without_skill_requirements_is_an_error(tmp_path):

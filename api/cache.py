@@ -6,6 +6,7 @@ n_alternatives 전체를 보내는 stateless 계약은 그대로다. 이 캐시�
 서버가 클라이언트별 상태를 기억하는 것이 아니다."""
 import hashlib
 import json
+import threading
 from collections import OrderedDict
 
 from core.optimize.milp import MilpParams
@@ -19,6 +20,8 @@ class ResultCache:
 
     def __init__(self):
         self._store: OrderedDict[str, list[PlanAssignment]] = OrderedDict()
+        # 야간 배치(api/nightly.py)가 별도 스레드에서 넣는다 -- 요청 경로의 get/put과 겹쳐도 LRU 순서가 깨지지 않게(2026-10-18)
+        self._lock = threading.Lock()
 
     @staticmethod
     def key(weights: dict, milp_params: MilpParams | dict, n_alternatives: int,
@@ -38,16 +41,23 @@ class ResultCache:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> list | None:
-        plans = self._store.get(key)
-        if plans is not None:
-            self._store.move_to_end(key)
-        return plans
+        with self._lock:
+            plans = self._store.get(key)
+            if plans is not None:
+                self._store.move_to_end(key)
+            return plans
+
+    def has(self, key: str) -> bool:
+        """들어 있는지만 본다(점검용 -- get과 달리 최근 사용 순서를 바꾸지 않는다)."""
+        with self._lock:
+            return key in self._store
 
     def pop(self, key: str) -> None:
         self._store.pop(key, None)
 
     def put(self, key: str, plans: list) -> None:
-        self._store[key] = plans
-        self._store.move_to_end(key)
-        while len(self._store) > self.MAX_ENTRIES:
-            self._store.popitem(last=False)
+        with self._lock:
+            self._store[key] = plans
+            self._store.move_to_end(key)
+            while len(self._store) > self.MAX_ENTRIES:
+                self._store.popitem(last=False)

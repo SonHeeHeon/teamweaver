@@ -22,6 +22,191 @@
 
 ---
 
+## 2026-10-19 · claude-a · b `006b70f` 병합 · 12개월 한도 v5 재측정 · 계산 버전에 모델 규칙 표지 · **main 병합(사용자 승인)**
+- 커밋: `40e61be`(계산 버전 = 원천 + 사전 + `milp.OBJECTIVE_RULES` -- 감점 예외처럼 규칙이 바뀌면 같은 원천도 버전이 달라져 야간 결과·캐시가 예전 증명으로 복원되지 않는다, Codex Stop 리뷰 P1. 미리 계산 8개는 이미 새 규칙으로 풀어 `rekeyed`로 버전만 옮김) ·
+  `0e6d1e1`(b `006b70f` 병합: 수명 주기 표시·후보 점수 나눔·12개월 한도 규칙. 문서 충돌 3곳 양쪽 유지, 네 표시 시험 연간 번호 v5로) · 이 커밋(분담표·일지) → main 병합.
+- 12개월 한도: v5 연간 묶음 재측정(`scripts/measure_annual_time_budget.py`, 시드 1·4) 가장 느린 시드 52·186·312초 → `MEASURED_FULL_12` → 100·200·300명 120·390·630초(b 규칙: ×2와 6개월 ×4 중 큰 값).
+- 상대 영향(claude-b): main에 a·b 작업이 모두 들어간다. 네 브랜치는 main을 다시 받으면 된다. 계산 버전이 바뀌어 예전 캐시·야간 결과는 다시 계산된다. 기준선 2009 passed·slow 20·웹 256·Phase 0 13/13.
+- 사용자 질문 답(기록): 기술 경력은 계획 시작 직전 달까지의 스냅샷이다(계획 기간 안에서 달마다 늘지 않음). 데이터를 새로 받으면 그때 다시 센다.
+
+---
+
+## 2026-10-19 · claude-a · 생성기 v5(연초 계획도 진행 사업 위주 · 진행 사업 경력을 이력·평가에 이음) · 지금 같은 사업 팀원은 익숙한 쌍 감점 제외 · 전일 투입 0.99 결함
+- 브랜치/커밋: `feat/claude-a-fulltime-redesign` `ce15782`(v5) · 후속 커밋(이 항목과 함께). main 미병합(사용자 승인 대기).
+- 사용자: "기존 사업 20개는 여전히 전부 하반기 시작 … 잘못된거같은데", "운영 단계가 16개 중 6개면 적절 · 2-3명 평균 · 추가 과제 1-2개", "진행해야겠어"(선택 "갈아 끼우고 평가도 새로"),
+  리뷰 뒤 질문 결정 "지금 사업에서는 감점 안 함", "진행 사업은 모두 현재 팀 있음". 일지의 예전 용어 4줄 고침(`44f21f7`).
+- 한 일: 생성기 v5(`core/ingest/org_profile.py`) -- 연초 계획 실행 사업 75%가 계획 전 진행 사업, 진행 사업은 모두 현재 팀(80~100%), `_link_ongoing`(합류 달부터 이력을 그 사업으로 · 기술 경력 재계산 ·
+  맞지 않게 된 원래 평가 삭제 · 팀원끼리 새 평가 -- 새 글만 서비스 AI 판정, `demo/review_judgments.json` 9,594건). **익숙한 쌍 감점 제외**: `MemoryGraph.current_teams`(공유 계약 `core/graph` -- 필드 추가, 기본 빈 집합)·
+  `milp.familiar_exempt`를 MILP·독립 검증기·numerics·평가기·Phase 0 오라클·긴급 투입 거르기·운영 중 기여 분해에 같은 규칙으로(벤치 정식·factor_lab 제외). **결함 수정**: 전일 투입 명단 투입률을 정확히 1.0
+  (HiGHS z = 1 − 5e-10을 0.99로 내림해 검증기가 해를 거절 -- v5 AI 효과 재측정에서 실측). 시간 한도 재측정 12·30·45초 → 권장 30·60·90초.
+- 상대 영향(claude-b): **연초 계획·연간 묶음 번호가 다시 바뀌었다** -- 연초 100명 사업 21개(진행 사업 J010·J011·J014·J015 운영, J013·J019 고도화, J012·J017 개발, 추가 과제 J021 상위 J010), 연간 첫 하반기 신규 J022.
+  운영 중·연말형 사업·번호는 그대로(J018·J019·J020, 끝나는 J010·J007·J013·J016)지만 이력·평가·기술 경력·현재 팀 감점이 바뀌어 점수가 다르다. 네 수명 주기 표시 시험의 연초 계획 번호와 12개월 배수 측정은
+  이제 해도 된다(요청 상태 갱신). `MemoryGraph`에 필드가 하나 늘었다(`replace()` 복사는 그대로 가져간다). 서비스 자동 계산 시간이 100명 30초·200명 60초·300명 90초.
+- 검증: 1992 passed·slow 20·웹 247·Phase 0 13/13, 동봉 미리 계산 서버 적재 시험(빠짐 0), `--check` OK. 리뷰: Codex(한도 소진 중 Opus 폴백 MUST 0 → 한도 회복 뒤 Codex 2라운드).
+- 근거: 루트 `.omc/plan/2026-10-19-lifecycle-v5.md`, `.omc/reports/2026-10-19-lifecycle-v5.md`.
+
+---
+
+## 2026-10-19 · claude-b · 12개월 시간 한도 여유 2배(200·300명 660·900초) · 후보 점수 변화를 빈자리와 기술·협업으로 나눔
+- 브랜치/커밋: `feat/claude-b-three-scenarios` `66151a4..` `d9ff88e`(점수 나눔·긴급 투입 600초 상한)·`e7d89dd`(12개월 한도)·이 문서 커밋. main 병합 안 함 -- 사용자 "해당 브랜치에서 a도 작업 중이라면 나중에 a가 병합하지뭐"(work-split 요청 [claude-b→claude-a]).
+- 사용자: "1년 계획 계산 시간 리밋은 더 널널하게 둬도 될거같아. 점수 변화는 나눠 보이도록 하자."
+- 한 일:
+  - 12개월 전일 투입 자동 한도의 실측 하한을 **가장 느린 시드 × 여유 2**로 바꿨다(`api/settings.MEASURED_FULL_12` 78·322·485초, `MARGIN_12`, 30초 단위, 상한 900). 100·200·300명은 240·660·900초가 됐다(직전 240·420·630).
+  - 새로 재지는 않았다. claude-a `fd99155` 요청대로 v5 뒤에 다시 잰다. 설정 화면 근거 문구는 상수에서 만든다.
+  - 신규 사업 후보·긴급 투입(후보·대기 명단·최선 조합)·밤 대기 명단 행에 `unfilled_seats_delta`·`delta_excl_unfilled`를 붙였다(`api/routes/scenarios.split_unfilled`). 이름·부호는 운영 중 보강과 같고, `delta_total`·순위는 그대로다.
+  - 화면은 "빈자리(1자리 메움·생김)"와 "기술·협업 점수" 두 칸으로 나눴다(`web/src/components/scoreSplit.ts`·`ScoreSplitNote.tsx`). 나눔 없는 예전 밤 명단은 "점수 +x"로 보인다.
+  - 긴급 투입 최선 조합 풀이는 `OPERATING_TIME_LIMIT_MAX` 600초에서 자른다. 900초 한도가 가벼운 슬롯을 15분 잡던 것을 막는다(폴백 리뷰 SHOULD).
+- 상대 영향(claude-a): v5 `MEASURED_FULL`(30/60/90초)과 합치면 100명 12개월이 max(120, 180) = **180초**로 내려간다. 연간 시연 기록·미리 계산의 계산 요청(지금 240초)을 v5 재생성 때 함께 본다.
+  v5 연간 묶음으로 `scripts/measure_annual_time_budget.py`를 다시 돌려 `MEASURED_FULL_12`만 고치면 된다. `fd99155`를 b 브랜치에 합치지 못해 work-split "진행 중"·"요청" 머리에서 단순 충돌이 날 수 있다(둘 다 남긴다). 기준선 1997·웹 256.
+- 검증: `uv run pytest -q` 1997 passed·1 skipped·20 deselected, `-m slow` 20 passed, 웹 tsc·256 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 연말형 기록): 신규 사업 J018 후보 "1자리 메움 · +1.00", 빼 오기 "— · +0.44 · J017에서 빼 옴", 긴급 투입 J004 빼 오기 "1자리 생김 · +0.67", 최선 조합 "김재훈 · 기술·협업 +1.47", 연간 설정 근거 문구 240초, 콘솔 오류 0.
+  리뷰: Codex 한도 소진 2회 → Stop 게이트 끔, Claude Opus 폴백 approve(SHOULD 1·NIT 1 반영, NIT 2 WON'T) → 2라운드 Codex gpt-6.1-sol(19:09 회복 뒤) 지적 없음 → **Stop 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-score-split-annual-time.md`(로컬)
+
+---
+
+## 2026-10-19 · claude-b · 사업 수명 주기 표시(실제 시작·단계·추가 과제 상위·외주) · 12개월 시간 한도 하한 · v4 장면 브라우저 점검
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(claude-a `1c677c3`로 fast-forward 뒤 이 항목 커밋들). main 병합은 사용자 승인 대기(이 브랜치가 claude-a 브랜치를 포함).
+- 사용자: "A 끝났어. 너가 작업해도 될 준비가 다 됐는지 확인해보고 이상 없으면 착수해줘" -- 준비 확인(작업 트리 깨끗·진행 중 없음·내 `bd65e0c` 병합됨, 합친 상태 1982 passed·웹 247) 뒤 b 몫(추가 과제 리포트 6절).
+- 한 일: `api/lifecycle.py`(manifest `lifecycle` + pipeline 추가 과제 합치기, 신규 사업은 pipeline 우선) → `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 원문 기간), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력".
+  신규 사업 수정·떨어짐이 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` -- 안 하면 로더 "없는 사업"·"시작 달이 다르다" 경고). 화면: 진행 사업 목록 "J002 · 2024-06~2028-01" + 꼬리표(이름 머리말과 같은 단계는 생략), 연간 계획 사업 표·결과 표 머리에 원래 기간·꼬리표.
+  12개월 전일 투입 자동 한도에 실측 하한(`api/settings.MEASURED_FULL_12`): 100명 240초 그대로, 200명 360→420초, 300명 480→630초(`scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json`: 200·300명 연간형 안 A 증명 279·406초(시드 1), 시드 4는 300명이 480초 한도 끝에서 증명).
+- 상대 영향(claude-a): 생성기 `lifecycle` 모양은 읽기만 한다 -- 칸을 바꾸면 `api/lifecycle.lifecycle_of`도 맞춘다. 신규 사업 편집이 manifest `lifecycle`의 그 사업 항목을 고치거나 지운다(기록이 있는 사업만).
+  참고: `rehearsal/results/time-budget-full.json`의 note·env가 "생성기 v3 · 1135841"로 남아 있으나 숫자는 v4 재측정(26.2/55.5/65.8초) -- 네 파일이라 두었다. 기준선 1989·웹 253.
+- 검증: `uv run --group benchmark pytest -q` 1989 passed·1 skipped·20 deselected, `-m slow` 아래 커밋 기록, 웹 tsc·253 passed·oxlint 새 경고 0·build.
+  브라우저(헤드리스, 대본 D5~D7 + 연간): K=0~3 품질 66.58/67.74/68.71/69.31·빈자리 0, J007 고도화 → 권다현, J004 김재훈, J015 권다현 동시 수행, 연간 J021 "24.2~28.10월 · 계획 안 26.10~27.9월", 콘솔 오류 0 -- 대본 숫자와 같음.
+  리뷰: Codex(한도 회복) adversarial gpt-6.1-sol 2라운드 모두 approve(지적 없음) → **Stop 리뷰 게이트 다시 켬**.
+- 근거: `.omc/reports/2026-10-19-lifecycle-display.md`(로컬)
+
+---
+
+## 2026-10-19 · claude-a · 생성기 v4: 사업 수명 주기 섞기(b 요청 6번) · 권장 계산 시간 60·90·120초 · 시연 데이터·숫자 다시
+- 브랜치/커밋: `feat/claude-a-fulltime-redesign` `02d3989`(단순 규칙 100%·이어서 투입·미리 허용자 긴급 지원 힌트) · v4 커밋(이 항목과 함께). main 미병합(사용자 승인 대기).
+- 사용자 원문(b 요청 6번): "24년에 시작해서 아직 진행중인 플젝 … 26년엔 운영에 클라우드 마이그레이션 … 추가 과제가 있어 6달만 회사 인력은 2명만 추가(외주는 여러명)", "26년 상반기에 시작된것도 … 25년에 했는데 추가로 고도화 과제가 떠서 하고있는것도".
+- 한 일: `core/ingest/org_profile.py` GENERATOR v4(별도 난수열 `lifecycle_seed` -- 사람·이력·평가 글 바이트 그대로), 연초 계획은 기존 사업 뒤에 장기 사업(25명당 1개: 2024 `[운영]` 내부 2~3명·계획 뒤까지 / 2025 `[고도화]` / 2026 상반기 개발)과
+  운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 3~6명 참고값)를 붙인다. 운영 중은 진행 사업마다 수명 주기(운영 30%·팀 2~3명), 신규 제안 + 추가 과제 1개(대기 인력 2명, **b의 pipeline 모양**: parent·external_headcount).
+  실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름 -- `core/ingest/convert.py`), 단계는 이름 머리말 + manifest `lifecycle`(`core/ingest/lifecycle.py` 검사, 경고만). CSV 계약·`ProjectPhase` 그대로.
+  `time_budget.MEASURED_FULL` v4 재측정 27·56·66초 → 권장 60·90·120초(12개월 240초). 묶음 9개·미리 계산 8개·기록 8개·숫자·대본·슬라이드·보고서(PDF 10쪽) 다시.
+- 상대 영향(claude-b): **v4 사업 번호** -- 운영 중·연말형 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016, 등록 새 번호 J021, 연간 첫 하반기 신규 사업 J026.
+  연초 100명 사업 25개(J021~J025 장기·추가 과제). `scripts/make_{annual,yearend}_demo.py`를 고쳤다(b 소유, 이번 재설계로 넘겨받은 범위). 네 `test_addon_task.py`는 병합 때 v4 번호로 맞춘다.
+  서비스 기본 자동 계산 시간이 100명 60초·300명 120초로 늘었다(화면 권장 표시도). 시험 두 개가 고정 투입률 표와 우연히 같은 값으로 통과하고 있어 전일 투입 기준으로 고쳤다(`tests/api/test_settings.py`·`tests/scenarios/test_annual_horizon.py`).
+- 검증: 전체 시험(아래 커밋 기록), 생성기 277, 웹 243, 미리 계산 모두 빈자리 0, `export_demo_judgments.py --check` OK. 리뷰: Codex 2라운드(MUST 2 반영 → approve).
+- 근거: 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`, `.omc/reports/2026-10-19-lifecycle-mix.md`.
+
+---
+
+## 2026-10-19 · claude-b · 진행 사업에 추가 과제 붙이기(상위 사업·외주 참고)
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(이 항목 다음 커밋). main 병합은 사용자 승인 대기.
+- 한 일: 사용자 예("24년 시작 사업이 운영 중 26년 클라우드 마이그레이션 추가 과제, 6달만 회사 인력 2명·외주 여러 명") -- 신규 사업 양식 "연결 사업" 단계에 상위 사업(추가 과제)·외주 인원,
+  진행 사업 행 "+ 추가 과제"(미리 채운 양식 `GET …/form?as=addon`), 후보 "상위 사업 팀원", 진행 사업에 붙은 추가 과제 칩. 데이터 = 별도 사업 행 + manifest `pipeline[id].parent`·`external_headcount`.
+- 상대 영향: claude-a 재설계(`docs/requests/2026-10-19-availability-redesign.md` 6항)에 사업 수명 주기 섞기와 이 표현을 적었다 -- 생성 데이터가 같은 모양이면 화면이 그대로 보인다. CSV 계약은 그대로.
+- 검증: `uv run pytest -q` 1929 passed·1 skipped·20 deselected, 웹 241·tsc·lint·build, 브라우저(연말형 묶음에서 J001 추가 과제 등록 → 목록·후보 표시, 콘솔 오류 0).
+  리뷰: Codex adversarial 1라운드(medium 2 반영)·2라운드(형식 오류, 지적 1 반영) → Codex 한도 소진(14:08까지, 2회 연속) → Stop 게이트 끔, Opus 대체 리뷰(MUST 0, SHOULD 2 반영).
+- 근거: `.omc/reports/2026-10-19-addon-task.md`(로컬)
+
+---
+
+## 2026-10-19 · claude-a · 전일 투입 · 사람 단위 프로젝트 동시 수행 · 생성기 v3 · 시연 데이터·숫자 전부 재생성 (b 요청 처리)
+- 브랜치/커밋: `feat/claude-a-fulltime-redesign`(b `c150f84` 위) `f53a7e5`(모델) · `168dea0`(b 병합) · `1135841`(생성기·서비스·데이터) · 숫자·문서 커밋(이 항목과 함께). origin push, main 미병합(사용자 승인 대기 -- b 브랜치 다음).
+- 사용자 결정: 전일 투입(들어가면 100%), 예산 1.0~1.25배, **"프로젝트 동시 수행"은 부서장이 사람 단위로 사유와 함께 허용**(전체 3% 상한 아님, 기본 0명), 숫자 갱신은 구현 뒤 한 번에. 용어는 "동시 수행"(회사 규정 -- 다른 이름을 쓰지 않는다).
+  요구들이 사용자의 직접 수행 경험에서 나왔다는 점을 보고서 1.5에 남겼다(사용자 지시).
+- 한 일: `MilpParams.allocation_mode="full"`(+`Person.max_concurrent`, 검증기·평가기·보정·지표·Phase 0 13/13, 탐욕 초기해), 서비스 기본 full, 생성기 v3(`core/ingest/leave.py` 휴직 창·등급별 정원 85%·예산 1.0~1.25·운영 중 휴직 제외·제안 정원 = 대기 등급 구성),
+  manifest `concurrency` → `POST /api/workspace/concurrency`·확정 `concurrency_add`·`POST /api/concurrency/candidates`·긴급 "동시 수행으로 지원"(행별 apply_hint)·검토 자료 `MOVE_CONCURRENT`·"이어서 투입"(follow_on), 화면(설정·배지·허용 목록·빈자리 후보·긴급 지원),
+  시연 묶음 9개·미리 계산 8개·편성 기록 8개 재생성(모든 안·K 행 빈자리 0), 대본·슬라이드·보고서(PDF 10쪽) 숫자.
+- 상대 영향(claude-b): **b 파일을 고쳤다**(b가 넘긴 범위) -- `api/{settings,schemas,datasets,review_docs,workspace_edits,main}.py`·`api/routes/{workspace,scenarios,settings,plans,report,meta,concurrency}.py`, `web/src/**`(설정·긴급·신규 사업·배지·패널), `scripts/make_{annual,yearend}_demo.py`(생성기 함수 사용, 연말형 끝나는 사업 J005·J006·J008·J009·신규 제안 번호 manifest에서).
+  **v3 사업 번호가 바뀌었다**(운영 중·연말형 신규 제안 J013·J014) -- 시험 기대값을 맞췄다. 서비스 기본이 full이라 예전에 저장한 `settings.json`(fixed)은 그대로 남는다.
+  기준선 1962 passed · slow 20 · 웹 242.
+- 검증: 위 기준선, Phase 0 PASS 13, 미리 계산·편성 기록 검증 통과, `export_demo_judgments.py --check` OK. 리뷰: Codex 2라운드(모델) + Codex 한도 소진 중 Claude Opus 폴백 3라운드.
+- 근거: 루트 `.omc/plan/2026-10-19-concurrency.md`(2판)·`.impl.md`, `.omc/reports/2026-10-19-fulltime-redesign.md`, `rehearsal/results/{concurrency-compare,time-budget-full,plan-scenes-1019,scenarios-1019,strong-baseline,ai-effect}.json`.
+
+---
+
+## 2026-10-19 · claude-b · 계획 기간 1년(6|12개월) · 연간 시연 묶음 · 투입 불가 인력 표시 · 가용률·동시 수행 재설계는 claude-a에게
+- 브랜치/커밋: `feat/claude-b-three-scenarios` (claude-a `1b921ea`를 먼저 합침 `5bc1289`, 이 작업 커밋은 이 항목 다음). main 병합은 사용자 승인 대기.
+- 한 일: 사용자 "계획기간 1년 확장도 하자" -- 데이터마다 계획 기간 6|12개월(`core/domain/models.py` `HORIZON_CHOICES`·`Dataset.horizon_months`, manifest `horizon_months`), 화면 달 표시를 실제 달로("27.4월"), 계획 기간 표시(헤더·PDF).
+  연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`, 휴직 가정 가용률·하반기 신규 사업, 현재 배치 없음) + 미리 계산 + 편성 기록. 12개월은 자동 시간 한도 ×4(`api/settings.recommended_seconds`).
+  사용자 "육아휴직이면 what if나 플젝 인력 교체에서 … 표기는 하되 비활성화하고 사유도 빨간글씨로" -- `api/unavailable.py`, `/api/meta` 사람 `availability`·`leave`, 후보·긴급 응답 `unavailable`, 화면 `SwapControl`·`scenarios/UnavailableList`.
+- 상대 영향: **공유 계약** `core/domain/models.py`(6|12 허용, `Dataset` 검증 추가 -- 기존 6개월 데이터의 직렬화·버전·캐시 키는 그대로), `core/ingest/{contract,loader}.py`(manifest 6|12, claude-a 영역 -- 사용자 지시), `rehearsal/make_demo_records.py`(연간 묶음 추가),
+  `rehearsal/precompute_demo.py`·`api/*`의 `to_milp_params(n_people, months=)`. API 달 키 상한 0~11(`EntryIn`·`AllocChangeIn`). `/api/meta` 사람에 `availability`·`leave` 필드 추가.
+  **claude-a 요청**: 가용률(대부분 100%·3% 육아휴직·2% 한 달 휴가)·동시 수행 3%·사업 정원 재설계와 시연 데이터 재생성 -- `docs/requests/2026-10-19-availability-redesign.md`(실측표·원 요청 원문). 생성기에 넣어 봤다가 동시 수행 폭증·빈자리로 되돌렸다(이 브랜치 생성기·연초 계획 묶음 = main과 같음).
+- 검증: 아래 리포트 · Codex adversarial gpt-6.1-sol 2라운드(high 1 -- API 달 키 상한 5 → 반영, 2라운드 approve).
+- 근거: `.omc/reports/2026-10-19-annual-horizon.md`(로컬)
+
+## 2026-10-19 · claude-b · 밤 점검이 편성 기록을 연 데이터도 본다 · claude-a 브랜치와 합친 상태 확인
+- 브랜치/커밋: `feat/claude-b-three-scenarios` `828c70b`. main 병합은 사용자 승인 대기 -- 순서는 이 브랜치 다음 `feat/claude-a-review-doc`.
+- 한 일: `api/nightly.check_precomputed`가 편성 기록을 연 데이터(source "record")를 "편성 기록 결과"로 점검(예전엔 "시연 묶음이 아니다"로 건너뜀). 기록·시연 묶음 모두 등록부 표시가 아니라 결과 캐시에 실제로 남았는지 본다(`ResultCache.has`, 32개 밖으로 밀려난 경우).
+- 상대 영향: `api/cache.ResultCache.has` 추가(읽기 전용). **합친 상태 확인**: `git merge-tree`로 이 브랜치 + `feat/claude-a-review-doc`를 합치면 충돌 없음(`1ca26dc` 기준 임시 worktree에서 서버 1907 passed·1 skipped·20 deselected, 웹 230 passed·tsc). 병합 뒤 기준선은 claude-a CLAUDE.md 줄(1900대)을 따르고 이 브랜치 시험 +4가 더해진다.
+- 검증: `uv run --group benchmark pytest -q` → 1885 passed, 1 skipped, 19 deselected. Codex review gpt-6.1-sol 2라운드(P2 캐시 밀림·P2 등록부 반복 경쟁, 둘 다 반영).
+
+---
+
+## 2026-10-19 · claude-b · 편성 기록을 연 뒤 작업 데이터를 고치면 재기동해도 고친 판으로 뜬다
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(아래 3상황 항목 다음 커밋). main 병합은 사용자 승인 대기.
+- 사용자 요청: "끝나면 claude-a 작업에 맞춰서 추가로 해야하는거 있으면 추가로 진행해줘" -- claude-a의 편성 기록(재기동 복원 순서 "열어 둔 기록 → 업로드 저장본 → 시작 묶음")과 맞춤.
+- 한 일: `api/workspace._activate_blob`이 새 판 **저장이 성공한 뒤에만** 열어 둔 기록 표시(`records/active.json`)를 지운다(저장 실패면 남겨 둔다 -- 지우면 복원할 곳이 둘 다 없어진다). 표시 지우기 실패는 요청을 실패시키지 않고 `persist_error`로 알린다. 화면(`withPersistNote`)이 완료 알림 뒤에 "주의: …"로 보인다.
+- 상대 영향(claude-a): `api/routes/datasets.py` 업로드 경로(159행 근처)도 저장 **전에** `clear_active`를 부른다 -- 같은 문제(저장 실패 시 기록·업로드 둘 다 없음)가 있다. 네 브랜치가 이 파일을 고치고 있어 손대지 않았다(work-split 요청). 화면 두 파일은 `setNotice` 줄만 바꿨다(네 `onReviewDoc` 줄과 겹치지 않음). 기준선 +2(서버)·+1(웹).
+- 검증: 아래 커밋 메시지·리포트. Codex adversarial-review(gpt-6.1-sol) 2라운드: 1라운드 high 1·medium 1 → 반영, 2라운드 approve. Codex 한도 회복으로 Stop 게이트 다시 켬.
+- 근거: `.omc/reports/2026-10-19-three-scenarios.md`(로컬, "기록 열기 뒤 편집" 절).
+
+---
+
+## 2026-10-19 · claude-b · 3가지 핵심 상황 — 신규 사업 편성 · 긴급 투입(서버·화면) + 야간 배치 재정비
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(야간 배치 브랜치 위) `66152f6` 서버 · `181d08c` claude-a 개편 합침 · `488ee9d` 화면 · `7ddf403` main 합침. main 병합은 사용자 승인 대기.
+- 사용자 요청: "상황을 3가지로 두고 개발하자 … 화면에서 3가지 핵심 상황에서 잘 작업 할 수 있도록 ui ux도 만들고 내부 로직도 수정 보완해줘" + "사업 고정 자물쇠를 프로젝트 내 사람에도 적용", 야간 배치는 "축소해서 이번 작업에 합침". 설계 `.omc/plan/2026-10-18-three-scenarios.md`(+ impl).
+- 한 일:
+  - 작업 데이터 판(`api/workspace*.py`, `api/routes/workspace.py`): 신규 사업 등록(양식·사전 기술·이전 사업 복사)·단계·떨어짐(팀원 대기)·고정(사업·사람)·확정·되돌리기(최근 20판). 업로드와 같은 검증·켜기.
+  - 신규 사업 후보 세 갈래·긴급 투입·대기 명단(`api/routes/scenarios.py`), 화면 `web/src/scenarios/*`(claude-a 3상황 메뉴 자리에 연결, 운영 중 편성 화면은 그 자리에서 빠짐 -- K 비교는 신규 사업 편성의 "자동 편성"으로).
+  - 야간 배치: AI 미사용(소명 글은 확정 때), 연간 계획은 백지일 때만, 운영 비교는 신규 사업 있을 때만, 긴급 대기 명단 추가.
+  - 연말형 시연 묶음 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`).
+- 상대 영향: work-split 요청(시작 데이터·기록 목록·대본/보고서). `api/main.py`에 라우터 4줄. 시험 전체 기준선 1881·웹 218. App의 신규 사업 편성·긴급 투입 탭이 `OperatingTab` 대신 새 화면을 띄운다(`OperatingTab` 파일과 시험은 그대로).
+- 검증: `uv run --group benchmark pytest -q` → 1881 passed, 1 skipped, 19 deselected · 웹 218 passed·tsc·lint·build · 브라우저(연말형 묶음, 로그인 끔): 등록 → 끝나 가는 인력·이전 팀원 → 확정 → 긴급 투입 → 확정, 콘솔 오류 0.
+- 리뷰: 서버 Codex 적대적 2라운드(5 + 6건 반영), 화면 Codex 1라운드(5건 반영) → 한도 소진(02:32까지) Opus 대체 리뷰(MUST 1·SHOULD 2 반영).
+- 근거: `.omc/reports/2026-10-19-three-scenarios.md`(로컬).
+
+## 2026-10-18 · claude-b · 야간 배치(00~05시): 긴 풀이 미리 해 두기 · 소명 글 미리 쓰기 · 밤사이 점검
+- 브랜치/커밋: `feat/claude-b-nightly-batch`(main `738aa67`에서 갈라짐) -- 기능·측정·문서 커밋. main 병합은 사용자 승인 대기.
+- 사용자 요청: "관리자가 퇴근한 시점인 매일 밤(새벽 00시부터 05시까지) 배치 작업으로 돌만한게 있을까?" → 제안 1·2·3에 "1,2,3번 좋네. 진행해봐줘"(대상은 지금 켜진 데이터 한 묶음).
+- 한 일:
+  - `api/nightly.py`(새): 서버 안 예약 실행기(`TEAMWEAVER_NIGHTLY`·`TEAMWEAVER_NIGHTLY_WINDOW`, 시간대 안에서 켜지면 그날 밤은 돌지 않음). 단계: 점검 → 기본 요청(안 A~D) 풀이 → 소명 글(안 A) → 운영 중 비교 풀이 → 낮 요청 다시 풀기 → 소명 글(B~D) → AI 연결.
+    밤에는 **시간 한도만** 늘리고(낮 × 10, 300~1800초, 남은 시간의 90%를 나눔) 키·서명은 낮 설정 → `<데이터 폴더>/nightly/prepared.json` → 캐시·"미리 계산" 등록부(`source: nightly`). 이미 캐시에 있는 요청(시연 미리 계산 포함)은 건너뜀. 넣을 때·재기동 때 데이터 버전·평가기 재채점·위반·K 행이 맞아야 쓴다. 실패(솔버 실패·검증 거절·풀지 못한 K)로 끊긴 묶음은 저장하지 않는다.
+    새 풀이 자리 1개·운영 비교 단일 자리·AI_SLOTS를 쓰고, 멈춤(`POST /api/nightly/stop`·종료)은 준비 중에 와도 풀이가 물려받는다. 낮 요청 기록은 순수 ASGI `RequestRecorder`(본문만, 최근 30건).
+  - `api/justification_cache.py`(새) + `api/routes/justification.py`: AI 소명 글(graphrag)만 저장해 화면·PDF가 다시 쓴다. 키 = 데이터 버전·사업·명단 전체·가중치·설정·AI(모델·주소·추론 강도)·**소명 재료(JustificationInput) 해시**·생성기 코드 지문. 응답에 `prepared_at`·`prepared_by`. 물러난 데이터셋의 요청은 저장하지 않고, 옛 데이터의 글은 부팅·밤 실행 시작 때 지운다.
+  - `api/routes/nightly.py`(새): `GET /api/nightly`(예약·진행·넣은 밤 결과·마지막 보고서), `POST /api/nightly/run {minutes}`·`/stop`(관리자). `api/cache.py`에 잠금(밤 스레드와 요청 경로), `api/datasets.ActiveDataset.retired`.
+  - `api/main.py`(claude-a 작업과 겹침, 최소): lifespan `attach`/`detach`, `justification.router` 다음에 미들웨어·라우터.
+  - `scripts/measure_nightly_gain.py` + `outputs/nightly-long-solve.json`: 시연 묶음 안 A 낮 대 밤 -- 100명 57.59→60.17(+4.5%, 상한 거리 11.0→5.3%), 200명 107.33→113.52(+5.8%, 7.9→1.8%), 300명 166.19→168.67(+1.5%, 3.2→1.4%). 낮 값은 시연 미리 계산과 같다.
+  - `tests/nightly/`(30), `tests/conftest.py`(새, 시험 전체에서 예약 끔), CLAUDE.md 함정 줄·기준선.
+- 상대 영향:
+  - claude-a: 화면 개편과 겹치는 연결은 work-split 요청(아침 알림 띠·관리자 실행/멈춤·"밤사이 계산" 표시·소명 `prepared_by` 표시·데이터 전환 뒤 다시 넣기·`api/main.py` 병합 시 양쪽 유지). 서버가 켜져 있으면 **기본으로 매일 00:00에 돈다**(끄려면 `TEAMWEAVER_NIGHTLY=off`).
+  - 모두: 기준선 1808(main `fa9be61`) → 1840. 시험에서 밤 실행을 돌리면 설명 AI를 막아야 한다(`.env` 키 -- 10-18 시험이 실제 외부 AI를 42번 불렀다, 가상 데이터·약 $0.045).
+  - codex: 권장 시간 한도 표(`core/optimize/time_budget.MEASURED`, "최선 대비 1% 이내")가 지금 데이터와 맞지 않는다(work-split 참고).
+- 검증: `uv run --group benchmark pytest -q` → 1836 passed(main `738aa67` 기준), main `fa9be61`을 합치고 대체 리뷰 반영 뒤 **1840 passed, 1 skipped, 19 deselected**. 실서버 스모크(임시 데이터 폴더, 시연 org-n100, 시드 4): ① 기본 설정 -- 기본 요청은 시연 미리 계산 보호로 건너뜀, 소명 글 실제 AI 20편 모두 통과($0.016) ② 낮 한도 20초로 바꾼 설정 -- 안 A~D를 151초씩 풀어 저장(안 A 59.60), 소명 17번 호출 16편 통과·1편 서버 검사 S4로 틀 대체, 아침 `/api/optimize` 0.16초 "미리 계산", 소명 글 저장본 0.3~0.7초(새로 쓰면 10초).
+- Codex: adversarial-review 2라운드(gpt-6.1-sol). 1라운드 3건(준비 중 멈춤 유실·AI 자리 대기 뒤 재확인·소명 키에 평가 코드 누락) → 반영, 2라운드 2건(실패 묶음 영속·늦은 저장이 지금 데이터 저장본 삭제) → 반영. 그 뒤 Codex 한도 소진(21:31까지, Stop 게이트·수동 리뷰 2회 실패) → 게이트 끄고 **Claude Opus 대체 리뷰 2라운드**: MUST 1(멈춤·마감으로 덜 풀린 묶음이 저장돼 아침 결과로 굳음 → 낮 cacheable과 같은 기준으로 저장 안 함), SHOULD 3(solve_failed 행·전환 중 넣기 재확인·소명 라우트가 옛 데이터 글 정리), NIT 5 반영 → 2라운드 MUST·SHOULD 0.
+- 근거: `.omc/reports/2026-10-18-nightly-batch.md`(로컬), 계획 `.omc/plan/2026-10-18-nightly-batch.md`.
+
+---
+
+---
+
+## 2026-10-19 · claude-a · claude-b 요청 후속 — 확정 화면 검토 자료 버튼 · 연말 편성 기록 · 대본/보고서 세 상황 · 야간 화면
+- 브랜치/커밋: `feat/claude-a-review-doc` — `c5e91fc`(claude-b `942aa56` 병합) · `3aebb3c` 버튼 · `c80cd4a` 연말 기록·대본·보고서 · `9fadaee` 야간 화면. main 병합은 b 브랜치 다음, 사용자 승인 대기.
+- 사용자 요청: "claude-b 작업 완료됐는지 확인하고 … 아직 너가 못한거 … 이제 너가 할 수 있는게 있으면 개발 해줘", "한도 끝날때까지 쭉 진행".
+- 한 일: claude-b 10-19 요청 (1)~(4)와 야간 요청 (1)(2)(3)(5) 처리((4)는 밤 소명 쓰기가 없어져 생략, (6)은 b 병합에서 유지). `demo/records/` 7개(연말 묶음 추가, 미리 계산 포함). 대본 D5~D7 = 신규 사업 편성 → 긴급 투입 → 인사팀 검토 자료(숫자 `rehearsal/results/scenarios-1019.json`).
+- 상대 영향(claude-b): 네 파일 `NewProjectsScreen`·`EmergencyScreen`(prop `onReviewDoc`, 확정 전 소명 열 이름 "소명 미리보기"), `api/nightly._install_entry`(기록 데이터의 비-밤 K 결과를 덮지 않음). 새 `api/routes/datasets.after_switch`가 전환 뒤 `install_prepared`를 부른다. 응답 필드 `precomputed_source` 추가.
+- 검증: `uv run --group benchmark pytest -q` → 1903 passed, 1 skipped, 20 deselected · slow 20 · 웹 229 · tsc·빌드 · 리뷰 Claude Opus 폴백(Codex 한도), P2 3·P3 1 반영.
+- 근거: `.omc/reports/2026-10-19-b-requests-followup.md`
+
+---
+
+## 2026-10-19 · claude-a · 인사팀 검토 자료 — 확정마다 사업별 소명 자료(옮겨 온 인력의 원래 사업 영향 · 부서장 본문·의견·해명·이의 · PDF)
+- 브랜치/커밋: `feat/claude-a-review-doc`(claude-b `181d08c` 위). main 병합은 claude-b 브랜치 다음.
+- 사용자 요청: 부서장이 사업 단위로 확정해 팀장·인사팀 확인을 받으니 사업별 소명 자료가 필요하고, 다른 사업에서 빼 온 사람은 원래 사업에 생기는 영향까지. 숫자만으로는 소명이 안 되니 부서장 의견을 적고 본문을 고칠 수 있게. 결정: 불리한 사실은 잠그고 해명·이의만, 긴급 투입도 자료, A 문서형, 합의 "요청 중"이어도 내보내기, 승인·반려는 만들지 않고 보고서 "실제 도입 시"에(전자결재 연결).
+- 한 일: `core/evaluate/review_moves.py`(출처·원래 사업 득실·메움), `core/kg/justify.py` `fact_key`·`focus_input`, `api/review_docs.py`·`api/routes/review_docs.py`(목록·만들기·조회·편집·AI 초안·PDF), `web/src/review/`(A 문서형 `ReviewDoc`, 메뉴 관리 → "검토 자료"), PDF `kind=review`, 보고서 8.1·8.4.
+- 상대 영향(claude-b): (1) `api/workspace.undo`의 prepare에 `record_undone` 한 줄(되돌림 판정용 기록 `<데이터 폴더>/review_docs/undone.json`) — 네 작업 트리의 `api/workspace.py` 수정과 같은 파일이니 병합 때 확인. (2) 확정 화면 버튼 요청은 work-split 10-19 항목. (3) Shell `Tab`에 `reviews`.
+- 검증: `uv run --group benchmark pytest -q` → 1900 passed, 1 skipped, 20 deselected · `-m slow` → 20 passed · 웹 `npx tsc -b` 통과, `npm test` 215 passed, 빌드 · Claude Opus 폴백 리뷰 2라운드(Codex 한도 소진, 02:32 회복 예정): P1 1·P2 4·P3 7 + 2라운드 새 P2 1 반영.
+- 근거: `.omc/reports/2026-10-19-review-doc.md`
+
+---
+
 ## 2026-10-19 · claude-a · claude-b 3상황 계획 요청 처리: 메뉴 개편(신규 사업 편성 첫 화면 · 긴급 투입 · 연간 계획) · 시작 데이터 연말 묶음 · main 병합
 - 브랜치/커밋: `feat/claude-a-service-ui-1018` `fcb265d`(아래 10-18 항목 위에 쌓음) → main 병합(사용자 지시 "b가 요청한거 검토 후 요청사항 진행해줘").
 - 한 일: claude-b `.omc/plan/2026-10-18-three-scenarios.md`의 "claude-a에게 전할 요청" 1·2·3. 왼쪽 메뉴를 핵심 상황 / 편성안·분석 / 관리로 다시 묶고 첫 화면을 신규 사업 편성으로(예전 "요건 설정" = 연간 계획, "운영 중 편성" = 신규 사업 편성(K 비교)·긴급 투입(보강)으로 나눔, 편성 기록은 데이터 화면에서 따로 메뉴로). 공통 부품 `web/src/ui/index.tsx`. `run_poc.sh`는 `demo/org-n100-yearend`가 있으면 그것으로 시작.
@@ -653,7 +838,7 @@
   - `core/optimize/greedy.solve_greedy`에 `min_alloc` 인자(기본 0.2 = 예전 그대로).
   - 리뷰 문장 틀 문구 변경으로 `demo/org-n100`·zip의 `reviews.csv`가 바뀌었다(값·라벨 동일, 문장 한 구절만).
   - 테스트 기준선 **1318 passed, 19 deselected**(`--group benchmark`).
-- 검증: `uv run --group benchmark pytest -q` → 1318 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(겸직자 빈틈) 수정 후 재검토 MUST 0.
+- 검증: `uv run --group benchmark pytest -q` → 1318 passed · Phase 0 PASS · Opus 대체 리뷰 MUST 1(동시 수행자 빈틈) 수정 후 재검토 MUST 0.
 - 근거: `rehearsal/results/{operating-check,baseline-check}.json`, `.omc/reports/2026-10-06-operating-staffing.md`(claude-a 로컬)
 
 ## 2026-10-06 · claude-a · 실데이터 가정 전체 검증: 기준 정식 반영·시드 운영화·실데이터 경로 리허설·과거 성과 검증·시연 기본값 전환

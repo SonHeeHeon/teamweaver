@@ -386,7 +386,8 @@ def test_auto_time_limit_uses_the_recommendation_for_the_active_dataset(client):
     body = client.get("/api/settings").json()
     n = body["recommended_time"]["n_people"]
     assert body["settings"]["time_limit_auto"] is True
-    assert body["effective_time_limit"] == recommend(n).per_solve_s
+    # 서비스 기본은 전일 투입 -- 예전에는 고정 투입률 표(30초)와 우연히 같아 통과했다(v4 측정으로 전일 투입 100명이 60초가 되며 드러남)
+    assert body["effective_time_limit"] == recommend(n, allocation_mode="full").per_solve_s
     manual = PlacementSettings(time_limit=77, time_limit_auto=False)
     assert manual.to_milp_params(n_people=n).time_limit == 77
     monthly = PlacementSettings(allocation_mode="monthly")

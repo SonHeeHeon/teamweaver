@@ -54,8 +54,9 @@ def _upper_bound(graph: MemoryGraph, S, params, entries, ubs: dict | None) -> fl
     """최적화율 분모. 명단에 월별 항목이 있으면 월별 정식의 상한을 쓴다 -- 섞인 명단도 월별 정식의
     가능한 해이고, 월별 상한은 고정 상한 이상이라 비율이 1을 넘지 않는다(사람별 달별 조정, 2026-10-05).
     ubs는 같은 요청 안에서 방식별 상한을 한 번만 풀기 위한 캐시."""
-    mode = "monthly" if (getattr(params, "allocation_mode", "fixed") == "monthly"
-                         or any(e.monthly_alloc for e in entries)) else "fixed"
+    mode = ("full" if getattr(params, "allocation_mode", "fixed") == "full"      # 전일 투입은 투입률 = z라 바꾸지 않는다
+            else "monthly" if (getattr(params, "allocation_mode", "fixed") == "monthly"
+                               or any(e.monthly_alloc for e in entries)) else "fixed")
     if ubs is not None and mode in ubs:
         return ubs[mode]
     p = params if params.allocation_mode == mode else params.model_copy(update={"allocation_mode": mode})

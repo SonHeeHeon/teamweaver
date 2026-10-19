@@ -63,6 +63,12 @@ def _penalty_pairs(graph: MemoryGraph, params: MilpParams) -> tuple[tuple[int, i
     )
 
 
+def _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects, exempt=frozenset()) -> float:
+    return (params.lam * sum(float(synergy[p, q]) * z[(p, j)] * z[(q, j)] for p, q in reward_pairs for j in range(n_projects))
+            - params.mu * sum(z[(p, j)] * z[(q, j)] for p, q in penalty_pairs for j in range(n_projects)
+                              if (p, q, j) not in exempt))
+
+
 def solve_tiny_oracle(
     graph: MemoryGraph,
     skill: np.ndarray,
@@ -81,6 +87,7 @@ def solve_tiny_oracle(
 
     reward_pairs = _reward_pairs(synergy, params)
     penalty_pairs = _penalty_pairs(graph, params)
+    exempt = getattr(graph, "current_teams", frozenset()) or frozenset()   # 지금 같은 사업에 함께 있는 쌍(2026-10-19)
     best_objective = -np.inf
     best_z: dict[tuple[int, int], int] | None = None
     best_a: dict[tuple[int, int], float] | None = None
@@ -108,6 +115,28 @@ def solve_tiny_oracle(
             if not grade_feasible:
                 break
         if not grade_feasible:
+            continue
+        if getattr(params, "allocation_mode", "fixed") == "full":
+            # 전일 투입(2026-10-19): 투입률 = z라 LP가 없다. 들어간 사업 기간 가용률 1.0, 같은 달 사업 수 ≤ 사람별 상한,
+            # 예산 Σ 단가·z -- 서비스 MILP(milp.full_eligible)를 빌리지 않고 원자료로 본다.
+            if any(z[(i, j)] and any(person.availability[m] < 1.0 - 1e-9 for m in project.months)
+                   for i, person in enumerate(people) for j, project in enumerate(projects)):
+                continue
+            if any(sum(z[(i, j)] for j, project in enumerate(projects) if month in project.months)
+                   > getattr(person, "max_concurrent", 1)
+                   for i, person in enumerate(people) for month in range(len(person.availability))):
+                continue
+            if any(sum(person.monthly_rate * z[(i, j)] for i, person in enumerate(people)) > project.monthly_budget + 1e-9
+                   for j, project in enumerate(projects)):
+                continue
+            feasible_count += 1
+            allocations = {(i, j): float(z[(i, j)]) for i in range(n_people) for j in range(n_projects)}
+            skill_term = (1.0 + getattr(params, "seat_fit_weight", 0.0)) * sum(
+                float(skill[i, j]) * z[(i, j)] for i in range(n_people) for j in range(n_projects))
+            objective = skill_term + _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects, exempt) \
+                - params.slack_penalty * sum(slack.values())
+            if objective > best_objective + 1e-12:
+                best_objective, best_z, best_a, best_slack = objective, z, allocations, slack
             continue
         # C6: 한 사람이 같은 달에 맡는 프로젝트 수 상한 -- 서비스·벤치 MILP와 같은 규칙.
         if any(
@@ -174,6 +203,7 @@ def solve_tiny_oracle(
             z[(p, j)] * z[(q, j)]
             for p, q in penalty_pairs
             for j in range(n_projects)
+            if (p, q, j) not in exempt                  # 지금 같은 사업에 함께 있는 쌍(2026-10-19) -- 원자료 graph.current_teams
         )
         unfilled_term = -params.slack_penalty * sum(slack.values())
         objective = skill_term + reward_term + penalty_term + unfilled_term

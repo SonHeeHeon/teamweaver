@@ -4,8 +4,11 @@ import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
 import { hasMarkers } from "../components/evidenceMarkers";
-import { formatAlloc, formatMonthly } from "../components/allocFormat";
+import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
+import { lifecycleTags, projectPeriod } from "../components/lifecycle";
 import { fallbackText, segmentsOf } from "../components/justification";
+import { ReviewDoc } from "../review/ReviewDoc";
+import type { ReviewDocView } from "../review/reviewApi";
 import { creditedLine } from "../components/skillLabel";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
 
@@ -32,7 +35,22 @@ declare global {
 /** 인쇄 전용 페이지. Playwright가 add_init_script로 window.__REPORT_DATA__를
  *  먼저 심고 이 라우트로 이동한다. 레이아웃이 끝나면 __REPORT_READY__를 세워
  *  "이제 인쇄해도 된다"를 알린다. */
+/** PDF 한 장의 종류: 편성안 보고서(기본) 또는 인사팀 검토 자료(kind="review", 2026-10-19 claude-a -- api/routes/review_docs). */
 export function ReportPage() {
+  return window.__REPORT_DATA__?.kind === "review" ? <ReviewReport doc={window.__REPORT_DATA__.doc} /> : <PlanReport />;
+}
+
+function ReviewReport({ doc }: { doc: ReviewDocView }) {
+  useEffect(() => { window.__REPORT_READY__ = true; }, []);
+  return (
+    <main className="report-root mx-auto max-w-[780px] p-8">
+      <p className="mb-2 text-xs text-slate-500">인사팀 검토 자료 · {new Date().toLocaleString("ko-KR")} 출력</p>
+      <ReviewDoc doc={doc} editable={false} />
+    </main>
+  );
+}
+
+function PlanReport() {
   const data = window.__REPORT_DATA__;
   // 서버가 PDF 요청 시점의 데이터셋으로 만든 meta를 함께 넣어 준다(K9) -- 있으면 그것만
   // 쓴다. 따로 /api/meta를 부르면 렌더 중 전환된 새 데이터의 이름이 옛 명단에 붙는다.
@@ -69,13 +87,19 @@ export function ReportPage() {
   const pct = (v: number | null) => (v === null ? "산정 불가(제약 위반)" : `${((v ?? 0) * 100).toFixed(1)}%`);
   const byId = new Map((meta?.people ?? []).map((p) => [p.id, p]));
   const jName = new Map((meta?.projects ?? []).map((j) => [j.id, j.name]));
+  // 사업 이력(2026-10-19): 수명 주기 기록이 있거나 계획 밖까지 이어지는 사업만
+  const lifecycleRows = (meta?.projects ?? []).filter((j) => j.lifecycle || j.period);
   const nameOf = (id: string) => byId.get(id)?.name ?? id;
   const generatedAt = new Date().toLocaleString("ko-KR");
 
   return (
     <div className="report-root mx-auto max-w-[760px] bg-white p-8 text-slate-900">
       <h1 className="text-2xl font-bold">TeamWeaver 인력 배치 리포트</h1>
-      <p className="mt-1 text-sm text-slate-500">Plan {data.plan_label}</p>
+      <p className="mt-1 text-sm text-slate-500">
+        Plan {data.plan_label}
+        {meta && horizonRange(meta.horizon_start, meta.horizon_months ?? 6)
+          ? ` · 계획 기간 ${horizonRange(meta.horizon_start, meta.horizon_months ?? 6)}` : ""}
+      </p>
       <p className="text-xs text-slate-400">생성 시각 {generatedAt}</p>
       {meta && data.dataset_version && meta.dataset_version !== data.dataset_version && (
         <p className="mt-1 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800">
@@ -109,9 +133,11 @@ export function ReportPage() {
       )}
       <p className="text-xs text-slate-500">
         계산 기준: {data.milp_params
-          ? `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
-            + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
-            + `투입률 ${data.milp_params.allocation_mode === "monthly" ? "달마다 따로" : "기간 내내 한 비율"} · `
+          ? (data.milp_params.allocation_mode === "full"
+              ? "전일 투입(들어가면 100%) · 프로젝트 동시 수행은 부서장이 허용한 사람만 · "
+              : `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
+                + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
+                + `투입률 ${data.milp_params.allocation_mode === "monthly" ? "달마다 따로" : "기간 내내 한 비율"} · `)
             + `반복 협업 기준 ${data.milp_params.clique_window_months ? `최근 ${data.milp_params.clique_window_months}개월 중 ` : "전체 이력 중 "}`
             + `${data.milp_params.clique_threshold_months}개월 이상 · `
             + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
@@ -155,7 +181,7 @@ export function ReportPage() {
                   s.warnings?.length ? "bg-red-50 text-red-800" : ""}`}>
                   <td className="py-1">{k + 1}</td>
                   <td className="py-1">{s.kind === "alloc"
-                    ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc) || ""}`
+                    ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc, meta?.horizon_start) || ""}`
                     : `${nameOf(s.out_person_id)} → ${nameOf(s.in_person_id)}`}</td>
                   <td className="py-1">{jName.get(s.project_id) ?? s.project_id}</td>
                   <td className="py-1 text-right tabular-nums">
@@ -246,7 +272,7 @@ export function ReportPage() {
                 <td className="py-1 text-right tabular-nums">
                   {formatAlloc(e.alloc)}
                   {e.monthly_alloc && (
-                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc)}</span>
+                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc, meta?.horizon_start)}</span>
                   )}
                 </td>
               </tr>
@@ -254,6 +280,24 @@ export function ReportPage() {
           </tbody>
         </table>
       </section>
+
+      {lifecycleRows.length > 0 && (
+        <section className="mt-6" aria-label="사업 이력">
+          <h2 className="mb-1 text-base font-semibold">사업 이력</h2>
+          <p className="mb-2 text-xs text-slate-500">계획 기간 밖에서 시작했거나 이어지는 사업, 추가 과제의 상위 사업·외주 인원이다. 외주 인원은 참고값 -- 배치 계산은 회사 인력만 다룬다.</p>
+          <table className="w-full text-sm">
+            <tbody>
+              {lifecycleRows.map((j) => (
+                <tr key={j.id} className="border-b border-slate-100">
+                  <td className="py-1">{j.name}({j.id})</td>
+                  <td className="py-1 text-slate-600">{lifecycleTags(j.lifecycle, "").join(" · ")}</td>
+                  <td className="py-1 text-right text-xs text-slate-600">{projectPeriod(j, meta?.horizon_start)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {data.justifications_note && (
         <p className="mt-6 text-xs text-slate-500">{data.justifications_note}</p>

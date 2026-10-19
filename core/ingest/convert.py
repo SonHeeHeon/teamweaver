@@ -149,6 +149,8 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
         if a["month"] in month_index:
             avail[a["person_id"]][a["month"]] = a["available_mm"]
 
+    from core.ingest.concurrency import limits as concurrency_limits
+    concurrent = concurrency_limits(bundle.manifest)          # 부서장이 허용한 프로젝트 동시 수행(2026-10-19) -- 나머지는 1
     people = []
     for p in t["people.csv"]:
         rate = rates.get((p["career_grade"], p["role_type"]))
@@ -162,7 +164,8 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
             continue
         people.append(Person(id=p["person_id"], name=p["display_name"], grade=Grade(p["career_grade"]),
                              monthly_rate=rate, skills=skills[p["person_id"]], skill_credit=credits[p["person_id"]],
-                             availability=[avail[p["person_id"]][m] for m in bundle.horizon]))
+                             availability=[avail[p["person_id"]][m] for m in bundle.horizon],
+                             max_concurrent=concurrent.get(p["person_id"], 1)))
 
     grade_req = defaultdict(dict)
     for g in t["project_grade_requirements.csv"]:
@@ -195,10 +198,9 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
             report.warn("projects.csv", f"{pid}는 계획 기간({first:%Y-%m}~{last:%Y-%m}) 밖이라 배치 대상에서 뺐다",
                         row=j["__row__"], column="start_month")
             continue
+        # 계획 기간 전에 시작했거나 뒤에 끝나는 진행 사업은 정상이라 경고 없이 계획 기간으로 자른다(2026-10-19 v4 -- 실데이터에서도
+        # 진행 사업마다 경고가 나 쓸모가 없었다). 화면은 원래 기간(projects.csv 원문)을 보인다.
         start, end = max(j["start_month"], first), min(j["end_month"], last)
-        if (start, end) != (j["start_month"], j["end_month"]):
-            report.warn("projects.csv", f"{pid}의 기간을 계획 기간에 맞춰 {start:%Y-%m}~{end:%Y-%m}로 잘랐다",
-                        row=j["__row__"], column="start_month" if start != j["start_month"] else "end_month")
         if not skill_req[pid]:
             report.error("project_skill_requirements.csv", f"{pid}에 기술 요구가 없다(현행 점수 계산에 1건 이상 필요)")
             continue

@@ -33,7 +33,8 @@ def _summary(graph: MemoryGraph, S, C, params: MilpParams, entries) -> dict:
 
 
 def compare_with_baseline(graph: MemoryGraph, S, C, params: MilpParams, entries) -> dict:
-    baseline = solve_greedy(graph, S, params.max_concurrent_projects, min_alloc=params.min_alloc)   # 같은 최소 투입률(리뷰)
+    baseline = solve_greedy(graph, S, params.max_concurrent_projects, min_alloc=params.min_alloc,   # 같은 최소 투입률(리뷰)
+                            full=getattr(params, "allocation_mode", "fixed") == "full")      # 전일 투입이면 단순 규칙도 100%(2026-10-19)
     opt = _summary(graph, S, C, params, list(entries))
     base = _summary(graph, S, C, params, list(baseline.entries))
     diff = {k: round(opt[k] - base[k], 4) for k in ("total", "quality", "skill", "synergy", "overfamiliarity",

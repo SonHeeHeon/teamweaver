@@ -6,7 +6,11 @@ from core.optimize.types import AssignEntry, PlanAssignment
 
 
 def solve_greedy(graph: MemoryGraph, S: np.ndarray, max_concurrent_projects: int = 3,
-                 min_alloc: float = 0.2) -> PlanAssignment:
+                 min_alloc: float = 0.2, full: bool = False) -> PlanAssignment:
+    """full(전일 투입, 2026-10-19): 들어가면 100% -- 사업 기간 가용률 1.0이고 같은 달 사업 수가 그 사람 상한(Person.max_concurrent)
+    아래인 사람만. 예산은 예전처럼 보지 않는다(단순 규칙)."""
+    if full:
+        return _greedy_full(graph, S)
     remaining = {p.id: list(p.availability) for p in graph.people}
     # 같은 달 동시 프로젝트 수(C6) -- MILP와 같은 규칙.
     concurrent = {p.id: [0] * len(p.availability) for p in graph.people}
@@ -43,3 +47,57 @@ def solve_greedy(graph: MemoryGraph, S: np.ndarray, max_concurrent_projects: int
                           for e in entries))
     return PlanAssignment(entries=entries, objective=objective,
                           unfilled=unfilled, violations=violations, label="Greedy")
+
+
+def _greedy_full(graph: MemoryGraph, S: np.ndarray) -> PlanAssignment:
+    from core.optimize.milp import full_eligible
+    load = {p.id: [0] * len(p.availability) for p in graph.people}
+    entries, unfilled, violations = [], [], []
+    for j, proj in sorted(enumerate(graph.projects), key=lambda t: t[1].start_month):
+        cost = 0.0
+        for grade, need in sorted(proj.grade_headcount.items(), key=lambda t: t[0].value):
+            cands = sorted(((S[graph.pid_index[p.id], j], p) for p in graph.people if p.grade == grade),
+                           key=lambda t: (-t[0], t[1].id))
+            for _score, p in cands:
+                if need == 0:
+                    break
+                if not full_eligible(p, proj) or any(load[p.id][m] >= p.max_concurrent for m in proj.months):
+                    continue
+                for m in proj.months:
+                    load[p.id][m] += 1
+                entries.append(AssignEntry(person_id=p.id, project_id=proj.id, alloc=1.0))
+                cost += p.monthly_rate
+                need -= 1
+            if need > 0:
+                unfilled.append(f"{proj.id}:{grade.value}:{need}명 미충원")
+        if cost > proj.monthly_budget:
+            violations.append(f"{proj.id}: 월 예산 {proj.monthly_budget} 초과 (소요 {int(cost)})")
+    objective = float(sum(S[graph.pid_index[e.person_id], graph.project_index[e.project_id]] for e in entries))
+    return PlanAssignment(entries=entries, objective=objective, unfilled=unfilled, violations=violations, label="Greedy")
+
+
+def warm_start_full(graph: MemoryGraph, S: np.ndarray) -> list[AssignEntry]:
+    """전일 투입의 초기해(2026-10-19, 설계 3.3): 사업 시작 순, 등급 자리마다 S가 가장 높은 사람 -- 사업 기간 가용률 1.0,
+    그 기간 다른 사업에 없음(초기해는 동시 수행을 만들지 않는다), 남은 예산 안. 항상 가능한 해다(못 채운 자리는 빈자리)."""
+    from core.optimize.milp import full_eligible
+    people = graph.people
+    busy: dict[int, set[int]] = {i: set() for i in range(len(people))}
+    entries = []
+    for j, proj in sorted(enumerate(graph.projects), key=lambda t: (t[1].start_month, t[0])):
+        months = set(proj.months)
+        left = float(proj.monthly_budget)
+        for grade, need in sorted(proj.grade_headcount.items(), key=lambda t: t[0].value):
+            cands = sorted((i for i, p in enumerate(people)
+                            if p.grade == grade and not (busy[i] & months) and full_eligible(p, proj)),
+                           key=lambda i: (-float(S[i, j]), people[i].id))
+            got = 0
+            for i in cands:
+                if got >= need:
+                    break
+                if people[i].monthly_rate > left + 1e-9:
+                    continue
+                entries.append(AssignEntry(person_id=people[i].id, project_id=proj.id, alloc=1.0))
+                busy[i] |= months
+                left -= people[i].monthly_rate
+                got += 1
+    return entries

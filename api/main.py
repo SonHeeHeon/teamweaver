@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.admin import warn_if_unprotected
 from api.cache import ResultCache
+from api.settings import horizon_months_of
 from api.datasets import ActiveDataset, DatasetStore, build_active, dir_version
 from api.routes.datasets import validate_and_build
 from api.plan_edits import PlanEditStore
@@ -133,10 +134,14 @@ async def lifespan(app: FastAPI):
     from api.demos import current_demo_root
     app.state.demo_active_root = (current_demo_root() if app.state.dataset.info.source == "demo-bundle" else None)
     install(app, boot_record)
+    # 야간 배치(2026-10-18, claude-b): 지금 데이터에 맞는 밤 결과를 검증해 캐시에 넣고, 켜져 있으면 예약을 시작한다(api/nightly).
+    from api import nightly as nightly_batch
+    nightly_batch.attach(app)
     # 관리자 배치 설정(K8). 사전계산도 이 설정으로 한다 -- 웹이 같은 설정을
     # milp_params로 보내므로 기본 화면의 첫 실행이 캐시에 맞는다.
     store = settings_store
-    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people))
+    warm_params = store.current().settings.to_milp_params(n_people=len(app.state.dataset.graph.people),
+                                                  months=horizon_months_of(app.state.dataset.graph))
     # 사전계산은 서버 기동을 막는다. 시간 한도가 크거나(최대 900초 × Plan A·대안 4회)
     # gap이 작으면(실측: gap 0·120초에서 부팅 377초) 재기동이 오래 멈춘다 -- 기본값
     # 수준(120초 이하, gap 5% 이상)일 때만 한다(기본 설정 실측 ~34초).
@@ -175,6 +180,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    nightly_batch.detach(app)
     app.state.dataset.retire()
 
 
@@ -208,8 +214,23 @@ app.include_router(admin.router)
 app.include_router(plans.router)
 app.include_router(operating.router)
 app.include_router(justification.router)
+# 야간 배치(2026-10-18, claude-b): 상태·지금 실행·멈춤 API와 낮 요청 기록(최적화·운영 비교 요청 본문, 개인정보 없음).
+from api import nightly as _nightly_batch  # noqa: E402
+from api.routes import nightly as _nightly_routes  # noqa: E402
+app.add_middleware(_nightly_batch.RequestRecorder)
+app.include_router(_nightly_routes.router)
+# 3가지 핵심 상황(2026-10-18, claude-b): 작업 데이터 판(신규 사업·고정·확정·되돌리기)과 신규 사업 후보·긴급 투입 API.
+from api.routes import scenarios as _scenario_routes, workspace as _workspace_routes  # noqa: E402
+app.include_router(_workspace_routes.router)
+app.include_router(_scenario_routes.router)
 app.include_router(skill_map.router)
 app.include_router(records.router)
+# 인사팀 검토 자료(2026-10-19, claude-a): 확정마다 사업별 소명 자료(잠긴 사실 + 부서장 본문·의견·해명·이의) · PDF.
+from api.routes import review_docs as _review_doc_routes  # noqa: E402
+app.include_router(_review_doc_routes.router)
+# 빈자리 → 프로젝트 동시 수행 허용 후보(2026-10-19, claude-a)
+from api.routes import concurrency as _concurrency_routes  # noqa: E402
+app.include_router(_concurrency_routes.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

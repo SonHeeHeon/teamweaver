@@ -13,7 +13,8 @@ from core.evaluate.plan_eval import evaluate_plan
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.incremental import move_budget_constraints, moves_from
 from core.optimize.interrupt import SolveCancelled, current as current_stop
-from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs, solve_milp_assessment
+from core.optimize.types import AssignEntry
+from core.optimize.milp import MilpParams, _overfamiliar_pairs, familiar_exempt, pruned_pairs, solve_milp_assessment
 
 
 def project_contributions(graph: MemoryGraph, S, C, params: MilpParams, entries) -> dict[str, dict]:
@@ -40,7 +41,7 @@ def project_contributions(graph: MemoryGraph, S, C, params: MilpParams, entries)
                 pair = tuple(sorted((members[a_], members[b_])))
                 if pair in reward:
                     row["synergy"] += params.lam * float(C[pair])
-                if pair in penalty:
+                if pair in penalty and (pair[0], pair[1], jdx[pid]) not in familiar_exempt(graph):   # 지금 그 사업에 함께 있는 쌍은 감점 없음
                     row["overfamiliarity"] -= params.mu
     for row in out.values():
         row["total"] = row["skill"] + row["synergy"] + row["overfamiliarity"]
@@ -91,8 +92,12 @@ def compare_move_budgets(graph: MemoryGraph, S, C, params: MilpParams, current, 
     for k in sorted(ks):
         t = time.perf_counter()
         failure: dict | None = None
+        # 초기해(전일 투입만 쓰인다, 2026-10-19): K−1의 최선 해는 K에서도 가능하고, K=0이면 현재 명단 그대로가 가능한 해다
+        start = ([AssignEntry(**e) if isinstance(e, dict) else e for e in best_so_far["entries"]]
+                 if best_so_far is not None else list(current))
         try:
-            a = solve_milp_assessment(graph, S, C, params, extra_constraints=move_budget_constraints(graph, current, k))
+            a = solve_milp_assessment(graph, S, C, params, extra_constraints=move_budget_constraints(graph, current, k),
+                                      start_entries=start)
         except RuntimeError as exc:
             a, failure = None, {"error": str(exc)[:300]}
         elapsed = round(time.perf_counter() - t, 2)

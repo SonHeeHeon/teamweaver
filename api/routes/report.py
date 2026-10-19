@@ -174,7 +174,8 @@ class PayloadTooLarge(RuntimeError):
     pass
 
 
-def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
+def _report_meta(graph: MemoryGraph, version: str, payload: dict, horizon_start: str | None = None,
+                 leave: dict | None = None, concurrency: dict | None = None, scenario: dict | None = None) -> dict:
     """PDF에 필요한 사람·프로젝트·협업선만 담은 meta(K9 스냅숏을 리포트 범위로 줄임).
     전체 meta는 데이터셋 크기에 비례해 커지므로(업로드 데이터에는 행 수 상한이 없다) 넣지 않는다."""
     people_ids, project_ids = set(), set()
@@ -187,7 +188,8 @@ def _report_meta(graph: MemoryGraph, version: str, payload: dict) -> dict:
         else:
             people_ids.update((s["out_person_id"], s["in_person_id"]))
         project_ids.add(s["project_id"])
-    full = build_meta(graph, version).model_dump()
+    full = build_meta(graph, version, horizon_start, leave, concurrency, lifecycle=(scenario or {}).get("lifecycle"),
+                      periods=(scenario or {}).get("periods")).model_dump()
     full["people"] = [p for p in full["people"] if p["id"] in people_ids]
     full["projects"] = [j for j in full["projects"] if j["id"] in project_ids]
     full["coworks"] = [c for c in full["coworks"]
@@ -227,7 +229,11 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
     payload["plan_provenance"] = provenance
     payload["solve_evidence"] = _solve_evidence(req, provenance)
     payload.pop("evidence_token", None)
-    payload["meta"] = _report_meta(graph, version, payload)
+    payload["meta"] = _report_meta(graph, version, payload,
+                                   dataset.scenario.get("horizon_start") if dataset is not None else None,
+                                   dataset.scenario.get("leave") if dataset is not None else None,
+                                   dataset.scenario.get("concurrency") if dataset is not None else None,
+                                   dataset.scenario if dataset is not None else None)
     size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     if size > MAX_RENDER_PAYLOAD_BYTES:
         raise PayloadTooLarge(f"PDF 데이터가 {size:,}바이트로 상한 {MAX_RENDER_PAYLOAD_BYTES:,}바이트를 넘는다.")
@@ -378,6 +384,36 @@ async def report(req: ReportRequest, request: Request,
 
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{pdf_filename(req.plan_label)}"'})
+
+
+async def render_review_pdf(request: Request, payload: dict) -> bytes:
+    """인사팀 검토 자료 한 편의 PDF(2026-10-19, claude-a -- api/routes/review_docs). 같은 /report 화면이 payload.kind=="review"를
+    그린다. 보고서 PDF와 같은 내부 origin·동시성 슬롯·시간 상한을 쓴다(AI 호출 없음 -- 본문은 이미 저장돼 있다)."""
+    try:
+        import playwright                           # noqa: F401
+    except ImportError:
+        raise HTTPException(status_code=503, detail="playwright가 설치돼 있지 않다.")
+    if not _DIST_INDEX.exists():
+        raise HTTPException(status_code=503, detail="web/dist 없음 -- `cd web && npm run build` 먼저 실행할 것")
+    settings = _settings()
+    try:
+        origin = resolve_internal_origin(request.scope, settings.origin_override)
+    except OriginUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not PDF_SLOTS.try_acquire(settings.max_concurrency):
+        raise HTTPException(status_code=429, headers={"Retry-After": "10"},
+                            detail=f"PDF 생성이 이미 {settings.max_concurrency}건 진행 중이다. 잠시 후 다시 시도할 것.")
+    try:
+        return await asyncio.wait_for(render_report_pdf(payload, origin, settings.timeout_s), timeout=settings.timeout_s)
+    except BrowserLaunchError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:                        # noqa: BLE001
+        if not (isinstance(exc, TimeoutError) or type(exc).__name__ == "TimeoutError"):
+            log.exception("검토 자료 PDF 생성 실패")
+            raise HTTPException(status_code=500, detail=f"PDF 생성 실패({type(exc).__name__}).") from exc
+        raise HTTPException(status_code=504, detail=f"PDF 생성이 {settings.timeout_s:g}초 안에 끝나지 않았다.") from exc
+    finally:
+        PDF_SLOTS.release()
 
 
 def pdf_filename(label: str | None) -> str:

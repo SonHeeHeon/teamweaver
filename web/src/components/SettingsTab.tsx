@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { PlacementSettings, SettingsResponse } from "../api/types";
-import { FIELDS, MODE_LABEL, WINDOW_OPTIONS, toInput, type NumKey } from "./settingsFields";
+import { FIELDS, MODE_LABEL, SPLIT_ONLY, WINDOW_OPTIONS, toInput, type NumKey } from "./settingsFields";
 
 type Key = NumKey;
 type Mode = PlacementSettings["allocation_mode"];
@@ -30,7 +30,7 @@ export function SettingsTab({ data, onSave }: Props) {
   const fromSettings = (s: PlacementSettings) =>
     Object.fromEntries(FIELDS.map((f) => [f.key, toInput(f, s[f.key])])) as Record<Key, string>;
   const [form, setForm] = useState<Record<Key, string>>(() => fromSettings(data.settings));
-  const [mode, setMode] = useState<Mode>(data.settings.allocation_mode ?? "fixed");
+  const [mode, setMode] = useState<Mode>(data.settings.allocation_mode ?? "full");
   const savedWindow = data.settings.clique_window_months ?? null;
   const [windowMonths, setWindowMonths] = useState<number | null>(savedWindow);
   const [auto, setAuto] = useState<boolean>(data.settings.time_limit_auto !== false);
@@ -45,14 +45,19 @@ export function SettingsTab({ data, onSave }: Props) {
   if (seenUpdatedAt !== data.updated_at) {
     setSeenUpdatedAt(data.updated_at);
     setForm(fromSettings(data.settings));
-    setMode(data.settings.allocation_mode ?? "fixed");
+    setMode(data.settings.allocation_mode ?? "full");
     setWindowMonths(data.settings.clique_window_months ?? null);
     setAuto(data.settings.time_limit_auto !== false);
     setSeeds(data.settings.solver_seeds ?? null);
   }
 
-  const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time) : data.recommended_time;
-  const parsed = FIELDS.map((f) => [f.key, parseField(f, form[f.key], data.bounds[f.key])] as const);
+  const hint = mode === "monthly" ? (data.recommended_time_monthly ?? data.recommended_time)
+    : mode === "full" ? (data.recommended_time_full ?? data.recommended_time) : data.recommended_time;
+  // 전일 투입에서 숨긴 칸(최소 투입률 등)은 검사하지 않고, 잘못된 값이면 저장된 값을 그대로 보낸다 -- 안 보이는 오류로 저장이 막히지 않게(폴백 리뷰 P3)
+  const parsed = FIELDS.map((f) => {
+    const v = parseField(f, form[f.key], data.bounds[f.key]);
+    return [f.key, mode === "full" && SPLIT_ONLY.includes(f.key) && typeof v === "string" ? data.settings[f.key] : v] as const;
+  });
   const errors = Object.fromEntries(parsed.filter(([, v]) => typeof v === "string"));
   const valid = Object.keys(errors).length === 0;
   const next = valid
@@ -60,7 +65,7 @@ export function SettingsTab({ data, onSave }: Props) {
         clique_window_months: windowMonths, solver_seeds: seeds } as unknown as PlacementSettings)
     : null;
   const dirty = next !== null && (FIELDS.some((f) => next[f.key] !== data.settings[f.key])
-                                  || mode !== (data.settings.allocation_mode ?? "fixed")
+                                  || mode !== (data.settings.allocation_mode ?? "full")
                                   || windowMonths !== savedWindow
                                   || auto !== (data.settings.time_limit_auto !== false)
                                   || seeds !== savedSeeds);
@@ -94,9 +99,9 @@ export function SettingsTab({ data, onSave }: Props) {
       )}
       <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
         <fieldset>
-          <legend className="block text-sm font-medium text-slate-800">투입률 방식</legend>
+          <legend className="block text-sm font-medium text-slate-800">투입 방식</legend>
           <div className="mt-1 flex flex-wrap gap-4 text-sm">
-            {(["fixed", "monthly"] as Mode[]).map((m) => (
+            {(["full", "fixed", "monthly"] as Mode[]).map((m) => (
               <label key={m} className="flex items-center gap-1.5">
                 <input type="radio" name="allocation_mode" value={m} checked={mode === m}
                        onChange={() => setMode(m)} />
@@ -104,6 +109,11 @@ export function SettingsTab({ data, onSave }: Props) {
               </label>
             ))}
           </div>
+          <p className="mt-1 text-xs text-slate-500">
+            전일 투입(기본): 한 사람은 들어간 사업 기간 동안 100%로 일한다. 여러 사업을 같은 달에 맡는 <b>프로젝트 동시 수행</b>은
+            부서장이 사람마다 사유와 함께 허용한 사람만 할 수 있고, 그 사람은 사업마다 100%·예산 전액으로 센다. 그 사업 기간에 쉬는 달(육아휴직 등)이
+            있는 사람은 그 사업에 넣지 않는다. 아래 두 방식은 예전 투입률 나누기 방식이다.
+          </p>
           <p className="mt-1 text-xs text-slate-500">
             달마다 따로: 다른 프로젝트가 끝나 한가해진 달에 더 많이 배치할 수 있다. 가상 조직 데이터 측정(Plan A)에서 끝까지
             풀면 100명 +20.5%, 200명 +15.4%, 300명 +15.0%였지만 시간이 2~4배 더 든다(300명 약 5분). 시간이 모자라면 오히려
@@ -147,7 +157,12 @@ export function SettingsTab({ data, onSave }: Props) {
             4면 안 A~D가 모두 나왔다. 서버 자원 설정이라 결과 캐시·미리 계산 비교에는 들어가지 않는다.
           </p>
         </div>
-        {FIELDS.map((f) => (
+        {mode === "full" && (
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            최소 투입률·동시 프로젝트 최대는 전일 투입에서 쓰지 않는다(투입률을 나누는 예전 방식 전용 -- 값은 그대로 저장된다).
+          </p>
+        )}
+        {FIELDS.filter((f) => !(mode === "full" && SPLIT_ONLY.includes(f.key))).map((f) => (
           <div key={f.key}>
             <label className="block text-sm font-medium text-slate-800" htmlFor={`set-${f.key}`}>
               {f.label}

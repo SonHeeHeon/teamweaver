@@ -6,13 +6,99 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v2",
+ "generator": "core.ingest.org_profile v5",
  "groups": {
   "DP": 100
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.8435,
+ "peak_demand_ratio": 0.8333,
+ "leave": {
+  "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
+  "calibrated": false,
+  "people": [
+   {
+    "person_id": "DP0004",
+    "kind": "육아휴직",
+    "start": "2026-12",
+    "months": 12
+   },
+   {
+    "person_id": "DP0007",
+    "kind": "한 달 휴가",
+    "start": "2027-03",
+    "months": 1
+   },
+   {
+    "person_id": "DP0011",
+    "kind": "육아휴직",
+    "start": "2025-11",
+    "months": 12
+   },
+   {
+    "person_id": "DP0067",
+    "kind": "육아휴직",
+    "start": "2026-05",
+    "months": 12
+   },
+   {
+    "person_id": "DP0070",
+    "kind": "한 달 휴가",
+    "start": "2027-09",
+    "months": 1
+   }
+  ]
+ },
+ "lifecycle": {
+  "J010": {
+   "stage": "운영",
+   "started": "2024-04"
+  },
+  "J011": {
+   "stage": "운영",
+   "started": "2024-04"
+  },
+  "J012": {
+   "stage": "개발",
+   "started": "2025-03"
+  },
+  "J013": {
+   "stage": "고도화",
+   "started": "2025-03"
+  },
+  "J014": {
+   "stage": "운영",
+   "started": "2024-02"
+  },
+  "J015": {
+   "stage": "운영",
+   "started": "2024-10"
+  },
+  "J017": {
+   "stage": "개발",
+   "started": "2026-01"
+  },
+  "J019": {
+   "stage": "고도화",
+   "started": "2025-12"
+  },
+  "J021": {
+   "stage": "추가 과제",
+   "started": "2026-12",
+   "parent": "J010",
+   "external_headcount": 5
+  }
+ },
+ "ongoing_history": {
+  "people": 24,
+  "dropped_reviews": 247,
+  "new_reviews": 68,
+  "join_months": [
+   3,
+   30
+  ],
+  "note": "생성기 v5: 계획 전에 시작한 진행 사업의 현재 팀원은 합류 달부터 업무 이력이 그 사업이다(지난 이력은 합류 직전에서 끊음). 끊긴 이력과 맞지 않게 된 평가는 지우고 진행 사업 팀원끼리의 평가를 새로 만들었다(번호는 원래 평가 뒤)."
+ },
  "review_style": {
   "blunt_share": 0.08,
   "mismatch_share": 0.05,
@@ -32,7 +118,6 @@
    "R000023",
    "R000064",
    "R000072",
-   "R000092",
    "R000118",
    "R000126",
    "R000133",
@@ -90,45 +175,31 @@
    "R000826",
    "R000857",
    "R000865",
-   "R000874",
    "R000889",
    "R000890",
    "R000893",
    "R000899",
    "R000919",
-   "R000930",
    "R000954",
-   "R000969",
    "R000970",
-   "R001001",
-   "R001012",
    "R001017",
-   "R001020",
    "R001032",
    "R001051",
    "R001079",
-   "R001080",
    "R001103",
    "R001142",
-   "R001146",
-   "R001159",
-   "R001167",
-   "R001181",
    "R001198",
    "R001212",
-   "R001213",
-   "R001220",
    "R001231",
    "R001232",
-   "R001256",
    "R001267",
    "R001291",
    "R001294",
-   "R001304",
-   "R001314",
    "R001333",
    "R001342",
-   "R001343"
+   "R001343",
+   "R001415",
+   "R001425"
   ],
   "harsh_reviews": [
    "R000003",
@@ -159,7 +230,6 @@
    "R000533",
    "R000553",
    "R000561",
-   "R000578",
    "R000628",
    "R000699",
    "R000742",
@@ -167,34 +237,22 @@
    "R000764",
    "R000768",
    "R000781",
-   "R000871",
    "R000880",
-   "R000925",
-   "R000926",
-   "R000927",
    "R000932",
    "R000948",
    "R000978",
    "R000984",
-   "R000998",
-   "R000999",
    "R001005",
-   "R001035",
-   "R001036",
    "R001075",
    "R001111",
-   "R001135",
    "R001163",
-   "R001176",
-   "R001189",
    "R001240",
-   "R001249",
    "R001253",
-   "R001254",
    "R001278",
    "R001299",
    "R001331",
-   "R001336"
+   "R001384",
+   "R001404"
   ],
   "soft_reviews": [
    "R000037",
@@ -207,7 +265,6 @@
    "R000831",
    "R000832",
    "R000957",
-   "R001150",
    "R001322",
    "R001359"
   ],
@@ -216,15 +273,15 @@
  "files": {
   "people.csv": "d28b1503b23c0efb0ff497c14bc746384b0855b62b92bd312194a02483eb5207",
   "rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
-  "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
-  "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
-  "availability.csv": "40a8a6a4e9ceddf7c93e68e7b012e3db0cac50ed2865089bf721db6773f710ea",
-  "projects.csv": "84cf274e4cd02cd9ed09c8eebfbdb50639672f61b00d06ec28cdcdcd5ad16f6b",
-  "project_grade_requirements.csv": "a1daf8b346f30d034c4b57fb84dcae7dba6faa91dfbecf905927f79576897921",
-  "project_skill_requirements.csv": "223c8c8c68c8e00aaedb35f94f15efab89cc76ac1f68cc649736f2bf9f38ae28",
-  "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
-  "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
-  "current_assignments.csv": "f404b86f2dc48619815cfb0cffca967c5b48019bb8f8a4a8d2fc14cffd6b6152",
+  "person_skills.csv": "2f8a9f4af2acdc3d0a8517721093db267836ba59b9f45b464a901ef9464dd0cc",
+  "work_history.csv": "845faec9e0c3dc5e200abaa6cf9e8dfc06a0e78711a848ad13dd12dadbd769b1",
+  "availability.csv": "29a5d98f302826aac845bd28b2e2953e7e26fef06c38b437aed2d80a564397ff",
+  "projects.csv": "9b8c95dffbe859f71170de1a14624e7e4799d4063f232f2fd076ad89a5c62529",
+  "project_grade_requirements.csv": "e9db3eda60f208ada472b1a012a7636bcfb08923069a627fd9194352c19f1d20",
+  "project_skill_requirements.csv": "17161e173c12505f193c3d969c14ee3b4675d2ac4ea3444c6b311c6bd8f0b834",
+  "reviews.csv": "710b1f42941a40dc309c6306f29822cf34691ca089a98f2da2e80cbabf9ea0d7",
+  "review_items.csv": "808d78961dac5aef12c4851f529ac07f3b447d04dc1a34acaaeea78a2cdb61bb",
+  "current_assignments.csv": "e1e1bf214ba05a25d7a1bb1d4c572231d9a3b4a8bbfe3c0e658efcfc18ae1883",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
  }

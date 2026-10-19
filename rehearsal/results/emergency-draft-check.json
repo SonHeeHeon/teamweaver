@@ -1,0 +1,118 @@
+{
+ "measured": 10,
+ "ai_accepted": 10,
+ "template_fallback": 0,
+ "with_pull": 10,
+ "rows": [
+  {
+   "project": "J001",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 9.1,
+   "joined": [
+    "DP0074"
+   ],
+   "moved": 1,
+   "chars": 918
+  },
+  {
+   "project": "J002",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 7.2,
+   "joined": [
+    "DP0086"
+   ],
+   "moved": 1,
+   "chars": 896
+  },
+  {
+   "project": "J003",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 5.9,
+   "joined": [
+    "DP0086"
+   ],
+   "moved": 1,
+   "chars": 1035
+  },
+  {
+   "project": "J004",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 9.5,
+   "joined": [
+    "DP0086"
+   ],
+   "moved": 1,
+   "chars": 1009
+  },
+  {
+   "project": "J005",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 7.0,
+   "joined": [
+    "DP0027"
+   ],
+   "moved": 1,
+   "chars": 735
+  },
+  {
+   "project": "J006",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 6.2,
+   "joined": [
+    "DP0023"
+   ],
+   "moved": 1,
+   "chars": 869
+  },
+  {
+   "project": "J007",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 7.0,
+   "joined": [
+    "DP0091"
+   ],
+   "moved": 1,
+   "chars": 1110
+  },
+  {
+   "project": "J008",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 10.3,
+   "joined": [
+    "DP0023"
+   ],
+   "moved": 1,
+   "chars": 1089
+  },
+  {
+   "project": "J009",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 8.2,
+   "joined": [
+    "DP0074"
+   ],
+   "moved": 1,
+   "chars": 1039
+  },
+  {
+   "project": "J010",
+   "status": "ok",
+   "method": "graphrag",
+   "seconds": 9.2,
+   "joined": [
+    "DP0024"
+   ],
+   "moved": 1,
+   "chars": 829
+  }
+ ]
+}

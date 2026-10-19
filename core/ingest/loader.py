@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.ingest.contract import FILE_SPECS, FILES, HORIZON_MONTHS, MANIFEST_KEYS, SCHEMA_VERSION, Column
+from core.ingest.contract import FILE_SPECS, FILES, HORIZON_CHOICES, HORIZON_MONTHS, MANIFEST_KEYS, SCHEMA_VERSION, Column
 from core.ingest.report import IngestReport
 
 _MONTH = re.compile(r"^([0-9]{4})-([0-9]{2})$")
@@ -85,10 +85,13 @@ def _read_manifest(root: Path, report: IngestReport) -> tuple[dict, list[dt.date
     if "schema_version" in manifest and (type(manifest["schema_version"]) is not int
                                          or manifest["schema_version"] != SCHEMA_VERSION):
         report.error("manifest.json", f"schema_version must be {SCHEMA_VERSION}", column="schema_version")
-    if "horizon_months" in manifest and (type(manifest["horizon_months"]) is not int
-                                         or manifest["horizon_months"] != HORIZON_MONTHS):
-        report.error("manifest.json", f"horizon_months must be {HORIZON_MONTHS} (current model)",
-                     column="horizon_months")
+    n_months = HORIZON_MONTHS
+    if "horizon_months" in manifest:
+        if type(manifest["horizon_months"]) is not int or manifest["horizon_months"] not in HORIZON_CHOICES:
+            report.error("manifest.json", f"horizon_months must be one of {list(HORIZON_CHOICES)} (current model)",
+                         column="horizon_months")
+        else:
+            n_months = manifest["horizon_months"]
     if "synthetic" in manifest and not isinstance(manifest["synthetic"], bool):
         report.error("manifest.json", "synthetic must be true or false", column="synthetic")
     for key in ("dataset_id", "cost_unit"):
@@ -98,7 +101,7 @@ def _read_manifest(root: Path, report: IngestReport) -> tuple[dict, list[dt.date
     if "horizon_start" in manifest:
         try:
             start = _parse_month(str(manifest["horizon_start"]))
-            for k in range(HORIZON_MONTHS):
+            for k in range(n_months):
                 y, m = divmod(start.month - 1 + k, 12)
                 horizon.append(dt.date(start.year + y, m + 1, 1))
         except ValueError:
@@ -344,6 +347,10 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     _check_hashes(root, manifest, report)
     _check_keys_and_refs(tables, report)
     _check_rules(tables, horizon, report)
+    from core.ingest import concurrency          # 프로젝트 동시 수행 허용(manifest, 2026-10-19)
+    concurrency.check(manifest, {r["person_id"] for r in tables.get("people.csv", [])}, report)
+    from core.ingest import lifecycle            # 사업 수명 주기(manifest, 2026-10-19 v4) -- 계산에 안 쓰는 기록이라 경고만
+    lifecycle.check(manifest, tables.get("projects.csv", []), report)
     return Bundle(manifest=manifest, horizon=horizon, tables=tables), report
 
 

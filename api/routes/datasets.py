@@ -128,6 +128,19 @@ def _activate(request: Request, new: ActiveDataset) -> None:
         clear_cache(judge_cache_path())
 
 
+def after_switch(app) -> None:
+    """데이터를 바꾼 뒤(업로드·되돌리기·다시 판정·편성 기록 열기): 지금 데이터의 밤 결과를 다시 넣고 옛 데이터의 소명 저장본을 지운다
+    (claude-b 요청 (5), claude-a 2026-10-19 -- 예전엔 재기동·다음 밤까지 밤 결과 표시가 사라졌다). 실패해도 전환은 유효하다. 스레드에서 부른다."""
+    from api.routes.justification import prune_other_versions
+    prune_other_versions(app.state.dataset.info.version)
+    nightly = getattr(app.state, "nightly", None)
+    if nightly is not None:
+        try:
+            nightly.install_prepared()
+        except Exception:                               # noqa: BLE001 -- 밤 결과는 없어도 된다
+            log.warning("밤 결과를 다시 넣지 못했다", exc_info=True)
+
+
 @router.post("/api/datasets", dependencies=[Depends(require_admin)])
 async def upload_dataset(request: Request):
     ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
@@ -156,9 +169,9 @@ async def upload_dataset(request: Request):
             from api.demo_precomputed import install
             install(request.app, None)                  # 업로드 데이터의 결과는 새로 계산한다
             state.demo_active_root = None
-            await anyio.to_thread.run_sync(state.record_store.clear_active)   # 편성 기록에서 벗어났다
             # 다른 데이터셋의 교체 기록은 지운다(이전 업로드의 사번·명단이 남지 않게, Opus 리뷰 S2).
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, active.info.version)
+            await anyio.to_thread.run_sync(after_switch, request.app)
             # 재기동 후에도 이 데이터로 뜨도록 저장한다(K13). 저장에 실패해도 전환은 유효하다 --
             # 대신 "재기동하면 사라진다"는 사실을 응답에 싣는다.
             persist_error = None
@@ -168,6 +181,14 @@ async def upload_dataset(request: Request):
                 log.error("업로드 데이터 저장 실패: %s", exc)
                 persist_error = (f"서버에 저장하지 못했다(재기동하면 이전에 저장된 데이터, 없으면 기본 "
                                  f"데이터로 뜬다): {exc}")
+            if persist_error is None:
+                # 편성 기록에서 벗어났다 -- 새 업로드가 저장된 **뒤에만** 열어 둔 기록 표시를 지운다(저장이 실패했는데 지우면
+                # 재기동 때 복원할 곳이 둘 다 없다, api/workspace._activate_blob과 같은 처리). 지우기 실패는 전환을 무르지 않는다.
+                try:
+                    await anyio.to_thread.run_sync(state.record_store.clear_active)
+                except OSError as exc:
+                    log.error("열어 둔 편성 기록 표시를 지우지 못했다: %s", exc)
+                    persist_error = f"열어 둔 편성 기록 표시를 지우지 못했다(재기동하면 그 기록으로 뜬다): {exc}"
             request.app.state.dataset_restore_error = None
             return {"activated": True, "dataset": _info(active), "report": report,
                     "persisted": persist_error is None, "persist_error": persist_error}
@@ -213,6 +234,7 @@ async def reset_dataset(request: Request) -> dict:
             await anyio.to_thread.run_sync(request.app.state.dataset_store.clear)
             await anyio.to_thread.run_sync(state.record_store.clear_active)
             await anyio.to_thread.run_sync(request.app.state.plan_edit_store.prune, fixture.info.version)
+            await anyio.to_thread.run_sync(after_switch, request.app)
             # 시연 묶음을 못 읽어 예전 fixture로 되돌아갔으면 그 이유를 알린다(claude-a 요청 -- 조용히 바뀌지 않게).
             err = getattr(request.app.state, "demo_bundle_error", None)
             request.app.state.dataset_restore_error = err
@@ -246,6 +268,7 @@ async def rejudge_dataset(request: Request) -> dict:
             state.demo_active_root = root
             # 판정이 성공하면 버전이 바뀐다 -- 옛 버전의 교체 기록(사번·명단)을 남기지 않는다(리뷰 S6).
             await anyio.to_thread.run_sync(state.plan_edit_store.prune, new.info.version)
+            await anyio.to_thread.run_sync(after_switch, request.app)
             if new.info.source != "upload":
                 # 시연 묶음을 못 읽어 예전 fixture가 됐으면 조용히 바뀌지 않게 이유를 알린다(리뷰 S6).
                 state.dataset_restore_error = getattr(state, "demo_bundle_error", None)

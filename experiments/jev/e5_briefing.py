@@ -66,7 +66,7 @@ def build_cases():
     active = build_active(ds, parsed, dataset_id="e5", version=bundle_version(BUNDLE), source="demo-bundle",
                           synthetic=True, judge=False, manifest=bundle.manifest)
     g = active.graph
-    params = PlacementSettings().to_milp_params(n_people=len(g.people))
+    params = PlacementSettings(allocation_mode="fixed").to_milp_params(n_people=len(g.people))   # 예전 투입률 방식으로 잰 실험(10-19 기본 전환 뒤 고정)
     eng = ScoringEngine(g)
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
     entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in active.current]

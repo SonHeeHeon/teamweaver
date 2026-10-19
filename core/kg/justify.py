@@ -23,7 +23,7 @@ AI 원문이 빠뜨린 불리한 사실을 서버가 정해진 문단(adverse_ad
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from core.ingest.convert import level_from_months
 
@@ -189,6 +189,33 @@ def justification_input(kg, project_id: str, entries, *, graph, S, C, params) ->
     return JustificationInput(project_id=project_id, project=ev["project"], team=[m["person_id"] for m in ev["members"]],
                               facts=facts_from_evidence(ev, len(pe.violations), sum(s.missing for s in pe.shortfalls)),
                               known_ids=ids, evidence=ev)
+
+
+def fact_key(f: Fact) -> str:
+    """사실 지문: 종류·주인·기술과 숫자를 뺀 문구. 다시 계산해 번호(F#)나 숫자가 바뀌어도 같은 사실이면 같다 --
+    검토 자료의 부서장 해명·이의를 이 지문에 붙인다(2026-10-19, 설계 .omc/plan/2026-10-19-review-doc.md 3절)."""
+    import hashlib
+    body = "|".join([f.kind, ",".join(sorted(f.owners)), f.skill or "", re.sub(r"[-+]?\d+(?:\.\d+)?", "#", f.text)])
+    return hashlib.sha1(body.encode("utf-8")).hexdigest()[:16]
+
+
+GROUP_KINDS = frozenset({"PRJ", "REQ", "CON"})      # 사업 전체 사실(사람이 주인이 아님)
+
+
+def focus_input(inp: JustificationInput, people: set[str]) -> JustificationInput:
+    """긴급 투입: 본문이 **새로 들어온 사람만** 다루게 사실을 줄인다(사업·요구·전체 규칙 + 주인이 그 사람인 사실).
+    번호는 F1부터 다시 매기고, 팀(주어 목록)도 그 사람들로 줄인다 -- 남은 사실이 없는 기존 팀원을 주어로 요구하지 않게.
+    사실 문구·문법은 그대로다(E7c 측정 조건 유지)."""
+    facts = []
+    for f in inp.facts:
+        if f.kind == "CW" and any(o in people for o in f.owners):
+            # 함께 일한 사실은 ID가 작은 쪽이 주인이라 새로 온 사람이 둘째일 수 있다 -- 그 사람을 앞으로(문구는 대칭이라 그대로, 폴백 리뷰 P2)
+            f = replace(f, owners=tuple(sorted(f.owners, key=lambda o: o not in people)))
+        elif not (f.kind in GROUP_KINDS or (f.owners and f.owners[0] in people)):
+            continue
+        facts.append(replace(f, id=f"F{len(facts) + 1}"))
+    return JustificationInput(project_id=inp.project_id, project=inp.project, team=[p for p in inp.team if p in people],
+                              facts=facts, known_ids=inp.known_ids, evidence=inp.evidence)
 
 
 def template_text(facts: list[Fact]) -> str:

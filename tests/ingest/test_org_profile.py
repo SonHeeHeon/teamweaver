@@ -30,7 +30,8 @@ def test_group_composition_matches_the_size(bundle):
     for row in b.tables["people.csv"]:
         groups[row["person_id"][:2]] = groups.get(row["person_id"][:2], 0) + 1
     assert groups == {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}[size]
-    assert len(ds.projects) == size // 5
+    # v5(2026-10-19): 사람 5명당 사업 1개(실행 사업 대부분이 계획 전에 시작한 진행 사업) + 운영 사업의 추가 과제(100명 1 · 200·300명 2)
+    assert len(ds.projects) == size // 5 + {100: 1, 200: 2, 300: 2}[size]
 
 
 def test_flagship_keeps_its_internal_seats(bundle):
@@ -69,8 +70,8 @@ def test_projects_mix_execution_and_proposal_with_labels(bundle):
     _, _, b, _, _ = bundle
     rows = b.tables["projects.csv"]
     phases = [r["phase"] for r in rows]
-    assert 0.25 <= phases.count("제안") / len(phases) <= 0.45
-    assert all(re.match(r"^\[(제안|실행)\] ", r["project_name"]) for r in rows[1:])
+    assert 0.2 <= phases.count("제안") / len(phases) <= 0.45
+    assert all(re.match(r"^\[(제안|실행|운영|고도화|추가 과제)\] ", r["project_name"]) for r in rows[1:])
 
 
 def test_generation_is_deterministic(tmp_path):
@@ -96,13 +97,15 @@ def test_current_roster_respects_grades_availability_and_locks(bundle):
 
 
 def test_roster_does_not_change_the_other_tables(tmp_path, monkeypatch):
-    """The roster has its own RNG stream: with it removed, every other file is byte-identical."""
+    """The roster has its own RNG stream: with it removed, every other file is byte-identical -- except the files the
+    v5 ongoing-history link derives from the roster (work history, skill months, reviews of the running projects)."""
     import core.ingest.org_profile as op
     a = generate_org_bundle(tmp_path / "a", 200, seed=5)
     monkeypatch.setattr(op, "_current_roster", lambda *args, **kw: [])
     c = op.generate_org_bundle(tmp_path / "c", 200, seed=5)
+    linked = ("work_history.csv", "person_skills.csv", "reviews.csv", "review_items.csv")
     for f in a.iterdir():
-        if f.name not in ("current_assignments.csv", "manifest.json"):
+        if f.name not in ("current_assignments.csv", "manifest.json") + linked:
             assert f.read_bytes() == (c / f.name).read_bytes(), f.name
 
 
@@ -267,9 +270,15 @@ def test_operating_scenario_matches_the_described_situation(tmp_path):
     m = json.loads((root / "manifest.json").read_text("utf-8"))
     b, report = load_bundle(root)
     ds, _ = to_dataset(b, report)
-    assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 2
+    # v4(2026-10-19): 신규 제안 2개 + 운영 사업에 붙은 추가 과제 1개(작업 데이터 pipeline 모양)
+    assert report.errors == [] and m["scenario"] == "operating" and len(m["proposals"]) == 3
+    addon = m["proposals"][-1]
+    assert m["pipeline"][addon]["parent"] in {j for j, e in m["lifecycle"].items() if e["stage"] == "운영"}
     on = {c.person_id for c in ds.current}
-    assert len(on) == 90 and set(m["bench"]) == {p.id for p in ds.people} - on
+    # 생성기 v3(2026-10-19): 계획 기간에 육아휴직 달이 걸린 사람은 진행 사업·대기 인력 어디에도 없다
+    away = {p.id for p in ds.people if min(p.availability) < 1.0}
+    assert away and not (away & on) and not (away & set(m["bench"]))
+    assert len(m["bench"]) == 10 and set(m["bench"]) == {p.id for p in ds.people} - on - away
     for p in ds.projects:
         team = [c for c in ds.current if c.project_id == p.id]
         if p.id in m["proposals"]:
@@ -357,9 +366,13 @@ def test_review_style_shares_are_checked(tmp_path):
         generate_org_bundle(tmp_path / "x", 100, seed=5, blunt_share=1.5)
 
 
-def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp_path):
-    """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 표는 바이트 단위로 같다.
-    항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰)."""
+def test_v3_keeps_people_history_and_review_tables_byte_identical_to_v1(tmp_path):
+    """생성기 v1(2026-10-11 전, 커밋 436aa9a의 demo/org-n100 manifest)과 같은 seed면 이름·리뷰 글·manifest 밖의 사람·이력·평가 표는 바이트 단위로 같다.
+    항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰).
+    v3(2026-10-19)는 가용률·사업 정원·예산·현재 배치만 바꾼다(전일 투입 재설계) -- 그 표는 이 비교에서 뺀다. 리뷰 판정 동봉이 그대로 쓰이는 근거."""
+    v3_changed = {"availability.csv", "projects.csv", "project_grade_requirements.csv", "current_assignments.csv",
+                  "project_skill_requirements.csv",                         # v4(2026-10-19): 장기 사업·추가 과제의 기술 요구가 붙는다
+                  "work_history.csv", "person_skills.csv", "review_items.csv"}   # v5: 진행 사업 경력을 이력·기술 경력·평가에 잇는다
     v1 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
           "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
           "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
@@ -373,7 +386,7 @@ def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp
           "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"}
     root = generate_org_bundle(tmp_path / "v2", 100, seed=2026)                   # v1 manifest의 seed(시연 묶음)
     files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
-    assert {k: files[k] for k in v1} == v1
+    assert {k: files[k] for k in v1 if k not in v3_changed} == {k: v for k, v in v1.items() if k not in v3_changed}
     v1_n300 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",   # AI·AU 그룹까지(436aa9a demo/org-n300.zip)
                "person_skills.csv": "9aaf017b68cfda60f6a13d08655ac1f089c7146e3eedb7359489a64c06475338",
                "work_history.csv": "6463a3fa274bb266b973464bfd7e7f3a0f47c76674d1de544602973b96448c47",
@@ -387,4 +400,177 @@ def test_v2_keeps_every_table_but_names_and_review_text_byte_identical_to_v1(tmp
                "replacements.csv": "7c52ecaf8ea4a3db93cccf78f5f18fe19148f83d0688f2c16632a41918a9220a"}
     root = generate_org_bundle(tmp_path / "v2-n300", 300, seed=2026)
     files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
-    assert {k: files[k] for k in v1_n300} == v1_n300
+    assert {k: files[k] for k in v1_n300 if k not in v3_changed} == {k: v for k, v in v1_n300.items() if k not in v3_changed}
+
+
+# ---------------------------------------------------------------- 2026-10-19: 생성기 v3(전일 투입 재설계, 설계 .omc/plan/2026-10-19-concurrency.md 4절)
+@pytest.mark.parametrize("n", [100, 200, 300])
+def test_v3_headcounts_fit_each_grade_without_project_concurrency(tmp_path, n):
+    """등급·달마다 정원 합 ≤ 0.85 × 그 달 일할 수 있는(가용률 1.0) 그 등급 인원, 예산 ≥ 가장 싼 사람으로 전일 채운 비용."""
+    from core.ingest.org_profile import PEAK_CAP
+    b, report = load_bundle(generate_org_bundle(tmp_path / f"n{n}", n, seed=2026))
+    ds, _ = to_dataset(b, report)
+    months = len(ds.people[0].availability)
+    for m in range(months):
+        for g in {p.grade for p in ds.people}:
+            supply = sum(1 for p in ds.people if p.grade == g and p.availability[m] >= 1.0)
+            demand = sum(p.grade_headcount.get(g, 0) for p in ds.projects if m in p.months)
+            assert demand <= PEAK_CAP * supply + 1e-9, (m, g, demand, supply)
+    cheapest = {g: min(p.monthly_rate for p in ds.people if p.grade == g) for g in {p.grade for p in ds.people}}
+    assert all(p.monthly_budget >= sum(cheapest[g] * k for g, k in p.grade_headcount.items()) for p in ds.projects)
+
+
+def test_v3_leave_is_the_same_people_in_every_scenario(tmp_path):
+    """육아휴직 3%(가용률 0인 달)·한 달 휴가 2%(가용률 그대로), 연초·운영 중이 같은 사람·같은 창."""
+    plan = generate_org_bundle(tmp_path / "plan", 100, seed=2026)
+    op = generate_org_bundle(tmp_path / "op", 100, seed=2026, scenario="operating")
+    mp, mo = (json.loads((r / "manifest.json").read_text("utf-8")) for r in (plan, op))
+    assert mp["leave"] == mo["leave"] and mp["leave"]["calibrated"] is False
+    kinds = [x["kind"] for x in mp["leave"]["people"]]
+    assert kinds.count("육아휴직") == 3 and kinds.count("한 달 휴가") == 2
+    b, report = load_bundle(plan)
+    ds, _ = to_dataset(b, report)
+    parental = {x["person_id"] for x in mp["leave"]["people"] if x["kind"] == "육아휴직"}
+    assert {a for p in ds.people for a in p.availability} <= {0.0, 1.0}
+    assert {p.id for p in ds.people if min(p.availability) < 1.0} <= parental
+
+
+def test_v3_current_roster_is_full_time_without_overlap_or_leave(tmp_path):
+    b, report = load_bundle(generate_org_bundle(tmp_path / "plan", 100, seed=2026))
+    ds, _ = to_dataset(b, report)
+    people = {p.id: p for p in ds.people}
+    projects = {p.id: p for p in ds.projects}
+    assert ds.current and all(c.alloc == 1.0 for c in ds.current)
+    busy: dict = {}
+    for c in ds.current:
+        for m in projects[c.project_id].months:
+            assert people[c.person_id].availability[m] == 1.0
+            assert (c.person_id, m) not in busy                                  # 동시 수행 없음
+            busy[(c.person_id, m)] = c.project_id
+    for j, p in projects.items():
+        assert sum(people[c.person_id].monthly_rate for c in ds.current if c.project_id == j) <= p.monthly_budget
+
+
+# ---------------------------------------------------------------- 2026-10-19 생성기 v4: 사업 수명 주기 섞기(b 요청 6번, 사용자 원문)
+@pytest.mark.parametrize("scenario", ["planning", "operating"])
+def test_v4_mixes_long_running_projects_and_add_on_tasks(tmp_path, scenario):
+    """사용자: 24년 시작 운영 사업(내부 소수), 25년 고도화, 26년 상반기 시작, 운영 사업에 붙은 추가 과제(회사 인력 2명·6달, 외주 여러 명)."""
+    import csv
+    root = generate_org_bundle(tmp_path / scenario, 100, seed=2026, scenario=scenario)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    b, report = load_bundle(root)
+    ds, _ = to_dataset(b, report)
+    assert report.errors == [] and report.warnings == []          # 계획 전 시작·계획 뒤 끝은 경고 없이 자른다
+    rows = {r["project_id"]: r for r in csv.DictReader(open(root / "projects.csv", encoding="utf-8"))}
+    hc = {j.id: sum(j.grade_headcount.values()) for j in ds.projects}
+    life = m["lifecycle"]
+    stages = {e["stage"] for e in life.values()}
+    assert {"운영", "고도화", "개발", "추가 과제"} <= stages
+    first = m["horizon_start"]
+    for pid, e in life.items():
+        assert rows[pid]["start_month"] == e["started"]
+        prefix = {"운영": "[운영] ", "고도화": "[고도화] ", "개발": "[실행] ", "추가 과제": "[추가 과제] "}[e["stage"]]
+        assert rows[pid]["project_name"].startswith(prefix)
+        if e["stage"] == "추가 과제":
+            parent = e["parent"]
+            assert life[parent]["stage"] == "운영" and hc[pid] == 2
+            assert 3 <= e["external_headcount"] <= 6
+            assert rows[parent]["start_month"] <= rows[pid]["start_month"] and rows[pid]["end_month"] <= rows[parent]["end_month"]
+        else:
+            assert e["started"] < first                            # 계획 전에 시작해 지금 진행 중
+        if e["stage"] == "운영":
+            assert hc[pid] <= 3 and rows[pid]["end_month"] > ds_last(m)    # 내부 소수, 계획 뒤까지 운영
+    if scenario == "operating":
+        addon = m["proposals"][-1]
+        assert life[addon]["stage"] == "추가 과제" and m["pipeline"][addon]["parent"] == life[addon]["parent"]
+        assert not [c for c in ds.current if c.project_id == addon]           # 아직 아무도 없다(남는 인력으로 짠다)
+
+
+def ds_last(m: dict) -> str:
+    y, mo = map(int, m["horizon_start"].split("-"))
+    k = y * 12 + mo - 1 + m["horizon_months"] - 1
+    return f"{k // 12}-{k % 12 + 1:02d}"
+
+
+def test_v5_planning_projects_are_mostly_running_before_the_horizon(tmp_path):
+    """사용자(2026-10-19): "기존 사업 20개는 여전히 전부 하반기 시작 프로젝트들인가? 그건 좀 잘못된거같은데" -- 연초 계획의 실행 사업
+    대부분이 계획 전에 시작한 진행 사업이고(운영은 회사 인력 2~3명), 이름 머리말이 단계를 말한다. 번호·이름 뒷부분(고객·사업 종류)은 v4와 같다."""
+    import csv
+    root = generate_org_bundle(tmp_path / "p", 100, seed=2026)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    rows = list(csv.DictReader(open(root / "projects.csv", encoding="utf-8")))
+    execution = [r for r in rows[1:] if r["phase"] == "실행" and m["lifecycle"].get(r["project_id"], {}).get("stage") != "추가 과제"]
+    running = [r for r in execution if r["project_id"] in m["lifecycle"]]
+    assert len(running) >= 0.5 * len(execution) and all(r["start_month"] < m["horizon_start"] for r in running)
+    assert all(r["project_name"].startswith(("[운영]", "[고도화]", "[실행]")) for r in running)
+    assert [r["project_id"] for r in rows[:20]] == [f"J{k:03d}" for k in range(1, 21)]
+
+
+@pytest.mark.parametrize("seed,scenario,start", [(14, "planning", "2026-10"), (1, "operating", "2026-10"),
+                                                 (2026, "planning", "2026-01"), (2026, "operating", "2027-03")])
+def test_v4_bundles_load_for_other_seeds_and_horizon_starts(tmp_path, seed, scenario, start):
+    """Codex 리뷰(2026-10-19): 추가 과제가 상위 기술의 클라우드 기술을 또 요구해 시드 14·1이 적재 거부됐고, 시작 연도를 박아 둬
+    2026-01 시작 묶음에 끝보다 늦게 시작하는 사업이 생겼다 -- 장기 사업은 늘 계획 시작 전에 시작하고 기술 요구가 겹치지 않는다."""
+    import csv
+    root = generate_org_bundle(tmp_path / "b", 100, seed=seed, scenario=scenario, horizon_start=start)
+    b, report = load_bundle(root)
+    assert report.errors == [], [i.message for i in report.errors]
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    rows = {r["project_id"]: r for r in csv.DictReader(open(root / "projects.csv", encoding="utf-8"))}
+    for pid, e in m["lifecycle"].items():
+        if e["stage"] != "추가 과제":
+            assert e["started"] < start <= rows[pid]["end_month"]
+    pairs = [(r["project_id"], r["skill_name"]) for r in csv.DictReader(open(root / "project_skill_requirements.csv", encoding="utf-8"))]
+    assert len(pairs) == len(set(pairs))
+
+
+
+@pytest.mark.parametrize("scenario", ["planning", "operating"])
+def test_v5_ongoing_work_is_in_the_history_and_reviews_stay_consistent(tmp_path, scenario):
+    """v5(사용자 "진행해야겠어", 선택 "갈아 끼우고 평가도 새로"): 진행 사업 팀원은 합류 달부터 업무 이력이 그 사업이고 그 뒤 지난 이력과
+    겹치지 않는다. 남은 평가는 모두 평가 기간에 두 사람이 같은 사업 이력에 있고, 진행 사업 팀원끼리의 평가가 새로 생긴다."""
+    import csv
+    import datetime as dt
+    root = generate_org_bundle(tmp_path / scenario, 100, seed=2026, scenario=scenario)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    work = list(csv.DictReader(open(root / "work_history.csv", encoding="utf-8")))
+    cur = list(csv.DictReader(open(root / "current_assignments.csv", encoding="utf-8")))
+    reviews = list(csv.DictReader(open(root / "reviews.csv", encoding="utf-8")))
+    on_running = {(c["person_id"], c["project_id"]) for c in cur
+                  if m["lifecycle"].get(c["project_id"], {}).get("stage") not in (None, "추가 과제")}
+    linked = [w for w in work if w["project_code"].startswith("J")]
+    assert linked and m["ongoing_history"]["people"] == len(linked)
+    assert all((w["person_id"], w["project_code"]) in on_running and w["status"] == "진행중" for w in linked)
+    by_person: dict[str, list] = {}
+    for w in work:
+        by_person.setdefault(w["person_id"], []).append((w["start_date"], w["end_date"]))
+    for spans in by_person.values():                                  # 한 사람은 한 번에 한 이력(전일 투입)
+        spans.sort()
+        assert all(spans[k][1] < spans[k + 1][0] for k in range(len(spans) - 1))
+    rows = {}
+    for w in work:
+        rows.setdefault((w["person_id"], w["project_code"]), []).append((w["start_date"], w["end_date"]))
+    for r in reviews:
+        d = dt.date.fromisoformat(r["reviewed_at"])
+        hi = dt.date(d.year, d.month, 1).isoformat()
+        y, mo = (d.year, d.month - 5) if d.month > 5 else (d.year - 1, d.month + 7)
+        lo = f"{y}-{mo:02d}-01"
+        a = [x for x in rows.get((r["reviewer_id"], r["project_code"]), []) if x[0] <= hi and x[1] >= lo]
+        b = [x for x in rows.get((r["reviewee_id"], r["project_code"]), []) if x[0] <= hi and x[1] >= lo]
+        assert any(x[0] <= y2[1] and y2[0] <= x[1] for x in a for y2 in b), r["review_id"]
+    assert any(r["project_code"].startswith("J") for r in reviews)
+    assert m["ongoing_history"]["new_reviews"] == sum(r["project_code"].startswith("J") for r in reviews)
+
+
+def test_v5_link_is_the_only_change_to_history_skills_and_review_items(tmp_path, monkeypatch):
+    """폴백 리뷰(2026-10-19): v5에서 v1 해시 비교가 이력·기술 경력·평가 항목을 빼 난수열 이탈을 못 잡게 됐다 -- 진행 사업 잇기를 끄면
+    세 표가 v1(2026-10-11 전 시연 묶음) 해시와 그대로 같아야 한다. 잇기 자체는 v5 시험들이 따로 본다."""
+    import core.ingest.org_profile as op
+    monkeypatch.setattr(op, "_link_ongoing", lambda hrng, people, works, work_skills, projects, roster, last, first,
+                        reviews, review_items, review_style, **kw: (works, work_skills, reviews, review_items, review_style, {}))
+    root = op.generate_org_bundle(tmp_path / "unlinked", 100, seed=2026)
+    files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
+    assert {k: files[k] for k in ("work_history.csv", "person_skills.csv", "review_items.csv")} == {
+        "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
+        "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
+        "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe"}

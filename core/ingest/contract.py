@@ -7,7 +7,8 @@ missing is ever filled in silently.
 from dataclasses import dataclass
 
 SCHEMA_VERSION = 1
-HORIZON_MONTHS = 6
+HORIZON_MONTHS = 6                  # 기본 계획 기간(생성기 기본값)
+HORIZON_CHOICES = (6, 12)           # manifest horizon_months 허용 값(2026-10-19 "계획기간 1년 확장", core.domain.models와 같다)
 
 GRADES = ("특급", "고급", "중급", "초급")
 ROLE_TYPES = ("개발", "컨설팅")

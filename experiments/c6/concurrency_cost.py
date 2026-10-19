@@ -37,7 +37,7 @@ def main() -> None:
                      "objectives": [round(p.objective, 3) for p in plans], "alternatives_stop": outcome})
         print(rows[-1], flush=True)
     out = {"experiment": "c6-concurrency-cost", "business_validity": "NOT_CALIBRATED", "fixture": "100x20",
-           "params": PlacementSettings().to_milp_params().model_dump(), "varied": "max_concurrent_projects",
+           "params": PlacementSettings(allocation_mode="fixed").to_milp_params().model_dump(), "varied": "max_concurrent_projects",
            "command": "uv run --group benchmark python -m experiments.c6.concurrency_cost " + str(args.output),
            "platform": platform.platform(), "measured_at": time.strftime("%Y-%m-%d %H:%M"), "rows": rows}
     args.output.parent.mkdir(parents=True, exist_ok=True)

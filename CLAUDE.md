@@ -38,7 +38,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 코드 지도
 
-- `core/domain/models.py` 입력 계약(Pydantic). 6개월 고정 horizon, 레벨 1~5, 4등급.
+- `core/domain/models.py` 입력 계약(Pydantic). 계획 기간 6 또는 12개월(데이터마다, 2026-10-19), 레벨 1~5, 4등급.
 - `core/graph/memory_graph.py` S/C 계산용 인메모리 구조 · `core/graph/sqlite_store.py` 근거 검색용 SQLite.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
 - `core/optimize/milp.py` 제품 MILP(PuLP+**HiGHS**, 2026-10-05부터. `MilpParams.solver="cbc"`는 비교용) · `highs_portfolio.py` 시드 포트폴리오 · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
@@ -54,6 +54,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `experiments/phase1/solvers.py::_build_model`(벤치, 3솔버 공용), 그리고 C1 보정 LP `core/optimize/numerics.py::_allocation_lp`(가용률·예산 행)와
   독립 검증기 `core/optimize/validation.py`(목적값 재계산), 평가기 `core/evaluate/plan_eval.py`. 목적식·제약을 바꾸면 모두
   고치고 Phase 0 검증(`uv run --group benchmark python -m experiments.bench.phase0_model`)을 다시 돌려야 한다.
+- **전일 투입 `allocation_mode="full"`**(2026-10-19 사용자 결정, claude-a 설계 `.omc/plan/2026-10-19-concurrency.md`): 투입률 변수 없음(a = z, 100%),
+  사업 기간 가용률 1.0인 사람만 자격(`milp.full_eligible`, 문턱 `FULL_TIME_MIN_AVAILABILITY` -- 검증기·오라클은 같은 값을 따로 적는다), 같은 달 사업 수 ≤ `Person.max_concurrent`
+  (기본 1, 부서장이 사람 단위로 허용한 **프로젝트 동시 수행**만 2~3, 사업마다 예산 전액). 용어는 "프로젝트 동시 수행"(동시 수행)으로 통일한다(사용자 지시 2026-10-19 -- 회사 규정상 다른 이름을 쓰지 않는다).
+  예전 fixed·monthly는 그대로(시험·옛 기록). full에서만 탐욕 초기해(`greedy.warm_start_full` → HiGHS `setSolution`), C1 보정은 건너뛴다.
 - **HiGHS 경계 잔차**: HiGHS는 z=1.0000000000000007 같은 값을 돌려주고, 독립 검증기(C0)는 범위를 조금이라도
   넘으면 거절한다. `milp._snap_bounds`가 1e-9 안쪽 잔차만 경계로 옮긴다(원본은 native_capture에 보존).
   이 처리가 없으면 HiGHS 해가 전부 "검증 실패"가 된다(2026-10-05 리허설에서 실측).
@@ -62,7 +66,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   규모를 키우거나 보상 쌍을 늘리면 반드시 쌍 수 측정(`python -m rehearsal.run --size N --stage pairs`)으로 확인한다.
 - **정답 비교는 gap=0**: Phase 0 오라클 사례·시험은 `gap=0.0`으로 푼다. 기본 5% gap이면 솔버가 최적 전에
   멈춰도 정상인데, 예전에는 CBC가 우연히 최적을 내서 통과하고 있었다.
-- **익숙한 쌍 = 최근 `clique_window_months`(서비스 36) 중 `clique_threshold_months`(서비스 12) 이상**(2026-10-06 사용자 결정,
+- **익숙한 쌍 = 최근 `clique_window_months`(서비스 36) 중 `clique_threshold_months`(서비스 12) 이상**(2026-10-06 사용자 결정 · **지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점 안 함**(2026-10-19 사용자 결정, `MemoryGraph.current_teams` ← 현재 배치, `milp.familiar_exempt` -- MILP·독립 검증기·평가기·C1 확인(numerics)·Phase 0 오라클·긴급 투입 거르기·운영 중 기여 분해가 같은 규칙, 벤치 정식·factor_lab에는 없음),
   `rehearsal/results/rule-compare.html`). 달 정보는 `CoworkRecord.months_ago`(ingest가 채움) → `MemoryGraph.cowork_within`.
   협업 점수 C는 10년 전체를 쓴다. 독립 검증기·Phase 0 오라클은 서비스 함수를 빌리지 않고 원자료로 센다. 달 정보 없는 fixture는 전체 이력 기준.
   모델 기본값(`MilpParams`)은 None·6(예전과 동일)이라 시험은 그대로다 -- 서비스 기본은 `api/settings.PlacementSettings`.
@@ -71,11 +75,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   시작 인자로 넘기면 자식이 시작 중 죽을 때 부모가 영원히 멈춘다(main 가드 없는 스크립트에서 실측). HiGHS 증명 상한은 `SolverEvidence.best_bound`.
 - **운영 중 편성은 갭 0으로 푼다**(`core/evaluate/operating.exact`, 2026-10-06): 빈자리 감점(자리당 100)이 섞인 목적에서 5% 갭은
   1~2명 이동의 개선(1~2점)을 통째로 가린다(실측: 빼 오기 허용이 더 나쁜 모순). 변경 예산 제약은 `core/optimize/incremental.py` --
-  옮긴 사람은 "원래 없던 사업"에 들어가야 한다(겸직자가 기존 겸직으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
-  K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 겸직자 한 명이 2로 셌다).
+  옮긴 사람은 "원래 없던 사업"에 들어가야 한다(동시 수행자가 기존 동시 수행으로 조건을 채워 대기되던 빈틈, 리뷰 MUST).
+  K는 **옮긴 사람 수**다(사람마다 0/1 보조 변수, 2026-10-12 -- 예전엔 빠진 배치 수라 동시 수행자 한 명이 2로 셌다).
   **추가 제약 콜백이 새 변수를 만들면 정수형(0/1)만** 쓴다: `milp`가 그 풀이 값을 고정해 `numerics.project_additive_constraints`에 넘겨야
   C1 보정·추가 행 독립 검증이 켜진다. 연속 보조 변수나 기존 변수를 바꾸면 "모델 변형"으로 보정·검증이 조용히 꺼진다(실측: 추가 행 0개).
-  시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(90명 배치 중·대기 10명·신규 제안 2), 같은 사람.
+  시연 묶음은 둘: 연초 계획 `demo/org-n100`(전원 배치)·운영 중 `demo/org-n100-operating`(생성기 v4: 87명 배치 중·대기 10명·육아휴직 3명·신규 제안 2 + 추가 과제 1), 같은 사람.
   생성기 v2(2026-10-11): 가상 이름(`core/ingest/names.py`, ID별 고정·중복 없음), 아쉬운 점 항목마다 문장·직설형 평가자 8%·어긋난 글 5%(manifest `review_style`) --
   고른 항목의 난수열은 그대로라 글만 바뀐다. 글을 바꾸면 `python -m rehearsal.make_demo`(+`make_broken_demo`) → 판정·미리 계산·판정 동봉을 한 데이터 폴더에서 이어서 만든다.
   운영 중 묶음을 "전부 다시 짜기"(안 A~D)로 풀면 200·300명은 시간 한도 안에 빈자리가 남는다(정원·예산이 현재 명단에 맞춰짐) -- K 비교로 쓴다.
@@ -118,6 +122,60 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   연결이 끊기면 abort(시드 프로세스까지 즉시 정리). 멈춤 뒤에는 `HighsPortfolio`가 새 풀이를 시작하지 않고 `SolveCancelled`(RuntimeError 아님) --
   대안 생성기·운영 K 비교가 이것을 "실패"로 삼키지 않게. 풀이 경로에 새 `except Exception`을 넣으면 멈춤이 실패로 바뀐다.
   PDF 계산 신뢰도는 결과·K 행의 서버 서명 `evidence`+`evidence_token`(plan_token에 묶임)이 맞을 때만 찍는다 -- 화면은 `evidence`를 그대로 돌려보낸다(다시 조립하면 서명이 어긋난다).
+- **3가지 핵심 상황**(2026-10-19, claude-b, 설계 `.omc/plan/2026-10-18-three-scenarios.md`): 신규 사업 편성(`web/src/scenarios/NewProjectsScreen`)·긴급 투입(`EmergencyScreen`)·연간 계획(기존 요건 설정).
+  **작업 데이터 판**(`api/workspace.py`·`workspace_edits.py`·`routes/workspace.py`): 신규 사업 등록·단계(예정/제안/수주)·떨어짐·고정(사업·사람 = `current_assignments.locked`)·확정은
+  모두 원천 CSV 묶음을 고쳐 **업로드와 같은 경로**(`validate_and_build` → `_activate` → `DatasetStore.save`)로 켠다 -- 계산 버전이 바뀐다. 단계·이전 사업은 manifest `pipeline`(CSV 계약은 그대로),
+  "적힌 0명 = 그 등급 금지"라 양식은 네 등급을 다 보낸다. 이력·되돌리기는 `<데이터 폴더>/workspace/`(켜기 **전에** 쓴다). `mapping.json` 묶음은 편집 불가.
+  확정은 평가기로 **새로 생기거나 커진 위반**(한도와의 거리)·잠긴 배치 빼기를 거절한다. 신규 사업 후보는 등록한 정원·예산 그대로 다시 채점(`rescore_unchanged` -- 보강 계산은 자리를 늘린다),
+  "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
+  시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
+  후보 점수는 나눠 보인다(사용자 2026-10-19 "점수 변화는 나눠 보이도록"): `scenarios.split_unfilled`가 `unfilled_seats_delta`(메운 자리, 운영 중 보강과 같은 이름·부호)·`delta_excl_unfilled`(빈자리 몫 뺀 변화)를 붙이고 `delta_total`·순위는 그대로.
+  긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
+- **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
+  긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
+  **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
+  소명 글은 확정 때 화면에서 쓰고 `api/justification_cache`(키 = 데이터 버전·명단·설정·AI·소명 재료 해시·생성기 코드 지문)가 저장해 다시 돈 내지 않는다. 점검 보고서 `GET /api/nightly`.
+  `TEAMWEAVER_NIGHTLY=off`로 끈다 -- `tests/conftest.py`가 시험 전체에서 끈다. **시험에서 밤 실행·소명을 돌릴 때는 설명 AI를 막는다**(`tests/nightly/conftest.py` -- lifespan의 `load_env`가 `.env` 키를 올린다).
+- **인사팀 검토 자료**(2026-10-19, claude-a `api/review_docs.py`·`routes/review_docs.py`·`core/evaluate/review_moves.py`·`web/src/review/`): 확정(`apply_auto|manual|emergency`) × 사람이 새로 들어간 사업마다 한 편.
+  전 = 확정 직전 판 zip의 현재 배치, 후 = 확정 판 -- 옮겨 온 사람의 출처·원래 사업이 잃는 것·메움을 평가기로 잰다. **시스템 사실은 만들 때 계산해 자료에 저장**하고(그래서 그 확정이 지금 판일 때만 만든다),
+  PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
+  "되돌려짐"은 `api.workspace.undo`가 남기는 기록(`review_docs/undone.json`)으로만 판정하고, "이력에 있음"은 확정(apply_*) 항목만 센다(시작 판 base는 재확정이 아니다) -- 다른 데이터로 바꿨거나 20판 밖으로 밀린 것은 "이력 밖"(열고 고치고 내보낼 수 있다). 긴급 투입 AI 재료는 `focus_input`(새로 온 사람만).
+  승인·반려는 만들지 않았다 -- 보고서 8.4 "결재 연결(실제 도입 시)".
+- **계획 기간 6|12개월**(2026-10-19 사용자 "계획기간 1년 확장도 하자", claude-b): `Dataset`이 모든 사람의 가용률 길이가 같고(`HORIZON_CHOICES` 6·12) 사업이 그 안에
+  있는지 본다 -- 기간은 저장 필드가 아니라 가용률 길이(`Dataset.horizon_months`)라 기존 데이터 버전·캐시 키는 그대로. manifest `horizon_months` 6|12, 계산 모델은 원래 달 수 일반형.
+  연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`: org-n100과 같은 사람·평가 글, 상반기 사업 그대로 + 하반기 신규 사업, 휴직 가정 가용률, 현재 배치 없음 = 밤 배치 연간 계획 대상).
+  화면 달 표시는 `/api/meta`의 `horizon_start`로 실제 달("27.4월", `allocFormat.monthLabel`) -- 12개월에서 순번 "1~12월"은 달력 달처럼 읽힌다.
+- **생성기 v3 = 휴직·휴가 가정 + 등급별 정원 + 전일 비용 예산**(2026-10-19 사용자 가정·결정, claude-a 재설계 -- b 요청 `docs/requests/2026-10-19-availability-redesign.md`, 설계 루트 `.omc/plan/2026-10-19-concurrency.md`):
+  가용률은 **모든 묶음**(연초·운영 중·연말형·연간)이 같은 창 -- `core/ingest/leave.py`(대부분 100%, 3% 육아휴직 12개월 해를 걸침 → 그 달 0, 2% 한 달 휴가는 가용률 그대로·manifest `leave`에만).
+  사업 정원은 등급·달마다 (가용률 1.0인 그 등급 인원)의 85% 이하(`org_profile.shrink_to_supply` -- 예전 전체 85%는 등급을 안 봐 쪼개 넣어야 채워졌다), 예산 = 기준 단가 × 정원 × 1.0~1.25(`budget_of`),
+  연초 현재 배치 100%·겹침 없음, 운영 중은 휴직 달이 걸린 사람을 진행 사업·대기에서 빼고 신규 제안 정원 = 대기 인력의 등급 구성(한 명 여유).
+  **사람·이력·평가 글 난수열은 그대로**라 판정 동봉이 그대로 쓰인다(`export_demo_judgments.py --check`). 연간·연말형 도구(`scripts/make_{annual,yearend}_demo.py`)가 같은 함수를 쓴다.
+  **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`) -- `to_milp_params(n_people, months=)`. 전일 투입은 12개월 실측 하한(`MEASURED_FULL_12`, v5 100·200·300명 가장 느린 시드 52·186·312초 × 여유 2, 상한 900초)과
+  큰 값이라 120·390·630초(claude-b 규칙 2026-10-19, claude-a v5 재측정, `scripts/measure_annual_time_budget.py` → `rehearsal/results/time-budget-annual.json` -- 사용자 "1년 계획 계산 시간 리밋은 더 널널하게"). 사업 구성을 바꾸면 다시 잰다.
+- **생성기 v4·v5 = 사업 수명 주기 섞기 + 진행 사업 경력 잇기**(2026-10-19 사용자 원문 -- b 요청 6번 · 사용자 "기존 사업 20개는 여전히 전부 하반기 시작 … 잘못", "진행해야겠어"(선택 "갈아 끼우고 평가도 새로"), claude-a 설계 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`·`-v5.md`):
+  연초 계획은 실행 사업의 약 75%(`RUNNING_SHARE`)가 계획 전에 시작한 진행 사업이고, 운영 중은 진행 사업마다 수명 주기를 붙인다. 비율은 둘 다 운영 30%·고도화 20%·개발(2025) 20%·개발(2026 상반기) 30%이고, 운영 = 내부 2~3명·계획 뒤까지(사용자 "16개 중 6개면 적절", "2-3명이 평균").
+  운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값 -- 연초 100명 1·200·300명 2, 운영 중은 신규 제안 중 1개, **b의 `pipeline` 모양** parent·external_headcount)를 붙인다.
+  실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름), 단계는 이름 머리말 + manifest `lifecycle`(`core/ingest/lifecycle.py`, 경고만, 계산에 안 씀). 시작 달은 계획 시작 기준 몇 개월 전으로 뽑는다(연도를 박으면 다른 시작 달 묶음이 깨졌다 -- Codex).
+  연초 계획의 진행 사업은 빠짐없이 현재 팀이 있다(자리의 80~100%, 사용자 결정 10-19 -- 계획 첫 달 새 사업만 예전 70% 규칙).
+  **v5 `_link_ongoing`**: 진행 사업 현재 팀원은 합류 달(계획 3~30개월 전, 마지막 교체 뒤, 첫 이력 뒤)부터 업무 이력이 그 사업이다. 지난 이력은 끊고, 기술 경력은 다시 세며, 끊긴 이력과 맞지 않는 평가는 지우고 진행 사업 팀원끼리 평가를 새로 만든다.
+  원래 평가를 **먼저** 만든 뒤 고치므로 남는 글은 그대로이고, 새 글만 서비스 AI로 판정해 `demo/review_judgments.json`에 동봉한다(10-19 약 2,300건 · 1달러 미만). 생성기를 바꾸면 `build_demo`(키 있는 데이터 폴더)로 판정 → `export_demo_judgments.py` → `--check`.
+  사업 번호: 연초 100명 사업 21개(진행 사업에 단계 머리말, 추가 과제 J021 -- 상위 J010), 연간 첫 하반기 신규 J022. 운영 중·연말형은 v4와 같다 -- 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016.
+  전일 투입 권장표 `time_budget.MEASURED_FULL`(v5 100/200/300명 12/30/45초 → 권장 30/60/90초, 12개월 ×4). 사업 구성을 바꾸면 다시 잰다(v3 30/90/90, v4 60/90/120).
+- **프로젝트 동시 수행 허용**(2026-10-19 사용자 결정 "사람 단위로, 사유와 함께"): manifest `concurrency`(`core/ingest/concurrency.py` 검사 → `Person.max_concurrent`),
+  `POST /api/workspace/concurrency`(사유 필수 · 지금 겹침보다 낮게 다시 걸기·허용 없는 해제는 거절), 확정 `concurrency_add`(긴급 투입 "동시 수행으로 지원" -- 같은 판, 되돌리면 함께),
+  `POST /api/concurrency/candidates`(빈자리마다 허용 후보, 다시 풀지 않음), 긴급 투입 `rank_candidates(offer_concurrency=True)`는 **허용이 필요한 후보만** 따로(섞으면 빼 오기·대기 후보가 밀려났다),
+  검토 자료 사실 `MOVE_CONCURRENT`. 시연 데이터는 허용 0명. 예전 실험(experiments/jev·c6)은 fixed로 고정.
+- **투입 불가 인력 표시**(2026-10-19 사용자 지시, `api/unavailable.py`·`web/src/components/availability.ts`·`scenarios/UnavailableList`): 사업 기간에 가용률 0인 달(육아휴직 등)이 있으면
+  교체 검토·신규 사업 후보·긴급 투입에서 **보이되 고를 수 없게**, 사유를 빨간 글씨로("육아휴직 — 27.4~27.7월 투입 불가"). 계산(MILP·평가기·보강 계산)은 원래 달마다 가용률을 지킨다 -- 화면 표시만 더했다.
+  `/api/meta` 사람에 `availability`·`leave`, 후보·긴급 응답에 `unavailable`.
+- **추가 과제**(2026-10-19 사용자 예 "운영 중 사업에 클라우드 마이그레이션 추가 과제, 6달만 회사 인력 2명·외주 여러 명", `api/workspace_edits`): 진행 중 사업에 붙는 과제는
+  **별도 사업 행** + manifest `pipeline[id].parent`·`external_headcount`(외주, 참고값 -- 계산에 안 씀). 고도화 과제(`predecessor`, 끝난 이전 사업)와 함께 못 고른다.
+  상위 사업은 등록·상위 변경 때 "현재 배치가 있는 진행 사업", 과제 기간은 상위 기간 안(`_check_parent`, 원문 달 공백 정규화 `_period`). 추가 과제 칸은 추가 과제에만 쓴다 --
+  일반 등록의 manifest 모양(데이터 버전)이 그대로. 후보는 상위 사업 팀원 `parent_team` 맨 위. 시연 데이터의 사업 수명 주기는 생성기 v4가 같은 모양으로 만든다(아래 생성기 v4 -- 연말형 J020이 J011에 붙은 추가 과제).
+- **사업 수명 주기 표시**(2026-10-19, claude-b `api/lifecycle.py`·`web/src/components/{lifecycle.ts,LifecycleChips.tsx}`): manifest `lifecycle`(생성기 v4)과 `pipeline` 추가 과제를 합쳐
+  `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 사업의 원문 기간 -- `start_month`·`end_month`는 계획 안으로 자른 달 순번), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력"에 싣는다.
+  신규 사업은 **pipeline이 원본**(화면에서 고친 상위·외주가 이긴다, pipeline에서 상위를 풀면 생성 기록의 연결은 무시). 신규 사업 수정·떨어짐은 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` --
+  안 하면 로더가 "없는 사업"·"시작 달이 다르다" 경고를 남긴다), 기록이 없는 사업엔 칸을 만들지 않는다. 계산(MILP·평가기)은 읽지 않는다. 꼬리표는 이름 머리말("[운영]")과 같은 단계를 다시 쓰지 않는다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -132,7 +190,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-18 **1831 passed, 1 skipped, 19 deselected**, `--group benchmark` 포함 · slow 19 passed, 웹 208(10-19) -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5·현재 팀 감점 제외(claude-a) + 수명 주기 표시·후보 점수 나눔·12개월 한도(claude-b `006b70f`) 병합 **2009 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 256 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

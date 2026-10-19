@@ -6,7 +6,7 @@
 규칙(현재 배치 = Dataset.current):
 - 유지되는 배치는 사람·사업·투입률이 그대로다: a_ij = 현재 투입률 × z_ij (z_ij=0이면 그 사람이 그 사업에서 빠진 것).
 - 옮기는 **사람** 수 ≤ K(변경 예산): 사람 i가 현재 배치 하나라도 빠지면 m_i = 1, Σ m_i ≤ K. 잠긴 배치(locked)는 빠질 수 없다.
-  (2026-10-12 Codex 감사: 예전엔 빠지는 배치 수를 세어 두 사업 겸직자 한 명이 옮기면 2로 셌다 -- 화면·대본의 "최대 K명"과 달랐다)
+  (2026-10-12 Codex 감사: 예전엔 빠지는 배치 수를 세어 두 사업 동시 수행자 한 명이 옮기면 2로 셌다 -- 화면·대본의 "최대 K명"과 달랐다)
 - 진행 중 사업(현재 명단이 있는 사업)은 인원이 늘지 않는다: 빠진 자리만 다른 사람으로 메운다(정원식이 등급별 인원을 지킨다).
 - 그 밖(신규 제안, 남는 인력)은 모델이 자유롭게 정한다. 목적식·제약은 서비스 MILP 그대로다 -- 독립 검증·보정도 그대로 탄다.
 """
@@ -62,6 +62,8 @@ def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment]
     def constrain(prob, z, alloc_vars):
         for i, j, alloc, locked in rows:
             vs = alloc_vars(i, j)
+            if len(vs) == 1 and vs[0] is z[i][j]:
+                vs = []                                 # 전일 투입: 투입률 = z라 "그대로 유지" 행이 필요 없다(유지면 100%)
             prof = profiles.get((i, j))
             months = graph.projects[j].months
             targets = ([float(prof.get(m, alloc)) for m in months] if prof and len(vs) == len(months)
@@ -74,7 +76,7 @@ def move_budget_constraints(graph: MemoryGraph, current: list[CurrentAssignment]
             elif movers_to is not None and movers_to in jdx and jdx[movers_to] != j:
                 prob += z[i][jdx[movers_to]] >= 1 - z[i][j]
             elif movers_must_be_placed:
-                # 새로 들어가는 사업이어야 한다 -- 이미 겸직 중인 다른 사업으로는 채워지지 않는다(리뷰 MUST: 겸직자는 기존
+                # 새로 들어가는 사업이어야 한다 -- 이미 동시 수행 중인 다른 사업으로는 채워지지 않는다(리뷰 MUST: 동시 수행자는 기존
                 # 배치만으로 조건을 채워 "빼서 대기, 남는 인력으로 교체" 해가 다시 나왔다)
                 prob += pulp.lpSum(z[i][jj] for jj in range(len(graph.projects))
                                    if jj not in current_projects[i]) >= 1 - z[i][j]

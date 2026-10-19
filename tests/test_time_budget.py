@@ -38,3 +38,8 @@ def test_the_measured_table_gives_the_rehearsal_recommendations():
     """2026-10-05 rehearsal: 15 / 30 / 120 s measured -> 30 / 60 / 180 s recommended per solve."""
     assert [recommend(n).per_solve_s for n in (100, 200, 300)] == [30, 60, 180]
     assert recommend(250).per_solve_s == 180 and recommend(400).measured is False
+
+
+def test_full_time_table_from_the_2026_10_19_measurement():
+    """전일 투입(서비스 기본): v5 100명 12초·200명 30초·300명 45초 × 여유 1.5 → 30초 단위로 올림(v3 30·90·90, v4 60·90·120)."""
+    assert [recommend(n, allocation_mode="full").per_solve_s for n in (100, 200, 300)] == [30, 60, 90]

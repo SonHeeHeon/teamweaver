@@ -4,13 +4,13 @@ import { Brand } from "./LoginScreen";
 
 /** 메뉴(2026-10-18 사용자 결정 — 3가지 핵심 상황 중심): 신규 사업 편성(가장 잦음, 첫 화면) · 긴급 투입 · 연간 계획(드묾),
  *  그 아래 편성안·분석과 관리. 상황 2·3 화면은 claude-b가 이 틀 위에 만든다 -- 그때까지는 운영 중 편성(K 비교·보강)이 그 자리에 있다. */
-export type Tab = "pipeline" | "emergency" | "annual" | "whatif" | "skills" | "records" | "data" | "settings";
+export type Tab = "pipeline" | "emergency" | "annual" | "whatif" | "skills" | "reviews" | "records" | "data" | "settings";
 
 export const NAV: { group: string; items: { id: Tab; label: string; hint?: string }[] }[] = [
   { group: "핵심 상황", items: [{ id: "pipeline", label: "신규 사업 편성" }, { id: "emergency", label: "긴급 투입" },
                                 { id: "annual", label: "연간 계획", hint: "백지" }] },
   { group: "편성안·분석", items: [{ id: "whatif", label: "What-if 대시보드" }, { id: "skills", label: "조직 기술 지도" }] },
-  { group: "관리", items: [{ id: "records", label: "편성 기록" }, { id: "data", label: "데이터" },
+  { group: "관리", items: [{ id: "reviews", label: "검토 자료" }, { id: "records", label: "편성 기록" }, { id: "data", label: "데이터" },
                            { id: "settings", label: "배치 설정" }] },
 ];
 
@@ -20,6 +20,7 @@ export const PAGE: Record<Tab, { title: string; sub: string }> = {
   annual: { title: "연간 계획", sub: "백지에서 기술 가중치를 정하고 편성안 A~D를 계산합니다" },
   whatif: { title: "What-if 대시보드", sub: "편성안을 비교하고, 사람을 바꿔 보고, PDF로 냅니다" },
   skills: { title: "조직 기술 지도", sub: "기술마다 실무 가능·숙련 인원과 요구 사업을 봅니다" },
+  reviews: { title: "인사팀 검토 자료", sub: "확정한 편성마다 사업별 소명 자료를 고치고 PDF로 냅니다" },
   records: { title: "편성 기록", sub: "지난 편성을 파일로 내보내고 다시 열어 봅니다" },
   data: { title: "데이터", sub: "인력·사업 CSV 묶음을 올려 작업 데이터를 바꿉니다" },
   settings: { title: "배치 설정", sub: "최소 투입률·익숙한 사이 기준·계산 시간 같은 조직 공통 규칙" },
@@ -123,7 +124,7 @@ export function WhatifEmpty({ dataset, onCompute, onRecords }: {
           <div className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-line px-4 py-3.5">
             <div>
               <b className="block font-semibold">새로 계산하기</b>
-              <span className="text-[13px] text-slate-500">연간 계획에서 기술 가중치를 정하고 최적화를 실행합니다. 100명 기준 약 30초입니다.</span>
+              <span className="text-[13px] text-slate-500">연간 계획에서 기술 가중치를 정하고 최적화를 실행합니다. 안 하나에 100명 6개월 기준 약 30초(12개월 계획은 약 4배)입니다.</span>
             </div>
             <button className="btn-primary" onClick={onCompute}>연간 계획으로</button>
           </div>

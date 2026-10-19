@@ -11,7 +11,8 @@ import numpy as np
 
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.audit_types import ObjectiveBreakdown
-from core.optimize.milp import MilpParams, _overfamiliar_pairs, partner_floor_on, partner_map, pruned_pairs
+from core.optimize.milp import (FULL_TIME_MIN_AVAILABILITY, MilpParams, _overfamiliar_pairs, familiar_exempt, partner_floor_on,
+                                partner_map, pruned_pairs)
 from core.optimize.types import AssignEntry
 
 TOL = 1e-6
@@ -101,13 +102,15 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
     penalty = _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))
     synergy = params.lam * sum(float(C[p, q]) for p, q in reward
                                for j in members if together(p, q, j))
-    overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j))
+    exempt = familiar_exempt(graph)                 # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다(2026-10-19)
+    overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j) and (p, q, j) not in exempt)
     if partner_floor_on(params):                    # 실험 G: 팀 안에 새 파트너가 partner_floor명보다 적으면 감점
         partners = partner_map(penalty)
         overfam -= params.partner_floor_weight * sum(
             max(0, params.partner_floor - (len(team) - 1 - len(partners[i] & team)))
             for team in members.values() for i in team if i in partners)
 
+    full = getattr(params, "allocation_mode", "fixed") == "full"
     violations: list[PlanViolation] = []
     shortfalls: list[GradeShortfall] = []
     for j, project in enumerate(projects):
@@ -140,6 +143,14 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
         for month, available in enumerate(person.availability):
             load = sum(month_alloc(pi, j, month) for (pi, j) in alloc
                        if pi == i and month in projects[j].months)
+            if full:
+                # 전일 투입(2026-10-19): 가용률 1.0 미만인 달(육아휴직 등)에는 어느 사업에도 들어갈 수 없다.
+                # 동시 수행 허용자의 합(사업마다 100%)은 아래 사람별 상한이 본다.
+                if load > TOL and available < FULL_TIME_MIN_AVAILABILITY:
+                    violations.append(PlanViolation(
+                        "availability", f"{person.id}:month{month}", load, available,
+                        f"{person.id}의 계획 {month + 1}번째 달 가용률이 {available:.2f}라 전일 투입할 수 없다"))
+                continue
             if load > available + TOL:
                 violations.append(PlanViolation(
                     "availability", f"{person.id}:month{month}", load, available,
@@ -148,18 +159,28 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
 
     # C6 동시 프로젝트 상한(사용자 답변: 최대 3개·보통 1개). 서비스 MILP 제약과 같은 규칙으로, 교체 검토·적용·PDF가
     # 상한을 넘는 명단을 "위반 없음"으로 보이지 않게 한다(claude-b 요청, 2026-10-05).
-    limit = params.max_concurrent_projects
+    # 전일 투입은 사람별 상한(Person.max_concurrent -- 기본 1, 부서장이 허용한 사람만 2~3).
     concurrent: dict[tuple[int, int], int] = {}
     for (i, j) in alloc:
         for month in projects[j].months:
             concurrent[(i, month)] = concurrent.get((i, month), 0) + 1
     for (i, month), n in sorted(concurrent.items()):
+        limit = getattr(people[i], "max_concurrent", 1) if full else params.max_concurrent_projects
         if n > limit:
             violations.append(PlanViolation(
                 "concurrent_projects", f"{people[i].id}:month{month}", float(n), float(limit),
-                f"{people[i].id}의 계획 {month + 1}번째 달 동시 프로젝트 {n}개가 상한 {limit}개를 초과"))
+                f"{people[i].id}의 계획 {month + 1}번째 달 동시 프로젝트 {n}개가 상한 {limit}개를 초과"
+                + (" (동시 수행 허용 안 됨)" if full and limit == 1 else "")))
 
     for (i, j), a in alloc.items():
+        if full:
+            values = list(monthly[(i, j)].values()) if (i, j) in monthly else [a]
+            if any(abs(v - 1.0) > TOL for v in values):
+                bad = next(v for v in values if abs(v - 1.0) > TOL)
+                violations.append(PlanViolation(
+                    "alloc_range", f"{people[i].id}:{projects[j].id}", bad, 1.0,
+                    f"{people[i].id}의 {projects[j].id} 투입률 {bad:.2f} -- 전일 투입은 100%만"))
+            continue
         if (i, j) in monthly:
             for month, v in sorted(monthly[(i, j)].items()):
                 if v < params.min_alloc - TOL or v > 1.0 + TOL:

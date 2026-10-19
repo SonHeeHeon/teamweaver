@@ -5,7 +5,7 @@
 (미리 계산 때 서버 평가기로 확인한 값), 평가 글 판정값은 시연 묶음을 켤 때와 같은 동봉 값(`demo/review_judgments.json`).
 만든 뒤 불러오기 검증(build_and_verify)을 그대로 돌려 통과해야 저장한다 -- 하나라도 실패하면 아무것도 쓰지 않는다.
 
-    TEAMWEAVER_DATA_DIR=<임시 폴더> uv run python -m rehearsal.make_demo_records
+    TEAMWEAVER_DATA_DIR=<임시 폴더> uv run python -m rehearsal.make_demo_records [묶음 이름 ...]
 """
 from __future__ import annotations
 
@@ -16,7 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEMO = ROOT / "demo"
 OUT = DEMO / "records"
-BUNDLES = ("org-n100", "org-n100-operating", "org-n200", "org-n200-operating", "org-n300", "org-n300-operating")
+BUNDLES = ("org-n100", "org-n100-annual", "org-n100-operating", "org-n100-yearend", "org-n200", "org-n200-operating", "org-n300",
+           "org-n300-operating")
 
 
 def _files(root: Path) -> dict[str, str]:
@@ -32,6 +33,10 @@ def _title(manifest: dict, people: int) -> str:
     y, m = str(manifest.get("horizon_start", "")).split("-") if manifest.get("horizon_start") else ("", "")
     when = f"{y}년 {int(m)}월 " if y else ""
     kind = "운영 중 편성" if manifest.get("scenario") == "operating" else "연초 편성"
+    if "yearend" in str(manifest.get("dataset_id", "")):
+        kind = "연말 운영 중 편성(신규 사업 발주·끝나 가는 사업)"     # 3상황 시연 묶음(claude-b, 2026-10-19)
+    if manifest.get("horizon_months") == 12:
+        kind = "연간 편성(12개월, 백지)"                              # 계획기간 1년 확장(claude-b, 2026-10-19)
     return f"{when}{kind} · {people}명"
 
 
@@ -68,9 +73,10 @@ def make(name: str) -> tuple[str, dict]:
 
 
 def main() -> None:
+    import sys
     from api.records import build_and_verify, parse_record
     made = []
-    for name in BUNDLES:
+    for name in (sys.argv[1:] or BUNDLES):         # 묶음 이름을 주면 그것만(예: org-n100-yearend)
         title, rec = make(name)
         raw = json.dumps(rec, ensure_ascii=False).encode("utf-8")
         active, pre, check = build_and_verify(parse_record(raw))

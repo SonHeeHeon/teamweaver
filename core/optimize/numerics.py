@@ -11,7 +11,7 @@ from scipy.sparse import csr_matrix
 
 from core.optimize.audit_types import RawMilpSolution, ValidationReport
 from core.optimize.candidate import rebuild_plan
-from core.optimize.milp import mean_alloc
+from core.optimize.milp import familiar_exempt, mean_alloc
 from core.optimize.validation import _independent_partner_floor, validate_raw_solution
 
 
@@ -241,6 +241,9 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         return finish("ALREADY_VALID",accepted=candidate,final=initial)
     if not policy.enabled:
         return finish("POLICY_DISABLED")
+    if getattr(params, "allocation_mode", "fixed") == "full":
+        # 전일 투입은 투입률이 z(0/1)라 보정할 연속 값이 없다 -- 예산 잔차도 그대로 거절한다(설계 2026-10-19 3.4)
+        return finish("FULL_TIME_NO_REFINEMENT")
     if native_capture is None or native_validation is None:
         return finish("NATIVE_CAPTURE_MISSING")
     # 반환 명단 예산(plan_budget, 2026-10-11)은 원해 예산 잔차에 딸려 오는 것이라 같이 보정한다 -- 보정 뒤 명단을 다시 만든다
@@ -265,7 +268,8 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         objective = (sum(float(S[i,j])*a for (i,j),a in skill_alloc.items())
                      + getattr(params,"seat_fit_weight",0.0)*sum(float(S[i,j])*v for (i,j),v in candidate.z.items())
                      + params.lam*sum(float(C[p,q])*v for (p,q,j),v in candidate.y.items() if (p,q) in reward_pairs)
-                     - params.mu*sum(v for (p,q,j),v in candidate.y.items() if (p,q) in penalty_pairs)
+                     - params.mu*sum(v for (p,q,j),v in candidate.y.items()
+                                     if (p,q) in penalty_pairs and (p,q,j) not in familiar_exempt(graph))
                      # 실험 G(파트너 다양성 하한): z만 쓰는 항이라 투입률 보정과 무관하다 -- 빠뜨리면 검증기가 거절(리뷰 MUST)
                      + _independent_partner_floor(candidate.z,candidate.penalty_pairs,params,
                                                   len(graph.people),len(graph.projects))

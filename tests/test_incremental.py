@@ -259,13 +259,42 @@ def test_numeric_budget_fits_the_allocation_and_screening_still_matches(tmp_path
     graph = MemoryGraph.build(ds, parsed)
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix({}), eng.synergy_matrix()
-    params = PlacementSettings().to_milp_params(n_people=len(ds.people))
+    # 예산에 맞춰 투입률을 낮추는 것은 예전 투입률 방식(fixed)의 동작 -- 서비스 기본(전일 투입)은 아래 다음 시험
+    params = PlacementSettings(allocation_mode="fixed").to_milp_params(n_people=len(ds.people))
     entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in ds.current]
-    fast = rank_candidates(graph, S, C, params, entries, "J007", budget_add=600, top=5)
-    full = rank_candidates(graph, S, C, params, entries, "J007", budget_add=600, top=5, screen=None)
+    # J008: 예산 여유가 작은 사업(생성기 v3 운영 중 묶음에서 154) -- 600을 더해도 대부분 전일 비용이 안 된다
+    fast = rank_candidates(graph, S, C, params, entries, "J008", budget_add=600, top=5)
+    full = rank_candidates(graph, S, C, params, entries, "J008", budget_add=600, top=5, screen=None)
     assert [(r["person_id"], r["alloc"]) for r in fast] == [(r["person_id"], r["alloc"]) for r in full]
     assert any(r["alloc"] < 1.0 for r in full)                    # allocations were fitted to the small budget
     assert all(not any(code == "budget" for code, _ in r["new_violations"]) for r in full)
+
+
+def test_full_time_keeps_100_percent_and_shows_the_budget_gap(tmp_path):
+    """전일 투입(서비스 기본, 2026-10-19): 정해 준 추가 예산이 모자라도 투입률을 낮추지 않고 예산 초과를 위반으로 보인다."""
+    from api.settings import PlacementSettings
+    from core.evaluate.staffing_sim import rank_candidates
+    from core.ingest.convert import to_dataset
+    from core.ingest.loader import load_bundle
+    from core.ingest.org_profile import generate_org_bundle
+    from core.scoring.engine import ScoringEngine
+    b, rep = load_bundle(generate_org_bundle(tmp_path / "b", 100, seed=2026, scenario="operating"))
+    ds, parsed = to_dataset(b, rep)
+    graph = MemoryGraph.build(ds, parsed)
+    eng = ScoringEngine(graph)
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    params = PlacementSettings().to_milp_params(n_people=len(ds.people))
+    assert params.allocation_mode == "full"
+    entries = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in ds.current]
+    target = next(p for p in ds.projects if p.id == "J008")
+    room = target.monthly_budget + 600 - sum(next(p.monthly_rate for p in ds.people if p.id == e.person_id)
+                                             for e in entries if e.project_id == "J008")
+    rows = rank_candidates(graph, S, C, params, entries, "J008", budget_add=600, top=None, screen=None)
+    assert rows and all(r["alloc"] == 1.0 for r in rows)
+    for r in rows:                          # 남는 예산보다 비싼 사람은 투입률을 낮추지 않고 예산 초과로 보인다
+        over = any(code == "budget" for code, _ in r["new_violations"])
+        assert over == (r["monthly_cost"] > room + 1e-9), r
+    assert any(r["monthly_cost"] > room for r in rows)
 
 
 def test_on_row_gets_each_finished_row_in_order():

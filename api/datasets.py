@@ -130,6 +130,11 @@ class ActiveDataset:
             self._users -= 1
             self._close_if_idle()
 
+    @property
+    def retired(self) -> bool:
+        """전환으로 물러난 데이터셋인가(늦게 끝난 요청이 지금 데이터의 저장본을 건드리지 않게, api/justification_cache)."""
+        return self._retired
+
     def retire(self) -> None:
         with self._lock:
             self._retired = True
@@ -157,10 +162,13 @@ def dir_version(root: Path, names: list[str] | None = None) -> str:
 
 
 def rules_version(content: str) -> str:
-    """원천 파일 해시 + 입력 단계 규칙(core.ingest.skills 사전 버전·인정 비율) → 계산 버전."""
+    """원천 파일 해시 + 입력 단계 규칙(core.ingest.skills 사전 버전·인정 비율) + 계산 규칙 표지(milp.OBJECTIVE_RULES) → 계산 버전.
+    규칙 표지가 바뀌면 같은 원천이라도 버전이 달라져 캐시·미리 계산·야간 결과가 예전 규칙의 증명으로 쓰이지 않는다(2026-10-19)."""
     from core.ingest.skills import load_dictionary
+    from core.optimize.milp import OBJECTIVE_RULES
     d = load_dictionary()
-    return hashlib.sha256(f"{content}|skills:{d.version}|credit:{d.narrower_credit}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(f"{content}|skills:{d.version}|credit:{d.narrower_credit}|model:{OBJECTIVE_RULES}"
+                          .encode("utf-8")).hexdigest()
 
 
 def bundle_version(root: Path) -> str:
@@ -174,7 +182,7 @@ def judge_cache_path(synthetic: bool = False) -> Path:
 
 
 def scenario_of(manifest: dict | None) -> dict:
-    """manifest에서 운영 중 시나리오 정보만(scenario·bench·proposals). 형식이 다르면 버린다."""
+    """manifest에서 운영 중 시나리오 정보(scenario·bench·proposals)와 계획 시작 달만. 형식이 다르면 버린다."""
     m = manifest or {}
     out: dict = {}
     if isinstance(m.get("scenario"), str):
@@ -182,6 +190,24 @@ def scenario_of(manifest: dict | None) -> dict:
     for key in ("bench", "proposals"):
         if isinstance(m.get(key), list) and all(isinstance(x, str) for x in m[key]):
             out[key] = list(m[key])
+    # 계획 시작 달(화면이 달 순번을 실제 달로 보이게, 2026-10-19 계획기간 1년 확장). 개월 수는 가용률 길이에서 읽는다
+    if isinstance(m.get("horizon_start"), str) and len(m["horizon_start"]) == 7:
+        out["horizon_start"] = m["horizon_start"]
+    # 휴직·휴가 가정(2026-10-19, 생성기 manifest `leave`) -- 투입 불가 사유 표시용(api/unavailable)
+    from api.unavailable import leave_of
+    leave = leave_of(m)
+    if leave:
+        out["leave"] = leave
+    # 프로젝트 동시 수행 허용(2026-10-19, manifest `concurrency`) -- 사유·메모 표시용(계산은 Person.max_concurrent)
+    from core.ingest.concurrency import grants
+    allowed = grants(m)
+    if allowed:
+        out["concurrency"] = allowed
+    # 사업 수명 주기(2026-10-19, manifest `lifecycle` + pipeline 추가 과제) -- 화면 표시용(api/lifecycle, 계산에 안 씀)
+    from api.lifecycle import lifecycle_of
+    lifecycle = lifecycle_of(m)
+    if lifecycle:
+        out["lifecycle"] = lifecycle
     return out
 
 
@@ -249,8 +275,14 @@ def build_active(ds: Dataset, parsed: list, *, dataset_id: str, version: str,
     # 리뷰 문장은 색인에도 두지 않는다). 값이 없거나 false면 숨김.
     from api.rag.evidence import build_evidence_index
     evidence = build_evidence_index(ds, parsed, reveal_text=(synthetic is True))
+    scenario = scenario_of(manifest)
+    # 계획 기간 밖으로 이어지는 사업의 원문 기간(로더가 계획 안으로 자른다) -- 화면이 "2024.06~2028.01"로 보인다
+    from api.lifecycle import original_periods
+    periods = original_periods(bundle, [j.id for j in ds.projects])
+    if periods:
+        scenario["periods"] = periods
     return ActiveDataset(graph=graph, sqlite_conn=conn, info=info, evidence=evidence,
-                         current=ds.current, scenario=scenario_of(manifest),
+                         current=ds.current, scenario=scenario,
                          kg_source=(bundle, ds, parsed) if bundle is not None else None)
 
 

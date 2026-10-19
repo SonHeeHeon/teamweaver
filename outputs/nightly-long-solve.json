@@ -1,0 +1,108 @@
+{
+  "measured_at": "2026-10-18T09:08:49+00:00",
+  "note": "가상 데이터. 낮 한도 = 관리자 기본 설정의 자동 한도, 밤 한도 = 밤 배치 후보값. 사업 효과 NOT_CALIBRATED.",
+  "rows": [
+    {
+      "bundle": "org-n100",
+      "n_people": 100,
+      "n_projects": 20,
+      "dataset_version": "e75a83fddb7ddcd2c5366f2f54d2e931087799ae1ab9da4b51699ea8f4ae9e46",
+      "solver_seeds": 4,
+      "day": {
+        "time_limit": 30,
+        "elapsed_s": 30.8,
+        "termination": "time_limit_incumbent",
+        "objective": 57.586337278693605,
+        "eval_objective": 57.56164246031746,
+        "best_bound": 64.68255687799606,
+        "gap_to_bound": 0.10970839654170311,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "night": {
+        "time_limit": 600,
+        "elapsed_s": 600.5,
+        "termination": "time_limit_incumbent",
+        "objective": 60.169881168831274,
+        "eval_objective": 60.1562496031746,
+        "best_bound": 63.56915189946795,
+        "gap_to_bound": 0.053473589454402067,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "gain": {
+        "objective": 2.583543890137669,
+        "objective_rel": 0.04486383423961148,
+        "unfilled": 0
+      }
+    },
+    {
+      "bundle": "org-n200",
+      "n_people": 200,
+      "n_projects": 40,
+      "dataset_version": "80b514a05dc4bf809db50375f65e5c06517189b423902b5978bf336728e244b1",
+      "solver_seeds": 4,
+      "day": {
+        "time_limit": 60,
+        "elapsed_s": 61.5,
+        "termination": "time_limit_incumbent",
+        "objective": 107.33128876473634,
+        "eval_objective": 107.27670674603175,
+        "best_bound": 116.51154224368334,
+        "gap_to_bound": 0.07879265266051098,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "night": {
+        "time_limit": 900,
+        "elapsed_s": 901.9,
+        "termination": "time_limit_incumbent",
+        "objective": 113.52378796270293,
+        "eval_objective": 113.45159828042328,
+        "best_bound": 115.64124387669584,
+        "gap_to_bound": 0.01831055982284903,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "gain": {
+        "objective": 6.192499197966583,
+        "objective_rel": 0.057695190929274734,
+        "unfilled": 0
+      }
+    },
+    {
+      "bundle": "org-n300",
+      "n_people": 300,
+      "n_projects": 60,
+      "dataset_version": "09e9ba796e5796e83c920c18545bcba514f51bd64dc87fc506d3cb93f3747f53",
+      "solver_seeds": 4,
+      "day": {
+        "time_limit": 180,
+        "elapsed_s": 184.3,
+        "termination": "time_limit_incumbent",
+        "objective": 166.19472601333896,
+        "eval_objective": 166.0834962962963,
+        "best_bound": 171.66752240959607,
+        "gap_to_bound": 0.03188020843685914,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "night": {
+        "time_limit": 1800,
+        "elapsed_s": 1803.9,
+        "termination": "time_limit_incumbent",
+        "objective": 168.6723305798389,
+        "eval_objective": 168.55174722222225,
+        "best_bound": 171.13260415124978,
+        "gap_to_bound": 0.014376416367955521,
+        "unfilled": 0,
+        "violations": 0
+      },
+      "gain": {
+        "objective": 2.4776045664999344,
+        "objective_rel": 0.014907841096600618,
+        "unfilled": 0
+      }
+    }
+  ]
+}

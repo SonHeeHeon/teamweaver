@@ -54,10 +54,16 @@ def plan_entries(graph: MemoryGraph, params: "MilpParams", z: dict, a: dict,
     (monthly_alloc 없음), 다르면 monthly_alloc과 진행 달 평균(6자리 내림 -- 해 값 평균보다 크지 않다)을 싣는다.
     배치(z>0.5)인데 어느 달이든 최소 투입률보다 작으면(허용오차 밖) 항목을 만들지 않는다 -- 검증기가 잡는다."""
     entries = []
+    full = getattr(params, "allocation_mode", "fixed") == "full"
     for (i, j) in sorted(z):
         if not z[(i, j)] or z[(i, j)] <= 0.5:
             continue
         pid, jid = graph.people[i].id, graph.projects[j].id
+        if full:
+            # 전일 투입: 배치 = 100%(a ≡ z, 0/1). 해 값 0.9999999995를 소수 둘째 자리 내림하면 0.99가 돼, 경계 정리(1.0)를 본
+            # 검증기와 어긋나 해가 통째로 거절됐다(2026-10-19 v5 재측정에서 실측 -- 전일 투입은 C1 보정이 명단을 다시 만들지 않는다)
+            entries.append(AssignEntry(person_id=pid, project_id=jid, alloc=1.0))
+            continue
         if a_month is None:
             v = a[(i, j)]
             if v is None or not math.isfinite(v) or v < params.min_alloc - 1e-6:
@@ -114,7 +120,10 @@ class MilpParams(BaseModel):
     # fixed 해가 그대로 monthly의 가능한 해다 -- 최적해끼리는 점수가 나빠질 수 없다(시간 한도에 걸리면 변수가 많은
     # monthly가 더 낮을 수 있다: 300명 측정 −1.6%). 모델 기본값은 fixed(이전과 같음),
     # 서비스 기본은 관리자 설정(api/settings.py)이 정한다.
-    allocation_mode: Literal["fixed", "monthly"] = "fixed"
+    # "full"(전일 투입, 2026-10-19 사용자 결정 "두 플젝 다 100%"): 투입률 변수가 없다 -- 들어가면 그 사업 기간 100%(a = z).
+    # 사업 기간 모든 달 가용률 1.0인 사람만 들어갈 수 있고(full_eligible), 같은 달 사업 수는 사람마다 Person.max_concurrent
+    # (기본 1 = 동시 수행 불가, 부서장이 허용하면 2~3 -- 동시 수행자는 사업마다 예산 전액). min_alloc·max_concurrent_projects는 쓰지 않는다.
+    allocation_mode: Literal["fixed", "monthly", "full"] = "fixed"
     # HiGHS 시드 포트폴리오(2026-10-06, `core/optimize/highs_portfolio.py`): 같은 모델을 시드 k개로 동시에 풀어 최선을
     # 고른다. 조밀한 10년 이력에서 시간 한도에 걸린 해의 품질이 시드에 따라 27.7~33.1로 흔들려서 넣었다(100명 60초,
     # 시드 4개 동시 최선 32.8 = 20분 풀이 33.9의 97%). 1이면 이전과 같다(기본, 시험 속도·결과 유지). 서비스 값은
@@ -131,6 +140,20 @@ class MilpParams(BaseModel):
     # 벤치 정식(experiments/phase1/solvers.py)·Phase 0 오라클에는 아직 없다 -- 채택하면 함께 반영한다.
     partner_floor: int = Field(default=0, ge=0, le=5)
     partner_floor_weight: float = Field(default=0.0, ge=0.0)
+
+
+def full_mode(params) -> bool:
+    return getattr(params, "allocation_mode", "fixed") == "full"
+
+
+# 전일 투입 자격의 가용률 문턱. 검증기·평가기·Phase 0 오라클도 같은 값을 쓴다(독립 구현은 값을 따로 적는다 -- Codex 리뷰 P2:
+# 검증기가 수치 허용오차 1e-6을 쓰면 가용률 0.9999995인 사람의 배치를 모델은 막고 검증은 통과시켰다).
+FULL_TIME_MIN_AVAILABILITY = 1.0 - 1e-9
+
+
+def full_eligible(person, project) -> bool:
+    """전일 투입 자격: 사업 기간 모든 달 가용률 1.0(0인 달 = 육아휴직 등, 0과 1 사이 = 시간제도 불가)."""
+    return all(person.availability[m] >= FULL_TIME_MIN_AVAILABILITY for m in project.months)
 
 
 def partner_map(pairs) -> dict[int, set[int]]:
@@ -169,13 +192,28 @@ def _snap_bounds(values: dict, lo: float, hi: float | None, integral: bool) -> t
     return out, n
 
 
-def _solver_cmd(params: "MilpParams"):
-    """PuLP 솔버 객체. 둘 다 1스레드(Phase 1과 같은 조건, 동시 요청이 코어를 나눠 쓰게)."""
+def _solver_cmd(params: "MilpParams", start: dict[str, float] | None = None):
+    """PuLP 솔버 객체. 둘 다 1스레드(Phase 1과 같은 조건, 동시 요청이 코어를 나눠 쓰게). start = 초기해(HiGHS만)."""
     if params.solver == "cbc":
         return pulp.PULP_CBC_CMD(msg=0, timeLimit=params.time_limit, gapRel=params.gap)
     from core.optimize.highs_portfolio import HighsPortfolio
-    return HighsPortfolio(seeds=effective_seeds(params), msg=False, timeLimit=params.time_limit, gapRel=params.gap,
-                          threads=1)
+    return HighsPortfolio(seeds=effective_seeds(params), start=start, msg=False, timeLimit=params.time_limit,
+                          gapRel=params.gap, threads=1)
+
+
+def _start_values(graph: MemoryGraph, params: "MilpParams", entries, z, y, slack) -> tuple[dict[str, float], int]:
+    """배치 항목 → 변수 이름별 시작 값(z, y = z_p·z_q, slack = 정원 − 배치). (값, 시작의 빈자리 수)."""
+    pdx, jdx = graph.pid_index, graph.project_index
+    on = {(pdx[e.person_id], jdx[e.project_id]) for e in entries
+          if e.person_id in pdx and e.project_id in jdx}
+    values = {z[i][j].name: 1.0 for (i, j) in on}
+    values.update({v.name: 1.0 for (p, q, j), v in y.items() if (p, j) in on and (q, j) in on})
+    empty = 0
+    for (j, g), v in slack.items():
+        left = graph.projects[j].grade_headcount[g] - sum(1 for (i, jj) in on if jj == j and graph.people[i].grade == g)
+        values[v.name] = float(max(0, left))
+        empty += max(0, left)
+    return values, empty
 
 
 SEEDS_ENV = "TEAMWEAVER_SOLVER_SEEDS"
@@ -284,8 +322,20 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int,
     return result
 
 
+# 목적·제약 규칙 표지 -- 계산 버전(api/datasets.rules_version)에 들어간다. 규칙을 바꾸면 올린다: 같은 원천이라도 예전 규칙으로 푼
+# 결과(야간 결과·결과 캐시·미리 계산)가 새 규칙의 "최선 증명"으로 다시 쓰이지 않게(Codex Stop 리뷰 2026-10-19: 감점 예외를 넣고 올리지
+# 않아 예전 해 1.8이 새 최적 1.9 대신 Optimal·상한 1.8로 복원됐다).
+OBJECTIVE_RULES = "2026-10-19:full-time-1.0;familiar-exempt-current-teams"
+
+
+def familiar_exempt(graph: MemoryGraph) -> frozenset:
+    """익숙한 쌍 감점에서 빼는 (p, q, 사업): 지금 그 사업에 함께 있는 두 사람(그 사업에 계속 있을 때만 -- 다른 사업에 함께 넣으면 감점).
+    2026-10-19 사용자 결정. 독립 검증기·Phase 0 오라클은 graph.current_teams를 직접 읽는다(같은 원자료)."""
+    return getattr(graph, "current_teams", frozenset()) or frozenset()
+
+
 def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-                          params: MilpParams, extra_constraints=None):
+                          params: MilpParams, extra_constraints=None, start_entries=None):
     """Capture native evidence and assess it without weakening the final gate."""
     from core.optimize.numerics import (
         NumericalPolicy, assess_candidate, capture_model_contract,
@@ -296,7 +346,16 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     prob = pulp.LpProblem("teamweaver", pulp.LpMaximize)
     z = pulp.LpVariable.dicts("z", (range(nP), range(nJ)), cat="Binary")
     monthly = params.allocation_mode == "monthly"
-    if monthly:
+    full = full_mode(params)
+    if full:
+        # 투입률 = z. 자격 없는 (사람, 사업)은 0으로 고정한다(변수 모양은 그대로 -- 검증기·보정이 모든 쌍을 본다)
+        for i, person in enumerate(people):
+            for j, project in enumerate(projects):
+                if not full_eligible(person, project):
+                    z[i][j].upBound = 0
+        am = None
+        a = None
+    elif monthly:
         # a[(i, j, m)]: 프로젝트 j의 진행 달마다. 아래 제약·목적에서 aget(i, j, m)으로 꺼낸다.
         am = {(i, j, m): pulp.LpVariable(f"am_{i}_{j}_{m}", 0.0, 1.0)
               for i in range(nP) for j, pj in enumerate(projects) for m in pj.months}
@@ -306,7 +365,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         a = pulp.LpVariable.dicts("a", (range(nP), range(nJ)), 0.0, 1.0)
 
     def aget(i, j, m):
-        return am[(i, j, m)] if monthly else a[i][j]
+        return z[i][j] if full else am[(i, j, m)] if monthly else a[i][j]
     pruned = pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)         # top |C| pairs -> synergy reward term
     # len(pruned) == max_pairs is not by itself evidence that the cap did anything --
     # keep_ratio alone can happen to select exactly max_pairs pairs, which would log a
@@ -319,6 +378,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months,
                                   params.clique_window_months)          # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
+    exempt = familiar_exempt(graph)                          # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
          for (p, q) in pairs for j in range(nJ)}
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
@@ -329,10 +389,10 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
 
     objective_expr = (
         (pulp.lpSum(S[i, j] * (1.0 / len(projects[j].months)) * am[(i, j, m)] for (i, j, m) in am) if monthly
-         else pulp.lpSum(S[i, j] * a[i][j] for i in range(nP) for j in range(nJ)))
+         else pulp.lpSum(S[i, j] * aget(i, j, None) for i in range(nP) for j in range(nJ)))
         + params.seat_fit_weight * pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
-        - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
+        - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ) if (p, q, j) not in exempt)
         - params.slack_penalty * pulp.lpSum(slack.values()))
     if short:
         objective_expr -= params.partner_floor_weight * pulp.lpSum(short.values())
@@ -342,7 +402,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         for (i, j, m), v in am.items():
             prob += v <= z[i][j]
             prob += v >= params.min_alloc * z[i][j]
-    else:
+    elif not full:
         for i in range(nP):
             for j in range(nJ):
                 prob += a[i][j] <= z[i][j]
@@ -360,9 +420,14 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     for i, person in enumerate(people):                     # 제약 1: 월별 가동률
         for m in range(len(person.availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
-            if active:
+            if full:
+                # 전일 투입: 같은 달 사업 수 ≤ 그 사람 상한(가용률은 자격으로 이미 걸렀다). 자격 있는 사업만 센다
+                active = [j for j in active if z[i][j].upBound != 0]
+                if len(active) > person.max_concurrent:
+                    prob += pulp.lpSum(z[i][j] for j in active) <= person.max_concurrent
+            elif active:
                 prob += pulp.lpSum(aget(i, j, m) for j in active) <= person.availability[m]
-    for i in range(nP):                                     # 제약 1b: 같은 달 동시 프로젝트 수(C6)
+    for i in range(nP if not full else 0):                  # 제약 1b: 같은 달 동시 프로젝트 수(C6, 투입률 방식만)
         for m in range(len(people[i].availability)):
             active = [j for j, pj in enumerate(projects) if m in pj.months]
             # 상한+1곳에 최소 투입률로도 못 들어가는 달(가용률 < (K+1)·min_alloc)은 가용률 제약이 이미
@@ -390,7 +455,14 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
             extra_constraints(prob, z)
     after_callback = capture_model_contract(prob) if extra_constraints else None
 
-    solver = _solver_cmd(params)
+    # 초기해(전일 투입만, 2026-10-19 설계 3.3 -- 예전 방식은 동작 그대로): 추가 제약이 없으면 탐욕 해, 있으면 호출자가 준 시작만
+    # (운영 중 K: 현재 명단 = K=0 해). 가능하지 않은 시작은 HiGHS가 쓰지 않는다.
+    start, start_empty = None, None
+    if full and params.solver == "highs" and (start_entries is not None or not extra_constraints):
+        from core.optimize.greedy import warm_start_full
+        start, start_empty = _start_values(graph, params, start_entries if start_entries is not None
+                                           else warm_start_full(graph, S), z, y, slack)
+    solver = _solver_cmd(params, start=start)
     prob.solve(solver)
     status = pulp.LpStatus[prob.status]
     if status not in ("Optimal", "Not Solved"):
@@ -398,6 +470,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     raw_z = {(i, j): z[i][j].value() for i in range(nP) for j in range(nJ)}
     raw_am = {key: var.value() for key, var in am.items()} if monthly else None
     raw_a = (mean_alloc(graph, {k: (v if v is not None else float("nan")) for k, v in raw_am.items()}) if monthly
+             else dict(raw_z) if full
              else {(i, j): a[i][j].value() for i in range(nP) for j in range(nJ)})
     raw_y = {key: var.value() for key, var in y.items()}
     raw_slack = {key: var.value() for key, var in slack.items()}
@@ -421,6 +494,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         has_incumbent=has_incumbent,
         best_bound=_highs_best_bound(prob, solver) if params.solver == "highs" else None,
         options={"time_limit": params.time_limit, "gap": params.gap,
+                 **({"warm_start_unfilled": start_empty} if start is not None else {}),
                  **({"seeds": solver.seeds, "chosen_seed": solver.portfolio["chosen_seed"],
                      **({"seed_errors": len(solver.portfolio["errors"])} if solver.portfolio.get("errors") else {}),
                      **({"fallback": solver.portfolio["fallback"]} if solver.portfolio.get("fallback") else {})}
@@ -471,7 +545,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         a_month={key: float(value) for key, value in raw_am.items()} if monthly else None,
     )
     snapped_z, nz = _snap_bounds(candidate.z, 0.0, 1.0, integral=True)
-    snapped_a, na = _snap_bounds(candidate.a, 0.0, 1.0, integral=False)
+    snapped_a, na = (dict(snapped_z), 0) if full else _snap_bounds(candidate.a, 0.0, 1.0, integral=False)
     snapped_y, ny = _snap_bounds(candidate.y, 0.0, 1.0, integral=True)
     snapped_s, ns = _snap_bounds(candidate.slack, 0.0, None, integral=True)
     snapped_am, nam = (_snap_bounds(candidate.a_month, 0.0, 1.0, integral=False) if monthly else (None, 0))
@@ -510,6 +584,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
         try:
             extra_rows = project_additive_constraints(before_callback,after_callback,
                 allocation_variables=({v.name: key for key, v in am.items()} if monthly
+                                      else {} if full                # 투입률 = z(고정값) -- 추가 행은 상수 검사가 된다
                                       else {a[i][j].name:(i,j) for i in range(nP) for j in range(nJ)}),
                 fixed_values=fixed_values)
         except UnsupportedModelMutation as exc:
@@ -522,10 +597,10 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
 
 
 def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-                          params: MilpParams, extra_constraints=None) -> RawMilpSolution:
+                          params: MilpParams, extra_constraints=None, start_entries=None) -> RawMilpSolution:
     """Return only a strictly validated candidate; retained public contract."""
     from core.optimize.validation import validate_raw_solution
-    assessment = solve_milp_assessment(graph,S,C,params,extra_constraints=extra_constraints)
+    assessment = solve_milp_assessment(graph,S,C,params,extra_constraints=extra_constraints,start_entries=start_entries)
     candidate = assessment.accepted
     validation = (validate_raw_solution(graph,S,C,params,candidate) if candidate is not None
                   else assessment.initial_validation)
@@ -539,8 +614,8 @@ def solve_milp_diagnostic(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
 
 
 def solve_milp(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
-               params: MilpParams, extra_constraints=None) -> PlanAssignment:
+               params: MilpParams, extra_constraints=None, start_entries=None) -> PlanAssignment:
     """Backward-compatible public solver returning the display plan only."""
     return solve_milp_diagnostic(
-        graph, S, C, params, extra_constraints=extra_constraints
+        graph, S, C, params, extra_constraints=extra_constraints, start_entries=start_entries
     ).plan

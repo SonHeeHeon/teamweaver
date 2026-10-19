@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   adminLogout, AdminLoginRequiredError, type AdminStatus, applyAlloc, applySwap, DatasetChangedError, EditsConflictError, downloadReport, loadPlanEdits, savePlanEdits, fetchActiveDataset, fetchAdminStatus, fetchMeta,
   fetchSettings, postBaseline, postWhatif, saveSettings, SettingsConflictError,
@@ -33,11 +33,17 @@ import { ApplyControl } from "./components/ApplyControl";
 import { AppliedPanel } from "./components/AppliedPanel";
 import { describeChanges } from "./components/settingsFields";
 import { BaselineCard } from "./components/BaselineCard";
-import { OperatingTab } from "./components/OperatingTab";
+import { EmergencyScreen } from "./scenarios/EmergencyScreen";
+import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
 import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
 import { RecordsPanel } from "./components/RecordsPanel";
+import { ReviewDocsPanel } from "./review/ReviewDocsPanel";
+import { ConcurrencyPanel } from "./scenarios/ConcurrencyPanel";
+import { NightlyBanner } from "./nightly/NightlyBanner";
+import { NightlyPanel } from "./nightly/NightlyPanel";
 
 
 
@@ -63,6 +69,12 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 } = {}) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
+  // 확정 화면에서 "인사팀 검토 자료 만들기"로 넘어온 자료(claude-a 2026-10-19) -- 사업이 없으면(자동 편성) 목록만 연다
+  const [reviewOpen, setReviewOpen] = useState<{ version: string; projectId: string } | null>(null);
+  const openReviewDoc = useCallback((version: string, projectId: string | null) => {
+    setReviewOpen(projectId ? { version, projectId } : null);
+    setTab("reviews");
+  }, []);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -185,7 +197,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 
   // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
   useEffect(() => {
-    if (tab === "settings" || tab === "data" || tab === "records") refreshAdmin();
+    if (tab === "settings" || tab === "data" || tab === "records" || tab === "reviews") refreshAdmin();
   }, [tab]);
 
   /** 활성 데이터셋이 바뀌었다: 이전 데이터의 플랜·교체 검토·가중치(기술 이름이 다를 수
@@ -231,6 +243,16 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       const info = await fetchActiveDataset();
       await datasetSwitched(info);
       setError("다른 사용자가 데이터셋을 바꿨다. 화면을 새 데이터로 다시 불러왔으니 다시 실행할 것.");
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+
+  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다. */
+  async function ownSwitch() {
+    try {
+      await datasetSwitched(await fetchActiveDataset());
+      setError(null);
     } catch (e) {
       setError(String(e));
     }
@@ -631,8 +653,9 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   const current = original ? shown(original) : null;
   const edit = selected ? edits[selected] : undefined;
 
+  const horizon = meta ? horizonRange(meta.horizon_start, meta.horizon_months ?? 6) : "";
   const pageContext = tab === "whatif" && dataset
-    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건`
+    ? `${datasetLabel(dataset)} · ${dataset.people}명 · 사업 ${dataset.projects}건${horizon ? ` · 계획 기간 ${horizon}` : ""}`
     : undefined;
   const showResults = plans.length > 0 || running;
 
@@ -651,7 +674,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             </button>
           </>
         ) : undefined} />
-        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records") && (
+        {admin?.default_credentials && admin.logged_in && (tab === "settings" || tab === "data" || tab === "records" || tab === "reviews") && (
           <p role="status" className="mx-4 mt-4 rounded-md bg-amber-50 px-4 py-2 text-[13px] text-amber-700 md:mx-8">
             기본 관리자 계정(admin)과 기본 비밀번호로 들어와 있습니다. 다른 사람이 접속하는 주소로 쓰려면 서버의
             TEAMWEAVER_ADMIN_PASSWORD_HASH로 비밀번호를 바꾸세요.
@@ -666,10 +689,18 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       <main className="flex-1 px-4 py-6 md:px-8">
         {/* 운영 중 편성 탭은 다른 탭에 가도 사라지지 않게 늘 띄워 두고 숨긴다 -- 35초짜리 비교 결과를 잃지 않게(리뷰) */}
         {/* 전역 error로 숨기지 않는다 -- 운영 탭은 자체 오류 표시가 있고, 다른 탭의 오류 때문에 탭이 빈 화면이 되면 안 된다(리뷰 2라운드 MUST) */}
-        <div className={tab === "pipeline" || tab === "emergency" ? "" : "hidden"}>
-          <OperatingTab meta={meta} params={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
-                        focus={tab === "emergency" ? "reinforce" : "new"} onShowReinforce={() => setTab("emergency")}
-                        onDatasetChanged={() => { void externalSwitch(); }} />
+        {/* 3가지 핵심 상황(claude-b 2026-10-19): 신규 사업 편성·긴급 투입. 다른 메뉴에 가도 상태가 남게 숨김 방식으로 띄운다.
+            확정·등록·고정은 작업 데이터의 새 판을 만들므로 App이 데이터 정보를 다시 읽는다(ownSwitch -- "다른 사용자" 경고 없이). */}
+        {/* 아침 알림(claude-b 요청 (1)): 첫 화면 위 띠 -- 데이터가 바뀌면 다시 읽는다 */}
+        {tab === "pipeline" && <NightlyBanner refreshKey={dataset?.version ?? ""} />}
+        <div className={tab === "pipeline" ? "" : "hidden"}>
+          <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
+                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                             onReviewDoc={openReviewDoc} />
+        </div>
+        <div className={tab === "emergency" ? "" : "hidden"}>
+          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                           onReviewDoc={openReviewDoc} />
         </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
@@ -683,13 +714,19 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         )}
         {/* 편집 중에 세션이 끝났으면(loginReason) 탭 내용을 언마운트하지 않고 위에 로그인을 띄운다 --
             설정 폼에 입력하던 값이 사라지지 않게. 처음 여는 경우엔 로그인 화면이 탭을 대신한다. */}
-        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && loginReason && (
+        {(tab === "data" || tab === "settings" || tab === "records" || tab === "reviews") && needLogin && loginReason && (
           <div className="mb-6">
             <AdminLogin reason={loginReason} onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
           </div>
         )}
-        {(tab === "data" || tab === "settings" || tab === "records") && needLogin && !loginReason ? (
+        {(tab === "data" || tab === "settings" || tab === "records" || tab === "reviews") && needLogin && !loginReason ? (
           <AdminLogin onLoggedIn={() => { setLoginReason(null); refreshAdmin(); }} />
+        ) : tab === "reviews" ? (
+          <div className="space-y-4">
+            {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
+            <ReviewDocsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} open={reviewOpen}
+                             onOpened={() => setReviewOpen(null)} />
+          </div>
         ) : tab === "records" ? (
           <div className="max-w-[1080px] space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
@@ -722,6 +759,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                              throw e;
                            }
                          }} />
+            <NightlyPanel adminToken={adminToken || null} onLoginRequired={adminExpired} />
             </div>
           ) : (
             <p className="text-sm text-slate-500">
@@ -755,6 +793,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {!running && plans.some((p) => p.cached) && (
               <PrecomputedNotice at={plans.find((p) => p.precomputed_at != null)?.precomputed_at ?? null}
                                  label={plans.find((p) => p.precomputed_label)?.precomputed_label ?? null}
+                                 source={plans.find((p) => p.precomputed_at != null)?.precomputed_source ?? null}
                                  onRecompute={() => void run(true)} />
             )}
             {stoppedNote && (
@@ -799,7 +838,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {current && edit && (
               <AppliedPanel label={current.label} history={edit.history}
                             violations={edit.stack.at(-1)?.violations ?? []}
-                            people={meta.people} onUndo={undoApply} onReset={resetApply} />
+                            people={meta.people} horizonStart={meta.horizon_start} onUndo={undoApply} onReset={resetApply} />
             )}
             {current && (
               <>
@@ -811,16 +850,29 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                            </label>
                          ) : undefined} />
                 <div className={subTab === "roster" ? "" : "hidden"}>
+                  {/* 전일 투입(2026-10-19 서비스 기본)은 투입률이 100%뿐이라 달별 조정이 없다 */}
                   <AssignmentTable key={current.label} entries={current.entries} people={meta.people}
-                                   projects={meta.projects} onAdjust={applyAllocChange} busy={applyBusy}
-                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} />
+                                   projects={meta.projects}
+                                   onAdjust={planBasis?.params?.allocation_mode === "full" ? undefined : applyAllocChange}
+                                   busy={applyBusy}
+                                   minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start} />
+                  {planBasis?.params?.allocation_mode === "full" && current.unfilled.length > 0 && (
+                    <div className="mt-4">
+                      <ConcurrencyPanel datasetVersion={planBasis.datasetVersion} entries={current.entries}
+                                        weights={planBasis.weights}
+                                        projectName={(id) => meta.projects.find((j) => j.id === id)?.name ?? id}
+                                        onGranted={(msg) => { void ownSwitch().then(() => setNotice(msg)); }}
+                                        onStale={() => void externalSwitch()} />
+                    </div>
+                  )}
                 </div>
                 <div className={subTab === "swap" ? "grid gap-5 lg:grid-cols-2" : "hidden"}>
                   <div className="space-y-5">
                     <SwapControl key={`${current.label}-${edit?.history.length ?? 0}`}
                                  people={meta.people} onSelectionChange={selectionChanged}
                                  entries={current.entries}
-                                 onSwap={runSwap} busy={whatifBusy} />
+                                 onSwap={runSwap} busy={whatifBusy}
+                                 projects={meta.projects} horizonStart={meta.horizon_start} />
                     <BriefingPanel result={whatif} loading={whatifBusy}
                                    nameOf={(id) => meta.people.find((p) => p.id === id)?.name ?? id} />
                     <ApplyControl key={`${current.label}-${edit?.history.length ?? 0}-${lastSwap

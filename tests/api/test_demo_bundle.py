@@ -11,7 +11,7 @@ def test_server_boots_from_the_demo_bundle(tmp_path, monkeypatch):
     with TestClient(app) as c:
         info = c.get("/api/datasets/active").json()
         assert info["source"] == "demo-bundle" and info["synthetic"] is True
-        assert info["dataset_id"] == "org-n100-s11" and info["people"] == 100 and info["projects"] == 20
+        assert info["dataset_id"] == "org-n100-s11" and info["people"] == 100 and info["projects"] == 21   # v5: 사업 20(대부분 진행 사업) + 추가 과제 1
         meta = c.get("/api/meta").json()
         assert all(p["id"].startswith("DP") for p in meta["people"])
 

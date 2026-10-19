@@ -160,6 +160,27 @@ def _generated_tiny_partial_pruning_case() -> tuple[MemoryGraph, np.ndarray, np.
     return graph, skill, synergy, params.model_copy(update={"pair_keep_ratio": 1 / 3})
 
 
+def _full_time_case(permitted: bool) -> tuple[MemoryGraph, np.ndarray, np.ndarray, MilpParams]:
+    """전일 투입(2026-10-19): 겹치는 두 사업(j0 0~1월, j1 1~2월), 중급 셋 중 p2는 1월 휴직(자격 없음), j1 예산은 한 명분.
+    permitted면 p0만 동시 수행 허용(같은 달 2곳) -- 두 사업 모두 100%·예산 전액."""
+    people = [_person("p0", Grade.MID), _person("p1", Grade.MID), _person("p2", Grade.MID)]
+    people[2] = people[2].model_copy(update={"availability": [1.0, 0.0, 1.0, 1.0, 1.0, 1.0]})
+    if permitted:
+        people[0] = people[0].model_copy(update={"max_concurrent": 2})
+    projects = [
+        Project(id=f"j{k}", name=f"전일 투입 {k}", sector=Sector.INTERNAL, phase=ProjectPhase.EXECUTION,
+                start_month=k, end_month=k + 1, grade_headcount={Grade.MID: 2},
+                requirements=[SkillRequirement(skill="Python", min_level=1, headcount=1)],
+                monthly_budget=(2_000, 1_500)[k])
+        for k in range(2)
+    ]
+    synergy = np.zeros((3, 3))
+    synergy[0, 1] = synergy[1, 0] = 0.5
+    return _graph(people, projects), np.array([[0.9, 0.8], [0.6, 0.7], [1.0, 1.0]]), synergy, MilpParams(
+        pair_keep_ratio=1.0, time_limit=30, gap=0.0, allocation_mode="full"
+    )
+
+
 def default_oracle_cases() -> tuple[OracleCase, ...]:
     return (
         OracleCase("one_slot", _one_slot_case),
@@ -172,6 +193,8 @@ def default_oracle_cases() -> tuple[OracleCase, ...]:
             _generated_tiny_partial_pruning_case,
             "synthetic_seeded",
         ),
+        OracleCase("full_time_no_concurrency", lambda: _full_time_case(False)),
+        OracleCase("full_time_one_permitted", lambda: _full_time_case(True)),
     )
 
 

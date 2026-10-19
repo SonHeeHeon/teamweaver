@@ -51,14 +51,17 @@ export function formatValue(f: Field, v: number): string {
 
 /** 두 설정에서 값이 다른 필드를 "이름 이전→현재"로 나열한다. */
 export const MODE_LABEL: Record<PlacementSettings["allocation_mode"], string> = {
-  fixed: "기간 내내 한 비율", monthly: "달마다 따로",
+  full: "전일 투입(100%)", fixed: "기간 내내 한 비율", monthly: "달마다 따로",
 };
+
+/** 전일 투입에서는 쓰지 않는 칸(투입률을 나누는 예전 방식 전용). */
+export const SPLIT_ONLY: NumKey[] = ["min_alloc", "max_concurrent_projects"];
 
 export function describeChanges(before: PlacementSettings, now: PlacementSettings): string[] {
   const out = FIELDS.filter((f) => before[f.key] !== now[f.key])
     .map((f) => `${f.label} ${formatValue(f, before[f.key])}→${formatValue(f, now[f.key])}`);
-  const b = before.allocation_mode ?? "fixed", n = now.allocation_mode ?? "fixed";
-  if (b !== n) out.push(`투입률 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
+  const b = before.allocation_mode ?? "full", n = now.allocation_mode ?? "full";
+  if (b !== n) out.push(`투입 방식 ${MODE_LABEL[b]}→${MODE_LABEL[n]}`);
   const wb = before.clique_window_months ?? null, wn = now.clique_window_months ?? null;
   if (wb !== wn) out.push(`반복 협업 조회 기간 ${windowLabel(wb)}→${windowLabel(wn)}`);
   // 자동·수동 표시만 다르고 실제 계산 시간이 같으면 같은 계산이다(편성 기록은 그때의 실제 시간을 "수동"으로 담는다, 2026-10-18).

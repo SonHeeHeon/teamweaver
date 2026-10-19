@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from api.cache import ResultCache
+from api.settings import horizon_months_of
 from core.evaluate.plan_eval import evaluate_plan
 from core.optimize.milp import MilpParams
 from core.optimize.types import AssignEntry, PlanAssignment
@@ -205,6 +206,16 @@ def precomputed_label(app, key: str) -> str | None:
     return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("label")
 
 
+def precomputed_source(app, key: str) -> str | None:
+    """미리 계산의 출처: "nightly"(밤 배치, api/nightly) 또는 None(시연 미리 계산·편성 기록) -- 화면이 "밤사이 계산"으로 구분한다
+    (claude-b 요청 (3), claude-a 2026-10-19)."""
+    return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("source")
+
+
+def operating_source(app) -> str | None:
+    return (getattr(app.state, "precomputed_operating", None) or {}).get("source")
+
+
 def precomputed_stop_reason(app, key: str) -> str | None:
     return ((getattr(app.state, "precomputed_keys", None) or {}).get(key) or {}).get("stop_reason")
 
@@ -227,7 +238,8 @@ def prepare_for(app, active, bundle_path: Path | None) -> Precomputed | None:
     if active.info.source != "demo-bundle" or bundle_path is None:
         return None
     try:
-        params = app.state.settings_store.current().settings.to_milp_params(n_people=len(active.graph.people))
+        params = app.state.settings_store.current().settings.to_milp_params(n_people=len(active.graph.people),
+                                                                         months=horizon_months_of(active.graph))
         return load_precomputed(bundle_path, active, params)
     except Exception as exc:                        # noqa: BLE001 -- 미리 계산이 깨져도 전환·부팅은 된다
         log.error("미리 계산 결과를 확인하지 못했다(%s): %s", bundle_path, exc)

@@ -27,8 +27,9 @@ class Instance:
 
 
 def service_params() -> MilpParams:
-    """서비스 기본 배치 설정(관리자 설정 기본값: 최소 투입률 30% 등)."""
-    return PlacementSettings().to_milp_params()
+    """서비스 기본 배치 설정(관리자 설정 기본값: 최소 투입률 30% 등). 실험 J*는 예전 투입률 방식(fixed)으로 잰 것이라
+    2026-10-19 서비스 기본이 전일 투입(full)으로 바뀐 뒤에도 fixed로 고정한다 -- 결과의 의미가 바뀌지 않게."""
+    return PlacementSettings(allocation_mode="fixed").to_milp_params()
 
 
 def fixture_instance() -> Instance:

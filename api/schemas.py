@@ -1,5 +1,6 @@
 from typing import Annotated, Literal, Union
 
+from core.domain.models import MAX_HORIZON_MONTHS
 from pydantic import (BaseModel, ConfigDict, Discriminator, Field, Tag, field_validator, model_serializer,
                       model_validator)
 
@@ -25,6 +26,20 @@ class PersonOut(BaseModel):
     # 하위 기술 경력에서 인정된 기술(claude-a 계약 Person.skill_credit, 사용자 결정 2026-10-11 "구분해서 표시").
     # {기술: {source, months, depth, own_months}} -- 인정분이 경력을 정한 기술만, 없으면 빈 사전
     skill_credit: dict[str, dict] = {}
+    # 계획 달마다 가용률(0~1)·휴직 정보(2026-10-19): 화면이 그 달이 걸린 사업에 투입할 수 없는 사람을 비활성화하고 사유를 보인다
+    availability: list[float] = []
+    leave: dict | None = None
+    # 프로젝트 동시 수행(2026-10-19): 같은 달 최대 사업 수(1 = 동시 수행 없음)와 허용 기록(사유·메모·시각)
+    max_concurrent: int = 1
+    concurrency: dict | None = None
+
+
+class LifecycleOut(BaseModel):
+    """사업 수명 주기(2026-10-19, api/lifecycle -- 화면 표시용, 계산에 안 씀). stage: 개발|운영|고도화|추가 과제."""
+    stage: str
+    started: str | None = None                  # 실제 시작 달 "YYYY-MM"(계획 기간 전일 수 있다)
+    parent: str | None = None                   # 추가 과제의 상위 사업
+    external_headcount: int | None = None       # 추가 과제의 외주 인원(참고값)
 
 
 class ProjectOut(BaseModel):
@@ -32,10 +47,13 @@ class ProjectOut(BaseModel):
     name: str
     sector: str
     phase: str
-    start_month: int
+    start_month: int                            # 계획 안으로 자른 달 순번
     end_month: int
     grade_headcount: dict[str, int]
     monthly_budget: int
+    lifecycle: LifecycleOut | None = None
+    # 계획 기간 밖으로 이어지는 사업만 원문 기간 {"start","end"}("YYYY-MM") -- 나머지는 start_month·end_month가 원래 기간이다
+    period: dict[str, str] | None = None
 
 
 class CoworkOut(BaseModel):
@@ -54,6 +72,9 @@ class MetaResponse(BaseModel):
     # 이 meta가 나온 활성 데이터셋(K9). 화면은 계산 요청에 이 값을 실어 보내고, 서버는
     # 그사이 데이터셋이 바뀌었으면 409로 거부한다(옛 이름·명단과 새 결과가 섞이지 않게).
     dataset_version: str
+    # 계획 기간(2026-10-19 계획기간 1년 확장): 달 순번 0..n-1이 실제로 어느 달인지. 시작 달은 CSV 묶음에만 있다(fixture는 None)
+    horizon_start: str | None = None
+    horizon_months: int = 6
 
 
 class EvidenceOut(BaseModel):
@@ -133,7 +154,7 @@ class MilpParamsIn(BaseModel):
     gap: float | None = Field(default=None, ge=0.0, le=1.0)
     max_pairs: int | None = Field(default=None, ge=1, le=5000)
     max_concurrent_projects: int | None = Field(default=None, ge=1, le=6)
-    allocation_mode: Literal["fixed", "monthly"] | None = None
+    allocation_mode: Literal["full", "fixed", "monthly"] | None = None
     # 관리자 설정의 "자동(인원 기준)" 표시. 계산에는 쓰지 않는다(화면이 실제 시간을 time_limit으로 보낸다).
     # 받기만 하고 계산에는 쓰지 않는다. 자동 시간은 GET /api/settings의 effective_time_limit을
     # time_limit으로 보내야 적용된다 -- 이 칸만 true로 보내면 time_limit 기본값(120초)이 쓰인다.
@@ -167,6 +188,7 @@ class SettingsBody(BaseModel):
     load_error: str | None
     recommended_time: dict | None = None
     recommended_time_monthly: dict | None = None
+    recommended_time_full: dict | None = None           # 전일 투입(2026-10-19 서비스 기본)
     effective_time_limit: int | None = None
     # 지금 계산이 쓰는 동시 탐색 수(설정, 없으면 서버 환경 변수, 없으면 1)
     effective_solver_seeds: int | None = None
@@ -215,8 +237,8 @@ class EntryIn(BaseModel):
     person_id: str
     project_id: str
     alloc: float = Field(ge=0.0, le=1.0)
-    # 월별 투입률(키 = 프로젝트 진행 달 0~5). 없으면 모든 진행 달이 alloc(core/optimize/types.AssignEntry와 같은 뜻).
-    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] | None = None
+    # 월별 투입률(키 = 프로젝트 진행 달 0~11 -- 계획 기간 6|12개월, 실제 사업 달과 맞는지는 평가기가 본다). 없으면 모든 진행 달이 alloc(core/optimize/types.AssignEntry와 같은 뜻).
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=MAX_HORIZON_MONTHS - 1)], Annotated[float, Field(ge=0.0, le=1.0)]] | None = None
 
     @field_validator("monthly_alloc")
     @classmethod
@@ -248,12 +270,12 @@ class SwapIn(BaseModel):
 
 class AllocChangeIn(BaseModel):
     """적용 단계: 한 사람의 한 프로젝트 투입률을 달별로 바꾼다(사람별 달별 조정, 2026-10-05).
-    monthly_alloc은 그 프로젝트의 진행 달 전부(키 0~5). 모든 달이 같으면 일반 항목으로 정리된다."""
+    monthly_alloc은 그 프로젝트의 진행 달 전부(키 0~11, 12개월 계획까지). 모든 달이 같으면 일반 항목으로 정리된다."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["alloc"] = "alloc"
     person_id: str
     project_id: str
-    monthly_alloc: dict[Annotated[int, Field(ge=0, le=5)], Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
+    monthly_alloc: dict[Annotated[int, Field(ge=0, le=MAX_HORIZON_MONTHS - 1)], Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
         min_length=1)
 
 
