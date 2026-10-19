@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n100-operating",
  "dataset_id": "org-n100-s2026-operating",
- "dataset_version": "7a45e754f7baf71cb98117e8a87ef8e810e9644b3f72c5e2b582ba15368c0737",
+ "dataset_version": "f25c2b39b29998e8a1942e7362c10115bcff4eda55f0dd20811f2d76195e2bef",
  "review_judge": "llm",
  "computed_at": "2026-10-19T10:24:10+00:00",
  "commit": "ce15782",
@@ -4901,8 +4901,8 @@
   ]
  },
  "rekeyed": {
-  "at": "2026-10-19T11:12:54+00:00",
-  "from_dataset_version": "a060c8c17c62d74d4af4b059ff5668b961eba5f6b2ea712b0221cd177709f00d",
-  "reason": "calculation version now includes the model rules marker (model:2026-10-19:full-time-1.0;familiar-exempt-current-teams); computed with these rules (same bundle, review judgments and rules as when computed) -- results were not re-solved, and the server still re-scores every plan on load"
+  "at": "2026-10-19T12:27:03+00:00",
+  "from_dataset_version": "2fcb06ab40162194fa9434c69ad1fa6358d76f7ad5cfb1a0b15b839b5d277598",
+  "reason": "bundle gained the optional work_skills.csv and manifest as_of / skill_months_owner, and the calculation version now carries the ongoing-skill aging rules (HR source and aging, 2026-10-19); the demo skill rows were counted up to the month before the plan, so no skill months grew and the model input is unchanged -- results were not re-solved, and the server still re-scores every plan on load"
  }
 }

@@ -570,4 +570,8 @@ def test_calculation_version_follows_the_model_rules(monkeypatch):
     from api.datasets import rules_version
     a = rules_version("abc")
     monkeypatch.setattr(milp, "OBJECTIVE_RULES", milp.OBJECTIVE_RULES + ";next")
-    assert rules_version("abc") != a
+    b = rules_version("abc")
+    assert b != a
+    import core.ingest.aging as aging                 # 진행 중 사업 기술 경력 늘리기 규칙(2026-10-19)도
+    monkeypatch.setattr(aging, "AGING_RULES", aging.AGING_RULES + ";next")
+    assert rules_version("abc") != b
