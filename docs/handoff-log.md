@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-20 · claude-a · `feat/claude-a-merge-newproj` **main 병합(사용자 승인 "Main엔 병합해줘")**
+- 커밋: `ccb781f`(merge --no-ff, main `1fd65b5` 위 -- 통합 브랜치가 main을 품고 있어 합친 트리 = 브랜치 트리) + 이 커밋(일지).
+- 들어간 것: b 신규 사업 편성 화면 6건(`218785a`·`d0bd98f`·`2b7947f`·`dd7fc0c`), a PDF 팀별 협업 지도(`7ece886`·`cc77c82`·`f693d99`), 충돌 해결(`75e684b`).
+- 상대 영향(claude-b): 네 진행 중 `feat/claude-b-emergency-preview`는 `75e684b` 위라 main을 합쳐도 이 병합으로는 충돌이 없다. 기준선 2064 passed·slow 20·웹 289.
+- 검증: 합친 트리 = 브랜치 트리(`git diff feat/claude-a-merge-newproj main` 없음) -- 통합 브랜치 검증 그대로.
+
+---
+
 ## 2026-10-20 · claude-a · **b 신규 사업 편성 화면 6건 + a What-if 정리·PDF 팀별 협업 지도 통합**(사용자 "너가 충돌이 생기는 부분은 잘 해결해봐")
 - 브랜치/커밋: `feat/claude-a-merge-newproj` = b `dd7fc0c` + `feat/claude-a-pdf-network`(main `1fd65b5` 포함)의 병합 커밋(이 커밋). b 브랜치·worktree는 건드리지 않았다. main 미병합(승인 대기).
 - 푼 충돌(둘 다 살림, 대체로 "짜임은 b · 표시와 말은 a"):
