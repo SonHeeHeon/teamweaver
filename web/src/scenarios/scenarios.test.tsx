@@ -83,27 +83,46 @@ describe("ProjectForm", () => {
 describe("NewProjectsScreen", () => {
   it("후보 세 갈래에서 넣은 사람을 확정하면 빼 오는 배치를 빼고 명단을 보낸다", async () => {
     vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
-    vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: "J003", note: "계산상",
-      bench: [cand({})], ending: [],
+    const here = { project_id: "J014", name: "보험사 B 고도화", change: 1 };
+    const first = { project_id: "J014", predecessor: "J003", note: "계산상",
+      bench: [cand({ seat_effects: [here], skill_delta: 1.2, collab_delta: 0, partners: [] })], ending: [],
       pull: [cand({ person_id: "P1", name: "김민준", source: "pull", pulled_from: ["J003"], category: "pull", predecessor_team: true,
-                    delta_total: 0.4, delta: { unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 0.4 })] });
+                    delta_total: 0.4, delta: { unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 0.4,
+                    seat_effects: [{ project_id: "J003", name: "은행 A 데이터", change: -1 }, here], skill_delta: 0.3, collab_delta: 0.1,
+                    partners: [{ person_id: "P9", name: "박지훈", kind: "synergy", value: 0.17, c: 0.58 }] })] };
+    // 고른 사람이 있으면 서버는 그 사람을 표에서 빼고 고른 사람 전체를 미리 계산한다(2026-10-20 요청 2·5번)
+    vi.mocked(api.fetchCandidates).mockImplementation(async (_id, _v, picks = []) => picks.length ? {
+      ...first, bench: [], draft: { seats: { 고급: { need: 2, filled: picks.length } }, seat_effects: [{ ...here, change: picks.length }],
+                                    delta_total: 101.2, skill_delta: 1.2, collab_delta: 0.17, unfilled_seats_delta: 1,
+                                    new_violations: [], pairs: [{ a: "P1", a_name: "김민준", b: "P9", b_name: "박지훈", kind: "synergy", value: 0.17 }] },
+    } : first);
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: [], removed: [], changed: [] } });
     const changed = vi.fn();
     const review = vi.fn();
     // App은 확정 응답 뒤에야 새 판을 받는다 -- 그 사이 옛 판("v0")을 들고 있어도 버튼이 남아야 한다(Codex 리뷰)
     const { rerender } = render(<NewProjectsScreen milpParams={null} datasetVersion="v0" onDatasetChanged={changed} onReviewDoc={review} />);
     expect(await screen.findByText("박지훈")).toBeInTheDocument();
-    // 점수 변화를 나눠 보인다(사용자 2026-10-19): +101.20이 아니라 "1자리 메움"과 "+1.20"
+    // 정원 변화는 사업별 글로, 점수는 기술·협업 두 칸으로(사용자 2026-10-20 요청 4·5번) -- 빈자리 100점이 섞인 +101.20은 없다
     const row = screen.getByText("박지훈").closest("tr")!;
-    expect(within(row).getByText("1자리 메움")).toBeInTheDocument();
+    expect(within(row).getByText("이 사업 1자리 채움")).toBeInTheDocument();
     expect(within(row).getByText("+1.20")).toBeInTheDocument();
     expect(screen.queryByText("+101.20")).toBeNull();
-    expect(screen.getByRole("columnheader", { name: "기술·협업 점수" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /정원 변화/ })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /협업/ })).toBeInTheDocument();
+    expect(screen.getByText(/두 사람 사이의 점수/)).toBeInTheDocument();                          // 표 읽는 법
     fireEvent.click(screen.getByRole("button", { name: "박지훈 넣기" }));
+    // 확정 전에도: 고른 사람 줄과 자리 미리 계산(요청 2번)
+    const draft = await screen.findByRole("region", { name: "넣기로 고른 사람" });
+    expect(within(draft).getByText("박지훈")).toBeInTheDocument();
+    expect(await screen.findByTitle("지금 0/2 → 고른 사람 포함 1/2")).toBeInTheDocument();
+    expect(vi.mocked(api.fetchCandidates)).toHaveBeenLastCalledWith("J014", "v1", [{ person_id: "P9", alloc: 1, pulled_from: [] }]);
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
     expect(screen.getByText("이전 팀원")).toBeInTheDocument();
-    expect(within(screen.getByText("김민준").closest("tr")!).getByText("—")).toBeInTheDocument();      // 자리 변화 없음
+    const pullRow = screen.getByText("김민준").closest("tr")!;
+    expect(within(pullRow).getByText("J003에 1자리 빔")).toBeInTheDocument();
+    expect(within(pullRow).getByText("박지훈과 +0.17")).toBeInTheDocument();                   // 협업은 누구와의 쌍인지
     fireEvent.click(screen.getByRole("button", { name: "김민준 넣기" }));
+    expect(await within(draft).findByText("김민준·박지훈 +0.17")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "2명 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());
@@ -121,6 +140,60 @@ describe("NewProjectsScreen", () => {
     // 맞춰진 뒤 옛 판으로 돌아가면(되돌리기) 버튼은 사라진다(Codex 리뷰 2라운드)
     rerender(<NewProjectsScreen milpParams={null} datasetVersion="v0" onDatasetChanged={changed} onReviewDoc={review} />);
     await waitFor(() => expect(screen.queryByRole("button", { name: "인사팀 검토 자료 만들기" })).not.toBeInTheDocument());
+  });
+
+  it("고른 사람의 미리 계산이 실패하면 이전 결과를 지금 선택의 것처럼 보이지 않고 확정을 막는다(Codex 리뷰 2026-10-20)", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    const base = { project_id: "J014", predecessor: null, note: "", ending: [], pull: [],
+                   bench: [cand({}), cand({ person_id: "P8", name: "최유진" })] };
+    const draftOf = (n: number) => ({ seats: { 고급: { need: 2, filled: n } }, seat_effects: [], delta_total: 0, skill_delta: 0, collab_delta: 0,
+                                      unfilled_seats_delta: n, new_violations: [], pairs: [] });
+    let fail = false;
+    vi.mocked(api.fetchCandidates).mockImplementation(async (_id, _v, picks = []) => {
+      if (fail && picks.length === 2) throw new Error("서버 오류");
+      return { ...base, draft: picks.length ? draftOf(picks.length) : null };
+    });
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "박지훈 넣기" }));
+    expect(await screen.findByTitle("지금 0/2 → 고른 사람 포함 1/2")).toBeInTheDocument();
+    fail = true;
+    fireEvent.click(screen.getByRole("button", { name: "최유진 넣기" }));
+    expect(await screen.findByText(/후보·미리 계산을 하지 못했습니다/)).toBeInTheDocument();
+    expect(screen.queryByTitle("지금 0/2 → 고른 사람 포함 1/2")).toBeNull();               // 이전(1명) 결과를 보이지 않는다
+    expect(screen.getByRole("button", { name: "2명 확정" })).toBeDisabled();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "다시 계산" }));
+    expect(await screen.findByTitle("지금 0/2 → 고른 사람 포함 2/2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "2명 확정" })).toBeEnabled();
+  });
+
+  it("자동 편성은 기본 K 0~5를, 최대 3을 고르면 0~3을 비교한다(사용자 2026-10-20 \"k는 최대 5까지\")", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: null, note: "", bench: [], ending: [], pull: [] });
+    const { streamOperatingCompare } = await import("../api/client");
+    vi.mocked(streamOperatingCompare).mockImplementation(async function* () { /* 행 없음 */ });
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "옮길 인원별로 계산" }));
+    await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalled());
+    expect(vi.mocked(streamOperatingCompare).mock.calls[0][0]).toMatchObject({ ks: [0, 1, 2, 3, 4, 5] });
+    fireEvent.change(screen.getByLabelText("옮길 수 있는 최대 인원"), { target: { value: "3" } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "옮길 인원별로 계산" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "옮길 인원별로 계산" }));
+    await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(streamOperatingCompare).mock.calls[1][0]).toMatchObject({ ks: [0, 1, 2, 3] });
+  });
+
+  it("예전 편성 기록처럼 미리 계산이 K 0~3뿐이면 기본 최대 K는 3, 위반이 예상되는 넣기는 확정을 막는다(리뷰 S2·N6)", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue({ ...WS, operating_ks: [0, 1, 2, 3] });
+    vi.mocked(api.fetchCandidates).mockImplementation(async (_id, _v, picks = []) => ({
+      project_id: "J014", predecessor: null, note: "", ending: [], pull: [], bench: picks.length ? [] : [cand({})],
+      draft: picks.length ? { seats: { 고급: { need: 2, filled: 1 } }, seat_effects: [], delta_total: 0, skill_delta: 0, collab_delta: 0,
+                              unfilled_seats_delta: 1, new_violations: ["J014 월 비용 7,000이 예산 6,000을 초과"], pairs: [] } : null }));
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    await waitFor(() => expect((screen.getByLabelText("옮길 수 있는 최대 인원") as HTMLSelectElement).value).toBe("3"));
+    fireEvent.click(await screen.findByRole("button", { name: "박지훈 넣기" }));
+    expect(await screen.findByText(/확정하면 규칙 위반: J014 월 비용/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1명 확정" })).toBeDisabled();
   });
 
   it("진행 사업의 사람 한 명을 고정한다", async () => {
@@ -173,7 +246,7 @@ describe("EmergencyScreen", () => {
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
     expect(screen.getByText(/기술·협업 \+3\.10 · 월 비용 \+/)).toBeInTheDocument();
     expect(screen.getByText("빼 오는 사람: 김소율(J008→J003)")).toBeInTheDocument();   // 사번이 아니라 이름(부서장 점검 f7)
-    expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("1자리 메움")).toBeInTheDocument();
+    expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("빈자리 1개 채움")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "이 조합 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());

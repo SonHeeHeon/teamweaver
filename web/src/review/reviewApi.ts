@@ -61,6 +61,8 @@ export interface ReviewDocView {
   disclaimer: string;
   body_ai: string | null;
   body_ai_method: string | null;
+  /** AI 초안(요약)의 사실 검사 기록(2026-10-20) -- 예전 자료·규칙 본문이면 없음 */
+  body_ai_check?: BodyCheck | null;
   body: string | null;
   notes: ReviewNote[];
   judgments: Record<string, Judgment>;
@@ -140,4 +142,25 @@ export async function downloadReviewPdf(v: string, p: string, token: string | nu
   a.download = `review-${p}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** 검토 자료 AI 요약의 사실 검사(api/routes/review_docs.draft_summary): AI는 사실 번호만 고르고, 저장 전에 검사기가 다시 본다. */
+export interface BodyCheck {
+  ok: boolean;
+  /** graphrag = AI 요약이 검사를 통과 · rule = AI 없음 또는 검사에 걸려 규칙 요약 */
+  method: string | null;
+  fallback_reason: string | null;
+  cited: { id: string; text: string; adverse: boolean }[];
+  facts_total: number;
+  rules: string;
+}
+
+/** AI 초안 요약이 규칙 요약으로 바뀐 까닭(서버 check.fallback_reason). */
+export function fallbackLabel(method: string | null, reason: string | null): string {
+  if (method === "graphrag") return "AI 요약";
+  const why = !reason || reason === "no_client" ? "AI 없이"
+    : reason === "ai_busy" ? "AI가 다른 글을 쓰는 중이라"
+    : reason.startsWith("verify") || reason === "render_check" || reason === "recheck_failed" ? "AI 요약이 검사에 걸려"
+    : reason.startsWith("llm_") ? "AI 호출이 실패해" : reason;
+  return method === "rule" ? `규칙 요약(${why})` : `요약 없음(${why}) -- 규칙 본문`;
 }

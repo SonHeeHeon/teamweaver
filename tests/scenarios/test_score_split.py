@@ -47,6 +47,11 @@ def test_pipeline_and_emergency_rows_carry_the_split(yearend):
         assert groups and all(_adds_up(r) for r in groups)
         # 빼 오면 원래 사업에 빈자리가 생긴다(긴급 투입은 대상 사업 자리를 늘려 채점 -- 메움 0, 생김 −1)
         assert all(r["unfilled_seats_delta"] <= 0 for r in plan["candidates"]["pull"])
+        # 기술·협업 몫과 함께하게 될 팀원과의 쌍(2026-10-20 사용자 "협업 점수는 인력간의 점수로") -- 둘을 더하면 나머지 변화
+        team = {m["person_id"] for o in c.get("/api/workspace").json()["ongoing"] if o["project_id"] == "J007" for m in o["team"]}
+        assert all(abs(r["skill_delta"] + r["collab_delta"] - r["delta_excl_unfilled"]) < 1e-3 for r in groups)
+        assert all(p["person_id"] in team and p["kind"] in ("synergy", "familiar") for r in groups for p in r["partners"])
+        assert any(r["partners"] for r in groups)
         assert plan["standby"] and all(_adds_up(r) for r in plan["standby"])
         best = plan["best"]
         # 빼 오는 사람은 이름과 함께 온다(부서장 점검 f7 -- 화면이 "DP0075(J013→J007)"처럼 사번을 보였다)

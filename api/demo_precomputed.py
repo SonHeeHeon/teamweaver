@@ -226,11 +226,18 @@ def forget(app, key: str) -> None:
 
 
 def operating_rows(app, params: MilpParams, ks, dataset_version: str) -> tuple[list[dict], str] | None:
-    """운영 중 비교(K별)의 미리 계산 행 -- 같은 데이터·설정·K 목록일 때만. (행, 계산 시각) 또는 None."""
+    """운영 중 비교(K별)의 미리 계산 행 -- 같은 데이터·설정이고 요청 K 목록이 저장된 K 목록과 같거나 **그 앞부분**일 때. (행, 계산 시각) 또는 None.
+    K 행은 작은 K부터 차례로 풀고 앞 K의 해만 이어받는다(core.evaluate.operating.compare_move_budgets의 carried_from_k) -- 0~5로 푼 0~3 행은
+    0~3으로 푼 행과 같은 계산이다(2026-10-20, K 최대 5: 화면 기본·밤 배치·시연 미리 계산이 0~5라 0~3 요청도 받는다)."""
     op = getattr(app.state, "precomputed_operating", None)
-    if not op or op["key"] != operating_key(params, ks, dataset_version):
+    if not op:
         return None
-    return op["rows"], op["computed_at"]
+    want = sorted(int(k) for k in ks)
+    have = sorted(int(k) for k in op.get("ks", []))
+    if not want or want != have[:len(want)] or op["key"] != operating_key(params, have, dataset_version):
+        return None
+    keep = set(want)
+    return [r for r in op["rows"] if int(r.get("k")) in keep], op["computed_at"]
 
 
 def prepare_for(app, active, bundle_path: Path | None) -> Precomputed | None:

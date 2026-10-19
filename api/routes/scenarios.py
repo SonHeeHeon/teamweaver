@@ -4,6 +4,7 @@
 현재 배치의 `locked`(사업·사람)로 넘긴다 -- 잠긴 배치의 사람은 "빼 오기" 후보에 나오지 않는다.
 
 - GET  /api/pipeline/{id}/candidates  신규 사업 후보: 쉬는 인력 · 끝나 가는 인력 · 진행 사업에서 빼 오기(+ 이전 사업 팀원 표시)
+- POST /api/pipeline/{id}/candidates  같은 후보 + "넣기"로 고른 사람을 팀원으로 친 다시 채점·고른 사람 전체 미리 계산(2026-10-20)
 - POST /api/emergency/plan            긴급 투입: 대기 명단 · 최선 n명 조합 · 후보 순위 · 확정용 증원 값(apply_hint)
 - GET  /api/emergency/standby         밤 배치가 뽑아 둔 진행 사업별 대기 명단(없으면 요청한 사업만 계산)
 
@@ -101,32 +102,217 @@ def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | N
     return out
 
 
-def rescore_unchanged(graph, S, C, params, entries, project_id: str, rows: list[dict]) -> list[dict]:
+def _pair_rules(graph, C, params):
+    """평가기(core.evaluate.plan_eval)와 같은 쌍 규칙: 보상 쌍(|C| 상위, `pruned_pairs`) · 익숙한 쌍(감점) · 감점 예외(지금 같은 사업에 함께 있는 쌍)."""
+    from core.optimize.milp import _overfamiliar_pairs, familiar_exempt, pruned_pairs
+    return (set(pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)),
+            _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None)),
+            familiar_exempt(graph))
+
+
+def pair_terms(graph, C, params, rules, a: str, b: str, project_id: str) -> list[dict]:
+    """두 사람이 같은 사업에 있을 때 계산 점수에 들어가는 쌍 항(2026-10-20 사용자 "협업 점수는 인력간의 점수로 나와야하는거 아닌가?"):
+    협업 시너지(보상 쌍만 lam·C) · 익숙한 쌍 감점(−mu, 지금 그 사업에 함께 있으면 예외). 둘 다 아니면 빈 목록 -- 계산에 안 들어가는 쌍이다."""
+    reward, penalty, exempt = rules
+    i, k = graph.pid_index[a], graph.pid_index[b]
+    p, q = min(i, k), max(i, k)
+    j = graph.project_index[project_id]
+    out = []
+    if (p, q) in reward and float(C[p, q]):
+        out.append({"kind": "synergy", "value": round(params.lam * float(C[p, q]), 4), "c": round(float(C[p, q]), 4)})
+    if (p, q) in penalty and (p, q, j) not in exempt and params.mu:
+        out.append({"kind": "familiar", "value": round(-params.mu, 4)})
+    return out
+
+
+def _parts(ev) -> dict:
+    o = ev.objective            # core.evaluate.staffing_sim._parts와 같은 항
+    return {"total": o.total, "skill": o.skill, "synergy": o.synergy, "overfamiliarity": o.overfamiliarity, "unfilled": o.unfilled}
+
+
+def _seat_gaps(graph, ev) -> dict[str, int]:
+    """평가 결과의 사업별 빈자리 수(등급 합) -- 평가기 shortfalls."""
+    out: dict[str, int] = {}
+    for s in ev.shortfalls:
+        out[s.project_id] = out.get(s.project_id, 0) + int(s.missing)
+    return out
+
+
+def seat_effects(graph, before: dict[str, int], after: dict[str, int]) -> list[dict]:
+    """사업별 정원 변화(2026-10-20 사용자 "'1자리 메움','1자리 생김'이 어떤 의미인지 잘 모를거같으니"): change > 0 = 그 사업 빈자리를 채움,
+    < 0 = 그 사업에 빈자리가 생김(빼 온 사람의 원래 사업). 합은 unfilled_seats_delta와 같다."""
+    out = []
+    for pid in sorted(set(before) | set(after)):
+        change = before.get(pid, 0) - after.get(pid, 0)
+        if change:
+            out.append({"project_id": pid, "name": graph.projects[graph.project_index[pid]].name, "change": change})
+    return out
+
+
+def rescore_unchanged(graph, S, C, params, entries, project_id: str, rows: list[dict], *, names: dict[str, str] | None = None
+                      ) -> list[dict]:
     """보강 계산(rank_candidates)은 대상 사업에 자리·예산을 하나 늘려 채점한다. 신규 사업은 등록한 정원·예산의 **빈자리를 채우는**
     것이므로 바꾸지 않은 사업으로 다시 채점한다 -- 빈자리 감점이 줄어드는 효과가 보이고, 예산을 넘는 후보는 새 위반으로 보인다
-    (Codex 리뷰 2026-10-19). 위반이 없는 후보가 앞에 온다."""
-    from core.evaluate.staffing_sim import simulate
+    (Codex 리뷰 2026-10-19). 위반이 없는 후보가 앞에 온다.
+    2026-10-20: 사업별 정원 변화(`seat_effects`), 기술·협업 나눔(`skill_delta`·`collab_delta` -- 협업 = 협업 시너지 + 익숙한 쌍 감점, 모든 사업),
+    이 사업에서 함께하게 될 사람과의 쌍(`partners`)을 붙인다. entries가 "넣기로 고른 사람"을 포함하면 그 사람들도 팀원으로 친다."""
+    from core.evaluate.plan_eval import evaluate_plan
     from core.optimize.types import AssignEntry
+    names = names or {}
+    rules = _pair_rules(graph, C, params)
+    team = [e.person_id for e in entries if e.project_id == project_id]
+    # 평가는 후보마다 한 번(전은 한 번만) -- staffing_sim.simulate와 같은 넣기·빼기·변화 규칙(simulate는 부를 때마다 전을 다시 채점한다)
+    from api.violation_diff import new_or_worse
+    base = evaluate_plan(graph, S, C, params, entries)
+    base_parts, base_gaps = _parts(base), _seat_gaps(graph, base)
     out = []
     for r in rows:
-        sim = simulate(graph, S, C, params, entries,
-                       adds=[AssignEntry(person_id=r["person_id"], project_id=project_id, alloc=r["alloc"])],
-                       removes=[(r["person_id"], src) for src in r.get("pulled_from", [])])
-        out.append({**r, "delta_total": round(sim["delta"]["total"], 4),
-                    "delta": {k: round(v, 4) for k, v in sim["delta"].items()},
+        drop = {(r["person_id"], src) for src in r.get("pulled_from", [])}
+        new = [e for e in entries if (e.person_id, e.project_id) not in drop] + [
+            AssignEntry(person_id=r["person_id"], project_id=project_id, alloc=r["alloc"])]
+        after = evaluate_plan(graph, S, C, params, new)
+        a = _parts(after)
+        d = {k: a[k] - base_parts[k] for k in a}
+        after_gaps = _seat_gaps(graph, after)
+        # 새로 생기거나 커진 위반 -- 확정(routes/workspace.apply)과 같은 판정(api.violation_diff)
+        sim = {"new_violations": sorted({(v.code, v.location) for v in new_or_worse(base.violations, after.violations)})}
+        partners = [{"person_id": t, "name": names.get(t, t), **term}
+                    for t in team if t != r["person_id"] for term in pair_terms(graph, C, params, rules, r["person_id"], t, project_id)]
+        out.append({**r, "delta_total": round(d["total"], 4),
+                    "delta": {k: round(v, 4) for k, v in d.items()},
+                    "skill_delta": round(d.get("skill", 0.0), 4),
+                    "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
+                    "seat_effects": seat_effects(graph, base_gaps, after_gaps), "partners": partners,
                     "new_violations": [list(v) for v in sim["new_violations"]], "budget_added": 0})
     out.sort(key=lambda x: (bool(x["new_violations"]), -x["delta_total"], x["person_id"]))
     return out
 
 
-@router.get("/api/pipeline/{project_id}/candidates")
-async def pipeline_candidates(project_id: str, request: Request, dataset_version: str | None = None, top: int = 30,
-                              dataset: ActiveDataset = Depends(get_dataset)) -> dict:
-    check_dataset_version(dataset_version, dataset)
+# 사람 단위 위반(사업 정원·예산은 긴급 투입 확정이 apply_hint로 늘려 메운다 -- 그 둘은 보강 계산의 판정을 그대로 둔다)
+PERSON_CODES = ("concurrent_projects", "availability", "alloc_range")
+
+
+def with_worse(graph, S, C, params, entries, project_id: str, rows: list[dict]) -> list[dict]:
+    """보강 계산 행(staffing_sim.rank_candidates -- (종류, 위치)만 비교)에 **커진 기존 사람 단위 위반**을 더한다. 긴급 투입 확정도
+    `/api/workspace/apply`의 같은 판정(api.violation_diff.new_or_worse)으로 거절하므로, 화면이 "위반 없음"이라 하고 확정이 422가 되지 않게
+    (2026-10-20 Opus 대체 리뷰 S1 -- 신규 사업 후보의 Codex 지적과 같은 문제)."""
+    from api.violation_diff import new_or_worse
+    from core.evaluate.plan_eval import evaluate_plan
+    from core.optimize.types import AssignEntry
+    before = [v for v in evaluate_plan(graph, S, C, params, entries).violations if v.code in PERSON_CODES]
+    out = []
+    for r in rows:
+        drop = {(r["person_id"], src) for src in r.get("pulled_from", [])}
+        new = [e for e in entries if (e.person_id, e.project_id) not in drop] + [
+            AssignEntry(person_id=r["person_id"], project_id=project_id, alloc=r["alloc"])]
+        after = [v for v in evaluate_plan(graph, S, C, params, new).violations if v.code in PERSON_CODES]
+        # 동시 수행 지원 행(needs_grant)은 확정 때 그 사람의 허용을 함께 적는다 -- 그 사람의 동시 수행 상한은 보강 계산(허용을 친 채점)을 따른다
+        worse = {(v.code, v.location) for v in new_or_worse(before, after)
+                 if not (r.get("needs_grant") and v.code == "concurrent_projects" and v.location.startswith(f"{r['person_id']}:"))}
+        have = {tuple(x) for x in r.get("new_violations", [])}
+        out.append({**r, "new_violations": sorted(have | worse)})
+    return out
+
+
+def pair_view(graph, C, params, entries, project_id: str, rows: list[dict], names: dict[str, str]) -> list[dict]:
+    """보강 계산 행(rank_candidates)에 기술·협업 몫과 함께하게 될 사람과의 쌍을 붙인다(긴급 투입 후보 -- 신규 사업 후보와 같은 칸,
+    2026-10-20 사용자 "협업 점수는 인력간의 점수로 나와야하는거 아닌가?"). 점수 자체는 그대로다."""
+    rules = _pair_rules(graph, C, params)
+    team = [e.person_id for e in entries if e.project_id == project_id]
+    out = []
+    for r in rows:
+        d = r.get("delta") or {}
+        out.append({**r, "skill_delta": round(d.get("skill", 0.0), 4),
+                    "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
+                    "partners": [{"person_id": t, "name": names.get(t, t), **term} for t in team if t != r["person_id"]
+                                 for term in pair_terms(graph, C, params, rules, r["person_id"], t, project_id)]})
+    return out
+
+
+class PickIn(BaseModel):
+    """"넣기"로 고른 사람(확정 전) -- 후보 행의 값 그대로(투입률·빼 오는 사업)."""
+    model_config = ConfigDict(extra="forbid")
+    person_id: str = Field(min_length=1, max_length=32)
+    alloc: float = Field(gt=0.0, le=1.0)
+    pulled_from: list[Annotated[str, Field(min_length=1, max_length=32)]] = Field(default=[], max_length=6)
+
+
+class CandidatesIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version: str | None = None
+    picks: list[PickIn] = Field(default=[], max_length=30)
+    top: int = Field(default=30, ge=1, le=60)
+
+
+def _check_picks(dataset, project_id: str, picks: list[PickIn]) -> None:
+    """고른 사람이 데이터에 있고, 이 사업에 아직 없고, 빼 오는 사업이 그 사람의 지금 배치이며 잠기지 않았는지(화면이 오래된 경우 422)."""
+    g = dataset.graph
+    seen: set[str] = set()
+    on: dict[str, set[str]] = {}
+    for c in dataset.current:
+        on.setdefault(c.person_id, set()).add(c.project_id)
+    locked = _locked(dataset)
+    for pk in picks:
+        if pk.person_id not in g.pid_index:
+            raise HTTPException(status_code=422, detail=f"없는 사람 ID: {pk.person_id}")
+        if pk.person_id in seen:
+            raise HTTPException(status_code=422, detail=f"같은 사람을 두 번 골랐다: {pk.person_id}")
+        seen.add(pk.person_id)
+        if project_id in on.get(pk.person_id, set()):
+            raise HTTPException(status_code=422, detail=f"{pk.person_id}은(는) 이미 이 사업에 있다")
+        for src in pk.pulled_from:
+            if src not in on.get(pk.person_id, set()):
+                raise HTTPException(status_code=422, detail=f"{pk.person_id}은(는) {src}에 배치돼 있지 않다 -- 후보를 다시 불러온다")
+            if (pk.person_id, src) in locked:
+                raise HTTPException(status_code=422, detail=f"{pk.person_id}의 {src} 배치는 고정돼 빼 올 수 없다")
+
+
+def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn], names: dict[str, str]) -> dict:
+    """고른 사람 전체를 넣었을 때(2026-10-20 사용자 "확정 전에도 '넣기'한 인력에 대해서 자리가 얼마나 충당됐는지 계산"): 이 사업의 등급별 자리,
+    사업별 정원 변화, 점수 변화 나눔(기술·협업·빈자리), 새 위반 문장, 이 사업 팀 안에서 계산에 들어가는 쌍(고른 사람이 낀 것만)."""
+    from api.routes.justification import with_names
+    from api.violation_diff import new_or_worse
+    from core.evaluate.plan_eval import evaluate_plan
+    from core.optimize.types import AssignEntry
+    pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
+    entries_after = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
+        AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
+    before = evaluate_plan(graph, S, C, params, base)
+    after = evaluate_plan(graph, S, C, params, entries_after)
+    sim = {"entries": entries_after, "delta": {k: v - _parts(before)[k] for k, v in _parts(after).items()}}
+    j = graph.projects[graph.project_index[project_id]]
+    grade_of = {p.id: p.grade.value for p in graph.people}
+    need = {g.value: n for g, n in j.grade_headcount.items()}
+    filled: dict[str, int] = {}
+    for e in sim["entries"]:
+        if e.project_id == project_id:
+            filled[grade_of[e.person_id]] = filled.get(grade_of[e.person_id], 0) + 1
+    picked = {pk.person_id for pk in picks}
+    team = sorted({e.person_id for e in sim["entries"] if e.project_id == project_id})
+    rules = _pair_rules(graph, C, params)
+    pairs = [{"a": a, "a_name": names.get(a, a), "b": b, "b_name": names.get(b, b), **term}
+             for x, a in enumerate(team) for b in team[x + 1:] if a in picked or b in picked
+             for term in pair_terms(graph, C, params, rules, a, b, project_id)]
+    d = sim["delta"]
+    unfilled = float(d.get("unfilled", 0.0))
+    return {"seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in [x.value for x in Grade]
+                      if need.get(g, 0) or filled.get(g, 0)},
+            "seat_effects": seat_effects(graph, _seat_gaps(graph, before), _seat_gaps(graph, after)),
+            "delta_total": round(d["total"], 4), "skill_delta": round(d.get("skill", 0.0), 4),
+            "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
+            "unfilled_seats_delta": int(round(unfilled / params.slack_penalty)) if params.slack_penalty else 0,
+            # 새로 생기거나 커진 위반(확정과 같은 판정) -- 확정하면 거절될 이유를 미리 보인다
+            "new_violations": [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)],
+            "pairs": pairs}
+
+
+async def _candidates(request: Request, dataset: ActiveDataset, project_id: str, picks: list[PickIn], top: int) -> dict:
     if project_id not in dataset.graph.project_index:
         raise HTTPException(status_code=404, detail=f"없는 사업 ID: {project_id}")
     top = max(1, min(int(top), 60))
+    _check_picks(dataset, project_id, picks)
     from core.evaluate.staffing_sim import rank_candidates
+    from core.optimize.types import AssignEntry
     from core.scoring.engine import ScoringEngine
     params = _params(request.app, dataset)
     predecessor = parent = None
@@ -137,22 +323,44 @@ async def pipeline_candidates(project_id: str, request: Request, dataset_version
         predecessor, parent = entry.get("predecessor"), entry.get("parent")
     except Exception:                                   # noqa: BLE001 -- 원천 묶음이 없는 데이터(fixture)면 이전·상위 사업 표시만 없다
         predecessor = parent = None
+    names = _names(dataset)
 
     def go():
         eng = ScoringEngine(dataset.graph)
         S, C = eng.skill_matrix({}), eng.synergy_matrix()
-        entries = _entries(dataset)
+        base = _entries(dataset)
+        # 고른 사람을 이 사업 팀원으로 넣고(빼 오는 사람은 원래 사업에서 뺀 채) 나머지 후보를 채점한다 -- 협업 쌍·남은 자리가 고른 사람을 따른다
+        pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
+        entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
+            AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
         rows = rank_candidates(dataset.graph, S, C, params, entries, project_id, include_pull=True, top=top,
                                locked=_locked(dataset))
         rows = [split_unfilled(r, params.slack_penalty)
-                for r in rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows)]
-        return classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
+                for r in rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows, names=names)]
+        groups = classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
+        draft = draft_summary(dataset.graph, S, C, params, base, project_id, picks, names) if picks else None
+        return groups, draft
     async with _light(request.app):
-        groups = await anyio.to_thread.run_sync(go)
+        groups, draft = await anyio.to_thread.run_sync(go)
     from api.unavailable import unavailable_for
     # 그 사업 기간에 휴직 등으로 넣을 수 없는 사람 -- 후보 계산은 이미 빼므로 화면이 사유와 함께 비활성으로 보인다(2026-10-19)
     return {"dataset_version": dataset.info.version, "project_id": project_id, "predecessor": predecessor, "parent": parent,
-            **groups, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
+            **groups, "draft": draft, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
+
+
+@router.get("/api/pipeline/{project_id}/candidates")
+async def pipeline_candidates(project_id: str, request: Request, dataset_version: str | None = None, top: int = 30,
+                              dataset: ActiveDataset = Depends(get_dataset)) -> dict:
+    check_dataset_version(dataset_version, dataset)
+    return await _candidates(request, dataset, project_id, [], top)
+
+
+@router.post("/api/pipeline/{project_id}/candidates")
+async def pipeline_candidates_with_picks(project_id: str, body: CandidatesIn, request: Request,
+                                         dataset: ActiveDataset = Depends(get_dataset)) -> dict:
+    """"넣기"로 고른 사람을 팀원으로 친 후보 + 고른 사람 전체의 미리 계산(`draft`) -- 확정 전, 데이터를 바꾸지 않는다(2026-10-20)."""
+    check_dataset_version(body.dataset_version, dataset)
+    return await _candidates(request, dataset, project_id, body.picks, body.top)
 
 
 # --- 긴급 투입 ----------------------------------------------------------------------------------------------------------
@@ -230,6 +438,7 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
     from core.scoring.engine import ScoringEngine
     params = _params(request.app, dataset)
     names, extra = _extra_skills(dataset, body.project_id, body.skills)
+    nm = _names(dataset)
 
     def go():
         cand = _augmented(request, dataset, body.project_id, extra, body.n)
@@ -257,11 +466,20 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
             for r in [x for x in rows if x.get("source") == "concurrent"] + concurrent:
                 after = entries + [AssignEntry(person_id=r["person_id"], project_id=body.project_id, alloc=r["alloc"])]
                 r["apply_hint"] = _apply_hint(graph, body.project_id, entries, after, extra, 1)
-            standby = rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=False, top=5,
-                                      locked=locked)
+            standby = [r for r in with_worse(graph, S, C, params, entries, body.project_id,
+                                             rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=False,
+                                                             top=10, locked=locked)) if not r["new_violations"]][:5]
             hint = (_apply_hint(graph, body.project_id, entries, best["entries"], extra, body.n)
                     if best.get("accepted") else None)
-            rows = [split_unfilled(r, params.slack_penalty) for r in rows + concurrent]
+            rows = [split_unfilled(r, params.slack_penalty) for r in pair_view(graph, C, params, entries, body.project_id,
+                                                                                 with_worse(graph, S, C, params, entries,
+                                                                                            body.project_id, rows + concurrent), nm)]
+            if best.get("accepted"):                 # 최선 조합도 커진 사람 단위 위반을 더한다(확정과 같은 판정)
+                from api.violation_diff import new_or_worse
+                from core.evaluate.plan_eval import evaluate_plan
+                pv = lambda es: [v for v in evaluate_plan(graph, S, C, params, es).violations if v.code in PERSON_CODES]  # noqa: E731
+                worse = {(v.code, v.location) for v in new_or_worse(pv(entries), pv(best["entries"]))}
+                best = {**best, "new_violations": sorted({tuple(x) for x in best["new_violations"]} | worse)}
             standby = [split_unfilled(r, params.slack_penalty) for r in standby]
             if best.get("accepted"):
                 best = split_unfilled(best, params.slack_penalty)
@@ -272,7 +490,6 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
     from api.unavailable import unavailable_for
     async with _light(request.app):
         best, rows, standby, hint = await anyio.to_thread.run_sync(go)
-    nm = _names(dataset)
     groups = classify(dataset, body.project_id, rows)
     if best.get("accepted"):
         members_before = {c.person_id for c in dataset.current if c.project_id == body.project_id}
@@ -321,8 +538,10 @@ def standby_for(app, dataset, project_id: str, top: int = 5) -> list[dict]:
     from core.scoring.engine import ScoringEngine
     eng = ScoringEngine(dataset.graph)
     params = _params(app, dataset)
-    rows = rank_candidates(dataset.graph, eng.skill_matrix({}), eng.synergy_matrix(), params,
-                           _entries(dataset), project_id, include_pull=False, top=top * 3, locked=_locked(dataset))
+    S, C = eng.skill_matrix({}), eng.synergy_matrix()
+    rows = with_worse(dataset.graph, S, C, params, _entries(dataset), project_id,
+                      rank_candidates(dataset.graph, S, C, params, _entries(dataset), project_id, include_pull=False,
+                                      top=top * 3, locked=_locked(dataset)))
     nm = _names(dataset)
     penalty = params.slack_penalty
     # 넣으면 위반이 생기는 사람(동시 사업 수 상한 등)은 "바로 넣을 수 있는 사람"이 아니다(Codex 리뷰 2026-10-19)

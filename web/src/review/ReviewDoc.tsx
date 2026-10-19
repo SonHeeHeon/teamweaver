@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type {
-  AgreementStatus, EditPatch, Judgment, ReviewDocView, ReviewFact, ReviewNote,
+  AgreementStatus, BodyCheck, EditPatch, Judgment, ReviewDocView, ReviewFact, ReviewNote,
 } from "./reviewApi";
+import { fallbackLabel } from "./reviewApi";
 
 /** 인사팀 검토 자료(A 문서형, 2026-10-19 사용자 선택 -- 시안 justification-layout.html).
  *  세 층을 눈으로 구분한다: 시스템 사실(잠김·회색) · 본문(AI 초안 → 부서장 수정, 노란 밑줄) · 부서장 의견·해명(초록 줄)·이의(빨간 줄).
@@ -94,6 +95,26 @@ function FactBlock({ fact, notes, editable, onAdd, onRemove }: {
       ))}
       {editable && <NoteEditor onAdd={onAdd} />}
     </Locked>
+  );
+}
+
+/** AI 초안 요약의 사실 검사 한 줄 + 인용 사실 목록(펼치기 -- 인쇄·PDF에서는 펼친 채). 검사는 AI 초안에 대한 것이다(부서장이 고친 문장은 대상 아님). */
+function BodyCheckLine({ check, edited, print }: { check: BodyCheck; edited: boolean; print: boolean }) {
+  return (
+    <details className="mt-2 text-[12px] text-slate-600" open={print}>
+      <summary className="cursor-pointer select-none">
+        {/* 요약을 못 만들어 사실 목록 본문을 쓴 경우는 "미통과"가 아니라 상태를 말한다(리뷰 NIT -- 본문은 서버가 채운 사실 문구뿐) */}
+        <span className={check.ok ? "text-pine-800" : "text-amber-800"}>
+          {check.ok ? "✓ AI 초안 사실 검사 통과" : check.method === null ? "요약 없음 -- 사실 목록 본문" : "AI 초안 사실 검사 미통과"}</span>
+        {" · "}{fallbackLabel(check.method, check.fallback_reason)} · 인용한 사실 {check.cited.length}개(이 사업 사실 {check.facts_total}개 중)
+        {edited && <span className="ml-1 text-slate-500">· 부서장이 고친 문장은 검사 대상이 아님</span>}
+      </summary>
+      <p className="mt-1 text-slate-500">AI는 사실 번호만 고르고, 숫자·충족 여부 같은 문구는 시스템이 채웁니다. 만들 때 문장마다 검사해 걸리면 규칙 요약으로 바꾸고,
+        저장 전에 저장할 글이 검사한 원문 그대로인지 한 번 더 확인합니다: {check.rules}.</p>
+      <ul className="mt-1 list-disc pl-5">
+        {check.cited.map((c) => <li key={c.id}><span className="num text-slate-400">[{c.id}]</span> {c.text}{c.adverse && <span className="ml-1 text-amber-700">(불리한 사실)</span>}</li>)}
+      </ul>
+    </details>
   );
 }
 
@@ -225,6 +246,8 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
             </div>
           </div>
         ) : <div className="mt-2"><Body doc={doc} body={d.body} /></div>}
+        {doc.body_ai_check && <BodyCheckLine check={doc.body_ai_check} print={!editable}
+                                             edited={d.body !== null && d.body !== doc.body_ai} />}
       </section>
 
       <section className="mt-6">

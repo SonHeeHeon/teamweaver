@@ -41,6 +41,7 @@ def run(preset: dict, root: Path) -> dict:
     from core.optimize.alternatives import generate_plans_streaming
     from core.optimize.milp import effective_seeds
     from core.scoring.engine import ScoringEngine
+    from api.routes.operating import OPERATING_KS
 
     t0 = time.perf_counter()
     active = build_demo(root)
@@ -67,8 +68,8 @@ def run(preset: dict, root: Path) -> dict:
                        "plans": plans}
     if preset["scenario"] == "operating":
         t = time.perf_counter()
-        rows = compare_move_budgets(graph, S, C, params, active.current, ks=(0, 1, 2, 3))
-        out["operating"] = {"ks": [0, 1, 2, 3], "milp_params": params.model_dump(),
+        rows = compare_move_budgets(graph, S, C, params, active.current, ks=OPERATING_KS)
+        out["operating"] = {"ks": list(OPERATING_KS), "milp_params": params.model_dump(),
                             "elapsed_s": round(time.perf_counter() - t, 2), "rows": rows}
         print(f"  {preset['name']} 운영 중 비교: {out['operating']['elapsed_s']}초 · "
               + ", ".join(f"K={r['k']} 품질 {r.get('quality')} 빈자리 {r.get('unfilled_seats')}" for r in rows), flush=True)

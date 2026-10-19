@@ -120,7 +120,10 @@ def workspace_view(request: Request) -> dict:
                    for e in concurrency_of(m)]
     return {**base, "editable": True, "horizon_start": horizon[0] if horizon else None,
             "horizon_last": _horizon_last(m), "pipeline": pipeline, "ongoing": ongoing, "bench": bench,
-            "concurrency": concurrency, "history": history}
+            "concurrency": concurrency, "history": history,
+            # 지금 데이터에 미리 계산된 운영 중 비교의 K 목록(시연 미리 계산·밤 배치·편성 기록) -- 화면은 기본 "최대 K"를 이것에 맞춰
+            # 예전 기록(K 0~3)을 열었을 때 바로 나오게 한다(2026-10-20 Opus 대체 리뷰 S2). 안내용이라 키 검사는 계산 요청 때 한다
+            "operating_ks": sorted(int(k) for k in ((getattr(request.app.state, "precomputed_operating", None) or {}).get("ks") or []))}
 
 
 def _horizon_last(m: dict) -> str | None:
@@ -342,14 +345,10 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
     old = _violations(request.app, dataset, _entries_of(dataset))
 
     def check(candidate) -> None:
-        # 확정으로 새로 생기거나 더 나빠진 위반이 있으면 켜지 않는다(기존 위반이 악화되는 것도 막는다 -- Codex 평가 지적)
-        new = []
-        for key, v in _violations(request.app, candidate, _entries_of(candidate)).items():
-            o = old.get(key)
-            # 위반 크기 = 한도와의 거리(상한 위반은 넘친 만큼, 하한 위반은 모자란 만큼) -- actual만 보면 최소 투입률처럼
-            # 하한 위반은 방향이 반대라 악화를 통과시켰다(Codex 리뷰 2026-10-19)
-            if o is None or abs(v.actual - v.limit) > abs(o.actual - o.limit) + 1e-9:
-                new.append(asdict(v))
+        # 확정으로 새로 생기거나 더 나빠진 위반이 있으면 켜지 않는다(기존 위반이 악화되는 것도 막는다 -- Codex 평가 지적).
+        # 판정은 확정 전 미리 계산(routes/scenarios)과 같은 함수(api.violation_diff, 2026-10-20)
+        from api.violation_diff import new_or_worse
+        new = [asdict(v) for v in new_or_worse(old.values(), _violations(request.app, candidate, _entries_of(candidate)).values())]
         if new:
             raise HTTPException(status_code=422, detail={"message": "확정하면 새 위반이 생긴다 -- 확정하지 않았다.",
                                                          "violations": new[:20]})

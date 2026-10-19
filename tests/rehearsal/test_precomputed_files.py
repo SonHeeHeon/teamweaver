@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from api.demo_precomputed import FORMAT
+from api.routes.operating import OPERATING_KS
 
 DEMO = Path(__file__).resolve().parents[2] / "demo"
 FILES = sorted((DEMO / "precomputed").glob("*.json"))
@@ -27,7 +28,8 @@ def test_precomputed_file_shape(path):
     manifest = json.loads((bundle / "manifest.json").read_text("utf-8")) if bundle.is_dir() else None
     if (manifest or {}).get("scenario") == "operating" or data["preset"].endswith("-operating"):
         rows = data["operating"]["rows"]
-        assert [r["k"] for r in rows] == [0, 1, 2, 3] and all(r.get("accepted") for r in rows)
+        # K 0~5(2026-10-20 사용자 "k는 최대 5까지" -- 화면 기본·밤 배치와 같은 목록, api.routes.operating.OPERATING_KS)
+        assert [r["k"] for r in rows] == list(OPERATING_KS) and all(r.get("accepted") for r in rows)
 
 
 @pytest.mark.parametrize("name", ["org-n100", "org-n100-operating", "org-n100-yearend", "org-n100-annual"])
@@ -47,6 +49,6 @@ def test_bundled_precomputed_loads_without_skips(name, monkeypatch, tmp_path):
         pre = load_precomputed(root, active, params)
         assert pre is not None and pre.skipped == [] and len(pre.plans) == 4, pre and pre.skipped
         if name.endswith(("-operating", "-yearend")):
-            assert pre.operating is not None and len(pre.operating["rows"]) == 4
+            assert pre.operating is not None and len(pre.operating["rows"]) == len(OPERATING_KS)
     finally:
         active.retire()

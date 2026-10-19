@@ -22,6 +22,60 @@
 
 ---
 
+## 2026-10-20 · claude-a · **b 신규 사업 편성 화면 6건 + a What-if 정리·PDF 팀별 협업 지도 통합**(사용자 "너가 충돌이 생기는 부분은 잘 해결해봐")
+- 브랜치/커밋: `feat/claude-a-merge-newproj` = b `dd7fc0c` + `feat/claude-a-pdf-network`(main `1fd65b5` 포함)의 병합 커밋(이 커밋). b 브랜치·worktree는 건드리지 않았다. main 미병합(승인 대기).
+- 푼 충돌(둘 다 살림, 대체로 "짜임은 b · 표시와 말은 a"):
+  - `settingsFields.ts` 협업 가중 설명: b의 "두 사람 사이 점수"와 a의 "0이면 기술만"을 한 문장에.
+  - `EmergencyScreen.tsx` 후보 표: b의 기술·협업 두 칸·협업 상대·위반 이유, a의 이름 칩·빼 온 사업 코드 칩·100%뿐이면 투입률 칸 숨김(안 쓰게 된 `hasSplit` import 뺌).
+  - `NewProjectsScreen.tsx`:
+    - 후보 줄은 이름 칩 + `align-top`.
+    - 빼 오기 비고는 `ProjectCodes`(사용자 결정 "코드 + 마우스 올리면 이름").
+    - 자동 편성 머리는 b의 K 최대 3~5 고르기·예상 시간 + a의 쉬운 설명·버튼 "옮길 인원별로 계산"(b 시험 3곳 이름 맞춤).
+    - K 표 머리는 a 말("옮겨도 되는 인원(K)") + b의 정확한 품질 설명(빈자리 감점 뺀 값, K끼리만 비교).
+    - K 행은 a("최대 n명" + 옅은 K=n).
+  - `CLAUDE.md` 기준선은 통합 실측으로 고쳤다. 일지는 양쪽 항목을 시간 순으로 모두 남겼다(삭제 줄 0). 분담표의 b 요청은 "처리됨".
+- 상대 영향(claude-b): 네 브랜치를 이어 쓸 때는 이 브랜치(또는 이것이 들어간 main)를 합치면 된다. 버튼 이름이 "비교 계산" → "옮길 인원별로 계산"으로 바뀌었다. 기준선 2064 passed·slow 20·웹 289.
+- 검증: `uv run --group benchmark pytest -q` **2064 passed, 1 skipped, 20 deselected** · `-m slow` **20 passed** · 웹 **289**(38 files) · `npx tsc -b`·build.
+  브라우저(임시 데이터 폴더, b가 다시 만든 연말형 기록): 신규 사업 후보 세 갈래·빼 오기 비고 코드 칩(마우스 올리면 이름)·K 0~5 계산 표, 긴급 투입 대기 명단(100% 숨김)·후보 표(기술·협업 칸, 투입률 칸 숨김).
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰(충돌 푼 곳 + b 대비 화면 diff), 결함 없음.
+- 근거: `.omc/reports/2026-10-20-merge-newproj.md`.
+
+---
+
+## 2026-10-20 · claude-a · PDF 협업 그림 → 팀별 협업 지도(b 영역, 사용자 지시)
+- 브랜치/커밋: `feat/claude-a-pdf-network`(main `1fd65b5` 위) `7ece886`(리포트 meta 협업선 같은 사업 쌍만·가상 데이터 평가 극성) · `cc77c82`(PDF 그림·의존성 정리) · 이 커밋(문서). main 미병합.
+- 사용자: "pdf에 들어갈 괜찮은 협업 네트워크 그림 없을까?" -- 예전 힘 시뮬레이션 그림은 배치된 100명 사이 선 약 4,000개라 실타래였다.
+- 한 일: `web/src/report/TeamNetworks.tsx` -- 사업마다 팀원 원 배치·팀 안 협업선만(굵기 = 개월, 색 = 평가, 속 빈 원 = 팀에 아는 사람 없음, 13명부터 한 줄 카드)·요약(평가 나쁜 쌍이 있는 사업).
+  `api/routes/report._report_meta`가 협업선을 같은 사업 쌍만 싣고 가상 데이터면 `review`도 싣는다.
+- 상대 영향(claude-b): `web/src/report/StaticNetwork.tsx` 삭제, **`web/package.json`·lock에서 `d3-force`·`@types/d3-force`·`react-force-graph-2d` 제거**(쓰는 곳 없음 -- 화면 `NetworkGraph`는 앞서 지움). 리포트 meta `coworks`는 이제 같은 사업 쌍만이다.
+  b worktree의 커밋 안 된 `api/routes/report.py` 수정(소명 요약 칸)과는 다른 함수다. 기준선 2050 passed·slow 20·웹 280.
+- 검증: `uv run --group benchmark pytest -q` 2050 passed · `-m slow` 20 passed(최종 빌드로 다시) · 웹 280 · `npx tsc -b`·build · 시연 org-n100 PDF를 실제로 뽑아 그림 쪽 확인.
+- 리뷰: Codex 주간 한도 소진(10-25 16:31) → 직접 리뷰, SHOULD 1건(13명 이상 이름 겹침 → 한 줄 카드) 반영.
+- 근거: `.omc/reports/2026-10-20-pdf-team-network.md`, 설계 `.omc/plan/2026-10-20-pdf-team-network.md`.
+
+---
+
+## 2026-10-20 · claude-b · 신규 사업 편성 화면 6건(사용자 요청) -- 이름 단계 말·넣기 미리 계산·K 0~5·정원 변화 글·협업 쌍·검토 자료 요약
+- 브랜치/커밋: `feat/claude-b-newproj-screen`(main `1ee3143`에서) `218785a`(2~5번 화면·서버) · `d0bd98f`(시연 데이터) · `c2df966`(claude-a `bd8332d` cherry-pick) · `2b7947f`(6번) · 이 문서 커밋. main 미병합.
+- 사용자: 신규 사업 편성 화면 1~6(원문 루트 `.omc/plan/2026-10-20-newproj-screen.md`), "난 이제 자볼테니 … 다른 화면에서도 수정해야할게 있는지 검토도".
+- 한 일:
+  - 1: 생성기가 이름에 단계 말 `[제안]`·`[실행]`을 붙이지 않는다(종류 `[운영]`·`[고도화]`·`[추가 과제]`는 남김) -- **claude-a 영역 `core/ingest/org_profile.py` 수정(사용자 지시)**. 시연 묶음 9·미리 계산 8(버전만 옮김 + 운영 중 4묶음 K 0~5 다시 풂)·기록 8 다시 생성.
+  - 2·4·5: `POST /api/pipeline/{id}/candidates {picks}` -- 고른 사람을 팀원으로 친 다시 채점 + `draft`(자리·사업별 정원 변화·기술/협업·팀 안 쌍·새 위반). 후보 행 `seat_effects`·`skill_delta`·`collab_delta`·`partners`. 긴급 투입도 같은 칸.
+  - 3: 운영 중 비교 K 0~5(`OPERATING_KS` -- 화면 기본·밤 배치·미리 계산), 미리 계산 행 앞부분 재사용, `/api/workspace` `operating_ks`.
+  - 6: 검토 자료 AI 초안 = claude-a 요약(`generate_summary`) + 저장 글 재확인 기록 `body_ai_check`.
+  - 리뷰: 확정·미리 계산 공통 위반 판정 `api/violation_diff.new_or_worse`, 긴급 투입 커진 사람 단위 위반 `scenarios.with_worse`.
+- 상대 영향(claude-a):
+  - **네 `feat/claude-a-ui-friendly`와 같은 화면 파일이 겹친다** -- 병합 충돌 7곳(`web/src/scenarios/NewProjectsScreen.tsx`·`EmergencyScreen.tsx`·`web/src/components/settingsFields.ts`). b는 풀지 않았다(work-split "요청"). 둘 다 살리는 쪽이 맞다.
+  - 네 `bd8332d`를 cherry-pick했고 `api/routes/report.py` 요약 칸 한 줄은 네 `512d323`과 같다 -- 이 부분은 병합 때 충돌하지 않는다.
+  - 생성기 이름 규칙(네 영역): 단계 말을 다시 붙이지 말 것. 이름 겹침은 0(머리말 뺀 이름 기준으로 확인).
+  - `tests/api/test_llm_gate.py`·`test_evidence_connect.py`가 `api.deps.get_openai_client_or_none`을 덮어쓰는데, 시험 세션 중 다른 시험이 모듈을 다시 불러오면 덮어쓰기가 안 먹어 AI가 꺼진 채 통과할 수 있다(b 시험 2곳은 라우트가 쥔 함수로 고침) -- 확인 권장.
+  - 기준선 2057 passed·slow 20·웹 273.
+- 검증: `uv run --group benchmark pytest -q` 2057 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 273 · `npx tsc -b`·build · oxlint 7(main 기존) · 브라우저(연말형) 넣기 미리 계산·K 0~5 · 실제 AI 검토 자료 요약 1편(가상 데이터).
+- 리뷰: Codex gpt-6.1-sol 적대적 1라운드 medium 2 반영(이때 Stop 게이트 다시 켬) → Codex 한도 소진(10-25 16:31까지, 2회) → 게이트 끔 · Claude Opus 폴백 2라운드 approve(SHOULD 2·NIT 반영), 6번 Opus 폴백 2라운드(1차 SHOULD 3 반영 → 2차 approve).
+- 근거: 루트 `.omc/reports/2026-10-20-newproj-screen.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-20-newproj-screen.md`.
+
+---
+
 ## 2026-10-20 · claude-a · `feat/claude-a-ui-friendly` **main 병합(사용자 승인 "병합은 해주고")**
 - 커밋: `623d44c`(merge --no-ff, main `1ee3143` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
 - 들어간 것: 아래 10-20 항목 전부(배치 명단 압축·사업 코드 칩·교체 데려오기/맞바꾸기·관계 목록·소명 요약·규칙 비교 자동·PDF 소명 선택 창·쉬운 문구) + PDF 문구·명단 압축(`17b2319`).

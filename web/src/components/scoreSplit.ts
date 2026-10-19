@@ -14,10 +14,12 @@ export interface ScoreSplit {
 export const signedPts = (x: number | undefined | null) =>
   x === undefined || x === null ? "–" : (x >= 0 ? "+" : "") + x.toFixed(2);
 
-/** 1 → "1자리 메움", −1 → "1자리 생김", 0·없음 → "—". */
+/** 모든 사업 빈자리 합의 변화: 1 → "빈자리 1개 채움", −1 → "빈자리 1개 생김", 0·없음 → "—".
+ *  (2026-10-20 사용자 "'1자리 메움','1자리 생김'이 어떤 의미인지 잘 모를거같으니" -- 무엇이 채워지고 생기는지 말한다.
+ *  신규 사업 후보 표는 사업별로 나눠 쓴다: scenarios/pickView.seatLines) */
 export function seatsText(n: number | undefined | null): string {
   if (!n) return "—";
-  return n > 0 ? `${n}자리 메움` : `${-n}자리 생김`;
+  return n > 0 ? `빈자리 ${n}개 채움` : `빈자리 ${-n}개 생김`;
 }
 
 /** 서버가 나눠 준 행인가(예전 밤 대기 명단처럼 합계만 있으면 false). */

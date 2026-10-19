@@ -213,15 +213,21 @@ def test_list_has_one_doc_per_target_project(yearend):
 
 
 def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
-    from api import deps
+    """검토 자료 AI 초안 = 짧은 요약 + 사실 검사(2026-10-20 사용자 "간단 명료하게 요약 … 사실에 근거한 정보만 있는지 검토하는 프로세스"):
+    AI는 한 번(요약만, 긴 본문은 부르지 않는다), 저장한 글은 검사기를 다시 통과한 것이고 인용 사실이 기록된다."""
     from api.main import app
-    calls = []
+    from core.kg.justify import render, rule_summary_raw
+    calls, full = [], []
 
-    def fake_generate(client, model, inp, **kw):
+    def fake_summary(client, model, inp, **kw):
+        assert client is not None                         # AI가 실제로 켜진 경로
         calls.append(inp)
-        return {"project_id": inp.project_id, "method": "graphrag", "text": "AI가 쓴 초안.", "facts": [], "addendum": None}
-    monkeypatch.setattr("api.rag.justification.generate_justification", fake_generate)
-    app.dependency_overrides[deps.get_openai_client_or_none] = lambda: SimpleNamespace()
+        raw = rule_summary_raw(inp)                       # 검사를 통과하는 자리표시 글(AI가 쓴 것처럼)
+        return {"summary": render(raw, inp), "summary_method": "graphrag", "summary_fallback_reason": None, "summary_raw": raw}
+    monkeypatch.setattr("api.rag.justification.generate_summary", fake_summary)
+    monkeypatch.setattr("api.rag.justification.generate_justification", lambda *a, **k: full.append(1))
+    from api.routes import review_docs as rd       # 라우트가 쥔 의존성 함수(api.deps를 다시 불러온 시험이 있어도 맞게)
+    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
     try:
         with TestClient(app) as c:
             v = _confirm(c, source="emergency")
@@ -229,10 +235,14 @@ def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
             assert doc["confirm"]["kind"] == "emergency"
             r = c.post(f"/api/review-docs/{v}/{TGT}/draft")
             assert r.status_code == 200, r.text
-            assert r.json()["body_ai"] == "AI가 쓴 초안." and len(calls) == 1
+            body = r.json()
+            assert body["body_ai"] and body["body_ai_method"] == "graphrag" and len(calls) == 1 and not full
+            chk = body["body_ai_check"]
+            ids = {f.id for f in calls[0].facts}
+            assert chk["ok"] and chk["cited"] and {x["id"] for x in chk["cited"]} <= ids and chk["facts_total"] == len(ids)
             # 긴급 투입은 새로 들어온 사람 사실만 AI에 넘긴다
             assert set(calls[0].team) == {PULLED, BENCH}
-            assert c.post(f"/api/review-docs/{v}/{TGT}/draft").json()["body_ai"] == "AI가 쓴 초안." and len(calls) == 1
+            assert c.post(f"/api/review-docs/{v}/{TGT}/draft").json()["body_ai"] == body["body_ai"] and len(calls) == 1
             got = c.get(f"/api/review-docs/{v}/{TGT}").json()
             c.put(f"/api/review-docs/{v}/{TGT}", json={"revision": got["revision"], "body": "부서장 본문"})
             c.post(f"/api/review-docs/{v}/{TGT}/draft", params={"force": True})
@@ -240,3 +250,71 @@ def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
             assert len(calls) == 2 and got["body"] == "부서장 본문"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_draft_without_ai_is_a_checked_rule_summary(yearend):
+    """AI가 없으면(시험 환경) 규칙 요약 -- 같은 검사를 통과한 짧은 글이고 검사 기록에 "AI 없이"가 남는다(2026-10-20)."""
+    from api.main import app
+    with TestClient(app) as c:
+        v = _confirm(c, source="emergency")
+        _create(c, v)
+        body = c.post(f"/api/review-docs/{v}/{TGT}/draft").json()
+        assert body["body_ai_method"] == "rule" and body["body_ai_check"]["ok"]
+        assert body["body_ai_check"]["fallback_reason"] == "no_client"
+        assert body["body_ai"].count(".") <= 4 and body["body_ai_check"]["cited"]       # 3문장 안팎의 짧은 글
+
+
+def _draft_with(c, monkeypatch, fake, *, busy=False):
+    from api.main import app
+    import api.routes.justification as jr
+    import api.routes.review_docs as rd             # 라우트가 쥔 의존성 함수(다른 시험이 api.deps를 다시 불러와도 맞게)
+    monkeypatch.setattr("api.rag.justification.generate_summary", fake)
+    if busy:
+        monkeypatch.setattr(jr.AI_SLOTS, "acquire", lambda blocking=False: False)
+    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
+    try:
+        v = _confirm(c, source="emergency")
+        _create(c, v)
+        # 저장소는 시험 세션 데이터 폴더에 있어 같은 확정 판이면 이전 시험의 초안이 남는다 -- 새로 만든다
+        return c.post(f"/api/review-docs/{v}/{TGT}/draft", params={"force": True}).json()
+    finally:
+        app.dependency_overrides.clear()
+
+
+def _rule_after_verify(client, model, inp, **kw):
+    from core.kg.justify import render, rule_summary_raw
+    raw = rule_summary_raw(inp)
+    return {"summary": render(raw, inp), "summary_method": "rule", "summary_fallback_reason": "verify:S2"}
+
+
+def _no_summary(client, model, inp, **kw):
+    return {"summary": None, "summary_method": None, "summary_fallback_reason": "verify:Y2"}
+
+
+def _tampered(client, model, inp, **kw):                     # 검사한 원문과 다른 글
+    from core.kg.justify import render, rule_summary_raw
+    raw = rule_summary_raw(inp)
+    return {"summary": render(raw, inp) + " 이 팀이 가장 낫다.", "summary_method": "graphrag", "summary_raw": raw}
+
+
+def _no_client(client, model, inp, **kw):
+    from core.kg.justify import render, rule_summary_raw
+    assert client is None
+    raw = rule_summary_raw(inp)
+    return {"summary": render(raw, inp), "summary_method": "rule", "summary_fallback_reason": "no_client"}
+
+
+@pytest.mark.parametrize("fake, busy, want", [
+    (_rule_after_verify, False, {"method": "rule", "ok": True, "reason": "verify:S2"}),
+    (_no_summary, False, {"method": "template", "ok": False, "reason": "verify:Y2"}),      # 요약을 못 만들면 규칙 본문 + 사유
+    (_tampered, False, {"method": "template", "ok": False, "reason": "recheck_failed"}),   # 저장할 글이 검사 원문과 다르면 쓰지 않는다
+    (_no_client, True, {"method": "rule", "ok": True, "reason": "ai_busy"}),               # AI 자리가 바쁨
+])
+def test_draft_records_why_it_fell_back(yearend, monkeypatch, fake, busy, want):
+    """대체 리뷰(2026-10-20) S1·S3·NIT: 규칙 요약으로 바뀐 사유를 남기고, 저장할 글 자체를 다시 확인한다."""
+    from api.main import app
+    with TestClient(app) as c:
+        body = _draft_with(c, monkeypatch, fake, busy=busy)
+    assert body["body_ai"] and body["body_ai_method"] == want["method"]
+    assert body["body_ai_check"]["ok"] is want["ok"] and body["body_ai_check"]["fallback_reason"] == want["reason"]
+    assert "가장 낫다" not in body["body_ai"]

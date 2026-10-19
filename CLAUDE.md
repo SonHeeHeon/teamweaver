@@ -130,6 +130,12 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
   시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
   후보 점수는 나눠 보인다(사용자 2026-10-19 "점수 변화는 나눠 보이도록"): `scenarios.split_unfilled`가 `unfilled_seats_delta`(메운 자리, 운영 중 보강과 같은 이름·부호)·`delta_excl_unfilled`(빈자리 몫 뺀 변화)를 붙이고 `delta_total`·순위는 그대로.
+  **신규 사업 후보는 "넣기"로 고른 사람을 팀원으로 친다**(2026-10-20 사용자 요청 2·4·5, claude-b): `POST /api/pipeline/{id}/candidates {picks}`가 고른 사람을 넣은(빼 오는 사람은 원래 사업에서 뺀) 배치로
+  나머지 후보를 다시 채점하고 `draft`(등급별 자리·사업별 정원 변화·점수 나눔·새 위반 문장·팀 안 쌍)를 준다 -- 데이터는 확정 때만 바뀐다. 후보 행은 `seat_effects`(평가기 `shortfalls` 전후, 사업별 채움+/빔−),
+  `skill_delta`·`collab_delta`(협업 시너지 + 익숙한 쌍 감점, 모든 사업), `partners`(이 사업 팀원과의 쌍 중 계산에 들어가는 것 -- 평가기와 같은 `pruned_pairs`·익숙한 쌍·감점 예외)를 단다.
+  협업 점수 C는 **두 사람 사이 값**이라 사람 자체의 협업 점수는 없다 -- 화면은 "누구와 +0.17"로 보인다. 긴급 투입 후보도 같은 칸(`pair_view`).
+  **운영 중 비교 K는 0~5**(`api/routes/operating.OPERATING_KS` -- 화면 기본·밤 배치 `DEFAULT_KS`·시연 미리 계산이 같은 목록, 2026-10-20 사용자 "k는 최대 5까지"). 미리 계산·밤 행은
+  요청 K 목록이 저장된 목록의 **앞부분**이면 잘라 준다(`demo_precomputed.operating_rows` -- K 행은 앞 K만 이어받는다). 시연 운영 중 묶음 4개는 0~5로 다시 풀었다(0~3 행은 예전과 같았다).
   긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
@@ -143,6 +149,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   승인·반려는 만들지 않았다 -- 보고서 8.4 "결재 연결(실제 도입 시)".
   긴급 투입 화면의 "무슨 일인지"는 확정 요청 `situation`(300자, 긴급 투입만 이력 summary에 남김) → `confirms()`의 `situation` → 긴급 투입 자료 `situation_memo` 처음 값이다
   (2026-10-19 부서장 점검 f6, claude-b). 저장된 자료의 `confirm`에는 넣지 않는다(고친 메모와 원문이 둘로 남지 않게). AI 재료가 아니다 -- note를 잘라 쓰지 않는다.
+  **AI 초안은 짧은 요약 + 사실 검사**(2026-10-20 사용자 요청 6, claude-b `routes/review_docs.draft_summary`): What-if 소명 요약과 같은 코드(claude-a `api/rag/justification.generate_summary` -- 자리표시 문법,
+  `verify_summary` S1·S2·3문장·근거 2~4개·불리한 사실 포함, 걸리면 규칙 요약)를 AI 한 번으로 부르고(긴 본문은 부르지 않는다), 저장하는 글을 검사기로 다시 돌려 `body_ai_check`(통과·방식·인용 사실)를 남긴다.
+  요약을 못 만들면 예전 규칙 본문(`_rule_body`, AI 없음). 화면은 본문 아래 "사실 검사 통과 · 인용한 사실 n개"를 펼쳐 보인다. 이 브랜치는 claude-a `bd8332d`를 cherry-pick(`c2df966`)했다.
 - **계획 기간 6|12개월**(2026-10-19 사용자 "계획기간 1년 확장도 하자", claude-b): `Dataset`이 모든 사람의 가용률 길이가 같고(`HORIZON_CHOICES` 6·12) 사업이 그 안에
   있는지 본다 -- 기간은 저장 필드가 아니라 가용률 길이(`Dataset.horizon_months`)라 기존 데이터 버전·캐시 키는 그대로. manifest `horizon_months` 6|12, 계산 모델은 원래 달 수 일반형.
   연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`: org-n100과 같은 사람·평가 글, 상반기 사업 그대로 + 하반기 신규 사업, 휴직 가정 가용률, 현재 배치 없음 = 밤 배치 연간 계획 대상).
@@ -157,11 +166,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **생성기 v4·v5 = 사업 수명 주기 섞기 + 진행 사업 경력 잇기**(2026-10-19 사용자 원문 -- b 요청 6번 · 사용자 "기존 사업 20개는 여전히 전부 하반기 시작 … 잘못", "진행해야겠어"(선택 "갈아 끼우고 평가도 새로"), claude-a 설계 루트 `.omc/plan/2026-10-19-lifecycle-mix.md`·`-v5.md`):
   연초 계획은 실행 사업의 약 75%(`RUNNING_SHARE`)가 계획 전에 시작한 진행 사업이고, 운영 중은 진행 사업마다 수명 주기를 붙인다. 비율은 둘 다 운영 30%·고도화 20%·개발(2025) 20%·개발(2026 상반기) 30%이고, 운영 = 내부 2~3명·계획 뒤까지(사용자 "16개 중 6개면 적절", "2-3명이 평균").
   운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값 -- 연초 100명 1·200·300명 2, 운영 중은 신규 제안 중 1개, **b의 `pipeline` 모양** parent·external_headcount)를 붙인다.
-  실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름), 단계는 이름 머리말 + manifest `lifecycle`(`core/ingest/lifecycle.py`, 경고만, 계산에 안 씀). 시작 달은 계획 시작 기준 몇 개월 전으로 뽑는다(연도를 박으면 다른 시작 달 묶음이 깨졌다 -- Codex).
+  실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름), 단계는 manifest `lifecycle`(이름 머리말은 종류 `[운영]`·`[고도화]`·`[추가 과제]`만 -- 단계 말 `[실행]`·`[제안]`은 2026-10-20 사용자 "[제안]은 빼자"로 뺐다, 화면에서 단계가 바뀌면 이름이 낡는다)(`core/ingest/lifecycle.py`, 경고만, 계산에 안 씀). 시작 달은 계획 시작 기준 몇 개월 전으로 뽑는다(연도를 박으면 다른 시작 달 묶음이 깨졌다 -- Codex).
   연초 계획의 진행 사업은 빠짐없이 현재 팀이 있다(자리의 80~100%, 사용자 결정 10-19 -- 계획 첫 달 새 사업만 예전 70% 규칙).
   **v5 `_link_ongoing`**: 진행 사업 현재 팀원은 합류 달(계획 3~30개월 전, 마지막 교체 뒤, 첫 이력 뒤)부터 업무 이력이 그 사업이다. 지난 이력은 끊고, 기술 경력은 다시 세며, 끊긴 이력과 맞지 않는 평가는 지우고 진행 사업 팀원끼리 평가를 새로 만든다.
   원래 평가를 **먼저** 만든 뒤 고치므로 남는 글은 그대로이고, 새 글만 서비스 AI로 판정해 `demo/review_judgments.json`에 동봉한다(10-19 약 2,300건 · 1달러 미만). 생성기를 바꾸면 `build_demo`(키 있는 데이터 폴더)로 판정 → `export_demo_judgments.py` → `--check`.
-  사업 번호: 연초 100명 사업 21개(진행 사업에 단계 머리말, 추가 과제 J021 -- 상위 J010), 연간 첫 하반기 신규 J022. 운영 중·연말형은 v4와 같다 -- 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016.
+  사업 번호: 연초 100명 사업 21개(운영·고도화 진행 사업에 머리말, 추가 과제 J021 -- 상위 J010), 연간 첫 하반기 신규 J022. 운영 중·연말형은 v4와 같다 -- 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016.
   전일 투입 권장표 `time_budget.MEASURED_FULL`(v5 100/200/300명 12/30/45초 → 권장 30/60/90초, 12개월 ×4). 사업 구성을 바꾸면 다시 잰다(v3 30/90/90, v4 60/90/120).
 - **프로젝트 동시 수행 허용**(2026-10-19 사용자 결정 "사람 단위로, 사유와 함께"): manifest `concurrency`(`core/ingest/concurrency.py` 검사 → `Person.max_concurrent`),
   `POST /api/workspace/concurrency`(사유 필수 · 지금 겹침보다 낮게 다시 걸기·허용 없는 해제는 거절), 확정 `concurrency_add`(긴급 투입 "동시 수행으로 지원" -- 같은 판, 되돌리면 함께),
@@ -200,6 +209,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
   단순 규칙 비교는 탭이 보일 때 저절로 계산(`BaselineCard active`), PDF 소명 포함은 내려받을 때 창으로 묻는다(하위 탭 옆 체크박스 없앰).
+  PDF 협업 그림은 **팀별 협업 지도**(`web/src/report/TeamNetworks`, 사용자 "pdf에 들어갈 괜찮은 협업 네트워크 그림"): 사업마다 팀원을 원 위에 놓고 팀 안 협업선만(굵기 = 개월, 색 = 평가, 13명부터 한 줄 카드).
+  리포트 meta 협업선은 **같은 사업 쌍만**·평가 극성은 가상 데이터만(`report._report_meta(reveal_reviews=)`) -- 예전엔 배치된 사람끼리 전부(시연 100명 약 4,000개, 300명은 PDF 데이터 상한 압박). 힘 시뮬레이션 그림 `StaticNetwork`와 `d3-force`·`react-force-graph-2d`는 지웠다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -214,7 +225,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 What-if 정리·화면 친절하게(claude-a, b 점검 수정 병합 위) **2049 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 276 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 b 신규 사업 편성 화면 6건 + a What-if 정리·PDF 팀별 협업 지도 통합(claude-a `feat/claude-a-merge-newproj`) **2064 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 289 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

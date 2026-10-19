@@ -92,8 +92,8 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
     for k in range(n_old):
         name, sector, clients, pool, _ = rng.choices(types, weights=[t[4] for t in types])[0]
         phase = "제안" if k < n_prop else "실행"
-        label = next((f"[{phase}] " + name.format(c=c) for c in rng.sample(clients, len(clients))
-                      if f"[제안] {name.format(c=c)}" not in used and f"[실행] {name.format(c=c)}" not in used), None)
+        # 이름에 단계 말을 붙이지 않는다(2026-10-20 사용자 "[제안]은 빼자" -- 생성기와 같은 규칙). 같은 이름이 이미 있으면 다른 고객으로
+        label = next((name.format(c=c) for c in rng.sample(clients, len(clients)) if name.format(c=c) not in used), None)
         if label is None:
             continue
         used.add(label)

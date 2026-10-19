@@ -11,9 +11,10 @@ import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } 
 import { UnavailableList } from "./UnavailableList";
 import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { LifecycleChips } from "../components/LifecycleChips";
-import { ScoreSplitNote } from "../components/ScoreSplitNote";
-import { hasSplit, seatsText, signedPts } from "../components/scoreSplit";
+import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
+import { CandidateGuide, PickDraft } from "./PickDraft";
+import { partnersText, seatLines, skillCollab, violationReasons } from "./pickView";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postConcurrency, postLock,
   postProject, postUndo,
@@ -24,16 +25,26 @@ type Group = "bench" | "ending" | "pull";
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", ending: "끝나 가는 인력", pull: "진행 사업에서 빼 오기" };
 type SignedRow = OperatingRow & { plan_label?: string; plan_token?: string };
 
-export function Seats({ seats }: { seats: PipelineItem["seats"] }) {
-  const grades = Object.entries(seats);
+/** 등급별 자리(채움/정원). after가 있으면 "넣기로 고른 사람"을 넣었을 때의 값을 화살표로 함께(확정 전 미리 계산, 2026-10-20). */
+export function Seats({ seats, after }: { seats: PipelineItem["seats"]; after?: PipelineItem["seats"] | null }) {
+  const grades = [...new Set([...Object.keys(seats), ...Object.keys(after ?? {})])];
   if (!grades.length) return <span className="text-xs text-slate-400">정원 없음</span>;
   return (
     <span className="flex flex-wrap gap-1">
-      {grades.map(([g, s]) => (
-        <span key={g} className={`num rounded px-1.5 text-xs ${s.filled < s.need ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
-          {g} {s.filled}/{s.need}
-        </span>
-      ))}
+      {grades.map((g) => {
+        const s = seats[g] ?? { need: after?.[g]?.need ?? 0, filled: 0 };
+        const a = after?.[g];
+        const shown = a ?? s;
+        const changed = a && a.filled !== s.filled;
+        return (
+          // 정원표에 없는 등급(need 0)은 넘쳐도 빨갛게 칠하지 않는다 -- 그 판정은 서버 위반 문장이 한다(리뷰 N3)
+          <span key={g} className={`num rounded px-1.5 text-xs ${shown.filled < shown.need ? "bg-amber-50 text-amber-800"
+                                     : shown.need > 0 && shown.filled > shown.need ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-600"}`}
+                title={changed ? `지금 ${s.filled}/${s.need} → 고른 사람 포함 ${a.filled}/${a.need}` : undefined}>
+            {g} {changed ? <>{s.filled}/{s.need} → <b>{a.filled}/{a.need}</b></> : `${shown.filled}/${shown.need}`}
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -86,6 +97,23 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [autoState, setAutoState] = useState<"idle" | "running" | "done">("idle");
   const [justify, setJustify] = useState<{ title: string; text: string } | null>(null);
   const [openTeam, setOpenTeam] = useState<string | null>(null);
+  /** 고른 사람을 바꾼 뒤 후보를 다시 계산하는 중(이전 표는 흐리게 남긴다) */
+  const [recalc, setRecalc] = useState(false);
+  /** 지금 cands가 어느 선택(판·사업·고른 사람)으로 계산됐는지 -- 지금 선택과 다르면 미리 계산을 보이지 않고 확정을 막는다(Codex 리뷰 2026-10-20:
+   *  다시 계산이 실패하면 이전 선택의 자리·점수가 지금 선택의 것처럼 남았다) */
+  const [candsFor, setCandsFor] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  /** 후보·미리 계산 요청의 오류와 그 요청의 선택 키(다른 오류 문구와 따로 -- 지금 선택의 오류만 보인다) */
+  const [candError, setCandError] = useState<{ key: string; msg: string } | null>(null);
+  /** 자동 편성에서 옮길 수 있는 최대 인원(사용자 2026-10-20 "k는 최대 5까지") -- 0~kMax를 비교한다 */
+  const [kMax, setKMax] = useState(5);
+  // 미리 계산된 K가 0~3뿐이면(예전 편성 기록) 기본을 3으로 -- 바로 나오게(Opus 대체 리뷰 S2). 사람이 고르면 그대로 둔다
+  const kTouched = useRef(false);
+  useEffect(() => {
+    const ks = ws?.operating_ks ?? [];
+    if (!kTouched.current && ks.length && ks[0] === 0 && ks.every((k, i) => k === i) && ks[ks.length - 1] >= 3)
+      setKMax(Math.min(5, ks[ks.length - 1]));
+  }, [ws?.operating_ks]); // eslint-disable-line react-hooks/exhaustive-deps
   const abort = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
@@ -113,16 +141,30 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     }
     setConfirm(null);
   }, [ws?.dataset_version]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setDraft({}); setCands(null); setCandsFor(null); setCandError(null); }, [ws, selected]);
+  // "넣기"로 고른 사람을 팀원으로 쳐서 후보를 다시 채점하고 고른 사람 전체를 미리 계산한다(2026-10-20 사용자 요청 2·5번).
+  // 고를 때마다 서버를 부르되(1~2초) 짧게 몰아 누르면 마지막 것만, 이전 표는 흐리게 남긴다.
+  const picks = useMemo(() => Object.values(draft).map((r) => ({ person_id: r.person_id, alloc: r.alloc, pulled_from: r.pulled_from })),
+                        [draft]);
+  const pickKey = JSON.stringify(picks);
+  const forKey = `${ws?.dataset_version}|${selected}|${pickKey}`;
   useEffect(() => {
-    setDraft({});
-    setCands(null);
     if (!ws || !selected) return;
     let live = true;
-    fetchCandidates(selected, ws.dataset_version)
-      .then((c) => { if (live) setCands(c); })
-      .catch((e) => { if (live) setError((e as Error).message); });
-    return () => { live = false; };
-  }, [ws, selected]);
+    const key = forKey;
+    setRecalc(true);
+    const go = () => fetchCandidates(selected, ws.dataset_version, picks)
+      .then((c) => { if (live) { setCands(c); setCandsFor(key); setCandError(null); } })
+      .catch((e) => { if (live) setCandError({ key, msg: `후보·미리 계산을 하지 못했습니다: ${(e as Error).message}` }); })
+      .finally(() => { if (live) setRecalc(false); });
+    const t = picks.length ? window.setTimeout(go, 250) : (void go(), undefined);
+    return () => { live = false; if (t !== undefined) window.clearTimeout(t); };
+  }, [ws, selected, pickKey, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** 화면의 후보·미리 계산이 지금 선택의 것인가 */
+  const fresh = candsFor === forKey && !recalc;
+  /** 지금 선택의 계산이 실패했다(고른 직후 요청 전 한 프레임은 실패가 아니다 -- 리뷰 N1) */
+  const failedNow = !recalc && candError?.key === forKey;
+  const draftBlocked = fresh && (cands?.draft?.new_violations.length ?? 0) > 0;
 
   /** 판을 바꾸는 요청 하나 -- 성공하면 새 작업 데이터로 바꾸고 App에도 알린다. */
   async function mutate(run: () => Promise<{ workspace: Workspace }>, done: string, review?: { projectId: string | null }) {
@@ -173,7 +215,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     autoOf.current = { version: ws.dataset_version, params: milpParams };
     try {
       for await (const ev of streamOperatingCompare({ dataset_version: ws.dataset_version, milp_params: milpParams,
-                                                       ks: [0, 1, 2, 3] }, ctl.signal)) {
+                                                       ks: Array.from({ length: kMax + 1 }, (_, k) => k) }, ctl.signal)) {
         if (ctl.signal.aborted) break;                // 판이 바뀌어 버린 계산의 늦은 행
         if (ev.event === "row") setRows((r) => [...r, ev.data as SignedRow]);
         if (ev.event === "error") setError(ev.data.message);
@@ -234,6 +276,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   }
 
   const groupRows = cands ? cands[group] : [];
+  /** 사업 번호 → "J003 은행 A 데이터"(번호만 보이면 부서장이 다시 찾아야 한다 -- 점검표 f7 기조, 2026-10-20) */
+  const named = (id: string) => { const n = [...ws.ongoing, ...ws.pipeline].find((x) => x.project_id === id)?.name; return n ? `${id} ${n}` : id; };
   return (
     <div className="max-w-[1180px] space-y-4">
       {notice && <Notice>{notice}</Notice>}
@@ -263,8 +307,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                         <span className="num">{p.project_id} · {p.start}~{p.end}</span>
-                        {p.predecessor && <span>이전 사업 {p.predecessor}</span>}
-                        {p.parent && <span>추가 과제 — 상위 {p.parent}{p.external_headcount ? ` · 외주 ${p.external_headcount}명(참고)` : ""}</span>}
+                        {p.predecessor && <span>이전 사업 {named(p.predecessor)}</span>}
+                        {p.parent && <span>추가 과제 — 상위 {named(p.parent)}{p.external_headcount ? ` · 외주 ${p.external_headcount}명(참고)` : ""}</span>}
                       </div>
                       <div className="mt-1.5"><Seats seats={p.seats} /></div>
                     </button>
@@ -297,11 +341,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                  </>}>
             <div className="space-y-3 px-5 py-4">
               <div className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="text-slate-500">자리</span><Seats seats={project.seats} />
-                {project.predecessor && <span className="text-xs text-slate-500">고도화 과제 — 이전 사업 {project.predecessor} 팀원이 후보 맨 위에 옵니다</span>}
+                <span className="text-slate-500">자리</span><Seats seats={project.seats} after={draftList.length && fresh ? cands?.draft?.seats : null} />
+                {project.predecessor && <span className="text-xs text-slate-500">고도화 과제 — 이전 사업 {named(project.predecessor)} 팀원이 후보 맨 위에 옵니다</span>}
                 {project.parent && (
                   <span className="text-xs text-slate-500">
-                    추가 과제 — 상위 사업 {project.parent} 팀원이 후보 맨 위에 옵니다
+                    추가 과제 — 상위 사업 {named(project.parent)} 팀원이 후보 맨 위에 옵니다
                     {project.external_headcount ? ` · 외주 ${project.external_headcount}명(참고, 계산에 쓰지 않음)` : ""}
                   </span>
                 )}
@@ -314,29 +358,48 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </span>
                 )) : <span className="text-slate-400">아직 없음</span>}
               </div>
+              <PickDraft projectId={project.project_id} picks={draftList} summary={fresh ? cands?.draft : null} recalculating={recalc}
+                         failed={failedNow} onRetry={() => setRetry((n) => n + 1)} named={named}
+                         onRemove={(id) => setDraft((d) => { const n = { ...d }; delete n[id]; return n; })} />
+              {failedNow && candError && <Notice tone="bad">{candError.msg}</Notice>}
               <Tabs label="후보 갈래" value={group} onChange={setGroup}
                     items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${GROUP_LABEL[g]} ${cands ? cands[g].length : ""}`])} />
-              {!cands ? <p className="text-sm text-slate-500">후보를 계산하는 중…(1~2초)</p> : groupRows.length === 0 ? (
+              {!cands ? (failedNow ? null : <p className="text-sm text-slate-500">후보를 계산하는 중…(1~2초)</p>) : groupRows.length === 0 ? (
                 <p className="text-sm text-slate-500">이 갈래에는 후보가 없습니다.</p>
               ) : (
-                <table className="w-full text-sm">
+                <table className={`w-full text-sm ${fresh ? "" : "opacity-60"}`} aria-busy={recalc}>
                   <thead className="text-left text-xs text-slate-500">
-                    <tr><th className="py-1">이름</th><th>등급</th><th className="text-right">빈자리</th><th className="pr-3 text-right">기술·협업 점수</th><th>비고</th><th /></tr>
+                    <tr><th className="py-1">이름</th><th>등급</th>
+                      <th title="이 사람을 넣으면 사업별 정원(자리)이 어떻게 바뀌는지 -- 아래 '표 읽는 법'">정원 변화 ⓘ</th>
+                      <th className="text-right" title="이 사업 요구 기술에 맞는 정도">기술</th>
+                      <th className="pr-3 text-right" title="두 사람 사이 점수 -- 이 사업 팀원·넣기로 고른 사람과의 쌍만 셉니다">협업 ⓘ</th>
+                      <th>비고</th><th /></tr>
                   </thead>
                   <tbody>
                     {groupRows.map((r) => {
                       const picked = !!draft[r.person_id];
+                      const lines = r.seat_effects ? seatLines(r.seat_effects, project.project_id) : null;
+                      const sc = skillCollab(r);
+                      const who = partnersText(r);
                       return (
-                        <tr key={r.person_id} className="border-t border-slate-100">
+                        <tr key={r.person_id} className="border-t border-slate-100 align-top">
                           <td className="py-1.5"><PersonName name={r.name} person={pById.get(r.person_id)} />{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}
                             {r.parent_team && <span className="ml-1.5"><Chip tone="stage">상위 사업 팀원</Chip></span>}</td>
-                          <td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
-                          <td className={`num text-right text-xs ${(r.unfilled_seats_delta ?? 0) < 0 ? "text-amber-700" : ""}`}>{seatsText(r.unfilled_seats_delta)}</td>
-                          <td className="num pr-3 text-right">{signedPts(hasSplit(r) ? r.delta_excl_unfilled : r.delta_total)}</td>
+                          <td className="py-1.5"><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
+                          <td className="py-1.5 text-xs">
+                            {lines ? (lines.length ? lines.map((l, i) => (
+                              <div key={i} className={l.tone === "warn" ? "text-amber-700" : "text-pine-800"} title={l.title}>{l.text}</div>
+                            )) : <span className="text-slate-400">—</span>) : seatsText(r.unfilled_seats_delta)}
+                          </td>
+                          <td className="num py-1.5 text-right">{signedPts(sc.skill)}</td>
+                          <td className="py-1.5 pr-3 text-right">
+                            <span className="num">{sc.collab === undefined ? "–" : signedPts(sc.collab)}</span>
+                            {who && <div className="text-[11px] text-slate-500">{who}</div>}
+                          </td>
                           <td className="text-xs text-slate-500">
                             {r.pulled_from.length ? <><ProjectCodes ids={r.pulled_from} projects={projects} />에서 빼 옴</> : r.source === "partly_free" ? "남는 시간으로"
                               : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
-                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
+                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>}
                           </td>
                           <td className="text-right">
                             <button className={`btn px-2 py-0.5 text-xs ${picked ? "border-ink font-semibold" : ""}`} aria-pressed={picked}
@@ -351,7 +414,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </tbody>
                 </table>
               )}
-              {cands && groupRows.length > 0 && <ScoreSplitNote />}
+              {cands && groupRows.length > 0 && <CandidateGuide />}
               {cands && <UnavailableList rows={cands.unavailable} />}
               {cands && <p className="text-xs text-slate-400">{cands.note}</p>}
             </div>
@@ -363,15 +426,25 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
       {draftList.length > 0 && project && (
         <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠집니다.">
-          <button className="btn-primary" disabled={busy} onClick={applyDraft}>{draftList.length}명 확정</button>
+          <button className="btn-primary" disabled={busy || !fresh || draftBlocked} onClick={applyDraft}
+                  title={!fresh ? "고른 사람의 미리 계산이 끝나야 확정할 수 있습니다"
+                    : draftBlocked ? "확정하면 규칙 위반이 생깁니다(위 '넣기로 고른 사람' 참고)" : undefined}>{draftList.length}명 확정</button>
           <button className="btn-ghost" onClick={() => setDraft({})}>고른 것 지우기</button>
         </ActionBar>
       )}
 
-      <Panel title="자동 편성 — 몇 명까지 옮길까" sub="신규 사업을 채울 때 진행 사업에서 데려와도 되는 사람 수(K)를 0~3명으로 바꿔 가며 계산해 나란히 보여 줍니다. 품질이 높고 빈자리가 적은 줄을 고르면 됩니다. 고정한 사람은 옮기지 않습니다."
-             actions={<button className="btn" disabled={autoState === "running" || busy} onClick={() => void runAuto()}>
-               {autoState === "running" ? "계산 중…(100명 약 45초)" : "옮길 인원별로 계산"}
-             </button>}>
+      <Panel title="자동 편성 — 몇 명까지 옮길까" sub={`신규 사업을 채울 때 진행 사업에서 데려와도 되는 사람 수(K)를 0~${kMax}명으로 바꿔 가며 계산해 나란히 보여 줍니다. 품질이 높고 빈자리가 적은 줄을 고르면 됩니다. 고정한 사람은 옮기지 않습니다.`}
+             actions={<>
+               <label className="flex items-center gap-1.5 text-xs text-slate-600">최대
+                 <select className="rounded border border-slate-300 px-1.5 py-1 text-xs" value={kMax} disabled={autoState === "running"}
+                         aria-label="옮길 수 있는 최대 인원" onChange={(e) => { kTouched.current = true; setKMax(Number(e.target.value)); }}>
+                   {[3, 4, 5].map((k) => <option key={k} value={k}>{k}명</option>)}
+                 </select>
+               </label>
+               <button className="btn" disabled={autoState === "running" || busy} onClick={() => void runAuto()}>
+                 {autoState === "running" ? `계산 중…(100명 약 ${kMax >= 5 ? 45 : kMax === 4 ? 35 : 30}초)` : "옮길 인원별로 계산"}
+               </button>
+             </>}>
         {rows.length === 0 ? (
           <EmptyState title={autoState === "running" ? "계산하고 있습니다" : "아직 계산하지 않았습니다"}
                       body="밤 배치가 미리 계산해 두었으면 바로 나옵니다." />
@@ -379,8 +452,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-slate-500">
               <tr><th className="px-5 py-1.5" title="진행 사업에서 데려와도 되는 최대 인원">옮겨도 되는 인원(K)</th>
-                <th className="text-right" title="배치 품질 = 기술 적합 + 협업 보상 − 오래 함께한 사이 감점(높을수록 좋음)">품질 ⓘ</th>
-                <th className="text-right">빈자리</th>
+                <th className="text-right" title="빈자리 감점을 뺀 배치 품질 = 기술 적합 + 협업 보상 − 오래 함께한 사이 감점. 높을수록 좋고, 같은 데이터에서 K끼리 비교할 때만 뜻이 있습니다(실제 성과는 검증 전)">품질 ⓘ</th>
+                <th className="text-right" title="모든 사업에서 채우지 못한 정원 자리 수">빈자리</th>
                 <th>옮김</th><th>소명 미리보기</th><th /></tr>
             </thead>
             <tbody>
@@ -397,7 +470,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   <td className="text-xs">
                     {r.accepted && r.plan_token && ws.pipeline.map((p) => (
                       <button key={p.project_id} className="btn-ghost px-1.5 py-0.5 text-xs" disabled={busy}
-                              aria-label={`K=${r.k} ${p.name} 소명 미리보기`}
+                              aria-label={`K=${r.k} ${p.name} 소명 미리보기`} title={p.name}
                               onClick={() => void showJustification(r, p)}>{p.project_id}</button>
                     ))}
                   </td>

@@ -71,7 +71,9 @@ def test_projects_mix_execution_and_proposal_with_labels(bundle):
     rows = b.tables["projects.csv"]
     phases = [r["phase"] for r in rows]
     assert 0.2 <= phases.count("제안") / len(phases) <= 0.45
-    assert all(re.match(r"^\[(제안|실행|운영|고도화|추가 과제)\] ", r["project_name"]) for r in rows[1:])
+    # 이름 머리말은 사업 종류(운영·고도화·추가 과제)만 -- 단계 말("[제안]"·"[실행]")은 붙이지 않는다(2026-10-20 사용자 "[제안]은 빼자")
+    assert not [r for r in rows if re.match(r"^\[(제안|실행)\]", r["project_name"])]
+    assert all(re.match(r"^\[(운영|고도화|추가 과제)\] ", r["project_name"]) or not r["project_name"].startswith("[") for r in rows)
 
 
 def test_generation_is_deterministic(tmp_path):
@@ -469,8 +471,11 @@ def test_v4_mixes_long_running_projects_and_add_on_tasks(tmp_path, scenario):
     first = m["horizon_start"]
     for pid, e in life.items():
         assert rows[pid]["start_month"] == e["started"]
-        prefix = {"운영": "[운영] ", "고도화": "[고도화] ", "개발": "[실행] ", "추가 과제": "[추가 과제] "}[e["stage"]]
-        assert rows[pid]["project_name"].startswith(prefix)
+        prefix = {"운영": "[운영] ", "고도화": "[고도화] ", "개발": None, "추가 과제": "[추가 과제] "}[e["stage"]]
+        if prefix:
+            assert rows[pid]["project_name"].startswith(prefix)
+        else:                                                      # 단계 말은 이름에 없다(2026-10-20 사용자 "[제안]은 빼자")
+            assert not rows[pid]["project_name"].startswith("[")
         if e["stage"] == "추가 과제":
             parent = e["parent"]
             assert life[parent]["stage"] == "운영" and hc[pid] == 2
@@ -494,7 +499,7 @@ def ds_last(m: dict) -> str:
 
 def test_v5_planning_projects_are_mostly_running_before_the_horizon(tmp_path):
     """사용자(2026-10-19): "기존 사업 20개는 여전히 전부 하반기 시작 프로젝트들인가? 그건 좀 잘못된거같은데" -- 연초 계획의 실행 사업
-    대부분이 계획 전에 시작한 진행 사업이고(운영은 회사 인력 2~3명), 이름 머리말이 단계를 말한다. 번호·이름 뒷부분(고객·사업 종류)은 v4와 같다."""
+    대부분이 계획 전에 시작한 진행 사업이고(운영은 회사 인력 2~3명), 이름 머리말은 종류(운영·고도화)만 말한다(단계 말 "[실행]"은 2026-10-20 뺐다). 번호·이름 뒷부분(고객·사업 종류)은 v4와 같다."""
     import csv
     root = generate_org_bundle(tmp_path / "p", 100, seed=2026)
     m = json.loads((root / "manifest.json").read_text("utf-8"))
@@ -502,7 +507,10 @@ def test_v5_planning_projects_are_mostly_running_before_the_horizon(tmp_path):
     execution = [r for r in rows[1:] if r["phase"] == "실행" and m["lifecycle"].get(r["project_id"], {}).get("stage") != "추가 과제"]
     running = [r for r in execution if r["project_id"] in m["lifecycle"]]
     assert len(running) >= 0.5 * len(execution) and all(r["start_month"] < m["horizon_start"] for r in running)
-    assert all(r["project_name"].startswith(("[운영]", "[고도화]", "[실행]")) for r in running)
+    assert all(r["project_name"].startswith(("[운영]", "[고도화]")) == (m["lifecycle"][r["project_id"]]["stage"] != "개발")
+               for r in running)
+    # 이름에 단계 말("[실행]"·"[제안]")이 없다 -- 단계는 화면에서 바뀐다(2026-10-20 사용자 "[제안]은 빼자")
+    assert not [r for r in rows if r["project_name"].startswith(("[실행]", "[제안]"))]
     assert [r["project_id"] for r in rows[:20]] == [f"J{k:03d}" for k in range(1, 21)]
 
 

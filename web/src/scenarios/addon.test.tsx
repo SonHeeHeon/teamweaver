@@ -74,7 +74,7 @@ describe("추가 과제", () => {
     vi.mocked(api.fetchProjectForm).mockResolvedValue(ADDON);
     render(<NewProjectsScreen milpParams={null} datasetVersion="v1" onDatasetChanged={vi.fn()} />);
     const list = await screen.findByRole("list", { name: "신규 사업 목록" });
-    expect(within(list).getByText("추가 과제 — 상위 J001 · 외주 6명(참고)")).toBeInTheDocument();
+    expect(within(list).getByText("추가 과제 — 상위 J001 은행 A 데이터 · 외주 6명(참고)")).toBeInTheDocument();
     expect(screen.getByText("추가 과제 J016")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
     expect(await screen.findByText("상위 사업 팀원")).toBeInTheDocument();

@@ -175,13 +175,18 @@ class PayloadTooLarge(RuntimeError):
 
 
 def _report_meta(graph: MemoryGraph, version: str, payload: dict, horizon_start: str | None = None,
-                 leave: dict | None = None, concurrency: dict | None = None, scenario: dict | None = None) -> dict:
+                 leave: dict | None = None, concurrency: dict | None = None, scenario: dict | None = None,
+                 reveal_reviews: bool = False) -> dict:
     """PDF에 필요한 사람·프로젝트·협업선만 담은 meta(K9 스냅숏을 리포트 범위로 줄임).
-    전체 meta는 데이터셋 크기에 비례해 커지므로(업로드 데이터에는 행 수 상한이 없다) 넣지 않는다."""
+    전체 meta는 데이터셋 크기에 비례해 커지므로(업로드 데이터에는 행 수 상한이 없다) 넣지 않는다.
+    협업선은 같은 사업에 함께 있는 쌍만(PDF 팀별 협업 지도, 2026-10-20 -- 배치된 사람끼리 전부면 100명에 약 4,000개),
+    평가 극성은 가상 데이터만(reveal_reviews, 화면 /api/meta와 같은 규칙)."""
     people_ids, project_ids = set(), set()
+    projects_of: dict[str, set[str]] = {}
     for e in [*payload.get("entries", []), *(payload.get("base_entries") or [])]:
         people_ids.add(e["person_id"])
         project_ids.add(e["project_id"])
+        projects_of.setdefault(e["person_id"], set()).add(e["project_id"])
     for s in [*payload.get("applied_swaps", []), *([payload["swap"]] if payload.get("swap") else [])]:
         if s.get("kind") == "alloc":                          # 달별 투입률 조정: 사람 한 명
             people_ids.add(s["person_id"])
@@ -191,11 +196,11 @@ def _report_meta(graph: MemoryGraph, version: str, payload: dict, horizon_start:
                 project_ids.add(s["in_from_project_id"])
         project_ids.add(s["project_id"])
     full = build_meta(graph, version, horizon_start, leave, concurrency, lifecycle=(scenario or {}).get("lifecycle"),
-                      periods=(scenario or {}).get("periods")).model_dump()
+                      periods=(scenario or {}).get("periods"), reveal_reviews=reveal_reviews).model_dump()
     full["people"] = [p for p in full["people"] if p["id"] in people_ids]
     full["projects"] = [j for j in full["projects"] if j["id"] in project_ids]
     full["coworks"] = [c for c in full["coworks"]
-                       if c["a_id"] in people_ids and c["b_id"] in people_ids]
+                       if projects_of.get(c["a_id"], set()) & projects_of.get(c["b_id"], set())]
     return full
 
 
@@ -235,7 +240,8 @@ def _prepare_payload(req: ReportRequest, graph: MemoryGraph, version: str,
                                    dataset.scenario.get("horizon_start") if dataset is not None else None,
                                    dataset.scenario.get("leave") if dataset is not None else None,
                                    dataset.scenario.get("concurrency") if dataset is not None else None,
-                                   dataset.scenario if dataset is not None else None)
+                                   dataset.scenario if dataset is not None else None,
+                                   reveal_reviews=dataset is not None and dataset.info.synthetic is True)
     size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     if size > MAX_RENDER_PAYLOAD_BYTES:
         raise PayloadTooLarge(f"PDF 데이터가 {size:,}바이트로 상한 {MAX_RENDER_PAYLOAD_BYTES:,}바이트를 넘는다.")
