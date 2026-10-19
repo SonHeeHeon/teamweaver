@@ -15,14 +15,17 @@ router = APIRouter()
 
 def _body(state: SettingsState, request: Request) -> dict:
     # 인원 수만 읽는다 -- 데이터셋을 잡지(acquire) 않는다. 설정 저장이 데이터셋 전환과 얽히면 안 된다.
-    from api.settings import HORIZON_TIME_FACTOR, horizon_months_of, recommended_seconds
+    from api.settings import (HORIZON_TIME_FACTOR, MARGIN_12, MEASURED_FULL_12, TIME_LIMIT_MAX, horizon_months_of,
+                              recommended_seconds)
     n = len(request.app.state.dataset.graph.people)
     months = horizon_months_of(request.app.state.dataset.graph)
 
     def rec(mode: str) -> dict:
         tb = recommend(n, allocation_mode=mode)
         per = recommended_seconds(n, mode, months)
-        basis = tb.basis + ((" · 12개월 계획: 6개월 권장 ×4와 12개월 실측(100·200·300명 78·279·406초 × 여유 1.5) 중 큰 값"
+        sizes = sorted(k for k, v in MEASURED_FULL_12.items() if v)
+        basis = tb.basis + ((f" · 12개월 계획: 6개월 권장 ×4와 12개월 실측({'·'.join(map(str, sizes))}명 가장 느린 시드 "
+                             f"{'·'.join(str(MEASURED_FULL_12[k]) for k in sizes)}초 × 여유 {MARGIN_12:g}, 최대 {TIME_LIMIT_MAX}초) 중 큰 값"
                              if mode == "full" else f" · 12개월 계획 ×{HORIZON_TIME_FACTOR[12]}(100명 실측)") if months == 12 else "")
         return {"n_people": n, "per_solve_s": per, "worst_case_total_s": 4 * per,
                 "measured": tb.measured, "basis": basis}
