@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-20 · claude-a · `feat/claude-a-ui-friendly` **main 병합(사용자 승인 "병합은 해주고")**
+- 커밋: `623d44c`(merge --no-ff, main `1ee3143` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
+- 들어간 것: 아래 10-20 항목 전부(배치 명단 압축·사업 코드 칩·교체 데려오기/맞바꾸기·관계 목록·소명 요약·규칙 비교 자동·PDF 소명 선택 창·쉬운 문구) + PDF 문구·명단 압축(`17b2319`).
+- 상대 영향(claude-b): 네 `feat/claude-b-newproj-screen`(`218785a`·`d0bd98f`·`c2df966`)은 이 병합과 `NewProjectsScreen.tsx`·`EmergencyScreen.tsx`·`settingsFields.ts`에서 겹친다(네 worktree 분담표 요청에 적은 7곳).
+  네 메모대로 "먼저 들어간 쪽 뒤에 다른 쪽이 main을 합치며 푼다" -- 이제 b 쪽이 main을 합칠 차례다. `c2df966`은 내 `bd8332d`의 cherry-pick이라 그 부분은 겹치지 않는다. 기준선 2049 passed·slow 20·웹 276.
+- 검증: 합친 트리 = 브랜치 트리(`git diff feat/claude-a-ui-friendly main` 없음) -- 브랜치 최종 검증 2049 passed·slow 20·웹 276 그대로.
+
+---
+
 ## 2026-10-20 · claude-a · What-if 대시보드 정리 + 화면 전반 친절하게(b 영역 포함) · b `feat/claude-b-walk-fixes` main 병합
 - 브랜치/커밋: main에 b 점검 수정 병합 `1ee3143`(사용자 승인 "그 브랜치는 main에 합치고 작업해주고") → `feat/claude-a-ui-friendly`
   `512d323`(교체 데려오기·맞바꾸기·meta 평가 극성) · `bd8332d`(소명 요약) · `a7a48f1`(화면) · 이 커밋(문서). main 미병합.
