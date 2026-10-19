@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-20 · claude-a · `feat/claude-a-hr-source` **main 병합(사용자 승인 "main 병합해줘")**
+- 커밋: `e6a47dc`(merge --no-ff, main `ad5a7cd` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
+- 들어간 것: 인사 시스템 API 받기(기본)·CSV(대체)·밤 배치 첫 단계·설정 "데이터 원천", 진행 중 사업 기술 경력 늘리기(`work_skills.csv`·manifest `as_of`/`skill_months_owner`), 리뷰 반영(아래 10-19 항목).
+- 상대 영향(claude-b): main을 받으면 위 10-19 항목의 계약 변경(선택 표 `work_skills.csv`, manifest 두 칸, 계산 버전 `aging:` 표지)과 b 영역 수정(`api/nightly.py`·`api/main.py`·`web/src/App.tsx`)이 들어온다.
+  네 `feat/claude-b-walk-fixes`(`3e38d89`·`9db6446`)는 main에 아직 없다 -- 받아 합칠 때 일지·분담표·CLAUDE.md 기준선 줄이 겹칠 수 있다. 기준선 2035 passed·slow 20·웹 262.
+- 검증: 합친 트리 = 브랜치 트리(`git diff feat/claude-a-hr-source main` 없음) -- 브랜치 최종 검증 2035 passed·slow 20·웹 262 그대로. 병합 뒤 입력·데이터 원천·계산 버전·미리 계산 시험 다시 통과.
+- Codex: 쿼터 소진(10-20 00:10 회복)으로 Stop 훅 게이트를 껐다(사용자 허용, 00:06). 회복 뒤 첫 리뷰가 성공하면 다시 켠다.
+
+---
+
 ## 2026-10-19 · claude-a · 인사 시스템 API 받기(기본)·CSV(대체) · 진행 중 사업 기술 경력을 이 서비스가 늘림 · 설정 "데이터 원천"
 - 브랜치/커밋: `feat/claude-a-hr-source`(main `ad5a7cd` 위) `e6924e2`(경력 늘리기·`work_skills.csv`·manifest `as_of`/`skill_months_owner`·데이터) · `aed1a9a`(API 받기·서버·밤 배치·화면·문서) · 이 커밋(일지). main 미병합(사용자 승인 대기).
 - 사용자: "디폴트는 api고 그게 없다면 2번째 옵션으로 Csv로도", "현재 진행중인 등록된 프로젝트에서 등록한 기술에 한해 기술 개월수를 업데이트가 돼야하지않나?",
