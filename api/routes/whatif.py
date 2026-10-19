@@ -57,10 +57,41 @@ def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
         raise HTTPException(status_code=422,
                             detail=f"{swap.in_person_id!r} is already on {swap.project_id!r}")
     after = [e for e in before if e is not out]
+    src = swap.in_from_project_id
+    if src is None and swap.exchange:
+        raise HTTPException(status_code=422, detail="맞바꾸기(exchange)는 데려올 사업(in_from_project_id)이 있어야 한다")
+    if src is not None:
+        # 다른 사업에서 데려오기(2026-10-20): 그 사업에서 뺀다 -- 빈자리는 평가기가 센다(new_shortfalls)
+        if src not in jdx:
+            raise HTTPException(status_code=404, detail=f"unknown in_from_project_id: {src!r}")
+        if src == swap.project_id:
+            raise HTTPException(status_code=422, detail="같은 사업 안에서는 데려올 수 없다")
+        moved = next((e for e in after if e.person_id == swap.in_person_id and e.project_id == src), None)
+        if moved is None:
+            raise HTTPException(status_code=422, detail=f"{swap.in_person_id!r} is not on {src!r}")
+        after = [e for e in after if e is not moved]
+        if swap.exchange:
+            if any(e.person_id == swap.out_person_id and e.project_id == src for e in after):
+                raise HTTPException(status_code=422, detail=f"{swap.out_person_id!r} is already on {src!r}")
+            after.append(AssignEntry(person_id=swap.out_person_id, project_id=src,
+                                     alloc=moved.alloc, monthly_alloc=moved.monthly_alloc))
     # 들어오는 사람은 빠지는 사람의 투입률을 그대로 이어받는다(월별 투입률이면 달별 값까지).
     after.append(AssignEntry(person_id=swap.in_person_id, project_id=swap.project_id,
                              alloc=out.alloc, monthly_alloc=out.monthly_alloc))
     return before, after
+
+
+def source_loss_notes(swap: SwapIn, new_shortfalls: list[dict]) -> list[str]:
+    """데려오기면 원래 사업이 잃는 것을 정해진 문장으로(AI 설명이 빼먹어도 서버가 붙인다 -- 소명 덧붙임과 같은 방식)."""
+    src = swap.in_from_project_id
+    if src is None:
+        return []
+    gaps = [f"{s['grade']} {s['missing']}명" for s in new_shortfalls if s["project_id"] == src]
+    if swap.exchange:
+        return [f"맞바꾸기: {swap.out_person_id}가 {src}로 가고 {swap.in_person_id}가 {swap.project_id}로 온다"
+                + (f" -- {src}에 {', '.join(gaps)} 빈자리가 남는다." if gaps else ".")]
+    return [f"{swap.in_person_id}를 {src}에서 데려오면 {src}에 " + (", ".join(gaps) + " 빈자리가 생긴다." if gaps
+                                                                  else "자리가 하나 빈다(정원 밖 인원이라 빈자리로 세지는 않는다).")]
 
 
 def _evaluate(graph, S, C, params, entries) -> PlanEvaluation:
@@ -108,9 +139,10 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     with SQLITE_LOCK:                                   # 공유 연결 -- 동시 요청이 겹치면 500(api.deps.SQLITE_LOCK)
         ctx = swap_context(conn, req.swap.out_person_id, req.swap.in_person_id, evidence=evidence,
                            project_id=req.swap.project_id)
-    score_change = {k: getattr(after.objective, k) - getattr(before.objective, k)
+    # AI 설명에 넘기는 값은 소수 둘째 자리로(화면 친절하게 2026-10-20 -- 그대로 넘기면 글에 -101.79133333333334가 나왔다)
+    score_change = {k: round(getattr(after.objective, k) - getattr(before.objective, k), 2)
                     for k in ("skill", "synergy", "overfamiliarity", "unfilled")}
-    score_change["total"] = after.objective.total - before.objective.total
+    score_change["total"] = round(after.objective.total - before.objective.total, 2)
     # 점수만 보면 가용률·예산을 어기면서 total만 오른 교체도 "권고"로 읽힌다 -- 위반 여부를 같이 준다.
     score_change["feasible"] = not after.violations
     if new_violations:
@@ -141,7 +173,8 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "new_violations": new_violations,
         "new_shortfalls": new_shortfalls,
         "feasible": not after.violations,
-        "briefing": _named(clamp_briefing(briefing), dataset),
+        "briefing": _named(clamp_briefing({**briefing, "risks": source_loss_notes(req.swap, new_shortfalls)
+                                                       + list(briefing.get("risks") or [])}), dataset),
         "fallback_used": fallback_used,
         "fallback_reason": fallback_reason if fallback_used else None,
     }
