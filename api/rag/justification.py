@@ -17,7 +17,7 @@ from dataclasses import asdict
 
 from core.config import load_pricing
 from core.kg.justify import (CONNECTIVES, LABELS, SUBJECT_KINDS, JustificationInput, adverse_addendum, render, render_ok,
-                              template_text, verify)
+                              template_text, verify, verify_summary, rule_summary_raw, SUMMARY_MAX_SENTENCES, SUMMARY_MAX_SLOTS)
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +89,69 @@ def justification_settings(model: str) -> dict:
             "timeout_s": float(j.get("timeout_s", DEFAULT_TIMEOUT_S)), "expected_s": float(j.get("expected_s", DEFAULT_EXPECTED_S))}
 
 
-def generate_justification(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None) -> dict:
+SUMMARY_TASK = ("이 사업에 왜 이 사람들을 배치했는지 인사팀이 10초 안에 읽을 **요약**을 써라. 팀원 {n}명: {team}. 맺음말 없이 "
+                f"{SUMMARY_MAX_SENTENCES}문장 이하, 자리표시는 모두 {SUMMARY_MAX_SLOTS}개 이하: 가장 강한 근거 두 가지를 한두 문장으로(요구 기술 충족·후보 비교·규칙 준수 같은 사업 전체 사실이나 "
+                "팀을 대표하는 사람 사실), 마지막 문장은 '불리' 표시 사실 중 가장 중요한 하나를 '다만 {{F7}}입니다.'처럼. '불리' 사실이 없으면 두 문장. "
+                "요약이므로 규칙 (4)(팀원 전원에게 사람 사실)는 따르지 않는다. 문법·라벨 규칙은 그대로다.")
+
+
+def summary_prompt(inp: JustificationInput) -> str:
+    return prompt(inp).replace(TASK.format(n=len(inp.team), team=", ".join(inp.team)),
+                               SUMMARY_TASK.format(n=len(inp.team), team=", ".join(inp.team)), 1)
+
+
+def generate_summary(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None) -> dict:
+    """인사팀 소명 요약(2026-10-20 사용자 "너무 길어서 읽을수가 없어 … 출처에서 나온 사실만 … 결과를 검증"): 본문과 같은 자리표시 문법·검사기
+    (`verify_summary`: 없는 사실 S1·허용 밖 말 S2 + 3문장 이하·불리한 사실 인용). 걸리면 규칙 요약(`rule_summary_raw`), 그것도 못 만들면 None.
+    반환: {summary(채운 글 또는 None), summary_method: graphrag|rule|None, summary_fallback_reason, summary_usage}."""
+    out = {"summary": None, "summary_method": None, "summary_fallback_reason": None, "summary_usage": None}
+
+    def rule(reason: str) -> dict:
+        raw = rule_summary_raw(inp)
+        out.update(summary=render(raw, inp) if raw else None, summary_method="rule" if raw else None, summary_fallback_reason=reason)
+        return out
+    if client is None:
+        return rule("no_client")
+    price = load_pricing().get("models", {}).get(model, {})
+    effort = reasoning_effort if reasoning_effort is not None else justification_settings(model)["reasoning_effort"]
+    t0 = time.monotonic()
+    try:
+        resp = client.chat.completions.create(
+            model=model, response_format={"type": "json_object"}, **({"reasoning_effort": effort} if effort else {}),
+            messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": summary_prompt(inp)}])
+    except Exception as exc:                                    # noqa: BLE001 -- 네트워크·API 오류는 규칙 요약으로
+        log.warning("소명 요약 AI 호출 실패 %s: %s", inp.project_id, exc)
+        return rule(f"llm_error:{type(exc).__name__}")
+    u = getattr(resp, "usage", None)
+    pin, pout = getattr(u, "prompt_tokens", 0) or 0, getattr(u, "completion_tokens", 0) or 0
+    out["summary_usage"] = {"latency_s": round(time.monotonic() - t0, 2), "in": pin, "out": pout, "model": model,
+                            "cost_usd": round((pin * price.get("input_per_1m", 0) + pout * price.get("output_per_1m", 0)) / 1e6, 6)}
+    try:
+        raw = json.loads(resp.choices[0].message.content or "{}").get("text", "")
+        if not isinstance(raw, str):
+            raise TypeError("text가 문자열이 아니다")
+        ver = verify_summary(raw, inp)
+    except (ValueError, TypeError, AttributeError, IndexError) as exc:
+        return rule(f"llm_bad_json:{type(exc).__name__}")
+    if not ver["ok"]:
+        return rule("verify:" + ",".join(sorted({v["rule"] for v in ver["violations"]})))
+    text = render(raw, inp)
+    if not render_ok(raw, text):
+        return rule("render_check")
+    out.update(summary=text, summary_method="graphrag", summary_raw=raw)
+    return out
+
+
+def generate_justification(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None,
+                           summary: bool = False) -> dict:
+    """본문(`_generate_full`) + summary=True면 요약(`generate_summary`, 화면·PDF용 -- 측정 스크립트는 본문만)."""
+    out = _generate_full(client, model, inp, reasoning_effort=reasoning_effort)
+    if summary:
+        out.update(generate_summary(client, model, inp, reasoning_effort=reasoning_effort))
+    return out
+
+
+def _generate_full(client, model: str, inp: JustificationInput, *, reasoning_effort: str | None = None) -> dict:
     """반환: {method: graphrag|template, text(보여 줄 글), facts, verification, fallback_reason, llm_text(AI 원문, 자리표시 포함), usage,
     addendum(서버가 덧붙인 불리한 사실 문단, text의 끝과 같다 · 없으면 None), appended_adverse(그 사실 ID들, 문단 순서),
     addendum_groups([{owner: 사람 ID 또는 None(사업 전체), facts: [사실 ID…]}], 문단의 줄과 같은 순서 -- 화면이 사람별로 접을 수 있게)}.
