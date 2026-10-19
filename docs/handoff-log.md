@@ -22,6 +22,27 @@
 
 ---
 
+## 2026-10-20 · claude-b · 신규 사업 편성 화면 6건(사용자 요청) -- 이름 단계 말·넣기 미리 계산·K 0~5·정원 변화 글·협업 쌍·검토 자료 요약
+- 브랜치/커밋: `feat/claude-b-newproj-screen`(main `1ee3143`에서) `218785a`(2~5번 화면·서버) · `d0bd98f`(시연 데이터) · `c2df966`(claude-a `bd8332d` cherry-pick) · `2b7947f`(6번) · 이 문서 커밋. main 미병합.
+- 사용자: 신규 사업 편성 화면 1~6(원문 루트 `.omc/plan/2026-10-20-newproj-screen.md`), "난 이제 자볼테니 … 다른 화면에서도 수정해야할게 있는지 검토도".
+- 한 일:
+  - 1: 생성기가 이름에 단계 말 `[제안]`·`[실행]`을 붙이지 않는다(종류 `[운영]`·`[고도화]`·`[추가 과제]`는 남김) -- **claude-a 영역 `core/ingest/org_profile.py` 수정(사용자 지시)**. 시연 묶음 9·미리 계산 8(버전만 옮김 + 운영 중 4묶음 K 0~5 다시 풂)·기록 8 다시 생성.
+  - 2·4·5: `POST /api/pipeline/{id}/candidates {picks}` -- 고른 사람을 팀원으로 친 다시 채점 + `draft`(자리·사업별 정원 변화·기술/협업·팀 안 쌍·새 위반). 후보 행 `seat_effects`·`skill_delta`·`collab_delta`·`partners`. 긴급 투입도 같은 칸.
+  - 3: 운영 중 비교 K 0~5(`OPERATING_KS` -- 화면 기본·밤 배치·미리 계산), 미리 계산 행 앞부분 재사용, `/api/workspace` `operating_ks`.
+  - 6: 검토 자료 AI 초안 = claude-a 요약(`generate_summary`) + 저장 글 재확인 기록 `body_ai_check`.
+  - 리뷰: 확정·미리 계산 공통 위반 판정 `api/violation_diff.new_or_worse`, 긴급 투입 커진 사람 단위 위반 `scenarios.with_worse`.
+- 상대 영향(claude-a):
+  - **네 `feat/claude-a-ui-friendly`와 같은 화면 파일이 겹친다** -- 병합 충돌 7곳(`web/src/scenarios/NewProjectsScreen.tsx`·`EmergencyScreen.tsx`·`web/src/components/settingsFields.ts`). b는 풀지 않았다(work-split "요청"). 둘 다 살리는 쪽이 맞다.
+  - 네 `bd8332d`를 cherry-pick했고 `api/routes/report.py` 요약 칸 한 줄은 네 `512d323`과 같다 -- 이 부분은 병합 때 충돌하지 않는다.
+  - 생성기 이름 규칙(네 영역): 단계 말을 다시 붙이지 말 것. 이름 겹침은 0(머리말 뺀 이름 기준으로 확인).
+  - `tests/api/test_llm_gate.py`·`test_evidence_connect.py`가 `api.deps.get_openai_client_or_none`을 덮어쓰는데, 시험 세션 중 다른 시험이 모듈을 다시 불러오면 덮어쓰기가 안 먹어 AI가 꺼진 채 통과할 수 있다(b 시험 2곳은 라우트가 쥔 함수로 고침) -- 확인 권장.
+  - 기준선 2057 passed·slow 20·웹 273.
+- 검증: `uv run --group benchmark pytest -q` 2057 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 273 · `npx tsc -b`·build · oxlint 7(main 기존) · 브라우저(연말형) 넣기 미리 계산·K 0~5 · 실제 AI 검토 자료 요약 1편(가상 데이터).
+- 리뷰: Codex gpt-6.1-sol 적대적 1라운드 medium 2 반영(이때 Stop 게이트 다시 켬) → Codex 한도 소진(10-25 16:31까지, 2회) → 게이트 끔 · Claude Opus 폴백 2라운드 approve(SHOULD 2·NIT 반영), 6번 Opus 폴백 2라운드(1차 SHOULD 3 반영 → 2차 approve).
+- 근거: 루트 `.omc/reports/2026-10-20-newproj-screen.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-20-newproj-screen.md`.
+
+---
+
 ## 2026-10-20 · claude-a · `feat/claude-a-hr-source` **main 병합(사용자 승인 "main 병합해줘")**
 - 커밋: `e6a47dc`(merge --no-ff, main `ad5a7cd` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
 - 들어간 것: 인사 시스템 API 받기(기본)·CSV(대체)·밤 배치 첫 단계·설정 "데이터 원천", 진행 중 사업 기술 경력 늘리기(`work_skills.csv`·manifest `as_of`/`skill_months_owner`), 리뷰 반영(아래 10-19 항목).
