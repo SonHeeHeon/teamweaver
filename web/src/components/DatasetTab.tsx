@@ -148,7 +148,8 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
           <div>
             <h2 id="data-upload" className="text-base font-semibold text-slate-900">인력·사업 데이터 올리기</h2>
             <p className="mt-0.5 text-[13px] text-slate-500">
-              CSV 묶음(manifest.json 포함 zip)을 올리면 검증한 뒤 작업 데이터로 바꿉니다. 오류가 하나라도 있으면 바꾸지 않고
+              인력·경력·평가·사업 정보를 담은 파일 묶음(CSV 여러 개 + 설명 파일 manifest.json을 zip으로)을 올리면 검사한 뒤 작업 데이터로 바꿉니다.
+              인사 시스템에서 자동으로 받는 설정은 '배치 설정'의 데이터 원천에 있습니다. 오류가 하나라도 있으면 바꾸지 않고
               파일·줄·칸을 알려 줍니다. 바꾸면 이 서버를 쓰는 모든 사용자에게 적용되고, 서버를 다시 켜도 유지됩니다.
             </p>
           </div>

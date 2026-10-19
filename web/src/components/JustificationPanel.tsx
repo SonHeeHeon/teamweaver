@@ -145,6 +145,10 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
           다시 쓰기
         </button>
       </div>
+      <p className="mt-1 text-[12.5px] text-slate-500">
+        사업마다 "왜 이 사람들을 배치했는가"를 인사팀에 설명하는 글입니다. 숫자·충족 여부는 데이터에서 그대로 가져오고, AI는 사실을 고르고 엮기만 합니다.
+        밑줄 친 문구를 누르면 오른쪽 근거 사실이 강조됩니다.
+      </p>
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-700">
           {error}
@@ -157,7 +161,19 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
         <p className="mt-2 text-xs text-amber-700">{fallbackText(result.fallback_reason)}</p>
       )}
       {!result && !error && <p className="mt-2 text-sm text-slate-500">불러오는 중…</p>}
+      {result?.summary && (
+        <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 px-4 py-3" aria-label="소명 요약">
+          <p className="mb-1 text-xs font-semibold text-emerald-900">
+            핵심 요약{result.summary_method === "graphrag" ? " · AI 구성(사실은 데이터 그대로, 검사 통과)" : " · 정해진 규칙으로 고름"}
+          </p>
+          <Prose text={result.summary} facts={result.facts} onCite={cite} active={active} />
+        </div>
+      )}
       {result && (
+        <details open={!result.summary} className="mt-3">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700">
+            전체 소명 보기 — 사람별 근거와 근거 사실 {result.facts.length}개{adverseCount ? ` · 불리한 사실 ${adverseCount}개` : ""}
+          </summary>
         <div className="mt-3 grid gap-4 lg:grid-cols-[3fr_2fr]">
           <div>
             <Prose text={main} facts={result.facts} onCite={cite} active={active} />
@@ -216,6 +232,7 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
             ))}
           </div>
         </div>
+        </details>
       )}
     </section>
   );

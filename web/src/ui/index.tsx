@@ -9,6 +9,8 @@
  *  - Stamp: 인주색 도장 -- "서버가 검사해 통과"에만 쓴다(장식으로 쓰지 않는다)
  *  - Chip: 등급·단계 같은 짧은 표지. tone: grade1~4(특급→초급 램프)·stage·warn·plain
  *  - Notice: 화면 위 안내 띠. tone: info(기록·알림) · warn(주의) · bad(오류)
+ *  - ProjectCode: 사업 코드 그대로 + 마우스를 올리면 사업 이름(사용자 2026-10-20 "사업 이름이 길잖아")
+ *  - Term: 전문용어 옆 ⓘ -- 마우스를 올리거나 누르면 쉬운 설명(화면 친절하게, 2026-10-20)
  */
 import type { ReactNode } from "react";
 
@@ -102,4 +104,32 @@ export function Notice({ children, tone = "info", role }: { children: ReactNode;
 }
 
 // 화면 틀(왼쪽 메뉴·제목 줄)은 components/Shell.tsx -- 상황 화면은 App이 그 안에 그린다.
+/** 사업 코드(J019) + 마우스를 올리면 이름. name이 없으면 코드만. */
+export function ProjectCode({ id, name, className = "" }: { id: string; name?: string | null; className?: string }) {
+  if (!name || name === id) return <span className={`num ${className}`}>{id}</span>;
+  return (
+    <abbr title={name} aria-label={`${id} ${name}`}
+          className={`num cursor-help no-underline decoration-dotted underline-offset-2 hover:underline ${className}`}>
+      {id}
+    </abbr>
+  );
+}
+
+/** 전문용어 옆 ⓘ: 마우스를 올리거나(키보드 초점) 누르면 쉬운 설명이 뜬다. */
+export function Term({ children, help }: { children: ReactNode; help: ReactNode }) {
+  return (
+    <span className="group relative inline-flex items-baseline gap-0.5">
+      {children}
+      <button type="button" aria-label="설명 보기" tabIndex={0}
+              className="peer text-[11px] leading-none text-slate-400 hover:text-slate-700 focus:text-slate-700 focus:outline-none">ⓘ</button>
+      <span role="tooltip"
+            className="pointer-events-none invisible absolute left-0 top-full z-30 mt-1 w-64 rounded-md border border-slate-200 bg-white p-2
+                       text-[12px] font-normal leading-snug text-slate-700 opacity-0 shadow-lg transition
+                       group-hover:visible group-hover:opacity-100 peer-focus:visible peer-focus:opacity-100">
+        {help}
+      </span>
+    </span>
+  );
+}
+
 export { PageHeader, WhatifEmpty, datasetLabel } from "../components/Shell";

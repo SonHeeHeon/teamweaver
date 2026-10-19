@@ -157,10 +157,10 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
     // Plan A가 선택된 상태에서 스왑을 시작한다 (out=p1/j1, in=p3)
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
 
     expect(postWhatif).toHaveBeenCalledTimes(1);
-    await screen.findByText("브리핑 생성 중…");
+    await screen.findByText("AI 교체 설명 쓰는 중…");
 
     // 응답이 오기 전에 Plan B로 전환한다
     fireEvent.click(screen.getByText("Plan B"));
@@ -176,8 +176,8 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
       expect(screen.queryByText(/이 문장은 Plan A 기준으로 계산된 것/)).not.toBeInTheDocument();
     });
     // busy 상태로 멈춰 있지도 않아야 한다 (finally 가드 확인).
-    expect(screen.queryByText("브리핑 생성 중…")).not.toBeInTheDocument();
-    expect(screen.getByText(/인력을 교체하면/)).toBeInTheDocument();
+    expect(screen.queryByText("AI 교체 설명 쓰는 중…")).not.toBeInTheDocument();
+    expect(screen.getByText(/교체 효과 보기.를 누르면/)).toBeInTheDocument();
   });
 });
 
@@ -216,7 +216,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     // 교체 검토는 플랜을 계산한 30% 기준으로 보낸다(50%가 아니다).
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(1));
     expect(vi.mocked(postWhatif).mock.calls[0][3]).toEqual(SETTINGS.settings);
 
@@ -238,7 +238,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(1));
     expect(vi.mocked(postWhatif).mock.calls[0][2]).toEqual({});
   });
@@ -356,7 +356,7 @@ describe("App — 다른 사용자가 데이터셋을 바꾼 경우(K9 리뷰 �
     expect(vi.mocked(streamOptimize).mock.calls[0][0].dataset_version).toBe(META.dataset_version);
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await waitFor(() => expect(postWhatif).toHaveBeenCalled());
     expect(vi.mocked(postWhatif).mock.calls[0][4]).toBe(META.dataset_version);
   });
@@ -416,7 +416,7 @@ describe("App — 교체 적용(K10)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await screen.findByText("검토 브리핑");
   }
 
@@ -441,6 +441,20 @@ describe("App — 교체 적용(K10)", () => {
     expect(call[5]?.base).toEqual(PLAN_A.entries);
     expect(call[5]?.swaps).toEqual([{ out_person_id: "p1", in_person_id: "p3", project_id: "j1" }]);
     expect(call[6]).toEqual({ weights: {}, planToken: "tok-A", evidence: null });   // 신뢰도 서명이 없는 플랜(배지 없음)
+  });
+
+  it("묶음 데이터면 PDF 내려받기가 소명 포함 여부를 묻는다(체크박스 대신, 사용자 2026-10-20)", async () => {
+    vi.mocked(fetchActiveDataset).mockResolvedValue({ ...FIXTURE_INFO, source: "upload" });
+    vi.mocked(downloadReport).mockReset();
+    await reviewSwap();
+    expect(screen.queryByText("PDF에 사업별 인사팀 소명 포함")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "PDF 내려받기" }));
+    expect(await screen.findByRole("dialog", { name: "PDF 내려받기" })).toBeInTheDocument();
+    expect(downloadReport).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "소명 포함해 받기" }));
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled());
+    expect(vi.mocked(downloadReport).mock.calls.at(-1)![7]).toBe(true);
+    vi.mocked(fetchActiveDataset).mockResolvedValue(FIXTURE_INFO);
   });
 
   it("마지막 적용 취소로 원래 명단으로 돌아간다", async () => {
@@ -468,7 +482,7 @@ describe("App — 교체 적용(K10)", () => {
     await screen.findByText(/교체 1건 적용/);
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p2" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await screen.findByText("검토 브리핑");
     fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 2건 적용/);
@@ -523,7 +537,7 @@ describe("App — 교체 적용(K10)", () => {
     await screen.findByText("Plan B");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await screen.findByText("검토 브리핑");
     fireEvent.click(screen.getByRole("button", { name: "이 교체 적용" }));
     await screen.findByRole("button", { name: "적용 중…" });
@@ -533,7 +547,7 @@ describe("App — 교체 적용(K10)", () => {
     expect(screen.queryByText(/교체 1건 적용/)).not.toBeInTheDocument();   // 늦은 응답은 버려짐
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     expect(await screen.findByRole("button", { name: "이 교체 적용" })).toBeEnabled();
   });
 
@@ -544,7 +558,7 @@ describe("App — 교체 적용(K10)", () => {
     await screen.findByText(/교체 1건 적용/);
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p2" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(2));
     expect(vi.mocked(postWhatif).mock.calls[1][0]).toEqual(APPLIED.entries);
   });
@@ -592,7 +606,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     await waitFor(() => expect(savePlanEdits).toHaveBeenCalledTimes(1));
@@ -620,7 +634,7 @@ describe("App — 적용 교체 저장·복원(K13)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     expect(await screen.findByText(/서버에 저장하지 못했다/)).toBeInTheDocument();
   });
@@ -650,7 +664,7 @@ describe("App — 저장 요청 순서(K13 리뷰 M1)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));
@@ -689,7 +703,7 @@ describe("App — 복원과 로컬 적용의 경합(K13 리뷰 S1)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     const old = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
@@ -730,7 +744,7 @@ describe("App — 다른 화면이 먼저 저장(서버 revision, Codex 3차)", 
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     expect(await screen.findByText(/다른 화면에서 먼저 저장해/)).toBeInTheDocument();
     expect(screen.getByText(/교체 2건 적용/)).toBeInTheDocument();
@@ -757,7 +771,7 @@ describe("App — 다른 화면이 먼저 저장(서버 revision, Codex 3차)", 
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));
@@ -793,7 +807,7 @@ describe("App — 적용 중 복원 도착(K13 리뷰 S-a)", () => {
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     const saved = { ...STEP, entries: [{ person_id: "p2", project_id: "j1", alloc: 1 }],
                     swap: { out_person_id: "p1", in_person_id: "p2", project_id: "j1" } };
@@ -840,7 +854,7 @@ describe("App — 재실행 뒤 revision이 섞이지 않는다(Opus 검증 M1)"
     await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledWith("tok-B"));
     fireEvent.change(await screen.findByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await waitFor(() => expect(savePlanEdits).toHaveBeenCalled());
     const [tok, body] = vi.mocked(savePlanEdits).mock.calls[0];
@@ -875,7 +889,7 @@ describe("App — 충돌 뒤 줄 선 저장은 버린다(Opus 검증 S1)", () =>
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     fireEvent.click(screen.getByRole("button", { name: "원래 플랜으로" }));   // 줄 선 두 번째 저장
@@ -915,14 +929,14 @@ describe("App — 409 뒤 서버 상태로 맞추기 전에 한 적용(K13 남�
     await screen.findByText("Plan A");
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     await waitFor(() => expect(loadPlanEdits).toHaveBeenCalledTimes(2));   // 409 → 강제 복원 대기 중
     // 복원이 끝나기 전에 한 번 더 검토·적용한다(화면에는 아직 옛 이력 1건이 보인다).
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p3::j1" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p1" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑 생성/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 2건 적용/);
     await act(async () => {
@@ -1001,7 +1015,7 @@ describe("App — 사람별 달별 투입률 조정", () => {
     render(<App initialTab="annual" />);
     fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
     await screen.findByText("Plan A");
-    expect(screen.getByText(/여러 프로젝트에 나눠 들어가는 사람은/)).toBeInTheDocument();     // 기능 안내
+    expect(screen.getByText(/달마다 비율을 바꿀 수 있습니다/)).toBeInTheDocument();     // 기능 안내(예전 투입률 방식만)
     fireEvent.click(screen.getByRole("button", { name: "김일번 달별 조정" }));
     fireEvent.change(screen.getByLabelText("1월 투입률"), { target: { value: "50" } });
     fireEvent.change(screen.getByLabelText("2월 투입률"), { target: { value: "50" } });

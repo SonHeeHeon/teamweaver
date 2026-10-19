@@ -24,9 +24,9 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-slate-900">스킬 가중치</h2>
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">기술 가중치</h2>
         <p className="mb-4 text-sm text-slate-500">
-          1~5점. 값이 높을수록 그 스킬의 적합도가 배치 점수에 크게 반영된다.
+          1~5점(기본 3). 이번 계획에서 더 중요하게 볼 기술을 올리면, 그 기술이 맞는 사람을 더 우선해 배치합니다. 모르면 그대로 두세요.
         </p>
         <div className="panel grid gap-x-6 px-4 py-3 sm:grid-cols-2">
           {meta.skills.map((s) => (
@@ -60,7 +60,7 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-slate-900">
-          프로젝트 제약 ({meta.projects.length}건)
+          사업 조건 ({meta.projects.length}건) — 사업마다 등급별로 필요한 인원과 한 달 예산(가상 비용 점수)
         </h2>
         <div className="max-h-[28rem] overflow-y-auto rounded-lg border border-slate-200 bg-white">
           <table className="w-full text-sm">
@@ -69,7 +69,7 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
                 <th className="px-3 py-2 font-medium">프로젝트</th>
                 <th className="px-3 py-2 font-medium">구분</th>
                 <th className="px-3 py-2 font-medium">정원</th>
-                <th className="px-3 py-2 text-right font-medium">월 예산</th>
+                <th className="px-3 py-2 text-right font-medium" title="한 달에 쓸 수 있는 인건비(가상 비용 점수). 배치한 사람들의 등급별 단가 합이 이 안이어야 합니다.">월 예산 ⓘ</th>
               </tr>
             </thead>
             <tbody>

@@ -41,7 +41,7 @@ describe("투입 불가 인력", () => {
     // 휴직 전 사업이면 넣을 수 있다
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "a::early" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "b" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     expect(onSwap).toHaveBeenCalledWith({ out_person_id: "a", in_person_id: "b", project_id: "early" });
   });
 
@@ -51,7 +51,7 @@ describe("투입 불가 인력", () => {
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "b" } });
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "a::late" } });
     expect(screen.getByRole("alert").textContent).toContain("교체 투입할 수 없다");
-    expect(screen.getByRole("button", { name: /브리핑/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /교체 효과 보기/ })).toBeDisabled();
   });
 
   it("신규 사업·긴급 투입 화면의 투입 불가 목록은 넣기 버튼이 막혀 있다", () => {

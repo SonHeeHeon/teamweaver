@@ -88,8 +88,8 @@ export function SettingsTab({ data, onSave }: Props) {
     <section className="max-w-2xl">
       <h2 className="mb-1 text-lg font-semibold text-slate-900">배치 설정</h2>
       <p className="mb-4 text-sm text-slate-500">
-        조직 공통 배치 규칙이다. 서버에 저장되며, 각 화면은 '최적화 실행'을 누를 때마다
-        최신 설정을 다시 읽어 계산한다. 이미 계산한 결과는 그때의 설정을 그대로 쓴다.
+        조직 공통 배치 규칙입니다. 서버에 저장되며, 계산할 때마다 최신 설정을 다시 읽습니다. 이미 계산한 결과는 그때의 설정을 그대로 씁니다.
+        잘 모르는 칸은 기본값을 두면 됩니다(아래 '기본값으로 채우기').
       </p>
       {data.load_error && (
         <p role="alert" className="mb-4 rounded-md border border-amber-400 bg-amber-50 px-3 py-2
@@ -152,9 +152,9 @@ export function SettingsTab({ data, onSave }: Props) {
             ))}
           </select>
           <p className="mt-1 text-xs text-slate-500">
-            같은 문제를 출발점(시드)만 바꿔 동시에 푸는 수 = 계산에 쓰는 CPU 코어 수. 늘리면 같은 시간 안에 더 좋은 답·대안을
-            찾을 가능성이 높아지지만 코어를 그만큼 쓴다(코어 4개 이상이면 4 권장). 100명 30초 실측: 1이면 대안이 품질 하한에 걸려 안 A만,
-            4면 안 A~D가 모두 나왔다. 서버 자원 설정이라 결과 캐시·미리 계산 비교에는 들어가지 않는다.
+            같은 문제를 출발점만 바꿔 동시에 몇 갈래로 풀지 정합니다(= 계산에 쓰는 CPU 코어 수). 늘리면 같은 시간 안에 더 좋은 안·대안을
+            찾을 가능성이 높아지지만 서버 자원을 그만큼 씁니다(코어 4개 이상이면 4 권장). 100명 30초 실측: 1이면 대안이 안 나오고 안 A만,
+            4면 안 A~D가 모두 나왔습니다.
           </p>
         </div>
         {mode === "full" && (

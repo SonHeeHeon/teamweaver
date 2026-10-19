@@ -321,6 +321,11 @@ function PlanReport() {
                     {j.method === "graphrag" ? "AI 구성 · 사실은 데이터 그대로" : `정해진 틀${fallbackText(j.fallback_reason) ? " — " + fallbackText(j.fallback_reason) : ""}`}
                   </span>
                 </h3>
+                {j.summary && (
+                  <p className="mt-1 whitespace-pre-wrap rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[12px] leading-6">
+                    <b className="mr-1 text-[11px] text-emerald-800">핵심 요약</b><ReportProse text={j.summary} facts={j.facts ?? []} />
+                  </p>
+                )}
                 <p className="mt-1 whitespace-pre-wrap text-[12px] leading-6"><ReportProse text={main} facts={j.facts ?? []} /></p>
                 {add && (
                   <p className="mt-1 whitespace-pre-wrap rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[12px] leading-6">

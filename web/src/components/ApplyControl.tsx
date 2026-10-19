@@ -17,7 +17,8 @@ interface Props {
 export function ApplyControl({ result, swap, nameOf, busy, onApply }: Props) {
   const [confirming, setConfirming] = useState(false);
   if (!result || !swap) return null;
-  const what = `${nameOf(swap.out_person_id)} → ${nameOf(swap.in_person_id)} (${swap.project_id})`;
+  const what = `${nameOf(swap.out_person_id)} → ${nameOf(swap.in_person_id)} (${swap.project_id}${swap.in_from_project_id
+    ? `, ${swap.exchange ? `${swap.in_from_project_id}와 맞바꿈` : `${swap.in_from_project_id}에서 데려옴`}` : ""})`;
   const warnings = swapWarnings(result);
   const risky = warnings.length > 0;
 
