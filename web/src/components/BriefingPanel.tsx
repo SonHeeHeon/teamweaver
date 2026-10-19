@@ -2,6 +2,7 @@ import type { ObjectiveBreakdown, WhatifResponse } from "../api/types";
 import { swapWarnings } from "../api/whatifWarnings";
 import { EvidenceList } from "./EvidenceList";
 import { hasMarkers, numberMarkers } from "./evidenceMarkers";
+import { Term } from "../ui";
 
 interface Props {
   result: WhatifResponse | null;
@@ -23,14 +24,14 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
   if (loading) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
-        AI 교체 설명 쓰는 중…
+        XAI 브리핑 쓰는 중…
       </div>
     );
   }
   if (!result) {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-400">
-        빠질 사람과 들어올 사람을 고르고 '교체 효과 보기'를 누르면 점수 변화와 AI 교체 설명이 여기에 나옵니다.
+        빠질 사람과 들어올 사람을 고르고 '교체 효과 보기'를 누르면 점수 변화와 XAI 브리핑이 여기에 나옵니다.
       </div>
     );
   }
@@ -41,7 +42,10 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">AI 교체 설명</h3>
+        {/* "XAI 브리핑" 이름은 그대로(사용자 2026-10-20 "표현이 멋있어서" -- 잠시 "AI 교체 설명"이었다), 뜻은 ⓘ에 */}
+        <h3 className="text-sm font-semibold text-slate-900">
+          <Term help="XAI = 설명할 수 있는 AI. 이 교체로 점수가 왜 오르거나 내리는지 근거(기술 경력·함께 일한 기간·동료 평가)를 들어 설명합니다. 본문의 [근거 n]은 아래 근거 목록의 번호입니다.">XAI 브리핑</Term>
+        </h3>
         {result.fallback_used && (
           <span className="rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
             {result.fallback_reason === "external_blocked"
