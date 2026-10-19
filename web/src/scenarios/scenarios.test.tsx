@@ -33,7 +33,8 @@ const WS: Workspace = {
 };
 const cand = (over: Partial<CandidateRow>): CandidateRow => ({
   person_id: "P9", name: "박지훈", grade: "고급", alloc: 1, source: "bench", pulled_from: [], delta_total: 101.2,
-  delta: { unfilled: 100 }, new_violations: [], category: "bench", predecessor_team: false, ...over,
+  delta: { unfilled: 100 }, unfilled_seats_delta: 1, delta_excl_unfilled: 1.2, new_violations: [], category: "bench",
+  predecessor_team: false, ...over,
 });
 
 beforeEach(() => { vi.clearAllMocks(); });
@@ -84,16 +85,24 @@ describe("NewProjectsScreen", () => {
     vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
     vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: "J003", note: "계산상",
       bench: [cand({})], ending: [],
-      pull: [cand({ person_id: "P1", name: "김민준", source: "pull", pulled_from: ["J003"], category: "pull", predecessor_team: true })] });
+      pull: [cand({ person_id: "P1", name: "김민준", source: "pull", pulled_from: ["J003"], category: "pull", predecessor_team: true,
+                    delta_total: 0.4, delta: { unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 0.4 })] });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: [], removed: [], changed: [] } });
     const changed = vi.fn();
     const review = vi.fn();
     // App은 확정 응답 뒤에야 새 판을 받는다 -- 그 사이 옛 판("v0")을 들고 있어도 버튼이 남아야 한다(Codex 리뷰)
     const { rerender } = render(<NewProjectsScreen milpParams={null} datasetVersion="v0" onDatasetChanged={changed} onReviewDoc={review} />);
     expect(await screen.findByText("박지훈")).toBeInTheDocument();
+    // 점수 변화를 나눠 보인다(사용자 2026-10-19): +101.20이 아니라 "1자리 메움"과 "+1.20"
+    const row = screen.getByText("박지훈").closest("tr")!;
+    expect(within(row).getByText("1자리 메움")).toBeInTheDocument();
+    expect(within(row).getByText("+1.20")).toBeInTheDocument();
+    expect(screen.queryByText("+101.20")).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "기술·협업 점수" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "박지훈 넣기" }));
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
     expect(screen.getByText("이전 팀원")).toBeInTheDocument();
+    expect(within(screen.getByText("김민준").closest("tr")!).getByText("—")).toBeInTheDocument();      // 자리 변화 없음
     fireEvent.click(screen.getByRole("button", { name: "김민준 넣기" }));
     fireEvent.click(screen.getByRole("button", { name: "2명 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
@@ -150,15 +159,18 @@ describe("EmergencyScreen", () => {
     const hint = { headcount_add: { J003: { 고급: 1 } }, budget_add: { J003: 900 }, skills_add: {} };
     vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J003", skills: [], added_requirements: [],
       best: { accepted: true, entries: [{ person_id: "P9", project_id: "J003", alloc: 1 }], added: [{ person_id: "P9", name: "박지훈" }],
-              delta: { total: 3.1 }, new_violations: [] },
+              delta: { total: 3.1, unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 3.1, new_violations: [] },
       candidates: { bench: [cand({})], spare: [], pull: [] }, standby: [], apply_hint: hint, note: "" });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P9@J003"], removed: [], changed: [] } });
     const review = vi.fn();
     render(<EmergencyScreen onDatasetChanged={vi.fn()} onReviewDoc={review} />);
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
     expect(await screen.findByText("밤사이 미리 뽑아 둔 명단")).toBeInTheDocument();
+    expect(screen.getByText(/100% · 점수 \+3\.10/)).toBeInTheDocument();            // 나눔 없는 예전 밤 명단은 합계 그대로
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
+    expect(screen.getByText(/기술·협업 \+3\.10 · 추가 월 비용/)).toBeInTheDocument();
+    expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("1자리 메움")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "이 조합 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());

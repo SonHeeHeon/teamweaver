@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
+import { ScoreSplitNote } from "../components/ScoreSplitNote";
+import { hasSplit, seatsText, signedPts, splitText } from "../components/scoreSplit";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
   withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
@@ -12,7 +14,6 @@ import {
 
 type Group = "bench" | "spare" | "pull";
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
-const fmt = (x: number | undefined) => (x === undefined ? "–" : (x >= 0 ? "+" : "") + x.toFixed(2));
 
 export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc }: {
   datasetVersion?: string | null; onDatasetChanged: () => void;
@@ -244,7 +245,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                   {standby.rows.map((r) => (
                     <li key={r.person_id} className="rounded-md border border-line px-3 py-1.5 text-sm">
                       <Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip> {r.name}
-                      <span className="num ml-1.5 text-xs text-slate-500">{Math.round(r.alloc * 100)}% · {fmt(r.delta_total)}</span>
+                      <span className="num ml-1.5 text-xs text-slate-500">{Math.round(r.alloc * 100)}% · {splitText(r)}</span>
                     </li>
                   ))}
                 </ul>
@@ -258,7 +259,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                 {!plan.best.accepted ? <p className="text-amber-700">조건에 맞는 조합을 찾지 못했습니다(빼 오기·등급 조건을 바꿔 보세요).</p> : (
                   <>
                     <p>넣을 사람: <b>{plan.best.added?.map((a) => a.name).join(", ") || "없음"}</b>
-                      <span className="num ml-2 text-xs text-slate-500">점수 변화 {fmt(plan.best.delta?.total)} · 추가 월 비용 {plan.best.added_cost ?? 0}</span></p>
+                      <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 추가 월 비용 {plan.best.added_cost ?? 0}</span></p>
                     {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
                     {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반이 있어 확정할 수 없습니다.</Notice>}
                     {plan.apply_hint && (Object.keys(plan.apply_hint.headcount_add).length > 0 || Object.keys(plan.apply_hint.budget_add).length > 0) && (
@@ -275,13 +276,14 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                 {rows.length === 0 ? <p className="text-slate-500">이 갈래에는 후보가 없습니다.</p> : (
                   <table className="w-full">
                     <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th><th className="text-right">투입률</th>
-                      <th className="text-right">점수 변화</th><th>비고</th></tr></thead>
+                      <th className="text-right">빈자리</th><th className="pr-3 text-right">기술·협업 점수</th><th>비고</th></tr></thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.person_id} className="border-t border-slate-100">
                           <td className="py-1.5">{r.name}</td><td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
                           <td className="num text-right">{Math.round(r.alloc * 100)}%</td>
-                          <td className="num text-right">{fmt(r.delta_total)}</td>
+                          <td className={`num text-right text-xs ${(r.unfilled_seats_delta ?? 0) < 0 ? "text-amber-700" : ""}`}>{seatsText(r.unfilled_seats_delta)}</td>
+                          <td className="num pr-3 text-right">{signedPts(hasSplit(r) ? r.delta_excl_unfilled : r.delta_total)}</td>
                           <td className="text-xs text-slate-500">{r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : ""}
                             {r.source === "concurrent" && <span>원래 사업 유지{r.needs_grant ? " · 허용 필요" : ""}</span>}
                             {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반</span>}
@@ -295,6 +297,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc 
                     </tbody>
                   </table>
                 )}
+                {rows.length > 0 && <ScoreSplitNote />}
                 <UnavailableList rows={plan.unavailable} />
               </div>
             </Panel>

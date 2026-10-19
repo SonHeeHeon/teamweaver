@@ -44,6 +44,19 @@ def _entries(dataset):
     return [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in dataset.current]
 
 
+def split_unfilled(row: dict, penalty: float) -> dict:
+    """점수 변화를 빈자리 몫과 나머지로 나눈다(사용자 2026-10-19 "점수 변화는 나눠 보이도록 하자").
+
+    빈자리를 하나 메우면 delta_total에 빈자리 감점(자리당 slack_penalty, 설정 화면에 없음 -- 100)이 통째로 더해져 +101처럼 보였고
+    사람끼리의 차이(1~3점)가 묻혔다. unfilled_seats_delta = 메운 자리 수(생기면 음수 -- 운영 중 보강 `routes/operating.py`와 같은
+    이름·부호), delta_excl_unfilled = 그 밖의 변화(기술 적합·협업 시너지·익숙한 쌍 감점). delta_total과 순위는 그대로다."""
+    d = row.get("delta") or {}
+    unfilled = float(d.get("unfilled", 0.0))
+    total = float(row["delta_total"] if "delta_total" in row else d.get("total", 0.0))
+    return {**row, "unfilled_seats_delta": int(round(unfilled / penalty)) if penalty else 0,
+            "delta_excl_unfilled": round(total - unfilled, 4)}
+
+
 def _locked(dataset) -> set[tuple[str, str]]:
     return {(c.person_id, c.project_id) for c in dataset.current if c.locked}
 
@@ -131,8 +144,9 @@ async def pipeline_candidates(project_id: str, request: Request, dataset_version
         entries = _entries(dataset)
         rows = rank_candidates(dataset.graph, S, C, params, entries, project_id, include_pull=True, top=top,
                                locked=_locked(dataset))
-        return classify(dataset, project_id, rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows),
-                        predecessor=predecessor, parent=parent)
+        rows = [split_unfilled(r, params.slack_penalty)
+                for r in rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows)]
+        return classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
     async with _light(request.app):
         groups = await anyio.to_thread.run_sync(go)
     from api.unavailable import unavailable_for
@@ -225,7 +239,11 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
             weights = {n: 5 for n in names}
             S, C = eng.skill_matrix(weights), eng.synergy_matrix()
             entries, locked = _entries(dataset), _locked(dataset)
-            best = best_additions(graph, S, C, params, entries, body.project_id, body.n, grade=body.grade,
+            # 최선 조합은 갭 0 풀이라 운영 중 보강·밤 배치처럼 600초에서 자른다 -- 12개월 자동 한도(최대 900초, 2026-10-19 여유 2배)를
+            # 그대로 쓰면 요청 하나가 가벼운 계산 슬롯(_light)을 15분까지 잡는다(폴백 리뷰 SHOULD)
+            from api.routes.operating import OPERATING_TIME_LIMIT_MAX
+            capped = params.model_copy(update={"time_limit": min(params.time_limit, OPERATING_TIME_LIMIT_MAX)})
+            best = best_additions(graph, S, C, capped, entries, body.project_id, body.n, grade=body.grade,
                                   pull_budget=body.pull_budget, locked=locked)
             rows = rank_candidates(graph, S, C, params, entries, body.project_id, include_pull=body.pull_budget > 0,
                                    top=20, locked=locked)
@@ -243,7 +261,11 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
                                       locked=locked)
             hint = (_apply_hint(graph, body.project_id, entries, best["entries"], extra, body.n)
                     if best.get("accepted") else None)
-            return best, rows + concurrent, standby, hint
+            rows = [split_unfilled(r, params.slack_penalty) for r in rows + concurrent]
+            standby = [split_unfilled(r, params.slack_penalty) for r in standby]
+            if best.get("accepted"):
+                best = split_unfilled(best, params.slack_penalty)
+            return best, rows, standby, hint
         finally:
             if cand is not None:
                 cand.retire()
@@ -294,13 +316,16 @@ def standby_for(app, dataset, project_id: str, top: int = 5) -> list[dict]:
     from core.evaluate.staffing_sim import rank_candidates
     from core.scoring.engine import ScoringEngine
     eng = ScoringEngine(dataset.graph)
-    rows = rank_candidates(dataset.graph, eng.skill_matrix({}), eng.synergy_matrix(), _params(app, dataset),
+    params = _params(app, dataset)
+    rows = rank_candidates(dataset.graph, eng.skill_matrix({}), eng.synergy_matrix(), params,
                            _entries(dataset), project_id, include_pull=False, top=top * 3, locked=_locked(dataset))
     nm = _names(dataset)
+    penalty = params.slack_penalty
     # 넣으면 위반이 생기는 사람(동시 사업 수 상한 등)은 "바로 넣을 수 있는 사람"이 아니다(Codex 리뷰 2026-10-19)
     return [{"person_id": r["person_id"], "name": nm.get(r["person_id"], r["person_id"]), "grade": r["grade"],
-             "alloc": r["alloc"], "source": r["source"], "delta_total": r["delta_total"]}
-            for r in rows if not r.get("new_violations")][:top]
+             "alloc": r["alloc"], "source": r["source"], "delta_total": r["delta_total"],
+             "unfilled_seats_delta": r["unfilled_seats_delta"], "delta_excl_unfilled": r["delta_excl_unfilled"]}
+            for r in (split_unfilled(x, penalty) for x in rows) if not r.get("new_violations")][:top]
 
 
 def params_fingerprint(app, dataset) -> str:

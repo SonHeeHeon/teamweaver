@@ -48,6 +48,8 @@ export interface ProjectForm {
 export interface CandidateRow {
   person_id: string; name: string; grade: Grade; alloc: number; source: "bench" | "partly_free" | "pull" | "concurrent";
   pulled_from: string[]; delta_total: number; delta: Record<string, number>; new_violations: unknown[];
+  /** 점수 변화 나눔(2026-10-19): 메운 자리 수(생기면 음수)와 빈자리 몫을 뺀 변화 -- components/scoreSplit */
+  unfilled_seats_delta?: number; delta_excl_unfilled?: number;
   category: "bench" | "ending" | "pull"; predecessor_team: boolean; parent_team?: boolean; monthly_cost?: number;
   /** 전일 투입: 원래 사업을 유지한 채 들어오려면 프로젝트 동시 수행 허용이 필요하다(확정 때 함께 적는다) */
   needs_grant?: boolean;
@@ -59,7 +61,8 @@ export interface UnavailableRow { person_id: string; name: string; grade: Grade;
 export interface Candidates { project_id: string; predecessor: string | null; parent?: string | null; bench: CandidateRow[]; ending: CandidateRow[];
                               pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string }
 
-export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number }
+export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number;
+                             unfilled_seats_delta?: number; delta_excl_unfilled?: number }
 export interface ApplyHint {
   headcount_add: Record<string, Partial<Record<Grade, number>>>; budget_add: Record<string, number>;
   skills_add: Record<string, SkillNeed[]>;
@@ -68,7 +71,8 @@ export interface EmergencyPlan {
   dataset_version: string; project_id: string; skills: string[]; added_requirements: { name: string }[];
   best: { accepted: boolean; entries?: AssignEntry[]; added?: { person_id: string; name: string }[];
           diff?: { moved?: { person_id: string; from: string; to: string[] }[] };
-          delta?: Record<string, number>; added_cost?: number; new_violations?: unknown[]; termination?: string | null };
+          delta?: Record<string, number>; added_cost?: number; new_violations?: unknown[]; termination?: string | null;
+          unfilled_seats_delta?: number; delta_excl_unfilled?: number };
   candidates: { bench: CandidateRow[]; spare: CandidateRow[]; pull: CandidateRow[] };
   standby: StandbyRow[]; unavailable?: UnavailableRow[]; apply_hint: ApplyHint | null; note: string;
 }

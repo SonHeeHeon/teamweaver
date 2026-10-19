@@ -10,6 +10,8 @@ import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } 
 import { UnavailableList } from "./UnavailableList";
 import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { LifecycleChips } from "../components/LifecycleChips";
+import { ScoreSplitNote } from "../components/ScoreSplitNote";
+import { hasSplit, seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postConcurrency, postLock,
@@ -40,7 +42,6 @@ const localTime = (iso: string) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" });
 };
-const fmt = (x: number | undefined | null) => (x === undefined || x === null ? "–" : (x >= 0 ? "+" : "") + x.toFixed(2));
 
 interface Props {
   milpParams: PlacementSettings | null;
@@ -315,7 +316,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
               ) : (
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs text-slate-500">
-                    <tr><th className="py-1">이름</th><th>등급</th><th className="text-right">점수 변화</th><th>비고</th><th /></tr>
+                    <tr><th className="py-1">이름</th><th>등급</th><th className="text-right">빈자리</th><th className="pr-3 text-right">기술·협업 점수</th><th>비고</th><th /></tr>
                   </thead>
                   <tbody>
                     {groupRows.map((r) => {
@@ -325,7 +326,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                           <td className="py-1.5">{r.name}{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}
                             {r.parent_team && <span className="ml-1.5"><Chip tone="stage">상위 사업 팀원</Chip></span>}</td>
                           <td><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
-                          <td className="num text-right">{fmt(r.delta_total)}</td>
+                          <td className={`num text-right text-xs ${(r.unfilled_seats_delta ?? 0) < 0 ? "text-amber-700" : ""}`}>{seatsText(r.unfilled_seats_delta)}</td>
+                          <td className="num pr-3 text-right">{signedPts(hasSplit(r) ? r.delta_excl_unfilled : r.delta_total)}</td>
                           <td className="text-xs text-slate-500">
                             {r.pulled_from.length ? `${r.pulled_from.join(", ")}에서 빼 옴` : r.source === "partly_free" ? "남는 시간으로"
                               : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
@@ -344,6 +346,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </tbody>
                 </table>
               )}
+              {cands && groupRows.length > 0 && <ScoreSplitNote />}
               {cands && <UnavailableList rows={cands.unavailable} />}
               {cands && <p className="text-xs text-slate-400">{cands.note}</p>}
             </div>
