@@ -1,7 +1,7 @@
 /** 3가지 핵심 상황 화면의 서버 호출(2026-10-19, claude-b) -- api/routes/workspace.py·scenarios.py.
  *  판을 바꾸는 요청(등록·단계·떨어짐·고정·확정·되돌리기)은 화면이 본 판(dataset_version)을 함께 보낸다 -- 다르면 409. */
 import { API_BASE } from "../api/client";
-import type { AssignEntry } from "../api/types";
+import type { AssignEntry, Lifecycle } from "../api/types";
 
 export type Stage = "예정" | "제안" | "수주";
 export const STAGE_LABEL: Record<Stage, string> = { 예정: "발주 예정", 제안: "제안 중", 수주: "수주" };
@@ -16,6 +16,8 @@ export interface Seats { [grade: string]: { need: number; filled: number } }
 export interface ProjectItem {
   project_id: string; name: string; start: string | null; end: string | null; monthly_budget: number;
   seats: Seats; team: Member[];
+  /** 사업 수명 주기(2026-10-19): 단계·실제 시작·추가 과제 상위·외주(참고) */
+  lifecycle?: Lifecycle | null;
 }
 export interface PipelineItem extends ProjectItem {
   stage: Stage; predecessor: string | null; registered_at?: string | null;

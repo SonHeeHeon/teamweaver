@@ -28,7 +28,8 @@ def _cowork_edges(graph: MemoryGraph) -> list[CoworkOut]:
 
 
 def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | None = None,
-               leave: dict | None = None, concurrency: dict | None = None) -> MetaResponse:
+               leave: dict | None = None, concurrency: dict | None = None, *,
+               lifecycle: dict | None = None, periods: dict | None = None) -> MetaResponse:
     """meta를 graph 하나에서 만든다. /api/report도 요청이 잡은 데이터셋으로 이걸 만들어
     PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9)."""
     people = [PersonOut(id=p.id, name=p.name, grade=p.grade.value, skills=p.skills,
@@ -39,7 +40,8 @@ def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | No
     projects = [ProjectOut(id=j.id, name=j.name, sector=j.sector.value, phase=j.phase.value,
                            start_month=j.start_month, end_month=j.end_month,
                            grade_headcount={g.value: n for g, n in j.grade_headcount.items()},
-                           monthly_budget=j.monthly_budget)
+                           monthly_budget=j.monthly_budget,
+                           lifecycle=(lifecycle or {}).get(j.id), period=(periods or {}).get(j.id))
                 for j in graph.projects]
     return MetaResponse(people=people, projects=projects,
                         skills=sorted(graph.skill_index.keys()),
@@ -54,4 +56,5 @@ def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | No
 def get_meta(graph: MemoryGraph = Depends(get_graph),
              dataset: ActiveDataset = Depends(get_dataset)) -> MetaResponse:
     return build_meta(graph, dataset.info.version, dataset.scenario.get("horizon_start"), dataset.scenario.get("leave"),
-                      dataset.scenario.get("concurrency"))
+                      dataset.scenario.get("concurrency"), lifecycle=dataset.scenario.get("lifecycle"),
+                      periods=dataset.scenario.get("periods"))

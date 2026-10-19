@@ -1,5 +1,7 @@
 import type { Meta } from "../api/types";
 import { WeightSlider } from "./WeightSlider";
+import { LifecycleChips } from "./LifecycleChips";
+import { projectPeriod } from "./lifecycle";
 
 const DEFAULT_WEIGHT = 3;   // core/config.py 의 DEFAULT_WEIGHT 와 같은 값
 
@@ -73,7 +75,11 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
             <tbody>
               {meta.projects.map((p) => (
                 <tr key={p.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2 text-slate-900">{p.name}</td>
+                  <td className="px-3 py-2 text-slate-900">
+                    {p.name}<LifecycleChips lc={p.lifecycle} name={p.name} />
+                    {/* 기간은 이름 아래 줄 -- 따로 열을 두면 반쪽 폭 표에서 정원 칸이 등급마다 접힌다(10-19 브라우저 점검) */}
+                    {meta.horizon_start && <span className="block text-xs text-slate-500">{projectPeriod(p, meta.horizon_start)}</span>}
+                  </td>
                   <td className="px-3 py-2 text-slate-600">{p.sector} · {p.phase}</td>
                   <td className="px-3 py-2 text-slate-600">
                     {Object.entries(p.grade_headcount).map(([g, n]) => `${g} ${n}`).join(", ")}

@@ -16,15 +16,26 @@ export interface Person {
   concurrency?: { reason: string; memo?: string; granted_at?: string; max_projects?: number } | null;
 }
 
+/** 사업 수명 주기(2026-10-19, 서버 api/lifecycle -- 표시용, 계산에 안 씀). stage: 개발|운영|고도화|추가 과제. */
+export interface Lifecycle {
+  stage: string;
+  started?: string | null;            // 실제 시작 달 "YYYY-MM"(계획 전일 수 있다)
+  parent?: string | null;             // 추가 과제의 상위 사업
+  external_headcount?: number | null; // 추가 과제의 외주 인원(참고값)
+}
+
 export interface Project {
   id: string;
   name: string;
   sector: string;
   phase: string;
-  start_month: number;
+  start_month: number;                // 계획 안으로 자른 달 순번
   end_month: number;
   grade_headcount: Record<string, number>;
   monthly_budget: number;
+  lifecycle?: Lifecycle | null;
+  /** 계획 밖까지 이어지는 사업의 원래 기간("YYYY-MM") -- 없으면 start_month·end_month가 원래 기간 */
+  period?: { start: string; end: string } | null;
 }
 
 export interface Cowork {

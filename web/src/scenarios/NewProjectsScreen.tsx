@@ -9,6 +9,7 @@ import type { AssignEntry, OperatingRow, PlacementSettings } from "../api/types"
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ConcurrencyPanel } from "./ConcurrencyPanel";
+import { LifecycleChips } from "../components/LifecycleChips";
 import { ProjectForm } from "./ProjectForm";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCandidates, fetchWorkspace, patchStage, postApply, postConcurrency, postLock,
@@ -437,7 +438,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                 <button className="text-left" onClick={() => setOpenTeam(openTeam === o.project_id ? null : o.project_id)}
                         aria-expanded={openTeam === o.project_id}>
                   <span className="font-medium">{o.name}</span>{" "}
-                  <span className="num text-xs text-slate-500">{o.project_id} · ~{o.end} · {o.team.length}명</span>
+                  <span className="num text-xs text-slate-500">{o.project_id} · {o.start ? `${o.start}~` : "~"}{o.end} · {o.team.length}명</span>
+                  <LifecycleChips lc={o.lifecycle} name={o.name} />
                   {o.ends_in_horizon && <span className="ml-1.5"><Chip tone="warn">곧 종료 {o.end}</Chip></span>}
                   {o.locked_count > 0 && !o.locked_all && <span className="ml-1.5 text-xs text-slate-500">고정 {o.locked_count}명</span>}
                   {(o.addons ?? []).map((a) => <span key={a} className="ml-1.5"><Chip tone="stage">추가 과제 {a}</Chip></span>)}

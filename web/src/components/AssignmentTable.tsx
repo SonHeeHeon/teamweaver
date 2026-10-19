@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { AllocChange, AssignEntry, Person, Project } from "../api/types";
 import { formatAlloc, formatMonthly, monthLabel } from "./allocFormat";
+import { LifecycleChips } from "./LifecycleChips";
+import { projectPeriod } from "./lifecycle";
 import { practicalCredits, skillChips } from "./skillLabel";
 
 interface Props {
@@ -16,10 +18,6 @@ interface Props {
   horizonStart?: string | null;
 }
 
-/** 사업 기간 "26.12~27.3월"(한 달이면 "26.12월"). */
-const periodLabel = (p: Project, start: string) =>
-  p.start_month === p.end_month ? monthLabel(p.start_month, start)
-    : `${monthLabel(p.start_month, start).slice(0, -1)}~${monthLabel(p.end_month, start)}`;
 
 const months = (p: Project | undefined) =>
   p ? Array.from({ length: p.end_month - p.start_month + 1 }, (_, k) => p.start_month + k) : [];
@@ -110,9 +108,10 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
             <span className="ml-2 text-xs font-normal text-slate-500">{list.length}명</span>
             {horizonStart && jById.get(jid) && (
               <span className="ml-2 text-xs font-normal text-slate-500">
-                {periodLabel(jById.get(jid)!, horizonStart)}
+                {projectPeriod(jById.get(jid)!, horizonStart)}
               </span>
             )}
+            {jById.get(jid) && <LifecycleChips lc={jById.get(jid)!.lifecycle} name={jById.get(jid)!.name} />}
           </div>
           <ul className="divide-y divide-slate-100">
             {list.map((e) => {

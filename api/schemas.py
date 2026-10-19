@@ -34,15 +34,26 @@ class PersonOut(BaseModel):
     concurrency: dict | None = None
 
 
+class LifecycleOut(BaseModel):
+    """사업 수명 주기(2026-10-19, api/lifecycle -- 화면 표시용, 계산에 안 씀). stage: 개발|운영|고도화|추가 과제."""
+    stage: str
+    started: str | None = None                  # 실제 시작 달 "YYYY-MM"(계획 기간 전일 수 있다)
+    parent: str | None = None                   # 추가 과제의 상위 사업
+    external_headcount: int | None = None       # 추가 과제의 외주 인원(참고값)
+
+
 class ProjectOut(BaseModel):
     id: str
     name: str
     sector: str
     phase: str
-    start_month: int
+    start_month: int                            # 계획 안으로 자른 달 순번
     end_month: int
     grade_headcount: dict[str, int]
     monthly_budget: int
+    lifecycle: LifecycleOut | None = None
+    # 계획 기간 밖으로 이어지는 사업만 원문 기간 {"start","end"}("YYYY-MM") -- 나머지는 start_month·end_month가 원래 기간이다
+    period: dict[str, str] | None = None
 
 
 class CoworkOut(BaseModel):
