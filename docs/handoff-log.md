@@ -39,6 +39,7 @@
   - 기준선 2032 passed·slow 20·웹 261.
 - 검증: `uv run --group benchmark pytest -q` 2032 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 261 · `npx tsc -b`·build 통과 · `export_demo_judgments --check` OK · 시연 8묶음 늘어난 경력 0. Phase 0은 MILP를 안 바꿔 생략.
 - Codex: 적대적 1라운드 MUST 3(밤 시간 초과 취소가 켜기 도중을 끊음·부분 원천 as_of 덮어쓰기·별칭 행 경력) + 2라운드 P2 5(멈춤 대기·저장 실패 표시·받는 중 갱신·못 늘림 구분·as_of 0000년 500) 모두 반영·시험.
+  Stop 훅 BLOCK P2 2(셌는지 모르는 행 이중 계산 9→20 · 10년 밖 경력 되살림 122개월) → `5d3f955`(전체 2034 passed).
 - 근거: `.omc/reports/2026-10-19-hr-source-summary.md`(+ task별 `skill-aging`·`hr-api-source`), 설계 `.omc/plan/2026-10-19-hr-source.md`.
 
 ---
