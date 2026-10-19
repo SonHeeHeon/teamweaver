@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-19 · claude-b · 진행 사업에 추가 과제 붙이기(상위 사업·외주 참고)
+- 브랜치/커밋: `feat/claude-b-three-scenarios`(이 항목 다음 커밋). main 병합은 사용자 승인 대기.
+- 한 일: 사용자 예("24년 시작 사업이 운영 중 26년 클라우드 마이그레이션 추가 과제, 6달만 회사 인력 2명·외주 여러 명") -- 신규 사업 양식 "연결 사업" 단계에 상위 사업(추가 과제)·외주 인원,
+  진행 사업 행 "+ 추가 과제"(미리 채운 양식 `GET …/form?as=addon`), 후보 "상위 사업 팀원", 진행 사업에 붙은 추가 과제 칩. 데이터 = 별도 사업 행 + manifest `pipeline[id].parent`·`external_headcount`.
+- 상대 영향: claude-a 재설계(`docs/requests/2026-10-19-availability-redesign.md` 6항)에 사업 수명 주기 섞기와 이 표현을 적었다 -- 생성 데이터가 같은 모양이면 화면이 그대로 보인다. CSV 계약은 그대로.
+- 검증: `uv run pytest -q` 1929 passed·1 skipped·20 deselected, 웹 241·tsc·lint·build, 브라우저(연말형 묶음에서 J001 추가 과제 등록 → 목록·후보 표시, 콘솔 오류 0).
+  리뷰: Codex adversarial 1라운드(medium 2 반영)·2라운드(형식 오류, 지적 1 반영) → Codex 한도 소진(14:08까지, 2회 연속) → Stop 게이트 끔, Opus 대체 리뷰(MUST 0, SHOULD 2 반영).
+- 근거: `.omc/reports/2026-10-19-addon-task.md`(로컬)
+
 ## 2026-10-19 · claude-b · 계획 기간 1년(6|12개월) · 연간 시연 묶음 · 투입 불가 인력 표시 · 가용률·겸직 재설계는 claude-a에게
 - 브랜치/커밋: `feat/claude-b-three-scenarios` (claude-a `1b921ea`를 먼저 합침 `5bc1289`, 이 작업 커밋은 이 항목 다음). main 병합은 사용자 승인 대기.
 - 한 일: 사용자 "계획기간 1년 확장도 하자" -- 데이터마다 계획 기간 6|12개월(`core/domain/models.py` `HORIZON_CHOICES`·`Dataset.horizon_months`, manifest `horizon_months`), 화면 달 표시를 실제 달로("27.4월"), 계획 기간 표시(헤더·PDF).

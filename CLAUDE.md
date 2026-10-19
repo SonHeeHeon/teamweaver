@@ -146,6 +146,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **투입 불가 인력 표시**(2026-10-19 사용자 지시, `api/unavailable.py`·`web/src/components/availability.ts`·`scenarios/UnavailableList`): 사업 기간에 가용률 0인 달(육아휴직 등)이 있으면
   교체 검토·신규 사업 후보·긴급 투입에서 **보이되 고를 수 없게**, 사유를 빨간 글씨로("육아휴직 — 27.4~27.7월 투입 불가"). 계산(MILP·평가기·보강 계산)은 원래 달마다 가용률을 지킨다 -- 화면 표시만 더했다.
   `/api/meta` 사람에 `availability`·`leave`, 후보·긴급 응답에 `unavailable`.
+- **추가 과제**(2026-10-19 사용자 예 "운영 중 사업에 클라우드 마이그레이션 추가 과제, 6달만 회사 인력 2명·외주 여러 명", `api/workspace_edits`): 진행 중 사업에 붙는 과제는
+  **별도 사업 행** + manifest `pipeline[id].parent`·`external_headcount`(외주, 참고값 -- 계산에 안 씀). 고도화 과제(`predecessor`, 끝난 이전 사업)와 함께 못 고른다.
+  상위 사업은 등록·상위 변경 때 "현재 배치가 있는 진행 사업", 과제 기간은 상위 기간 안(`_check_parent`, 원문 달 공백 정규화 `_period`). 추가 과제 칸은 추가 과제에만 쓴다 --
+  일반 등록의 manifest 모양(데이터 버전)이 그대로. 후보는 상위 사업 팀원 `parent_team` 맨 위. 시연 데이터의 사업 수명 주기(장기 사업·단계·추가 과제)는 claude-a 재설계 요청 6항.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -160,7 +164,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 계획 기간 1년·투입 불가 표시(claude-b) **1922 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 237 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 계획 기간 1년·투입 불가 표시·추가 과제(claude-b) **1929 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 241 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
