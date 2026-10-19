@@ -38,7 +38,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 코드 지도
 
-- `core/domain/models.py` 입력 계약(Pydantic). 6개월 고정 horizon, 레벨 1~5, 4등급.
+- `core/domain/models.py` 입력 계약(Pydantic). 계획 기간 6 또는 12개월(데이터마다, 2026-10-19), 레벨 1~5, 4등급.
 - `core/graph/memory_graph.py` S/C 계산용 인메모리 구조 · `core/graph/sqlite_store.py` 근거 검색용 SQLite.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
 - `core/optimize/milp.py` 제품 MILP(PuLP+**HiGHS**, 2026-10-05부터. `MilpParams.solver="cbc"`는 비교용) · `highs_portfolio.py` 시드 포트폴리오 · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
@@ -135,6 +135,17 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
   "되돌려짐"은 `api.workspace.undo`가 남기는 기록(`review_docs/undone.json`)으로만 판정하고, "이력에 있음"은 확정(apply_*) 항목만 센다(시작 판 base는 재확정이 아니다) -- 다른 데이터로 바꿨거나 20판 밖으로 밀린 것은 "이력 밖"(열고 고치고 내보낼 수 있다). 긴급 투입 AI 재료는 `focus_input`(새로 온 사람만).
   승인·반려는 만들지 않았다 -- 보고서 8.4 "결재 연결(실제 도입 시)".
+- **계획 기간 6|12개월**(2026-10-19 사용자 "계획기간 1년 확장도 하자", claude-b): `Dataset`이 모든 사람의 가용률 길이가 같고(`HORIZON_CHOICES` 6·12) 사업이 그 안에
+  있는지 본다 -- 기간은 저장 필드가 아니라 가용률 길이(`Dataset.horizon_months`)라 기존 데이터 버전·캐시 키는 그대로. manifest `horizon_months` 6|12, 계산 모델은 원래 달 수 일반형.
+  연간 시연 `demo/org-n100-annual`(`scripts/make_annual_demo.py`: org-n100과 같은 사람·평가 글, 상반기 사업 그대로 + 하반기 신규 사업, 휴직 가정 가용률, 현재 배치 없음 = 밤 배치 연간 계획 대상).
+  화면 달 표시는 `/api/meta`의 `horizon_start`로 실제 달("27.4월", `allocFormat.monthLabel`) -- 12개월에서 순번 "1~12월"은 달력 달처럼 읽힌다.
+- **가용률 휴직·휴가 가정은 연간 묶음에만**(2026-10-19 사용자 가정 "대부분 100%, 3%는 1년 육아휴직(해를 걸침), 2%는 한 달 휴가(사업이 자체 감당)", `scripts/make_annual_demo.leave_windows`):
+  연초 계획 묶음(생성기 무작위 가용률, 0%가 사람·달마다 10%)에 넣어 보니 겸직이 폭증하고(100명 안 A 158건) 30초 안 A가 빈자리를 남겼다 -- 겸직을 막으면 사업 등급 정원이 사람 수에 안 맞는다.
+  가용률·겸직 3%·사업 정원 재설계는 claude-a 요청(`docs/requests/2026-10-19-availability-redesign.md`, 실측표). **12개월 데이터는 자동 시간 한도 ×4**(`api/settings.HORIZON_TIME_FACTOR`,
+  연간 100명 30초: 빈자리 62항목, 120초: 0) -- `to_milp_params(n_people, months=)`에 계획 기간을 넘긴다.
+- **투입 불가 인력 표시**(2026-10-19 사용자 지시, `api/unavailable.py`·`web/src/components/availability.ts`·`scenarios/UnavailableList`): 사업 기간에 가용률 0인 달(육아휴직 등)이 있으면
+  교체 검토·신규 사업 후보·긴급 투입에서 **보이되 고를 수 없게**, 사유를 빨간 글씨로("육아휴직 — 27.4~27.7월 투입 불가"). 계산(MILP·평가기·보강 계산)은 원래 달마다 가용률을 지킨다 -- 화면 표시만 더했다.
+  `/api/meta` 사람에 `availability`·`leave`, 후보·긴급 응답에 `unavailable`.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -149,7 +160,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 검토 자료·야간 화면 + claude-b `1ca26dc` **1908 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 231 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 계획 기간 1년·투입 불가 표시(claude-b) **1922 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 237 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
