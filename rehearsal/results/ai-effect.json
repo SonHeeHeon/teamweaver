@@ -1,112 +1,112 @@
 {
- "recorded_at": "2026-10-19T15:08:36+0900",
+ "recorded_at": "2026-10-19T18:19:58+0900",
  "sizes": {
   "100": {
    "people": 100,
-   "projects": 25,
-   "reviews": 1372,
-   "text_only_negative_reviews": 145,
-   "rule_only_negative_reviews": 196,
-   "flagged_pairs": 138,
+   "projects": 21,
+   "reviews": 1216,
+   "text_only_negative_reviews": 131,
+   "rule_only_negative_reviews": 173,
+   "flagged_pairs": 123,
    "reward_pairs": 200,
    "flagged_in_reward": {
     "rule": 34,
     "ai": 0
    },
-   "reward_overlap": 161,
-   "time_limit_s": 60,
+   "reward_overlap": 163,
+   "time_limit_s": 30,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 60.6,
+    "elapsed_s": 30.5,
     "flagged_together": 9,
-    "synergy_under_ai": 5.1783,
-    "total_under_ai": 68.613,
+    "synergy_under_ai": 6.2612,
+    "total_under_ai": 58.3626,
     "violations": 0,
-    "assignments": 82
+    "assignments": 67
    },
    "plan_ai": {
-    "elapsed_s": 60.5,
-    "flagged_together": 1,
-    "synergy_under_ai": 7.7914,
-    "total_under_ai": 70.783,
+    "elapsed_s": 30.4,
+    "flagged_together": 4,
+    "synergy_under_ai": 7.7848,
+    "total_under_ai": 59.5362,
     "violations": 0,
-    "assignments": 82
+    "assignments": 67
    },
-   "assignments_only_ai": 46,
-   "assignments_only_rule": 46,
+   "assignments_only_ai": 44,
+   "assignments_only_rule": 44,
    "np_check": true
   },
   "200": {
    "people": 200,
-   "projects": 50,
-   "reviews": 2641,
-   "text_only_negative_reviews": 255,
-   "rule_only_negative_reviews": 484,
-   "flagged_pairs": 240,
+   "projects": 42,
+   "reviews": 2369,
+   "text_only_negative_reviews": 235,
+   "rule_only_negative_reviews": 426,
+   "flagged_pairs": 220,
    "reward_pairs": 200,
    "flagged_in_reward": {
-    "rule": 34,
+    "rule": 36,
     "ai": 0
    },
-   "reward_overlap": 161,
-   "time_limit_s": 90,
+   "reward_overlap": 163,
+   "time_limit_s": 60,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 91.5,
-    "flagged_together": 14,
-    "synergy_under_ai": 12.1517,
-    "total_under_ai": 161.2832,
+    "elapsed_s": 48.6,
+    "flagged_together": 17,
+    "synergy_under_ai": 14.359,
+    "total_under_ai": 149.497,
     "violations": 0,
-    "assignments": 185
+    "assignments": 167
    },
    "plan_ai": {
-    "elapsed_s": 92.1,
-    "flagged_together": 5,
-    "synergy_under_ai": 15.2611,
-    "total_under_ai": 163.7051,
+    "elapsed_s": 53.0,
+    "flagged_together": 6,
+    "synergy_under_ai": 15.3614,
+    "total_under_ai": 150.3448,
     "violations": 0,
-    "assignments": 185
+    "assignments": 167
    },
-   "assignments_only_ai": 91,
-   "assignments_only_rule": 91,
+   "assignments_only_ai": 67,
+   "assignments_only_rule": 67,
    "np_check": true
   },
   "300": {
    "people": 300,
-   "projects": 74,
-   "reviews": 4012,
-   "text_only_negative_reviews": 346,
-   "rule_only_negative_reviews": 667,
-   "flagged_pairs": 334,
+   "projects": 62,
+   "reviews": 3606,
+   "text_only_negative_reviews": 316,
+   "rule_only_negative_reviews": 589,
+   "flagged_pairs": 306,
    "reward_pairs": 200,
    "flagged_in_reward": {
     "rule": 22,
     "ai": 0
    },
-   "reward_overlap": 158,
-   "time_limit_s": 120,
+   "reward_overlap": 175,
+   "time_limit_s": 90,
    "solver_seeds": 4,
    "gap": 0.01,
    "plan_rule": {
-    "elapsed_s": 122.9,
-    "flagged_together": 12,
-    "synergy_under_ai": 14.2232,
-    "total_under_ai": 243.682,
+    "elapsed_s": 92.7,
+    "flagged_together": 20,
+    "synergy_under_ai": 15.7095,
+    "total_under_ai": 224.6238,
     "violations": 0,
-    "assignments": 284
+    "assignments": 260
    },
    "plan_ai": {
-    "elapsed_s": 111.2,
-    "flagged_together": 7,
-    "synergy_under_ai": 18.9402,
-    "total_under_ai": 246.3967,
+    "elapsed_s": 92.4,
+    "flagged_together": 9,
+    "synergy_under_ai": 18.7909,
+    "total_under_ai": 226.8849,
     "violations": 0,
-    "assignments": 284
+    "assignments": 260
    },
-   "assignments_only_ai": 117,
-   "assignments_only_rule": 117,
+   "assignments_only_ai": 125,
+   "assignments_only_rule": 125,
    "np_check": true
   }
  }

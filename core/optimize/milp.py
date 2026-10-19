@@ -54,10 +54,16 @@ def plan_entries(graph: MemoryGraph, params: "MilpParams", z: dict, a: dict,
     (monthly_alloc 없음), 다르면 monthly_alloc과 진행 달 평균(6자리 내림 -- 해 값 평균보다 크지 않다)을 싣는다.
     배치(z>0.5)인데 어느 달이든 최소 투입률보다 작으면(허용오차 밖) 항목을 만들지 않는다 -- 검증기가 잡는다."""
     entries = []
+    full = getattr(params, "allocation_mode", "fixed") == "full"
     for (i, j) in sorted(z):
         if not z[(i, j)] or z[(i, j)] <= 0.5:
             continue
         pid, jid = graph.people[i].id, graph.projects[j].id
+        if full:
+            # 전일 투입: 배치 = 100%(a ≡ z, 0/1). 해 값 0.9999999995를 소수 둘째 자리 내림하면 0.99가 돼, 경계 정리(1.0)를 본
+            # 검증기와 어긋나 해가 통째로 거절됐다(2026-10-19 v5 재측정에서 실측 -- 전일 투입은 C1 보정이 명단을 다시 만들지 않는다)
+            entries.append(AssignEntry(person_id=pid, project_id=jid, alloc=1.0))
+            continue
         if a_month is None:
             v = a[(i, j)]
             if v is None or not math.isfinite(v) or v < params.min_alloc - 1e-6:

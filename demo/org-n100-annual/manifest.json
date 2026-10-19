@@ -6,13 +6,13 @@
  "cost_unit": "가상비용점(월)",
  "synthetic": true,
  "seed": 2026,
- "generator": "core.ingest.org_profile v4",
+ "generator": "core.ingest.org_profile v5",
  "groups": {
   "DP": 100
  },
  "flagship_project": "J001",
  "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",
- "peak_demand_ratio": 0.8478,
+ "peak_demand_ratio": 0.8333,
  "leave": {
   "model": "대부분 100% · 육아휴직 3%(12개월, 해를 걸침, 그 달 0%) · 한 달 휴가 2%(사업이 자체 감당 -- 가용률 그대로)",
   "calibrated": false,
@@ -50,28 +50,54 @@
   ]
  },
  "lifecycle": {
-  "J021": {
+  "J010": {
+   "stage": "운영",
+   "started": "2024-04"
+  },
+  "J011": {
+   "stage": "운영",
+   "started": "2024-04"
+  },
+  "J012": {
+   "stage": "개발",
+   "started": "2025-03"
+  },
+  "J013": {
+   "stage": "고도화",
+   "started": "2025-03"
+  },
+  "J014": {
    "stage": "운영",
    "started": "2024-02"
   },
-  "J022": {
+  "J015": {
    "stage": "운영",
-   "started": "2024-11"
+   "started": "2024-10"
   },
-  "J023": {
-   "stage": "고도화",
-   "started": "2025-08"
-  },
-  "J024": {
+  "J017": {
    "stage": "개발",
-   "started": "2026-05"
+   "started": "2026-01"
   },
-  "J025": {
+  "J019": {
+   "stage": "고도화",
+   "started": "2025-12"
+  },
+  "J021": {
    "stage": "추가 과제",
    "started": "2026-12",
-   "parent": "J021",
-   "external_headcount": 3
+   "parent": "J010",
+   "external_headcount": 5
   }
+ },
+ "ongoing_history": {
+  "people": 21,
+  "dropped_reviews": 218,
+  "new_reviews": 62,
+  "join_months": [
+   3,
+   30
+  ],
+  "note": "생성기 v5: 계획 전에 시작한 진행 사업의 현재 팀원은 합류 달부터 업무 이력이 그 사업이다(지난 이력은 합류 직전에서 끊음). 끊긴 이력과 맞지 않게 된 평가는 지우고 진행 사업 팀원끼리의 평가를 새로 만들었다(번호는 원래 평가 뒤)."
  },
  "review_style": {
   "blunt_share": 0.08,
@@ -129,9 +155,7 @@
    "R000565",
    "R000579",
    "R000582",
-   "R000584",
    "R000605",
-   "R000610",
    "R000618",
    "R000630",
    "R000673",
@@ -145,31 +169,22 @@
    "R000743",
    "R000763",
    "R000797",
-   "R000798",
    "R000799",
    "R000826",
    "R000857",
    "R000865",
    "R000874",
-   "R000889",
-   "R000890",
    "R000893",
    "R000899",
    "R000919",
    "R000930",
-   "R000954",
    "R000969",
    "R000970",
-   "R001001",
    "R001012",
    "R001017",
    "R001020",
    "R001032",
-   "R001051",
-   "R001079",
-   "R001080",
    "R001103",
-   "R001142",
    "R001146",
    "R001159",
    "R001167",
@@ -177,18 +192,19 @@
    "R001198",
    "R001212",
    "R001213",
-   "R001220",
    "R001231",
    "R001232",
-   "R001256",
    "R001267",
    "R001291",
    "R001294",
-   "R001304",
-   "R001314",
    "R001333",
    "R001342",
-   "R001343"
+   "R001343",
+   "R001373",
+   "R001381",
+   "R001399",
+   "R001405",
+   "R001416"
   ],
   "harsh_reviews": [
    "R000003",
@@ -231,30 +247,22 @@
    "R000880",
    "R000925",
    "R000926",
-   "R000927",
    "R000932",
-   "R000948",
    "R000978",
    "R000984",
-   "R000998",
-   "R000999",
-   "R001005",
    "R001035",
    "R001036",
    "R001075",
    "R001111",
-   "R001135",
    "R001163",
    "R001176",
-   "R001189",
    "R001240",
    "R001249",
-   "R001253",
-   "R001254",
    "R001278",
    "R001299",
    "R001331",
-   "R001336"
+   "R001384",
+   "R001404"
   ],
   "soft_reviews": [
    "R000037",
@@ -268,22 +276,21 @@
    "R000832",
    "R000957",
    "R001150",
-   "R001322",
-   "R001359"
+   "R001322"
   ],
   "note": "시연 글 성향(정답 보조, 계약 칸 아님): 리뷰마다 normal·blunt·harsh·soft 중 하나 -- 세 목록에 없는 리뷰는 normal. blunt = 직설형 평가자(blunt_reviewers)의 글(짧은 칭찬, 직설적인 아쉬운 점), harsh = 항목보다 글이 독함, soft = 항목보다 글이 부드러움. 어긋남(harsh·soft)이 직설형보다 우선해, 직설형 평가자의 리뷰 일부는 harsh·soft에 있다. 고른 항목(review_items.csv)은 성향과 무관하다."
  },
  "files": {
   "people.csv": "d28b1503b23c0efb0ff497c14bc746384b0855b62b92bd312194a02483eb5207",
   "rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
-  "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
-  "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
+  "person_skills.csv": "405b2e1b9434ec3d58e5d494402ee45a05c909a8f6d29fb0a55bdd6642d3b413",
+  "work_history.csv": "77c6df23609098e196d790e4477beef3386be856795b0bbd4cd7fab6eae71fbf",
   "availability.csv": "3e5d1620d5cf0e5cc781a44c8c458edafe23efda65fb5246bcdc375d9fe47e42",
-  "projects.csv": "a4ea862f33be82511514053c33e708af902b624891a1e163f38c36ded936880e",
-  "project_grade_requirements.csv": "ae37761373b037825614002ed1818eb1b53f22713486248757a0313f365faac1",
-  "project_skill_requirements.csv": "4e101871f7c1291bb856fe60df6f6046a3834a5b4bdb9ea8ac601ab6f52229ef",
-  "reviews.csv": "b727d86e2805e72b4d868c251ba2cd6414c88a9fcffdc1904c5a2dad69569c2b",
-  "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe",
+  "projects.csv": "9deae89ebcddcbf35e13d64af859848c8e98135863c1d49bf937399bdec08b61",
+  "project_grade_requirements.csv": "da49830ef92bbc893a94c9a919cce547905a32e4a3ae52ef6212f7c250cdc72c",
+  "project_skill_requirements.csv": "a4960746e4a140d03d77b9842b81534295dc8c89288394b7bc3a5a7f5ad010ec",
+  "reviews.csv": "14a115fe74c2dd9bb54115499fe1e704eb1a9670b91855a642d9ff30034e7b1e",
+  "review_items.csv": "acfe36bdbe309838fcda9bbdc5ef62be3fa1d4aab492a5517b55e46188561bd4",
   "current_assignments.csv": "5a21b91d4920b7834e10f92106d7d206c6c43657f474d5585b4b13ad8ed1c31d",
   "project_outcomes.csv": "866a90008129f085197bf6daf576e444ba6061aa35365af4b6cfde70fb44ecd7",
   "replacements.csv": "0217fb001f5b94d1e390afc763fb7044788d0bb7f4748001cb7bef8bbd90e375"
@@ -291,6 +298,10 @@
  "annual": {
   "source": "org-n100",
   "new_projects": [
+   "J022",
+   "J023",
+   "J024",
+   "J025",
    "J026",
    "J027",
    "J028",
@@ -305,11 +316,7 @@
    "J037",
    "J038",
    "J039",
-   "J040",
-   "J041",
-   "J042",
-   "J043",
-   "J044"
+   "J040"
   ],
   "note": "연간 계획 시연(상황 1 · 계획기간 1년): org-n100과 같은 사람·이력·평가 글, 기간 12개월. 상반기 사업은 원본과 같고 하반기 신규 사업은 생성기 규칙을 별도 난수열로 옮겼다. 가용률은 휴직·휴가 가정(manifest leave)으로 새로 만들었다. 현재 배치 없음(백지). scripts/make_annual_demo.py가 만든다."
  }

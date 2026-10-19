@@ -340,7 +340,8 @@ def validate_raw_solution(
             if solution.z[(i, j)] <= 0.5:
                 continue
             months = list(project.months)
-            values = [month_alloc(i, j, m) for m in months]
+            # 전일 투입은 배치 = 100%(독립 사본: z가 0/1이면 표시 투입률은 1.0 -- 해 값의 미세한 잔차를 내림해 0.99로 보지 않는다)
+            values = [1.0 if full else month_alloc(i, j, m) for m in months]
             if any(v < params.min_alloc - tol for v in values):
                 continue
             shown = {m: _display_alloc(v, params.min_alloc) for m, v in zip(months, values)}

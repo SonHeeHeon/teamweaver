@@ -154,7 +154,7 @@ def test_people_on_parental_leave_are_listed_as_unavailable_with_the_reason(annu
     assert dp4["leave"] == {"kind": "육아휴직", "start": "2026-12", "months": 12}
     assert dp4["availability"][:2] == [1.0, 1.0] and set(dp4["availability"][2:]) == {0.0}
     blocked = {u["person_id"]: u for u in late["unavailable"]}
-    j021 = next(j for j in meta["projects"] if j["id"] == "J026")   # v4: 장기 사업 J021~J025 뒤 첫 하반기 신규 사업
+    j021 = next(j for j in meta["projects"] if j["id"] == "J026")   # 하반기 신규 사업(v5: 첫 하반기 신규는 J022 -- J026도 하반기 사업)
     months = list(range(j021["start_month"], j021["end_month"] + 1))
     assert months[0] >= 6 and blocked["DP0004"]["months"] == months     # 하반기 사업 기간 전체가 휴직과 겹친다
     assert blocked["DP0004"]["reason"].startswith("육아휴직 — 27.") and blocked["DP0004"]["reason"].endswith("월 투입 불가")
@@ -176,7 +176,7 @@ def test_twelve_month_data_gets_a_longer_automatic_time_limit(annual):
     with TestClient(app) as c:
         body = c.get("/api/settings").json()
     # 서비스 기본은 전일 투입 -- 고정 투입률 표와 값이 같아 통과하던 비교를 바로잡았다(v4 측정으로 전일 100명이 60초가 되며 드러남)
-    assert body["effective_time_limit"] == recommended_seconds(100, "full", 12) == 240
+    assert body["effective_time_limit"] == recommended_seconds(100, "full", 12) == 120
     assert body["recommended_time_full"]["per_solve_s"] == body["effective_time_limit"]
     assert "12개월" in body["recommended_time_full"]["basis"] and "12개월" in body["recommended_time"]["basis"]
 

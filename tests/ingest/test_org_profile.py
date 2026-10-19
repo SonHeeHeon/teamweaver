@@ -30,8 +30,8 @@ def test_group_composition_matches_the_size(bundle):
     for row in b.tables["people.csv"]:
         groups[row["person_id"][:2]] = groups.get(row["person_id"][:2], 0) + 1
     assert groups == {100: {"DP": 100}, 200: {"DP": 100, "AI": 100}, 300: {"DP": 100, "AI": 100, "AU": 100}}[size]
-    # v4(2026-10-19): 사람 5명당 사업 1개 + 계획 전에 시작한 장기 사업(25명당 1개) + 운영 사업의 추가 과제(100명 1 · 200·300명 2)
-    assert len(ds.projects) == size // 5 + size // 25 + {100: 1, 200: 2, 300: 2}[size]
+    # v5(2026-10-19): 사람 5명당 사업 1개(실행 사업 대부분이 계획 전에 시작한 진행 사업) + 운영 사업의 추가 과제(100명 1 · 200·300명 2)
+    assert len(ds.projects) == size // 5 + {100: 1, 200: 2, 300: 2}[size]
 
 
 def test_flagship_keeps_its_internal_seats(bundle):
@@ -97,13 +97,15 @@ def test_current_roster_respects_grades_availability_and_locks(bundle):
 
 
 def test_roster_does_not_change_the_other_tables(tmp_path, monkeypatch):
-    """The roster has its own RNG stream: with it removed, every other file is byte-identical."""
+    """The roster has its own RNG stream: with it removed, every other file is byte-identical -- except the files the
+    v5 ongoing-history link derives from the roster (work history, skill months, reviews of the running projects)."""
     import core.ingest.org_profile as op
     a = generate_org_bundle(tmp_path / "a", 200, seed=5)
     monkeypatch.setattr(op, "_current_roster", lambda *args, **kw: [])
     c = op.generate_org_bundle(tmp_path / "c", 200, seed=5)
+    linked = ("work_history.csv", "person_skills.csv", "reviews.csv", "review_items.csv")
     for f in a.iterdir():
-        if f.name not in ("current_assignments.csv", "manifest.json"):
+        if f.name not in ("current_assignments.csv", "manifest.json") + linked:
             assert f.read_bytes() == (c / f.name).read_bytes(), f.name
 
 
@@ -369,7 +371,8 @@ def test_v3_keeps_people_history_and_review_tables_byte_identical_to_v1(tmp_path
     항목을 고르는 난수열 앞에서 난수를 하나라도 더 쓰면 여기서 걸린다(같은 생성기를 두 번 돌리는 비교로는 못 잡는다 -- 폴백 리뷰).
     v3(2026-10-19)는 가용률·사업 정원·예산·현재 배치만 바꾼다(전일 투입 재설계) -- 그 표는 이 비교에서 뺀다. 리뷰 판정 동봉이 그대로 쓰이는 근거."""
     v3_changed = {"availability.csv", "projects.csv", "project_grade_requirements.csv", "current_assignments.csv",
-                  "project_skill_requirements.csv"}                         # v4(2026-10-19): 장기 사업·추가 과제의 기술 요구가 붙는다
+                  "project_skill_requirements.csv",                         # v4(2026-10-19): 장기 사업·추가 과제의 기술 요구가 붙는다
+                  "work_history.csv", "person_skills.csv", "review_items.csv"}   # v5: 진행 사업 경력을 이력·기술 경력·평가에 잇는다
     v1 = {"rate_card.csv": "773b8e1c324e522f13bf7d09549b7024db27a4ab765f182b24bf87b2037189d0",
           "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
           "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
@@ -489,16 +492,18 @@ def ds_last(m: dict) -> str:
     return f"{k // 12}-{k % 12 + 1:02d}"
 
 
-def test_v4_keeps_v3_projects_of_the_planning_bundle():
-    """연초 계획: 기존 사업(J001~J020)은 번호·이름·기간·기술 그대로, 장기 사업은 뒤에 붙는다(별도 난수열)."""
+def test_v5_planning_projects_are_mostly_running_before_the_horizon(tmp_path):
+    """사용자(2026-10-19): "기존 사업 20개는 여전히 전부 하반기 시작 프로젝트들인가? 그건 좀 잘못된거같은데" -- 연초 계획의 실행 사업
+    대부분이 계획 전에 시작한 진행 사업이고(운영은 회사 인력 2~3명), 이름 머리말이 단계를 말한다. 번호·이름 뒷부분(고객·사업 종류)은 v4와 같다."""
     import csv
-    import tempfile
-    from pathlib import Path
-    with tempfile.TemporaryDirectory() as tmp:
-        root = generate_org_bundle(Path(tmp) / "p", 100, seed=2026)
-        new = list(csv.DictReader(open(root / "projects.csv", encoding="utf-8")))
-    assert [r["project_id"] for r in new[:20]] == [f"J{k:03d}" for k in range(1, 21)]
-    assert all(r["project_name"].startswith(("[제안]", "[실행]")) for r in new[1:20])
+    root = generate_org_bundle(tmp_path / "p", 100, seed=2026)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    rows = list(csv.DictReader(open(root / "projects.csv", encoding="utf-8")))
+    execution = [r for r in rows[1:] if r["phase"] == "실행" and m["lifecycle"].get(r["project_id"], {}).get("stage") != "추가 과제"]
+    running = [r for r in execution if r["project_id"] in m["lifecycle"]]
+    assert len(running) >= 0.5 * len(execution) and all(r["start_month"] < m["horizon_start"] for r in running)
+    assert all(r["project_name"].startswith(("[운영]", "[고도화]", "[실행]")) for r in running)
+    assert [r["project_id"] for r in rows[:20]] == [f"J{k:03d}" for k in range(1, 21)]
 
 
 @pytest.mark.parametrize("seed,scenario,start", [(14, "planning", "2026-10"), (1, "operating", "2026-10"),
@@ -517,3 +522,41 @@ def test_v4_bundles_load_for_other_seeds_and_horizon_starts(tmp_path, seed, scen
             assert e["started"] < start <= rows[pid]["end_month"]
     pairs = [(r["project_id"], r["skill_name"]) for r in csv.DictReader(open(root / "project_skill_requirements.csv", encoding="utf-8"))]
     assert len(pairs) == len(set(pairs))
+
+
+
+@pytest.mark.parametrize("scenario", ["planning", "operating"])
+def test_v5_ongoing_work_is_in_the_history_and_reviews_stay_consistent(tmp_path, scenario):
+    """v5(사용자 "진행해야겠어", 선택 "갈아 끼우고 평가도 새로"): 진행 사업 팀원은 합류 달부터 업무 이력이 그 사업이고 그 뒤 지난 이력과
+    겹치지 않는다. 남은 평가는 모두 평가 기간에 두 사람이 같은 사업 이력에 있고, 진행 사업 팀원끼리의 평가가 새로 생긴다."""
+    import csv
+    import datetime as dt
+    root = generate_org_bundle(tmp_path / scenario, 100, seed=2026, scenario=scenario)
+    m = json.loads((root / "manifest.json").read_text("utf-8"))
+    work = list(csv.DictReader(open(root / "work_history.csv", encoding="utf-8")))
+    cur = list(csv.DictReader(open(root / "current_assignments.csv", encoding="utf-8")))
+    reviews = list(csv.DictReader(open(root / "reviews.csv", encoding="utf-8")))
+    on_running = {(c["person_id"], c["project_id"]) for c in cur
+                  if m["lifecycle"].get(c["project_id"], {}).get("stage") not in (None, "추가 과제")}
+    linked = [w for w in work if w["project_code"].startswith("J")]
+    assert linked and m["ongoing_history"]["people"] == len(linked)
+    assert all((w["person_id"], w["project_code"]) in on_running and w["status"] == "진행중" for w in linked)
+    by_person: dict[str, list] = {}
+    for w in work:
+        by_person.setdefault(w["person_id"], []).append((w["start_date"], w["end_date"]))
+    for spans in by_person.values():                                  # 한 사람은 한 번에 한 이력(전일 투입)
+        spans.sort()
+        assert all(spans[k][1] < spans[k + 1][0] for k in range(len(spans) - 1))
+    rows = {}
+    for w in work:
+        rows.setdefault((w["person_id"], w["project_code"]), []).append((w["start_date"], w["end_date"]))
+    for r in reviews:
+        d = dt.date.fromisoformat(r["reviewed_at"])
+        hi = dt.date(d.year, d.month, 1).isoformat()
+        y, mo = (d.year, d.month - 5) if d.month > 5 else (d.year - 1, d.month + 7)
+        lo = f"{y}-{mo:02d}-01"
+        a = [x for x in rows.get((r["reviewer_id"], r["project_code"]), []) if x[0] <= hi and x[1] >= lo]
+        b = [x for x in rows.get((r["reviewee_id"], r["project_code"]), []) if x[0] <= hi and x[1] >= lo]
+        assert any(x[0] <= y2[1] and y2[0] <= x[1] for x in a for y2 in b), r["review_id"]
+    assert any(r["project_code"].startswith("J") for r in reviews)
+    assert m["ongoing_history"]["new_reviews"] == sum(r["project_code"].startswith("J") for r in reviews)

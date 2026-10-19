@@ -1,114 +1,114 @@
 {
- "recorded_at": "2026-10-19T15:04:05+0900",
+ "recorded_at": "2026-10-19T18:01:18+0900",
  "sizes": {
   "100": {
-   "time_limit_s": 60,
+   "time_limit_s": 30,
    "milp_plan_a": {
-    "total": 70.783,
-    "skill": 62.992,
-    "synergy": 7.791,
+    "total": 59.536,
+    "skill": 51.751,
+    "synergy": 7.785,
     "overfamiliarity": -0.0,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 82
+    "assignments": 67
    },
    "simple_rule": {
-    "total": 61.94,
-    "skill": 61.467,
-    "synergy": 0.873,
-    "overfamiliarity": -0.4,
+    "total": 51.717,
+    "skill": 51.11,
+    "synergy": 0.607,
+    "overfamiliarity": -0.0,
     "unfilled_seats": 0,
-    "violations": {},
-    "assignments": 82
+    "violations": {
+     "budget": 1
+    },
+    "assignments": 67
    },
    "strong_heuristic": {
-    "total": 65.461,
-    "skill": 60.163,
-    "synergy": 5.699,
-    "overfamiliarity": -0.4,
+    "total": 53.408,
+    "skill": 47.886,
+    "synergy": 5.522,
+    "overfamiliarity": -0.0,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 82,
-    "elapsed_s": 60.0,
-    "tries": 28579497,
-    "accepted": 4,
+    "assignments": 67,
+    "elapsed_s": 30.0,
+    "tries": 11208768,
+    "accepted": 2,
     "missing_seats_construct": 0
    },
-   "milp_best_bound": 72.4293267191144
+   "milp_best_bound": 61.11016107363094
   },
   "200": {
+   "time_limit_s": 60,
+   "milp_plan_a": {
+    "total": 150.345,
+    "skill": 135.583,
+    "synergy": 15.361,
+    "overfamiliarity": -0.6,
+    "unfilled_seats": 0,
+    "violations": {},
+    "assignments": 167
+   },
+   "simple_rule": {
+    "total": 124.866,
+    "skill": 125.069,
+    "synergy": 2.797,
+    "overfamiliarity": -3.0,
+    "unfilled_seats": 0,
+    "violations": {},
+    "assignments": 165
+   },
+   "strong_heuristic": {
+    "total": 134.631,
+    "skill": 125.98,
+    "synergy": 9.251,
+    "overfamiliarity": -0.6,
+    "unfilled_seats": 0,
+    "violations": {},
+    "assignments": 167,
+    "elapsed_s": 60.1,
+    "tries": 26421604,
+    "accepted": 8,
+    "missing_seats_construct": 0
+   },
+   "milp_best_bound": 151.81959950977728
+  },
+  "300": {
    "time_limit_s": 90,
    "milp_plan_a": {
-    "total": 163.705,
-    "skill": 148.844,
-    "synergy": 15.261,
+    "total": 226.885,
+    "skill": 208.494,
+    "synergy": 18.791,
     "overfamiliarity": -0.4,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 185
+    "assignments": 260
    },
    "simple_rule": {
-    "total": 140.196,
-    "skill": 140.442,
-    "synergy": 3.554,
-    "overfamiliarity": -3.8,
+    "total": 196.056,
+    "skill": 197.963,
+    "synergy": 0.493,
+    "overfamiliarity": -2.4,
     "unfilled_seats": 0,
     "violations": {
      "budget": 3
     },
-    "assignments": 184
+    "assignments": 256
    },
    "strong_heuristic": {
-    "total": -151.207,
-    "skill": 142.059,
-    "synergy": 8.534,
-    "overfamiliarity": -1.8,
-    "unfilled_seats": 3,
+    "total": -197.093,
+    "skill": 198.078,
+    "synergy": 5.429,
+    "overfamiliarity": -0.6,
+    "unfilled_seats": 4,
     "violations": {},
-    "assignments": 184,
-    "elapsed_s": 90.1,
-    "tries": 46747841,
-    "accepted": 7,
-    "missing_seats_construct": 3
+    "assignments": 259,
+    "elapsed_s": 90.2,
+    "tries": 38658660,
+    "accepted": 4,
+    "missing_seats_construct": 4
    },
-   "milp_best_bound": 165.59675258502364
-  },
-  "300": {
-   "time_limit_s": 120,
-   "milp_plan_a": {
-    "total": 246.397,
-    "skill": 227.856,
-    "synergy": 18.94,
-    "overfamiliarity": -0.4,
-    "unfilled_seats": 0,
-    "violations": {},
-    "assignments": 284
-   },
-   "simple_rule": {
-    "total": 214.839,
-    "skill": 217.696,
-    "synergy": 0.942,
-    "overfamiliarity": -3.8,
-    "unfilled_seats": 0,
-    "violations": {
-     "budget": 5
-    },
-    "assignments": 281
-   },
-   "strong_heuristic": {
-    "total": 24.339,
-    "skill": 217.804,
-    "synergy": 7.335,
-    "overfamiliarity": -0.8,
-    "unfilled_seats": 2,
-    "violations": {},
-    "assignments": 283,
-    "elapsed_s": 120.2,
-    "tries": 59914312,
-    "accepted": 7,
-    "missing_seats_construct": 2
-   },
-   "milp_best_bound": 248.28473165047714
+   "milp_best_bound": 229.14933942090352
   }
  }
 }

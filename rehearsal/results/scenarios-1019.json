@@ -121,42 +121,40 @@
    "권다현(중급): 지금 사업이 끝난 뒤 이어서 투입, J021 투입률 1, 이 사업 요구 기술 중 충족: ETL, 금융 업무, 비정형 문서 처리(OCR)"
   ],
   "adverse_facts": 3,
-  "facts": 13
+  "facts": 14
  },
  "emergency": {
   "added": [
    {
-    "person_id": "DP0042",
-    "name": "김재훈"
+    "person_id": "DP0034",
+    "name": "정진우"
    }
   ],
   "delta": {
-   "total": 1.4747380952380809,
-   "skill": 1.2666666666666657,
-   "synergy": 0.20807142857142868,
-   "overfamiliarity": 0.0,
+   "total": 1.7814999999998236,
+   "skill": 1.0,
+   "synergy": -0.21850000000000236,
+   "overfamiliarity": 1.0,
    "unfilled": 0.0
   },
   "apply_hint": {
    "headcount_add": {
     "J004": {
-     "특급": 1
+     "중급": 1
     }
    },
-   "budget_add": {
-    "J004": 514
-   },
+   "budget_add": {},
    "skills_add": {}
   },
   "standby": [
-   "박나연",
    "황유찬",
-   "김우진"
+   "박나연",
+   "윤시현"
   ],
   "moved": [
    {
-    "person_id": "DP0042",
-    "from": "J015",
+    "person_id": "DP0034",
+    "from": "J017",
     "to": [
      "J004"
     ]
@@ -168,63 +166,59 @@
   "kind": "emergency",
   "joined": [
    {
-    "name": "김재훈",
-    "grade": "특급",
+    "name": "정진우",
+    "grade": "중급",
     "origin": "moved",
     "sources": [
-     "J015"
+     "J017"
     ]
    }
   ],
   "move_facts": [
-   "이 확정으로 J004 사업 점수 5.74 → 6.34, 요구 기술 ETL 충족 3→4명(필요 2명), Spark 충족 4→5명(필요 1명), 금융 업무 충족 2→3명(필요 2명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
-   "김재훈(특급): 진행 사업에서 옮겨 옴, J004 투입률 1, 이 사업 요구 기술 중 충족: ETL, 금융 업무, Spark",
-   "김재훈: [고도화] 금융사 하 비정형 문서 메타데이터 전환(J015)에서 옮겨 옴 — 그 사업에서 빠짐",
-   "J015 사업(이 확정 전체로 인한 변화): 점수 3.27 → 4.15, 요구 기술 Text Analysis 충족 0→1명(필요 2명), 메타데이터 관리 충족 0→1명(필요 1명), 등급 정원 빈자리 0 → 0석",
-   "J015의 자리를 같은 확정에서 이보람(특급, 대기 인력)이(가) 채움"
+   "이 확정으로 J004 사업 점수 5.69 → 6.02, 요구 기술 Data Lake & Data Catalog 충족 5→6명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "정진우(중급): 진행 사업에서 옮겨 옴, J004 투입률 1, 이 사업 요구 기술 중 충족: Data Lake & Data Catalog",
+   "정진우: [고도화] 계열사 X 데이터 거버넌스·카탈로그 구축(J017)에서 옮겨 옴 — 그 사업에서 빠짐",
+   "J017 사업(이 확정 전체로 인한 변화): 점수 0.74 → 2.18, 요구 기술 Data Lake & Data Catalog 충족 1→2명(필요 1명), 데이터 모델링 충족 1→2명(필요 1명), 메타데이터 관리 충족 1→2명(필요 2명), 등급 정원 빈자리 0 → 0석",
+   "J017의 자리를 같은 확정에서 윤시현(중급, 대기 인력)이(가) 채움"
   ],
   "adverse_facts": 3,
-  "facts": 31
+  "facts": 29
  },
  "concurrent_support": {
   "candidates": [
    {
+    "name": "지준우",
+    "grade": "중급",
+    "delta": 1.3,
+    "predecessor_team": false,
+    "from": []
+   },
+   {
     "name": "권다현",
     "grade": "중급",
-    "delta": 1.44,
+    "delta": 1.25,
     "predecessor_team": false,
     "from": []
    },
    {
-    "name": "노민준",
-    "grade": "특급",
-    "delta": 1.43,
-    "predecessor_team": false,
-    "from": []
-   },
-   {
-    "name": "김서현",
-    "grade": "중급",
-    "delta": 1.37,
+    "name": "하예준",
+    "grade": "고급",
+    "delta": 1.2,
     "predecessor_team": false,
     "from": []
    }
   ],
-  "person": "권다현",
+  "person": "지준우",
   "keeps": [
    {
-    "project_id": "J007",
-    "end_month_index": 2
-   },
-   {
-    "project_id": "J021",
+    "project_id": "J014",
     "end_month_index": 5
    }
   ],
   "grant": [
    {
-    "person_id": "DP0035",
-    "name": "권다현",
+    "person_id": "DP0079",
+    "name": "지준우",
     "grade": "중급",
     "max_projects": 2,
     "reason": "긴급 지원",
@@ -233,7 +227,7 @@
    }
   ],
   "monthly_cost": 1000.0,
-  "delta": 1.44,
+  "delta": 1.3,
   "apply_hint": {
    "headcount_add": {
     "J015": {
@@ -251,18 +245,18 @@
   "kind": "emergency",
   "joined": [
    {
-    "name": "권다현",
+    "name": "지준우",
     "grade": "중급",
     "origin": "partly_free",
     "sources": []
    }
   ],
   "move_facts": [
-   "이 확정으로 J015 사업 점수 4.15 → 5.59, 요구 기술 ETL 충족 5→6명(필요 2명), Text Analysis 충족 1→2명(필요 2명), 메타데이터 관리 충족 1→2명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
-   "권다현(중급): 프로젝트 동시 수행(원래 사업 유지), J015 투입률 1, 이 사업 요구 기술 중 충족: ETL, Text Analysis, 메타데이터 관리",
-   "권다현: 프로젝트 동시 수행 허용 — 사유 긴급 지원 · 기술 지원 요청 (2026-10-19), 같은 달 최대 2개 사업(사업마다 100%)"
+   "이 확정으로 J015 사업 점수 3.97 → 5.27, 요구 기술 ETL 충족 6→7명(필요 2명), 메타데이터 관리 충족 0→1명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "지준우(중급): 프로젝트 동시 수행(원래 사업 유지), J015 투입률 1, 이 사업 요구 기술 중 충족: ETL, 메타데이터 관리",
+   "지준우: 프로젝트 동시 수행 허용 — 사유 긴급 지원 · 기술 지원 요청 (2026-10-19), 같은 달 최대 2개 사업(사업마다 100%)"
   ],
-  "adverse_facts": 1,
+  "adverse_facts": 3,
   "facts": 27
  }
 }

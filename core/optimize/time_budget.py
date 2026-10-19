@@ -25,11 +25,11 @@ MEASURED: dict[int, int | None] = {100: 15, 200: 30, 300: 120}
 # 시간(outputs/c6-monthly-scale*.json: 100명 16초, 200명 120초 한도에서 76초, 300명 360초 한도에서 309초).
 # 권장 시간 안에서 못 끝내면 고정 투입률보다 낮을 수 있다(300명 180초: −1.6%), 끝내면 +15~20%.
 MEASURED_MONTHLY: dict[int, int | None] = {100: 16, 200: 77, 300: 309}
-# 전일 투입(allocation_mode="full", 2026-10-19 claude-a): 생성기 v4 연초 묶음(6개월, 사업 수명 주기 -- 사업 25·50·74개), 초기해 포함, 시드 1,
-# 안 A가 gap 5% 안 최선 증명으로 끝난 시간 -- 100명 26초, 200명 55초, 300명 66초(30초 한도면 200·300명 빈자리 3석이 남았다 -- 초기해가 3석을 못 채움).
-# v3(사업 20·40·60개)는 18·48·58초였다. 근거 rehearsal/results/time-budget-full.json(`python -m rehearsal.time_budget_full`).
-# 12개월은 api/settings.HORIZON_TIME_FACTOR(연간 100명: 120초 한도에서 82초 증명).
-MEASURED_FULL: dict[int, int | None] = {100: 27, 200: 56, 300: 66}
+# 전일 투입(allocation_mode="full", 2026-10-19 claude-a): 생성기 v5 연초 묶음(6개월 -- 실행 사업 대부분이 계획 전에 시작한 진행 사업, 진행 사업 경력을
+# 이력·평가에 이음), 초기해 포함, 시드 1, 안 A가 gap 5% 안 최선 증명으로 끝난 시간 -- 100명 13초, 200명 38초, 300명 53초(30초 한도면 300명 빈자리 3석:
+# 초기해가 3석을 못 채움). v3 18·48·58초, v4 26·55·66초. 근거 rehearsal/results/time-budget-full.json(`python -m rehearsal.time_budget_full`).
+# 12개월은 api/settings.HORIZON_TIME_FACTOR(v5 연간 100명: 60초 한도에서 41초 증명).
+MEASURED_FULL: dict[int, int | None] = {100: 13, 200: 38, 300: 53}
 # Margin over the measured minimum: plan A is solved with a stricter 1 % gap in the service, and real data may be
 # harder than the synthetic bundles. Rounded up to 30 s steps.
 MARGIN = 1.5

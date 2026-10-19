@@ -82,8 +82,9 @@ def make(src: Path = SRC, dst: Path = DST) -> Path:
                                  idx.get(p["end_month"], MONTHS - 1 if p["end_month"] > months[-1] else 0))
     used = {p["project_name"] for p in projects}
     life = m.get("lifecycle") or {}
-    n_old = sum(1 for p in projects if p["project_id"] != FLAGSHIP["project_id"] and p["project_id"] not in life)
-    # ↑ 대표 사업·장기 사업(v4 lifecycle)을 뺀 상반기 사업 수 -- 하반기 신규 사업 수가 v3와 같게
+    n_old = sum(1 for p in projects if p["project_id"] != FLAGSHIP["project_id"]
+                and (life.get(p["project_id"]) or {}).get("stage") != "추가 과제")
+    # ↑ 대표 사업·추가 과제를 뺀 상반기 사업 수(v5: 진행 중 사업도 센다 -- 대부분 상반기에 끝나 하반기에 새 사업이 들어온다) -- 하반기 신규 사업 수가 v3와 같게
     n_prop = round(n_old * 0.35)
     types = PROJECT_TYPES["DP"]
     new: list[dict] = []

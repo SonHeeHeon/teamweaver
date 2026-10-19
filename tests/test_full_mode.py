@@ -83,6 +83,19 @@ def test_validator_rejects_part_time_or_leave_month_or_unpermitted_double_seat()
     assert "concurrent_projects" in issues
 
 
+def test_full_time_plan_is_exactly_100_percent_despite_solver_residue():
+    """2026-10-19(v5 재측정 실측): HiGHS가 z = 1 − 5e-10을 돌려주면 명단이 0.99로 내림되고 경계 정리(1.0)를 본 검증기가 해를 거절했다.
+    전일 투입은 배치 = 100% -- 명단과 검증기의 독립 사본 모두 1.0이다."""
+    from core.optimize.milp import plan_entries
+    graph, S, C = _fixture()
+    raw = solve_milp_diagnostic(graph, S, C, FULL)
+    near = {k: (1.0 - 5e-10 if v > 0.5 else v) for k, v in raw.z.items()}
+    entries = plan_entries(graph, FULL, near, near)
+    assert entries and all(e.alloc == 1.0 for e in entries)
+    residue = replace(raw, z=near, a=near, plan=raw.plan.model_copy(update={"entries": entries}))
+    assert not {i.code for i in validate_raw_solution(graph, S, C, FULL, residue).issues} & {"plan_allocation"}
+
+
 def test_evaluator_full_rules():
     graph, S, C = _fixture({"p0": 2})
     ok = [AssignEntry(person_id="p0", project_id="j0", alloc=1.0), AssignEntry(person_id="p0", project_id="j1", alloc=1.0)]
