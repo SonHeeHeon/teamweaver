@@ -427,3 +427,50 @@ def fragments(raw: str) -> list[str]:
     for s in split_sentences(raw or ""):
         out += [p.strip() for p in SLOT.split(s)[::2] if p.strip()]
     return out
+
+
+# ---------------------------------------------------------------- 요약(2026-10-20 사용자 "인사팀 소명은 너무 길어서 읽을수가 없어")
+# 같은 자리표시 문법·같은 검사(_analyze)를 쓴다 -- 사실은 서버가 채우고, 없는 사실은 S1로 걸린다. 요약만의 규칙:
+#   팀원 전원을 다룰 필요는 없다(S5를 보지 않는다), 맺음말 빼고 SUMMARY_MAX_SENTENCES문장 이하(Y1), 자리표시 2개 이상(Y2),
+#   불리한 사실이 있으면 그중 하나 이상을 인용한다(Y3 -- 주의 줄을 빼먹은 요약은 채택하지 않는다).
+SUMMARY_MAX_SENTENCES = 3
+SUMMARY_MAX_SLOTS = 4        # 근거 자리 4개 이하(Y4) -- 한 문장에 요구 기술을 줄줄이 넣으면 요약이 아니다(1차 측정 2026-10-20)
+
+
+def verify_summary(raw: str, inp: JustificationInput) -> dict:
+    if not raw or not raw.strip() or not SLOT.search(raw):
+        return {"ok": False, "violations": [{"rule": "S6", "sentence": (raw or "")[:200], "detail": "빈 글이거나 자리표시가 없다"}], "cited": []}
+    a = _analyze(raw, inp)
+    viol = list(a["violations"])
+    body = [s for s in a["sentences"] if SLOT.search(s)]
+    if len(body) > SUMMARY_MAX_SENTENCES:
+        viol.append({"rule": "Y1", "sentence": "", "detail": f"요약이 {len(body)}문장이다(최대 {SUMMARY_MAX_SENTENCES})"})
+    if len(SLOT.findall(raw)) < 2:
+        viol.append({"rule": "Y2", "sentence": "", "detail": "근거 자리표시가 2개보다 적다"})
+    if len(SLOT.findall(raw)) > SUMMARY_MAX_SLOTS:
+        viol.append({"rule": "Y4", "sentence": "", "detail": f"근거 자리표시가 {SUMMARY_MAX_SLOTS}개보다 많다"})
+    adverse = {f.id for f in inp.facts if f.adverse}
+    if adverse and not (adverse & a["cited"]):
+        viol.append({"rule": "Y3", "sentence": "", "detail": "불리한 사실이 있는데 하나도 인용하지 않았다"})
+    return {"ok": not viol, "violations": viol, "cited": sorted(a["cited"], key=lambda x: int(x[1:]))}
+
+
+def rule_summary_raw(inp: JustificationInput) -> str | None:
+    """AI가 없거나 요약이 검사에 걸리면 쓰는 규칙 요약(자리표시 원문 -- render로 채운다): 요구 기술 충족 → 후보 비교·규칙 준수 중 하나 → 불리한 사실 하나."""
+    good = [f for f in inp.facts if not f.adverse]
+    bad = [f for f in inp.facts if f.adverse]
+    pick = lambda kinds: next((f for k in kinds for f in good if f.kind == k), None)   # noqa: E731
+    first = pick(("REQ",))
+    second = pick(("ALT", "CON", "PRJ"))
+    parts = []
+    if first:
+        parts.append(f"요구 기술은 {{{first.id}}}입니다.")
+    if second:
+        label = {"ALT": "후보 비교 결과", "CON": "규칙 준수 현황", "PRJ": "이 사업"}[second.kind]
+        parts.append(f"{label}{josa(label, '은/는')} {{{second.id}}}입니다.")
+    if bad:
+        f = bad[0]
+        lead = "다만 " + (f"{f.owners[0]}{josa(f.owners[0], '은/는')} " if f.kind in SUBJECT_KINDS else "")
+        parts.append(f"{lead}{{{f.id}}}입니다.")
+    raw = " ".join(parts)
+    return raw if raw and verify_summary(raw, inp)["ok"] else None

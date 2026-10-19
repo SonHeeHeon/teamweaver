@@ -99,6 +99,9 @@ def public_view(out: dict) -> dict:
             "addendum_groups": [{"owner": g.get("owner"), "owner_label": g.get("owner"), "facts": list(g.get("facts") or [])}
                                 for g in (out.get("addendum_groups") or [])],
             "facts": out.get("facts") or [], "fallback_reason": out.get("fallback_reason"), "verification": summary,
+            # 요약(2026-10-20, 같은 문법·검사 -- 걸리면 규칙 요약): 화면은 이것을 먼저, 본문은 "전체 보기"로
+            "summary": out.get("summary"), "summary_method": out.get("summary_method"),
+            "summary_fallback_reason": out.get("summary_fallback_reason"),
             "usage": ({k: usage.get(k) for k in ("model", "latency_s", "cost_usd", "reasoning_effort")} if usage else None)}
 
 
@@ -143,7 +146,7 @@ def apply_names(out: dict, names: dict[str, str]) -> dict:
     facts = [{**f, **{k: with_names(f.get(k), names) for k in ("text", "phrase", "phrase_full")}} for f in out.get("facts", [])]
     groups = [{**g, "owner_label": names.get(g.get("owner") or "", g.get("owner"))} for g in out.get("addendum_groups", [])]
     return {**out, "text": with_names(out.get("text"), names), "addendum": with_names(out.get("addendum"), names),
-            "facts": facts, "addendum_groups": groups}
+            "summary": with_names(out.get("summary"), names), "facts": facts, "addendum_groups": groups}
 
 
 def build_input(kg, project_id: str, entries, graph, S, C, params):
@@ -161,7 +164,7 @@ def justify_one(dataset: ActiveDataset, kg, project_id: str, entries, graph, S, 
     from api.rag.justification import generate_justification
     if inp is None:
         inp = build_input(kg, project_id, entries, graph, S, C, params)
-    out = generate_justification(client if ai else None, ai_model(), inp)
+    out = generate_justification(client if ai else None, ai_model(), inp, summary=True)
     if not ai:
         out["fallback_reason"] = None          # 화면이 템플릿을 먼저 달라고 했다(실패가 아니다)
     # 이름 치환은 검사·채움이 끝난 뒤 보여 줄 글에만 한다(AI·검사기는 ID 문법 그대로 -- E7c 측정 조건 유지)
