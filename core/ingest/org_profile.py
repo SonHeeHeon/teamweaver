@@ -69,7 +69,14 @@ def _life_record(kind: str, started: str) -> dict:
     return {"stage": {"운영": "운영", "고도화": "고도화"}.get(kind, "개발"), "started": started}
 
 
-LIFE_LABEL = {"운영": "[운영]", "고도화": "[고도화]", "개발2025": "[실행]", "개발2026": "[실행]"}
+# 이름 머리말은 사업 **종류**만(운영·고도화 -- 추가 과제는 아래에서 따로). 단계 말("[실행]"·"[제안]")은 붙이지 않는다: 단계는 화면에서
+# 바뀌어(제안 → 발주 예정 → 수주) 이름의 단계 말이 낡는다 -- 사용자 2026-10-20 "[제안]은 빼자 … 추가 과제나 이런건 앞에 붙이면 좋은데
+# 아닌 것들은 안붙이는게 좋은거같아"(claude-b, 사용자 지시로 claude-a 영역 수정). 개발 단계는 수명 주기 칩이 보인다. 난수 소비는 그대로.
+LIFE_LABEL = {"운영": "[운영]", "고도화": "[고도화]", "개발2025": "", "개발2026": ""}
+
+
+def _labeled(kind: str, name: str) -> str:
+    return f"{LIFE_LABEL[kind]} {name}" if LIFE_LABEL[kind] else name
 PEAK_CAP = 0.85                     # 등급·달별 정원 합 / 그 달 그 등급 가용 인원 상한(예전 전체 85% 규칙을 등급별로)
 BUDGET_RANGE = (1.0, 1.25)          # 예산 = 기준 단가 × 정원 × uniform(BUDGET_RANGE) -- 사용자 결정 2026-10-19(예전 0.9~1.15)
 BLUNT_SHARE, MISMATCH_SHARE = 0.08, 0.05        # 직설형 평가자 비율(평가자 단위) · 항목과 글이 어긋나는 리뷰 비율(claude-b 요청 5~10%)
@@ -648,7 +655,7 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
                 start = rng.randint(0, 2)
                 end = min(HORIZON_MONTHS - 1, start + rng.randint(2, 5))
                 hc = {"특급": rng.randint(0, 1), "고급": rng.randint(1, 2), "중급": rng.randint(1, 3), "초급": rng.randint(0, 2)}
-            label = f"[{'제안' if phase == '제안' else '실행'}] " + name.format(c=client)
+            label = name.format(c=client)                    # 단계 말 없음(2026-10-20, LIFE_LABEL 주석)
             pid = f"J{j:03d}"
             texts = (horizon[start].strftime("%Y-%m"), horizon[end].strftime("%Y-%m"))
             life = None
@@ -664,7 +671,7 @@ def _projects(rng: random.Random, groups: dict[str, int], horizon: list[dt.date]
                     texts = (started, _month_add(horizon[0], lrng.randint(12, 24)).strftime("%Y-%m"))
                 else:
                     texts = (started, horizon[end].strftime("%Y-%m"))
-                label = f"{LIFE_LABEL[kind]} " + name.format(c=client)
+                label = _labeled(kind, name.format(c=client))
             projects.append({"project_id": pid, "project_name": label, "sector": sector, "phase": phase,
                              "start_month": texts[0], "end_month": texts[1],
                              "_start": start, "_end": end, "_hc": hc, "_flagship": False,
@@ -845,12 +852,12 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
                 hc[m["career_grade"]] += 1
             rows = skill_rows(skills)
             if kind is None:
-                add_project(f"J{j:03d}", f"[실행] {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows)
+                add_project(f"J{j:03d}", name, sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows)
                 continue
             started = _life_start(lrng, kind, horizon[0])
             end_text = (_month_add(horizon[0], lrng.randint(12, 24)).strftime("%Y-%m") if small
                         else horizon[HORIZON_MONTHS - 1].strftime("%Y-%m"))
-            add_project(f"J{j:03d}", f"{LIFE_LABEL[kind]} {name}", sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows,
+            add_project(f"J{j:03d}", _labeled(kind, name), sector, "실행", 0, HORIZON_MONTHS - 1, team, dict(hc), rows,
                         texts=(started, end_text), life=_life_record(kind, started))
             projects[-1].update(_base=name, _client=picked_client[name], _skills=[r["skill_name"] for r in rows])
             if small:
@@ -882,7 +889,7 @@ def _operating_scenario(rng: random.Random, people: list[dict], groups: dict[str
         hc = defaultdict(int)
         for p in dealt[k]:
             hc[p["career_grade"]] += 1
-        add_project(f"J{j:03d}", f"[제안] {name}", sector, "제안", 1, HORIZON_MONTHS - 1, [], dict(hc), skill_rows(skills),
+        add_project(f"J{j:03d}", name, sector, "제안", 1, HORIZON_MONTHS - 1, [], dict(hc), skill_rows(skills),
                     priced=dealt[k])
         proposal_ids.append(f"J{j:03d}")
     addons = {}

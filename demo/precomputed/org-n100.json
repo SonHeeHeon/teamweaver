@@ -2,7 +2,7 @@
  "format": 1,
  "preset": "org-n100",
  "dataset_id": "org-n100-s2026",
- "dataset_version": "13e4b636cf99a215e1bd2289d48d39738ce5254582023a3e3436feaedee7ff94",
+ "dataset_version": "364d7ee50b109d8b86878e8b2fc3b4733b8b54db2e918ac694ee758ce7282a55",
  "review_judge": "llm",
  "computed_at": "2026-10-19T10:17:30+00:00",
  "commit": "ce15782",
@@ -1437,8 +1437,8 @@
  },
  "operating": null,
  "rekeyed": {
-  "at": "2026-10-19T13:19:15+00:00",
-  "from_dataset_version": "d1e55b908ecc5180b94851f190a56d18699ad1bab933cbd04ca7cd215ce4de8b",
-  "reason": "the ongoing-skill aging rules marker changed (rows with an unknown counted month are held, rows last used before the 10-year window keep only the new months -- review fixes 2026-10-19); the demo skill rows were counted up to the month before the plan, so no skill months grew and the model input is unchanged -- results were not re-solved, and the server still re-scores every plan on load"
+  "at": "2026-10-19T16:47:43+00:00",
+  "from_dataset_version": "13e4b636cf99a215e1bd2289d48d39738ce5254582023a3e3436feaedee7ff94",
+  "reason": "project names lost their stage words ('[제안] ', '[실행] ' -- user 2026-10-20 \"[제안]은 빼자\"); names are not a model input, so the plans were not re-solved, and the server still re-scores every plan on load"
  }
 }
