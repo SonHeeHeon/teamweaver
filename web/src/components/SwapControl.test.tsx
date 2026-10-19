@@ -25,7 +25,7 @@ describe("SwapControl", () => {
     render(<SwapControl people={people} entries={entries} onSwap={onSwap} busy={false} />);
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p000::j00" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p001" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     expect(onSwap).toHaveBeenCalledWith({
       out_person_id: "p000", in_person_id: "p001", project_id: "j00",
     });
@@ -47,7 +47,7 @@ describe("SwapControl", () => {
 
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: opts[1].value } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p001" } });
-    fireEvent.click(screen.getByRole("button", { name: /브리핑/ }));
+    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
     expect(onSwap).toHaveBeenCalledWith({
       out_person_id: "p000", in_person_id: "p001", project_id: "j01",
     });
@@ -87,5 +87,33 @@ describe("entryKey / parseEntryKey", () => {
 
   it("형식이 아니면 null", () => {
     expect(parseEntryKey("p000")).toBeNull();
+  });
+});
+
+describe("다른 사업에서 데려오기·안내(사용자 2026-10-20)", () => {
+  const ppl: Person[] = [
+    { id: "a", name: "가", grade: "중급", skills: {} }, { id: "b", name: "나", grade: "중급", skills: {} },
+    { id: "c", name: "다", grade: "고급", skills: {} }];
+  const ent: AssignEntry[] = [{ person_id: "a", project_id: "J1", alloc: 1 }, { person_id: "b", project_id: "J2", alloc: 1 }];
+  const projects = [{ id: "J1", name: "포털", start_month: 0, end_month: 5, grade_headcount: {} },
+                    { id: "J2", name: "차세대", start_month: 0, end_month: 5, grade_headcount: {} }] as never;
+
+  it("교체 대상을 고르면 다른 사업 인력도 후보이고, 데려오기·맞바꾸기를 보낸다", () => {
+    const onSwap = vi.fn();
+    const onPick = vi.fn();
+    render(<SwapControl people={ppl} entries={ent} onSwap={onSwap} busy={false} projects={projects} onPick={onPick} />);
+    expect(screen.getByText("교체 대상을 먼저 고르면 다른 사업 인력도 후보에 나옵니다.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "a::J1" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "b@J2" } });
+    expect(onPick).toHaveBeenLastCalledWith({ outPersonId: "a", projectId: "J1", inPersonId: "b", from: "J2" });
+    expect(screen.getByText(/에서 데려오면 그 사업에 자리가 하나 빕니다/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /맞바꾸기/ }));
+    fireEvent.click(screen.getByRole("button", { name: "교체 효과 보기" }));
+    expect(onSwap).toHaveBeenCalledWith({ out_person_id: "a", in_person_id: "b", project_id: "J1",
+                                          in_from_project_id: "J2", exchange: true });
+  });
+
+  it("데려온 사람의 원래 사업 값은 투입 칸 규칙을 통과한다", () => {
+    expect(resolveDrop("in::b@J2", "in")).toEqual({ slot: "in", value: "b@J2" });
   });
 });

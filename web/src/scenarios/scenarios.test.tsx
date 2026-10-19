@@ -173,12 +173,12 @@ describe("NewProjectsScreen", () => {
     const { streamOperatingCompare } = await import("../api/client");
     vi.mocked(streamOperatingCompare).mockImplementation(async function* () { /* 행 없음 */ });
     render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
-    fireEvent.click(await screen.findByRole("button", { name: "비교 계산" }));
+    fireEvent.click(await screen.findByRole("button", { name: "옮길 인원별로 계산" }));
     await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalled());
     expect(vi.mocked(streamOperatingCompare).mock.calls[0][0]).toMatchObject({ ks: [0, 1, 2, 3, 4, 5] });
     fireEvent.change(screen.getByLabelText("옮길 수 있는 최대 인원"), { target: { value: "3" } });
-    await waitFor(() => expect(screen.getByRole("button", { name: "비교 계산" })).toBeEnabled());
-    fireEvent.click(screen.getByRole("button", { name: "비교 계산" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "옮길 인원별로 계산" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "옮길 인원별로 계산" }));
     await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(2));
     expect(vi.mocked(streamOperatingCompare).mock.calls[1][0]).toMatchObject({ ks: [0, 1, 2, 3] });
   });
@@ -239,12 +239,12 @@ describe("EmergencyScreen", () => {
     const review = vi.fn();
     render(<EmergencyScreen onDatasetChanged={vi.fn()} onReviewDoc={review} />);
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
-    expect(await screen.findByText("밤사이 미리 뽑아 둔 명단")).toBeInTheDocument();
-    expect(screen.getByText(/100% · 점수 \+3\.10/)).toBeInTheDocument();            // 나눔 없는 예전 밤 명단은 합계 그대로
+    expect(await screen.findByText(/밤사이 미리 뽑아 둔 순위/)).toBeInTheDocument();
+    expect(screen.getByText(/^점수 \+3\.10/)).toBeInTheDocument();            // 나눔 없는 예전 밤 명단은 합계 그대로
     fireEvent.change(screen.getByLabelText(/무슨 일인지/), { target: { value: "  운영 이관 중 장애  " } });
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
-    expect(screen.getByText(/기술·협업 \+3\.10 · 추가 월 비용/)).toBeInTheDocument();
+    expect(screen.getByText(/기술·협업 \+3\.10 · 월 비용 \+/)).toBeInTheDocument();
     expect(screen.getByText("빼 오는 사람: 김소율(J008→J003)")).toBeInTheDocument();   // 사번이 아니라 이름(부서장 점검 f7)
     expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("빈자리 1개 채움")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "이 조합 확정" }));

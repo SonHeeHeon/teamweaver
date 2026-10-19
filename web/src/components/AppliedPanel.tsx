@@ -38,8 +38,9 @@ export function AppliedPanel({ label, history, violations, people, horizonStart,
           <li key={k}>
             {isAlloc(h)
               ? <>투입률 조정: {nameOf(h.person_id)} ({h.project_id}) {describe(h.monthly_alloc, horizonStart)}</>
-              : <>{nameOf(h.out_person_id)} → {nameOf(h.in_person_id)} ({h.project_id})</>}
-            {" "}· Δ {signed(h.objective_delta)}
+              : <>{nameOf(h.out_person_id)} → {nameOf(h.in_person_id)} ({h.project_id}{h.in_from_project_id
+                  ? `, ${h.exchange ? `${h.in_from_project_id}와 맞바꿈` : `${h.in_from_project_id}에서 데려옴`}` : ""})</>}
+            {" "}· 종합 점수 {signed(h.objective_delta)}
             {h.warnings.length > 0 && (
               <span className="ml-2 font-medium text-red-700">경고: {h.warnings.join(", ")}</span>
             )}

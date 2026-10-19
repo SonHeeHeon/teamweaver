@@ -8,7 +8,7 @@ from core.graph.memory_graph import MemoryGraph
 router = APIRouter()
 
 
-def _cowork_edges(graph: MemoryGraph) -> list[CoworkOut]:
+def _cowork_edges(graph: MemoryGraph, reveal_reviews: bool = False) -> list[CoworkOut]:
     """csr_matrix(대칭)에서 상삼각만 훑어 무방향 엣지를 복원한다.
 
     MemoryGraph는 원본 CoworkRecord 리스트를 보관하지 않으므로 project_count는
@@ -18,20 +18,24 @@ def _cowork_edges(graph: MemoryGraph) -> list[CoworkOut]:
     """
     ids = [p.id for p in graph.people]
     cw = graph.cowork_months.tocoo()
+    rv = graph.pair_review_score
     out = []
     for i, j, v in zip(cw.row, cw.col, cw.data):
         if int(i) < int(j) and v:
+            r = rv.get((int(i), int(j)), rv.get((int(j), int(i))))
             out.append(CoworkOut(a_id=ids[int(i)], b_id=ids[int(j)],
-                                 co_months=int(v), project_count=0))
+                                 co_months=int(v), project_count=0,
+                                 review=None if r is None or not reveal_reviews else round(float(r), 3)))
     out.sort(key=lambda e: (e.a_id, e.b_id))
     return out
 
 
 def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | None = None,
                leave: dict | None = None, concurrency: dict | None = None, *,
-               lifecycle: dict | None = None, periods: dict | None = None) -> MetaResponse:
+               lifecycle: dict | None = None, periods: dict | None = None, reveal_reviews: bool = False) -> MetaResponse:
     """meta를 graph 하나에서 만든다. /api/report도 요청이 잡은 데이터셋으로 이걸 만들어
-    PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9)."""
+    PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9).
+    reveal_reviews: 두 사람이 서로 남긴 평가의 좋고 나쁨(교체 검토 관계 목록, 2026-10-20)을 싣는다 -- 가상 데이터만(실데이터는 평가 원문 비공개 K5와 같은 선)."""
     people = [PersonOut(id=p.id, name=p.name, grade=p.grade.value, skills=p.skills,
                         skill_credit={k: v.model_dump() for k, v in (getattr(p, "skill_credit", None) or {}).items()},
                         availability=list(p.availability), leave=(leave or {}).get(p.id),
@@ -47,7 +51,7 @@ def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | No
                         skills=sorted(graph.skill_index.keys()),
                         review_items=load_review_items(),
                         dataset_version=dataset_version,
-                        coworks=_cowork_edges(graph),
+                        coworks=_cowork_edges(graph, reveal_reviews),
                         horizon_start=horizon_start,
                         horizon_months=len(graph.people[0].availability) if graph.people else 6)
 
@@ -57,4 +61,4 @@ def get_meta(graph: MemoryGraph = Depends(get_graph),
              dataset: ActiveDataset = Depends(get_dataset)) -> MetaResponse:
     return build_meta(graph, dataset.info.version, dataset.scenario.get("horizon_start"), dataset.scenario.get("leave"),
                       dataset.scenario.get("concurrency"), lifecycle=dataset.scenario.get("lifecycle"),
-                      periods=dataset.scenario.get("periods"))
+                      periods=dataset.scenario.get("periods"), reveal_reviews=dataset.info.synthetic is True)

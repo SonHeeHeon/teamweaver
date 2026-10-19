@@ -5,7 +5,8 @@
  *  변경 이력과 되돌리기. 확정·등록·고정은 모두 작업 데이터의 새 판이 된다(서버가 업로드와 같은 검증을 한다). */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, postJustification, streamOperatingCompare } from "../api/client";
-import type { AssignEntry, OperatingRow, PlacementSettings } from "../api/types";
+import type { AssignEntry, OperatingRow, Person, PlacementSettings, Project } from "../api/types";
+import { PersonName, ProjectCodes } from "../components/PersonName";
 import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ConcurrencyPanel } from "./ConcurrencyPanel";
@@ -61,9 +62,13 @@ interface Props {
   onDatasetChanged: () => void;
   /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19): 확정한 판과 사업(자동 편성은 여러 사업이라 null = 목록)으로 검토 자료 화면을 연다 */
   onReviewDoc?: (version: string, projectId: string | null) => void;
+  /** 이름을 누르면 기술 창, 사업 코드에 마우스를 올리면 이름(2026-10-20 화면 친절하게) -- 없으면 이름·코드만 */
+  people?: Person[];
+  projects?: Project[];
 }
 
-export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged, onReviewDoc }: Props) {
+export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged, onReviewDoc, people, projects }: Props) {
+  const pById = useMemo(() => new Map((people ?? []).map((p) => [p.id, p])), [people]);
   const [ws, setWs] = useState<Workspace | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [cands, setCands] = useState<Candidates | null>(null);
@@ -378,7 +383,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       const who = partnersText(r);
                       return (
                         <tr key={r.person_id} className="border-t border-slate-100 align-top">
-                          <td className="py-1.5">{r.name}{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}
+                          <td className="py-1.5"><PersonName name={r.name} person={pById.get(r.person_id)} />{r.predecessor_team && <span className="ml-1.5"><Chip tone="stage">이전 팀원</Chip></span>}
                             {r.parent_team && <span className="ml-1.5"><Chip tone="stage">상위 사업 팀원</Chip></span>}</td>
                           <td className="py-1.5"><Chip tone={GRADE_TONE[r.grade]}>{r.grade}</Chip></td>
                           <td className="py-1.5 text-xs">
@@ -392,7 +397,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                             {who && <div className="text-[11px] text-slate-500">{who}</div>}
                           </td>
                           <td className="text-xs text-slate-500">
-                            {r.pulled_from.length ? `${r.pulled_from.map(named).join(", ")}에서 빼 옴` : r.source === "partly_free" ? "남는 시간으로"
+                            {r.pulled_from.length ? <><ProjectCodes ids={r.pulled_from} projects={projects} />에서 빼 옴</> : r.source === "partly_free" ? "남는 시간으로"
                               : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
                             {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>}
                           </td>
@@ -428,7 +433,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
         </ActionBar>
       )}
 
-      <Panel title="자동 편성 — 몇 명까지 옮길까" sub={`신규 사업을 모두 채우면서 진행 사업에서 옮기는 사람 수(K)를 0~${kMax}명으로 비교합니다. 고정한 사람은 옮기지 않습니다.`}
+      <Panel title="자동 편성 — 몇 명까지 옮길까" sub={`신규 사업을 채울 때 진행 사업에서 데려와도 되는 사람 수(K)를 0~${kMax}명으로 바꿔 가며 계산해 나란히 보여 줍니다. 품질이 높고 빈자리가 적은 줄을 고르면 됩니다. 고정한 사람은 옮기지 않습니다.`}
              actions={<>
                <label className="flex items-center gap-1.5 text-xs text-slate-600">최대
                  <select className="rounded border border-slate-300 px-1.5 py-1 text-xs" value={kMax} disabled={autoState === "running"}
@@ -437,7 +442,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                  </select>
                </label>
                <button className="btn" disabled={autoState === "running" || busy} onClick={() => void runAuto()}>
-                 {autoState === "running" ? `계산 중…(100명 약 ${kMax >= 5 ? 45 : kMax === 4 ? 35 : 30}초)` : "비교 계산"}
+                 {autoState === "running" ? `계산 중…(100명 약 ${kMax >= 5 ? 45 : kMax === 4 ? 35 : 30}초)` : "옮길 인원별로 계산"}
                </button>
              </>}>
         {rows.length === 0 ? (
@@ -446,16 +451,15 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
         ) : (
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-slate-500">
-              <tr><th className="px-5 py-1.5" title="진행 사업에서 옮길 수 있는 최대 인원">K(최대 옮김)</th>
-                <th className="text-right" title="빈자리 감점을 뺀 계산 점수(전체 배치의 기술 적합 + 협업 − 익숙한 쌍 감점). 높을수록 좋고, 같은 데이터에서 K끼리 비교할 때만 뜻이 있습니다(실제 성과는 검증 전)">품질 ⓘ</th>
+              <tr><th className="px-5 py-1.5" title="진행 사업에서 데려와도 되는 최대 인원">옮겨도 되는 인원(K)</th>
+                <th className="text-right" title="빈자리 감점을 뺀 배치 품질 = 기술 적합 + 협업 보상 − 오래 함께한 사이 감점. 높을수록 좋고, 같은 데이터에서 K끼리 비교할 때만 뜻이 있습니다(실제 성과는 검증 전)">품질 ⓘ</th>
                 <th className="text-right" title="모든 사업에서 채우지 못한 정원 자리 수">빈자리</th>
                 <th>옮김</th><th>소명 미리보기</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.k} className="border-t border-slate-100">
-                  <td className="px-5 py-2"><span className="font-semibold">K={r.k}</span>
-                    <span className="ml-1 text-xs text-slate-500">{r.k === 0 ? "옮기지 않음" : `최대 ${r.k}명`}</span></td>
+                  <td className="px-5 py-2 font-semibold">{r.k === 0 ? "옮기지 않음" : `최대 ${r.k}명`} <span className="text-xs font-normal text-slate-400">K={r.k}</span></td>
                   <td className="num text-right">{r.accepted ? r.quality?.toFixed(2) : "–"}</td>
                   <td className="num text-right">{r.accepted ? r.unfilled_seats : "–"}</td>
                   <td className="text-xs text-slate-600">

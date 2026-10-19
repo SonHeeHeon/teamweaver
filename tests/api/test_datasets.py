@@ -431,6 +431,36 @@ def test_report_payload_carries_meta_of_the_acquired_dataset(client, monkeypatch
     assert all({c["a_id"], c["b_id"]} <= {"p000", "p001"} for c in meta["coworks"])
 
 
+def test_report_meta_coworks_are_teammates_only_with_review_words_for_synthetic(client, monkeypatch, tmp_path):
+    """PDF 팀별 협업 지도(2026-10-20): 협업선은 같은 사업에 함께 있는 쌍만(배치된 사람끼리 전부면 100명에 약 4,000개),
+    평가 극성은 가상 데이터만 -- 화면 /api/meta와 같은 규칙(fixture는 가상)."""
+    import api.routes.report as report_route
+
+    index = tmp_path / "index.html"
+    index.write_text("x")
+    monkeypatch.setattr(report_route, "_DIST_INDEX", index)
+    seen = []
+
+    async def fake_render(payload, *args, **kwargs):
+        seen.append(payload)
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(report_route, "render_report_pdf", fake_render)
+    body = client.get("/api/meta").json()
+    a, b = next((c["a_id"], c["b_id"]) for c in body["coworks"] if c["review"] is not None)
+    others = {c["b_id"] if c["a_id"] == a else c["a_id"] for c in body["coworks"] if a in (c["a_id"], c["b_id"])} - {b}
+    c = sorted(others)[0]                                  # a와 함께 일한 적 있지만 다른 사업에 둔다
+    res = client.post("/api/report", json={
+        "plan_label": "A", "objective": 1.0, "fulfillment": 1.0, "optimization_ratio": 1.0,
+        "entries": [{"person_id": a, "project_id": "j00", "alloc": 1.0}, {"person_id": b, "project_id": "j00", "alloc": 1.0},
+                    {"person_id": c, "project_id": "j01", "alloc": 1.0}],
+        "dataset_version": body["dataset_version"]})
+    assert res.status_code == 200, res.text
+    pairs = {frozenset((e["a_id"], e["b_id"])): e for e in seen[0]["meta"]["coworks"]}
+    assert set(pairs) == {frozenset((a, b))}
+    assert pairs[frozenset((a, b))]["review"] is not None
+
+
 # --- K13: 업로드 데이터 영속 ------------------------------------------------
 
 def test_uploaded_dataset_survives_restart(client, bundle_zip, data_dir):

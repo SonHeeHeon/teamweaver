@@ -159,7 +159,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             out_sel.select_option(out_value)
             in_sel = page.get_by_label("교체 투입")
             in_sel.select_option(in_sel.locator("option").nth(1).get_attribute("value"))
-            page.get_by_role("button", name=re.compile("브리핑 생성")).click()
+            page.get_by_role("button", name=re.compile("교체 효과 보기")).click()
             apply_btn = page.get_by_role("button", name=re.compile("^이 교체 적용"))
             expect(apply_btn).to_be_visible(timeout=60_000)
             # 이 seed(20명/4프로젝트, s11)의 첫 교체는 경고가 없다(결정적). 경고가 있는 확인 흐름은
@@ -171,6 +171,7 @@ def test_settings_upload_optimize_apply_and_pdf_in_a_real_browser(server):
             # 5) PDF(K4 내부 origin + K10 서버 재계산 + 원 플랜 서명)
             with page.expect_download(timeout=120_000) as dl:
                 page.get_by_role("button", name="PDF 내려받기").click()
+                page.get_by_role("button", name="소명 빼고 받기").click()     # 소명 포함 여부를 묻는 창(2026-10-20)
             pdf_bytes = Path(dl.value.path()).read_bytes()
         finally:
             browser.close()
@@ -222,7 +223,7 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
                 out_sel.select_option(out_sel.locator("option").nth(1).get_attribute("value"))
                 in_sel = page.get_by_label("교체 투입")
                 in_sel.select_option(in_sel.locator("option").nth(1).get_attribute("value"))
-                page.get_by_role("button", name=re.compile("브리핑 생성")).click()
+                page.get_by_role("button", name=re.compile("교체 효과 보기")).click()
                 with page.expect_response(lambda r: "/api/plans/edits/" in r.url
                                           and r.request.method == "PUT") as saved:
                     # 서버 기본 기준(최근 3년 중 12개월)에서는 이 교체에 경고가 붙을 수 있다 -- 경고를 확인하고 적용한다
@@ -248,6 +249,7 @@ def test_uploaded_data_and_applied_swap_survive_a_server_restart(tmp_path):
                 expect(page.get_by_text(re.compile("교체 1건 적용"))).to_be_visible()
                 with page.expect_download(timeout=120_000) as dl:
                     page.get_by_role("button", name="PDF 내려받기").click()
+                    page.get_by_role("button", name="소명 빼고 받기").click()     # 소명 포함 여부를 묻는 창(2026-10-20)
                 pdf_bytes = Path(dl.value.path()).read_bytes()
         finally:
             browser.close()

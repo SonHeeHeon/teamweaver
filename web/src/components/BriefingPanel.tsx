@@ -1,7 +1,7 @@
 import type { ObjectiveBreakdown, WhatifResponse } from "../api/types";
 import { swapWarnings } from "../api/whatifWarnings";
 import { EvidenceList } from "./EvidenceList";
-import { hasMarkers } from "./evidenceMarkers";
+import { hasMarkers, numberMarkers } from "./evidenceMarkers";
 
 interface Props {
   result: WhatifResponse | null;
@@ -11,36 +11,37 @@ interface Props {
 }
 
 const TERMS: [keyof ObjectiveBreakdown, string][] = [
-  ["skill", "기술 적합도"],
-  ["synergy", "협업 시너지"],
-  ["overfamiliarity", "반복 협업 감점"],
-  ["unfilled", "미충원 감점"],
+  ["skill", "기술 적합"],
+  ["synergy", "협업 보상(함께 일한 기간·서로 남긴 평가)"],
+  ["overfamiliarity", "오래 함께한 사이 감점"],
+  ["unfilled", "빈자리 감점(1자리 −100)"],
 ];
 
-const signed = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(4)}`;
+const signed = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
 
 export function BriefingPanel({ result, loading, nameOf }: Props) {
   if (loading) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
-        브리핑 생성 중…
+        AI 교체 설명 쓰는 중…
       </div>
     );
   }
   if (!result) {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-400">
-        인력을 교체하면 변화량과 XAI 브리핑이 여기에 표시된다.
+        빠질 사람과 들어올 사람을 고르고 '교체 효과 보기'를 누르면 점수 변화와 AI 교체 설명이 여기에 나옵니다.
       </div>
     );
   }
   const up = result.objective_delta >= 0;
   const warnings = swapWarnings(result);
   const hasNewViolation = result.new_violations.length > 0;
+  const ev = result.briefing.evidence ?? [];
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">XAI 브리핑</h3>
+        <h3 className="text-sm font-semibold text-slate-900">AI 교체 설명</h3>
         {result.fallback_used && (
           <span className="rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
             {result.fallback_reason === "external_blocked"
@@ -50,9 +51,12 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
         )}
       </div>
       <p className={`mt-2 text-sm font-medium ${up ? "text-emerald-600" : "text-red-600"}`}>
-        현행 점수 기준 변화 {signed(result.objective_delta)}
+        교체하면 종합 점수 {signed(result.objective_delta)}
       </p>
-      <p className="text-xs text-slate-400">참고값 · 재최적화 아님</p>
+      <p className="text-xs text-slate-500">
+        참고값 · 재최적화 아님 — 전체를 다시 푼 최적 배치가 아니라, 지금 명단에서 두 사람만 바꿔 같은 기준으로 다시 채점한 값입니다.
+        종합 점수 = 기술 적합 + 협업 보상 − 감점.
+      </p>
       <table className="mt-2 w-full text-xs text-slate-600">
         <tbody>
           {TERMS.map(([key, label]) => (
@@ -76,17 +80,17 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
           </ul>
         </div>
       )}
-      <p className="mt-3 text-sm text-slate-700">{result.briefing.rationale}</p>
+      <p className="mt-3 text-sm text-slate-700">{numberMarkers(result.briefing.rationale, ev)}</p>
       <div className="mt-3">
-        <h4 className="text-xs font-medium text-slate-500">리스크</h4>
+        <h4 className="text-xs font-medium text-slate-500">주의할 점</h4>
         <ul className="mt-1 list-inside list-disc text-sm text-slate-700">
-          {result.briefing.risks.map((r) => <li key={r}>{r}</li>)}
+          {result.briefing.risks.map((r) => <li key={r}>{numberMarkers(r, ev)}</li>)}
         </ul>
       </div>
       <div className="mt-3">
-        <h4 className="text-xs font-medium text-slate-500">대안</h4>
+        <h4 className="text-xs font-medium text-slate-500">다른 방법</h4>
         <ul className="mt-1 list-inside list-disc text-sm text-slate-700">
-          {result.briefing.alternatives.map((a) => <li key={a}>{a}</li>)}
+          {result.briefing.alternatives.map((a) => <li key={a}>{numberMarkers(a, ev)}</li>)}
         </ul>
       </div>
       <EvidenceList evidence={result.briefing.evidence ?? []} nameOf={nameOf}

@@ -61,6 +61,8 @@ class CoworkOut(BaseModel):
     b_id: str
     co_months: int
     project_count: int
+    # 두 사람이 서로 남긴 동료 평가의 극성 평균(-1~1, MemoryGraph.pair_review_score) -- 교체 검토 관계 목록(2026-10-20). 평가가 없으면 없음
+    review: float | None = None
 
 
 class MetaResponse(BaseModel):
@@ -258,13 +260,23 @@ class SwapIn(BaseModel):
     out_person_id: str
     in_person_id: str
     project_id: str
+    # 다른 사업에서 데려오기(사용자 2026-10-20 "교체 투입에 왜 기존 플젝 인력은 안돼?"): 들어올 사람을 이 사업에서 뺀다(빈자리가 생긴다).
+    # exchange면 빠지는 사람이 그 자리로 간다(맞바꾸기). 둘 다 없으면 예전 교체(대기 인력).
+    in_from_project_id: str | None = None
+    exchange: bool = False
 
     @model_serializer(mode="wrap")
     def _omit_default_kind(self, handler):
         # 교체는 kind를 내보내지 않는다 -- 저장된 교체·응답·PDF 기록이 이전과 같은 모양(kind 없음 = 교체).
+        # 데려오기 칸도 기본값이면 내보내지 않는다(예전 교체의 저장 모양·서명이 그대로).
         data = handler(self)
-        if isinstance(data, dict) and data.get("kind") == "swap":
-            data.pop("kind", None)
+        if isinstance(data, dict):
+            if data.get("kind") == "swap":
+                data.pop("kind", None)
+            if data.get("in_from_project_id") is None:
+                data.pop("in_from_project_id", None)
+            if not data.get("exchange"):
+                data.pop("exchange", None)
         return data
 
 

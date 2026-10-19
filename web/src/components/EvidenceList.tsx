@@ -26,6 +26,7 @@ export function EvidenceList({ evidence, hasInlineMarkers = false, nameOf = (id)
           const b = BADGE[e.kind];
           return (
             <li key={`${i}-${e.source_id}`}>
+              <span className="mr-1 text-[11px] font-semibold text-slate-500">근거 {i + 1}</span>
               <span className={`mr-1.5 rounded border px-1.5 py-0.5 text-[11px] ${b.cls}`}>{b.label}</span>
               {e.kind === "quote" ? <q>{e.text}</q> : <span>{e.text}</span>}
               <span className="ml-1.5 text-[11px] text-slate-400">
@@ -37,7 +38,7 @@ export function EvidenceList({ evidence, hasInlineMarkers = false, nameOf = (id)
       </ul>
       {hasInlineMarkers && (
         <p className="mt-1 text-[11px] text-slate-400">
-          본문의 [rv:…] 표시는 관련 출처를 가리킬 뿐, 그 문장 전체가 원문으로 검증됐다는 뜻은 아니다.
+          본문의 [근거 n] 표시는 아래 근거를 가리킬 뿐, 그 문장 전체가 원문으로 검증됐다는 뜻은 아니다.
         </p>
       )}
     </div>

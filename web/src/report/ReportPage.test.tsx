@@ -60,7 +60,7 @@ describe("ReportPage", () => {
     await waitFor(() => expect(window.__REPORT_READY__).toBe(true));
     expect(screen.getByText(/규칙 기반\(결정론적\) 생성기/)).toBeInTheDocument();
     expect(screen.getByText(/검토한 교체: 김일번 → 이이번/)).toBeInTheDocument();
-    expect(screen.getByText(/현행 점수 기준 Δ -0.2500/)).toBeInTheDocument();
+    expect(screen.getByText(/현행 점수 기준 종합 점수 -0.25/)).toBeInTheDocument();
     expect(screen.queryByText(/교체 검토 경고/)).not.toBeInTheDocument();
   });
 
@@ -188,7 +188,7 @@ describe("ReportPage — 적용된 교체(K10)", () => {
     expect(await screen.findByText("적용된 교체 1건")).toBeInTheDocument();
     expect(screen.getByText(/최적화가 고른 명단이/)).toBeInTheDocument();
     expect(screen.getByText("김일번 → 이이번")).toBeInTheDocument();
-    expect(screen.getByText("-0.2500")).toBeInTheDocument();
+    expect(screen.getByText("-0.25")).toBeInTheDocument();
     expect(screen.getByText("j1 0월 예산 초과(최종)")).toBeInTheDocument();
     expect(screen.getByText("산정 불가(제약 위반)")).toBeInTheDocument();
     expect(screen.getByText(/서버 계산 여부 미검증/)).toBeInTheDocument();
@@ -259,5 +259,21 @@ describe("ReportPage — 브리핑 근거(K5)", () => {
     expect(await screen.findByText("직접 인용")).toBeInTheDocument();
     expect(screen.getByText(/김일번 리뷰 · rv:p1>p2#1:pos/)).toBeInTheDocument();
     expect(screen.getByText(/검증됐다는 뜻은 아니다/)).toBeInTheDocument();
+  });
+});
+
+describe("ReportPage — 배치 명단 압축(2026-10-20)", () => {
+  it("사업마다 한 줄, 전일 투입 100%는 쓰지 않는다", async () => {
+    vi.mocked(fetchMeta).mockResolvedValue(META);
+    window.__REPORT_DATA__ = {
+      plan_label: "A",
+      entries: [{ person_id: "p1", project_id: "j1", alloc: 1 }, { person_id: "p2", project_id: "j1", alloc: 1 }],
+      objective: 1, fulfillment: 1, optimization_ratio: 1, unfilled: [],
+    };
+    render(<ReportPage />);
+    await waitFor(() => expect(window.__REPORT_READY__).toBe(true));
+    const row = screen.getAllByText("김일번").map((el) => el.closest("tr")).find((tr) => tr?.textContent?.includes("이이번"))!;
+    expect(row.textContent).toContain("이이번");
+    expect(row.textContent).not.toContain("100%");
   });
 });

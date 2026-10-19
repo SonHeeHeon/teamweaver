@@ -43,6 +43,8 @@ export interface Cowork {
   b_id: string;
   co_months: number;
   project_count: number;
+  /** 서로 남긴 동료 평가 극성 평균(-1~1), 없으면 null */
+  review?: number | null;
 }
 
 export interface Meta {
@@ -163,6 +165,10 @@ export interface Swap {
   out_person_id: string;
   in_person_id: string;
   project_id: string;
+  /** 다른 사업에서 데려오기(그 사업에서 빠진다, 2026-10-20) */
+  in_from_project_id?: string;
+  /** 맞바꾸기: 빠지는 사람이 그 사업으로 간다 */
+  exchange?: boolean;
 }
 
 /** POST /api/report 의 요청 본문. fallback_used/swap/objective_delta는
@@ -247,7 +253,9 @@ export function isAlloc(s: Step): s is AllocChange {
 export function stepBody(s: Step): Step {
   return isAlloc(s)
     ? { kind: "alloc", person_id: s.person_id, project_id: s.project_id, monthly_alloc: s.monthly_alloc }
-    : { out_person_id: s.out_person_id, in_person_id: s.in_person_id, project_id: s.project_id };
+    : { out_person_id: s.out_person_id, in_person_id: s.in_person_id, project_id: s.project_id,
+        // 데려오기·맞바꾸기(2026-10-20) -- 빼면 저장·PDF·소명이 일반 교체로 다시 적용한다(Codex high). 예전 교체는 모양 그대로
+        ...(s.in_from_project_id ? { in_from_project_id: s.in_from_project_id, ...(s.exchange ? { exchange: true } : {}) } : {}) };
 }
 
 /** POST /api/plans/apply-swap 응답 -- 교체 후 명단과 그 명단 전체의 재평가(K10). */
@@ -566,4 +574,7 @@ export interface Justification {
   ai_unavailable_reason: string | null;
   /** AI 글 예상 시간(초, 모델별 -- 외부 약 8·사내 Flash 약 60). 화면 "약 N초" 안내용. */
   ai_expected_s?: number;
+  /** 3문장 요약(2026-10-20, 본문과 같은 문법·검사 -- graphrag: AI 구성 통과, rule: 규칙 요약). 없으면 null */
+  summary?: string | null;
+  summary_method?: "graphrag" | "rule" | null;
 }
