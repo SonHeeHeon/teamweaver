@@ -11,6 +11,7 @@ import { ReviewDoc } from "../review/ReviewDoc";
 import type { ReviewDocView } from "../review/reviewApi";
 import { creditedLine } from "../components/skillLabel";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
+import { placedText } from "../components/headcount";
 
 /** PDF의 소명 글: 근거 문구에 밑줄 + 사실 목록 번호(위 첨자). 'F12' 같은 내부 번호는 보이지 않는다(사용자 결정 2026-10-11). */
 function ReportProse({ text, facts }: { text: string; facts: any[] }) {
@@ -147,7 +148,7 @@ function PlanReport() {
       <section className="mt-6 grid grid-cols-3 gap-4">
         {[["최적화율", pct(data.optimization_ratio)],
           ["매칭 충족률", pct(data.fulfillment)],
-          ["배치 인원", `${(data.entries ?? []).length}명`]].map(([k, v]) => (
+          ["배치 인원", placedText(data.entries ?? [])]].map(([k, v]) => (
           <div key={k} className="rounded-lg border border-slate-200 p-3">
             <div className="text-xs text-slate-500">{k}</div>
             <div className="mt-1 text-xl font-semibold tabular-nums">{v}</div>

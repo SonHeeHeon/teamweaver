@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AdminLoginRequiredError, rejudgeDataset, resetDataset, uploadDataset } from "../api/client";
 import type { DatasetInfo, IngestIssue, OpenRecordResult, UploadResult } from "../api/types";
 import { RecordsPanel } from "./RecordsPanel";
+import { mentionsPeople } from "./headcount";
 
 /** 평가 사유(글)를 보내는 곳 -- 사내로 확인되지 않은 주소를 "사내"라고 단정하지 않는다. */
 function placeLabel(location: string | null | undefined, host: string | null | undefined): string {
@@ -161,7 +162,7 @@ export function DatasetTab({ active, onSwitched, adminToken = null, onLoginRequi
                   <span className="font-semibold">{active.record_title ?? active.dataset_id}</span>
                   {" · "}{SOURCE_LABEL[active.source] ?? active.source}
                   {active.synthetic ? " · 가상 데이터" : active.synthetic === false ? " · 실데이터" : ""}
-                  <span className="num">{" · "}{active.people}명 · 사업 {active.projects}건</span>
+                  <span className="num">{" · "}{mentionsPeople(active.record_title ?? active.dataset_id, active.people) ? "" : `${active.people}명 · `}사업 {active.projects}건</span>
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
                   평가 글 판정:{" "}

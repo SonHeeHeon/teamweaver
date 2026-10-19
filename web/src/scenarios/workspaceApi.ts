@@ -70,7 +70,7 @@ export interface ApplyHint {
 export interface EmergencyPlan {
   dataset_version: string; project_id: string; skills: string[]; added_requirements: { name: string }[];
   best: { accepted: boolean; entries?: AssignEntry[]; added?: { person_id: string; name: string }[];
-          diff?: { moved?: { person_id: string; from: string; to: string[] }[] };
+          diff?: { moved?: { person_id: string; name?: string; from: string; to: string[] }[] };
           delta?: Record<string, number>; added_cost?: number; new_violations?: unknown[]; termination?: string | null;
           unfilled_seats_delta?: number; delta_excl_unfilled?: number };
   candidates: { bench: CandidateRow[]; spare: CandidateRow[]; pull: CandidateRow[] };
@@ -137,6 +137,8 @@ export const dropProject = (v: string, id: string) =>
 export const postLock = (v: string, projectId: string, people: string[] | null, locked: boolean) =>
   call<WithWs>("/api/workspace/lock", json("POST", { dataset_version: v, project_id: projectId, people, locked }));
 export const postApply = (v: string, body: { entries: AssignEntry[]; note?: string;
+  /** 긴급 투입 "무슨 일인지" 원문 -- 검토 자료 상황 메모의 처음 값(AI에 보내지 않음) */
+  situation?: string;
   source: "auto" | "manual" | "emergency" | "plan";
   concurrency_add?: { person_id: string; memo?: string; reason?: ConcurrencyReason }[] } & Partial<ApplyHint>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
