@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-20 · claude-a · PDF 협업 그림 → 팀별 협업 지도(b 영역, 사용자 지시)
+- 브랜치/커밋: `feat/claude-a-pdf-network`(main `1fd65b5` 위) `7ece886`(리포트 meta 협업선 같은 사업 쌍만·가상 데이터 평가 극성) · `cc77c82`(PDF 그림·의존성 정리) · 이 커밋(문서). main 미병합.
+- 사용자: "pdf에 들어갈 괜찮은 협업 네트워크 그림 없을까?" -- 예전 힘 시뮬레이션 그림은 배치된 100명 사이 선 약 4,000개라 실타래였다.
+- 한 일: `web/src/report/TeamNetworks.tsx` -- 사업마다 팀원 원 배치·팀 안 협업선만(굵기 = 개월, 색 = 평가, 속 빈 원 = 팀에 아는 사람 없음, 13명부터 한 줄 카드)·요약(평가 나쁜 쌍이 있는 사업).
+  `api/routes/report._report_meta`가 협업선을 같은 사업 쌍만 싣고 가상 데이터면 `review`도 싣는다.
+- 상대 영향(claude-b): `web/src/report/StaticNetwork.tsx` 삭제, **`web/package.json`·lock에서 `d3-force`·`@types/d3-force`·`react-force-graph-2d` 제거**(쓰는 곳 없음 -- 화면 `NetworkGraph`는 앞서 지움). 리포트 meta `coworks`는 이제 같은 사업 쌍만이다.
+  b worktree의 커밋 안 된 `api/routes/report.py` 수정(소명 요약 칸)과는 다른 함수다. 기준선 2050 passed·slow 20·웹 280.
+- 검증: `uv run --group benchmark pytest -q` 2050 passed · `-m slow` 20 passed(최종 빌드로 다시) · 웹 280 · `npx tsc -b`·build · 시연 org-n100 PDF를 실제로 뽑아 그림 쪽 확인.
+- 리뷰: Codex 주간 한도 소진(10-25 16:31) → 직접 리뷰, SHOULD 1건(13명 이상 이름 겹침 → 한 줄 카드) 반영.
+- 근거: `.omc/reports/2026-10-20-pdf-team-network.md`, 설계 `.omc/plan/2026-10-20-pdf-team-network.md`.
+
+---
+
 ## 2026-10-20 · claude-a · `feat/claude-a-ui-friendly` **main 병합(사용자 승인 "병합은 해주고")**
 - 커밋: `623d44c`(merge --no-ff, main `1ee3143` 위 -- main이 그대로라 합친 트리 = 브랜치 트리, 검증한 상태 그대로) + 이 커밋(일지).
 - 들어간 것: 아래 10-20 항목 전부(배치 명단 압축·사업 코드 칩·교체 데려오기/맞바꾸기·관계 목록·소명 요약·규칙 비교 자동·PDF 소명 선택 창·쉬운 문구) + PDF 문구·명단 압축(`17b2319`).

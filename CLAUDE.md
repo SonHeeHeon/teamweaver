@@ -200,6 +200,8 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
   단순 규칙 비교는 탭이 보일 때 저절로 계산(`BaselineCard active`), PDF 소명 포함은 내려받을 때 창으로 묻는다(하위 탭 옆 체크박스 없앰).
+  PDF 협업 그림은 **팀별 협업 지도**(`web/src/report/TeamNetworks`, 사용자 "pdf에 들어갈 괜찮은 협업 네트워크 그림"): 사업마다 팀원을 원 위에 놓고 팀 안 협업선만(굵기 = 개월, 색 = 평가, 13명부터 한 줄 카드).
+  리포트 meta 협업선은 **같은 사업 쌍만**·평가 극성은 가상 데이터만(`report._report_meta(reveal_reviews=)`) -- 예전엔 배치된 사람끼리 전부(시연 100명 약 4,000개, 300명은 PDF 데이터 상한 압박). 힘 시뮬레이션 그림 `StaticNetwork`와 `d3-force`·`react-force-graph-2d`는 지웠다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -214,7 +216,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 What-if 정리·화면 친절하게(claude-a, b 점검 수정 병합 위) **2049 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 276 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 PDF 팀별 협업 지도(claude-a, What-if 정리 main 병합 위) **2050 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 280 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
