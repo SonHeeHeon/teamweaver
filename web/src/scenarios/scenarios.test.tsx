@@ -237,7 +237,9 @@ describe("EmergencyScreen", () => {
       candidates: { bench: [cand({})], spare: [], pull: [] }, standby: [], apply_hint: hint, note: "" });
     vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: ["P9@J003"], removed: [], changed: [] } });
     const review = vi.fn();
-    render(<EmergencyScreen onDatasetChanged={vi.fn()} onReviewDoc={review} />);
+    const J8 = { id: "J008", name: "금융사 하2 데이터 마트", sector: "금융", phase: "실행", start_month: 0, end_month: 5,
+                 grade_headcount: {}, monthly_budget: 0 };
+    render(<EmergencyScreen onDatasetChanged={vi.fn()} onReviewDoc={review} projects={[J8]} />);
     fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
     expect(await screen.findByText(/밤사이 미리 뽑아 둔 순위/)).toBeInTheDocument();
     expect(screen.getByText(/^점수 \+3\.10/)).toBeInTheDocument();            // 나눔 없는 예전 밤 명단은 합계 그대로
@@ -245,7 +247,8 @@ describe("EmergencyScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
     expect(screen.getByText(/기술·협업 \+3\.10 · 월 비용 \+/)).toBeInTheDocument();
-    expect(screen.getByText("빼 오는 사람: 김소율(J008→J003)")).toBeInTheDocument();   // 사번이 아니라 이름(부서장 점검 f7)
+    expect(screen.getByText(/빼 오는 사람:/).textContent).toBe("빼 오는 사람: 김소율(J008→J003)");   // 사번이 아니라 이름(부서장 점검 f7), 코드는 칩
+    expect(within(screen.getByText(/빼 오는 사람:/)).getByTitle("금융사 하2 데이터 마트")).toHaveTextContent("J008");   // 마우스를 올리면 사업 이름
     expect(within(screen.getByText("박지훈", { selector: "td" }).closest("tr")!).getByText("빈자리 1개 채움")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "이 조합 확정" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));

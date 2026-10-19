@@ -274,7 +274,10 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                   <>
                     <p>넣을 사람: <b>{plan.best.added?.map((a) => a.name).join(", ") || "없음"}</b>
                       <span className="num ml-2 text-xs text-slate-500">{splitText({ ...plan.best, delta_total: plan.best.delta?.total })} · 월 비용 +{(plan.best.added_cost ?? 0).toLocaleString()}(가상 비용 점수)</span></p>
-                    {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m) => `${m.name ?? m.person_id}(${m.from}→${m.to.join(",")})`).join(" · ")}</p>}
+                    {pulled.length > 0 && <p className="text-xs text-slate-600">빼 오는 사람: {pulled.map((m, i) => (
+                      // 사업 코드는 코드 그대로 + 마우스를 올리면 이름(사용자 2026-10-20 -- 후보 표 비고와 같게)
+                      <span key={m.person_id}>{i > 0 && " · "}{m.name ?? m.person_id}(<ProjectCodes ids={[m.from]} projects={projects} />→<ProjectCodes ids={m.to} projects={projects} />)</span>
+                    ))}</p>}
                     {(plan.best.new_violations?.length ?? 0) > 0 && <Notice tone="warn">이 조합은 새 위반({violationReasons(plan.best.new_violations ?? [])})이 있어 확정할 수 없습니다.</Notice>}
                     {plan.apply_hint && (Object.keys(plan.apply_hint.headcount_add).length > 0 || Object.keys(plan.apply_hint.budget_add).length > 0) && (
                       <p className="text-xs text-slate-500">확정하면 사업 정원
