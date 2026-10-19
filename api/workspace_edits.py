@@ -427,8 +427,11 @@ def _overlaps(files: Files, person_id: str) -> int:
     읽지 못하는 달이면 EditError(허용 해제·낮추기를 거절하는 쪽으로 닫힌다)."""
     _, cur = current_table(files)
     _, projects = read_table(files, PROJECTS)
-    span = {r["project_id"]: _period(r) for r in projects}
-    mine = [span[r["project_id"]] for r in cur if r.get("person_id") == person_id and r.get("project_id") in span]
+    # 그 사람이 들어 있는 사업 행만 읽는다 -- 로더가 건너뛰는 빈 행(",,,,,,")·다른 사업의 기간까지 검사하면 허용·해제가 통째로 막혔다
+    # (Codex Stop 리뷰 2026-10-19 두 번째)
+    ids = {str(r.get("project_id") or "").strip() for r in cur if str(r.get("person_id") or "").strip() == person_id}
+    ids.discard("")
+    mine = [_period(r) for r in projects if str(r.get("project_id") or "").strip() in ids]
     months = {mo for a, _ in mine for mo in (a,)} | {b for _, b in mine}
     return max((sum(1 for a, b in mine if a <= mo <= b) for mo in months), default=0)
 

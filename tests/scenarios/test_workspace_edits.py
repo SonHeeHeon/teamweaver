@@ -187,3 +187,13 @@ def test_revoke_sees_overlap_through_padded_months(files):
     granted = we.set_concurrency(files, person, True, reason="기술 지원")
     with pytest.raises(we.EditError):
         we.set_concurrency(granted, person, False)                            # 같은 달(2026-12) 두 사업 -- 해제 거절
+
+
+def test_blank_project_rows_do_not_block_grant_or_revoke(files):
+    """Codex Stop 리뷰(2026-10-19 두 번째): 로더가 건너뛰는 빈 행(",,,,,,")이 있어도 허용·해제는 된다 -- 그 사람 사업 행만 읽는다."""
+    files = {**files, we.PROJECTS: files[we.PROJECTS].rstrip("\n") + "\n,,,,,,\n"}
+    _, cur = we.current_table(files)
+    person = next(r["person_id"] for r in cur if r["project_id"] == "J004")
+    granted = we.set_concurrency(files, person, True, reason="인력 부족")
+    assert we._overlaps(granted, person) == 1
+    we.set_concurrency(granted, person, False)
