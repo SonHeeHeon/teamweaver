@@ -3,7 +3,7 @@ import { fetchMeta } from "../api/client";
 import type { Meta } from "../api/types";
 import { StaticNetwork } from "./StaticNetwork";
 import { EvidenceList } from "../components/EvidenceList";
-import { hasMarkers } from "../components/evidenceMarkers";
+import { hasMarkers, numberMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
 import { lifecycleTags, projectPeriod } from "../components/lifecycle";
 import { fallbackText, segmentsOf } from "../components/justification";
@@ -173,7 +173,7 @@ function PlanReport() {
           <table className="w-full text-sm">
             <thead className="border-b border-slate-300 text-left text-slate-600">
               <tr><th className="py-1">#</th><th className="py-1">변경(빠진 인력 → 들어간 인력 / 투입률 조정)</th>
-                  <th className="py-1">프로젝트</th><th className="py-1 text-right">Δ</th>
+                  <th className="py-1">프로젝트</th><th className="py-1 text-right">종합 점수 변화</th>
                   <th className="py-1">경고</th></tr>
             </thead>
             <tbody>
@@ -183,10 +183,11 @@ function PlanReport() {
                   <td className="py-1">{k + 1}</td>
                   <td className="py-1">{s.kind === "alloc"
                     ? `투입률 조정: ${nameOf(s.person_id)} ${formatMonthly(s.monthly_alloc, meta?.horizon_start) || ""}`
-                    : `${nameOf(s.out_person_id)} → ${nameOf(s.in_person_id)}`}</td>
+                    : `${nameOf(s.out_person_id)} → ${nameOf(s.in_person_id)}${s.in_from_project_id
+                      ? ` (${s.exchange ? `${jName.get(s.in_from_project_id) ?? s.in_from_project_id}와 맞바꿈` : `${jName.get(s.in_from_project_id) ?? s.in_from_project_id}에서 데려옴`})` : ""}`}</td>
                   <td className="py-1">{jName.get(s.project_id) ?? s.project_id}</td>
                   <td className="py-1 text-right tabular-nums">
-                    {s.objective_delta >= 0 ? "+" : ""}{s.objective_delta.toFixed(4)}
+                    {s.objective_delta >= 0 ? "+" : ""}{s.objective_delta.toFixed(2)}
                   </td>
                   <td className="py-1">{(s.warnings ?? []).join(", ") || "-"}</td>
                 </tr>
@@ -211,13 +212,13 @@ function PlanReport() {
 
       {data.briefing && (
         <section className="mt-6">
-          <h2 className="mb-2 text-base font-semibold">XAI 브리핑</h2>
+          <h2 className="mb-2 text-base font-semibold">AI 교체 설명</h2>
           {data.swap && (
             <p className="text-xs text-slate-500">
               검토한 교체: {nameOf(data.swap.out_person_id)} → {nameOf(data.swap.in_person_id)}
               {typeof data.objective_delta === "number" &&
-                ` (현행 점수 기준 Δ ${data.objective_delta >= 0 ? "+" : ""}`
-                + `${data.objective_delta.toFixed(4)}, 참고값·재최적화 아님)`}
+                ` (현행 점수 기준 종합 점수 ${data.objective_delta >= 0 ? "+" : ""}`
+                + `${data.objective_delta.toFixed(2)}, 참고값·재최적화 아님 -- 두 사람만 바꿔 다시 채점한 값)`}
             </p>
           )}
           {(data.swap_violations ?? []).length > 0 && (
@@ -236,14 +237,14 @@ function PlanReport() {
               발표 시점에 LLM을 사용할 수 없었다.
             </p>
           )}
-          <p className="mt-2 text-sm">{data.briefing.rationale}</p>
-          <h3 className="mt-3 text-xs font-medium text-slate-500">리스크</h3>
+          <p className="mt-2 text-sm">{numberMarkers(data.briefing.rationale ?? "", data.briefing.evidence ?? [])}</p>
+          <h3 className="mt-3 text-xs font-medium text-slate-500">주의할 점</h3>
           <ul className="list-inside list-disc text-sm">
-            {(data.briefing.risks ?? []).map((r: string) => <li key={r}>{r}</li>)}
+            {(data.briefing.risks ?? []).map((r: string) => <li key={r}>{numberMarkers(r, data.briefing.evidence ?? [])}</li>)}
           </ul>
-          <h3 className="mt-3 text-xs font-medium text-slate-500">대안</h3>
+          <h3 className="mt-3 text-xs font-medium text-slate-500">다른 방법</h3>
           <ul className="list-inside list-disc text-sm">
-            {(data.briefing.alternatives ?? []).map((a: string) => <li key={a}>{a}</li>)}
+            {(data.briefing.alternatives ?? []).map((a: string) => <li key={a}>{numberMarkers(a, data.briefing.evidence ?? [])}</li>)}
           </ul>
           <EvidenceList evidence={data.briefing.evidence ?? []} nameOf={nameOf}
                         hasInlineMarkers={hasMarkers([data.briefing.rationale ?? "",
@@ -254,32 +255,40 @@ function PlanReport() {
 
       <section className="mt-6">
         <h2 className="mb-2 text-base font-semibold">배치 명단</h2>
+        {/* 사업마다 한 줄(2026-10-20 화면 정리와 같게 -- 사람마다 한 줄이면 수십 줄). 전일 투입 100%는 쓰지 않는다 */}
         <table className="w-full text-sm">
           <thead className="border-b border-slate-300 text-left text-slate-600">
-            <tr><th className="py-1">인력</th><th className="py-1">등급</th>
-                <th className="py-1">프로젝트</th><th className="py-1 text-right">투입률</th></tr>
+            <tr><th className="py-1">프로젝트</th><th className="py-1 text-right">인원</th><th className="py-1 pl-3">배치 인력(등급)</th></tr>
           </thead>
           <tbody>
-            {(data.entries ?? []).map((e: any) => (
-              <tr key={`${e.person_id}-${e.project_id}`} className="border-b border-slate-100">
-                <td className="py-1">
-                  {byId.get(e.person_id)?.name ?? e.person_id}
-                  {creditedLine(byId.get(e.person_id)) && (
-                    <span className="block text-[10px] text-amber-800">인정: {creditedLine(byId.get(e.person_id))}</span>
-                  )}
-                </td>
-                <td className="py-1 text-slate-600">{byId.get(e.person_id)?.grade ?? "-"}</td>
-                <td className="py-1 text-slate-600">{jName.get(e.project_id) ?? e.project_id}</td>
-                <td className="py-1 text-right tabular-nums">
-                  {formatAlloc(e.alloc)}
-                  {e.monthly_alloc && (
-                    <span className="block text-[10px] text-slate-500">{formatMonthly(e.monthly_alloc, meta?.horizon_start)}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {[...new Set<string>((data.entries ?? []).map((e: any) => e.project_id))].sort().map((jid) => {
+              const list = (data.entries ?? []).filter((e: any) => e.project_id === jid);
+              return (
+                <tr key={jid} className="border-b border-slate-100 align-top">
+                  <td className="py-1 pr-2">{jName.get(jid) ?? jid} <span className="text-[10px] text-slate-500">{jid}</span></td>
+                  <td className="py-1 text-right tabular-nums">{list.length}</td>
+                  <td className="py-1 pl-3">
+                    {list.map((e: any, i: number) => (
+                      <span key={e.person_id}>{i > 0 && ", "}{byId.get(e.person_id)?.name ?? e.person_id}
+                        <span className="text-slate-500">({(byId.get(e.person_id)?.grade ?? "-").slice(0, 1)})</span>
+                        {Math.abs(e.alloc - 1) > 1e-9 && <span className="tabular-nums text-slate-500"> {formatAlloc(e.alloc)}</span>}
+                        {e.monthly_alloc && <span className="text-[10px] text-slate-500"> {formatMonthly(e.monthly_alloc, meta?.horizon_start)}</span>}
+                      </span>
+                    ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+        {(data.entries ?? []).some((e: any) => creditedLine(byId.get(e.person_id))) && (
+          <div className="mt-2 text-[10px] text-amber-800">
+            <p className="font-medium">하위 기술 경력에서 일부 인정한 기술</p>
+            {[...new Set<string>((data.entries ?? []).map((e: any) => e.person_id))]
+              .filter((pid) => creditedLine(byId.get(pid)))
+              .map((pid) => <p key={pid}>{byId.get(pid)?.name ?? pid}: {creditedLine(byId.get(pid))}</p>)}
+          </div>
+        )}
       </section>
 
       {lifecycleRows.length > 0 && (
