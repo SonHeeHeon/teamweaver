@@ -36,7 +36,7 @@ def _floor2(x: float) -> float:
 
 class State:
     def __init__(self, graph, S, C, params):
-        from core.optimize.milp import _overfamiliar_pairs, pruned_pairs
+        from core.optimize.milp import _overfamiliar_pairs, familiar_exempt, pruned_pairs
         self.g, self.S, self.p = graph, S, params
         n = len(graph.people)
         self.R = np.zeros((n, n))
@@ -46,6 +46,11 @@ class State:
         for a, b in _overfamiliar_pairs(graph, params.clique_threshold_months,
                                         getattr(params, "clique_window_months", None)):
             self.P[a, b] = self.P[b, a] = 1.0
+        # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다(2026-10-19 사용자 결정 -- 평가기·MILP와 같은 규칙, Codex 리뷰:
+        # 빠뜨리면 휴리스틱이 기존 팀을 흩는 것을 이득으로 보고 실제 점수를 낮추는 교체를 받아들였다)
+        self.exempt: dict[int, set] = {}
+        for a, b, j in familiar_exempt(graph):
+            self.exempt.setdefault(j, set()).add((a, b))
         self.rem = [list(map(float, pp.availability)) for pp in graph.people]
         self.conc = [[0] * len(pp.availability) for pp in graph.people]
         self.alloc: dict[tuple[int, int], float] = {}
@@ -65,10 +70,19 @@ class State:
     def budget_left(self, j) -> float:
         return self.g.projects[j].monthly_budget - self.cost[j]
 
+    def pen(self, i, members: list, j: int) -> float:
+        """i가 j의 members와 함께일 때 익숙한 쌍 수(지금 그 사업에 함께 있는 쌍은 빼고)."""
+        if not members:
+            return 0.0
+        ex = self.exempt.get(j)
+        if not ex:
+            return float(self.P[i, members].sum())
+        return float(sum(self.P[i, t] for t in members if (min(i, t), max(i, t)) not in ex))
+
     def gain_join(self, i, j, a) -> float:
         t = list(self.team[j])
         return (float(self.S[i, j]) * a + self.p.lam * float(self.R[i, t].sum())
-                - self.p.mu * float(self.P[i, t].sum())) if t else float(self.S[i, j]) * a
+                - self.p.mu * self.pen(i, t, j)) if t else float(self.S[i, j]) * a
 
     def add(self, i, j, a):
         self.alloc[(i, j)] = a
@@ -186,7 +200,7 @@ def heuristic(graph, S, C, params, seconds: float, seed: int = 0) -> tuple[list,
                 continue
             t = [q for q in st.team[j] if q != i]
             d = (float(S[k, j] - S[i, j]) * a + params.lam * float(st.R[k, t].sum() - st.R[i, t].sum())
-                 - params.mu * float(st.P[k, t].sum() - st.P[i, t].sum()))
+                 - params.mu * (st.pen(k, t, j) - st.pen(i, t, j)))
             if d > 1e-9:
                 st.remove(i, j)
                 st.add(k, j, a)

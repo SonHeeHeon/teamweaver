@@ -113,7 +113,7 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
     − 익숙한 쌍 감점 − 빼 오면 생기는 정원 빈자리)로 거르고, 상위 screen명만 평가기로 정확히 채점한다. screen=None이면 전부."""
     j = graph.project_index[project_id]
     team = {e.person_id for e in entries if e.project_id == project_id}
-    from core.optimize.milp import _overfamiliar_pairs, pruned_pairs
+    from core.optimize.milp import _overfamiliar_pairs, familiar_exempt, pruned_pairs
     reward = {tuple(sorted(p)) for p in pruned_pairs(C, params.pair_keep_ratio, params.max_pairs)}
     penalty = {tuple(sorted(p)) for p in _overfamiliar_pairs(graph, params.clique_threshold_months,
                                                               params.clique_window_months)}
@@ -122,7 +122,9 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
         teams.setdefault(e.project_id, []).append(graph.pid_index[e.person_id])
     listed = {pj.id: set(pj.grade_headcount) for pj in graph.projects}
 
-    def pair_value(i: int, members: list[int]) -> float:
+    exempt = familiar_exempt(graph)
+
+    def pair_value(i: int, members: list[int], pj: int) -> float:
         v = 0.0
         for t in members:
             if t == i:
@@ -130,7 +132,7 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
             key = (min(i, t), max(i, t))
             if key in reward:
                 v += params.lam * float(C[key])
-            if key in penalty:
+            if key in penalty and (key[0], key[1], pj) not in exempt:     # 지금 그 사업에 함께 있는 쌍은 감점 없음(2026-10-19)
                 v -= params.mu
         return v
 
@@ -168,10 +170,11 @@ def rank_candidates(graph: MemoryGraph, S, C, params: MilpParams, entries: list[
                     alloc = min(alloc, math.floor(room * 10_000) / 10_000)
             if alloc < params.min_alloc - 1e-9:
                 return None
-            quick = float(S[i_, j]) * alloc + pair_value(i_, teams.get(project_id, []))
+            quick = float(S[i_, j]) * alloc + pair_value(i_, teams.get(project_id, []), j)
             for src in subset:                     # 빼 오면 원래 사업의 기여와 정원 자리를 잃는다
                 src_e = next(e for e in entries if e.person_id == pid and e.project_id == src)
-                quick -= float(S[i_, graph.project_index[src]]) * src_e.alloc + pair_value(i_, teams.get(src, []))
+                quick -= float(S[i_, graph.project_index[src]]) * src_e.alloc + pair_value(i_, teams.get(src, []),
+                                                                                      graph.project_index[src])
                 if person.grade in listed[src]:
                     quick -= params.slack_penalty
             return quick, [(pid, p) for p in subset], alloc

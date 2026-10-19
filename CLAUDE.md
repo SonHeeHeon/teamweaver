@@ -66,7 +66,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   규모를 키우거나 보상 쌍을 늘리면 반드시 쌍 수 측정(`python -m rehearsal.run --size N --stage pairs`)으로 확인한다.
 - **정답 비교는 gap=0**: Phase 0 오라클 사례·시험은 `gap=0.0`으로 푼다. 기본 5% gap이면 솔버가 최적 전에
   멈춰도 정상인데, 예전에는 CBC가 우연히 최적을 내서 통과하고 있었다.
-- **익숙한 쌍 = 최근 `clique_window_months`(서비스 36) 중 `clique_threshold_months`(서비스 12) 이상**(2026-10-06 사용자 결정,
+- **익숙한 쌍 = 최근 `clique_window_months`(서비스 36) 중 `clique_threshold_months`(서비스 12) 이상**(2026-10-06 사용자 결정 · **지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점 안 함**(2026-10-19 사용자 결정, `MemoryGraph.current_teams` ← 현재 배치, `milp.familiar_exempt` -- MILP·독립 검증기·평가기·C1 확인(numerics)·Phase 0 오라클·긴급 투입 거르기·운영 중 기여 분해가 같은 규칙, 벤치 정식·factor_lab에는 없음),
   `rehearsal/results/rule-compare.html`). 달 정보는 `CoworkRecord.months_ago`(ingest가 채움) → `MemoryGraph.cowork_within`.
   협업 점수 C는 10년 전체를 쓴다. 독립 검증기·Phase 0 오라클은 서비스 함수를 빌리지 않고 원자료로 센다. 달 정보 없는 fixture는 전체 이력 기준.
   모델 기본값(`MilpParams`)은 None·6(예전과 동일)이라 시험은 그대로다 -- 서비스 기본은 `api/settings.PlacementSettings`.
@@ -153,10 +153,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   연초 계획은 실행 사업의 약 75%(`RUNNING_SHARE`)가 계획 전에 시작한 진행 사업이고, 운영 중은 진행 사업마다 수명 주기를 붙인다. 비율은 둘 다 운영 30%·고도화 20%·개발(2025) 20%·개발(2026 상반기) 30%이고, 운영 = 내부 2~3명·계획 뒤까지(사용자 "16개 중 6개면 적절", "2-3명이 평균").
   운영 사업의 `[추가 과제]`(내부 2명·6개월·외주 참고값 -- 연초 100명 1·200·300명 2, 운영 중은 신규 제안 중 1개, **b의 `pipeline` 모양** parent·external_headcount)를 붙인다.
   실제 시작 달은 `projects.csv start_month`(계획 전이면 로더가 **경고 없이** 자름), 단계는 이름 머리말 + manifest `lifecycle`(`core/ingest/lifecycle.py`, 경고만, 계산에 안 씀). 시작 달은 계획 시작 기준 몇 개월 전으로 뽑는다(연도를 박으면 다른 시작 달 묶음이 깨졌다 -- Codex).
-  **v5 `_link_ongoing`**: 진행 사업 현재 팀원은 합류 달(계획 3~30개월 전, 마지막 교체 뒤)부터 업무 이력이 그 사업이다. 지난 이력은 끊고, 기술 경력은 다시 세며, 끊긴 이력과 맞지 않는 평가는 지우고 진행 사업 팀원끼리 평가를 새로 만든다.
+  연초 계획의 진행 사업은 빠짐없이 현재 팀이 있다(자리의 80~100%, 사용자 결정 10-19 -- 계획 첫 달 새 사업만 예전 70% 규칙).
+  **v5 `_link_ongoing`**: 진행 사업 현재 팀원은 합류 달(계획 3~30개월 전, 마지막 교체 뒤, 첫 이력 뒤)부터 업무 이력이 그 사업이다. 지난 이력은 끊고, 기술 경력은 다시 세며, 끊긴 이력과 맞지 않는 평가는 지우고 진행 사업 팀원끼리 평가를 새로 만든다.
   원래 평가를 **먼저** 만든 뒤 고치므로 남는 글은 그대로이고, 새 글만 서비스 AI로 판정해 `demo/review_judgments.json`에 동봉한다(10-19 약 2,300건 · 1달러 미만). 생성기를 바꾸면 `build_demo`(키 있는 데이터 폴더)로 판정 → `export_demo_judgments.py` → `--check`.
   사업 번호: 연초 100명 사업 21개(진행 사업에 단계 머리말, 추가 과제 J021 -- 상위 J010), 연간 첫 하반기 신규 J022. 운영 중·연말형은 v4와 같다 -- 신규 제안 J018(제안)·J019(예정) + 추가 과제 J020(상위 J011), 연말형 끝나는 사업 J010·J007·J013·J016.
-  전일 투입 권장표 `time_budget.MEASURED_FULL`(v5 100/200/300명 13/38/53초 → 권장 30/60/90초, 12개월 ×4). 사업 구성을 바꾸면 다시 잰다(v3 30/90/90, v4 60/90/120).
+  전일 투입 권장표 `time_budget.MEASURED_FULL`(v5 100/200/300명 12/30/45초 → 권장 30/60/90초, 12개월 ×4). 사업 구성을 바꾸면 다시 잰다(v3 30/90/90, v4 60/90/120).
 - **프로젝트 동시 수행 허용**(2026-10-19 사용자 결정 "사람 단위로, 사유와 함께"): manifest `concurrency`(`core/ingest/concurrency.py` 검사 → `Person.max_concurrent`),
   `POST /api/workspace/concurrency`(사유 필수 · 지금 겹침보다 낮게 다시 걸기·허용 없는 해제는 거절), 확정 `concurrency_add`(긴급 투입 "동시 수행으로 지원" -- 같은 판, 되돌리면 함께),
   `POST /api/concurrency/candidates`(빈자리마다 허용 후보, 다시 풀지 않음), 긴급 투입 `rank_candidates(offer_concurrency=True)`는 **허용이 필요한 후보만** 따로(섞으면 빼 오기·대기 후보가 밀려났다),
@@ -182,7 +183,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v4 + b `bd65e0c`(추가 과제) 병합(claude-a) **1980 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 247 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5 + 현재 팀 익숙한 쌍 감점 제외(claude-a) **1992 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 247 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

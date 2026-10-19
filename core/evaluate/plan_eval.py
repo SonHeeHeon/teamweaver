@@ -11,7 +11,7 @@ import numpy as np
 
 from core.graph.memory_graph import MemoryGraph
 from core.optimize.audit_types import ObjectiveBreakdown
-from core.optimize.milp import (FULL_TIME_MIN_AVAILABILITY, MilpParams, _overfamiliar_pairs, partner_floor_on,
+from core.optimize.milp import (FULL_TIME_MIN_AVAILABILITY, MilpParams, _overfamiliar_pairs, familiar_exempt, partner_floor_on,
                                 partner_map, pruned_pairs)
 from core.optimize.types import AssignEntry
 
@@ -102,7 +102,8 @@ def evaluate_plan(graph: MemoryGraph, S: np.ndarray, C: np.ndarray, params: Milp
     penalty = _overfamiliar_pairs(graph, params.clique_threshold_months, getattr(params, "clique_window_months", None))
     synergy = params.lam * sum(float(C[p, q]) for p, q in reward
                                for j in members if together(p, q, j))
-    overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j))
+    exempt = familiar_exempt(graph)                 # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다(2026-10-19)
+    overfam = -params.mu * sum(1 for p, q in penalty for j in members if together(p, q, j) and (p, q, j) not in exempt)
     if partner_floor_on(params):                    # 실험 G: 팀 안에 새 파트너가 partner_floor명보다 적으면 감점
         partners = partner_map(penalty)
         overfam -= params.partner_floor_weight * sum(

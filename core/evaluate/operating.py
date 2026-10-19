@@ -14,7 +14,7 @@ from core.graph.memory_graph import MemoryGraph
 from core.optimize.incremental import move_budget_constraints, moves_from
 from core.optimize.interrupt import SolveCancelled, current as current_stop
 from core.optimize.types import AssignEntry
-from core.optimize.milp import MilpParams, _overfamiliar_pairs, pruned_pairs, solve_milp_assessment
+from core.optimize.milp import MilpParams, _overfamiliar_pairs, familiar_exempt, pruned_pairs, solve_milp_assessment
 
 
 def project_contributions(graph: MemoryGraph, S, C, params: MilpParams, entries) -> dict[str, dict]:
@@ -41,7 +41,7 @@ def project_contributions(graph: MemoryGraph, S, C, params: MilpParams, entries)
                 pair = tuple(sorted((members[a_], members[b_])))
                 if pair in reward:
                     row["synergy"] += params.lam * float(C[pair])
-                if pair in penalty:
+                if pair in penalty and (pair[0], pair[1], jdx[pid]) not in familiar_exempt(graph):   # 지금 그 사업에 함께 있는 쌍은 감점 없음
                     row["overfamiliarity"] -= params.mu
     for row in out.values():
         row["total"] = row["skill"] + row["synergy"] + row["overfamiliarity"]

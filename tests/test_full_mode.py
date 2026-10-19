@@ -194,3 +194,37 @@ def test_simple_rule_in_full_mode_assigns_whole_people_without_double_booking():
     assert plan.entries and all(e.alloc == 1.0 for e in plan.entries)
     assert all(_count(plan.entries, p) <= 1 for p in ("p0", "p1", "p2")) and _count(plan.entries, "p3") == 0
     assert not {v.code for v in evaluate_plan(graph, S, C, FULL, plan.entries).violations} - {"budget"}
+
+
+def test_current_teammates_are_not_penalised_on_their_current_project():
+    """2026-10-19 사용자 결정 "지금 사업에서는 감점 안 함": 오래 함께 일한 두 사람이 지금 같은 사업에 있으면 그 사업에 계속 있는 한
+    익숙한 쌍 감점이 없다(평가기·MILP·독립 검증기 같은 규칙). 다른 사업에 둘을 함께 넣으면 그대로 감점한다."""
+    from scipy.sparse import csr_matrix
+    graph, S, C = _fixture()
+    cw = np.zeros((4, 4))
+    cw[0, 1] = cw[1, 0] = 24
+    params = FULL.model_copy(update={"mu": 0.5})
+    familiar = replace(graph, cowork_months=csr_matrix(cw), _within_cache={})
+    current = replace(familiar, current_teams=frozenset({(0, 1, 0)}))
+    on_j0 = [AssignEntry(person_id="p0", project_id="j0", alloc=1.0), AssignEntry(person_id="p1", project_id="j0", alloc=1.0)]
+    on_j1 = [AssignEntry(person_id="p0", project_id="j1", alloc=1.0), AssignEntry(person_id="p1", project_id="j1", alloc=1.0)]
+    assert evaluate_plan(familiar, S, C, params, on_j0).objective.overfamiliarity == -0.5
+    assert evaluate_plan(current, S, C, params, on_j0).objective.overfamiliarity == 0.0
+    assert evaluate_plan(current, S, C, params, on_j1).objective.overfamiliarity == -0.5
+    for g in (familiar, current):
+        raw = solve_milp_diagnostic(g, S, C, params)
+        assert validate_raw_solution(g, S, C, params, raw).valid
+        assert abs(raw.objective - evaluate_plan(g, S, C, params, raw.plan.entries).objective.total) < 1e-6
+
+
+def test_graph_lists_current_teams_from_the_roster():
+    from pathlib import Path
+    from core.graph.memory_graph import MemoryGraph
+    from core.ingest.convert import to_dataset
+    from core.ingest.loader import load_bundle
+    b, rep = load_bundle(Path(__file__).resolve().parents[1] / "demo" / "org-n100-operating")
+    ds, parsed = to_dataset(b, rep)
+    g = MemoryGraph.build(ds, parsed)
+    on = {(c.person_id, c.project_id) for c in ds.current}
+    assert g.current_teams and all((g.people[p].id, g.projects[j].id) in on and (g.people[q].id, g.projects[j].id) in on
+                                   and p < q for p, q, j in g.current_teams)

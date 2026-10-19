@@ -11,7 +11,7 @@ from scipy.sparse import csr_matrix
 
 from core.optimize.audit_types import RawMilpSolution, ValidationReport
 from core.optimize.candidate import rebuild_plan
-from core.optimize.milp import mean_alloc
+from core.optimize.milp import familiar_exempt, mean_alloc
 from core.optimize.validation import _independent_partner_floor, validate_raw_solution
 
 
@@ -268,7 +268,8 @@ def assess_candidate(graph, S, C, params, candidate, *, native_capture, policy,
         objective = (sum(float(S[i,j])*a for (i,j),a in skill_alloc.items())
                      + getattr(params,"seat_fit_weight",0.0)*sum(float(S[i,j])*v for (i,j),v in candidate.z.items())
                      + params.lam*sum(float(C[p,q])*v for (p,q,j),v in candidate.y.items() if (p,q) in reward_pairs)
-                     - params.mu*sum(v for (p,q,j),v in candidate.y.items() if (p,q) in penalty_pairs)
+                     - params.mu*sum(v for (p,q,j),v in candidate.y.items()
+                                     if (p,q) in penalty_pairs and (p,q,j) not in familiar_exempt(graph))
                      # 실험 G(파트너 다양성 하한): z만 쓰는 항이라 투입률 보정과 무관하다 -- 빠뜨리면 검증기가 거절(리뷰 MUST)
                      + _independent_partner_floor(candidate.z,candidate.penalty_pairs,params,
                                                   len(graph.people),len(graph.projects))

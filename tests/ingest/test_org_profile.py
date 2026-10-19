@@ -560,3 +560,17 @@ def test_v5_ongoing_work_is_in_the_history_and_reviews_stay_consistent(tmp_path,
         assert any(x[0] <= y2[1] and y2[0] <= x[1] for x in a for y2 in b), r["review_id"]
     assert any(r["project_code"].startswith("J") for r in reviews)
     assert m["ongoing_history"]["new_reviews"] == sum(r["project_code"].startswith("J") for r in reviews)
+
+
+def test_v5_link_is_the_only_change_to_history_skills_and_review_items(tmp_path, monkeypatch):
+    """폴백 리뷰(2026-10-19): v5에서 v1 해시 비교가 이력·기술 경력·평가 항목을 빼 난수열 이탈을 못 잡게 됐다 -- 진행 사업 잇기를 끄면
+    세 표가 v1(2026-10-11 전 시연 묶음) 해시와 그대로 같아야 한다. 잇기 자체는 v5 시험들이 따로 본다."""
+    import core.ingest.org_profile as op
+    monkeypatch.setattr(op, "_link_ongoing", lambda hrng, people, works, work_skills, projects, roster, last, first,
+                        reviews, review_items, review_style, **kw: (works, work_skills, reviews, review_items, review_style, {}))
+    root = op.generate_org_bundle(tmp_path / "unlinked", 100, seed=2026)
+    files = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["files"]
+    assert {k: files[k] for k in ("work_history.csv", "person_skills.csv", "review_items.csv")} == {
+        "work_history.csv": "5bba826547277bf2c1de51cb9c1e945ba9c5aeb4b7b029139caf4c52be2ed002",
+        "person_skills.csv": "ae843b26f1e3d09656bc671c9489f5439213a0f4f4d4594f5f4518ba3e9c867e",
+        "review_items.csv": "6ee0ec28b6641eeb3512c992cd4630dc2e40abf9cac31146b0f383250305dabe"}

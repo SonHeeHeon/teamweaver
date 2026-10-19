@@ -314,10 +314,13 @@ def validate_raw_solution(
         for p, q in expected_reward_pairs
         for j in range(n_projects)
     )
+    # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다(2026-10-19 사용자 결정) -- 원자료(graph.current_teams)를 직접 읽는다
+    exempt = getattr(graph, "current_teams", frozenset()) or frozenset()
     overfamiliarity_term = -params.mu * sum(
         solution.y[(p, q, j)]
         for p, q in expected_penalty_pairs
         for j in range(n_projects)
+        if (p, q, j) not in exempt
     ) + _independent_partner_floor(solution.z, expected_penalty_pairs, params, n_people, n_projects)
     unfilled_term = -params.slack_penalty * sum(solution.slack.values())
     total = skill_term + synergy_term + overfamiliarity_term + unfilled_term

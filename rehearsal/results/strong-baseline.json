@@ -1,21 +1,21 @@
 {
- "recorded_at": "2026-10-19T18:01:18+0900",
+ "recorded_at": "2026-10-19T20:02:28+0900",
  "sizes": {
   "100": {
    "time_limit_s": 30,
    "milp_plan_a": {
-    "total": 59.536,
-    "skill": 51.751,
-    "synergy": 7.785,
-    "overfamiliarity": -0.0,
+    "total": 59.467,
+    "skill": 52.383,
+    "synergy": 7.684,
+    "overfamiliarity": -0.6,
     "unfilled_seats": 0,
     "violations": {},
     "assignments": 67
    },
    "simple_rule": {
-    "total": 51.717,
-    "skill": 51.11,
-    "synergy": 0.607,
+    "total": 52.87,
+    "skill": 52.235,
+    "synergy": 0.635,
     "overfamiliarity": -0.0,
     "unfilled_seats": 0,
     "violations": {
@@ -24,71 +24,71 @@
     "assignments": 67
    },
    "strong_heuristic": {
-    "total": 53.408,
-    "skill": 47.886,
-    "synergy": 5.522,
-    "overfamiliarity": -0.0,
-    "unfilled_seats": 0,
+    "total": -43.388,
+    "skill": 50.778,
+    "synergy": 6.035,
+    "overfamiliarity": -0.2,
+    "unfilled_seats": 1,
     "violations": {},
     "assignments": 67,
     "elapsed_s": 30.0,
-    "tries": 11208768,
-    "accepted": 2,
-    "missing_seats_construct": 0
+    "tries": 12005043,
+    "accepted": 17,
+    "missing_seats_construct": 1
    },
-   "milp_best_bound": 61.11016107363094
+   "milp_best_bound": 60.965857218178904
   },
   "200": {
    "time_limit_s": 60,
    "milp_plan_a": {
-    "total": 150.345,
-    "skill": 135.583,
-    "synergy": 15.361,
-    "overfamiliarity": -0.6,
+    "total": 151.433,
+    "skill": 135.85,
+    "synergy": 16.383,
+    "overfamiliarity": -0.8,
     "unfilled_seats": 0,
     "violations": {},
     "assignments": 167
    },
    "simple_rule": {
-    "total": 124.866,
-    "skill": 125.069,
-    "synergy": 2.797,
-    "overfamiliarity": -3.0,
+    "total": 125.369,
+    "skill": 125.268,
+    "synergy": 3.301,
+    "overfamiliarity": -3.2,
     "unfilled_seats": 0,
     "violations": {},
     "assignments": 165
    },
    "strong_heuristic": {
-    "total": 134.631,
-    "skill": 125.98,
-    "synergy": 9.251,
+    "total": 133.926,
+    "skill": 124.936,
+    "synergy": 9.59,
     "overfamiliarity": -0.6,
     "unfilled_seats": 0,
     "violations": {},
-    "assignments": 167,
+    "assignments": 166,
     "elapsed_s": 60.1,
-    "tries": 26421604,
+    "tries": 24617248,
     "accepted": 8,
     "missing_seats_construct": 0
    },
-   "milp_best_bound": 151.81959950977728
+   "milp_best_bound": 152.87632031463377
   },
   "300": {
    "time_limit_s": 90,
    "milp_plan_a": {
-    "total": 226.885,
-    "skill": 208.494,
-    "synergy": 18.791,
+    "total": 228.098,
+    "skill": 209.305,
+    "synergy": 19.193,
     "overfamiliarity": -0.4,
     "unfilled_seats": 0,
     "violations": {},
     "assignments": 260
    },
    "simple_rule": {
-    "total": 196.056,
-    "skill": 197.963,
-    "synergy": 0.493,
-    "overfamiliarity": -2.4,
+    "total": 195.952,
+    "skill": 198.457,
+    "synergy": 0.696,
+    "overfamiliarity": -3.2,
     "unfilled_seats": 0,
     "violations": {
      "budget": 3
@@ -96,19 +96,19 @@
     "assignments": 256
    },
    "strong_heuristic": {
-    "total": -197.093,
-    "skill": 198.078,
-    "synergy": 5.429,
+    "total": -94.276,
+    "skill": 199.418,
+    "synergy": 6.906,
     "overfamiliarity": -0.6,
-    "unfilled_seats": 4,
+    "unfilled_seats": 3,
     "violations": {},
     "assignments": 259,
     "elapsed_s": 90.2,
-    "tries": 38658660,
-    "accepted": 4,
-    "missing_seats_construct": 4
+    "tries": 37138384,
+    "accepted": 2,
+    "missing_seats_construct": 3
    },
-   "milp_best_bound": 229.14933942090352
+   "milp_best_bound": 230.15566047669438
   }
  }
 }

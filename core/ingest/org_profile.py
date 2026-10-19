@@ -368,6 +368,9 @@ def _link_ongoing(hrng: random.Random, people: list[dict], works: list[dict], wo
     proj = {p["project_id"]: p for p in projects}
     llm_origin = _month_add(last, -(LLM_ERA_MONTHS - 1))
     # 교체 기록(replacements.csv)은 "그 사업 이력이 교체 날짜에 끝난다"가 맞아야 한다 -- 합류는 그 사람의 마지막 교체 다음 달부터
+    first_work = {}                                     # 그 사람의 첫 이력 -- 합류가 입사(첫 이력) 앞으로 가지 않게(폴백 리뷰 P3)
+    for w in works:
+        first_work[w["person_id"]] = min(first_work.get(w["person_id"], w["_start"]), w["_start"])
     replaced = {}
     for x in replacements or []:
         d = dt.date.fromisoformat(x["replaced_at"])
@@ -388,6 +391,8 @@ def _link_ongoing(hrng: random.Random, people: list[dict], works: list[dict], wo
         if r["person_id"] in replaced:
             rd = replaced[r["person_id"]]
             jn = max(jn, _month_add(dt.date(rd.year, rd.month, 1), 1))
+        if r["person_id"] in first_work:
+            jn = max(jn, first_work[r["person_id"]])
         if jn <= last:
             joins[r["person_id"]] = (jn, j)
     kept = []
@@ -454,7 +459,8 @@ def _link_ongoing(hrng: random.Random, people: list[dict], works: list[dict], wo
                                                      _review_rounds(first), seed=seed, blunt_share=blunt_share,
                                                      mismatch_share=mismatch_share, id_start=len(reviews))
     style = dict(review_style)
-    style["blunt_reviewers"] = sorted(set(review_style["blunt_reviewers"]) | set(new_style["blunt_reviewers"]))
+    still = {r["reviewer_id"] for r in kept_reviews} | {r["reviewer_id"] for r in new_reviews}   # 평가가 모두 지워진 평가자는 뺀다
+    style["blunt_reviewers"] = sorted((set(review_style["blunt_reviewers"]) | set(new_style["blunt_reviewers"])) & still)
     for key in ("blunt_reviews", "harsh_reviews", "soft_reviews"):
         style[key] = [x for x in review_style[key] if x in kept_ids] + new_style[key]
     record = {"people": len(joins), "dropped_reviews": len(reviews) - len(kept_reviews), "new_reviews": len(new_reviews),
@@ -920,12 +926,15 @@ def _current_roster(rng: random.Random, people: list[dict], projects: list[dict]
     rows = []
     running = [j for j in projects if j["phase"] == "실행" and j["_start"] == 0]
     for j in running:
-        if not j["_flagship"] and rng.random() > 0.7:
+        # v5(2026-10-19 사용자 "진행 사업은 모두 현재 팀 있음"): 계획 전에 시작한 진행 사업은 빠짐없이 자리의 80~100%가 지금 일하는 사람이다.
+        # 계획 첫 달에 새로 시작하는 사업만 예전 규칙(70%의 사업, 자리의 50~100%)
+        ongoing = (j.get("_life") or {}).get("stage") not in (None, "추가 과제")
+        if not j["_flagship"] and not ongoing and rng.random() > 0.7:
             continue
         months = set(range(j["_start"], j["_end"] + 1))
         left = float(j["monthly_budget"])
         for grade, seats in j["_hc"].items():
-            want = round(seats * rng.uniform(0.5, 1.0))
+            want = round(seats * rng.uniform(0.8 if ongoing else 0.5, 1.0))
             cands = [pid for pid in by_grade[grade]
                      if all(avail[pid][m] >= 1.0 for m in months) and not (busy[pid] & months)]
             for pid in rng.sample(cands, min(want, len(cands))):
@@ -942,7 +951,8 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
                         scenario: str = "planning", *, blunt_share: float = BLUNT_SHARE,
                         mismatch_share: float = MISMATCH_SHARE) -> Path:
     """scenario: "planning" = 연초 계획(사업을 백지에서 배치), "operating" = 운영 중(대부분이 진행 사업에 있고 신규 제안
-    2~3개를 남는 인력으로 짠다, 2026-10-06). 같은 seed면 사람·이력·평가·과거 성과는 두 시나리오가 같다."""
+    2~3개를 남는 인력으로 짠다, 2026-10-06). 같은 seed면 사람·과거 성과·교체 기록은 두 시나리오가 같다 -- 업무 이력·기술 경력·평가는
+    v5부터 진행 사업 현재 팀원의 경력을 이어 시나리오마다 다르다(`_link_ongoing`)."""
     if size not in SIZES:
         raise ValueError(f"size must be one of {sorted(SIZES)}")
     if scenario not in ("planning", "operating"):

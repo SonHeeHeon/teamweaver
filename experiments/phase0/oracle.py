@@ -63,9 +63,10 @@ def _penalty_pairs(graph: MemoryGraph, params: MilpParams) -> tuple[tuple[int, i
     )
 
 
-def _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects) -> float:
+def _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects, exempt=frozenset()) -> float:
     return (params.lam * sum(float(synergy[p, q]) * z[(p, j)] * z[(q, j)] for p, q in reward_pairs for j in range(n_projects))
-            - params.mu * sum(z[(p, j)] * z[(q, j)] for p, q in penalty_pairs for j in range(n_projects)))
+            - params.mu * sum(z[(p, j)] * z[(q, j)] for p, q in penalty_pairs for j in range(n_projects)
+                              if (p, q, j) not in exempt))
 
 
 def solve_tiny_oracle(
@@ -86,6 +87,7 @@ def solve_tiny_oracle(
 
     reward_pairs = _reward_pairs(synergy, params)
     penalty_pairs = _penalty_pairs(graph, params)
+    exempt = getattr(graph, "current_teams", frozenset()) or frozenset()   # 지금 같은 사업에 함께 있는 쌍(2026-10-19)
     best_objective = -np.inf
     best_z: dict[tuple[int, int], int] | None = None
     best_a: dict[tuple[int, int], float] | None = None
@@ -131,7 +133,7 @@ def solve_tiny_oracle(
             allocations = {(i, j): float(z[(i, j)]) for i in range(n_people) for j in range(n_projects)}
             skill_term = (1.0 + getattr(params, "seat_fit_weight", 0.0)) * sum(
                 float(skill[i, j]) * z[(i, j)] for i in range(n_people) for j in range(n_projects))
-            objective = skill_term + _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects) \
+            objective = skill_term + _pair_terms(z, synergy, params, reward_pairs, penalty_pairs, n_projects, exempt) \
                 - params.slack_penalty * sum(slack.values())
             if objective > best_objective + 1e-12:
                 best_objective, best_z, best_a, best_slack = objective, z, allocations, slack
@@ -201,6 +203,7 @@ def solve_tiny_oracle(
             z[(p, j)] * z[(q, j)]
             for p, q in penalty_pairs
             for j in range(n_projects)
+            if (p, q, j) not in exempt                  # 지금 같은 사업에 함께 있는 쌍(2026-10-19) -- 원자료 graph.current_teams
         )
         unfilled_term = -params.slack_penalty * sum(slack.values())
         objective = skill_term + reward_term + penalty_term + unfilled_term

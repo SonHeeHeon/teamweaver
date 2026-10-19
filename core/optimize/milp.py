@@ -322,6 +322,12 @@ def _overfamiliar_pairs(graph: MemoryGraph, threshold: int,
     return result
 
 
+def familiar_exempt(graph: MemoryGraph) -> frozenset:
+    """익숙한 쌍 감점에서 빼는 (p, q, 사업): 지금 그 사업에 함께 있는 두 사람(그 사업에 계속 있을 때만 -- 다른 사업에 함께 넣으면 감점).
+    2026-10-19 사용자 결정. 독립 검증기·Phase 0 오라클은 graph.current_teams를 직접 읽는다(같은 원자료)."""
+    return getattr(graph, "current_teams", frozenset()) or frozenset()
+
+
 def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
                           params: MilpParams, extra_constraints=None, start_entries=None):
     """Capture native evidence and assess it without weakening the final gate."""
@@ -366,6 +372,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
     overfam = _overfamiliar_pairs(graph, params.clique_threshold_months,
                                   params.clique_window_months)          # ALL over-familiar pairs -> penalty term
     pairs = sorted(set(pruned) | overfam)                    # y/linearization must cover both
+    exempt = familiar_exempt(graph)                          # 지금 같은 사업에 함께 있는 쌍은 그 사업에서 감점하지 않는다
     y = {(p, q, j): pulp.LpVariable(f"y_{p}_{q}_{j}", 0.0, 1.0)
          for (p, q) in pairs for j in range(nJ)}
     slack = {(j, g): pulp.LpVariable(f"s_{j}_{g.value}", lowBound=0)
@@ -379,7 +386,7 @@ def solve_milp_assessment(graph: MemoryGraph, S: np.ndarray, C: np.ndarray,
          else pulp.lpSum(S[i, j] * aget(i, j, None) for i in range(nP) for j in range(nJ)))
         + params.seat_fit_weight * pulp.lpSum(S[i, j] * z[i][j] for i in range(nP) for j in range(nJ))
         + params.lam * pulp.lpSum(C[p, q] * y[(p, q, j)] for (p, q) in pruned for j in range(nJ))
-        - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ))
+        - params.mu * pulp.lpSum(y[(p, q, j)] for (p, q) in overfam for j in range(nJ) if (p, q, j) not in exempt)
         - params.slack_penalty * pulp.lpSum(slack.values()))
     if short:
         objective_expr -= params.partner_floor_weight * pulp.lpSum(short.values())

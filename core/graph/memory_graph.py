@@ -25,6 +25,9 @@ class MemoryGraph:
     node_polarity: dict[int, float] = field(default_factory=dict)
     # (i, j) i<j -> 함께 일한 달들이 계획 몇 달 전인지. 원천이 달 정보를 주면만 채운다(CoworkRecord.months_ago).
     cowork_months_ago: dict[tuple[int, int], tuple[int, ...]] = field(default_factory=dict)
+    # 지금 같은 사업에 함께 있는 두 사람 (p, q, 사업), p < q -- 그 사업에 계속 있는 한 "익숙한 쌍" 감점을 하지 않는다
+    # (2026-10-19 사용자 결정 "지금 사업에서는 감점 안 함": v5에서 진행 사업 경력이 이력에 이어져 기존 팀이 감점 대상이 됐다)
+    current_teams: frozenset = field(default_factory=frozenset)
     _within_cache: dict = field(default_factory=dict, repr=False, compare=False)
 
     @classmethod
@@ -80,7 +83,14 @@ class MemoryGraph:
         for p_ in parsed:
             pol_acc[pid[p_.reviewee_id]].append(p_.text_polarity)
         node_pol = {k: float(np.mean(v)) for k, v in pol_acc.items()}
-        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev), node_pol, months_ago)
+        on: dict[int, list[int]] = defaultdict(list)
+        for c in getattr(ds, "current", None) or []:
+            if c.person_id in pid and c.project_id in jidx:
+                on[jidx[c.project_id]].append(pid[c.person_id])
+        teams = frozenset((min(a, b), max(a, b), j) for j, members in on.items()
+                          for a in members for b in members if a < b)
+        return cls(ds.people, ds.projects, pid, jidx, sidx, L, cw, pair_score, dict(ev), node_pol, months_ago,
+                   current_teams=teams)
 
     def cowork_within(self, window_months: int | None) -> csr_matrix:
         """최근 window_months 개월 안에 함께 일한 개월 수(대칭 행렬).
