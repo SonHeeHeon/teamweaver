@@ -231,6 +231,9 @@ app.include_router(_review_doc_routes.router)
 # 빈자리 → 프로젝트 동시 수행 허용 후보(2026-10-19, claude-a)
 from api.routes import concurrency as _concurrency_routes  # noqa: E402
 app.include_router(_concurrency_routes.router)
+# 데이터 원천: 인사 시스템 API 받기(기본)·CSV(대체)·진행 중 사업 기술 경력 갱신 주체(2026-10-19, claude-a)
+from api.routes import hr_source as _hr_source_routes  # noqa: E402
+app.include_router(_hr_source_routes.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

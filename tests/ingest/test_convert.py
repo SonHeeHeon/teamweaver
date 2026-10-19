@@ -308,8 +308,14 @@ def test_skills_last_used_before_the_window_are_not_held(tmp_path):
     (root / "manifest.json").write_text(json.dumps(m, ensure_ascii=False), "utf-8")
     path = root / "person_skills.csv"
     rows = list(csv.DictReader(path.open(encoding="utf-8")))
-    pid, skill = rows[0]["person_id"], rows[0]["skill_name"]
-    rows[0]["last_used_month"] = "2012-06"                              # a skill nobody has used for 14 years
+    # 진행 중 업무에 등록된 기술은 이 서비스가 계획 직전 달까지 이어 센다(core/ingest/aging, 2026-10-19) -- 그렇지 않은 기술을 고른다
+    ongoing = {w["work_id"]: w["person_id"] for w in csv.DictReader((root / "work_history.csv").open(encoding="utf-8"))
+               if w["status"] == "진행중"}
+    live = {(ongoing[x["work_id"]], x["skill_name"]) for x in csv.DictReader((root / "work_skills.csv").open(encoding="utf-8"))
+            if x["work_id"] in ongoing}
+    k = next(i for i, r in enumerate(rows) if (r["person_id"], r["skill_name"]) not in live)
+    pid, skill = rows[k]["person_id"], rows[k]["skill_name"]
+    rows[k]["last_used_month"] = "2012-06"                              # a skill nobody has used for 14 years
     with path.open("w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()

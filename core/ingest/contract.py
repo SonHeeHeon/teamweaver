@@ -72,6 +72,12 @@ FILES: tuple[FileSpec, ...] = (
         Column("industry", "str", required=False),
         Column("summary", "str", required=False),
     ), key=("work_id",)),
+    # 업무 이력별 사용 기술(기술 이력 화면의 사업별 기술, 2026-10-19 -- 선택 표). 진행 중(status 진행중) 업무에 등록된 기술만 이 서비스가
+    # 데이터 기준월 뒤 계획 직전 달까지 개월 수를 늘린다(core/ingest/aging, manifest skill_months_owner = "service"일 때).
+    FileSpec("work_skills.csv", (
+        Column("work_id", "str", ref="work_history.csv:work_id"),
+        Column("skill_name", "str"),
+    ), key=("work_id", "skill_name"), optional=True),
     FileSpec("availability.csv", (
         Column("person_id", "str", ref="people.csv:person_id"),
         Column("month", "month"),

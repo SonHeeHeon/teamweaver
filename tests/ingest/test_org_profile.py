@@ -103,7 +103,7 @@ def test_roster_does_not_change_the_other_tables(tmp_path, monkeypatch):
     a = generate_org_bundle(tmp_path / "a", 200, seed=5)
     monkeypatch.setattr(op, "_current_roster", lambda *args, **kw: [])
     c = op.generate_org_bundle(tmp_path / "c", 200, seed=5)
-    linked = ("work_history.csv", "person_skills.csv", "reviews.csv", "review_items.csv")
+    linked = ("work_history.csv", "work_skills.csv", "person_skills.csv", "reviews.csv", "review_items.csv")
     for f in a.iterdir():
         if f.name not in ("current_assignments.csv", "manifest.json") + linked:
             assert f.read_bytes() == (c / f.name).read_bytes(), f.name

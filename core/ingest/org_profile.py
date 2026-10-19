@@ -218,7 +218,8 @@ def _work_history(rng: random.Random, people: list[dict], last: dt.date):
                    "start_date": s.isoformat(), "end_date": _month_end(e).isoformat(), "status": status,
                    "work_name": code["work_name"], "client": code["client"],
                    "industry": INDUSTRY[code["domain"]],
-                   "_start": s, "_end": e, "_code": code, "_used": list(used), "_ws": []}
+                   "_start": s, "_end": e, "_code": code, "_used": list(used), "_ws": [],
+                   "_all": list(dict.fromkeys(used + extra + [code["domain"]]))}     # 업무별 사용 기술(work_skills.csv, 2026-10-19)
             works.append(row)
             for skill in dict.fromkeys(used + extra + [code["domain"]]):
                 ss = max(s, llm_origin) if skill in LLM_ERA else s
@@ -432,7 +433,7 @@ def _link_ongoing(hrng: random.Random, people: list[dict], works: list[dict], wo
                         "work_name": j["_base"], "client": j["_client"], "industry": INDUSTRY[domain],
                         "summary": f"{j['_base']}에서 {area} 담당" + (f"({', '.join(used[:3])} 활용)" if used else ""),
                         "_start": jn, "_end": last, "_code": {"area": area, "domain": domain}, "_used": used,
-                        "_skills": used or [domain]})
+                        "_skills": used or [domain], "_all": list(dict.fromkeys(used + [domain]))})
         for sk in dict.fromkeys(used + [domain]):
             ss = max(jn, llm_origin) if sk in LLM_ERA else jn
             if ss <= last:
@@ -1012,8 +1013,13 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
                  for g in GRADES for r in ("개발", "컨설팅")]
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    llm_origin = _month_add(last, -(LLM_ERA_MONTHS - 1))
+    # 업무별 사용 기술(2026-10-19 -- 진행 중 업무의 기술을 이 서비스가 늘린다, core/ingest/aging). LLM 시대 전에 끝난 업무에는 LLM 기술을 적지 않는다
+    work_skill_rows = [{"work_id": w["work_id"], "skill_name": sk} for w in works for sk in w.get("_all", [])
+                       if sk not in LLM_ERA or w["_end"] >= llm_origin]
     tables = {"people.csv": people, "rate_card.csv": rate_card, "person_skills.csv": _person_skills(work_skills),
-              "work_history.csv": works, "availability.csv": availability, "projects.csv": projects,
+              "work_history.csv": works, "work_skills.csv": work_skill_rows, "availability.csv": availability,
+              "projects.csv": projects,
               "project_grade_requirements.csv": grade_reqs, "project_skill_requirements.csv": skill_reqs,
               "reviews.csv": reviews, "review_items.csv": review_items,
               "current_assignments.csv": roster,
@@ -1022,6 +1028,8 @@ def generate_org_bundle(out_dir: Path, size: int, seed: int, horizon_start: str 
     manifest = {"dataset_id": f"org-n{size}-s{seed}" + ("-operating" if scenario == "operating" else ""),
                 "schema_version": SCHEMA_VERSION,
                 "horizon_start": horizon_start, "horizon_months": HORIZON_MONTHS, "cost_unit": "가상비용점(월)",
+                # 데이터 기준월 = 계획 직전 달(이력·기술 경력이 거기까지) -- 진행 중 사업 기술은 늘어날 달이 없다(시연 숫자 그대로)
+                "as_of": last.strftime("%Y-%m"), "skill_months_owner": "service",
                 "synthetic": True, "seed": seed, "generator": GENERATOR, "groups": groups,
                 "flagship_project": FLAGSHIP["project_id"],
                 "note": "조직 구성은 사용자 설명(2026-10-05)을 따른 가상 데이터. 최대 사업은 내부 정원만 표현(외주 제외). 고객명 익명.",

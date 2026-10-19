@@ -1,0 +1,9119 @@
+work_id,skill_name
+W000001,ETL
+W000001,Hadoop
+W000001,Scala
+W000001,Private Cloud
+W000001,Java
+W000001,금융 업무
+W000002,ETL
+W000002,Spark
+W000002,Python
+W000002,금융 업무
+W000003,Python
+W000003,Kafka
+W000003,Hadoop
+W000003,Airflow
+W000003,SQL
+W000003,Scala
+W000003,공공 업무
+W000004,AWS
+W000004,Scala
+W000004,Kafka
+W000004,ETL
+W000004,Airflow
+W000004,Docker
+W000004,데이터 모델링
+W000004,금융 업무
+W000005,Hadoop
+W000005,Kafka
+W000005,Spark
+W000005,Python
+W000005,ETL
+W000005,공공 업무
+W000006,Airflow
+W000006,Python
+W000006,ETL
+W000006,금융 업무
+W000007,SQL
+W000007,Hadoop
+W000007,Kafka
+W000007,Python
+W000007,Spark
+W000007,Airflow
+W000007,금융 업무
+W000008,Hadoop
+W000008,Scala
+W000008,Python
+W000008,Airflow
+W000008,메타데이터 관리
+W000008,비정형 문서 처리(OCR)
+W000008,그룹사 업무
+W000009,Scala
+W000009,Spark
+W000009,Airflow
+W000009,ETL
+W000009,Hadoop
+W000009,금융 업무
+W000010,Kafka
+W000010,Scala
+W000010,Python
+W000010,SQL
+W000010,React
+W000010,금융 업무
+W000011,Spark
+W000011,SQL
+W000011,AWS
+W000011,Java
+W000011,금융 업무
+W000012,Python
+W000012,Hadoop
+W000012,Kafka
+W000012,SQL
+W000012,Spark
+W000012,공공 업무
+W000013,Airflow
+W000013,SQL
+W000013,Scala
+W000013,Spark
+W000013,그룹사 업무
+W000014,Hadoop
+W000014,AWS
+W000014,Scala
+W000014,SQL
+W000014,검색엔진
+W000014,프로세스 마이닝
+W000014,그룹사 업무
+W000015,Airflow
+W000015,Spark
+W000015,ETL
+W000015,SQL
+W000015,금융 업무
+W000016,Python
+W000016,ETL
+W000016,AWS
+W000016,Kafka
+W000016,Hadoop
+W000016,Airflow
+W000016,로우코드 플랫폼
+W000016,프로세스 마이닝
+W000016,그룹사 업무
+W000017,AWS
+W000017,Python
+W000017,Hadoop
+W000017,Scala
+W000017,SQL
+W000017,Airflow
+W000017,FastAPI
+W000017,비정형 문서 처리(OCR)
+W000017,그룹사 업무
+W000018,Kafka
+W000018,Scala
+W000018,Airflow
+W000018,SQL
+W000018,AWS
+W000018,Hadoop
+W000018,Data Lake & Data Catalog
+W000018,FastAPI
+W000018,금융 업무
+W001827,ETL
+W001827,Spark
+W001827,Python
+W001827,SQL
+W001827,금융 업무
+W000021,Python
+W000021,ETL
+W000021,메타데이터 관리
+W000021,비정형 문서 처리(OCR)
+W000021,검색엔진
+W000021,ML Ops
+W000021,Scala
+W000021,금융 업무
+W000022,비정형 문서 처리(OCR)
+W000022,ETL
+W000022,Text Analysis
+W000022,Python
+W000022,메타데이터 관리
+W000022,워크플로우·BPM
+W000022,공공 업무
+W000023,Python
+W000023,Text Analysis
+W000023,메타데이터 관리
+W000023,금융 업무
+W000024,비정형 문서 처리(OCR)
+W000024,ETL
+W000024,Text Analysis
+W000024,공공 업무
+W000025,Python
+W000025,Text Analysis
+W000025,비정형 문서 처리(OCR)
+W000025,프로세스 마이닝
+W000025,데이터 모델링
+W000025,그룹사 업무
+W000026,메타데이터 관리
+W000026,비정형 문서 처리(OCR)
+W000026,ETL
+W000026,React
+W000026,공공 업무
+W000027,비정형 문서 처리(OCR)
+W000027,ETL
+W000027,메타데이터 관리
+W000027,Text Analysis
+W000027,Spring
+W000027,FastAPI
+W000027,공공 업무
+W000028,ETL
+W000028,Python
+W000028,Text Analysis
+W000028,비정형 문서 처리(OCR)
+W000028,메타데이터 관리
+W000028,Kubernetes
+W000028,그룹사 업무
+W000029,비정형 문서 처리(OCR)
+W000029,검색엔진
+W000029,메타데이터 관리
+W000029,ETL
+W000029,Python
+W000029,FastAPI
+W000029,Airflow
+W000029,그룹사 업무
+W000030,검색엔진
+W000030,ETL
+W000030,Python
+W000030,비정형 문서 처리(OCR)
+W000030,Text Analysis
+W000030,메타데이터 관리
+W000030,그룹사 업무
+W000031,Python
+W000031,Text Analysis
+W000031,검색엔진
+W000031,비정형 문서 처리(OCR)
+W000031,메타데이터 관리
+W000031,금융 업무
+W000032,비정형 문서 처리(OCR)
+W000032,ETL
+W000032,검색엔진
+W000032,Text Analysis
+W000032,Airflow
+W000032,AI 에이전트 프레임워크
+W000032,금융 업무
+W000033,Text Analysis
+W000033,ETL
+W000033,메타데이터 관리
+W000033,비정형 문서 처리(OCR)
+W000033,검색엔진
+W000033,Python
+W000033,그룹사 업무
+W001828,Text Analysis
+W001828,ETL
+W001828,비정형 문서 처리(OCR)
+W001828,검색엔진
+W001828,Python
+W001828,금융 업무
+W000041,Scala
+W000041,Spark
+W000041,ETL
+W000041,AWS
+W000041,SQL
+W000041,Python
+W000041,프로세스 마이닝
+W000041,Data Lake & Data Catalog
+W000041,그룹사 업무
+W000042,AWS
+W000042,Hadoop
+W000042,Airflow
+W000042,SQL
+W000042,ETL
+W000042,Kafka
+W000042,그룹사 업무
+W000043,Scala
+W000043,SQL
+W000043,Spark
+W000043,ETL
+W000043,Python
+W000043,비정형 문서 처리(OCR)
+W000043,FastAPI
+W000043,금융 업무
+W000044,ETL
+W000044,Hadoop
+W000044,Spark
+W000044,Kafka
+W000044,로우코드 플랫폼
+W000044,BI Reporting
+W000044,그룹사 업무
+W000045,Spark
+W000045,Hadoop
+W000045,Scala
+W000045,Python
+W000045,Kafka
+W000045,그룹사 업무
+W000046,Hadoop
+W000046,Python
+W000046,AWS
+W000046,Airflow
+W000046,Kafka
+W000046,FastAPI
+W000046,금융 업무
+W000047,AWS
+W000047,ETL
+W000047,Python
+W000047,Spark
+W000047,Airflow
+W000047,금융 업무
+W000048,Hadoop
+W000048,Python
+W000048,Spark
+W000048,ETL
+W000048,Scala
+W000048,Private Cloud
+W000048,BI Reporting
+W000048,그룹사 업무
+W000049,SQL
+W000049,Python
+W000049,Scala
+W000049,Hadoop
+W000049,ETL
+W000049,Spark
+W000049,공공 업무
+W000050,ETL
+W000050,Kafka
+W000050,Airflow
+W000050,AWS
+W000050,SQL
+W000050,Python
+W000050,공공 업무
+W000051,SQL
+W000051,Python
+W000051,Spark
+W000051,Airflow
+W000051,그룹사 업무
+W000052,Kafka
+W000052,Hadoop
+W000052,ETL
+W000052,Airflow
+W000052,프로세스 마이닝
+W000052,금융 업무
+W000053,Spark
+W000053,Airflow
+W000053,Kafka
+W000053,AWS
+W000053,ETL
+W000053,로우코드 플랫폼
+W000053,Java
+W000053,그룹사 업무
+W000054,Hadoop
+W000054,Spark
+W000054,AWS
+W000054,Scala
+W000054,SQL
+W000054,금융 업무
+W000055,Python
+W000055,ETL
+W000055,Kafka
+W000055,AWS
+W000055,SQL
+W000055,워크플로우·BPM
+W000055,금융 업무
+W000056,AWS
+W000056,SQL
+W000056,ETL
+W000056,Spark
+W000056,Scala
+W000056,Airflow
+W000056,그룹사 업무
+W000057,Scala
+W000057,Airflow
+W000057,Kafka
+W000057,RPA
+W000057,금융 업무
+W000058,Airflow
+W000058,AWS
+W000058,Python
+W000058,Text Analysis
+W000058,메타데이터 관리
+W000058,그룹사 업무
+W000059,ETL
+W000059,Hadoop
+W000059,SQL
+W000059,Python
+W000059,Spark
+W000059,Scala
+W000059,React
+W000059,LLM 파인튜닝
+W000059,금융 업무
+W000060,ETL
+W000060,Hadoop
+W000060,Kafka
+W000060,Airflow
+W000060,Python
+W000060,Scala
+W000060,금융 업무
+W000061,Python
+W000061,Spark
+W000061,Airflow
+W000061,Scala
+W000061,프롬프트 엔지니어링
+W000061,비정형 문서 처리(OCR)
+W000061,그룹사 업무
+W000062,Scala
+W000062,SQL
+W000062,Hadoop
+W000062,Kafka
+W000062,ETL
+W000062,Airflow
+W000062,RAG·벡터DB
+W000062,프로세스 마이닝
+W000062,금융 업무
+W000063,AWS
+W000063,ETL
+W000063,Spark
+W000063,Kafka
+W000063,Hadoop
+W000063,Scala
+W000063,Java
+W000063,그룹사 업무
+W000064,Scala
+W000064,Python
+W000064,Airflow
+W000064,Hadoop
+W000064,Kafka
+W000064,Spark
+W000064,공공 업무
+W000065,AWS
+W000065,Scala
+W000065,Python
+W000065,Kafka
+W000065,ETL
+W000065,로우코드 플랫폼
+W000065,금융 업무
+W000066,BI Reporting
+W000066,SQL
+W000066,데이터 모델링
+W000066,금융 업무
+W000067,메타데이터 관리
+W000067,SQL
+W000067,데이터 모델링
+W000067,금융 업무
+W000068,SQL
+W000068,BI Reporting
+W000068,데이터 모델링
+W000068,Docker
+W000068,워크플로우·BPM
+W000068,금융 업무
+W000069,SQL
+W000069,Data Lake & Data Catalog
+W000069,데이터 모델링
+W000069,메타데이터 관리
+W000069,BI Reporting
+W000069,비정형 문서 처리(OCR)
+W000069,ETL
+W000069,금융 업무
+W000070,BI Reporting
+W000070,Data Lake & Data Catalog
+W000070,SQL
+W000070,데이터 모델링
+W000070,메타데이터 관리
+W000070,React
+W000070,금융 업무
+W000071,SQL
+W000071,데이터 모델링
+W000071,Data Lake & Data Catalog
+W000071,메타데이터 관리
+W000071,공공 업무
+W000072,Data Lake & Data Catalog
+W000072,메타데이터 관리
+W000072,데이터 모델링
+W000072,SQL
+W000072,Hadoop
+W000072,그룹사 업무
+W000073,메타데이터 관리
+W000073,데이터 모델링
+W000073,SQL
+W000073,Data Lake & Data Catalog
+W000073,공공 업무
+W000074,BI Reporting
+W000074,SQL
+W000074,메타데이터 관리
+W000074,데이터 모델링
+W000074,로우코드 플랫폼
+W000074,LLM Application
+W000074,그룹사 업무
+W000075,BI Reporting
+W000075,Data Lake & Data Catalog
+W000075,데이터 모델링
+W000075,SQL
+W000075,메타데이터 관리
+W000075,금융 업무
+W000076,데이터 모델링
+W000076,Data Lake & Data Catalog
+W000076,BI Reporting
+W000076,SQL
+W000076,메타데이터 관리
+W000076,프로세스 마이닝
+W000076,AWS
+W000076,금융 업무
+W000077,BI Reporting
+W000077,데이터 모델링
+W000077,Data Lake & Data Catalog
+W000077,SQL
+W000077,메타데이터 관리
+W000077,AWS
+W000077,그룹사 업무
+W000078,메타데이터 관리
+W000078,BI Reporting
+W000078,데이터 모델링
+W000078,SQL
+W000078,Data Lake & Data Catalog
+W000078,Scala
+W000078,그룹사 업무
+W000079,Data Lake & Data Catalog
+W000079,메타데이터 관리
+W000079,데이터 모델링
+W000079,BI Reporting
+W000079,SQL
+W000079,금융 업무
+W000080,SQL
+W000080,데이터 모델링
+W000080,BI Reporting
+W000080,Data Lake & Data Catalog
+W000080,LLM Application
+W000080,비정형 문서 처리(OCR)
+W000080,금융 업무
+W000081,Hadoop
+W000081,Kubernetes
+W000081,Private Cloud
+W000081,AWS
+W000081,FastAPI
+W000081,공공 업무
+W000082,Private Cloud
+W000082,Docker
+W000082,Kubernetes
+W000082,Hadoop
+W000082,공공 업무
+W000083,Kubernetes
+W000083,Kafka
+W000083,Data Lake & Data Catalog
+W000083,AWS
+W000083,Hadoop
+W000083,검색엔진
+W000083,FastAPI
+W000083,그룹사 업무
+W000084,Docker
+W000084,AWS
+W000084,Private Cloud
+W000084,SQL
+W000084,공공 업무
+W000085,Docker
+W000085,Kubernetes
+W000085,Private Cloud
+W000085,Data Lake & Data Catalog
+W000085,Python
+W000085,검색엔진
+W000085,금융 업무
+W000086,Kafka
+W000086,Data Lake & Data Catalog
+W000086,Hadoop
+W000086,금융 업무
+W000087,Data Lake & Data Catalog
+W000087,Kubernetes
+W000087,Docker
+W000087,Kafka
+W000087,메타데이터 관리
+W000087,금융 업무
+W000088,Hadoop
+W000088,AWS
+W000088,Data Lake & Data Catalog
+W000088,Airflow
+W000088,금융 업무
+W000089,Kubernetes
+W000089,Private Cloud
+W000089,Docker
+W000089,Data Lake & Data Catalog
+W000089,AWS
+W000089,워크플로우·BPM
+W000089,금융 업무
+W000090,Kafka
+W000090,Data Lake & Data Catalog
+W000090,AWS
+W000090,Docker
+W000090,Hadoop
+W000090,SQL
+W000090,공공 업무
+W000091,Kubernetes
+W000091,Private Cloud
+W000091,AWS
+W000091,워크플로우·BPM
+W000091,그룹사 업무
+W000092,Docker
+W000092,AWS
+W000092,Kubernetes
+W000092,Kafka
+W000092,LLM 파인튜닝
+W000092,프로세스 마이닝
+W000092,그룹사 업무
+W000093,Hadoop
+W000093,Data Lake & Data Catalog
+W000093,AWS
+W000093,Docker
+W000093,Java
+W000093,공공 업무
+W000094,Docker
+W000094,AWS
+W000094,Kafka
+W000094,RPA
+W000094,그룹사 업무
+W000095,Hadoop
+W000095,Docker
+W000095,Data Lake & Data Catalog
+W000095,Private Cloud
+W000095,Kafka
+W000095,Kubernetes
+W000095,Text Analysis
+W000095,로우코드 플랫폼
+W000095,금융 업무
+W000096,Kubernetes
+W000096,Private Cloud
+W000096,Kafka
+W000096,Docker
+W000096,지능형 문서 처리(IDP)
+W000096,금융 업무
+W001829,Kafka
+W001829,Kubernetes
+W001829,Private Cloud
+W001829,AWS
+W001829,그룹사 업무
+W000100,BI Reporting
+W000100,데이터 모델링
+W000100,SQL
+W000100,Data Lake & Data Catalog
+W000100,메타데이터 관리
+W000100,그룹사 업무
+W000101,BI Reporting
+W000101,Data Lake & Data Catalog
+W000101,SQL
+W000101,데이터 모델링
+W000101,메타데이터 관리
+W000101,Spring
+W000101,그룹사 업무
+W000102,Data Lake & Data Catalog
+W000102,메타데이터 관리
+W000102,SQL
+W000102,BI Reporting
+W000102,데이터 모델링
+W000102,Airflow
+W000102,공공 업무
+W000103,메타데이터 관리
+W000103,Data Lake & Data Catalog
+W000103,SQL
+W000103,데이터 모델링
+W000103,BI Reporting
+W000103,금융 업무
+W000104,Data Lake & Data Catalog
+W000104,BI Reporting
+W000104,SQL
+W000104,데이터 모델링
+W000104,프로세스 마이닝
+W000104,그룹사 업무
+W000105,BI Reporting
+W000105,Data Lake & Data Catalog
+W000105,SQL
+W000105,메타데이터 관리
+W000105,데이터 모델링
+W000105,RPA
+W000105,공공 업무
+W000106,BI Reporting
+W000106,데이터 모델링
+W000106,메타데이터 관리
+W000106,워크플로우·BPM
+W000106,금융 업무
+W000107,BI Reporting
+W000107,SQL
+W000107,Data Lake & Data Catalog
+W000107,데이터 모델링
+W000107,메타데이터 관리
+W000107,공공 업무
+W000108,Data Lake & Data Catalog
+W000108,메타데이터 관리
+W000108,데이터 모델링
+W000108,SQL
+W000108,ETL
+W000108,금융 업무
+W000109,메타데이터 관리
+W000109,데이터 모델링
+W000109,SQL
+W000109,Data Lake & Data Catalog
+W000109,그룹사 업무
+W000110,데이터 모델링
+W000110,메타데이터 관리
+W000110,SQL
+W000110,Data Lake & Data Catalog
+W000110,BI Reporting
+W000110,Java
+W000110,금융 업무
+W000111,Data Lake & Data Catalog
+W000111,메타데이터 관리
+W000111,SQL
+W000111,데이터 모델링
+W000111,프로세스 마이닝
+W000111,워크플로우·BPM
+W000111,공공 업무
+W000112,Data Lake & Data Catalog
+W000112,데이터 모델링
+W000112,BI Reporting
+W000112,SQL
+W000112,금융 업무
+W000113,메타데이터 관리
+W000113,BI Reporting
+W000113,Data Lake & Data Catalog
+W000113,데이터 모델링
+W000113,SQL
+W000113,프로세스 마이닝
+W000113,FastAPI
+W000113,그룹사 업무
+W000114,SQL
+W000114,메타데이터 관리
+W000114,BI Reporting
+W000114,데이터 모델링
+W000114,Data Lake & Data Catalog
+W000114,LLM 파인튜닝
+W000114,프롬프트 엔지니어링
+W000114,그룹사 업무
+W000115,데이터 모델링
+W000115,SQL
+W000115,BI Reporting
+W000115,Data Lake & Data Catalog
+W000115,메타데이터 관리
+W000115,Text Analysis
+W000115,그룹사 업무
+W000116,메타데이터 관리
+W000116,SQL
+W000116,Data Lake & Data Catalog
+W000116,금융 업무
+W000117,데이터 모델링
+W000117,SQL
+W000117,Data Lake & Data Catalog
+W000117,BI Reporting
+W000117,메타데이터 관리
+W000117,그룹사 업무
+W001830,데이터 모델링
+W001830,메타데이터 관리
+W001830,SQL
+W001830,그룹사 업무
+W000119,AWS
+W000119,Docker
+W000119,Kubernetes
+W000119,Hadoop
+W000119,금융 업무
+W000120,Data Lake & Data Catalog
+W000120,Hadoop
+W000120,Docker
+W000120,Private Cloud
+W000120,그룹사 업무
+W000121,Docker
+W000121,AWS
+W000121,Hadoop
+W000121,Scala
+W000121,데이터 모델링
+W000121,공공 업무
+W000122,AWS
+W000122,Data Lake & Data Catalog
+W000122,Private Cloud
+W000122,그룹사 업무
+W000123,AWS
+W000123,Private Cloud
+W000123,Data Lake & Data Catalog
+W000123,Kubernetes
+W000123,Kafka
+W000123,Hadoop
+W000123,Spark
+W000123,ML Ops
+W000123,그룹사 업무
+W000124,AWS
+W000124,Kubernetes
+W000124,Docker
+W000124,AI 에이전트 프레임워크
+W000124,그룹사 업무
+W000125,Hadoop
+W000125,AWS
+W000125,Private Cloud
+W000125,Kafka
+W000125,Docker
+W000125,지능형 문서 처리(IDP)
+W000125,금융 업무
+W001831,Data Lake & Data Catalog
+W001831,Kafka
+W001831,그룹사 업무
+W000129,AWS
+W000129,Kafka
+W000129,ETL
+W000129,RPA
+W000129,공공 업무
+W000130,Kafka
+W000130,Python
+W000130,Airflow
+W000130,Spark
+W000130,ETL
+W000130,금융 업무
+W000131,AWS
+W000131,Scala
+W000131,ETL
+W000131,SQL
+W000131,Airflow
+W000131,Spark
+W000131,Data Lake & Data Catalog
+W000131,그룹사 업무
+W000132,SQL
+W000132,AWS
+W000132,Hadoop
+W000132,Scala
+W000132,Python
+W000132,Airflow
+W000132,지능형 문서 처리(IDP)
+W000132,그룹사 업무
+W000133,SQL
+W000133,ETL
+W000133,Kafka
+W000133,Python
+W000133,Airflow
+W000133,공공 업무
+W000134,Kafka
+W000134,Airflow
+W000134,Scala
+W000134,Python
+W000134,ETL
+W000134,Java
+W000134,워크플로우·BPM
+W000134,금융 업무
+W000135,Python
+W000135,Airflow
+W000135,Hadoop
+W000135,AWS
+W000135,Kubernetes
+W000135,금융 업무
+W000136,ETL
+W000136,Python
+W000136,Scala
+W000136,Airflow
+W000136,그룹사 업무
+W000137,Airflow
+W000137,Hadoop
+W000137,AWS
+W000137,Spark
+W000137,금융 업무
+W000138,Airflow
+W000138,SQL
+W000138,Spark
+W000138,Scala
+W000138,Hadoop
+W000138,Kafka
+W000138,Java
+W000138,금융 업무
+W000139,Python
+W000139,SQL
+W000139,AWS
+W000139,금융 업무
+W000140,Python
+W000140,SQL
+W000140,Spark
+W000140,BI Reporting
+W000140,워크플로우·BPM
+W000140,금융 업무
+W000141,Scala
+W000141,SQL
+W000141,Hadoop
+W000141,Kafka
+W000141,금융 업무
+W000142,Python
+W000142,Airflow
+W000142,Spark
+W000142,SQL
+W000142,Scala
+W000142,FastAPI
+W000142,공공 업무
+W000143,Python
+W000143,Spark
+W000143,Kafka
+W000143,Kubernetes
+W000143,금융 업무
+W000144,Kafka
+W000144,Hadoop
+W000144,Python
+W000144,AWS
+W000144,ETL
+W000144,그룹사 업무
+W000145,ETL
+W000145,Hadoop
+W000145,AWS
+W000145,Scala
+W000145,Kafka
+W000145,Spark
+W000145,데이터 모델링
+W000145,RPA
+W000145,그룹사 업무
+W000146,Python
+W000146,Scala
+W000146,Hadoop
+W000146,비정형 문서 처리(OCR)
+W000146,그룹사 업무
+W000147,Python
+W000147,AWS
+W000147,Hadoop
+W000147,LLM Application
+W000147,Data Lake & Data Catalog
+W000147,그룹사 업무
+W000148,Scala
+W000148,ETL
+W000148,Python
+W000148,Kafka
+W000148,RPA
+W000148,그룹사 업무
+W000149,SQL
+W000149,Airflow
+W000149,ETL
+W000149,AWS
+W000149,Scala
+W000149,금융 업무
+W001832,ETL
+W001832,Airflow
+W001832,금융 업무
+W000154,Kafka
+W000154,AWS
+W000154,ETL
+W000154,Text Analysis
+W000154,프로세스 마이닝
+W000154,공공 업무
+W000155,AWS
+W000155,Spark
+W000155,SQL
+W000155,Kafka
+W000155,ETL
+W000155,지능형 문서 처리(IDP)
+W000155,공공 업무
+W000156,Hadoop
+W000156,Python
+W000156,AWS
+W000156,ETL
+W000156,SQL
+W000156,프로세스 마이닝
+W000156,그룹사 업무
+W000157,Hadoop
+W000157,SQL
+W000157,Scala
+W000157,Python
+W000157,지능형 문서 처리(IDP)
+W000157,그룹사 업무
+W000158,Airflow
+W000158,SQL
+W000158,AWS
+W000158,Hadoop
+W000158,워크플로우·BPM
+W000158,그룹사 업무
+W000159,AWS
+W000159,ETL
+W000159,SQL
+W000159,Airflow
+W000159,프로세스 마이닝
+W000159,금융 업무
+W000160,Kafka
+W000160,SQL
+W000160,Python
+W000160,Airflow
+W000160,Spark
+W000160,Hadoop
+W000160,메타데이터 관리
+W000160,RPA
+W000160,금융 업무
+W001833,ETL
+W001833,SQL
+W001833,Scala
+W001833,Python
+W001833,공공 업무
+W000164,Text Analysis
+W000164,메타데이터 관리
+W000164,검색엔진
+W000164,ETL
+W000164,BI Reporting
+W000164,그룹사 업무
+W000165,비정형 문서 처리(OCR)
+W000165,Text Analysis
+W000165,ETL
+W000165,BI Reporting
+W000165,로우코드 플랫폼
+W000165,금융 업무
+W000166,ETL
+W000166,메타데이터 관리
+W000166,Python
+W000166,검색엔진
+W000166,비정형 문서 처리(OCR)
+W000166,Text Analysis
+W000166,그룹사 업무
+W000167,비정형 문서 처리(OCR)
+W000167,검색엔진
+W000167,Python
+W000167,Text Analysis
+W000167,메타데이터 관리
+W000167,공공 업무
+W000168,Python
+W000168,ETL
+W000168,메타데이터 관리
+W000168,FastAPI
+W000168,그룹사 업무
+W000169,Text Analysis
+W000169,Python
+W000169,ETL
+W000169,검색엔진
+W000169,메타데이터 관리
+W000169,비정형 문서 처리(OCR)
+W000169,금융 업무
+W000170,Text Analysis
+W000170,Python
+W000170,ETL
+W000170,AWS
+W000170,금융 업무
+W000171,메타데이터 관리
+W000171,검색엔진
+W000171,Text Analysis
+W000171,LLM 파인튜닝
+W000171,그룹사 업무
+W000172,Text Analysis
+W000172,비정형 문서 처리(OCR)
+W000172,Python
+W000172,메타데이터 관리
+W000172,ETL
+W000172,금융 업무
+W000173,SQL
+W000173,Data Lake & Data Catalog
+W000173,메타데이터 관리
+W000173,Python
+W000173,금융 업무
+W000174,메타데이터 관리
+W000174,데이터 모델링
+W000174,BI Reporting
+W000174,금융 업무
+W000175,SQL
+W000175,데이터 모델링
+W000175,Data Lake & Data Catalog
+W000175,금융 업무
+W000176,BI Reporting
+W000176,Data Lake & Data Catalog
+W000176,데이터 모델링
+W000176,SQL
+W000176,메타데이터 관리
+W000176,ML Ops
+W000176,그룹사 업무
+W000177,Data Lake & Data Catalog
+W000177,메타데이터 관리
+W000177,BI Reporting
+W000177,워크플로우·BPM
+W000177,금융 업무
+W000178,BI Reporting
+W000178,Data Lake & Data Catalog
+W000178,메타데이터 관리
+W000178,Scala
+W000178,공공 업무
+W000179,메타데이터 관리
+W000179,BI Reporting
+W000179,Data Lake & Data Catalog
+W000179,데이터 모델링
+W000179,SQL
+W000179,RAG·벡터DB
+W000179,ML Ops
+W000179,그룹사 업무
+W000180,BI Reporting
+W000180,메타데이터 관리
+W000180,SQL
+W000180,Data Lake & Data Catalog
+W000180,데이터 모델링
+W000180,AI 에이전트 프레임워크
+W000180,Docker
+W000180,그룹사 업무
+W000181,메타데이터 관리
+W000181,SQL
+W000181,BI Reporting
+W000181,Private Cloud
+W000181,Spark
+W000181,금융 업무
+W000182,메타데이터 관리
+W000182,SQL
+W000182,데이터 모델링
+W000182,BI Reporting
+W000182,Hadoop
+W000182,그룹사 업무
+W000193,Scala
+W000193,Kafka
+W000193,Hadoop
+W000193,검색엔진
+W000193,금융 업무
+W000194,Airflow
+W000194,Hadoop
+W000194,Python
+W000194,ETL
+W000194,AWS
+W000194,그룹사 업무
+W000195,ETL
+W000195,Hadoop
+W000195,Spark
+W000195,Python
+W000195,Scala
+W000195,금융 업무
+W000196,Python
+W000196,SQL
+W000196,ETL
+W000196,Spark
+W000196,데이터 모델링
+W000196,비정형 문서 처리(OCR)
+W000196,그룹사 업무
+W000197,ETL
+W000197,Hadoop
+W000197,Spark
+W000197,SQL
+W000197,AWS
+W000197,로우코드 플랫폼
+W000197,비정형 문서 처리(OCR)
+W000197,그룹사 업무
+W000198,Scala
+W000198,AWS
+W000198,Spark
+W000198,Airflow
+W000198,Data Lake & Data Catalog
+W000198,그룹사 업무
+W000199,AWS
+W000199,Python
+W000199,Kafka
+W000199,ETL
+W000199,SQL
+W000199,그룹사 업무
+W000200,Kafka
+W000200,ETL
+W000200,Airflow
+W000200,그룹사 업무
+W000201,AWS
+W000201,Airflow
+W000201,Spark
+W000201,금융 업무
+W000202,AWS
+W000202,Airflow
+W000202,Python
+W000202,금융 업무
+W000203,ETL
+W000203,Kafka
+W000203,Scala
+W000203,Spark
+W000203,Hadoop
+W000203,Python
+W000203,로우코드 플랫폼
+W000203,그룹사 업무
+W000204,Python
+W000204,Airflow
+W000204,AWS
+W000204,Scala
+W000204,Spark
+W000204,Data Lake & Data Catalog
+W000204,금융 업무
+W000205,Kafka
+W000205,ETL
+W000205,SQL
+W000205,Python
+W000205,AWS
+W000205,Scala
+W000205,금융 업무
+W000206,Python
+W000206,Spark
+W000206,AWS
+W000206,SQL
+W000206,ETL
+W000206,Hadoop
+W000206,공공 업무
+W000207,ETL
+W000207,Scala
+W000207,Python
+W000207,Airflow
+W000207,Hadoop
+W000207,공공 업무
+W000208,Airflow
+W000208,Kafka
+W000208,SQL
+W000208,AWS
+W000208,ETL
+W000208,Spark
+W000208,그룹사 업무
+W000209,Python
+W000209,Hadoop
+W000209,SQL
+W000209,그룹사 업무
+W000210,Kafka
+W000210,Spark
+W000210,ETL
+W000210,Scala
+W000210,그룹사 업무
+W000211,Hadoop
+W000211,Kafka
+W000211,SQL
+W000211,ETL
+W000211,ML Ops
+W000211,지능형 문서 처리(IDP)
+W000211,그룹사 업무
+W000212,Scala
+W000212,Hadoop
+W000212,ETL
+W000212,메타데이터 관리
+W000212,LLM Application
+W000212,그룹사 업무
+W000213,SQL
+W000213,Hadoop
+W000213,Spark
+W000213,Scala
+W000213,Kafka
+W000213,그룹사 업무
+W000214,Scala
+W000214,AWS
+W000214,Kafka
+W000214,SQL
+W000214,Spark
+W000214,Airflow
+W000214,지능형 문서 처리(IDP)
+W000214,데이터 모델링
+W000214,금융 업무
+W001834,ETL
+W001834,Spark
+W001834,Hadoop
+W001834,금융 업무
+W000217,데이터 모델링
+W000217,메타데이터 관리
+W000217,BI Reporting
+W000217,SQL
+W000217,그룹사 업무
+W000218,메타데이터 관리
+W000218,SQL
+W000218,BI Reporting
+W000218,데이터 모델링
+W000218,Docker
+W000218,비정형 문서 처리(OCR)
+W000218,그룹사 업무
+W000219,SQL
+W000219,데이터 모델링
+W000219,BI Reporting
+W000219,메타데이터 관리
+W000219,로우코드 플랫폼
+W000219,FastAPI
+W000219,공공 업무
+W000220,메타데이터 관리
+W000220,데이터 모델링
+W000220,SQL
+W000220,BI Reporting
+W000220,그룹사 업무
+W001835,SQL
+W001835,금융 업무
+W000222,Private Cloud
+W000222,Data Lake & Data Catalog
+W000222,Hadoop
+W000222,검색엔진
+W000222,FastAPI
+W000222,그룹사 업무
+W000223,AWS
+W000223,Hadoop
+W000223,Kafka
+W000223,공공 업무
+W000224,Kafka
+W000224,Kubernetes
+W000224,Data Lake & Data Catalog
+W000224,AWS
+W000224,RAG·벡터DB
+W000224,그룹사 업무
+W000225,Data Lake & Data Catalog
+W000225,Docker
+W000225,Private Cloud
+W000225,AWS
+W000225,지능형 문서 처리(IDP)
+W000225,FastAPI
+W000225,그룹사 업무
+W000226,Private Cloud
+W000226,Kubernetes
+W000226,Hadoop
+W000226,AWS
+W000226,Data Lake & Data Catalog
+W000226,React
+W000226,LLM 파인튜닝
+W000226,그룹사 업무
+W000227,Private Cloud
+W000227,Kafka
+W000227,Docker
+W000227,Hadoop
+W000227,AWS
+W000227,Kubernetes
+W000227,Spark
+W000227,그룹사 업무
+W001836,Kafka
+W001836,Kubernetes
+W001836,Private Cloud
+W001836,Docker
+W001836,그룹사 업무
+W000247,Python
+W000247,검색엔진
+W000247,비정형 문서 처리(OCR)
+W000247,Text Analysis
+W000247,메타데이터 관리
+W000247,그룹사 업무
+W000248,메타데이터 관리
+W000248,Text Analysis
+W000248,검색엔진
+W000248,Python
+W000248,지능형 문서 처리(IDP)
+W000248,로우코드 플랫폼
+W000248,금융 업무
+W000249,검색엔진
+W000249,Text Analysis
+W000249,메타데이터 관리
+W000249,Python
+W000249,Kafka
+W000249,데이터 모델링
+W000249,그룹사 업무
+W000250,Python
+W000250,Text Analysis
+W000250,검색엔진
+W000250,비정형 문서 처리(OCR)
+W000250,ETL
+W000250,메타데이터 관리
+W000250,Docker
+W000250,금융 업무
+W000251,ETL
+W000251,Text Analysis
+W000251,검색엔진
+W000251,Python
+W000251,비정형 문서 처리(OCR)
+W000251,메타데이터 관리
+W000251,Spring
+W000251,금융 업무
+W000252,메타데이터 관리
+W000252,Text Analysis
+W000252,Python
+W000252,ETL
+W000252,검색엔진
+W000252,비정형 문서 처리(OCR)
+W000252,그룹사 업무
+W000253,ETL
+W000253,비정형 문서 처리(OCR)
+W000253,Text Analysis
+W000253,메타데이터 관리
+W000253,공공 업무
+W000254,비정형 문서 처리(OCR)
+W000254,ETL
+W000254,메타데이터 관리
+W000254,ML Ops
+W000254,Spring
+W000254,그룹사 업무
+W000255,ETL
+W000255,Text Analysis
+W000255,메타데이터 관리
+W000255,비정형 문서 처리(OCR)
+W000255,Python
+W000255,금융 업무
+W000256,메타데이터 관리
+W000256,검색엔진
+W000256,Python
+W000256,ETL
+W000256,Text Analysis
+W000256,비정형 문서 처리(OCR)
+W000256,그룹사 업무
+W000257,Text Analysis
+W000257,Python
+W000257,검색엔진
+W000257,비정형 문서 처리(OCR)
+W000257,워크플로우·BPM
+W000257,금융 업무
+W000258,Python
+W000258,ETL
+W000258,Text Analysis
+W000258,금융 업무
+W000259,메타데이터 관리
+W000259,Python
+W000259,ETL
+W000259,Airflow
+W000259,그룹사 업무
+W000260,비정형 문서 처리(OCR)
+W000260,Python
+W000260,Text Analysis
+W000260,Spark
+W000260,금융 업무
+W000261,검색엔진
+W000261,ETL
+W000261,비정형 문서 처리(OCR)
+W000261,Hadoop
+W000261,Data Lake & Data Catalog
+W000261,금융 업무
+W000262,Python
+W000262,비정형 문서 처리(OCR)
+W000262,ETL
+W000262,검색엔진
+W000262,그룹사 업무
+W000263,Text Analysis
+W000263,Python
+W000263,검색엔진
+W000263,비정형 문서 처리(OCR)
+W000263,메타데이터 관리
+W000263,ETL
+W000263,FastAPI
+W000263,ML Ops
+W000263,금융 업무
+W000264,비정형 문서 처리(OCR)
+W000264,메타데이터 관리
+W000264,검색엔진
+W000264,Python
+W000264,그룹사 업무
+W000265,비정형 문서 처리(OCR)
+W000265,Text Analysis
+W000265,Python
+W000265,RAG·벡터DB
+W000265,그룹사 업무
+W000266,Text Analysis
+W000266,검색엔진
+W000266,Python
+W000266,ETL
+W000266,비정형 문서 처리(OCR)
+W000266,LLM 파인튜닝
+W000266,그룹사 업무
+W001837,ETL
+W001837,비정형 문서 처리(OCR)
+W001837,메타데이터 관리
+W001837,Text Analysis
+W001837,Python
+W001837,금융 업무
+W000267,Python
+W000267,비정형 문서 처리(OCR)
+W000267,Text Analysis
+W000267,Kubernetes
+W000267,로우코드 플랫폼
+W000267,공공 업무
+W000268,ETL
+W000268,메타데이터 관리
+W000268,Python
+W000268,비정형 문서 처리(OCR)
+W000268,검색엔진
+W000268,Text Analysis
+W000268,Java
+W000268,금융 업무
+W000269,Text Analysis
+W000269,비정형 문서 처리(OCR)
+W000269,검색엔진
+W000269,ETL
+W000269,금융 업무
+W000270,검색엔진
+W000270,비정형 문서 처리(OCR)
+W000270,메타데이터 관리
+W000270,Python
+W000270,ETL
+W000270,Text Analysis
+W000270,그룹사 업무
+W000271,메타데이터 관리
+W000271,ETL
+W000271,검색엔진
+W000271,Python
+W000271,프로세스 마이닝
+W000271,금융 업무
+W000272,검색엔진
+W000272,메타데이터 관리
+W000272,Text Analysis
+W000272,Python
+W000272,그룹사 업무
+W000273,비정형 문서 처리(OCR)
+W000273,검색엔진
+W000273,Text Analysis
+W000273,Python
+W000273,그룹사 업무
+W000274,비정형 문서 처리(OCR)
+W000274,Text Analysis
+W000274,메타데이터 관리
+W000274,ETL
+W000274,Python
+W000274,AWS
+W000274,Kafka
+W000274,그룹사 업무
+W000275,Text Analysis
+W000275,Python
+W000275,메타데이터 관리
+W000275,비정형 문서 처리(OCR)
+W000275,RAG·벡터DB
+W000275,Data Lake & Data Catalog
+W000275,그룹사 업무
+W000276,Text Analysis
+W000276,비정형 문서 처리(OCR)
+W000276,Python
+W000276,검색엔진
+W000276,메타데이터 관리
+W000276,ETL
+W000276,Data Lake & Data Catalog
+W000276,금융 업무
+W000277,검색엔진
+W000277,메타데이터 관리
+W000277,Text Analysis
+W000277,그룹사 업무
+W000278,검색엔진
+W000278,ETL
+W000278,메타데이터 관리
+W000278,Spring
+W000278,공공 업무
+W001838,메타데이터 관리
+W001838,ETL
+W001838,그룹사 업무
+W000280,SQL
+W000280,AWS
+W000280,Hadoop
+W000280,Spark
+W000280,React
+W000280,그룹사 업무
+W000281,Hadoop
+W000281,ETL
+W000281,AWS
+W000281,SQL
+W000281,Scala
+W000281,FastAPI
+W000281,워크플로우·BPM
+W000281,그룹사 업무
+W000282,Scala
+W000282,AWS
+W000282,Kafka
+W000282,워크플로우·BPM
+W000282,비정형 문서 처리(OCR)
+W000282,그룹사 업무
+W000283,ETL
+W000283,Kafka
+W000283,Spark
+W000283,그룹사 업무
+W000284,ETL
+W000284,Scala
+W000284,SQL
+W000284,Kafka
+W000284,금융 업무
+W000285,SQL
+W000285,Spark
+W000285,Python
+W000285,Airflow
+W000285,그룹사 업무
+W000286,Scala
+W000286,Python
+W000286,Kafka
+W000286,ETL
+W000286,Spark
+W000286,Airflow
+W000286,그룹사 업무
+W000287,Spark
+W000287,Airflow
+W000287,Python
+W000287,그룹사 업무
+W000288,AWS
+W000288,Scala
+W000288,Hadoop
+W000288,Kafka
+W000288,Text Analysis
+W000288,그룹사 업무
+W000289,Hadoop
+W000289,Airflow
+W000289,Scala
+W000289,React
+W000289,공공 업무
+W001839,ETL
+W001839,Spark
+W001839,SQL
+W001839,금융 업무
+W000291,Kafka
+W000291,Data Lake & Data Catalog
+W000291,Kubernetes
+W000291,공공 업무
+W000292,Private Cloud
+W000292,Data Lake & Data Catalog
+W000292,Hadoop
+W000292,그룹사 업무
+W000293,Docker
+W000293,Kubernetes
+W000293,Kafka
+W000293,Data Lake & Data Catalog
+W000293,AWS
+W000293,Private Cloud
+W000293,Python
+W000293,그룹사 업무
+W000294,Kubernetes
+W000294,Kafka
+W000294,AWS
+W000294,Text Analysis
+W000294,메타데이터 관리
+W000294,금융 업무
+W000295,Data Lake & Data Catalog
+W000295,Hadoop
+W000295,AWS
+W000295,Kubernetes
+W000295,Private Cloud
+W000295,메타데이터 관리
+W000295,공공 업무
+W000296,Docker
+W000296,Hadoop
+W000296,Kubernetes
+W000296,Private Cloud
+W000296,Kafka
+W000296,Data Lake & Data Catalog
+W000296,금융 업무
+W000297,Kafka
+W000297,AWS
+W000297,Hadoop
+W000297,검색엔진
+W000297,로우코드 플랫폼
+W000297,금융 업무
+W000298,Kafka
+W000298,Docker
+W000298,AWS
+W000298,Kubernetes
+W000298,Hadoop
+W000298,그룹사 업무
+W000299,Private Cloud
+W000299,Docker
+W000299,Kubernetes
+W000299,RPA
+W000299,그룹사 업무
+W000300,AWS
+W000300,Kubernetes
+W000300,Kafka
+W000300,Private Cloud
+W000300,Data Lake & Data Catalog
+W000300,그룹사 업무
+W000301,Private Cloud
+W000301,Docker
+W000301,Kafka
+W000301,Hadoop
+W000301,AI 에이전트 프레임워크
+W000301,그룹사 업무
+W000302,AWS
+W000302,Private Cloud
+W000302,Kafka
+W000302,BI Reporting
+W000302,Spark
+W000302,금융 업무
+W000303,Kubernetes
+W000303,Kafka
+W000303,Hadoop
+W000303,Data Lake & Data Catalog
+W000303,Docker
+W000303,그룹사 업무
+W000304,Kubernetes
+W000304,Hadoop
+W000304,Kafka
+W000304,그룹사 업무
+W001840,Kafka
+W001840,Kubernetes
+W001840,Private Cloud
+W001840,Docker
+W001840,Hadoop
+W001840,그룹사 업무
+W000328,SQL
+W000328,Data Lake & Data Catalog
+W000328,메타데이터 관리
+W000328,데이터 모델링
+W000328,BI Reporting
+W000328,금융 업무
+W000329,Data Lake & Data Catalog
+W000329,메타데이터 관리
+W000329,SQL
+W000329,BI Reporting
+W000329,Kafka
+W000329,Airflow
+W000329,그룹사 업무
+W000330,메타데이터 관리
+W000330,Data Lake & Data Catalog
+W000330,SQL
+W000330,Docker
+W000330,금융 업무
+W000331,SQL
+W000331,BI Reporting
+W000331,데이터 모델링
+W000331,Data Lake & Data Catalog
+W000331,메타데이터 관리
+W000331,금융 업무
+W000332,데이터 모델링
+W000332,SQL
+W000332,메타데이터 관리
+W000332,BI Reporting
+W000332,Data Lake & Data Catalog
+W000332,그룹사 업무
+W000333,데이터 모델링
+W000333,Data Lake & Data Catalog
+W000333,BI Reporting
+W000333,메타데이터 관리
+W000333,금융 업무
+W000334,Data Lake & Data Catalog
+W000334,SQL
+W000334,메타데이터 관리
+W000334,그룹사 업무
+W000335,SQL
+W000335,Data Lake & Data Catalog
+W000335,BI Reporting
+W000335,메타데이터 관리
+W000335,데이터 모델링
+W000335,AWS
+W000335,Private Cloud
+W000335,금융 업무
+W000336,Data Lake & Data Catalog
+W000336,메타데이터 관리
+W000336,데이터 모델링
+W000336,SQL
+W000336,비정형 문서 처리(OCR)
+W000336,지능형 문서 처리(IDP)
+W000336,공공 업무
+W000337,메타데이터 관리
+W000337,BI Reporting
+W000337,데이터 모델링
+W000337,Data Lake & Data Catalog
+W000337,SQL
+W000337,그룹사 업무
+W000338,SQL
+W000338,데이터 모델링
+W000338,BI Reporting
+W000338,Data Lake & Data Catalog
+W000338,메타데이터 관리
+W000338,Airflow
+W000338,그룹사 업무
+W000339,Data Lake & Data Catalog
+W000339,데이터 모델링
+W000339,메타데이터 관리
+W000339,Scala
+W000339,금융 업무
+W000340,BI Reporting
+W000340,Data Lake & Data Catalog
+W000340,SQL
+W000340,데이터 모델링
+W000340,메타데이터 관리
+W000340,검색엔진
+W000340,그룹사 업무
+W000341,BI Reporting
+W000341,데이터 모델링
+W000341,Data Lake & Data Catalog
+W000341,금융 업무
+W000342,메타데이터 관리
+W000342,데이터 모델링
+W000342,Data Lake & Data Catalog
+W000342,BI Reporting
+W000342,SQL
+W000342,공공 업무
+W000343,데이터 모델링
+W000343,메타데이터 관리
+W000343,Data Lake & Data Catalog
+W000343,SQL
+W000343,BI Reporting
+W000343,Kafka
+W000343,React
+W000343,공공 업무
+W000344,메타데이터 관리
+W000344,데이터 모델링
+W000344,SQL
+W000344,비정형 문서 처리(OCR)
+W000344,금융 업무
+W000345,데이터 모델링
+W000345,BI Reporting
+W000345,SQL
+W000345,메타데이터 관리
+W000345,Data Lake & Data Catalog
+W000345,그룹사 업무
+W000346,데이터 모델링
+W000346,Data Lake & Data Catalog
+W000346,메타데이터 관리
+W000346,BI Reporting
+W000346,SQL
+W000346,FastAPI
+W000346,그룹사 업무
+W000347,Data Lake & Data Catalog
+W000347,SQL
+W000347,메타데이터 관리
+W000347,BI Reporting
+W000347,데이터 모델링
+W000347,금융 업무
+W000348,데이터 모델링
+W000348,BI Reporting
+W000348,SQL
+W000348,메타데이터 관리
+W000348,Data Lake & Data Catalog
+W000348,FastAPI
+W000348,금융 업무
+W000349,BI Reporting
+W000349,메타데이터 관리
+W000349,데이터 모델링
+W000349,그룹사 업무
+W000350,메타데이터 관리
+W000350,BI Reporting
+W000350,Data Lake & Data Catalog
+W000350,데이터 모델링
+W000350,SQL
+W000350,그룹사 업무
+W000351,데이터 모델링
+W000351,BI Reporting
+W000351,Data Lake & Data Catalog
+W000351,금융 업무
+W000352,SQL
+W000352,BI Reporting
+W000352,Data Lake & Data Catalog
+W000352,LLM 파인튜닝
+W000352,그룹사 업무
+W000353,BI Reporting
+W000353,Data Lake & Data Catalog
+W000353,데이터 모델링
+W000353,SQL
+W000353,LLM 파인튜닝
+W000353,그룹사 업무
+W001841,데이터 모델링
+W001841,Data Lake & Data Catalog
+W001841,메타데이터 관리
+W001841,금융 업무
+W000356,BI Reporting
+W000356,Data Lake & Data Catalog
+W000356,데이터 모델링
+W000356,SQL
+W000356,메타데이터 관리
+W000356,Docker
+W000356,RPA
+W000356,그룹사 업무
+W000357,Data Lake & Data Catalog
+W000357,메타데이터 관리
+W000357,BI Reporting
+W000357,SQL
+W000357,데이터 모델링
+W000357,금융 업무
+W000358,Data Lake & Data Catalog
+W000358,데이터 모델링
+W000358,메타데이터 관리
+W000358,Docker
+W000358,공공 업무
+W000359,BI Reporting
+W000359,메타데이터 관리
+W000359,Data Lake & Data Catalog
+W000359,SQL
+W000359,데이터 모델링
+W000359,공공 업무
+W000360,메타데이터 관리
+W000360,SQL
+W000360,BI Reporting
+W000360,데이터 모델링
+W000360,금융 업무
+W000361,데이터 모델링
+W000361,BI Reporting
+W000361,Data Lake & Data Catalog
+W000361,SQL
+W000361,금융 업무
+W000362,SQL
+W000362,데이터 모델링
+W000362,Data Lake & Data Catalog
+W000362,BI Reporting
+W000362,메타데이터 관리
+W000362,ETL
+W000362,금융 업무
+W000363,데이터 모델링
+W000363,Data Lake & Data Catalog
+W000363,SQL
+W000363,그룹사 업무
+W000364,BI Reporting
+W000364,데이터 모델링
+W000364,SQL
+W000364,로우코드 플랫폼
+W000364,그룹사 업무
+W000365,메타데이터 관리
+W000365,SQL
+W000365,데이터 모델링
+W000365,BI Reporting
+W000365,Data Lake & Data Catalog
+W000365,Java
+W000365,금융 업무
+W000366,데이터 모델링
+W000366,SQL
+W000366,Data Lake & Data Catalog
+W000366,BI Reporting
+W000366,메타데이터 관리
+W000366,비정형 문서 처리(OCR)
+W000366,금융 업무
+W000367,BI Reporting
+W000367,메타데이터 관리
+W000367,SQL
+W000367,Data Lake & Data Catalog
+W000367,Kubernetes
+W000367,공공 업무
+W000368,SQL
+W000368,데이터 모델링
+W000368,Data Lake & Data Catalog
+W000368,Scala
+W000368,공공 업무
+W000369,메타데이터 관리
+W000369,Data Lake & Data Catalog
+W000369,BI Reporting
+W000369,SQL
+W000369,데이터 모델링
+W000369,Private Cloud
+W000369,금융 업무
+W000370,메타데이터 관리
+W000370,Data Lake & Data Catalog
+W000370,SQL
+W000370,프로세스 마이닝
+W000370,React
+W000370,그룹사 업무
+W000371,데이터 모델링
+W000371,SQL
+W000371,메타데이터 관리
+W000371,LLM 파인튜닝
+W000371,그룹사 업무
+W000372,메타데이터 관리
+W000372,Data Lake & Data Catalog
+W000372,데이터 모델링
+W000372,SQL
+W000372,BI Reporting
+W000372,AWS
+W000372,Spark
+W000372,금융 업무
+W001842,데이터 모델링
+W001842,Data Lake & Data Catalog
+W001842,메타데이터 관리
+W001842,BI Reporting
+W001842,금융 업무
+W000384,Text Analysis
+W000384,ETL
+W000384,Python
+W000384,검색엔진
+W000384,비정형 문서 처리(OCR)
+W000384,메타데이터 관리
+W000384,RPA
+W000384,그룹사 업무
+W000385,Python
+W000385,Text Analysis
+W000385,비정형 문서 처리(OCR)
+W000385,ETL
+W000385,RPA
+W000385,공공 업무
+W000386,Text Analysis
+W000386,ETL
+W000386,비정형 문서 처리(OCR)
+W000386,메타데이터 관리
+W000386,Python
+W000386,검색엔진
+W000386,금융 업무
+W000387,비정형 문서 처리(OCR)
+W000387,Python
+W000387,ETL
+W000387,메타데이터 관리
+W000387,검색엔진
+W000387,Text Analysis
+W000387,금융 업무
+W000388,검색엔진
+W000388,ETL
+W000388,Python
+W000388,비정형 문서 처리(OCR)
+W000388,Text Analysis
+W000388,Airflow
+W000388,공공 업무
+W000389,비정형 문서 처리(OCR)
+W000389,ETL
+W000389,Python
+W000389,ML Ops
+W000389,프로세스 마이닝
+W000389,금융 업무
+W000390,메타데이터 관리
+W000390,비정형 문서 처리(OCR)
+W000390,Python
+W000390,Text Analysis
+W000390,ETL
+W000390,검색엔진
+W000390,지능형 문서 처리(IDP)
+W000390,금융 업무
+W000391,Python
+W000391,검색엔진
+W000391,Text Analysis
+W000391,ETL
+W000391,메타데이터 관리
+W000391,그룹사 업무
+W000392,ETL
+W000392,메타데이터 관리
+W000392,Python
+W000392,데이터 모델링
+W000392,금융 업무
+W000393,메타데이터 관리
+W000393,비정형 문서 처리(OCR)
+W000393,Text Analysis
+W000393,Python
+W000393,Kafka
+W000393,금융 업무
+W000394,비정형 문서 처리(OCR)
+W000394,ETL
+W000394,Python
+W000394,메타데이터 관리
+W000394,Text Analysis
+W000394,검색엔진
+W000394,그룹사 업무
+W000395,메타데이터 관리
+W000395,ETL
+W000395,Text Analysis
+W000395,비정형 문서 처리(OCR)
+W000395,검색엔진
+W000395,지능형 문서 처리(IDP)
+W000395,그룹사 업무
+W000396,메타데이터 관리
+W000396,검색엔진
+W000396,Text Analysis
+W000396,공공 업무
+W000397,ETL
+W000397,검색엔진
+W000397,Text Analysis
+W000397,Python
+W000397,Scala
+W000397,금융 업무
+W000398,Text Analysis
+W000398,비정형 문서 처리(OCR)
+W000398,ETL
+W000398,검색엔진
+W000398,메타데이터 관리
+W000398,금융 업무
+W000399,Text Analysis
+W000399,메타데이터 관리
+W000399,비정형 문서 처리(OCR)
+W000399,ETL
+W000399,Private Cloud
+W000399,LLM 파인튜닝
+W000399,금융 업무
+W000400,Python
+W000400,메타데이터 관리
+W000400,검색엔진
+W000400,데이터 모델링
+W000400,프로세스 마이닝
+W000400,그룹사 업무
+W000401,메타데이터 관리
+W000401,Python
+W000401,ETL
+W000401,Text Analysis
+W000401,비정형 문서 처리(OCR)
+W000401,그룹사 업무
+W000402,Python
+W000402,검색엔진
+W000402,Text Analysis
+W000402,AI 에이전트 프레임워크
+W000402,그룹사 업무
+W000403,Python
+W000403,Text Analysis
+W000403,메타데이터 관리
+W000403,검색엔진
+W000403,비정형 문서 처리(OCR)
+W000403,ETL
+W000403,React
+W000403,프롬프트 엔지니어링
+W000403,금융 업무
+W000404,Data Lake & Data Catalog
+W000404,메타데이터 관리
+W000404,SQL
+W000404,공공 업무
+W000405,데이터 모델링
+W000405,메타데이터 관리
+W000405,Data Lake & Data Catalog
+W000405,SQL
+W000405,BI Reporting
+W000405,Kubernetes
+W000405,그룹사 업무
+W000406,BI Reporting
+W000406,데이터 모델링
+W000406,Data Lake & Data Catalog
+W000406,메타데이터 관리
+W000406,SQL
+W000406,그룹사 업무
+W000407,데이터 모델링
+W000407,Data Lake & Data Catalog
+W000407,BI Reporting
+W000407,메타데이터 관리
+W000407,SQL
+W000407,금융 업무
+W000408,BI Reporting
+W000408,데이터 모델링
+W000408,SQL
+W000408,메타데이터 관리
+W000408,금융 업무
+W000409,SQL
+W000409,Data Lake & Data Catalog
+W000409,BI Reporting
+W000409,메타데이터 관리
+W000409,데이터 모델링
+W000409,Hadoop
+W000409,금융 업무
+W000410,SQL
+W000410,데이터 모델링
+W000410,BI Reporting
+W000410,메타데이터 관리
+W000410,Data Lake & Data Catalog
+W000410,ETL
+W000410,금융 업무
+W000411,데이터 모델링
+W000411,메타데이터 관리
+W000411,SQL
+W000411,BI Reporting
+W000411,Data Lake & Data Catalog
+W000411,그룹사 업무
+W000412,Data Lake & Data Catalog
+W000412,SQL
+W000412,데이터 모델링
+W000412,BI Reporting
+W000412,메타데이터 관리
+W000412,로우코드 플랫폼
+W000412,그룹사 업무
+W000413,Data Lake & Data Catalog
+W000413,데이터 모델링
+W000413,메타데이터 관리
+W000413,그룹사 업무
+W000414,메타데이터 관리
+W000414,SQL
+W000414,Data Lake & Data Catalog
+W000414,로우코드 플랫폼
+W000414,Text Analysis
+W000414,그룹사 업무
+W001843,BI Reporting
+W001843,SQL
+W001843,Data Lake & Data Catalog
+W001843,공공 업무
+W000417,ETL
+W000417,AWS
+W000417,Spark
+W000417,Scala
+W000417,Airflow
+W000417,Hadoop
+W000417,Docker
+W000417,그룹사 업무
+W000418,Scala
+W000418,Kafka
+W000418,Spark
+W000418,SQL
+W000418,AWS
+W000418,Docker
+W000418,그룹사 업무
+W000419,Hadoop
+W000419,SQL
+W000419,Spark
+W000419,Scala
+W000419,Python
+W000419,AWS
+W000419,비정형 문서 처리(OCR)
+W000419,금융 업무
+W000420,ETL
+W000420,Spark
+W000420,Hadoop
+W000420,Python
+W000420,Private Cloud
+W000420,비정형 문서 처리(OCR)
+W000420,그룹사 업무
+W000421,Python
+W000421,Spark
+W000421,Kafka
+W000421,ETL
+W000421,Scala
+W000421,데이터 모델링
+W000421,금융 업무
+W000422,Hadoop
+W000422,ETL
+W000422,AWS
+W000422,Python
+W000422,SQL
+W000422,Scala
+W000422,그룹사 업무
+W000423,Hadoop
+W000423,Airflow
+W000423,SQL
+W000423,AWS
+W000423,Kafka
+W000423,워크플로우·BPM
+W000423,금융 업무
+W000424,SQL
+W000424,AWS
+W000424,Python
+W000424,Hadoop
+W000424,Spring
+W000424,검색엔진
+W000424,금융 업무
+W000425,Kafka
+W000425,ETL
+W000425,Spark
+W000425,지능형 문서 처리(IDP)
+W000425,그룹사 업무
+W000426,Kafka
+W000426,Scala
+W000426,Hadoop
+W000426,ETL
+W000426,Airflow
+W000426,Spark
+W000426,검색엔진
+W000426,프로세스 마이닝
+W000426,금융 업무
+W000427,SQL
+W000427,Airflow
+W000427,Kafka
+W000427,ETL
+W000427,공공 업무
+W000428,Hadoop
+W000428,Spark
+W000428,SQL
+W000428,Scala
+W000428,AWS
+W000428,Text Analysis
+W000428,공공 업무
+W000429,Scala
+W000429,Kafka
+W000429,AWS
+W000429,BI Reporting
+W000429,그룹사 업무
+W000430,Scala
+W000430,SQL
+W000430,Python
+W000430,Hadoop
+W000430,Kafka
+W000430,Private Cloud
+W000430,Kubernetes
+W000430,그룹사 업무
+W000431,AWS
+W000431,Scala
+W000431,ETL
+W000431,Python
+W000431,FastAPI
+W000431,그룹사 업무
+W000432,Spark
+W000432,Kafka
+W000432,AWS
+W000432,Airflow
+W000432,Scala
+W000432,Python
+W000432,Kubernetes
+W000432,그룹사 업무
+W000433,Scala
+W000433,Kafka
+W000433,AWS
+W000433,Python
+W000433,워크플로우·BPM
+W000433,Text Analysis
+W000433,그룹사 업무
+W000434,AWS
+W000434,ETL
+W000434,Hadoop
+W000434,Python
+W000434,SQL
+W000434,RAG·벡터DB
+W000434,LLM 파인튜닝
+W000434,그룹사 업무
+W000435,Hadoop
+W000435,AWS
+W000435,Airflow
+W000435,SQL
+W000435,그룹사 업무
+W000436,Hadoop
+W000436,Airflow
+W000436,Python
+W000436,AWS
+W000436,ETL
+W000436,RAG·벡터DB
+W000436,LLM 파인튜닝
+W000436,금융 업무
+W000437,Scala
+W000437,AWS
+W000437,Airflow
+W000437,ETL
+W000437,Kafka
+W000437,지능형 문서 처리(IDP)
+W000437,데이터 모델링
+W000437,그룹사 업무
+W000438,SQL
+W000438,Python
+W000438,Hadoop
+W000438,FastAPI
+W000438,그룹사 업무
+W000439,Docker
+W000439,AWS
+W000439,Data Lake & Data Catalog
+W000439,Kafka
+W000439,Private Cloud
+W000439,Hadoop
+W000439,금융 업무
+W000440,Kafka
+W000440,Data Lake & Data Catalog
+W000440,Docker
+W000440,검색엔진
+W000440,금융 업무
+W000441,Docker
+W000441,Hadoop
+W000441,Kafka
+W000441,Data Lake & Data Catalog
+W000441,AWS
+W000441,메타데이터 관리
+W000441,금융 업무
+W000442,Kafka
+W000442,Kubernetes
+W000442,AWS
+W000442,Docker
+W000442,메타데이터 관리
+W000442,FastAPI
+W000442,그룹사 업무
+W000443,AWS
+W000443,Kubernetes
+W000443,Data Lake & Data Catalog
+W000443,Private Cloud
+W000443,Kafka
+W000443,Spring
+W000443,그룹사 업무
+W000444,Private Cloud
+W000444,Hadoop
+W000444,Kafka
+W000444,Kubernetes
+W000444,로우코드 플랫폼
+W000444,그룹사 업무
+W000445,Docker
+W000445,Kafka
+W000445,Private Cloud
+W000445,AWS
+W000445,Hadoop
+W000445,그룹사 업무
+W000446,Data Lake & Data Catalog
+W000446,Hadoop
+W000446,AWS
+W000446,Kubernetes
+W000446,Kafka
+W000446,Docker
+W000446,Java
+W000446,그룹사 업무
+W000447,Kubernetes
+W000447,Docker
+W000447,Kafka
+W000447,Private Cloud
+W000447,Hadoop
+W000447,Data Lake & Data Catalog
+W000447,Spring
+W000447,금융 업무
+W000448,Private Cloud
+W000448,Hadoop
+W000448,Kafka
+W000448,Java
+W000448,금융 업무
+W001844,Kafka
+W001844,Kubernetes
+W001844,Private Cloud
+W001844,Data Lake & Data Catalog
+W001844,그룹사 업무
+W000449,Python
+W000449,메타데이터 관리
+W000449,ETL
+W000449,검색엔진
+W000449,그룹사 업무
+W000450,메타데이터 관리
+W000450,ETL
+W000450,검색엔진
+W000450,비정형 문서 처리(OCR)
+W000450,Python
+W000450,금융 업무
+W000451,검색엔진
+W000451,ETL
+W000451,메타데이터 관리
+W000451,Text Analysis
+W000451,비정형 문서 처리(OCR)
+W000451,Python
+W000451,워크플로우·BPM
+W000451,공공 업무
+W000452,비정형 문서 처리(OCR)
+W000452,검색엔진
+W000452,ETL
+W000452,메타데이터 관리
+W000452,Text Analysis
+W000452,지능형 문서 처리(IDP)
+W000452,그룹사 업무
+W000453,비정형 문서 처리(OCR)
+W000453,Python
+W000453,Text Analysis
+W000453,금융 업무
+W000454,Text Analysis
+W000454,검색엔진
+W000454,Python
+W000454,FastAPI
+W000454,BI Reporting
+W000454,그룹사 업무
+W000455,Python
+W000455,검색엔진
+W000455,Text Analysis
+W000455,비정형 문서 처리(OCR)
+W000455,공공 업무
+W000456,검색엔진
+W000456,Text Analysis
+W000456,메타데이터 관리
+W000456,Python
+W000456,SQL
+W000456,금융 업무
+W001845,Text Analysis
+W001845,ETL
+W001845,비정형 문서 처리(OCR)
+W001845,메타데이터 관리
+W001845,Python
+W001845,검색엔진
+W001845,금융 업무
+W000459,Airflow
+W000459,Kafka
+W000459,SQL
+W000459,Spark
+W000459,Python
+W000459,그룹사 업무
+W000460,Spark
+W000460,Kafka
+W000460,ETL
+W000460,그룹사 업무
+W000461,AWS
+W000461,Airflow
+W000461,SQL
+W000461,Scala
+W000461,검색엔진
+W000461,그룹사 업무
+W000462,Python
+W000462,Hadoop
+W000462,AWS
+W000462,SQL
+W000462,Spring
+W000462,ML Ops
+W000462,금융 업무
+W000463,SQL
+W000463,Hadoop
+W000463,Airflow
+W000463,Kafka
+W000463,데이터 모델링
+W000463,BI Reporting
+W000463,금융 업무
+W000464,SQL
+W000464,Scala
+W000464,Python
+W000464,RPA
+W000464,그룹사 업무
+W000465,Scala
+W000465,SQL
+W000465,Kafka
+W000465,프로세스 마이닝
+W000465,금융 업무
+W000466,Python
+W000466,Hadoop
+W000466,AWS
+W000466,그룹사 업무
+W000467,Kafka
+W000467,SQL
+W000467,AWS
+W000467,Hadoop
+W000467,로우코드 플랫폼
+W000467,금융 업무
+W000468,Airflow
+W000468,Hadoop
+W000468,AWS
+W000468,Spark
+W000468,금융 업무
+W000469,Spark
+W000469,ETL
+W000469,Kafka
+W000469,Airflow
+W000469,공공 업무
+W000470,SQL
+W000470,ETL
+W000470,Spark
+W000470,Scala
+W000470,AWS
+W000470,그룹사 업무
+W000471,ETL
+W000471,AWS
+W000471,Spark
+W000471,Private Cloud
+W000471,데이터 모델링
+W000471,그룹사 업무
+W000472,Spark
+W000472,AWS
+W000472,Scala
+W000472,Python
+W000472,Kafka
+W000472,Hadoop
+W000472,그룹사 업무
+W000473,SQL
+W000473,Kafka
+W000473,Spark
+W000473,ETL
+W000473,Airflow
+W000473,React
+W000473,금융 업무
+W000474,Kafka
+W000474,Python
+W000474,Hadoop
+W000474,Spark
+W000474,AWS
+W000474,ETL
+W000474,금융 업무
+W000475,Scala
+W000475,Spark
+W000475,ETL
+W000475,Hadoop
+W000475,SQL
+W000475,그룹사 업무
+W000476,Airflow
+W000476,Scala
+W000476,Spark
+W000476,Python
+W000476,Kafka
+W000476,그룹사 업무
+W001846,ETL
+W001846,Spark
+W001846,Airflow
+W001846,Kafka
+W001846,금융 업무
+W000478,BI Reporting
+W000478,데이터 모델링
+W000478,메타데이터 관리
+W000478,SQL
+W000478,Docker
+W000478,금융 업무
+W000479,데이터 모델링
+W000479,메타데이터 관리
+W000479,BI Reporting
+W000479,SQL
+W000479,RPA
+W000479,그룹사 업무
+W000480,데이터 모델링
+W000480,메타데이터 관리
+W000480,SQL
+W000480,그룹사 업무
+W000481,BI Reporting
+W000481,데이터 모델링
+W000481,SQL
+W000481,메타데이터 관리
+W000481,그룹사 업무
+W000482,메타데이터 관리
+W000482,BI Reporting
+W000482,SQL
+W000482,데이터 모델링
+W000482,공공 업무
+W000483,메타데이터 관리
+W000483,SQL
+W000483,BI Reporting
+W000483,데이터 모델링
+W000483,ETL
+W000483,Private Cloud
+W000483,금융 업무
+W000484,데이터 모델링
+W000484,SQL
+W000484,BI Reporting
+W000484,메타데이터 관리
+W000484,금융 업무
+W000485,BI Reporting
+W000485,데이터 모델링
+W000485,메타데이터 관리
+W000485,검색엔진
+W000485,Java
+W000485,그룹사 업무
+W000486,BI Reporting
+W000486,메타데이터 관리
+W000486,데이터 모델링
+W000486,SQL
+W000486,AI 에이전트 프레임워크
+W000486,지능형 문서 처리(IDP)
+W000486,그룹사 업무
+W000487,데이터 모델링
+W000487,BI Reporting
+W000487,메타데이터 관리
+W000487,SQL
+W000487,그룹사 업무
+W000488,BI Reporting
+W000488,SQL
+W000488,데이터 모델링
+W000488,LLM Application
+W000488,금융 업무
+W000489,SQL
+W000489,BI Reporting
+W000489,데이터 모델링
+W000489,메타데이터 관리
+W000489,그룹사 업무
+W001847,데이터 모델링
+W001847,메타데이터 관리
+W001847,SQL
+W001847,BI Reporting
+W001847,그룹사 업무
+W000518,비정형 문서 처리(OCR)
+W000518,검색엔진
+W000518,Text Analysis
+W000518,ETL
+W000518,Hadoop
+W000518,Docker
+W000518,금융 업무
+W000519,Text Analysis
+W000519,메타데이터 관리
+W000519,검색엔진
+W000519,Python
+W000519,ETL
+W000519,비정형 문서 처리(OCR)
+W000519,FastAPI
+W000519,그룹사 업무
+W000520,검색엔진
+W000520,Python
+W000520,ETL
+W000520,메타데이터 관리
+W000520,Text Analysis
+W000520,ML Ops
+W000520,그룹사 업무
+W000521,Text Analysis
+W000521,비정형 문서 처리(OCR)
+W000521,검색엔진
+W000521,Java
+W000521,Kubernetes
+W000521,그룹사 업무
+W000522,Text Analysis
+W000522,비정형 문서 처리(OCR)
+W000522,검색엔진
+W000522,Kubernetes
+W000522,SQL
+W000522,금융 업무
+W000523,비정형 문서 처리(OCR)
+W000523,검색엔진
+W000523,Python
+W000523,메타데이터 관리
+W000523,ETL
+W000523,Text Analysis
+W000523,금융 업무
+W000524,Python
+W000524,비정형 문서 처리(OCR)
+W000524,Text Analysis
+W000524,메타데이터 관리
+W000524,ETL
+W000524,검색엔진
+W000524,Docker
+W000524,Scala
+W000524,공공 업무
+W000525,검색엔진
+W000525,ETL
+W000525,비정형 문서 처리(OCR)
+W000525,금융 업무
+W000526,Text Analysis
+W000526,검색엔진
+W000526,ETL
+W000526,Python
+W000526,비정형 문서 처리(OCR)
+W000526,금융 업무
+W000527,Text Analysis
+W000527,비정형 문서 처리(OCR)
+W000527,Python
+W000527,검색엔진
+W000527,ETL
+W000527,메타데이터 관리
+W000527,Docker
+W000527,React
+W000527,그룹사 업무
+W000528,Text Analysis
+W000528,메타데이터 관리
+W000528,비정형 문서 처리(OCR)
+W000528,금융 업무
+W000529,검색엔진
+W000529,메타데이터 관리
+W000529,Text Analysis
+W000529,비정형 문서 처리(OCR)
+W000529,RPA
+W000529,금융 업무
+W000530,Python
+W000530,비정형 문서 처리(OCR)
+W000530,Text Analysis
+W000530,메타데이터 관리
+W000530,ETL
+W000530,검색엔진
+W000530,공공 업무
+W000531,검색엔진
+W000531,Text Analysis
+W000531,ETL
+W000531,메타데이터 관리
+W000531,Python
+W000531,ML Ops
+W000531,그룹사 업무
+W000532,비정형 문서 처리(OCR)
+W000532,검색엔진
+W000532,Text Analysis
+W000532,Kubernetes
+W000532,공공 업무
+W000533,검색엔진
+W000533,비정형 문서 처리(OCR)
+W000533,메타데이터 관리
+W000533,AWS
+W000533,금융 업무
+W000534,비정형 문서 처리(OCR)
+W000534,메타데이터 관리
+W000534,Python
+W000534,Text Analysis
+W000534,RPA
+W000534,그룹사 업무
+W000535,ETL
+W000535,검색엔진
+W000535,메타데이터 관리
+W000535,비정형 문서 처리(OCR)
+W000535,Text Analysis
+W000535,FastAPI
+W000535,그룹사 업무
+W000536,메타데이터 관리
+W000536,Text Analysis
+W000536,비정형 문서 처리(OCR)
+W000536,검색엔진
+W000536,Scala
+W000536,금융 업무
+W001848,메타데이터 관리
+W001848,비정형 문서 처리(OCR)
+W001848,ETL
+W001848,Text Analysis
+W001848,검색엔진
+W001848,Python
+W001848,금융 업무
+W000547,Airflow
+W000547,Kafka
+W000547,Spark
+W000547,비정형 문서 처리(OCR)
+W000547,Text Analysis
+W000547,금융 업무
+W000548,Hadoop
+W000548,ETL
+W000548,Scala
+W000548,지능형 문서 처리(IDP)
+W000548,Spring
+W000548,그룹사 업무
+W000549,Scala
+W000549,AWS
+W000549,Airflow
+W000549,Kafka
+W000549,ML Ops
+W000549,데이터 모델링
+W000549,그룹사 업무
+W000550,SQL
+W000550,Spark
+W000550,Kafka
+W000550,Airflow
+W000550,Hadoop
+W000550,Python
+W000550,공공 업무
+W000551,Airflow
+W000551,Python
+W000551,Spark
+W000551,데이터 모델링
+W000551,금융 업무
+W000552,Airflow
+W000552,Scala
+W000552,SQL
+W000552,메타데이터 관리
+W000552,지능형 문서 처리(IDP)
+W000552,금융 업무
+W000553,ETL
+W000553,Scala
+W000553,Airflow
+W000553,SQL
+W000553,Python
+W000553,Spark
+W000553,그룹사 업무
+W000554,Scala
+W000554,AWS
+W000554,SQL
+W000554,Kafka
+W000554,ML Ops
+W000554,공공 업무
+W000555,Scala
+W000555,AWS
+W000555,Kafka
+W000555,Airflow
+W000555,Hadoop
+W000555,Data Lake & Data Catalog
+W000555,금융 업무
+W000556,Python
+W000556,Spark
+W000556,AWS
+W000556,Airflow
+W000556,로우코드 플랫폼
+W000556,금융 업무
+W000557,Airflow
+W000557,ETL
+W000557,Kafka
+W000557,Hadoop
+W000557,Spring
+W000557,그룹사 업무
+W000558,Kafka
+W000558,SQL
+W000558,Spark
+W000558,금융 업무
+W000559,AWS
+W000559,Spark
+W000559,Python
+W000559,공공 업무
+W000560,Hadoop
+W000560,Scala
+W000560,SQL
+W000560,Spark
+W000560,AWS
+W000560,Kafka
+W000560,비정형 문서 처리(OCR)
+W000560,금융 업무
+W000561,Python
+W000561,Spark
+W000561,AWS
+W000561,ETL
+W000561,Kafka
+W000561,그룹사 업무
+W000562,Airflow
+W000562,ETL
+W000562,Scala
+W000562,Python
+W000562,Hadoop
+W000562,Kafka
+W000562,RPA
+W000562,그룹사 업무
+W000563,Spark
+W000563,Kafka
+W000563,Python
+W000563,ETL
+W000563,그룹사 업무
+W000564,Scala
+W000564,SQL
+W000564,ETL
+W000564,AWS
+W000564,Airflow
+W000564,Spark
+W000564,로우코드 플랫폼
+W000564,그룹사 업무
+W000565,Kafka
+W000565,Airflow
+W000565,ETL
+W000565,SQL
+W000565,Data Lake & Data Catalog
+W000565,AI 에이전트 프레임워크
+W000565,그룹사 업무
+W000566,Airflow
+W000566,ETL
+W000566,Scala
+W000566,SQL
+W000566,AWS
+W000566,Hadoop
+W000566,LLM Application
+W000566,그룹사 업무
+W000567,Hadoop
+W000567,SQL
+W000567,Airflow
+W000567,Kafka
+W000567,Python
+W000567,금융 업무
+W001849,ETL
+W001849,Hadoop
+W001849,SQL
+W001849,금융 업무
+W000568,Hadoop
+W000568,Kafka
+W000568,Spark
+W000568,AWS
+W000568,SQL
+W000568,비정형 문서 처리(OCR)
+W000568,금융 업무
+W000569,Spark
+W000569,ETL
+W000569,Hadoop
+W000569,ML Ops
+W000569,공공 업무
+W000570,Airflow
+W000570,Kafka
+W000570,Spark
+W000570,Hadoop
+W000570,Python
+W000570,AWS
+W000570,RPA
+W000570,ML Ops
+W000570,금융 업무
+W000571,AWS
+W000571,Python
+W000571,ETL
+W000571,SQL
+W000571,공공 업무
+W000572,ETL
+W000572,Kafka
+W000572,Hadoop
+W000572,Airflow
+W000572,Spark
+W000572,BI Reporting
+W000572,로우코드 플랫폼
+W000572,금융 업무
+W000573,Scala
+W000573,Kafka
+W000573,Hadoop
+W000573,AWS
+W000573,Python
+W000573,금융 업무
+W000574,Scala
+W000574,Kafka
+W000574,ETL
+W000574,Python
+W000574,AWS
+W000574,데이터 모델링
+W000574,Text Analysis
+W000574,금융 업무
+W000575,Kafka
+W000575,SQL
+W000575,Airflow
+W000575,Spark
+W000575,Hadoop
+W000575,ETL
+W000575,금융 업무
+W000576,ETL
+W000576,Kafka
+W000576,Scala
+W000576,AWS
+W000576,LLM 파인튜닝
+W000576,그룹사 업무
+W000577,Hadoop
+W000577,SQL
+W000577,Airflow
+W000577,Spark
+W000577,금융 업무
+W000578,Spark
+W000578,SQL
+W000578,Airflow
+W000578,Private Cloud
+W000578,금융 업무
+W000579,ETL
+W000579,Hadoop
+W000579,SQL
+W000579,AWS
+W000579,Docker
+W000579,Kubernetes
+W000579,그룹사 업무
+W000580,Hadoop
+W000580,AWS
+W000580,Spark
+W000580,Scala
+W000580,ETL
+W000580,AI 에이전트 프레임워크
+W000580,금융 업무
+W000581,Kafka
+W000581,Scala
+W000581,Python
+W000581,ETL
+W000581,AWS
+W000581,Data Lake & Data Catalog
+W000581,그룹사 업무
+W000582,Hadoop
+W000582,SQL
+W000582,Airflow
+W000582,금융 업무
+W001850,ETL
+W001850,Scala
+W001850,AWS
+W001850,금융 업무
+W000592,AWS
+W000592,Hadoop
+W000592,Kubernetes
+W000592,Private Cloud
+W000592,Kafka
+W000592,Docker
+W000592,그룹사 업무
+W000593,Private Cloud
+W000593,Data Lake & Data Catalog
+W000593,Kubernetes
+W000593,Hadoop
+W000593,그룹사 업무
+W000594,AWS
+W000594,Kafka
+W000594,Private Cloud
+W000594,Kubernetes
+W000594,Data Lake & Data Catalog
+W000594,FastAPI
+W000594,공공 업무
+W000595,Private Cloud
+W000595,Kafka
+W000595,Hadoop
+W000595,Kubernetes
+W000595,AWS
+W000595,Docker
+W000595,React
+W000595,그룹사 업무
+W000596,Private Cloud
+W000596,Data Lake & Data Catalog
+W000596,Docker
+W000596,Hadoop
+W000596,Kubernetes
+W000596,Kafka
+W000596,금융 업무
+W000597,Kafka
+W000597,Data Lake & Data Catalog
+W000597,Hadoop
+W000597,Kubernetes
+W000597,Private Cloud
+W000597,로우코드 플랫폼
+W000597,비정형 문서 처리(OCR)
+W000597,금융 업무
+W000598,Hadoop
+W000598,Kafka
+W000598,Private Cloud
+W000598,Docker
+W000598,공공 업무
+W000599,Private Cloud
+W000599,Docker
+W000599,Kafka
+W000599,AWS
+W000599,Hadoop
+W000599,Data Lake & Data Catalog
+W000599,FastAPI
+W000599,RPA
+W000599,그룹사 업무
+W000600,Hadoop
+W000600,Private Cloud
+W000600,AWS
+W000600,Kafka
+W000600,Docker
+W000600,금융 업무
+W000601,Private Cloud
+W000601,Hadoop
+W000601,Docker
+W000601,Kafka
+W000601,금융 업무
+W000602,AWS
+W000602,Private Cloud
+W000602,Hadoop
+W000602,Data Lake & Data Catalog
+W000602,Docker
+W000602,금융 업무
+W000603,Data Lake & Data Catalog
+W000603,Kafka
+W000603,Hadoop
+W000603,Private Cloud
+W000603,그룹사 업무
+W000604,Hadoop
+W000604,Data Lake & Data Catalog
+W000604,Private Cloud
+W000604,Kubernetes
+W000604,SQL
+W000604,비정형 문서 처리(OCR)
+W000604,그룹사 업무
+W000605,Data Lake & Data Catalog
+W000605,Kafka
+W000605,Hadoop
+W000605,BI Reporting
+W000605,금융 업무
+W000606,Kubernetes
+W000606,Docker
+W000606,Private Cloud
+W000606,ML Ops
+W000606,금융 업무
+W000607,Kafka
+W000607,Docker
+W000607,Private Cloud
+W000607,Data Lake & Data Catalog
+W000607,AWS
+W000607,Kubernetes
+W000607,프롬프트 엔지니어링
+W000607,RAG·벡터DB
+W000607,금융 업무
+W000608,Docker
+W000608,Hadoop
+W000608,Private Cloud
+W000608,AWS
+W000608,프로세스 마이닝
+W000608,공공 업무
+W000609,Private Cloud
+W000609,AWS
+W000609,Kubernetes
+W000609,Data Lake & Data Catalog
+W000609,금융 업무
+W000610,데이터 모델링
+W000610,메타데이터 관리
+W000610,BI Reporting
+W000610,그룹사 업무
+W000611,BI Reporting
+W000611,Data Lake & Data Catalog
+W000611,메타데이터 관리
+W000611,데이터 모델링
+W000611,SQL
+W000611,Spring
+W000611,그룹사 업무
+W000612,데이터 모델링
+W000612,Data Lake & Data Catalog
+W000612,BI Reporting
+W000612,SQL
+W000612,지능형 문서 처리(IDP)
+W000612,로우코드 플랫폼
+W000612,금융 업무
+W000613,SQL
+W000613,BI Reporting
+W000613,메타데이터 관리
+W000613,Text Analysis
+W000613,워크플로우·BPM
+W000613,금융 업무
+W000614,데이터 모델링
+W000614,SQL
+W000614,메타데이터 관리
+W000614,Data Lake & Data Catalog
+W000614,BI Reporting
+W000614,비정형 문서 처리(OCR)
+W000614,ETL
+W000614,그룹사 업무
+W000615,메타데이터 관리
+W000615,데이터 모델링
+W000615,Data Lake & Data Catalog
+W000615,BI Reporting
+W000615,SQL
+W000615,Java
+W000615,그룹사 업무
+W000616,BI Reporting
+W000616,데이터 모델링
+W000616,SQL
+W000616,Data Lake & Data Catalog
+W000616,Hadoop
+W000616,금융 업무
+W000617,SQL
+W000617,데이터 모델링
+W000617,메타데이터 관리
+W000617,BI Reporting
+W000617,Data Lake & Data Catalog
+W000617,금융 업무
+W000618,Data Lake & Data Catalog
+W000618,SQL
+W000618,데이터 모델링
+W000618,메타데이터 관리
+W000618,BI Reporting
+W000618,Spring
+W000618,금융 업무
+W000619,메타데이터 관리
+W000619,Data Lake & Data Catalog
+W000619,SQL
+W000619,BI Reporting
+W000619,데이터 모델링
+W000619,금융 업무
+W000620,Data Lake & Data Catalog
+W000620,SQL
+W000620,BI Reporting
+W000620,데이터 모델링
+W000620,ETL
+W000620,공공 업무
+W000621,메타데이터 관리
+W000621,BI Reporting
+W000621,데이터 모델링
+W000621,Data Lake & Data Catalog
+W000621,SQL
+W000621,금융 업무
+W000622,Data Lake & Data Catalog
+W000622,SQL
+W000622,BI Reporting
+W000622,프롬프트 엔지니어링
+W000622,그룹사 업무
+W000623,BI Reporting
+W000623,SQL
+W000623,Data Lake & Data Catalog
+W000623,데이터 모델링
+W000623,Hadoop
+W000623,그룹사 업무
+W000624,SQL
+W000624,메타데이터 관리
+W000624,Data Lake & Data Catalog
+W000624,BI Reporting
+W000624,데이터 모델링
+W000624,그룹사 업무
+W000625,메타데이터 관리
+W000625,SQL
+W000625,BI Reporting
+W000625,데이터 모델링
+W000625,Data Lake & Data Catalog
+W000625,금융 업무
+W000626,SQL
+W000626,Data Lake & Data Catalog
+W000626,BI Reporting
+W000626,데이터 모델링
+W000626,메타데이터 관리
+W000626,Airflow
+W000626,Scala
+W000626,금융 업무
+W000627,Data Lake & Data Catalog
+W000627,BI Reporting
+W000627,SQL
+W000627,메타데이터 관리
+W000627,데이터 모델링
+W000627,LLM 파인튜닝
+W000627,금융 업무
+W000628,Data Lake & Data Catalog
+W000628,SQL
+W000628,BI Reporting
+W000628,금융 업무
+W000631,Python
+W000631,Text Analysis
+W000631,ETL
+W000631,검색엔진
+W000631,데이터 모델링
+W000631,금융 업무
+W000632,Text Analysis
+W000632,Python
+W000632,비정형 문서 처리(OCR)
+W000632,검색엔진
+W000632,ETL
+W000632,메타데이터 관리
+W000632,RPA
+W000632,금융 업무
+W000633,비정형 문서 처리(OCR)
+W000633,메타데이터 관리
+W000633,검색엔진
+W000633,그룹사 업무
+W000634,Text Analysis
+W000634,메타데이터 관리
+W000634,Python
+W000634,ETL
+W000634,Java
+W000634,금융 업무
+W000635,Text Analysis
+W000635,ETL
+W000635,메타데이터 관리
+W000635,그룹사 업무
+W000636,검색엔진
+W000636,Text Analysis
+W000636,Python
+W000636,Java
+W000636,금융 업무
+W000637,검색엔진
+W000637,ETL
+W000637,Text Analysis
+W000637,RPA
+W000637,그룹사 업무
+W000638,Python
+W000638,메타데이터 관리
+W000638,검색엔진
+W000638,비정형 문서 처리(OCR)
+W000638,Text Analysis
+W000638,지능형 문서 처리(IDP)
+W000638,금융 업무
+W000639,ETL
+W000639,메타데이터 관리
+W000639,Text Analysis
+W000639,Spring
+W000639,FastAPI
+W000639,금융 업무
+W000640,ETL
+W000640,비정형 문서 처리(OCR)
+W000640,검색엔진
+W000640,Text Analysis
+W000640,공공 업무
+W000641,Python
+W000641,메타데이터 관리
+W000641,ETL
+W000641,비정형 문서 처리(OCR)
+W000641,지능형 문서 처리(IDP)
+W000641,금융 업무
+W000642,Python
+W000642,Text Analysis
+W000642,메타데이터 관리
+W000642,워크플로우·BPM
+W000642,그룹사 업무
+W000643,ETL
+W000643,Python
+W000643,검색엔진
+W000643,Text Analysis
+W000643,비정형 문서 처리(OCR)
+W000643,메타데이터 관리
+W000643,금융 업무
+W000644,ETL
+W000644,Text Analysis
+W000644,비정형 문서 처리(OCR)
+W000644,Python
+W000644,메타데이터 관리
+W000644,지능형 문서 처리(IDP)
+W000644,그룹사 업무
+W000645,검색엔진
+W000645,Python
+W000645,ETL
+W000645,Text Analysis
+W000645,비정형 문서 처리(OCR)
+W000645,Spark
+W000645,금융 업무
+W000646,검색엔진
+W000646,Python
+W000646,비정형 문서 처리(OCR)
+W000646,ETL
+W000646,공공 업무
+W000647,ETL
+W000647,메타데이터 관리
+W000647,Text Analysis
+W000647,비정형 문서 처리(OCR)
+W000647,그룹사 업무
+W000648,비정형 문서 처리(OCR)
+W000648,Python
+W000648,검색엔진
+W000648,Text Analysis
+W000648,메타데이터 관리
+W000648,ETL
+W000648,Private Cloud
+W000648,그룹사 업무
+W000649,Text Analysis
+W000649,Python
+W000649,ETL
+W000649,메타데이터 관리
+W000649,비정형 문서 처리(OCR)
+W000649,RPA
+W000649,그룹사 업무
+W000650,Text Analysis
+W000650,검색엔진
+W000650,Python
+W000650,ETL
+W000650,메타데이터 관리
+W000650,비정형 문서 처리(OCR)
+W000650,Airflow
+W000650,그룹사 업무
+W000651,비정형 문서 처리(OCR)
+W000651,메타데이터 관리
+W000651,ETL
+W000651,검색엔진
+W000651,Python
+W000651,Text Analysis
+W000651,FastAPI
+W000651,그룹사 업무
+W000652,Python
+W000652,비정형 문서 처리(OCR)
+W000652,메타데이터 관리
+W000652,Text Analysis
+W000652,검색엔진
+W000652,SQL
+W000652,그룹사 업무
+W001851,ETL
+W001851,비정형 문서 처리(OCR)
+W001851,메타데이터 관리
+W001851,Text Analysis
+W001851,Python
+W001851,검색엔진
+W001851,금융 업무
+W000654,Kubernetes
+W000654,Data Lake & Data Catalog
+W000654,Hadoop
+W000654,AWS
+W000654,검색엔진
+W000654,프로세스 마이닝
+W000654,그룹사 업무
+W000655,Private Cloud
+W000655,AWS
+W000655,Kafka
+W000655,금융 업무
+W000656,Kubernetes
+W000656,Kafka
+W000656,Hadoop
+W000656,Private Cloud
+W000656,RPA
+W000656,금융 업무
+W000657,Private Cloud
+W000657,Data Lake & Data Catalog
+W000657,Docker
+W000657,공공 업무
+W000658,Data Lake & Data Catalog
+W000658,AWS
+W000658,Kubernetes
+W000658,Private Cloud
+W000658,Docker
+W000658,Kafka
+W000658,공공 업무
+W000659,Data Lake & Data Catalog
+W000659,Hadoop
+W000659,AWS
+W000659,Private Cloud
+W000659,Scala
+W000659,메타데이터 관리
+W000659,그룹사 업무
+W000660,AWS
+W000660,Private Cloud
+W000660,Kafka
+W000660,Kubernetes
+W000660,Data Lake & Data Catalog
+W000660,그룹사 업무
+W000661,Kafka
+W000661,Hadoop
+W000661,Kubernetes
+W000661,금융 업무
+W001852,Data Lake & Data Catalog
+W001852,Kafka
+W001852,그룹사 업무
+W000664,메타데이터 관리
+W000664,검색엔진
+W000664,ETL
+W000664,Python
+W000664,React
+W000664,Docker
+W000664,그룹사 업무
+W000665,메타데이터 관리
+W000665,비정형 문서 처리(OCR)
+W000665,ETL
+W000665,Python
+W000665,금융 업무
+W000666,비정형 문서 처리(OCR)
+W000666,ETL
+W000666,Python
+W000666,메타데이터 관리
+W000666,Text Analysis
+W000666,검색엔진
+W000666,금융 업무
+W000667,Python
+W000667,검색엔진
+W000667,메타데이터 관리
+W000667,ETL
+W000667,Text Analysis
+W000667,비정형 문서 처리(OCR)
+W000667,Private Cloud
+W000667,그룹사 업무
+W000668,ETL
+W000668,Python
+W000668,Text Analysis
+W000668,금융 업무
+W000669,Python
+W000669,Text Analysis
+W000669,비정형 문서 처리(OCR)
+W000669,ETL
+W000669,검색엔진
+W000669,ML Ops
+W000669,공공 업무
+W000670,Python
+W000670,Text Analysis
+W000670,비정형 문서 처리(OCR)
+W000670,메타데이터 관리
+W000670,검색엔진
+W000670,ETL
+W000670,Spark
+W000670,금융 업무
+W000671,Text Analysis
+W000671,ETL
+W000671,비정형 문서 처리(OCR)
+W000671,Private Cloud
+W000671,Scala
+W000671,그룹사 업무
+W000672,Python
+W000672,Text Analysis
+W000672,ETL
+W000672,메타데이터 관리
+W000672,비정형 문서 처리(OCR)
+W000672,AWS
+W000672,Private Cloud
+W000672,금융 업무
+W000673,Python
+W000673,검색엔진
+W000673,ETL
+W000673,메타데이터 관리
+W000673,Private Cloud
+W000673,그룹사 업무
+W000674,Python
+W000674,ETL
+W000674,Text Analysis
+W000674,메타데이터 관리
+W000674,검색엔진
+W000674,비정형 문서 처리(OCR)
+W000674,그룹사 업무
+W000675,메타데이터 관리
+W000675,ETL
+W000675,Text Analysis
+W000675,검색엔진
+W000675,Python
+W000675,Data Lake & Data Catalog
+W000675,금융 업무
+W000676,Text Analysis
+W000676,Python
+W000676,ETL
+W000676,검색엔진
+W000676,Scala
+W000676,금융 업무
+W000677,메타데이터 관리
+W000677,Python
+W000677,Text Analysis
+W000677,비정형 문서 처리(OCR)
+W000677,금융 업무
+W000678,비정형 문서 처리(OCR)
+W000678,Python
+W000678,메타데이터 관리
+W000678,Docker
+W000678,금융 업무
+W000679,Python
+W000679,비정형 문서 처리(OCR)
+W000679,Text Analysis
+W000679,ETL
+W000679,그룹사 업무
+W000680,Text Analysis
+W000680,검색엔진
+W000680,메타데이터 관리
+W000680,Python
+W000680,비정형 문서 처리(OCR)
+W000680,ETL
+W000680,SQL
+W000680,Spark
+W000680,그룹사 업무
+W000681,ETL
+W000681,메타데이터 관리
+W000681,검색엔진
+W000681,비정형 문서 처리(OCR)
+W000681,Private Cloud
+W000681,금융 업무
+W000682,Python
+W000682,비정형 문서 처리(OCR)
+W000682,검색엔진
+W000682,ETL
+W000682,프롬프트 엔지니어링
+W000682,금융 업무
+W000683,Text Analysis
+W000683,비정형 문서 처리(OCR)
+W000683,Python
+W000683,검색엔진
+W000683,ETL
+W000683,지능형 문서 처리(IDP)
+W000683,금융 업무
+W001853,ETL
+W001853,비정형 문서 처리(OCR)
+W001853,Python
+W001853,검색엔진
+W001853,금융 업무
+W000685,BI Reporting
+W000685,메타데이터 관리
+W000685,데이터 모델링
+W000685,SQL
+W000685,React
+W000685,금융 업무
+W000686,BI Reporting
+W000686,메타데이터 관리
+W000686,SQL
+W000686,프로세스 마이닝
+W000686,Airflow
+W000686,그룹사 업무
+W000687,데이터 모델링
+W000687,SQL
+W000687,메타데이터 관리
+W000687,BI Reporting
+W000687,금융 업무
+W000688,메타데이터 관리
+W000688,SQL
+W000688,BI Reporting
+W000688,데이터 모델링
+W000688,금융 업무
+W000689,데이터 모델링
+W000689,SQL
+W000689,BI Reporting
+W000689,메타데이터 관리
+W000689,Spark
+W000689,금융 업무
+W000690,메타데이터 관리
+W000690,BI Reporting
+W000690,데이터 모델링
+W000690,SQL
+W000690,Spring
+W000690,공공 업무
+W000691,BI Reporting
+W000691,SQL
+W000691,메타데이터 관리
+W000691,데이터 모델링
+W000691,React
+W000691,공공 업무
+W000692,데이터 모델링
+W000692,메타데이터 관리
+W000692,BI Reporting
+W000692,SQL
+W000692,금융 업무
+W000693,BI Reporting
+W000693,SQL
+W000693,메타데이터 관리
+W000693,그룹사 업무
+W000694,메타데이터 관리
+W000694,데이터 모델링
+W000694,BI Reporting
+W000694,SQL
+W000694,프로세스 마이닝
+W000694,그룹사 업무
+W000695,데이터 모델링
+W000695,SQL
+W000695,BI Reporting
+W000695,메타데이터 관리
+W000695,금융 업무
+W001854,메타데이터 관리
+W001854,데이터 모델링
+W001854,BI Reporting
+W001854,그룹사 업무
+W000697,메타데이터 관리
+W000697,검색엔진
+W000697,비정형 문서 처리(OCR)
+W000697,Text Analysis
+W000697,Python
+W000697,금융 업무
+W000698,ETL
+W000698,메타데이터 관리
+W000698,Text Analysis
+W000698,검색엔진
+W000698,Python
+W000698,Java
+W000698,워크플로우·BPM
+W000698,금융 업무
+W000699,ETL
+W000699,Python
+W000699,비정형 문서 처리(OCR)
+W000699,검색엔진
+W000699,Text Analysis
+W000699,그룹사 업무
+W000700,Python
+W000700,Text Analysis
+W000700,ETL
+W000700,메타데이터 관리
+W000700,검색엔진
+W000700,RPA
+W000700,공공 업무
+W000701,ETL
+W000701,Python
+W000701,Text Analysis
+W000701,메타데이터 관리
+W000701,비정형 문서 처리(OCR)
+W000701,금융 업무
+W000702,비정형 문서 처리(OCR)
+W000702,Python
+W000702,메타데이터 관리
+W000702,Hadoop
+W000702,그룹사 업무
+W000703,Text Analysis
+W000703,비정형 문서 처리(OCR)
+W000703,메타데이터 관리
+W000703,Python
+W000703,Data Lake & Data Catalog
+W000703,그룹사 업무
+W000704,검색엔진
+W000704,메타데이터 관리
+W000704,ETL
+W000704,FastAPI
+W000704,그룹사 업무
+W000705,검색엔진
+W000705,ETL
+W000705,비정형 문서 처리(OCR)
+W000705,Text Analysis
+W000705,Python
+W000705,메타데이터 관리
+W000705,Private Cloud
+W000705,Docker
+W000705,그룹사 업무
+W000706,메타데이터 관리
+W000706,Text Analysis
+W000706,비정형 문서 처리(OCR)
+W000706,Python
+W000706,그룹사 업무
+W001855,ETL
+W001855,비정형 문서 처리(OCR)
+W001855,Python
+W001855,검색엔진
+W001855,금융 업무
+W000716,SQL
+W000716,메타데이터 관리
+W000716,BI Reporting
+W000716,금융 업무
+W000717,BI Reporting
+W000717,Data Lake & Data Catalog
+W000717,SQL
+W000717,금융 업무
+W000718,데이터 모델링
+W000718,Data Lake & Data Catalog
+W000718,메타데이터 관리
+W000718,SQL
+W000718,BI Reporting
+W000718,그룹사 업무
+W000719,BI Reporting
+W000719,데이터 모델링
+W000719,Data Lake & Data Catalog
+W000719,메타데이터 관리
+W000719,SQL
+W000719,ETL
+W000719,Python
+W000719,금융 업무
+W000720,Data Lake & Data Catalog
+W000720,BI Reporting
+W000720,메타데이터 관리
+W000720,SQL
+W000720,데이터 모델링
+W000720,금융 업무
+W000721,BI Reporting
+W000721,Data Lake & Data Catalog
+W000721,데이터 모델링
+W000721,SQL
+W000721,Private Cloud
+W000721,공공 업무
+W000722,BI Reporting
+W000722,SQL
+W000722,메타데이터 관리
+W000722,데이터 모델링
+W000722,Data Lake & Data Catalog
+W000722,React
+W000722,금융 업무
+W000723,SQL
+W000723,Data Lake & Data Catalog
+W000723,BI Reporting
+W000723,메타데이터 관리
+W000723,데이터 모델링
+W000723,Spark
+W000723,금융 업무
+W000724,메타데이터 관리
+W000724,Data Lake & Data Catalog
+W000724,데이터 모델링
+W000724,BI Reporting
+W000724,ML Ops
+W000724,지능형 문서 처리(IDP)
+W000724,금융 업무
+W000725,데이터 모델링
+W000725,BI Reporting
+W000725,SQL
+W000725,메타데이터 관리
+W000725,Data Lake & Data Catalog
+W000725,그룹사 업무
+W000726,데이터 모델링
+W000726,메타데이터 관리
+W000726,SQL
+W000726,Data Lake & Data Catalog
+W000726,Kafka
+W000726,Java
+W000726,금융 업무
+W000727,SQL
+W000727,메타데이터 관리
+W000727,Data Lake & Data Catalog
+W000727,데이터 모델링
+W000727,Kubernetes
+W000727,금융 업무
+W000728,데이터 모델링
+W000728,SQL
+W000728,메타데이터 관리
+W000728,Data Lake & Data Catalog
+W000728,BI Reporting
+W000728,Text Analysis
+W000728,로우코드 플랫폼
+W000728,금융 업무
+W000729,데이터 모델링
+W000729,SQL
+W000729,Data Lake & Data Catalog
+W000729,메타데이터 관리
+W000729,BI Reporting
+W000729,Kubernetes
+W000729,그룹사 업무
+W000730,BI Reporting
+W000730,데이터 모델링
+W000730,SQL
+W000730,Data Lake & Data Catalog
+W000730,RPA
+W000730,AWS
+W000730,그룹사 업무
+W000731,Data Lake & Data Catalog
+W000731,메타데이터 관리
+W000731,BI Reporting
+W000731,SQL
+W000731,데이터 모델링
+W000731,RPA
+W000731,Spring
+W000731,그룹사 업무
+W000732,메타데이터 관리
+W000732,SQL
+W000732,데이터 모델링
+W000732,React
+W000732,Java
+W000732,그룹사 업무
+W000733,SQL
+W000733,Data Lake & Data Catalog
+W000733,데이터 모델링
+W000733,BI Reporting
+W000733,LLM Application
+W000733,프롬프트 엔지니어링
+W000733,그룹사 업무
+W000734,BI Reporting
+W000734,데이터 모델링
+W000734,SQL
+W000734,메타데이터 관리
+W000734,Data Lake & Data Catalog
+W000734,금융 업무
+W000735,BI Reporting
+W000735,Data Lake & Data Catalog
+W000735,SQL
+W000735,메타데이터 관리
+W000735,그룹사 업무
+W001856,데이터 모델링
+W001856,Data Lake & Data Catalog
+W001856,메타데이터 관리
+W001856,금융 업무
+W000738,Hadoop
+W000738,Data Lake & Data Catalog
+W000738,Docker
+W000738,Kafka
+W000738,React
+W000738,금융 업무
+W000739,Private Cloud
+W000739,Kafka
+W000739,AWS
+W000739,Kubernetes
+W000739,Docker
+W000739,Hadoop
+W000739,SQL
+W000739,FastAPI
+W000739,공공 업무
+W000740,Kafka
+W000740,Kubernetes
+W000740,Private Cloud
+W000740,Hadoop
+W000740,검색엔진
+W000740,Python
+W000740,금융 업무
+W000741,Hadoop
+W000741,Kafka
+W000741,Data Lake & Data Catalog
+W000741,AWS
+W000741,Kubernetes
+W000741,Docker
+W000741,그룹사 업무
+W000742,Private Cloud
+W000742,Kubernetes
+W000742,Hadoop
+W000742,Kafka
+W000742,Data Lake & Data Catalog
+W000742,AWS
+W000742,그룹사 업무
+W000743,AWS
+W000743,Hadoop
+W000743,Docker
+W000743,Private Cloud
+W000743,메타데이터 관리
+W000743,금융 업무
+W000744,Data Lake & Data Catalog
+W000744,Private Cloud
+W000744,Kafka
+W000744,Docker
+W000744,Spark
+W000744,금융 업무
+W000745,AWS
+W000745,Docker
+W000745,Data Lake & Data Catalog
+W000745,Private Cloud
+W000745,그룹사 업무
+W000746,Private Cloud
+W000746,Data Lake & Data Catalog
+W000746,AWS
+W000746,프로세스 마이닝
+W000746,그룹사 업무
+W001857,Kafka
+W001857,Kubernetes
+W001857,Private Cloud
+W001857,Hadoop
+W001857,그룹사 업무
+W000749,Python
+W000749,검색엔진
+W000749,비정형 문서 처리(OCR)
+W000749,ETL
+W000749,Text Analysis
+W000749,메타데이터 관리
+W000749,FastAPI
+W000749,금융 업무
+W000750,검색엔진
+W000750,메타데이터 관리
+W000750,Text Analysis
+W000750,Python
+W000750,ETL
+W000750,비정형 문서 처리(OCR)
+W000750,금융 업무
+W001858,Text Analysis
+W001858,ETL
+W001858,비정형 문서 처리(OCR)
+W001858,메타데이터 관리
+W001858,검색엔진
+W001858,금융 업무
+W000753,비정형 문서 처리(OCR)
+W000753,Text Analysis
+W000753,ETL
+W000753,검색엔진
+W000753,SQL
+W000753,Kafka
+W000753,금융 업무
+W000754,비정형 문서 처리(OCR)
+W000754,ETL
+W000754,메타데이터 관리
+W000754,Text Analysis
+W000754,Python
+W000754,검색엔진
+W000754,ML Ops
+W000754,워크플로우·BPM
+W000754,그룹사 업무
+W000755,ETL
+W000755,검색엔진
+W000755,비정형 문서 처리(OCR)
+W000755,메타데이터 관리
+W000755,BI Reporting
+W000755,RPA
+W000755,그룹사 업무
+W000756,비정형 문서 처리(OCR)
+W000756,메타데이터 관리
+W000756,검색엔진
+W000756,ETL
+W000756,Text Analysis
+W000756,Python
+W000756,Kafka
+W000756,금융 업무
+W000757,Text Analysis
+W000757,검색엔진
+W000757,비정형 문서 처리(OCR)
+W000757,Hadoop
+W000757,React
+W000757,그룹사 업무
+W000758,검색엔진
+W000758,Python
+W000758,ETL
+W000758,Text Analysis
+W000758,메타데이터 관리
+W000758,FastAPI
+W000758,AWS
+W000758,공공 업무
+W000759,비정형 문서 처리(OCR)
+W000759,Python
+W000759,메타데이터 관리
+W000759,ETL
+W000759,Text Analysis
+W000759,공공 업무
+W000760,ETL
+W000760,Text Analysis
+W000760,Python
+W000760,Private Cloud
+W000760,금융 업무
+W000761,ETL
+W000761,메타데이터 관리
+W000761,비정형 문서 처리(OCR)
+W000761,Python
+W000761,Text Analysis
+W000761,검색엔진
+W000761,금융 업무
+W000762,비정형 문서 처리(OCR)
+W000762,ETL
+W000762,Text Analysis
+W000762,메타데이터 관리
+W000762,Python
+W000762,검색엔진
+W000762,그룹사 업무
+W000763,Text Analysis
+W000763,메타데이터 관리
+W000763,비정형 문서 처리(OCR)
+W000763,검색엔진
+W000763,ETL
+W000763,Python
+W000763,프로세스 마이닝
+W000763,금융 업무
+W000764,검색엔진
+W000764,Text Analysis
+W000764,비정형 문서 처리(OCR)
+W000764,Python
+W000764,ETL
+W000764,메타데이터 관리
+W000764,지능형 문서 처리(IDP)
+W000764,Docker
+W000764,금융 업무
+W000765,Text Analysis
+W000765,검색엔진
+W000765,메타데이터 관리
+W000765,Python
+W000765,금융 업무
+W000766,ETL
+W000766,검색엔진
+W000766,메타데이터 관리
+W000766,Python
+W000766,그룹사 업무
+W000767,ETL
+W000767,비정형 문서 처리(OCR)
+W000767,Text Analysis
+W000767,Kubernetes
+W000767,ML Ops
+W000767,금융 업무
+W000768,Python
+W000768,비정형 문서 처리(OCR)
+W000768,ETL
+W000768,검색엔진
+W000768,Text Analysis
+W000768,그룹사 업무
+W000769,Python
+W000769,메타데이터 관리
+W000769,비정형 문서 처리(OCR)
+W000769,공공 업무
+W000770,검색엔진
+W000770,비정형 문서 처리(OCR)
+W000770,Text Analysis
+W000770,LLM Application
+W000770,LLM 파인튜닝
+W000770,그룹사 업무
+W000771,검색엔진
+W000771,Text Analysis
+W000771,비정형 문서 처리(OCR)
+W000771,Python
+W000771,메타데이터 관리
+W000771,ETL
+W000771,그룹사 업무
+W000772,비정형 문서 처리(OCR)
+W000772,메타데이터 관리
+W000772,Python
+W000772,Text Analysis
+W000772,금융 업무
+W000773,메타데이터 관리
+W000773,ETL
+W000773,검색엔진
+W000773,Python
+W000773,AWS
+W000773,React
+W000773,그룹사 업무
+W000774,메타데이터 관리
+W000774,Python
+W000774,비정형 문서 처리(OCR)
+W000774,Scala
+W000774,그룹사 업무
+W000775,Text Analysis
+W000775,비정형 문서 처리(OCR)
+W000775,검색엔진
+W000775,Python
+W000775,메타데이터 관리
+W000775,금융 업무
+W000786,Airflow
+W000786,Scala
+W000786,SQL
+W000786,Spark
+W000786,ETL
+W000786,Docker
+W000786,Kubernetes
+W000786,금융 업무
+W000787,ETL
+W000787,Spark
+W000787,AWS
+W000787,Python
+W000787,Hadoop
+W000787,SQL
+W000787,비정형 문서 처리(OCR)
+W000787,공공 업무
+W000788,Python
+W000788,AWS
+W000788,Spark
+W000788,Kafka
+W000788,Hadoop
+W000788,Scala
+W000788,금융 업무
+W000789,Spark
+W000789,Hadoop
+W000789,Airflow
+W000789,SQL
+W000789,AWS
+W000789,RPA
+W000789,금융 업무
+W000790,Hadoop
+W000790,Scala
+W000790,SQL
+W000790,Airflow
+W000790,RPA
+W000790,금융 업무
+W000791,Kafka
+W000791,Airflow
+W000791,Python
+W000791,Spark
+W000791,SQL
+W000791,ETL
+W000791,Kubernetes
+W000791,금융 업무
+W000792,SQL
+W000792,Spark
+W000792,Kafka
+W000792,Airflow
+W000792,AWS
+W000792,공공 업무
+W000793,SQL
+W000793,Kafka
+W000793,Scala
+W000793,ETL
+W000793,Spark
+W000793,Hadoop
+W000793,금융 업무
+W000794,Hadoop
+W000794,Scala
+W000794,ETL
+W000794,Airflow
+W000794,비정형 문서 처리(OCR)
+W000794,공공 업무
+W000795,Kafka
+W000795,AWS
+W000795,Hadoop
+W000795,Spark
+W000795,Scala
+W000795,RPA
+W000795,React
+W000795,금융 업무
+W000796,Hadoop
+W000796,Scala
+W000796,Airflow
+W000796,Python
+W000796,금융 업무
+W000797,Scala
+W000797,ETL
+W000797,Airflow
+W000797,비정형 문서 처리(OCR)
+W000797,금융 업무
+W000798,Spark
+W000798,Python
+W000798,ETL
+W000798,Hadoop
+W000798,SQL
+W000798,Scala
+W000798,공공 업무
+W000799,AWS
+W000799,Airflow
+W000799,Kafka
+W000799,Python
+W000799,ETL
+W000799,Spark
+W000799,비정형 문서 처리(OCR)
+W000799,Docker
+W000799,그룹사 업무
+W000800,Spark
+W000800,SQL
+W000800,Kafka
+W000800,Scala
+W000800,FastAPI
+W000800,그룹사 업무
+W000801,AWS
+W000801,Airflow
+W000801,ETL
+W000801,AI 에이전트 프레임워크
+W000801,프롬프트 엔지니어링
+W000801,금융 업무
+W000802,Kafka
+W000802,AWS
+W000802,Spark
+W000802,그룹사 업무
+W000803,SQL
+W000803,Airflow
+W000803,Python
+W000803,Scala
+W000803,금융 업무
+W001859,ETL
+W001859,Scala
+W001859,금융 업무
+W000807,BI Reporting
+W000807,Data Lake & Data Catalog
+W000807,데이터 모델링
+W000807,메타데이터 관리
+W000807,SQL
+W000807,FastAPI
+W000807,그룹사 업무
+W000808,메타데이터 관리
+W000808,SQL
+W000808,데이터 모델링
+W000808,BI Reporting
+W000808,Data Lake & Data Catalog
+W000808,금융 업무
+W000809,BI Reporting
+W000809,메타데이터 관리
+W000809,데이터 모델링
+W000809,Data Lake & Data Catalog
+W000809,Java
+W000809,공공 업무
+W000810,Data Lake & Data Catalog
+W000810,메타데이터 관리
+W000810,데이터 모델링
+W000810,SQL
+W000810,Java
+W000810,공공 업무
+W000811,데이터 모델링
+W000811,Data Lake & Data Catalog
+W000811,SQL
+W000811,Kubernetes
+W000811,그룹사 업무
+W000812,BI Reporting
+W000812,데이터 모델링
+W000812,메타데이터 관리
+W000812,AI 에이전트 프레임워크
+W000812,Kafka
+W000812,그룹사 업무
+W000813,BI Reporting
+W000813,SQL
+W000813,Data Lake & Data Catalog
+W000813,메타데이터 관리
+W000813,데이터 모델링
+W000813,그룹사 업무
+W000814,데이터 모델링
+W000814,BI Reporting
+W000814,SQL
+W000814,Data Lake & Data Catalog
+W000814,메타데이터 관리
+W000814,ETL
+W000814,LLM Application
+W000814,금융 업무
+W000815,SQL
+W000815,BI Reporting
+W000815,Data Lake & Data Catalog
+W000815,데이터 모델링
+W000815,메타데이터 관리
+W000815,Scala
+W000815,ML Ops
+W000815,금융 업무
+W000816,SQL
+W000816,Data Lake & Data Catalog
+W000816,BI Reporting
+W000816,데이터 모델링
+W000816,메타데이터 관리
+W000816,Text Analysis
+W000816,지능형 문서 처리(IDP)
+W000816,금융 업무
+W000817,SQL
+W000817,데이터 모델링
+W000817,BI Reporting
+W000817,메타데이터 관리
+W000817,RPA
+W000817,LLM Application
+W000817,그룹사 업무
+W000818,BI Reporting
+W000818,Data Lake & Data Catalog
+W000818,SQL
+W000818,메타데이터 관리
+W000818,데이터 모델링
+W000818,지능형 문서 처리(IDP)
+W000818,그룹사 업무
+W000819,SQL
+W000819,BI Reporting
+W000819,데이터 모델링
+W000819,메타데이터 관리
+W000819,공공 업무
+W001860,데이터 모델링
+W001860,Data Lake & Data Catalog
+W001860,메타데이터 관리
+W001860,SQL
+W001860,금융 업무
+W000821,Python
+W000821,비정형 문서 처리(OCR)
+W000821,Text Analysis
+W000821,ETL
+W000821,Data Lake & Data Catalog
+W000821,그룹사 업무
+W000822,ETL
+W000822,메타데이터 관리
+W000822,검색엔진
+W000822,Data Lake & Data Catalog
+W000822,그룹사 업무
+W000823,비정형 문서 처리(OCR)
+W000823,검색엔진
+W000823,Python
+W000823,ETL
+W000823,메타데이터 관리
+W000823,Data Lake & Data Catalog
+W000823,그룹사 업무
+W000824,Text Analysis
+W000824,검색엔진
+W000824,Python
+W000824,ETL
+W000824,데이터 모델링
+W000824,그룹사 업무
+W000825,ETL
+W000825,Text Analysis
+W000825,메타데이터 관리
+W000825,비정형 문서 처리(OCR)
+W000825,검색엔진
+W000825,ML Ops
+W000825,Hadoop
+W000825,그룹사 업무
+W000826,비정형 문서 처리(OCR)
+W000826,ETL
+W000826,Text Analysis
+W000826,메타데이터 관리
+W000826,검색엔진
+W000826,AI 에이전트 프레임워크
+W000826,그룹사 업무
+W000827,검색엔진
+W000827,비정형 문서 처리(OCR)
+W000827,Text Analysis
+W000827,Python
+W000827,ETL
+W000827,Hadoop
+W000827,LLM Application
+W000827,그룹사 업무
+W000828,Text Analysis
+W000828,검색엔진
+W000828,ETL
+W000828,비정형 문서 처리(OCR)
+W000828,ML Ops
+W000828,프롬프트 엔지니어링
+W000828,금융 업무
+W000829,ETL
+W000829,검색엔진
+W000829,Python
+W000829,Text Analysis
+W000829,메타데이터 관리
+W000829,비정형 문서 처리(OCR)
+W000829,로우코드 플랫폼
+W000829,프롬프트 엔지니어링
+W000829,금융 업무
+W000830,Text Analysis
+W000830,비정형 문서 처리(OCR)
+W000830,ETL
+W000830,메타데이터 관리
+W000830,검색엔진
+W000830,공공 업무
+W000831,검색엔진
+W000831,메타데이터 관리
+W000831,Text Analysis
+W000831,비정형 문서 처리(OCR)
+W000831,ETL
+W000831,공공 업무
+W000832,Python
+W000832,ETL
+W000832,Text Analysis
+W000832,검색엔진
+W000832,메타데이터 관리
+W000832,비정형 문서 처리(OCR)
+W000832,금융 업무
+W000833,Text Analysis
+W000833,ETL
+W000833,메타데이터 관리
+W000833,Spring
+W000833,Hadoop
+W000833,공공 업무
+W000834,비정형 문서 처리(OCR)
+W000834,Text Analysis
+W000834,Python
+W000834,메타데이터 관리
+W000834,금융 업무
+W000835,메타데이터 관리
+W000835,Text Analysis
+W000835,비정형 문서 처리(OCR)
+W000835,지능형 문서 처리(IDP)
+W000835,금융 업무
+W001861,Text Analysis
+W001861,ETL
+W001861,비정형 문서 처리(OCR)
+W001861,메타데이터 관리
+W001861,검색엔진
+W001861,Python
+W001861,금융 업무
+W000836,ETL
+W000836,AWS
+W000836,Scala
+W000836,Python
+W000836,Spark
+W000836,금융 업무
+W000837,Scala
+W000837,Python
+W000837,Spark
+W000837,ETL
+W000837,FastAPI
+W000837,그룹사 업무
+W000838,AWS
+W000838,Hadoop
+W000838,Scala
+W000838,그룹사 업무
+W000839,Airflow
+W000839,Kafka
+W000839,Python
+W000839,SQL
+W000839,AWS
+W000839,Scala
+W000839,Data Lake & Data Catalog
+W000839,FastAPI
+W000839,금융 업무
+W000840,Spark
+W000840,Kafka
+W000840,Python
+W000840,Java
+W000840,그룹사 업무
+W000841,Hadoop
+W000841,ETL
+W000841,Python
+W000841,비정형 문서 처리(OCR)
+W000841,금융 업무
+W000842,Hadoop
+W000842,Python
+W000842,Spark
+W000842,AWS
+W000842,공공 업무
+W000843,ETL
+W000843,AWS
+W000843,SQL
+W000843,Hadoop
+W000843,Scala
+W000843,Kafka
+W000843,공공 업무
+W000844,Python
+W000844,ETL
+W000844,AWS
+W000844,Hadoop
+W000844,금융 업무
+W000845,Spark
+W000845,Airflow
+W000845,Kafka
+W000845,Scala
+W000845,AI 에이전트 프레임워크
+W000845,워크플로우·BPM
+W000845,그룹사 업무
+W000846,Python
+W000846,Airflow
+W000846,SQL
+W000846,Hadoop
+W000846,Spark
+W000846,Scala
+W000846,RAG·벡터DB
+W000846,그룹사 업무
+W000847,ETL
+W000847,Airflow
+W000847,Spark
+W000847,SQL
+W000847,Hadoop
+W000847,Python
+W000847,FastAPI
+W000847,ML Ops
+W000847,그룹사 업무
+W000848,Scala
+W000848,Airflow
+W000848,ETL
+W000848,Kafka
+W000848,Hadoop
+W000848,Python
+W000848,금융 업무
+W001862,SQL
+W001862,ETL
+W001862,공공 업무
+W000851,검색엔진
+W000851,Text Analysis
+W000851,메타데이터 관리
+W000851,비정형 문서 처리(OCR)
+W000851,Python
+W000851,BI Reporting
+W000851,금융 업무
+W000852,검색엔진
+W000852,ETL
+W000852,비정형 문서 처리(OCR)
+W000852,Text Analysis
+W000852,Python
+W000852,데이터 모델링
+W000852,Spring
+W000852,금융 업무
+W000853,메타데이터 관리
+W000853,Python
+W000853,검색엔진
+W000853,ETL
+W000853,Airflow
+W000853,그룹사 업무
+W001863,Text Analysis
+W001863,ETL
+W001863,비정형 문서 처리(OCR)
+W001863,메타데이터 관리
+W001863,검색엔진
+W001863,Python
+W001863,금융 업무
+W000856,Private Cloud
+W000856,Kafka
+W000856,Data Lake & Data Catalog
+W000856,AWS
+W000856,Hadoop
+W000856,Docker
+W000856,RPA
+W000856,로우코드 플랫폼
+W000856,그룹사 업무
+W000857,Docker
+W000857,Data Lake & Data Catalog
+W000857,AWS
+W000857,Private Cloud
+W000857,Kafka
+W000857,RPA
+W000857,BI Reporting
+W000857,그룹사 업무
+W000858,Docker
+W000858,Hadoop
+W000858,Private Cloud
+W000858,AWS
+W000858,Data Lake & Data Catalog
+W000858,Kafka
+W000858,Text Analysis
+W000858,로우코드 플랫폼
+W000858,그룹사 업무
+W000859,Docker
+W000859,AWS
+W000859,Data Lake & Data Catalog
+W000859,지능형 문서 처리(IDP)
+W000859,워크플로우·BPM
+W000859,그룹사 업무
+W000860,Kafka
+W000860,AWS
+W000860,Hadoop
+W000860,메타데이터 관리
+W000860,SQL
+W000860,금융 업무
+W000861,Kubernetes
+W000861,Private Cloud
+W000861,Kafka
+W000861,Docker
+W000861,Data Lake & Data Catalog
+W000861,비정형 문서 처리(OCR)
+W000861,금융 업무
+W000862,Data Lake & Data Catalog
+W000862,Kubernetes
+W000862,Hadoop
+W000862,Kafka
+W000862,Docker
+W000862,검색엔진
+W000862,금융 업무
+W000863,Kafka
+W000863,Kubernetes
+W000863,Hadoop
+W000863,Data Lake & Data Catalog
+W000863,Private Cloud
+W000863,Docker
+W000863,금융 업무
+W000864,Hadoop
+W000864,Docker
+W000864,Kafka
+W000864,Data Lake & Data Catalog
+W000864,AWS
+W000864,Kubernetes
+W000864,금융 업무
+W000865,Kafka
+W000865,Hadoop
+W000865,Private Cloud
+W000865,지능형 문서 처리(IDP)
+W000865,Spark
+W000865,그룹사 업무
+W000866,Private Cloud
+W000866,Kafka
+W000866,Data Lake & Data Catalog
+W000866,그룹사 업무
+W000867,Kubernetes
+W000867,Docker
+W000867,Data Lake & Data Catalog
+W000867,그룹사 업무
+W000868,Kubernetes
+W000868,Docker
+W000868,Hadoop
+W000868,Kafka
+W000868,금융 업무
+W000869,AWS
+W000869,Kubernetes
+W000869,Hadoop
+W000869,Kafka
+W000869,금융 업무
+W000870,Kafka
+W000870,AWS
+W000870,Data Lake & Data Catalog
+W000870,LLM 파인튜닝
+W000870,그룹사 업무
+W000871,Docker
+W000871,AWS
+W000871,Data Lake & Data Catalog
+W000871,Hadoop
+W000871,Kubernetes
+W000871,그룹사 업무
+W000872,AWS
+W000872,Private Cloud
+W000872,Hadoop
+W000872,Docker
+W000872,Kafka
+W000872,Data Lake & Data Catalog
+W000872,금융 업무
+W000873,데이터 모델링
+W000873,BI Reporting
+W000873,메타데이터 관리
+W000873,SQL
+W000873,비정형 문서 처리(OCR)
+W000873,Kafka
+W000873,금융 업무
+W000874,데이터 모델링
+W000874,SQL
+W000874,메타데이터 관리
+W000874,BI Reporting
+W000874,Spark
+W000874,금융 업무
+W000875,데이터 모델링
+W000875,BI Reporting
+W000875,메타데이터 관리
+W000875,SQL
+W000875,비정형 문서 처리(OCR)
+W000875,LLM 파인튜닝
+W000875,그룹사 업무
+W000876,데이터 모델링
+W000876,BI Reporting
+W000876,메타데이터 관리
+W000876,LLM Application
+W000876,Scala
+W000876,그룹사 업무
+W000877,데이터 모델링
+W000877,BI Reporting
+W000877,메타데이터 관리
+W000877,SQL
+W000877,비정형 문서 처리(OCR)
+W000877,금융 업무
+W000878,BI Reporting
+W000878,메타데이터 관리
+W000878,데이터 모델링
+W000878,그룹사 업무
+W000879,BI Reporting
+W000879,SQL
+W000879,데이터 모델링
+W000879,그룹사 업무
+W000880,데이터 모델링
+W000880,메타데이터 관리
+W000880,SQL
+W000880,BI Reporting
+W000880,그룹사 업무
+W001864,데이터 모델링
+W001864,메타데이터 관리
+W001864,SQL
+W001864,그룹사 업무
+W000882,ETL
+W000882,Text Analysis
+W000882,검색엔진
+W000882,금융 업무
+W000883,Python
+W000883,비정형 문서 처리(OCR)
+W000883,메타데이터 관리
+W000883,Text Analysis
+W000883,Data Lake & Data Catalog
+W000883,그룹사 업무
+W000884,ETL
+W000884,Python
+W000884,비정형 문서 처리(OCR)
+W000884,Text Analysis
+W000884,메타데이터 관리
+W000884,그룹사 업무
+W000885,Text Analysis
+W000885,Python
+W000885,검색엔진
+W000885,비정형 문서 처리(OCR)
+W000885,메타데이터 관리
+W000885,ETL
+W000885,그룹사 업무
+W000886,Python
+W000886,검색엔진
+W000886,메타데이터 관리
+W000886,Text Analysis
+W000886,그룹사 업무
+W000887,Python
+W000887,ETL
+W000887,메타데이터 관리
+W000887,Text Analysis
+W000887,검색엔진
+W000887,AWS
+W000887,금융 업무
+W000888,Text Analysis
+W000888,메타데이터 관리
+W000888,검색엔진
+W000888,ETL
+W000888,Python
+W000888,비정형 문서 처리(OCR)
+W000888,그룹사 업무
+W000889,메타데이터 관리
+W000889,ETL
+W000889,Text Analysis
+W000889,Python
+W000889,검색엔진
+W000889,Hadoop
+W000889,금융 업무
+W001865,Text Analysis
+W001865,ETL
+W001865,비정형 문서 처리(OCR)
+W001865,메타데이터 관리
+W001865,금융 업무
+W000891,ETL
+W000891,Airflow
+W000891,Hadoop
+W000891,AWS
+W000891,금융 업무
+W000892,Airflow
+W000892,ETL
+W000892,SQL
+W000892,Hadoop
+W000892,금융 업무
+W000893,Airflow
+W000893,SQL
+W000893,Kafka
+W000893,Hadoop
+W000893,Spark
+W000893,ETL
+W000893,BI Reporting
+W000893,그룹사 업무
+W000894,ETL
+W000894,Python
+W000894,SQL
+W000894,Private Cloud
+W000894,금융 업무
+W000895,Hadoop
+W000895,Scala
+W000895,AWS
+W000895,메타데이터 관리
+W000895,RPA
+W000895,금융 업무
+W000896,Spark
+W000896,SQL
+W000896,AWS
+W000896,금융 업무
+W000897,Airflow
+W000897,AWS
+W000897,Kafka
+W000897,Spark
+W000897,ETL
+W000897,BI Reporting
+W000897,공공 업무
+W000898,Python
+W000898,Spark
+W000898,Airflow
+W000898,Kafka
+W000898,프로세스 마이닝
+W000898,금융 업무
+W000899,Hadoop
+W000899,ETL
+W000899,AWS
+W000899,Airflow
+W000899,Kubernetes
+W000899,그룹사 업무
+W000900,ETL
+W000900,SQL
+W000900,Kafka
+W000900,공공 업무
+W000901,Python
+W000901,Hadoop
+W000901,Scala
+W000901,Kafka
+W000901,그룹사 업무
+W000902,Spark
+W000902,SQL
+W000902,AWS
+W000902,Airflow
+W000902,Python
+W000902,ETL
+W000902,메타데이터 관리
+W000902,ML Ops
+W000902,그룹사 업무
+W000903,Kafka
+W000903,Spark
+W000903,SQL
+W000903,Airflow
+W000903,워크플로우·BPM
+W000903,금융 업무
+W001866,SQL
+W001866,Spark
+W001866,Python
+W001866,공공 업무
+W000907,Private Cloud
+W000907,Hadoop
+W000907,AWS
+W000907,금융 업무
+W000908,Kubernetes
+W000908,Private Cloud
+W000908,Hadoop
+W000908,AWS
+W000908,Docker
+W000908,ETL
+W000908,공공 업무
+W000909,Private Cloud
+W000909,Data Lake & Data Catalog
+W000909,Hadoop
+W000909,Docker
+W000909,React
+W000909,공공 업무
+W000910,Private Cloud
+W000910,Data Lake & Data Catalog
+W000910,Hadoop
+W000910,RPA
+W000910,그룹사 업무
+W000911,Data Lake & Data Catalog
+W000911,Kubernetes
+W000911,AWS
+W000911,Docker
+W000911,Airflow
+W000911,그룹사 업무
+W000912,Hadoop
+W000912,Docker
+W000912,Kubernetes
+W000912,LLM 파인튜닝
+W000912,그룹사 업무
+W000913,Kafka
+W000913,Docker
+W000913,Hadoop
+W000913,그룹사 업무
+W000914,AWS
+W000914,Kubernetes
+W000914,Private Cloud
+W000914,Hadoop
+W000914,Kafka
+W000914,Data Lake & Data Catalog
+W000914,로우코드 플랫폼
+W000914,그룹사 업무
+W000915,Data Lake & Data Catalog
+W000915,Private Cloud
+W000915,Kafka
+W000915,Hadoop
+W000915,AWS
+W000915,ETL
+W000915,그룹사 업무
+W000916,Data Lake & Data Catalog
+W000916,Kubernetes
+W000916,Private Cloud
+W000916,Kafka
+W000916,Docker
+W000916,검색엔진
+W000916,그룹사 업무
+W000917,Kafka
+W000917,Docker
+W000917,AWS
+W000917,Data Lake & Data Catalog
+W000917,Kubernetes
+W000917,Private Cloud
+W000917,ETL
+W000917,금융 업무
+W000918,Docker
+W000918,AWS
+W000918,Hadoop
+W000918,Kubernetes
+W000918,Data Lake & Data Catalog
+W000918,Spring
+W000918,BI Reporting
+W000918,금융 업무
+W000919,Hadoop
+W000919,Kubernetes
+W000919,Docker
+W000919,Kafka
+W000919,지능형 문서 처리(IDP)
+W000919,그룹사 업무
+W001867,AWS
+W001867,Docker
+W001867,금융 업무
+W000920,검색엔진
+W000920,Python
+W000920,비정형 문서 처리(OCR)
+W000920,Text Analysis
+W000920,ETL
+W000920,금융 업무
+W000921,ETL
+W000921,검색엔진
+W000921,Python
+W000921,비정형 문서 처리(OCR)
+W000921,BI Reporting
+W000921,공공 업무
+W000922,Python
+W000922,비정형 문서 처리(OCR)
+W000922,메타데이터 관리
+W000922,Text Analysis
+W000922,RPA
+W000922,Hadoop
+W000922,그룹사 업무
+W000923,메타데이터 관리
+W000923,검색엔진
+W000923,ETL
+W000923,Python
+W000923,그룹사 업무
+W000924,검색엔진
+W000924,Python
+W000924,ETL
+W000924,Airflow
+W000924,그룹사 업무
+W000925,ETL
+W000925,메타데이터 관리
+W000925,검색엔진
+W000925,FastAPI
+W000925,Java
+W000925,금융 업무
+W000926,검색엔진
+W000926,Python
+W000926,Text Analysis
+W000926,Spark
+W000926,Airflow
+W000926,공공 업무
+W000927,ETL
+W000927,비정형 문서 처리(OCR)
+W000927,Text Analysis
+W000927,SQL
+W000927,데이터 모델링
+W000927,금융 업무
+W000928,메타데이터 관리
+W000928,데이터 모델링
+W000928,BI Reporting
+W000928,SQL
+W000928,프롬프트 엔지니어링
+W000928,금융 업무
+W000929,데이터 모델링
+W000929,메타데이터 관리
+W000929,SQL
+W000929,BI Reporting
+W000929,Spring
+W000929,Hadoop
+W000929,그룹사 업무
+W000930,메타데이터 관리
+W000930,SQL
+W000930,BI Reporting
+W000930,그룹사 업무
+W000931,BI Reporting
+W000931,메타데이터 관리
+W000931,SQL
+W000931,데이터 모델링
+W000931,AI 에이전트 프레임워크
+W000931,금융 업무
+W000932,데이터 모델링
+W000932,메타데이터 관리
+W000932,BI Reporting
+W000932,SQL
+W000932,RPA
+W000932,금융 업무
+W001868,메타데이터 관리
+W001868,데이터 모델링
+W001868,BI Reporting
+W001868,SQL
+W001868,그룹사 업무
+W000947,검색엔진
+W000947,Text Analysis
+W000947,ETL
+W000947,Private Cloud
+W000947,그룹사 업무
+W000948,검색엔진
+W000948,비정형 문서 처리(OCR)
+W000948,Text Analysis
+W000948,ETL
+W000948,금융 업무
+W000949,비정형 문서 처리(OCR)
+W000949,Python
+W000949,검색엔진
+W000949,ETL
+W000949,Text Analysis
+W000949,그룹사 업무
+W000950,메타데이터 관리
+W000950,ETL
+W000950,비정형 문서 처리(OCR)
+W000950,Text Analysis
+W000950,Python
+W000950,검색엔진
+W000950,RPA
+W000950,금융 업무
+W000951,비정형 문서 처리(OCR)
+W000951,Python
+W000951,메타데이터 관리
+W000951,BI Reporting
+W000951,Private Cloud
+W000951,금융 업무
+W000952,검색엔진
+W000952,비정형 문서 처리(OCR)
+W000952,ETL
+W000952,메타데이터 관리
+W000952,Text Analysis
+W000952,Python
+W000952,React
+W000952,공공 업무
+W000953,검색엔진
+W000953,Python
+W000953,ETL
+W000953,비정형 문서 처리(OCR)
+W000953,메타데이터 관리
+W000953,ML Ops
+W000953,그룹사 업무
+W000954,Python
+W000954,메타데이터 관리
+W000954,검색엔진
+W000954,ETL
+W000954,비정형 문서 처리(OCR)
+W000954,ML Ops
+W000954,금융 업무
+W000955,메타데이터 관리
+W000955,ETL
+W000955,Text Analysis
+W000955,비정형 문서 처리(OCR)
+W000955,검색엔진
+W000955,그룹사 업무
+W000956,메타데이터 관리
+W000956,Python
+W000956,비정형 문서 처리(OCR)
+W000956,검색엔진
+W000956,ETL
+W000956,Text Analysis
+W000956,금융 업무
+W000957,메타데이터 관리
+W000957,비정형 문서 처리(OCR)
+W000957,Text Analysis
+W000957,ETL
+W000957,검색엔진
+W000957,Python
+W000957,Airflow
+W000957,Spring
+W000957,공공 업무
+W000958,Text Analysis
+W000958,메타데이터 관리
+W000958,검색엔진
+W000958,비정형 문서 처리(OCR)
+W000958,ETL
+W000958,Python
+W000958,Kubernetes
+W000958,Docker
+W000958,그룹사 업무
+W000959,Text Analysis
+W000959,ETL
+W000959,메타데이터 관리
+W000959,검색엔진
+W000959,Python
+W000959,금융 업무
+W000960,Python
+W000960,ETL
+W000960,메타데이터 관리
+W000960,비정형 문서 처리(OCR)
+W000960,검색엔진
+W000960,Text Analysis
+W000960,그룹사 업무
+W000961,비정형 문서 처리(OCR)
+W000961,Python
+W000961,ETL
+W000961,메타데이터 관리
+W000961,Spark
+W000961,금융 업무
+W000962,메타데이터 관리
+W000962,ETL
+W000962,검색엔진
+W000962,Text Analysis
+W000962,금융 업무
+W000963,메타데이터 관리
+W000963,Python
+W000963,ETL
+W000963,검색엔진
+W000963,비정형 문서 처리(OCR)
+W000963,프로세스 마이닝
+W000963,금융 업무
+W000964,Text Analysis
+W000964,Python
+W000964,ETL
+W000964,메타데이터 관리
+W000964,데이터 모델링
+W000964,Airflow
+W000964,금융 업무
+W000965,Airflow
+W000965,Python
+W000965,SQL
+W000965,Spark
+W000965,워크플로우·BPM
+W000965,금융 업무
+W000966,SQL
+W000966,Python
+W000966,Spark
+W000966,AWS
+W000966,Scala
+W000966,그룹사 업무
+W000967,AWS
+W000967,SQL
+W000967,ETL
+W000967,공공 업무
+W000968,Scala
+W000968,Spark
+W000968,ETL
+W000968,공공 업무
+W000969,Hadoop
+W000969,Kafka
+W000969,Spark
+W000969,Text Analysis
+W000969,금융 업무
+W000970,Python
+W000970,Scala
+W000970,SQL
+W000970,Airflow
+W000970,Docker
+W000970,그룹사 업무
+W000971,Hadoop
+W000971,Python
+W000971,Airflow
+W000971,AWS
+W000971,SQL
+W000971,그룹사 업무
+W000972,SQL
+W000972,Python
+W000972,Airflow
+W000972,Private Cloud
+W000972,AI 에이전트 프레임워크
+W000972,그룹사 업무
+W000973,Python
+W000973,ETL
+W000973,Hadoop
+W000973,Kafka
+W000973,Scala
+W000973,Airflow
+W000973,그룹사 업무
+W000974,Spark
+W000974,Airflow
+W000974,ETL
+W000974,Kafka
+W000974,Python
+W000974,Scala
+W000974,그룹사 업무
+W000975,AWS
+W000975,Airflow
+W000975,ETL
+W000975,FastAPI
+W000975,메타데이터 관리
+W000975,그룹사 업무
+W001869,ETL
+W001869,Python
+W001869,금융 업무
+W000978,Hadoop
+W000978,Scala
+W000978,Python
+W000978,SQL
+W000978,Spark
+W000978,Airflow
+W000978,워크플로우·BPM
+W000978,그룹사 업무
+W000979,Kafka
+W000979,Python
+W000979,SQL
+W000979,Spark
+W000979,ETL
+W000979,AWS
+W000979,그룹사 업무
+W000980,Scala
+W000980,AWS
+W000980,Hadoop
+W000980,Private Cloud
+W000980,프로세스 마이닝
+W000980,그룹사 업무
+W000981,SQL
+W000981,Python
+W000981,ETL
+W000981,데이터 모델링
+W000981,검색엔진
+W000981,금융 업무
+W000982,Spark
+W000982,Scala
+W000982,Airflow
+W000982,AWS
+W000982,Python
+W000982,React
+W000982,공공 업무
+W000983,ETL
+W000983,Spark
+W000983,Python
+W000983,RPA
+W000983,금융 업무
+W000984,ETL
+W000984,Hadoop
+W000984,Kafka
+W000984,FastAPI
+W000984,Text Analysis
+W000984,그룹사 업무
+W000985,Kafka
+W000985,Spark
+W000985,Airflow
+W000985,RAG·벡터DB
+W000985,금융 업무
+W000986,SQL
+W000986,Hadoop
+W000986,Scala
+W000986,Spark
+W000986,비정형 문서 처리(OCR)
+W000986,그룹사 업무
+W000987,AWS
+W000987,SQL
+W000987,Python
+W000987,Spark
+W000987,Scala
+W000987,그룹사 업무
+W000988,AWS
+W000988,Scala
+W000988,Kafka
+W000988,Hadoop
+W000988,Python
+W000988,React
+W000988,비정형 문서 처리(OCR)
+W000988,금융 업무
+W000989,Spark
+W000989,Airflow
+W000989,Kafka
+W000989,프로세스 마이닝
+W000989,금융 업무
+W001870,ETL
+W001870,SQL
+W001870,Scala
+W001870,공공 업무
+W000992,검색엔진
+W000992,메타데이터 관리
+W000992,Python
+W000992,Text Analysis
+W000992,비정형 문서 처리(OCR)
+W000992,ETL
+W000992,공공 업무
+W000993,Python
+W000993,비정형 문서 처리(OCR)
+W000993,Text Analysis
+W000993,ETL
+W000993,검색엔진
+W000993,메타데이터 관리
+W000993,Kafka
+W000993,금융 업무
+W000994,검색엔진
+W000994,비정형 문서 처리(OCR)
+W000994,메타데이터 관리
+W000994,Python
+W000994,ETL
+W000994,Java
+W000994,금융 업무
+W000995,Python
+W000995,Text Analysis
+W000995,비정형 문서 처리(OCR)
+W000995,메타데이터 관리
+W000995,LLM 파인튜닝
+W000995,Private Cloud
+W000995,그룹사 업무
+W000996,메타데이터 관리
+W000996,검색엔진
+W000996,Text Analysis
+W000996,ETL
+W000996,ML Ops
+W000996,Spring
+W000996,공공 업무
+W000997,비정형 문서 처리(OCR)
+W000997,ETL
+W000997,Text Analysis
+W000997,Spring
+W000997,금융 업무
+W000998,비정형 문서 처리(OCR)
+W000998,검색엔진
+W000998,메타데이터 관리
+W000998,Text Analysis
+W000998,ETL
+W000998,Python
+W000998,Airflow
+W000998,Spring
+W000998,금융 업무
+W000999,ETL
+W000999,Python
+W000999,검색엔진
+W000999,비정형 문서 처리(OCR)
+W000999,Text Analysis
+W000999,Docker
+W000999,그룹사 업무
+W001000,ETL
+W001000,검색엔진
+W001000,메타데이터 관리
+W001000,Python
+W001000,Text Analysis
+W001000,그룹사 업무
+W001001,Text Analysis
+W001001,메타데이터 관리
+W001001,검색엔진
+W001001,ETL
+W001001,Python
+W001001,금융 업무
+W001025,Kafka
+W001025,ETL
+W001025,Hadoop
+W001025,Kubernetes
+W001025,로우코드 플랫폼
+W001025,그룹사 업무
+W001026,Python
+W001026,Kafka
+W001026,Scala
+W001026,Hadoop
+W001026,ETL
+W001026,SQL
+W001026,비정형 문서 처리(OCR)
+W001026,금융 업무
+W001027,SQL
+W001027,ETL
+W001027,AWS
+W001027,Airflow
+W001027,그룹사 업무
+W001028,Airflow
+W001028,AWS
+W001028,Hadoop
+W001028,SQL
+W001028,워크플로우·BPM
+W001028,금융 업무
+W001029,ETL
+W001029,AWS
+W001029,Spark
+W001029,Scala
+W001029,Hadoop
+W001029,데이터 모델링
+W001029,그룹사 업무
+W001030,Kafka
+W001030,Scala
+W001030,Spark
+W001030,ETL
+W001030,SQL
+W001030,Spring
+W001030,금융 업무
+W001031,Spark
+W001031,SQL
+W001031,Scala
+W001031,Kafka
+W001031,Python
+W001031,그룹사 업무
+W001032,ETL
+W001032,Python
+W001032,Airflow
+W001032,Spark
+W001032,Kafka
+W001032,AWS
+W001032,지능형 문서 처리(IDP)
+W001032,금융 업무
+W001033,Spark
+W001033,Airflow
+W001033,Python
+W001033,Text Analysis
+W001033,금융 업무
+W001034,Scala
+W001034,Hadoop
+W001034,Spark
+W001034,SQL
+W001034,Kafka
+W001034,그룹사 업무
+W001035,Scala
+W001035,Airflow
+W001035,Spark
+W001035,금융 업무
+W001036,ETL
+W001036,Python
+W001036,SQL
+W001036,Scala
+W001036,Kubernetes
+W001036,금융 업무
+W001037,Hadoop
+W001037,Airflow
+W001037,Spark
+W001037,Kafka
+W001037,SQL
+W001037,Scala
+W001037,Spring
+W001037,금융 업무
+W001038,SQL
+W001038,Scala
+W001038,Kafka
+W001038,Spark
+W001038,비정형 문서 처리(OCR)
+W001038,FastAPI
+W001038,그룹사 업무
+W001039,Airflow
+W001039,Hadoop
+W001039,Scala
+W001039,공공 업무
+W001040,Spark
+W001040,Kafka
+W001040,Scala
+W001040,SQL
+W001040,데이터 모델링
+W001040,FastAPI
+W001040,금융 업무
+W001041,Hadoop
+W001041,Scala
+W001041,Spark
+W001041,Airflow
+W001041,SQL
+W001041,AI 에이전트 프레임워크
+W001041,데이터 모델링
+W001041,금융 업무
+W001042,Kafka
+W001042,AWS
+W001042,Hadoop
+W001042,Airflow
+W001042,ETL
+W001042,Spark
+W001042,React
+W001042,그룹사 업무
+W001043,Airflow
+W001043,Python
+W001043,SQL
+W001043,금융 업무
+W001871,ETL
+W001871,Spark
+W001871,AWS
+W001871,금융 업무
+W001046,BI Reporting
+W001046,Data Lake & Data Catalog
+W001046,데이터 모델링
+W001046,Spark
+W001046,그룹사 업무
+W001047,SQL
+W001047,데이터 모델링
+W001047,메타데이터 관리
+W001047,Data Lake & Data Catalog
+W001047,BI Reporting
+W001047,RPA
+W001047,Scala
+W001047,금융 업무
+W001048,데이터 모델링
+W001048,BI Reporting
+W001048,SQL
+W001048,메타데이터 관리
+W001048,Data Lake & Data Catalog
+W001048,RPA
+W001048,그룹사 업무
+W001049,Data Lake & Data Catalog
+W001049,SQL
+W001049,BI Reporting
+W001049,그룹사 업무
+W001050,데이터 모델링
+W001050,BI Reporting
+W001050,SQL
+W001050,그룹사 업무
+W001051,Data Lake & Data Catalog
+W001051,데이터 모델링
+W001051,BI Reporting
+W001051,SQL
+W001051,금융 업무
+W001052,데이터 모델링
+W001052,BI Reporting
+W001052,메타데이터 관리
+W001052,SQL
+W001052,AI 에이전트 프레임워크
+W001052,RAG·벡터DB
+W001052,그룹사 업무
+W001053,데이터 모델링
+W001053,SQL
+W001053,Data Lake & Data Catalog
+W001053,Docker
+W001053,금융 업무
+W001054,SQL
+W001054,데이터 모델링
+W001054,메타데이터 관리
+W001054,Data Lake & Data Catalog
+W001054,BI Reporting
+W001054,Airflow
+W001054,Spark
+W001054,금융 업무
+W001055,Data Lake & Data Catalog
+W001055,BI Reporting
+W001055,메타데이터 관리
+W001055,데이터 모델링
+W001055,공공 업무
+W001872,데이터 모델링
+W001872,Data Lake & Data Catalog
+W001872,SQL
+W001872,BI Reporting
+W001872,금융 업무
+W001057,Python
+W001057,AWS
+W001057,SQL
+W001057,Hadoop
+W001057,BI Reporting
+W001057,Java
+W001057,그룹사 업무
+W001058,Airflow
+W001058,ETL
+W001058,Scala
+W001058,Kafka
+W001058,그룹사 업무
+W001059,Hadoop
+W001059,Kafka
+W001059,ETL
+W001059,Airflow
+W001059,금융 업무
+W001060,Hadoop
+W001060,Kafka
+W001060,ETL
+W001060,AWS
+W001060,Python
+W001060,ML Ops
+W001060,그룹사 업무
+W001061,Spark
+W001061,ETL
+W001061,Airflow
+W001061,SQL
+W001061,Hadoop
+W001061,Kafka
+W001061,금융 업무
+W001062,ETL
+W001062,Spark
+W001062,SQL
+W001062,Airflow
+W001062,AWS
+W001062,Python
+W001062,ML Ops
+W001062,그룹사 업무
+W001063,Hadoop
+W001063,Airflow
+W001063,Kafka
+W001063,AWS
+W001063,ETL
+W001063,공공 업무
+W001064,Python
+W001064,Spark
+W001064,Airflow
+W001064,AWS
+W001064,금융 업무
+W001065,AWS
+W001065,Airflow
+W001065,Spark
+W001065,FastAPI
+W001065,그룹사 업무
+W001066,SQL
+W001066,Kafka
+W001066,Scala
+W001066,AWS
+W001066,그룹사 업무
+W001067,Hadoop
+W001067,SQL
+W001067,Python
+W001067,Spark
+W001067,AWS
+W001067,Airflow
+W001067,데이터 모델링
+W001067,Text Analysis
+W001067,그룹사 업무
+W001068,Scala
+W001068,ETL
+W001068,Kafka
+W001068,비정형 문서 처리(OCR)
+W001068,프로세스 마이닝
+W001068,그룹사 업무
+W001069,Scala
+W001069,SQL
+W001069,Python
+W001069,Hadoop
+W001069,Kafka
+W001069,ETL
+W001069,React
+W001069,공공 업무
+W001070,Scala
+W001070,ETL
+W001070,Hadoop
+W001070,Python
+W001070,SQL
+W001070,Spark
+W001070,Text Analysis
+W001070,금융 업무
+W001071,Hadoop
+W001071,AWS
+W001071,Python
+W001071,그룹사 업무
+W001873,ETL
+W001873,Hadoop
+W001873,SQL
+W001873,금융 업무
+W001073,Scala
+W001073,Airflow
+W001073,Spark
+W001073,Kafka
+W001073,Hadoop
+W001073,Java
+W001073,지능형 문서 처리(IDP)
+W001073,금융 업무
+W001074,Python
+W001074,Scala
+W001074,AWS
+W001074,Hadoop
+W001074,RPA
+W001074,검색엔진
+W001074,그룹사 업무
+W001075,Scala
+W001075,AWS
+W001075,Hadoop
+W001075,그룹사 업무
+W001076,SQL
+W001076,Hadoop
+W001076,Kafka
+W001076,Airflow
+W001076,로우코드 플랫폼
+W001076,공공 업무
+W001077,ETL
+W001077,Airflow
+W001077,Spark
+W001077,Python
+W001077,SQL
+W001077,워크플로우·BPM
+W001077,금융 업무
+W001078,Spark
+W001078,Hadoop
+W001078,AWS
+W001078,Python
+W001078,금융 업무
+W001079,Spark
+W001079,AWS
+W001079,Kafka
+W001079,SQL
+W001079,ETL
+W001079,RAG·벡터DB
+W001079,그룹사 업무
+W001080,Python
+W001080,Kafka
+W001080,Hadoop
+W001080,Scala
+W001080,ETL
+W001080,Spark
+W001080,지능형 문서 처리(IDP)
+W001080,그룹사 업무
+W001081,Hadoop
+W001081,Airflow
+W001081,AWS
+W001081,ETL
+W001081,그룹사 업무
+W001082,AWS
+W001082,Scala
+W001082,Kafka
+W001082,SQL
+W001082,ETL
+W001082,BI Reporting
+W001082,그룹사 업무
+W001083,Spark
+W001083,Kafka
+W001083,SQL
+W001083,AWS
+W001083,금융 업무
+W001874,ETL
+W001874,Hadoop
+W001874,Python
+W001874,금융 업무
+W001087,AWS
+W001087,Data Lake & Data Catalog
+W001087,Hadoop
+W001087,Private Cloud
+W001087,그룹사 업무
+W001088,Private Cloud
+W001088,AWS
+W001088,Data Lake & Data Catalog
+W001088,비정형 문서 처리(OCR)
+W001088,워크플로우·BPM
+W001088,금융 업무
+W001875,Data Lake & Data Catalog
+W001875,AWS
+W001875,Docker
+W001875,그룹사 업무
+W001091,Data Lake & Data Catalog
+W001091,SQL
+W001091,BI Reporting
+W001091,워크플로우·BPM
+W001091,Spring
+W001091,그룹사 업무
+W001092,데이터 모델링
+W001092,메타데이터 관리
+W001092,SQL
+W001092,프로세스 마이닝
+W001092,그룹사 업무
+W001093,데이터 모델링
+W001093,메타데이터 관리
+W001093,BI Reporting
+W001093,그룹사 업무
+W001094,BI Reporting
+W001094,SQL
+W001094,데이터 모델링
+W001094,Data Lake & Data Catalog
+W001094,메타데이터 관리
+W001094,그룹사 업무
+W001095,Data Lake & Data Catalog
+W001095,BI Reporting
+W001095,SQL
+W001095,메타데이터 관리
+W001095,데이터 모델링
+W001095,AWS
+W001095,Spark
+W001095,그룹사 업무
+W001096,Data Lake & Data Catalog
+W001096,데이터 모델링
+W001096,SQL
+W001096,메타데이터 관리
+W001096,BI Reporting
+W001096,그룹사 업무
+W001097,Data Lake & Data Catalog
+W001097,데이터 모델링
+W001097,SQL
+W001097,BI Reporting
+W001097,메타데이터 관리
+W001097,금융 업무
+W001098,SQL
+W001098,데이터 모델링
+W001098,메타데이터 관리
+W001098,BI Reporting
+W001098,Data Lake & Data Catalog
+W001098,그룹사 업무
+W001099,Data Lake & Data Catalog
+W001099,BI Reporting
+W001099,데이터 모델링
+W001099,Kubernetes
+W001099,LLM 파인튜닝
+W001099,금융 업무
+W001100,데이터 모델링
+W001100,SQL
+W001100,Data Lake & Data Catalog
+W001100,금융 업무
+W001101,SQL
+W001101,BI Reporting
+W001101,메타데이터 관리
+W001101,데이터 모델링
+W001101,FastAPI
+W001101,그룹사 업무
+W001102,Data Lake & Data Catalog
+W001102,메타데이터 관리
+W001102,SQL
+W001102,BI Reporting
+W001102,데이터 모델링
+W001102,Python
+W001102,금융 업무
+W001103,메타데이터 관리
+W001103,SQL
+W001103,Data Lake & Data Catalog
+W001103,데이터 모델링
+W001103,그룹사 업무
+W001104,SQL
+W001104,Data Lake & Data Catalog
+W001104,메타데이터 관리
+W001104,데이터 모델링
+W001104,BI Reporting
+W001104,그룹사 업무
+W001876,데이터 모델링
+W001876,Data Lake & Data Catalog
+W001876,SQL
+W001876,금융 업무
+W001109,AWS
+W001109,Spark
+W001109,SQL
+W001109,Scala
+W001109,Kafka
+W001109,React
+W001109,그룹사 업무
+W001110,Hadoop
+W001110,Airflow
+W001110,AWS
+W001110,ETL
+W001110,Scala
+W001110,Data Lake & Data Catalog
+W001110,공공 업무
+W001111,SQL
+W001111,Hadoop
+W001111,ETL
+W001111,Spark
+W001111,Scala
+W001111,금융 업무
+W001112,Spark
+W001112,AWS
+W001112,Airflow
+W001112,Kafka
+W001112,Docker
+W001112,지능형 문서 처리(IDP)
+W001112,그룹사 업무
+W001113,Kafka
+W001113,Airflow
+W001113,Spark
+W001113,AWS
+W001113,ETL
+W001113,Scala
+W001113,공공 업무
+W001114,Kafka
+W001114,Hadoop
+W001114,Airflow
+W001114,SQL
+W001114,금융 업무
+W001115,Airflow
+W001115,Kafka
+W001115,AWS
+W001115,Kubernetes
+W001115,그룹사 업무
+W001116,Hadoop
+W001116,Python
+W001116,Spark
+W001116,Airflow
+W001116,AWS
+W001116,그룹사 업무
+W001117,Hadoop
+W001117,Scala
+W001117,Python
+W001117,Kafka
+W001117,ETL
+W001117,SQL
+W001117,ML Ops
+W001117,Private Cloud
+W001117,그룹사 업무
+W001118,Hadoop
+W001118,Python
+W001118,Scala
+W001118,Kafka
+W001118,SQL
+W001118,Docker
+W001118,그룹사 업무
+W001119,Hadoop
+W001119,SQL
+W001119,Kafka
+W001119,금융 업무
+W001120,Python
+W001120,ETL
+W001120,AWS
+W001120,메타데이터 관리
+W001120,그룹사 업무
+W001121,AWS
+W001121,SQL
+W001121,Spark
+W001121,Python
+W001121,ETL
+W001121,금융 업무
+W001122,Scala
+W001122,Python
+W001122,Hadoop
+W001122,BI Reporting
+W001122,공공 업무
+W001123,AWS
+W001123,Python
+W001123,Kafka
+W001123,Hadoop
+W001123,Spark
+W001123,그룹사 업무
+W001124,Airflow
+W001124,Kafka
+W001124,AWS
+W001124,금융 업무
+W001125,ETL
+W001125,Scala
+W001125,Kafka
+W001125,그룹사 업무
+W001877,ETL
+W001877,Scala
+W001877,금융 업무
+W001127,Data Lake & Data Catalog
+W001127,BI Reporting
+W001127,SQL
+W001127,워크플로우·BPM
+W001127,Spark
+W001127,공공 업무
+W001128,데이터 모델링
+W001128,SQL
+W001128,메타데이터 관리
+W001128,Data Lake & Data Catalog
+W001128,BI Reporting
+W001128,RPA
+W001128,그룹사 업무
+W001129,메타데이터 관리
+W001129,SQL
+W001129,데이터 모델링
+W001129,Data Lake & Data Catalog
+W001129,BI Reporting
+W001129,금융 업무
+W001130,메타데이터 관리
+W001130,데이터 모델링
+W001130,BI Reporting
+W001130,SQL
+W001130,Data Lake & Data Catalog
+W001130,금융 업무
+W001131,데이터 모델링
+W001131,SQL
+W001131,BI Reporting
+W001131,Data Lake & Data Catalog
+W001131,메타데이터 관리
+W001131,워크플로우·BPM
+W001131,그룹사 업무
+W001132,SQL
+W001132,BI Reporting
+W001132,메타데이터 관리
+W001132,Data Lake & Data Catalog
+W001132,그룹사 업무
+W001133,메타데이터 관리
+W001133,Data Lake & Data Catalog
+W001133,BI Reporting
+W001133,데이터 모델링
+W001133,SQL
+W001133,검색엔진
+W001133,그룹사 업무
+W001134,Data Lake & Data Catalog
+W001134,SQL
+W001134,BI Reporting
+W001134,RPA
+W001134,AWS
+W001134,공공 업무
+W001135,데이터 모델링
+W001135,메타데이터 관리
+W001135,BI Reporting
+W001135,SQL
+W001135,Data Lake & Data Catalog
+W001135,금융 업무
+W001136,BI Reporting
+W001136,Data Lake & Data Catalog
+W001136,메타데이터 관리
+W001136,SQL
+W001136,데이터 모델링
+W001136,그룹사 업무
+W001137,메타데이터 관리
+W001137,SQL
+W001137,Data Lake & Data Catalog
+W001137,데이터 모델링
+W001137,BI Reporting
+W001137,ML Ops
+W001137,그룹사 업무
+W001138,데이터 모델링
+W001138,BI Reporting
+W001138,메타데이터 관리
+W001138,Data Lake & Data Catalog
+W001138,SQL
+W001138,그룹사 업무
+W001139,데이터 모델링
+W001139,Data Lake & Data Catalog
+W001139,메타데이터 관리
+W001139,그룹사 업무
+W001140,BI Reporting
+W001140,데이터 모델링
+W001140,SQL
+W001140,그룹사 업무
+W001878,데이터 모델링
+W001878,Data Lake & Data Catalog
+W001878,메타데이터 관리
+W001878,BI Reporting
+W001878,금융 업무
+W001146,메타데이터 관리
+W001146,SQL
+W001146,BI Reporting
+W001146,그룹사 업무
+W001147,BI Reporting
+W001147,메타데이터 관리
+W001147,데이터 모델링
+W001147,SQL
+W001147,금융 업무
+W001148,SQL
+W001148,데이터 모델링
+W001148,BI Reporting
+W001148,메타데이터 관리
+W001148,금융 업무
+W001149,BI Reporting
+W001149,데이터 모델링
+W001149,메타데이터 관리
+W001149,SQL
+W001149,Spring
+W001149,그룹사 업무
+W001150,SQL
+W001150,BI Reporting
+W001150,데이터 모델링
+W001150,메타데이터 관리
+W001150,금융 업무
+W001151,메타데이터 관리
+W001151,BI Reporting
+W001151,데이터 모델링
+W001151,프롬프트 엔지니어링
+W001151,그룹사 업무
+W001152,메타데이터 관리
+W001152,SQL
+W001152,BI Reporting
+W001152,데이터 모델링
+W001152,워크플로우·BPM
+W001152,ETL
+W001152,그룹사 업무
+W001153,SQL
+W001153,BI Reporting
+W001153,메타데이터 관리
+W001153,데이터 모델링
+W001153,Java
+W001153,Kafka
+W001153,그룹사 업무
+W001154,SQL
+W001154,BI Reporting
+W001154,데이터 모델링
+W001154,메타데이터 관리
+W001154,Scala
+W001154,LLM 파인튜닝
+W001154,그룹사 업무
+W001155,메타데이터 관리
+W001155,BI Reporting
+W001155,SQL
+W001155,데이터 모델링
+W001155,RPA
+W001155,금융 업무
+W001156,데이터 모델링
+W001156,메타데이터 관리
+W001156,BI Reporting
+W001156,SQL
+W001156,그룹사 업무
+W001157,메타데이터 관리
+W001157,SQL
+W001157,BI Reporting
+W001157,FastAPI
+W001157,Java
+W001157,그룹사 업무
+W001160,BI Reporting
+W001160,Data Lake & Data Catalog
+W001160,데이터 모델링
+W001160,메타데이터 관리
+W001160,SQL
+W001160,금융 업무
+W001161,데이터 모델링
+W001161,BI Reporting
+W001161,Data Lake & Data Catalog
+W001161,SQL
+W001161,메타데이터 관리
+W001161,금융 업무
+W001162,메타데이터 관리
+W001162,데이터 모델링
+W001162,Data Lake & Data Catalog
+W001162,SQL
+W001162,그룹사 업무
+W001163,SQL
+W001163,Data Lake & Data Catalog
+W001163,BI Reporting
+W001163,메타데이터 관리
+W001163,데이터 모델링
+W001163,Text Analysis
+W001163,그룹사 업무
+W001164,SQL
+W001164,데이터 모델링
+W001164,BI Reporting
+W001164,메타데이터 관리
+W001164,Data Lake & Data Catalog
+W001164,Airflow
+W001164,금융 업무
+W001165,SQL
+W001165,BI Reporting
+W001165,Data Lake & Data Catalog
+W001165,검색엔진
+W001165,React
+W001165,금융 업무
+W001166,BI Reporting
+W001166,데이터 모델링
+W001166,Data Lake & Data Catalog
+W001166,SQL
+W001166,메타데이터 관리
+W001166,Kafka
+W001166,Kubernetes
+W001166,그룹사 업무
+W001167,SQL
+W001167,메타데이터 관리
+W001167,Data Lake & Data Catalog
+W001167,BI Reporting
+W001167,데이터 모델링
+W001167,비정형 문서 처리(OCR)
+W001167,그룹사 업무
+W001168,BI Reporting
+W001168,SQL
+W001168,Data Lake & Data Catalog
+W001168,메타데이터 관리
+W001168,데이터 모델링
+W001168,Hadoop
+W001168,Java
+W001168,금융 업무
+W001169,BI Reporting
+W001169,SQL
+W001169,메타데이터 관리
+W001169,데이터 모델링
+W001169,Docker
+W001169,Kubernetes
+W001169,그룹사 업무
+W001170,메타데이터 관리
+W001170,SQL
+W001170,데이터 모델링
+W001170,Data Lake & Data Catalog
+W001170,BI Reporting
+W001170,Spring
+W001170,Private Cloud
+W001170,금융 업무
+W001171,Data Lake & Data Catalog
+W001171,SQL
+W001171,BI Reporting
+W001171,데이터 모델링
+W001171,메타데이터 관리
+W001171,Python
+W001171,공공 업무
+W001172,SQL
+W001172,메타데이터 관리
+W001172,Data Lake & Data Catalog
+W001172,BI Reporting
+W001172,AWS
+W001172,FastAPI
+W001172,금융 업무
+W001173,BI Reporting
+W001173,SQL
+W001173,메타데이터 관리
+W001173,데이터 모델링
+W001173,Data Lake & Data Catalog
+W001173,그룹사 업무
+W001174,SQL
+W001174,Data Lake & Data Catalog
+W001174,BI Reporting
+W001174,메타데이터 관리
+W001174,데이터 모델링
+W001174,검색엔진
+W001174,금융 업무
+W001175,데이터 모델링
+W001175,Data Lake & Data Catalog
+W001175,SQL
+W001175,메타데이터 관리
+W001175,BI Reporting
+W001175,그룹사 업무
+W001176,SQL
+W001176,데이터 모델링
+W001176,BI Reporting
+W001176,Data Lake & Data Catalog
+W001176,Scala
+W001176,Kubernetes
+W001176,그룹사 업무
+W001177,BI Reporting
+W001177,Data Lake & Data Catalog
+W001177,데이터 모델링
+W001177,메타데이터 관리
+W001177,SQL
+W001177,ETL
+W001177,그룹사 업무
+W001178,데이터 모델링
+W001178,BI Reporting
+W001178,SQL
+W001178,메타데이터 관리
+W001178,지능형 문서 처리(IDP)
+W001178,금융 업무
+W001879,데이터 모델링
+W001879,Data Lake & Data Catalog
+W001879,SQL
+W001879,메타데이터 관리
+W001879,금융 업무
+W001181,Spark
+W001181,Python
+W001181,Airflow
+W001181,Hadoop
+W001181,금융 업무
+W001182,AWS
+W001182,SQL
+W001182,Kafka
+W001182,Hadoop
+W001182,검색엔진
+W001182,비정형 문서 처리(OCR)
+W001182,공공 업무
+W001183,SQL
+W001183,Kafka
+W001183,Scala
+W001183,Docker
+W001183,BI Reporting
+W001183,금융 업무
+W001184,Airflow
+W001184,Scala
+W001184,Kafka
+W001184,Hadoop
+W001184,Spark
+W001184,SQL
+W001184,BI Reporting
+W001184,Docker
+W001184,그룹사 업무
+W001185,Kafka
+W001185,SQL
+W001185,ETL
+W001185,그룹사 업무
+W001186,Hadoop
+W001186,AWS
+W001186,ETL
+W001186,Spark
+W001186,SQL
+W001186,비정형 문서 처리(OCR)
+W001186,금융 업무
+W001187,Kafka
+W001187,Hadoop
+W001187,Airflow
+W001187,Spark
+W001187,Python
+W001187,Scala
+W001187,워크플로우·BPM
+W001187,그룹사 업무
+W001188,Python
+W001188,ETL
+W001188,SQL
+W001188,Spark
+W001188,Kafka
+W001188,비정형 문서 처리(OCR)
+W001188,공공 업무
+W001189,Airflow
+W001189,AWS
+W001189,Hadoop
+W001189,Python
+W001189,그룹사 업무
+W001190,Spark
+W001190,ETL
+W001190,Python
+W001190,Airflow
+W001190,SQL
+W001190,Spring
+W001190,그룹사 업무
+W001191,ETL
+W001191,Kafka
+W001191,Spark
+W001191,SQL
+W001191,Airflow
+W001191,로우코드 플랫폼
+W001191,그룹사 업무
+W001192,Hadoop
+W001192,Spark
+W001192,Kafka
+W001192,Python
+W001192,Scala
+W001192,ETL
+W001192,금융 업무
+W001193,AWS
+W001193,Airflow
+W001193,Spark
+W001193,Scala
+W001193,그룹사 업무
+W001194,Scala
+W001194,Airflow
+W001194,ETL
+W001194,Hadoop
+W001194,SQL
+W001194,프로세스 마이닝
+W001194,AI 에이전트 프레임워크
+W001194,공공 업무
+W001195,SQL
+W001195,Airflow
+W001195,Python
+W001195,Hadoop
+W001195,그룹사 업무
+W001196,Scala
+W001196,AWS
+W001196,Kafka
+W001196,Python
+W001196,SQL
+W001196,Kubernetes
+W001196,그룹사 업무
+W001197,SQL
+W001197,AWS
+W001197,Spark
+W001197,Airflow
+W001197,Hadoop
+W001197,Spring
+W001197,금융 업무
+W001198,Airflow
+W001198,ETL
+W001198,AWS
+W001198,Scala
+W001198,Python
+W001198,그룹사 업무
+W001199,ETL
+W001199,Scala
+W001199,Airflow
+W001199,Hadoop
+W001199,워크플로우·BPM
+W001199,금융 업무
+W001200,Kafka
+W001200,Python
+W001200,Hadoop
+W001200,Airflow
+W001200,Java
+W001200,금융 업무
+W001201,데이터 모델링
+W001201,BI Reporting
+W001201,메타데이터 관리
+W001201,SQL
+W001201,Text Analysis
+W001201,그룹사 업무
+W001202,SQL
+W001202,메타데이터 관리
+W001202,BI Reporting
+W001202,데이터 모델링
+W001202,Airflow
+W001202,Java
+W001202,그룹사 업무
+W001203,메타데이터 관리
+W001203,데이터 모델링
+W001203,BI Reporting
+W001203,SQL
+W001203,Python
+W001203,FastAPI
+W001203,그룹사 업무
+W001204,BI Reporting
+W001204,메타데이터 관리
+W001204,데이터 모델링
+W001204,SQL
+W001204,그룹사 업무
+W001205,메타데이터 관리
+W001205,데이터 모델링
+W001205,SQL
+W001205,BI Reporting
+W001205,공공 업무
+W001206,데이터 모델링
+W001206,BI Reporting
+W001206,SQL
+W001206,메타데이터 관리
+W001206,워크플로우·BPM
+W001206,RAG·벡터DB
+W001206,그룹사 업무
+W001880,메타데이터 관리
+W001880,데이터 모델링
+W001880,SQL
+W001880,BI Reporting
+W001880,그룹사 업무
+W001231,비정형 문서 처리(OCR)
+W001231,메타데이터 관리
+W001231,Text Analysis
+W001231,검색엔진
+W001231,그룹사 업무
+W001232,비정형 문서 처리(OCR)
+W001232,메타데이터 관리
+W001232,Text Analysis
+W001232,데이터 모델링
+W001232,금융 업무
+W001233,비정형 문서 처리(OCR)
+W001233,메타데이터 관리
+W001233,ETL
+W001233,Text Analysis
+W001233,공공 업무
+W001234,비정형 문서 처리(OCR)
+W001234,Python
+W001234,ETL
+W001234,Airflow
+W001234,공공 업무
+W001235,메타데이터 관리
+W001235,ETL
+W001235,검색엔진
+W001235,워크플로우·BPM
+W001235,Airflow
+W001235,그룹사 업무
+W001236,ETL
+W001236,검색엔진
+W001236,Python
+W001236,Text Analysis
+W001236,비정형 문서 처리(OCR)
+W001236,메타데이터 관리
+W001236,Spark
+W001236,Private Cloud
+W001236,금융 업무
+W001237,ETL
+W001237,Python
+W001237,메타데이터 관리
+W001237,검색엔진
+W001237,Text Analysis
+W001237,그룹사 업무
+W001238,비정형 문서 처리(OCR)
+W001238,메타데이터 관리
+W001238,Python
+W001238,프로세스 마이닝
+W001238,Spring
+W001238,그룹사 업무
+W001239,Python
+W001239,ETL
+W001239,메타데이터 관리
+W001239,그룹사 업무
+W001240,검색엔진
+W001240,ETL
+W001240,Text Analysis
+W001240,비정형 문서 처리(OCR)
+W001240,메타데이터 관리
+W001240,금융 업무
+W001241,메타데이터 관리
+W001241,ETL
+W001241,Text Analysis
+W001241,검색엔진
+W001241,비정형 문서 처리(OCR)
+W001241,Java
+W001241,공공 업무
+W001242,비정형 문서 처리(OCR)
+W001242,메타데이터 관리
+W001242,Text Analysis
+W001242,검색엔진
+W001242,ETL
+W001242,Python
+W001242,그룹사 업무
+W001243,ETL
+W001243,비정형 문서 처리(OCR)
+W001243,메타데이터 관리
+W001243,Hadoop
+W001243,공공 업무
+W001244,Text Analysis
+W001244,ETL
+W001244,검색엔진
+W001244,Python
+W001244,비정형 문서 처리(OCR)
+W001244,Java
+W001244,공공 업무
+W001245,Text Analysis
+W001245,메타데이터 관리
+W001245,비정형 문서 처리(OCR)
+W001245,검색엔진
+W001245,ETL
+W001245,Python
+W001245,그룹사 업무
+W001246,검색엔진
+W001246,ETL
+W001246,Text Analysis
+W001246,Python
+W001246,LLM 파인튜닝
+W001246,Data Lake & Data Catalog
+W001246,금융 업무
+W001247,Python
+W001247,비정형 문서 처리(OCR)
+W001247,Text Analysis
+W001247,RAG·벡터DB
+W001247,금융 업무
+W001248,메타데이터 관리
+W001248,검색엔진
+W001248,Text Analysis
+W001248,Kafka
+W001248,그룹사 업무
+W001249,Python
+W001249,비정형 문서 처리(OCR)
+W001249,검색엔진
+W001249,ETL
+W001249,Text Analysis
+W001249,그룹사 업무
+W001250,메타데이터 관리
+W001250,비정형 문서 처리(OCR)
+W001250,검색엔진
+W001250,금융 업무
+W001251,비정형 문서 처리(OCR)
+W001251,Text Analysis
+W001251,ETL
+W001251,그룹사 업무
+W001252,비정형 문서 처리(OCR)
+W001252,검색엔진
+W001252,ETL
+W001252,금융 업무
+W001253,SQL
+W001253,메타데이터 관리
+W001253,Data Lake & Data Catalog
+W001253,데이터 모델링
+W001253,BI Reporting
+W001253,그룹사 업무
+W001254,데이터 모델링
+W001254,메타데이터 관리
+W001254,BI Reporting
+W001254,Data Lake & Data Catalog
+W001254,SQL
+W001254,금융 업무
+W001255,Data Lake & Data Catalog
+W001255,BI Reporting
+W001255,SQL
+W001255,데이터 모델링
+W001255,메타데이터 관리
+W001255,Python
+W001255,그룹사 업무
+W001256,SQL
+W001256,데이터 모델링
+W001256,BI Reporting
+W001256,금융 업무
+W001257,BI Reporting
+W001257,Data Lake & Data Catalog
+W001257,SQL
+W001257,메타데이터 관리
+W001257,데이터 모델링
+W001257,로우코드 플랫폼
+W001257,비정형 문서 처리(OCR)
+W001257,그룹사 업무
+W001258,BI Reporting
+W001258,Data Lake & Data Catalog
+W001258,SQL
+W001258,메타데이터 관리
+W001258,데이터 모델링
+W001258,프로세스 마이닝
+W001258,Airflow
+W001258,그룹사 업무
+W001259,데이터 모델링
+W001259,메타데이터 관리
+W001259,Data Lake & Data Catalog
+W001259,SQL
+W001259,금융 업무
+W001260,BI Reporting
+W001260,메타데이터 관리
+W001260,Data Lake & Data Catalog
+W001260,SQL
+W001260,데이터 모델링
+W001260,ML Ops
+W001260,RAG·벡터DB
+W001260,그룹사 업무
+W001881,데이터 모델링
+W001881,Data Lake & Data Catalog
+W001881,BI Reporting
+W001881,SQL
+W001881,금융 업무
+W001262,Kafka
+W001262,Private Cloud
+W001262,Kubernetes
+W001262,Data Lake & Data Catalog
+W001262,Hadoop
+W001262,금융 업무
+W001882,Data Lake & Data Catalog
+W001882,Private Cloud
+W001882,Kubernetes
+W001882,그룹사 업무
+W001265,Text Analysis
+W001265,검색엔진
+W001265,메타데이터 관리
+W001265,데이터 모델링
+W001265,금융 업무
+W001266,검색엔진
+W001266,메타데이터 관리
+W001266,Python
+W001266,비정형 문서 처리(OCR)
+W001266,RPA
+W001266,Scala
+W001266,금융 업무
+W001267,Text Analysis
+W001267,검색엔진
+W001267,메타데이터 관리
+W001267,비정형 문서 처리(OCR)
+W001267,ETL
+W001267,Python
+W001267,그룹사 업무
+W001268,비정형 문서 처리(OCR)
+W001268,Text Analysis
+W001268,메타데이터 관리
+W001268,Hadoop
+W001268,ML Ops
+W001268,금융 업무
+W001269,ETL
+W001269,메타데이터 관리
+W001269,Text Analysis
+W001269,금융 업무
+W001270,비정형 문서 처리(OCR)
+W001270,ETL
+W001270,Python
+W001270,Text Analysis
+W001270,메타데이터 관리
+W001270,금융 업무
+W001271,비정형 문서 처리(OCR)
+W001271,Python
+W001271,Text Analysis
+W001271,검색엔진
+W001271,메타데이터 관리
+W001271,ETL
+W001271,공공 업무
+W001272,비정형 문서 처리(OCR)
+W001272,검색엔진
+W001272,Text Analysis
+W001272,메타데이터 관리
+W001272,워크플로우·BPM
+W001272,그룹사 업무
+W001273,검색엔진
+W001273,ETL
+W001273,Text Analysis
+W001273,메타데이터 관리
+W001273,비정형 문서 처리(OCR)
+W001273,Python
+W001273,프로세스 마이닝
+W001273,그룹사 업무
+W001274,비정형 문서 처리(OCR)
+W001274,Text Analysis
+W001274,검색엔진
+W001274,ETL
+W001274,Python
+W001274,지능형 문서 처리(IDP)
+W001274,FastAPI
+W001274,금융 업무
+W001275,ETL
+W001275,Text Analysis
+W001275,Python
+W001275,검색엔진
+W001275,금융 업무
+W001276,메타데이터 관리
+W001276,Python
+W001276,Text Analysis
+W001276,그룹사 업무
+W001277,비정형 문서 처리(OCR)
+W001277,메타데이터 관리
+W001277,ETL
+W001277,Python
+W001277,검색엔진
+W001277,Text Analysis
+W001277,워크플로우·BPM
+W001277,Scala
+W001277,공공 업무
+W001278,검색엔진
+W001278,Python
+W001278,ETL
+W001278,메타데이터 관리
+W001278,금융 업무
+W001279,메타데이터 관리
+W001279,Text Analysis
+W001279,검색엔진
+W001279,비정형 문서 처리(OCR)
+W001279,그룹사 업무
+W001280,검색엔진
+W001280,메타데이터 관리
+W001280,비정형 문서 처리(OCR)
+W001280,ETL
+W001280,Text Analysis
+W001280,Java
+W001280,프로세스 마이닝
+W001280,공공 업무
+W001281,Python
+W001281,검색엔진
+W001281,ETL
+W001281,메타데이터 관리
+W001281,비정형 문서 처리(OCR)
+W001281,그룹사 업무
+W001282,Text Analysis
+W001282,ETL
+W001282,비정형 문서 처리(OCR)
+W001282,그룹사 업무
+W001283,ETL
+W001283,메타데이터 관리
+W001283,검색엔진
+W001283,Hadoop
+W001283,금융 업무
+W001284,Python
+W001284,검색엔진
+W001284,Text Analysis
+W001284,AI 에이전트 프레임워크
+W001284,금융 업무
+W001285,비정형 문서 처리(OCR)
+W001285,Python
+W001285,Text Analysis
+W001285,ETL
+W001285,금융 업무
+W001883,ETL
+W001883,비정형 문서 처리(OCR)
+W001883,메타데이터 관리
+W001883,Text Analysis
+W001883,Python
+W001883,검색엔진
+W001883,금융 업무
+W001286,Private Cloud
+W001286,Kubernetes
+W001286,Data Lake & Data Catalog
+W001286,Docker
+W001286,Kafka
+W001286,AWS
+W001286,금융 업무
+W001287,Data Lake & Data Catalog
+W001287,Hadoop
+W001287,AWS
+W001287,Kubernetes
+W001287,Docker
+W001287,Kafka
+W001287,ETL
+W001287,그룹사 업무
+W001288,AWS
+W001288,Kubernetes
+W001288,Docker
+W001288,BI Reporting
+W001288,금융 업무
+W001289,Docker
+W001289,AWS
+W001289,Data Lake & Data Catalog
+W001289,Private Cloud
+W001289,Kubernetes
+W001289,Kafka
+W001289,RPA
+W001289,공공 업무
+W001290,Docker
+W001290,Kafka
+W001290,AWS
+W001290,Hadoop
+W001290,Private Cloud
+W001290,Kubernetes
+W001290,그룹사 업무
+W001291,Private Cloud
+W001291,AWS
+W001291,Kubernetes
+W001291,Docker
+W001291,Data Lake & Data Catalog
+W001291,Kafka
+W001291,그룹사 업무
+W001292,Data Lake & Data Catalog
+W001292,Hadoop
+W001292,Private Cloud
+W001292,Kubernetes
+W001292,Scala
+W001292,Python
+W001292,그룹사 업무
+W001293,Data Lake & Data Catalog
+W001293,Kubernetes
+W001293,Docker
+W001293,검색엔진
+W001293,데이터 모델링
+W001293,금융 업무
+W001294,AWS
+W001294,Data Lake & Data Catalog
+W001294,Private Cloud
+W001294,그룹사 업무
+W001295,Private Cloud
+W001295,Docker
+W001295,AWS
+W001295,Kafka
+W001295,Data Lake & Data Catalog
+W001295,Kubernetes
+W001295,그룹사 업무
+W001884,Data Lake & Data Catalog
+W001884,Hadoop
+W001884,Private Cloud
+W001884,그룹사 업무
+W001306,ETL
+W001306,Spark
+W001306,AWS
+W001306,Scala
+W001306,금융 업무
+W001307,Airflow
+W001307,Python
+W001307,Scala
+W001307,그룹사 업무
+W001308,ETL
+W001308,Airflow
+W001308,Kafka
+W001308,AWS
+W001308,Hadoop
+W001308,RPA
+W001308,Kubernetes
+W001308,공공 업무
+W001309,SQL
+W001309,Python
+W001309,Airflow
+W001309,Kafka
+W001309,Hadoop
+W001309,그룹사 업무
+W001310,Airflow
+W001310,ETL
+W001310,Hadoop
+W001310,Scala
+W001310,Kafka
+W001310,SQL
+W001310,Docker
+W001310,ML Ops
+W001310,공공 업무
+W001311,AWS
+W001311,Kafka
+W001311,Spark
+W001311,Scala
+W001311,SQL
+W001311,ETL
+W001311,로우코드 플랫폼
+W001311,금융 업무
+W001312,Python
+W001312,Hadoop
+W001312,Spark
+W001312,SQL
+W001312,AWS
+W001312,금융 업무
+W001313,Hadoop
+W001313,AWS
+W001313,Python
+W001313,SQL
+W001313,ETL
+W001313,그룹사 업무
+W001314,AWS
+W001314,Airflow
+W001314,Scala
+W001314,Python
+W001314,Hadoop
+W001314,Kafka
+W001314,금융 업무
+W001315,SQL
+W001315,Spark
+W001315,Kafka
+W001315,AWS
+W001315,Scala
+W001315,Spring
+W001315,금융 업무
+W001316,Kafka
+W001316,Scala
+W001316,ETL
+W001316,RPA
+W001316,그룹사 업무
+W001317,Spark
+W001317,SQL
+W001317,AWS
+W001317,Hadoop
+W001317,프로세스 마이닝
+W001317,금융 업무
+W001318,Airflow
+W001318,AWS
+W001318,Kafka
+W001318,금융 업무
+W001319,Spark
+W001319,SQL
+W001319,ETL
+W001319,Python
+W001319,Airflow
+W001319,프로세스 마이닝
+W001319,금융 업무
+W001320,Kafka
+W001320,Scala
+W001320,Python
+W001320,AWS
+W001320,ETL
+W001320,비정형 문서 처리(OCR)
+W001320,그룹사 업무
+W001321,Kafka
+W001321,ETL
+W001321,SQL
+W001321,Python
+W001321,Airflow
+W001321,프로세스 마이닝
+W001321,메타데이터 관리
+W001321,그룹사 업무
+W001322,Spark
+W001322,Scala
+W001322,Python
+W001322,Airflow
+W001322,워크플로우·BPM
+W001322,ML Ops
+W001322,금융 업무
+W001323,Spark
+W001323,SQL
+W001323,ETL
+W001323,Scala
+W001323,Kafka
+W001323,Hadoop
+W001323,Kubernetes
+W001323,금융 업무
+W001324,Hadoop
+W001324,ETL
+W001324,Spark
+W001324,Docker
+W001324,그룹사 업무
+W001325,SQL
+W001325,AWS
+W001325,Airflow
+W001325,Python
+W001325,Spring
+W001325,메타데이터 관리
+W001325,공공 업무
+W001326,Spark
+W001326,Kafka
+W001326,ETL
+W001326,Airflow
+W001326,Python
+W001326,ML Ops
+W001326,그룹사 업무
+W001885,ETL
+W001885,Spark
+W001885,SQL
+W001885,Airflow
+W001885,금융 업무
+W001328,Scala
+W001328,Hadoop
+W001328,Kafka
+W001328,Spark
+W001328,프롬프트 엔지니어링
+W001328,비정형 문서 처리(OCR)
+W001328,그룹사 업무
+W001329,Kafka
+W001329,Python
+W001329,Scala
+W001329,Spark
+W001329,ETL
+W001329,AWS
+W001329,그룹사 업무
+W001330,Kafka
+W001330,AWS
+W001330,SQL
+W001330,Airflow
+W001330,Scala
+W001330,ETL
+W001330,Text Analysis
+W001330,그룹사 업무
+W001331,Hadoop
+W001331,Spark
+W001331,Python
+W001331,ETL
+W001331,데이터 모델링
+W001331,금융 업무
+W001886,Spark
+W001886,Kafka
+W001886,금융 업무
+W001335,Spark
+W001335,AWS
+W001335,Python
+W001335,Kafka
+W001335,ETL
+W001335,FastAPI
+W001335,그룹사 업무
+W001336,Kafka
+W001336,Scala
+W001336,Python
+W001336,Spark
+W001336,Airflow
+W001336,Hadoop
+W001336,검색엔진
+W001336,지능형 문서 처리(IDP)
+W001336,금융 업무
+W001337,Scala
+W001337,SQL
+W001337,AWS
+W001337,공공 업무
+W001338,Hadoop
+W001338,Kafka
+W001338,AWS
+W001338,ETL
+W001338,Airflow
+W001338,지능형 문서 처리(IDP)
+W001338,금융 업무
+W001339,Hadoop
+W001339,ETL
+W001339,SQL
+W001339,Scala
+W001339,Python
+W001339,Data Lake & Data Catalog
+W001339,그룹사 업무
+W001340,Scala
+W001340,Airflow
+W001340,Hadoop
+W001340,Kafka
+W001340,금융 업무
+W001341,Airflow
+W001341,AWS
+W001341,ETL
+W001341,Kafka
+W001341,공공 업무
+W001342,Hadoop
+W001342,ETL
+W001342,Scala
+W001342,그룹사 업무
+W001343,Airflow
+W001343,Hadoop
+W001343,Scala
+W001343,Python
+W001343,Spark
+W001343,그룹사 업무
+W001344,Hadoop
+W001344,Spark
+W001344,Kafka
+W001344,워크플로우·BPM
+W001344,그룹사 업무
+W001345,Airflow
+W001345,Spark
+W001345,Kafka
+W001345,금융 업무
+W001346,Hadoop
+W001346,AWS
+W001346,SQL
+W001346,Python
+W001346,메타데이터 관리
+W001346,금융 업무
+W001347,Scala
+W001347,AWS
+W001347,Kafka
+W001347,ETL
+W001347,SQL
+W001347,Spark
+W001347,메타데이터 관리
+W001347,금융 업무
+W001348,SQL
+W001348,Spark
+W001348,ETL
+W001348,Scala
+W001348,ML Ops
+W001348,금융 업무
+W001349,SQL
+W001349,ETL
+W001349,AWS
+W001349,Spark
+W001349,Hadoop
+W001349,Python
+W001349,메타데이터 관리
+W001349,공공 업무
+W001350,Airflow
+W001350,AWS
+W001350,Python
+W001350,Hadoop
+W001350,SQL
+W001350,데이터 모델링
+W001350,Java
+W001350,그룹사 업무
+W001351,Hadoop
+W001351,Kafka
+W001351,Spark
+W001351,ETL
+W001351,SQL
+W001351,프로세스 마이닝
+W001351,그룹사 업무
+W001352,Hadoop
+W001352,Scala
+W001352,Spark
+W001352,Python
+W001352,Kafka
+W001352,BI Reporting
+W001352,비정형 문서 처리(OCR)
+W001352,공공 업무
+W001353,Python
+W001353,ETL
+W001353,SQL
+W001353,Airflow
+W001353,프롬프트 엔지니어링
+W001353,그룹사 업무
+W001354,Python
+W001354,Kafka
+W001354,Airflow
+W001354,금융 업무
+W001355,AWS
+W001355,SQL
+W001355,ETL
+W001355,Hadoop
+W001355,그룹사 업무
+W001356,Kafka
+W001356,Python
+W001356,Hadoop
+W001356,Spark
+W001356,Kubernetes
+W001356,BI Reporting
+W001356,그룹사 업무
+W001887,AWS
+W001887,그룹사 업무
+W001360,ETL
+W001360,메타데이터 관리
+W001360,Text Analysis
+W001360,검색엔진
+W001360,Python
+W001360,비정형 문서 처리(OCR)
+W001360,프로세스 마이닝
+W001360,그룹사 업무
+W001361,비정형 문서 처리(OCR)
+W001361,메타데이터 관리
+W001361,Python
+W001361,프로세스 마이닝
+W001361,금융 업무
+W001362,ETL
+W001362,Text Analysis
+W001362,Python
+W001362,비정형 문서 처리(OCR)
+W001362,지능형 문서 처리(IDP)
+W001362,Hadoop
+W001362,금융 업무
+W001363,메타데이터 관리
+W001363,검색엔진
+W001363,Text Analysis
+W001363,ETL
+W001363,비정형 문서 처리(OCR)
+W001363,Python
+W001363,금융 업무
+W001364,Text Analysis
+W001364,ETL
+W001364,메타데이터 관리
+W001364,검색엔진
+W001364,Python
+W001364,데이터 모델링
+W001364,AWS
+W001364,그룹사 업무
+W001365,비정형 문서 처리(OCR)
+W001365,Text Analysis
+W001365,Python
+W001365,BI Reporting
+W001365,SQL
+W001365,공공 업무
+W001366,메타데이터 관리
+W001366,ETL
+W001366,비정형 문서 처리(OCR)
+W001366,그룹사 업무
+W001367,ETL
+W001367,Text Analysis
+W001367,검색엔진
+W001367,메타데이터 관리
+W001367,비정형 문서 처리(OCR)
+W001367,Python
+W001367,RPA
+W001367,금융 업무
+W001368,Python
+W001368,메타데이터 관리
+W001368,Text Analysis
+W001368,검색엔진
+W001368,비정형 문서 처리(OCR)
+W001368,AWS
+W001368,SQL
+W001368,금융 업무
+W001369,메타데이터 관리
+W001369,ETL
+W001369,Text Analysis
+W001369,SQL
+W001369,Spring
+W001369,그룹사 업무
+W001370,비정형 문서 처리(OCR)
+W001370,Text Analysis
+W001370,메타데이터 관리
+W001370,Python
+W001370,ETL
+W001370,검색엔진
+W001370,그룹사 업무
+W001888,Text Analysis
+W001888,ETL
+W001888,비정형 문서 처리(OCR)
+W001888,메타데이터 관리
+W001888,검색엔진
+W001888,금융 업무
+W001373,Hadoop
+W001373,Scala
+W001373,AWS
+W001373,Python
+W001373,ETL
+W001373,검색엔진
+W001373,Docker
+W001373,그룹사 업무
+W001374,Scala
+W001374,Airflow
+W001374,Spark
+W001374,로우코드 플랫폼
+W001374,ML Ops
+W001374,그룹사 업무
+W001375,Scala
+W001375,Kafka
+W001375,Python
+W001375,Spark
+W001375,Hadoop
+W001375,Airflow
+W001375,ML Ops
+W001375,검색엔진
+W001375,공공 업무
+W001376,ETL
+W001376,Airflow
+W001376,SQL
+W001376,Python
+W001376,AWS
+W001376,비정형 문서 처리(OCR)
+W001376,금융 업무
+W001377,SQL
+W001377,Python
+W001377,Hadoop
+W001377,Airflow
+W001377,AWS
+W001377,그룹사 업무
+W001378,Spark
+W001378,Hadoop
+W001378,AWS
+W001378,Python
+W001378,프로세스 마이닝
+W001378,공공 업무
+W001379,AWS
+W001379,Hadoop
+W001379,Scala
+W001379,ETL
+W001379,공공 업무
+W001380,Scala
+W001380,SQL
+W001380,AWS
+W001380,Python
+W001380,Hadoop
+W001380,Airflow
+W001380,그룹사 업무
+W001381,AWS
+W001381,Hadoop
+W001381,Scala
+W001381,Spark
+W001381,SQL
+W001381,Airflow
+W001381,그룹사 업무
+W001382,SQL
+W001382,Hadoop
+W001382,AWS
+W001382,Kafka
+W001382,Airflow
+W001382,FastAPI
+W001382,메타데이터 관리
+W001382,그룹사 업무
+W001383,Scala
+W001383,AWS
+W001383,Python
+W001383,React
+W001383,데이터 모델링
+W001383,공공 업무
+W001384,Spark
+W001384,Python
+W001384,AWS
+W001384,Scala
+W001384,ETL
+W001384,SQL
+W001384,지능형 문서 처리(IDP)
+W001384,비정형 문서 처리(OCR)
+W001384,그룹사 업무
+W001385,Hadoop
+W001385,ETL
+W001385,Kafka
+W001385,Airflow
+W001385,Spark
+W001385,AWS
+W001385,금융 업무
+W001386,Spark
+W001386,Scala
+W001386,SQL
+W001386,Kubernetes
+W001386,React
+W001386,공공 업무
+W001387,Python
+W001387,Airflow
+W001387,Hadoop
+W001387,금융 업무
+W001388,ETL
+W001388,Spark
+W001388,AWS
+W001388,Hadoop
+W001388,데이터 모델링
+W001388,React
+W001388,그룹사 업무
+W001389,Scala
+W001389,Hadoop
+W001389,ETL
+W001389,그룹사 업무
+W001390,Scala
+W001390,Spark
+W001390,Airflow
+W001390,Kafka
+W001390,Hadoop
+W001390,워크플로우·BPM
+W001390,금융 업무
+W001391,Hadoop
+W001391,AWS
+W001391,Python
+W001391,Kafka
+W001391,Airflow
+W001391,Scala
+W001391,Data Lake & Data Catalog
+W001391,프로세스 마이닝
+W001391,금융 업무
+W001392,AWS
+W001392,Airflow
+W001392,Hadoop
+W001392,Spark
+W001392,Scala
+W001392,Python
+W001392,Private Cloud
+W001392,메타데이터 관리
+W001392,금융 업무
+W001889,SQL
+W001889,AWS
+W001889,Hadoop
+W001889,공공 업무
+W001398,Python
+W001398,검색엔진
+W001398,ETL
+W001398,비정형 문서 처리(OCR)
+W001398,Text Analysis
+W001398,메타데이터 관리
+W001398,금융 업무
+W001399,비정형 문서 처리(OCR)
+W001399,Python
+W001399,검색엔진
+W001399,ETL
+W001399,Text Analysis
+W001399,Spring
+W001399,그룹사 업무
+W001400,ETL
+W001400,Python
+W001400,비정형 문서 처리(OCR)
+W001400,Data Lake & Data Catalog
+W001400,금융 업무
+W001401,비정형 문서 처리(OCR)
+W001401,검색엔진
+W001401,ETL
+W001401,Text Analysis
+W001401,메타데이터 관리
+W001401,그룹사 업무
+W001402,메타데이터 관리
+W001402,Text Analysis
+W001402,ETL
+W001402,Python
+W001402,비정형 문서 처리(OCR)
+W001402,검색엔진
+W001402,공공 업무
+W001403,Python
+W001403,검색엔진
+W001403,ETL
+W001403,비정형 문서 처리(OCR)
+W001403,Kafka
+W001403,그룹사 업무
+W001404,비정형 문서 처리(OCR)
+W001404,Text Analysis
+W001404,검색엔진
+W001404,데이터 모델링
+W001404,워크플로우·BPM
+W001404,공공 업무
+W001405,비정형 문서 처리(OCR)
+W001405,ETL
+W001405,Python
+W001405,Text Analysis
+W001405,검색엔진
+W001405,데이터 모델링
+W001405,그룹사 업무
+W001406,ETL
+W001406,Text Analysis
+W001406,비정형 문서 처리(OCR)
+W001406,Python
+W001406,메타데이터 관리
+W001406,검색엔진
+W001406,AWS
+W001406,SQL
+W001406,금융 업무
+W001407,Python
+W001407,Text Analysis
+W001407,비정형 문서 처리(OCR)
+W001407,검색엔진
+W001407,금융 업무
+W001408,메타데이터 관리
+W001408,비정형 문서 처리(OCR)
+W001408,ETL
+W001408,검색엔진
+W001408,로우코드 플랫폼
+W001408,ML Ops
+W001408,공공 업무
+W001409,비정형 문서 처리(OCR)
+W001409,ETL
+W001409,Python
+W001409,검색엔진
+W001409,메타데이터 관리
+W001409,Text Analysis
+W001409,SQL
+W001409,BI Reporting
+W001409,금융 업무
+W001410,메타데이터 관리
+W001410,Python
+W001410,비정형 문서 처리(OCR)
+W001410,검색엔진
+W001410,그룹사 업무
+W001411,Text Analysis
+W001411,메타데이터 관리
+W001411,Python
+W001411,RPA
+W001411,Private Cloud
+W001411,그룹사 업무
+W001412,Text Analysis
+W001412,검색엔진
+W001412,ETL
+W001412,FastAPI
+W001412,Docker
+W001412,그룹사 업무
+W001413,Text Analysis
+W001413,비정형 문서 처리(OCR)
+W001413,검색엔진
+W001413,Airflow
+W001413,그룹사 업무
+W001414,메타데이터 관리
+W001414,비정형 문서 처리(OCR)
+W001414,검색엔진
+W001414,Text Analysis
+W001414,ETL
+W001414,Kafka
+W001414,Airflow
+W001414,금융 업무
+W001415,검색엔진
+W001415,Text Analysis
+W001415,메타데이터 관리
+W001415,ETL
+W001415,Python
+W001415,그룹사 업무
+W001416,메타데이터 관리
+W001416,Text Analysis
+W001416,검색엔진
+W001416,ETL
+W001416,그룹사 업무
+W001417,비정형 문서 처리(OCR)
+W001417,검색엔진
+W001417,메타데이터 관리
+W001417,RPA
+W001417,그룹사 업무
+W001418,Python
+W001418,메타데이터 관리
+W001418,ETL
+W001418,Text Analysis
+W001418,비정형 문서 처리(OCR)
+W001418,검색엔진
+W001418,Docker
+W001418,AI 에이전트 프레임워크
+W001418,금융 업무
+W001420,ETL
+W001420,메타데이터 관리
+W001420,Text Analysis
+W001420,RPA
+W001420,그룹사 업무
+W001421,ETL
+W001421,비정형 문서 처리(OCR)
+W001421,메타데이터 관리
+W001421,SQL
+W001421,그룹사 업무
+W001422,메타데이터 관리
+W001422,Python
+W001422,검색엔진
+W001422,Text Analysis
+W001422,금융 업무
+W001423,검색엔진
+W001423,비정형 문서 처리(OCR)
+W001423,Text Analysis
+W001423,Java
+W001423,Scala
+W001423,공공 업무
+W001424,메타데이터 관리
+W001424,검색엔진
+W001424,Python
+W001424,ETL
+W001424,금융 업무
+W001425,Python
+W001425,Text Analysis
+W001425,메타데이터 관리
+W001425,검색엔진
+W001425,ETL
+W001425,비정형 문서 처리(OCR)
+W001425,그룹사 업무
+W001426,메타데이터 관리
+W001426,Text Analysis
+W001426,ETL
+W001426,비정형 문서 처리(OCR)
+W001426,검색엔진
+W001426,Python
+W001426,ML Ops
+W001426,그룹사 업무
+W001427,Text Analysis
+W001427,메타데이터 관리
+W001427,Python
+W001427,그룹사 업무
+W001428,비정형 문서 처리(OCR)
+W001428,ETL
+W001428,검색엔진
+W001428,Text Analysis
+W001428,Python
+W001428,메타데이터 관리
+W001428,금융 업무
+W001429,Text Analysis
+W001429,메타데이터 관리
+W001429,비정형 문서 처리(OCR)
+W001429,ETL
+W001429,금융 업무
+W001430,검색엔진
+W001430,메타데이터 관리
+W001430,Python
+W001430,Text Analysis
+W001430,비정형 문서 처리(OCR)
+W001430,RPA
+W001430,그룹사 업무
+W001431,메타데이터 관리
+W001431,비정형 문서 처리(OCR)
+W001431,Text Analysis
+W001431,Python
+W001431,검색엔진
+W001431,금융 업무
+W001432,메타데이터 관리
+W001432,Python
+W001432,검색엔진
+W001432,Text Analysis
+W001432,비정형 문서 처리(OCR)
+W001432,Scala
+W001432,금융 업무
+W001433,비정형 문서 처리(OCR)
+W001433,검색엔진
+W001433,Python
+W001433,ETL
+W001433,공공 업무
+W001434,Python
+W001434,메타데이터 관리
+W001434,ETL
+W001434,검색엔진
+W001434,공공 업무
+W001435,메타데이터 관리
+W001435,Python
+W001435,Text Analysis
+W001435,데이터 모델링
+W001435,그룹사 업무
+W001436,검색엔진
+W001436,Text Analysis
+W001436,Python
+W001436,ETL
+W001436,프로세스 마이닝
+W001436,그룹사 업무
+W001437,Text Analysis
+W001437,Python
+W001437,메타데이터 관리
+W001437,금융 업무
+W001438,비정형 문서 처리(OCR)
+W001438,Text Analysis
+W001438,검색엔진
+W001438,ETL
+W001438,메타데이터 관리
+W001438,로우코드 플랫폼
+W001438,그룹사 업무
+W001439,비정형 문서 처리(OCR)
+W001439,메타데이터 관리
+W001439,검색엔진
+W001439,ETL
+W001439,Python
+W001439,Text Analysis
+W001439,그룹사 업무
+W001440,ETL
+W001440,Text Analysis
+W001440,Python
+W001440,검색엔진
+W001440,금융 업무
+W001441,ETL
+W001441,Python
+W001441,검색엔진
+W001441,메타데이터 관리
+W001441,Text Analysis
+W001441,비정형 문서 처리(OCR)
+W001441,Java
+W001441,그룹사 업무
+W001890,ETL
+W001890,비정형 문서 처리(OCR)
+W001890,메타데이터 관리
+W001890,Text Analysis
+W001890,검색엔진
+W001890,금융 업무
+W001443,SQL
+W001443,BI Reporting
+W001443,메타데이터 관리
+W001443,데이터 모델링
+W001443,금융 업무
+W001444,메타데이터 관리
+W001444,SQL
+W001444,BI Reporting
+W001444,데이터 모델링
+W001444,Python
+W001444,워크플로우·BPM
+W001444,금융 업무
+W001445,메타데이터 관리
+W001445,데이터 모델링
+W001445,BI Reporting
+W001445,SQL
+W001445,Spring
+W001445,Private Cloud
+W001445,공공 업무
+W001446,메타데이터 관리
+W001446,SQL
+W001446,데이터 모델링
+W001446,BI Reporting
+W001446,금융 업무
+W001447,SQL
+W001447,BI Reporting
+W001447,데이터 모델링
+W001447,메타데이터 관리
+W001447,ML Ops
+W001447,그룹사 업무
+W001448,BI Reporting
+W001448,SQL
+W001448,메타데이터 관리
+W001448,데이터 모델링
+W001448,그룹사 업무
+W001449,BI Reporting
+W001449,메타데이터 관리
+W001449,데이터 모델링
+W001449,금융 업무
+W001450,SQL
+W001450,메타데이터 관리
+W001450,BI Reporting
+W001450,데이터 모델링
+W001450,ML Ops
+W001450,그룹사 업무
+W001451,데이터 모델링
+W001451,SQL
+W001451,BI Reporting
+W001451,메타데이터 관리
+W001451,FastAPI
+W001451,그룹사 업무
+W001452,메타데이터 관리
+W001452,SQL
+W001452,BI Reporting
+W001452,데이터 모델링
+W001452,ML Ops
+W001452,Spring
+W001452,금융 업무
+W001453,BI Reporting
+W001453,데이터 모델링
+W001453,SQL
+W001453,금융 업무
+W001454,데이터 모델링
+W001454,BI Reporting
+W001454,SQL
+W001454,Text Analysis
+W001454,FastAPI
+W001454,그룹사 업무
+W001455,SQL
+W001455,BI Reporting
+W001455,메타데이터 관리
+W001455,데이터 모델링
+W001455,Docker
+W001455,로우코드 플랫폼
+W001455,그룹사 업무
+W001456,데이터 모델링
+W001456,메타데이터 관리
+W001456,SQL
+W001456,BI Reporting
+W001456,금융 업무
+W001457,SQL
+W001457,메타데이터 관리
+W001457,BI Reporting
+W001457,데이터 모델링
+W001457,Hadoop
+W001457,LLM Application
+W001457,그룹사 업무
+W001458,메타데이터 관리
+W001458,SQL
+W001458,BI Reporting
+W001458,데이터 모델링
+W001458,프로세스 마이닝
+W001458,검색엔진
+W001458,그룹사 업무
+W001459,SQL
+W001459,데이터 모델링
+W001459,BI Reporting
+W001459,Kafka
+W001459,그룹사 업무
+W001460,데이터 모델링
+W001460,SQL
+W001460,메타데이터 관리
+W001460,BI Reporting
+W001460,비정형 문서 처리(OCR)
+W001460,Spring
+W001460,공공 업무
+W001461,BI Reporting
+W001461,SQL
+W001461,데이터 모델링
+W001461,메타데이터 관리
+W001461,RPA
+W001461,AI 에이전트 프레임워크
+W001461,금융 업무
+W001462,SQL
+W001462,데이터 모델링
+W001462,BI Reporting
+W001462,메타데이터 관리
+W001462,금융 업무
+W001891,메타데이터 관리
+W001891,데이터 모델링
+W001891,BI Reporting
+W001891,SQL
+W001891,그룹사 업무
+W001475,Kubernetes
+W001475,AWS
+W001475,Private Cloud
+W001475,그룹사 업무
+W001476,Docker
+W001476,Data Lake & Data Catalog
+W001476,AWS
+W001476,Kubernetes
+W001476,Private Cloud
+W001476,프로세스 마이닝
+W001476,RPA
+W001476,그룹사 업무
+W001477,Data Lake & Data Catalog
+W001477,Private Cloud
+W001477,Hadoop
+W001477,AWS
+W001477,그룹사 업무
+W001478,AWS
+W001478,Kubernetes
+W001478,Private Cloud
+W001478,Data Lake & Data Catalog
+W001478,금융 업무
+W001479,AWS
+W001479,Kafka
+W001479,Kubernetes
+W001479,ETL
+W001479,Airflow
+W001479,금융 업무
+W001480,Hadoop
+W001480,Docker
+W001480,Data Lake & Data Catalog
+W001480,지능형 문서 처리(IDP)
+W001480,공공 업무
+W001481,Data Lake & Data Catalog
+W001481,AWS
+W001481,Docker
+W001481,그룹사 업무
+W001482,Kafka
+W001482,Data Lake & Data Catalog
+W001482,AWS
+W001482,Hadoop
+W001482,Docker
+W001482,데이터 모델링
+W001482,금융 업무
+W001483,Kafka
+W001483,Hadoop
+W001483,Docker
+W001483,AWS
+W001483,Data Lake & Data Catalog
+W001483,로우코드 플랫폼
+W001483,그룹사 업무
+W001484,Hadoop
+W001484,Kubernetes
+W001484,Kafka
+W001484,Docker
+W001484,Data Lake & Data Catalog
+W001484,Java
+W001484,그룹사 업무
+W001485,Docker
+W001485,Private Cloud
+W001485,Kafka
+W001485,Spark
+W001485,메타데이터 관리
+W001485,금융 업무
+W001486,Data Lake & Data Catalog
+W001486,Docker
+W001486,AWS
+W001486,Kafka
+W001486,Private Cloud
+W001486,그룹사 업무
+W001487,Kafka
+W001487,Kubernetes
+W001487,Private Cloud
+W001487,Data Lake & Data Catalog
+W001487,Docker
+W001487,금융 업무
+W001488,Private Cloud
+W001488,Data Lake & Data Catalog
+W001488,Kafka
+W001488,Hadoop
+W001488,Docker
+W001488,공공 업무
+W001489,Hadoop
+W001489,AWS
+W001489,Private Cloud
+W001489,Data Lake & Data Catalog
+W001489,Kafka
+W001489,Docker
+W001489,검색엔진
+W001489,ML Ops
+W001489,그룹사 업무
+W001490,Data Lake & Data Catalog
+W001490,AWS
+W001490,Private Cloud
+W001490,Hadoop
+W001490,Kubernetes
+W001490,메타데이터 관리
+W001490,데이터 모델링
+W001490,그룹사 업무
+W001491,Kubernetes
+W001491,Private Cloud
+W001491,Hadoop
+W001491,Docker
+W001491,LLM 파인튜닝
+W001491,Python
+W001491,공공 업무
+W001492,AWS
+W001492,Private Cloud
+W001492,Hadoop
+W001492,Docker
+W001492,금융 업무
+W001493,Private Cloud
+W001493,Hadoop
+W001493,Kafka
+W001493,Docker
+W001493,그룹사 업무
+W001892,Kafka
+W001892,Kubernetes
+W001892,Private Cloud
+W001892,Data Lake & Data Catalog
+W001892,그룹사 업무
+W001497,Text Analysis
+W001497,ETL
+W001497,비정형 문서 처리(OCR)
+W001497,Python
+W001497,메타데이터 관리
+W001497,검색엔진
+W001497,Scala
+W001497,그룹사 업무
+W001498,ETL
+W001498,Text Analysis
+W001498,Python
+W001498,금융 업무
+W001499,검색엔진
+W001499,비정형 문서 처리(OCR)
+W001499,메타데이터 관리
+W001499,RPA
+W001499,Kafka
+W001499,그룹사 업무
+W001500,메타데이터 관리
+W001500,비정형 문서 처리(OCR)
+W001500,Python
+W001500,금융 업무
+W001501,메타데이터 관리
+W001501,검색엔진
+W001501,비정형 문서 처리(OCR)
+W001501,Text Analysis
+W001501,ETL
+W001501,공공 업무
+W001502,Python
+W001502,비정형 문서 처리(OCR)
+W001502,검색엔진
+W001502,Text Analysis
+W001502,메타데이터 관리
+W001502,ETL
+W001502,Airflow
+W001502,금융 업무
+W001503,검색엔진
+W001503,ETL
+W001503,비정형 문서 처리(OCR)
+W001503,Python
+W001503,Text Analysis
+W001503,그룹사 업무
+W001504,검색엔진
+W001504,ETL
+W001504,Python
+W001504,Text Analysis
+W001504,메타데이터 관리
+W001504,비정형 문서 처리(OCR)
+W001504,지능형 문서 처리(IDP)
+W001504,워크플로우·BPM
+W001504,그룹사 업무
+W001505,ETL
+W001505,비정형 문서 처리(OCR)
+W001505,검색엔진
+W001505,금융 업무
+W001506,메타데이터 관리
+W001506,Python
+W001506,ETL
+W001506,Text Analysis
+W001506,SQL
+W001506,Docker
+W001506,그룹사 업무
+W001507,Text Analysis
+W001507,비정형 문서 처리(OCR)
+W001507,Python
+W001507,검색엔진
+W001507,ETL
+W001507,메타데이터 관리
+W001507,프롬프트 엔지니어링
+W001507,그룹사 업무
+W001508,Text Analysis
+W001508,ETL
+W001508,비정형 문서 처리(OCR)
+W001508,Python
+W001508,검색엔진
+W001508,메타데이터 관리
+W001508,ML Ops
+W001508,지능형 문서 처리(IDP)
+W001508,금융 업무
+W001509,Text Analysis
+W001509,Python
+W001509,ETL
+W001509,검색엔진
+W001509,메타데이터 관리
+W001509,비정형 문서 처리(OCR)
+W001509,그룹사 업무
+W001510,ETL
+W001510,검색엔진
+W001510,Python
+W001510,Text Analysis
+W001510,지능형 문서 처리(IDP)
+W001510,React
+W001510,금융 업무
+W001511,Python
+W001511,ETL
+W001511,비정형 문서 처리(OCR)
+W001511,그룹사 업무
+W001512,검색엔진
+W001512,메타데이터 관리
+W001512,ETL
+W001512,Python
+W001512,Text Analysis
+W001512,Java
+W001512,Kafka
+W001512,금융 업무
+W001513,ETL
+W001513,메타데이터 관리
+W001513,검색엔진
+W001513,Text Analysis
+W001513,비정형 문서 처리(OCR)
+W001513,FastAPI
+W001513,금융 업무
+W001514,메타데이터 관리
+W001514,비정형 문서 처리(OCR)
+W001514,검색엔진
+W001514,Hadoop
+W001514,공공 업무
+W001515,검색엔진
+W001515,Text Analysis
+W001515,ETL
+W001515,금융 업무
+W001516,Python
+W001516,Text Analysis
+W001516,검색엔진
+W001516,ETL
+W001516,메타데이터 관리
+W001516,비정형 문서 처리(OCR)
+W001516,금융 업무
+W001517,ETL
+W001517,Text Analysis
+W001517,Python
+W001517,메타데이터 관리
+W001517,검색엔진
+W001517,SQL
+W001517,그룹사 업무
+W001518,Python
+W001518,메타데이터 관리
+W001518,비정형 문서 처리(OCR)
+W001518,Text Analysis
+W001518,ETL
+W001518,Data Lake & Data Catalog
+W001518,로우코드 플랫폼
+W001518,그룹사 업무
+W001519,ETL
+W001519,비정형 문서 처리(OCR)
+W001519,Python
+W001519,검색엔진
+W001519,Text Analysis
+W001519,Private Cloud
+W001519,그룹사 업무
+W001520,Text Analysis
+W001520,검색엔진
+W001520,비정형 문서 처리(OCR)
+W001520,ETL
+W001520,Python
+W001520,로우코드 플랫폼
+W001520,금융 업무
+W001521,ETL
+W001521,메타데이터 관리
+W001521,검색엔진
+W001521,FastAPI
+W001521,금융 업무
+W001522,ETL
+W001522,검색엔진
+W001522,메타데이터 관리
+W001522,비정형 문서 처리(OCR)
+W001522,Python
+W001522,금융 업무
+W001523,ETL
+W001523,Text Analysis
+W001523,메타데이터 관리
+W001523,검색엔진
+W001523,비정형 문서 처리(OCR)
+W001523,RPA
+W001523,Data Lake & Data Catalog
+W001523,금융 업무
+W001524,Text Analysis
+W001524,ETL
+W001524,비정형 문서 처리(OCR)
+W001524,메타데이터 관리
+W001524,데이터 모델링
+W001524,RPA
+W001524,그룹사 업무
+W001525,비정형 문서 처리(OCR)
+W001525,검색엔진
+W001525,메타데이터 관리
+W001525,워크플로우·BPM
+W001525,금융 업무
+W001526,비정형 문서 처리(OCR)
+W001526,ETL
+W001526,Python
+W001526,Text Analysis
+W001526,프롬프트 엔지니어링
+W001526,LLM Application
+W001526,그룹사 업무
+W001527,검색엔진
+W001527,Text Analysis
+W001527,ETL
+W001527,그룹사 업무
+W001528,메타데이터 관리
+W001528,Text Analysis
+W001528,Python
+W001528,Airflow
+W001528,Data Lake & Data Catalog
+W001528,공공 업무
+W001529,검색엔진
+W001529,ETL
+W001529,메타데이터 관리
+W001529,Python
+W001529,Text Analysis
+W001529,금융 업무
+W001530,검색엔진
+W001530,ETL
+W001530,메타데이터 관리
+W001530,금융 업무
+W001893,ETL
+W001893,비정형 문서 처리(OCR)
+W001893,검색엔진
+W001893,Python
+W001893,금융 업무
+W001560,데이터 모델링
+W001560,메타데이터 관리
+W001560,SQL
+W001560,BI Reporting
+W001560,Data Lake & Data Catalog
+W001560,그룹사 업무
+W001561,메타데이터 관리
+W001561,데이터 모델링
+W001561,BI Reporting
+W001561,SQL
+W001561,Python
+W001561,그룹사 업무
+W001562,SQL
+W001562,Data Lake & Data Catalog
+W001562,데이터 모델링
+W001562,BI Reporting
+W001562,그룹사 업무
+W001563,메타데이터 관리
+W001563,BI Reporting
+W001563,SQL
+W001563,데이터 모델링
+W001563,Data Lake & Data Catalog
+W001563,그룹사 업무
+W001564,SQL
+W001564,메타데이터 관리
+W001564,데이터 모델링
+W001564,BI Reporting
+W001564,Data Lake & Data Catalog
+W001564,금융 업무
+W001565,SQL
+W001565,BI Reporting
+W001565,Data Lake & Data Catalog
+W001565,ML Ops
+W001565,Java
+W001565,금융 업무
+W001566,메타데이터 관리
+W001566,Data Lake & Data Catalog
+W001566,BI Reporting
+W001566,데이터 모델링
+W001566,SQL
+W001566,금융 업무
+W001567,SQL
+W001567,메타데이터 관리
+W001567,Data Lake & Data Catalog
+W001567,데이터 모델링
+W001567,BI Reporting
+W001567,공공 업무
+W001568,Data Lake & Data Catalog
+W001568,BI Reporting
+W001568,SQL
+W001568,Spark
+W001568,공공 업무
+W001569,데이터 모델링
+W001569,Data Lake & Data Catalog
+W001569,BI Reporting
+W001569,메타데이터 관리
+W001569,그룹사 업무
+W001570,SQL
+W001570,BI Reporting
+W001570,데이터 모델링
+W001570,Data Lake & Data Catalog
+W001570,Python
+W001570,금융 업무
+W001571,BI Reporting
+W001571,메타데이터 관리
+W001571,데이터 모델링
+W001571,워크플로우·BPM
+W001571,Kubernetes
+W001571,금융 업무
+W001572,SQL
+W001572,데이터 모델링
+W001572,Data Lake & Data Catalog
+W001572,메타데이터 관리
+W001572,BI Reporting
+W001572,Spring
+W001572,워크플로우·BPM
+W001572,금융 업무
+W001573,BI Reporting
+W001573,데이터 모델링
+W001573,Data Lake & Data Catalog
+W001573,FastAPI
+W001573,금융 업무
+W001574,메타데이터 관리
+W001574,Data Lake & Data Catalog
+W001574,BI Reporting
+W001574,SQL
+W001574,데이터 모델링
+W001574,Java
+W001574,금융 업무
+W001575,Data Lake & Data Catalog
+W001575,메타데이터 관리
+W001575,BI Reporting
+W001575,SQL
+W001575,데이터 모델링
+W001575,FastAPI
+W001575,지능형 문서 처리(IDP)
+W001575,그룹사 업무
+W001576,Data Lake & Data Catalog
+W001576,BI Reporting
+W001576,SQL
+W001576,메타데이터 관리
+W001576,데이터 모델링
+W001576,AI 에이전트 프레임워크
+W001576,Text Analysis
+W001576,금융 업무
+W001577,메타데이터 관리
+W001577,Data Lake & Data Catalog
+W001577,데이터 모델링
+W001577,SQL
+W001577,프롬프트 엔지니어링
+W001577,Kubernetes
+W001577,그룹사 업무
+W001578,BI Reporting
+W001578,Data Lake & Data Catalog
+W001578,SQL
+W001578,검색엔진
+W001578,Airflow
+W001578,그룹사 업무
+W001579,데이터 모델링
+W001579,SQL
+W001579,메타데이터 관리
+W001579,금융 업무
+W001894,Data Lake & Data Catalog
+W001894,메타데이터 관리
+W001894,데이터 모델링
+W001894,SQL
+W001894,BI Reporting
+W001894,그룹사 업무
+W001584,Text Analysis
+W001584,Python
+W001584,비정형 문서 처리(OCR)
+W001584,검색엔진
+W001584,메타데이터 관리
+W001584,ETL
+W001584,그룹사 업무
+W001585,메타데이터 관리
+W001585,검색엔진
+W001585,비정형 문서 처리(OCR)
+W001585,ETL
+W001585,Python
+W001585,로우코드 플랫폼
+W001585,지능형 문서 처리(IDP)
+W001585,그룹사 업무
+W001586,비정형 문서 처리(OCR)
+W001586,Text Analysis
+W001586,ETL
+W001586,Python
+W001586,검색엔진
+W001586,메타데이터 관리
+W001586,공공 업무
+W001587,Python
+W001587,검색엔진
+W001587,메타데이터 관리
+W001587,ETL
+W001587,Text Analysis
+W001587,비정형 문서 처리(OCR)
+W001587,그룹사 업무
+W001588,Text Analysis
+W001588,검색엔진
+W001588,Python
+W001588,그룹사 업무
+W001589,ETL
+W001589,Python
+W001589,Text Analysis
+W001589,비정형 문서 처리(OCR)
+W001589,검색엔진
+W001589,금융 업무
+W001590,Python
+W001590,메타데이터 관리
+W001590,검색엔진
+W001590,비정형 문서 처리(OCR)
+W001590,AWS
+W001590,그룹사 업무
+W001591,Python
+W001591,검색엔진
+W001591,비정형 문서 처리(OCR)
+W001591,Text Analysis
+W001591,메타데이터 관리
+W001591,Scala
+W001591,공공 업무
+W001592,Text Analysis
+W001592,검색엔진
+W001592,ETL
+W001592,Kubernetes
+W001592,워크플로우·BPM
+W001592,그룹사 업무
+W001593,Python
+W001593,검색엔진
+W001593,Text Analysis
+W001593,ETL
+W001593,SQL
+W001593,그룹사 업무
+W001594,ETL
+W001594,Python
+W001594,메타데이터 관리
+W001594,비정형 문서 처리(OCR)
+W001594,검색엔진
+W001594,ML Ops
+W001594,그룹사 업무
+W001595,비정형 문서 처리(OCR)
+W001595,메타데이터 관리
+W001595,Text Analysis
+W001595,Airflow
+W001595,Docker
+W001595,금융 업무
+W001596,Text Analysis
+W001596,메타데이터 관리
+W001596,비정형 문서 처리(OCR)
+W001596,FastAPI
+W001596,AWS
+W001596,공공 업무
+W001597,검색엔진
+W001597,메타데이터 관리
+W001597,Python
+W001597,SQL
+W001597,데이터 모델링
+W001597,그룹사 업무
+W001598,ETL
+W001598,비정형 문서 처리(OCR)
+W001598,Python
+W001598,React
+W001598,그룹사 업무
+W001599,ETL
+W001599,검색엔진
+W001599,비정형 문서 처리(OCR)
+W001599,Python
+W001599,Text Analysis
+W001599,그룹사 업무
+W001600,Python
+W001600,ETL
+W001600,Text Analysis
+W001600,메타데이터 관리
+W001600,비정형 문서 처리(OCR)
+W001600,검색엔진
+W001600,로우코드 플랫폼
+W001600,금융 업무
+W001601,Python
+W001601,메타데이터 관리
+W001601,Text Analysis
+W001601,Scala
+W001601,React
+W001601,그룹사 업무
+W001602,ETL
+W001602,비정형 문서 처리(OCR)
+W001602,Text Analysis
+W001602,Private Cloud
+W001602,Data Lake & Data Catalog
+W001602,그룹사 업무
+W001895,메타데이터 관리
+W001895,비정형 문서 처리(OCR)
+W001895,ETL
+W001895,Text Analysis
+W001895,검색엔진
+W001895,Python
+W001895,금융 업무
+W001612,데이터 모델링
+W001612,BI Reporting
+W001612,메타데이터 관리
+W001612,SQL
+W001612,금융 업무
+W001613,데이터 모델링
+W001613,BI Reporting
+W001613,메타데이터 관리
+W001613,그룹사 업무
+W001614,메타데이터 관리
+W001614,데이터 모델링
+W001614,SQL
+W001614,그룹사 업무
+W001615,메타데이터 관리
+W001615,SQL
+W001615,데이터 모델링
+W001615,BI Reporting
+W001615,Java
+W001615,그룹사 업무
+W001616,데이터 모델링
+W001616,메타데이터 관리
+W001616,BI Reporting
+W001616,SQL
+W001616,검색엔진
+W001616,Docker
+W001616,금융 업무
+W001617,BI Reporting
+W001617,데이터 모델링
+W001617,SQL
+W001617,메타데이터 관리
+W001617,Kubernetes
+W001617,그룹사 업무
+W001618,BI Reporting
+W001618,SQL
+W001618,데이터 모델링
+W001618,메타데이터 관리
+W001618,비정형 문서 처리(OCR)
+W001618,공공 업무
+W001619,SQL
+W001619,데이터 모델링
+W001619,BI Reporting
+W001619,메타데이터 관리
+W001619,그룹사 업무
+W001620,데이터 모델링
+W001620,SQL
+W001620,BI Reporting
+W001620,메타데이터 관리
+W001620,Kafka
+W001620,AWS
+W001620,그룹사 업무
+W001621,데이터 모델링
+W001621,메타데이터 관리
+W001621,SQL
+W001621,BI Reporting
+W001621,Java
+W001621,그룹사 업무
+W001622,데이터 모델링
+W001622,SQL
+W001622,메타데이터 관리
+W001622,BI Reporting
+W001622,그룹사 업무
+W001623,데이터 모델링
+W001623,메타데이터 관리
+W001623,BI Reporting
+W001623,SQL
+W001623,Kubernetes
+W001623,그룹사 업무
+W001624,메타데이터 관리
+W001624,BI Reporting
+W001624,데이터 모델링
+W001624,SQL
+W001624,비정형 문서 처리(OCR)
+W001624,Hadoop
+W001624,금융 업무
+W001625,메타데이터 관리
+W001625,SQL
+W001625,데이터 모델링
+W001625,BI Reporting
+W001625,Text Analysis
+W001625,그룹사 업무
+W001626,메타데이터 관리
+W001626,데이터 모델링
+W001626,SQL
+W001626,BI Reporting
+W001626,그룹사 업무
+W001627,데이터 모델링
+W001627,BI Reporting
+W001627,SQL
+W001627,Airflow
+W001627,그룹사 업무
+W001628,BI Reporting
+W001628,SQL
+W001628,메타데이터 관리
+W001628,데이터 모델링
+W001628,워크플로우·BPM
+W001628,Java
+W001628,그룹사 업무
+W001896,데이터 모델링
+W001896,메타데이터 관리
+W001896,BI Reporting
+W001896,그룹사 업무
+W001633,메타데이터 관리
+W001633,ETL
+W001633,Python
+W001633,비정형 문서 처리(OCR)
+W001633,검색엔진
+W001633,Text Analysis
+W001633,Hadoop
+W001633,금융 업무
+W001634,Python
+W001634,메타데이터 관리
+W001634,비정형 문서 처리(OCR)
+W001634,ETL
+W001634,Text Analysis
+W001634,검색엔진
+W001634,RAG·벡터DB
+W001634,RPA
+W001634,그룹사 업무
+W001635,메타데이터 관리
+W001635,검색엔진
+W001635,비정형 문서 처리(OCR)
+W001635,Python
+W001635,금융 업무
+W001636,Python
+W001636,검색엔진
+W001636,메타데이터 관리
+W001636,비정형 문서 처리(OCR)
+W001636,Scala
+W001636,AI 에이전트 프레임워크
+W001636,그룹사 업무
+W001637,Text Analysis
+W001637,ETL
+W001637,Python
+W001637,비정형 문서 처리(OCR)
+W001637,AI 에이전트 프레임워크
+W001637,금융 업무
+W001638,검색엔진
+W001638,Python
+W001638,ETL
+W001638,Text Analysis
+W001638,비정형 문서 처리(OCR)
+W001638,데이터 모델링
+W001638,그룹사 업무
+W001639,비정형 문서 처리(OCR)
+W001639,Python
+W001639,ETL
+W001639,금융 업무
+W001897,ETL
+W001897,비정형 문서 처리(OCR)
+W001897,메타데이터 관리
+W001897,금융 업무
+W001640,비정형 문서 처리(OCR)
+W001640,ETL
+W001640,메타데이터 관리
+W001640,검색엔진
+W001640,Text Analysis
+W001640,Python
+W001640,그룹사 업무
+W001641,Python
+W001641,비정형 문서 처리(OCR)
+W001641,ETL
+W001641,메타데이터 관리
+W001641,검색엔진
+W001641,Airflow
+W001641,금융 업무
+W001642,메타데이터 관리
+W001642,Text Analysis
+W001642,ETL
+W001642,데이터 모델링
+W001642,Kubernetes
+W001642,그룹사 업무
+W001643,메타데이터 관리
+W001643,검색엔진
+W001643,Text Analysis
+W001643,Python
+W001643,비정형 문서 처리(OCR)
+W001643,그룹사 업무
+W001644,검색엔진
+W001644,Python
+W001644,ETL
+W001644,비정형 문서 처리(OCR)
+W001644,메타데이터 관리
+W001644,워크플로우·BPM
+W001644,금융 업무
+W001645,Python
+W001645,ETL
+W001645,Text Analysis
+W001645,검색엔진
+W001645,비정형 문서 처리(OCR)
+W001645,그룹사 업무
+W001646,Python
+W001646,메타데이터 관리
+W001646,ETL
+W001646,비정형 문서 처리(OCR)
+W001646,검색엔진
+W001646,RPA
+W001646,프롬프트 엔지니어링
+W001646,그룹사 업무
+W001647,검색엔진
+W001647,ETL
+W001647,Text Analysis
+W001647,비정형 문서 처리(OCR)
+W001647,메타데이터 관리
+W001647,Kubernetes
+W001647,그룹사 업무
+W001898,메타데이터 관리
+W001898,비정형 문서 처리(OCR)
+W001898,ETL
+W001898,Text Analysis
+W001898,Python
+W001898,검색엔진
+W001898,금융 업무
+W001653,AWS
+W001653,ETL
+W001653,Spark
+W001653,금융 업무
+W001654,Airflow
+W001654,Hadoop
+W001654,Kafka
+W001654,지능형 문서 처리(IDP)
+W001654,금융 업무
+W001655,Kafka
+W001655,Airflow
+W001655,Scala
+W001655,ETL
+W001655,AWS
+W001655,그룹사 업무
+W001656,ETL
+W001656,AWS
+W001656,Python
+W001656,Hadoop
+W001656,SQL
+W001656,Java
+W001656,데이터 모델링
+W001656,금융 업무
+W001657,AWS
+W001657,Spark
+W001657,Scala
+W001657,FastAPI
+W001657,RPA
+W001657,금융 업무
+W001658,Spark
+W001658,ETL
+W001658,Python
+W001658,그룹사 업무
+W001659,Kafka
+W001659,AWS
+W001659,Python
+W001659,Airflow
+W001659,공공 업무
+W001660,Spark
+W001660,AWS
+W001660,Python
+W001660,Airflow
+W001660,Hadoop
+W001660,Kafka
+W001660,Docker
+W001660,Java
+W001660,그룹사 업무
+W001661,SQL
+W001661,Kafka
+W001661,Python
+W001661,Hadoop
+W001661,그룹사 업무
+W001662,SQL
+W001662,Spark
+W001662,Airflow
+W001662,Kafka
+W001662,Hadoop
+W001662,Scala
+W001662,금융 업무
+W001663,Python
+W001663,Hadoop
+W001663,AWS
+W001663,Scala
+W001663,Kafka
+W001663,LLM 파인튜닝
+W001663,Docker
+W001663,금융 업무
+W001899,Spark
+W001899,ETL
+W001899,SQL
+W001899,금융 업무
+W001679,Docker
+W001679,Hadoop
+W001679,Kafka
+W001679,Private Cloud
+W001679,Data Lake & Data Catalog
+W001679,AWS
+W001679,그룹사 업무
+W001680,AWS
+W001680,Kubernetes
+W001680,Kafka
+W001680,금융 업무
+W001681,Private Cloud
+W001681,Data Lake & Data Catalog
+W001681,Kafka
+W001681,Hadoop
+W001681,AWS
+W001681,Kubernetes
+W001681,Python
+W001681,그룹사 업무
+W001682,AWS
+W001682,Hadoop
+W001682,Kubernetes
+W001682,React
+W001682,Airflow
+W001682,그룹사 업무
+W001683,Kubernetes
+W001683,Docker
+W001683,Data Lake & Data Catalog
+W001683,SQL
+W001683,공공 업무
+W001684,Hadoop
+W001684,Private Cloud
+W001684,Docker
+W001684,Data Lake & Data Catalog
+W001684,Kafka
+W001684,Kubernetes
+W001684,공공 업무
+W001685,AWS
+W001685,Kubernetes
+W001685,Kafka
+W001685,Hadoop
+W001685,Data Lake & Data Catalog
+W001685,Docker
+W001685,FastAPI
+W001685,금융 업무
+W001686,Private Cloud
+W001686,Hadoop
+W001686,Data Lake & Data Catalog
+W001686,Docker
+W001686,AWS
+W001686,금융 업무
+W001687,Private Cloud
+W001687,Data Lake & Data Catalog
+W001687,Hadoop
+W001687,AWS
+W001687,Java
+W001687,금융 업무
+W001688,Hadoop
+W001688,Kafka
+W001688,AWS
+W001688,Data Lake & Data Catalog
+W001688,Docker
+W001688,ML Ops
+W001688,그룹사 업무
+W001689,Kubernetes
+W001689,Hadoop
+W001689,Private Cloud
+W001689,Kafka
+W001689,AWS
+W001689,Docker
+W001689,금융 업무
+W001690,Private Cloud
+W001690,AWS
+W001690,Kafka
+W001690,Kubernetes
+W001690,Hadoop
+W001690,SQL
+W001690,BI Reporting
+W001690,그룹사 업무
+W001691,AWS
+W001691,Private Cloud
+W001691,Hadoop
+W001691,Kubernetes
+W001691,Docker
+W001691,Data Lake & Data Catalog
+W001691,React
+W001691,프로세스 마이닝
+W001691,금융 업무
+W001692,AWS
+W001692,Docker
+W001692,Kafka
+W001692,Scala
+W001692,그룹사 업무
+W001693,Hadoop
+W001693,Docker
+W001693,Private Cloud
+W001693,Data Lake & Data Catalog
+W001693,Kafka
+W001693,Airflow
+W001693,금융 업무
+W001694,Docker
+W001694,AWS
+W001694,Private Cloud
+W001694,ML Ops
+W001694,금융 업무
+W001695,Docker
+W001695,Hadoop
+W001695,Private Cloud
+W001695,Data Lake & Data Catalog
+W001695,Kubernetes
+W001695,그룹사 업무
+W001696,Kubernetes
+W001696,Private Cloud
+W001696,Docker
+W001696,Data Lake & Data Catalog
+W001696,RPA
+W001696,Scala
+W001696,그룹사 업무
+W001697,Private Cloud
+W001697,Kubernetes
+W001697,AWS
+W001697,Kafka
+W001697,Data Lake & Data Catalog
+W001697,비정형 문서 처리(OCR)
+W001697,그룹사 업무
+W001900,Data Lake & Data Catalog
+W001900,AWS
+W001900,Kafka
+W001900,그룹사 업무
+W001703,Python
+W001703,메타데이터 관리
+W001703,비정형 문서 처리(OCR)
+W001703,Text Analysis
+W001703,그룹사 업무
+W001704,메타데이터 관리
+W001704,비정형 문서 처리(OCR)
+W001704,Text Analysis
+W001704,검색엔진
+W001704,Python
+W001704,ETL
+W001704,지능형 문서 처리(IDP)
+W001704,금융 업무
+W001705,비정형 문서 처리(OCR)
+W001705,Text Analysis
+W001705,검색엔진
+W001705,Python
+W001705,메타데이터 관리
+W001705,SQL
+W001705,금융 업무
+W001706,ETL
+W001706,메타데이터 관리
+W001706,Text Analysis
+W001706,검색엔진
+W001706,비정형 문서 처리(OCR)
+W001706,Hadoop
+W001706,AWS
+W001706,그룹사 업무
+W001707,Python
+W001707,비정형 문서 처리(OCR)
+W001707,Text Analysis
+W001707,데이터 모델링
+W001707,그룹사 업무
+W001708,메타데이터 관리
+W001708,ETL
+W001708,Python
+W001708,비정형 문서 처리(OCR)
+W001708,검색엔진
+W001708,Text Analysis
+W001708,금융 업무
+W001709,비정형 문서 처리(OCR)
+W001709,ETL
+W001709,검색엔진
+W001709,Text Analysis
+W001709,Python
+W001709,메타데이터 관리
+W001709,Spring
+W001709,데이터 모델링
+W001709,그룹사 업무
+W001710,Text Analysis
+W001710,Python
+W001710,ETL
+W001710,금융 업무
+W001711,검색엔진
+W001711,메타데이터 관리
+W001711,Text Analysis
+W001711,데이터 모델링
+W001711,금융 업무
+W001712,Text Analysis
+W001712,Python
+W001712,검색엔진
+W001712,메타데이터 관리
+W001712,ETL
+W001712,그룹사 업무
+W001713,메타데이터 관리
+W001713,비정형 문서 처리(OCR)
+W001713,검색엔진
+W001713,ETL
+W001713,Text Analysis
+W001713,FastAPI
+W001713,그룹사 업무
+W001714,Python
+W001714,Text Analysis
+W001714,ETL
+W001714,Airflow
+W001714,금융 업무
+W001715,Python
+W001715,검색엔진
+W001715,Text Analysis
+W001715,금융 업무
+W001716,Python
+W001716,메타데이터 관리
+W001716,비정형 문서 처리(OCR)
+W001716,ETL
+W001716,Text Analysis
+W001716,Spring
+W001716,그룹사 업무
+W001717,Python
+W001717,비정형 문서 처리(OCR)
+W001717,ETL
+W001717,검색엔진
+W001717,그룹사 업무
+W001718,Text Analysis
+W001718,메타데이터 관리
+W001718,Python
+W001718,ETL
+W001718,검색엔진
+W001718,공공 업무
+W001719,ETL
+W001719,Python
+W001719,메타데이터 관리
+W001719,Text Analysis
+W001719,검색엔진
+W001719,Spring
+W001719,그룹사 업무
+W001720,ETL
+W001720,Text Analysis
+W001720,메타데이터 관리
+W001720,Hadoop
+W001720,로우코드 플랫폼
+W001720,그룹사 업무
+W001721,검색엔진
+W001721,메타데이터 관리
+W001721,비정형 문서 처리(OCR)
+W001721,Text Analysis
+W001721,ETL
+W001721,Python
+W001721,AI 에이전트 프레임워크
+W001721,그룹사 업무
+W001901,ETL
+W001901,비정형 문서 처리(OCR)
+W001901,메타데이터 관리
+W001901,Text Analysis
+W001901,Python
+W001901,검색엔진
+W001901,금융 업무
+W001725,Python
+W001725,SQL
+W001725,AWS
+W001725,Data Lake & Data Catalog
+W001725,공공 업무
+W001726,Scala
+W001726,Spark
+W001726,Airflow
+W001726,ETL
+W001726,메타데이터 관리
+W001726,비정형 문서 처리(OCR)
+W001726,그룹사 업무
+W001727,Hadoop
+W001727,ETL
+W001727,AWS
+W001727,Data Lake & Data Catalog
+W001727,그룹사 업무
+W001728,Kafka
+W001728,Spark
+W001728,AWS
+W001728,Scala
+W001728,ML Ops
+W001728,Spring
+W001728,금융 업무
+W001729,Spark
+W001729,SQL
+W001729,Airflow
+W001729,Kafka
+W001729,ETL
+W001729,AWS
+W001729,그룹사 업무
+W001902,ETL
+W001902,Python
+W001902,금융 업무
+W001732,Python
+W001732,Text Analysis
+W001732,비정형 문서 처리(OCR)
+W001732,그룹사 업무
+W001733,비정형 문서 처리(OCR)
+W001733,검색엔진
+W001733,ETL
+W001733,Text Analysis
+W001733,Python
+W001733,SQL
+W001733,그룹사 업무
+W001734,Python
+W001734,ETL
+W001734,Text Analysis
+W001734,BI Reporting
+W001734,그룹사 업무
+W001735,비정형 문서 처리(OCR)
+W001735,메타데이터 관리
+W001735,검색엔진
+W001735,Text Analysis
+W001735,ETL
+W001735,Python
+W001735,Scala
+W001735,AWS
+W001735,금융 업무
+W001736,Python
+W001736,검색엔진
+W001736,ETL
+W001736,공공 업무
+W001737,Python
+W001737,Text Analysis
+W001737,검색엔진
+W001737,Scala
+W001737,FastAPI
+W001737,공공 업무
+W001738,ETL
+W001738,메타데이터 관리
+W001738,Python
+W001738,그룹사 업무
+W001739,Text Analysis
+W001739,비정형 문서 처리(OCR)
+W001739,검색엔진
+W001739,Python
+W001739,ETL
+W001739,메타데이터 관리
+W001739,React
+W001739,금융 업무
+W001740,Python
+W001740,Text Analysis
+W001740,검색엔진
+W001740,메타데이터 관리
+W001740,ETL
+W001740,비정형 문서 처리(OCR)
+W001740,Java
+W001740,금융 업무
+W001741,검색엔진
+W001741,ETL
+W001741,Text Analysis
+W001741,Python
+W001741,FastAPI
+W001741,그룹사 업무
+W001742,Python
+W001742,비정형 문서 처리(OCR)
+W001742,검색엔진
+W001742,Scala
+W001742,Docker
+W001742,그룹사 업무
+W001743,메타데이터 관리
+W001743,ETL
+W001743,비정형 문서 처리(OCR)
+W001743,검색엔진
+W001743,그룹사 업무
+W001903,ETL
+W001903,비정형 문서 처리(OCR)
+W001903,메타데이터 관리
+W001903,Text Analysis
+W001903,Python
+W001903,금융 업무
+W001765,검색엔진
+W001765,Python
+W001765,Text Analysis
+W001765,메타데이터 관리
+W001765,ETL
+W001765,비정형 문서 처리(OCR)
+W001765,금융 업무
+W001766,Text Analysis
+W001766,메타데이터 관리
+W001766,비정형 문서 처리(OCR)
+W001766,ETL
+W001766,BI Reporting
+W001766,Docker
+W001766,공공 업무
+W001767,메타데이터 관리
+W001767,비정형 문서 처리(OCR)
+W001767,Python
+W001767,Text Analysis
+W001767,AWS
+W001767,Docker
+W001767,그룹사 업무
+W001768,비정형 문서 처리(OCR)
+W001768,Python
+W001768,ETL
+W001768,그룹사 업무
+W001769,메타데이터 관리
+W001769,검색엔진
+W001769,Python
+W001769,비정형 문서 처리(OCR)
+W001769,React
+W001769,Hadoop
+W001769,그룹사 업무
+W001770,Python
+W001770,검색엔진
+W001770,메타데이터 관리
+W001770,Text Analysis
+W001770,비정형 문서 처리(OCR)
+W001770,Private Cloud
+W001770,Java
+W001770,그룹사 업무
+W001771,검색엔진
+W001771,Python
+W001771,비정형 문서 처리(OCR)
+W001771,메타데이터 관리
+W001771,ETL
+W001771,Text Analysis
+W001771,프로세스 마이닝
+W001771,ML Ops
+W001771,그룹사 업무
+W001772,메타데이터 관리
+W001772,ETL
+W001772,비정형 문서 처리(OCR)
+W001772,Text Analysis
+W001772,Python
+W001772,검색엔진
+W001772,그룹사 업무
+W001773,메타데이터 관리
+W001773,검색엔진
+W001773,Python
+W001773,Text Analysis
+W001773,금융 업무
+W001774,비정형 문서 처리(OCR)
+W001774,ETL
+W001774,Python
+W001774,메타데이터 관리
+W001774,검색엔진
+W001774,Text Analysis
+W001774,Docker
+W001774,그룹사 업무
+W001775,ETL
+W001775,비정형 문서 처리(OCR)
+W001775,검색엔진
+W001775,Python
+W001775,Data Lake & Data Catalog
+W001775,금융 업무
+W001776,메타데이터 관리
+W001776,비정형 문서 처리(OCR)
+W001776,검색엔진
+W001776,금융 업무
+W001777,비정형 문서 처리(OCR)
+W001777,Python
+W001777,ETL
+W001777,검색엔진
+W001777,공공 업무
+W001778,Python
+W001778,비정형 문서 처리(OCR)
+W001778,메타데이터 관리
+W001778,ETL
+W001778,Text Analysis
+W001778,검색엔진
+W001778,워크플로우·BPM
+W001778,Data Lake & Data Catalog
+W001778,그룹사 업무
+W001779,비정형 문서 처리(OCR)
+W001779,Text Analysis
+W001779,메타데이터 관리
+W001779,Python
+W001779,검색엔진
+W001779,Kubernetes
+W001779,Kafka
+W001779,그룹사 업무
+W001780,Python
+W001780,비정형 문서 처리(OCR)
+W001780,ETL
+W001780,Scala
+W001780,금융 업무
+W001781,비정형 문서 처리(OCR)
+W001781,메타데이터 관리
+W001781,Python
+W001781,Text Analysis
+W001781,검색엔진
+W001781,금융 업무
+W001782,메타데이터 관리
+W001782,Text Analysis
+W001782,ETL
+W001782,비정형 문서 처리(OCR)
+W001782,Python
+W001782,검색엔진
+W001782,Kubernetes
+W001782,금융 업무
+W001783,Text Analysis
+W001783,비정형 문서 처리(OCR)
+W001783,Python
+W001783,검색엔진
+W001783,메타데이터 관리
+W001783,ETL
+W001783,LLM Application
+W001783,AWS
+W001783,그룹사 업무
+W001784,Python
+W001784,비정형 문서 처리(OCR)
+W001784,검색엔진
+W001784,메타데이터 관리
+W001784,Text Analysis
+W001784,LLM 파인튜닝
+W001784,그룹사 업무
+W001785,Python
+W001785,비정형 문서 처리(OCR)
+W001785,메타데이터 관리
+W001785,Kafka
+W001785,BI Reporting
+W001785,금융 업무
+W001792,Python
+W001792,Text Analysis
+W001792,메타데이터 관리
+W001792,ETL
+W001792,Java
+W001792,그룹사 업무
+W001793,ETL
+W001793,Text Analysis
+W001793,메타데이터 관리
+W001793,금융 업무
+W001794,ETL
+W001794,Python
+W001794,검색엔진
+W001794,Text Analysis
+W001794,메타데이터 관리
+W001794,그룹사 업무
+W001795,검색엔진
+W001795,ETL
+W001795,비정형 문서 처리(OCR)
+W001795,Python
+W001795,Scala
+W001795,금융 업무
+W001796,Python
+W001796,Text Analysis
+W001796,비정형 문서 처리(OCR)
+W001796,검색엔진
+W001796,그룹사 업무
+W001797,Python
+W001797,검색엔진
+W001797,Text Analysis
+W001797,비정형 문서 처리(OCR)
+W001797,ETL
+W001797,Kafka
+W001797,데이터 모델링
+W001797,그룹사 업무
+W001798,Text Analysis
+W001798,비정형 문서 처리(OCR)
+W001798,검색엔진
+W001798,ETL
+W001798,Python
+W001798,공공 업무
+W001799,Text Analysis
+W001799,메타데이터 관리
+W001799,Python
+W001799,검색엔진
+W001799,ETL
+W001799,Spark
+W001799,금융 업무
+W001800,Python
+W001800,검색엔진
+W001800,메타데이터 관리
+W001800,Text Analysis
+W001800,Java
+W001800,Kubernetes
+W001800,공공 업무
+W001801,메타데이터 관리
+W001801,ETL
+W001801,Text Analysis
+W001801,Python
+W001801,BI Reporting
+W001801,Docker
+W001801,금융 업무
+W001802,메타데이터 관리
+W001802,비정형 문서 처리(OCR)
+W001802,Text Analysis
+W001802,워크플로우·BPM
+W001802,Hadoop
+W001802,금융 업무
+W001803,비정형 문서 처리(OCR)
+W001803,검색엔진
+W001803,Text Analysis
+W001803,ETL
+W001803,메타데이터 관리
+W001803,Python
+W001803,금융 업무
+W001804,Text Analysis
+W001804,비정형 문서 처리(OCR)
+W001804,ETL
+W001804,메타데이터 관리
+W001804,Python
+W001804,지능형 문서 처리(IDP)
+W001804,RPA
+W001804,금융 업무
+W001805,메타데이터 관리
+W001805,Text Analysis
+W001805,검색엔진
+W001805,Python
+W001805,Data Lake & Data Catalog
+W001805,그룹사 업무
+W001806,검색엔진
+W001806,ETL
+W001806,Python
+W001806,메타데이터 관리
+W001806,비정형 문서 처리(OCR)
+W001806,ML Ops
+W001806,금융 업무
+W001807,검색엔진
+W001807,메타데이터 관리
+W001807,Text Analysis
+W001807,Airflow
+W001807,금융 업무
+W001808,메타데이터 관리
+W001808,ETL
+W001808,검색엔진
+W001808,Python
+W001808,Text Analysis
+W001808,LLM 파인튜닝
+W001808,React
+W001808,금융 업무
+W001809,ETL
+W001809,비정형 문서 처리(OCR)
+W001809,검색엔진
+W001809,그룹사 업무
+W001810,검색엔진
+W001810,ETL
+W001810,Python
+W001810,워크플로우·BPM
+W001810,그룹사 업무
+W001811,Python
+W001811,Text Analysis
+W001811,검색엔진
+W001811,ETL
+W001811,메타데이터 관리
+W001811,비정형 문서 처리(OCR)
+W001811,FastAPI
+W001811,그룹사 업무
+W001812,메타데이터 관리
+W001812,비정형 문서 처리(OCR)
+W001812,ETL
+W001812,Text Analysis
+W001812,검색엔진
+W001812,Python
+W001812,로우코드 플랫폼
+W001812,Docker
+W001812,그룹사 업무
+W001904,ETL
+W001904,비정형 문서 처리(OCR)
+W001904,메타데이터 관리
+W001904,검색엔진
+W001904,금융 업무
+W001814,AWS
+W001814,Kafka
+W001814,Python
+W001814,Spark
+W001814,ETL
+W001814,그룹사 업무
+W001815,Kafka
+W001815,AWS
+W001815,Hadoop
+W001815,ETL
+W001815,Spring
+W001815,금융 업무
+W001816,Spark
+W001816,Python
+W001816,Hadoop
+W001816,AWS
+W001816,Scala
+W001816,금융 업무
+W001817,Python
+W001817,Spark
+W001817,AWS
+W001817,Docker
+W001817,금융 업무
+W001818,SQL
+W001818,Python
+W001818,Scala
+W001818,Hadoop
+W001818,비정형 문서 처리(OCR)
+W001818,금융 업무
+W001819,Kafka
+W001819,Spark
+W001819,Python
+W001819,ETL
+W001819,금융 업무
+W001820,ETL
+W001820,Spark
+W001820,SQL
+W001820,BI Reporting
+W001820,공공 업무
+W001821,ETL
+W001821,SQL
+W001821,Hadoop
+W001821,검색엔진
+W001821,금융 업무
+W001822,AWS
+W001822,ETL
+W001822,Spark
+W001822,SQL
+W001822,워크플로우·BPM
+W001822,Spring
+W001822,그룹사 업무
+W001823,ETL
+W001823,SQL
+W001823,AWS
+W001823,Private Cloud
+W001823,금융 업무
+W001824,Airflow
+W001824,ETL
+W001824,Kafka
+W001824,SQL
+W001824,AWS
+W001824,Scala
+W001824,금융 업무
+W001825,Python
+W001825,Spark
+W001825,Airflow
+W001825,AWS
+W001825,Kafka
+W001825,SQL
+W001825,비정형 문서 처리(OCR)
+W001825,그룹사 업무
+W001826,Spark
+W001826,SQL
+W001826,Scala
+W001826,ETL
+W001826,Python
+W001826,Airflow
+W001826,LLM 파인튜닝
+W001826,워크플로우·BPM
+W001826,금융 업무
+W001905,ETL
+W001905,Spark
+W001905,Kafka
+W001905,금융 업무

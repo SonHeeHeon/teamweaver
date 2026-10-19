@@ -26,6 +26,7 @@ class Bundle:
     manifest: dict
     horizon: list[dt.date]                      # first day of each planning month, in order
     tables: dict[str, list[dict]] = field(default_factory=dict)
+    aging: dict | None = None                   # 진행 중 사업 기술 경력 늘리기 기록(core/ingest/aging, 2026-10-19)
 
 
 def _parse_month(text: str) -> dt.date:
@@ -92,6 +93,15 @@ def _read_manifest(root: Path, report: IngestReport) -> tuple[dict, list[dt.date
                          column="horizon_months")
         else:
             n_months = manifest["horizon_months"]
+    if "as_of" in manifest:
+        try:
+            if not isinstance(manifest["as_of"], str):
+                raise ValueError
+            _parse_month(manifest["as_of"])              # 달력 검사(0000-09 같은 해도 거른다 -- Codex 리뷰 2026-10-19)
+        except ValueError:
+            report.error("manifest.json", "as_of(데이터 기준월) must be YYYY-MM", column="as_of")
+    if "skill_months_owner" in manifest and manifest["skill_months_owner"] not in ("service", "source"):
+        report.error("manifest.json", 'skill_months_owner must be "service" or "source"', column="skill_months_owner")
     if "synthetic" in manifest and not isinstance(manifest["synthetic"], bool):
         report.error("manifest.json", "synthetic must be true or false", column="synthetic")
     for key in ("dataset_id", "cost_unit"):
@@ -351,7 +361,15 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     concurrency.check(manifest, {r["person_id"] for r in tables.get("people.csv", [])}, report)
     from core.ingest import lifecycle            # 사업 수명 주기(manifest, 2026-10-19 v4) -- 계산에 안 쓰는 기록이라 경고만
     lifecycle.check(manifest, tables.get("projects.csv", []), report)
-    return Bundle(manifest=manifest, horizon=horizon, tables=tables), report
+    if report.ok and horizon:
+        # 진행 중 사업 기술 경력 늘리기(2026-10-19, core/ingest/aging) -- 검증을 통과한 행만 고친다. 별칭은 기술 사전의 대표 이름으로 맞춘다
+        from core.ingest.aging import age_ongoing_skills
+        from core.ingest.skills import load_dictionary
+        d = load_dictionary()
+        aging = age_ongoing_skills(manifest, tables, horizon, report, canonical=d.canonical)
+    else:
+        aging = None
+    return Bundle(manifest=manifest, horizon=horizon, tables=tables, aging=aging), report
 
 
 __all__ = ["Bundle", "load_bundle", "FILE_SPECS"]

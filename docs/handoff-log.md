@@ -22,6 +22,30 @@
 
 ---
 
+## 2026-10-19 · claude-a · 인사 시스템 API 받기(기본)·CSV(대체) · 진행 중 사업 기술 경력을 이 서비스가 늘림 · 설정 "데이터 원천"
+- 브랜치/커밋: `feat/claude-a-hr-source`(main `ad5a7cd` 위) `e6924e2`(경력 늘리기·`work_skills.csv`·manifest `as_of`/`skill_months_owner`·데이터) · `aed1a9a`(API 받기·서버·밤 배치·화면·문서) · 이 커밋(일지). main 미병합(사용자 승인 대기).
+- 사용자: "디폴트는 api고 그게 없다면 2번째 옵션으로 Csv로도", "현재 진행중인 등록된 프로젝트에서 등록한 기술에 한해 기술 개월수를 업데이트가 돼야하지않나?",
+  "Api … 업데이트를 한다고 하면 우리가 업데이트 안해도 되는데 안한다면 우리가 업데이트 하도록 하자. 그건 설정 화면에서 관리자가 설정", "두 값은 그대로"(RUNNING_SHARE·JOIN_MONTHS 유지).
+- 한 일:
+  - API 받기: `core/ingest/hr_api.py`·`api/hr_source.py`·`api/routes/hr_source.py`. 인사 표만 받아 지금 작업 데이터 판에 갈아 끼우고 `api.workspace.commit`(이력 `hr_sync`)으로 켠다. 원천이 그대로면 새 판 없음, 실패면 지금 데이터 그대로.
+  - 밤 배치 첫 단계: `Nightly._hr_sync` -- 서버 루프에 맡기고, 켜기는 shield, 시간 초과·멈춤이면 기다리기만 그만둔다.
+  - 경력 늘리기: `core/ingest/aging.py` -- 진행 중 업무 기술만, 행마다 `last_used_month` 뒤 ~ 계획 직전 달.
+  - 설정 화면: `web/src/datasource/DataSourcePanel`.
+  - 가짜 인사 시스템·계약 문서: `scripts/mock_hr_api.py`, `docs/hr-api-contract.md`.
+- 상대 영향(claude-b):
+  - 공유 계약 변경: 선택 표 `work_skills.csv`(FILE_SPECS에 추가 -- 업로드 허용 파일도 늘어남), manifest `as_of`·`skill_months_owner`(로더 검사).
+  - `api/datasets.rules_version`에 `aging:{AGING_RULES}`가 들어가 계산 버전이 바뀐다. 미리 계산 8개는 `rekeyed`, 기록 8개는 다시 생성했다.
+  - b 영역 파일을 고쳤다(b 진행 작업 없음을 확인): `api/nightly.py`(첫 단계·`loop`), `api/main.py`(라우터), `web/src/App.tsx`(설정 탭에 칸).
+  - 기준선 2032 passed·slow 20·웹 261.
+- 검증: `uv run --group benchmark pytest -q` 2032 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 261 · `npx tsc -b`·build 통과 · `export_demo_judgments --check` OK · 시연 8묶음 늘어난 경력 0. Phase 0은 MILP를 안 바꿔 생략.
+- Codex: 적대적 1라운드 MUST 3(밤 시간 초과 취소가 켜기 도중을 끊음·부분 원천 as_of 덮어쓰기·별칭 행 경력) + 2라운드 P2 5(멈춤 대기·저장 실패 표시·받는 중 갱신·못 늘림 구분·as_of 0000년 500) 모두 반영·시험.
+  Stop 훅 BLOCK P2 2(셌는지 모르는 행 이중 계산 9→20 · 10년 밖 경력 되살림 122개월) → `5d3f955`(전체 2034 passed).
+  그 뒤 Codex 쿼터 소진(10-20 00:10까지, 2회 시도 실패) → Claude Opus 폴백 리뷰 MUST 0 · SHOULD 3·NIT 2 반영 `b427369`(보류 행 기록·창 경계 시험·`AGING_RULES` 올림 → 미리 계산 다시 `rekeyed`).
+  최종 기준선 2035 passed·slow 20·웹 262. Stop 훅 게이트 끄기는 자동 권한 판정이 거부해 켜진 채다(사용자에게 알림).
+- 근거: `.omc/reports/2026-10-19-hr-source-summary.md`(+ task별 `skill-aging`·`hr-api-source`), 설계 `.omc/plan/2026-10-19-hr-source.md`.
+
+---
+
 ## 2026-10-19 · claude-a · b `006b70f` 병합 · 12개월 한도 v5 재측정 · 계산 버전에 모델 규칙 표지 · **main 병합(사용자 승인)**
 - 커밋: `40e61be`(계산 버전 = 원천 + 사전 + `milp.OBJECTIVE_RULES` -- 감점 예외처럼 규칙이 바뀌면 같은 원천도 버전이 달라져 야간 결과·캐시가 예전 증명으로 복원되지 않는다, Codex Stop 리뷰 P1. 미리 계산 8개는 이미 새 규칙으로 풀어 `rekeyed`로 버전만 옮김) ·
   `0e6d1e1`(b `006b70f` 병합: 수명 주기 표시·후보 점수 나눔·12개월 한도 규칙. 문서 충돌 3곳 양쪽 유지, 네 표시 시험 연간 번호 v5로) · 이 커밋(분담표·일지) → main 병합.

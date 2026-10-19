@@ -43,7 +43,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/scoring/engine.py` S(요구 대비 레벨, 가중 평균) · C(0.4·협업개월 + 0.6·리뷰점수).
 - `core/optimize/milp.py` 제품 MILP(PuLP+**HiGHS**, 2026-10-05부터. `MilpParams.solver="cbc"`는 비교용) · `highs_portfolio.py` 시드 포트폴리오 · `alternatives.py` 다양성 컷 대안 · `metrics.py` 지표
   · `validation.py` 원시 해 독립 검증 · `greedy.py` 기준선.
-- `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`).
+- `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`). 인사 시스템 API 받기 `hr_api.py`(서버 `api/hr_source.py`), 진행 중 사업 기술 경력 늘리기 `aging.py`.
   숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월). 개월 비율 직접 쓰기는 채택 안 함(사용자 결정 2026-10-12, 근거 `docs/skill-score-decision.md`).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
 - `web/` Vite+React+TS+Tailwind. 메뉴(`components/Shell.tsx`, 2026-10-18)는 3상황 중심 -- 신규 사업 편성(첫 화면)·긴급 투입·연간 계획(예전 요건 설정), 공통 부품 `web/src/ui/`. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
@@ -176,6 +176,18 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `/api/meta` 사업 `lifecycle`·`period`(계획 밖까지 이어지는 사업의 원문 기간 -- `start_month`·`end_month`는 계획 안으로 자른 달 순번), `/api/workspace` 항목 `lifecycle`, PDF "사업 이력"에 싣는다.
   신규 사업은 **pipeline이 원본**(화면에서 고친 상위·외주가 이긴다, pipeline에서 상위를 풀면 생성 기록의 연결은 무시). 신규 사업 수정·떨어짐은 생성 기록도 맞춘다(`workspace_edits._sync_lifecycle` --
   안 하면 로더가 "없는 사업"·"시작 달이 다르다" 경고를 남긴다), 기록이 없는 사업엔 칸을 만들지 않는다. 계산(MILP·평가기)은 읽지 않는다. 꼬리표는 이름 머리말("[운영]")과 같은 단계를 다시 쓰지 않는다.
+- **데이터 원천 = 인사 시스템 API(기본) · CSV(대체)**(2026-10-19 사용자 요청, claude-a, 계약 `docs/hr-api-contract.md`): `TEAMWEAVER_HR_API_URL`이 있으면 밤 배치 맨 앞(`Nightly._hr_sync` → 서버 루프에 맡김)과
+  관리자 "지금 받기"(`POST /api/hr-source/sync`)가 인사 표만 받아 **지금 작업 데이터 판에 갈아 끼우고**(사업·정원·요구 기술·현재 배치·manifest 단계 등은 이 서비스 것) 업로드와 같은 검사·켜기
+  (`api.workspace.commit`, 이력 `hr_sync`)로 켠다 -- 원문이 같으면 새 판 없음, 검사·연결 실패면 지금 데이터 그대로. 표마다 설정 JSON으로 `null`(지금 데이터 = CSV) 또는 끝점·칸 이름을 준다.
+  진짜 인사 시스템은 없다 -- 가짜 서버 `scripts/mock_hr_api.py`로만 시험했고 시연은 CSV다. 받을 때 manifest `as_of`는 기술 경력 표를 받았을 때만 받은 달, 파일 해시 목록(`files`)은 뺀다.
+  켜기(`hr_source._apply`)는 시작하면 바깥 취소와 상관없이 끝까지 간다(shield) -- 밤 배치는 시간 초과 때 **취소하지 않고** 기다리기만 그만둔다(Codex high, 켜기·저장본·이력 어긋남).
+- **진행 중 사업 기술 경력은 이 서비스가 늘린다**(2026-10-19 사용자 질문 "달이 지나가면 … 기술 개월수를 업데이트가 돼야하지않나?", `core/ingest/aging.py`): 로더가 검증 뒤
+  진행 중 업무에 등록된 기술(선택 표 `work_skills.csv`)만 그 경력의 `last_used_month` 다음 달 ~ 계획 직전 달(업무 기간 안)을 더한다 -- 원천이 이미 갱신했으면 두 번 세지 않는다.
+  별칭 행은 행마다 따로(합칠 때 최대). 업무별 기술 표가 없으면 데이터가 계획 직전 달보다 오래됐을 때만 경고.
+  어디까지 셌는지(마지막 사용 달·as_of) 모르는 행은 늘리지 않고 경고(기록 `held`), 10년 창 밖에서 마지막으로 쓴 행(행 자신의 마지막 사용 달로 판정)은 최근 달만 경력으로 남긴다
+  (Codex 종료 리뷰 -- 이중 계산·옛 경력 되살림). **늘리는 규칙을 바꾸면 `AGING_RULES`를 바꾸고 미리 계산 버전을 옮긴다**(시연은 늘어난 달 0이라 `rekeyed`).
+  manifest `skill_months_owner`="source"면 늘리지 않는다(설정 화면 "데이터 원천"에서 관리자가 바꿈 → 새 판). 규칙 표지 `aging.AGING_RULES`가 계산 버전에 들어간다.
+  계획 기간 안에서 달마다 올리지는 않는다. 시연 묶음은 `as_of` = 계획 직전 달·경력이 그 달까지 세어져 늘어나는 달 0(숫자 그대로, 미리 계산은 버전만 옮김).
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
   대상이 아니어서 예산·가용률 안에서 자유롭게 선택될 수 있다.
 - What-if `objective_delta`는 교체 전후를 `core/evaluate/plan_eval.py`로 현행 MILP 전체 목적(4항)과
@@ -190,7 +202,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 생성기 v5·현재 팀 감점 제외(claude-a) + 수명 주기 표시·후보 점수 나눔·12개월 한도(claude-b `006b70f`) 병합 **2009 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 256 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-19 인사 시스템 API 받기·진행 중 사업 기술 경력 늘리기(claude-a, main `ad5a7cd` 위) **2035 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 262 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
