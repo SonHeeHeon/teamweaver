@@ -22,6 +22,25 @@
 
 ---
 
+## 2026-10-21 · claude-a · What-if 화면 3건(배치 명단 정렬 · 교체 대상 사업별 묶음 · 팀원과의 관계 그림) + 등급 대체 검토(제안만)
+- 브랜치/커밋: `feat/claude-a-whatif-ui-fixes`(`feat/claude-a-ai-override-migrate` `24e6ee0` 위 -- b 브랜치와 같은 바탕) `cb5ca12`(화면) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "배치 명단 … 시작 빠른 순인데 왜 j001부터", "교체 대상 셀렉 박스 … 프로젝트 단위로 카테고리화", "팀원들과의 관계 … 지식그래프로 나오긴 좀 어려운가?"
+- 한 일:
+  - 정렬 열쇠가 원래 기간 "2024-02"와 계획 안 순번 "0000000"을 글자로 섞어 비교해 계획 안에서만 도는 사업(J001 등)이 늘 맨 앞이었다. `lifecycle.absoluteMonth`(절대 달 번호)로 고쳤다. 끝나 가는 순도 같은 버그였다.
+  - 교체 대상 셀렉트를 사업별 `optgroup`으로 묶었다(항목 "이름 (등급) · 코드", 값은 그대로).
+  - 팀원과의 관계를 SVG 그림으로 바꿨다(왼쪽 빠질 사람·가운데 팀원·오른쪽 들어올 사람, 굵기 = 개월·색 = 평가). 색·굵기 규칙은 `components/relationTone.ts`·`RelationLegend.tsx`로 옮겨 PDF 팀별 협업 지도와 함께 쓴다.
+  - 등급 대체(중급 자리에 고급·초급) 검토: 화면마다 다르게 처리한다(신규 사업 = 막음 · 긴급 투입 `_apply_hint` = 그 등급 정원을 사유 없이 늘림 · What-if = 경고). 제안 문서만 썼고 코드는 그대로다(`.omc/plan/2026-10-21-grade-substitution.md`, 사용자 결정 대기).
+- 상대 영향(claude-b):
+  - 네 진행 중 경로(`web/src/scenarios/**`·`review/**`·`ui/**`)는 건드리지 않았다(`ui/ProjectCode`는 import만).
+  - `TeamRelations`가 더 이상 `reviewWord`를 내보내지 않는다 -- `components/relationTone`에서 가져온다.
+  - 등급 대체를 하기로 하면 네 경로(확정 API·신규 사업·긴급 투입 화면)가 바뀐다 -- 순서는 사용자 결정.
+  - 기준선 2071 passed·slow 20·웹 296.
+- 검증: `uv run --group benchmark pytest -q` 2071 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 296(38 files) · `npx tsc -b`·build · 정렬 시험이 고치기 전 코드에서 실패 확인 · 브라우저(연말형 기록): 시작 빠른 순 J005(24.2) 먼저·J001(26.10)은 J014 뒤, 끝나 가는 순 26.12 끝 사업 넷 먼저, 교체 대상 묶음 20개, 관계 그림.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰, 결함 없음.
+- 근거: `.omc/reports/2026-10-21-whatif-ui-fixes.md`, 등급 대체 `.omc/plan/2026-10-21-grade-substitution.md`.
+
+---
+
 ## 2026-10-20 · claude-a · 시험의 설명 AI 바꿔 끼우기를 모두 라우트가 쥔 함수로(claude-b 확인 권장 마무리)
 - 브랜치/커밋: `feat/claude-a-ai-override-migrate`(main `266d986` 위) `0cf99f2`(시험) · 이 커밋(문서). main 미병합(승인 대기).
 - 사용자: "병합 승인할게. 남은 작은 일도 완료해줘" -- 직전 보고의 남은 일(이름을 열쇠로 쓴 override 23곳 남짓).

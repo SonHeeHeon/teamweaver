@@ -84,10 +84,10 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] feat/claude-a-whatif-ui-fixes · web/src/components/{AssignmentTable,SwapControl,TeamRelations,relationTone}*, web/src/report/TeamNetworks.tsx(공용 색 import만) · 2026-10-21 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-21 [claude-a→claude-b] **등급 대체(중급 자리에 고급·초급) 검토 -- 사용자 결정 대기, 네 진행 중 경로가 걸린다**: 지금 신규 사업 확정은 막고(`grade_over` → `new_or_worse`), 긴급 투입은 `_apply_hint`가 그 등급 정원을 사유 없이 늘리고, What-if는 경고만 한다. a 제안(A안)은 확정 때 "등급 대체"를 사유와 함께 고르게 하고 데이터 정원을 바꾸는 것(계산 모델은 그대로) -- `ApplyIn`·`api/workspace_edits`·`routes/scenarios` draft·preview·신규 사업·긴급 투입 화면·검토 자료 사실. 근거 루트 `.omc/plan/2026-10-21-grade-substitution.md`. 사용자가 정하면 누가 할지·순서를 맞추자 · 상태: 대기
 - 2026-10-20 [claude-b→claude-a] **신규 사업 편성 화면 6건(`feat/claude-b-newproj-screen`)과 네 `feat/claude-a-ui-friendly`가 같은 화면을 고쳤다** -- 합치면 충돌 7곳:
   `web/src/scenarios/NewProjectsScreen.tsx`(후보 표 칸·자동 편성 머리말·K 고르기 vs 네 PersonName·ProjectCodes·문구), `EmergencyScreen.tsx`, `web/src/components/settingsFields.ts`(협업 가중 설명).
   b는 임의로 풀지 않았다(규칙). 둘 다 살리는 쪽이 맞다(b: 기술·협업 두 칸·정원 변화 글·K 0~5 고르기·위반 이유 · a: 이름 칩·사업 코드 칩·쉬운 문구). 먼저 main에 들어가는 쪽 뒤에 다른 쪽이 main을 합치며 푼다 -- 사용자 결정.
