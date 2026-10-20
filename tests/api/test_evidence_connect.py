@@ -4,8 +4,6 @@ import zipfile
 
 import pytest
 
-from api.deps import get_openai_client_or_none
-from api.main import app
 from core.ingest.synthetic import generate_bundle
 
 ZIP = {"Content-Type": "application/zip"}
@@ -42,7 +40,7 @@ def test_uploaded_dataset_reveals_text_only_when_synthetic(client, tmp_path, syn
     assert kinds and (kinds <= {"quote", "summary"} if reveal else kinds == {"label"})
 
 
-def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatch):
+def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatch, ai_client):
     """swap_context에만 넘기면 인용 검증이 꺼진다(K5 리뷰 MUST) -- 둘 다 같은 색인을 받아야 한다."""
     import api.routes.whatif as w
     seen = {}
@@ -54,19 +52,19 @@ def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatc
         return real_ctx(conn, out_id, in_id, evidence=evidence, project_id=project_id)
 
     def brief(client_, model, c, out_id, in_id, evidence=None, score_change=None):
+        seen["client"] = client_
         seen["brief"] = evidence
         seen["score_change"] = score_change
         return {"rationale": "r", "risks": [], "alternatives": [], "evidence": []}
 
     monkeypatch.setattr(w, "swap_context", ctx)
     monkeypatch.setattr(w, "generate_briefing", brief)
-    app.dependency_overrides[get_openai_client_or_none] = lambda: object()
-    try:
+    marker = object()
+    with ai_client(marker):
         res = client.post("/api/whatif", json=SWAP)
         assert res.status_code == 200
         body = res.json()
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
+    assert seen["client"] is marker                     # 바꿔 끼운 클라이언트가 정말 라우트에 닿았다
     assert seen["ctx"] is client.app.state.dataset.evidence
     assert seen["brief"] is seen["ctx"]
     # claude-a 요청: 교체 대상 프로젝트와 점수 변화(전체 = objective_delta)를 설명 재료로 넘긴다.
@@ -76,7 +74,7 @@ def test_whatif_passes_the_same_index_to_context_and_briefing(client, monkeypatc
     assert seen["score_change"]["total"] == pytest.approx(body["objective_delta"])
 
 
-def test_llm_quote_round_trips_from_whatif_to_report(client, monkeypatch, tmp_path):
+def test_llm_quote_round_trips_from_whatif_to_report(client, monkeypatch, tmp_path, ai_client):
     """LLM이 원문의 일부를 인용하면 whatif가 "직접 인용"으로 싣고, 그 브리핑을 PDF로 다시 보내도 받는다."""
     import json
     from unittest.mock import MagicMock
@@ -87,24 +85,19 @@ def test_llm_quote_round_trips_from_whatif_to_report(client, monkeypatch, tmp_pa
     fake.chat.completions.create.return_value = MagicMock(choices=[MagicMock(message=MagicMock(content=json.dumps({
         "rationale": f"근거 [{src.source_id}]", "risks": [], "alternatives": [],
         "citations": [{"source_id": src.source_id, "quote": part}]})))])
-    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
-    try:
+    with ai_client(fake):
         body = client.post("/api/whatif", json=SWAP).json()
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
     assert body["fallback_used"] is False, body
+    fake.chat.completions.create.assert_called()        # 가짜가 정말 쓰였다(진짜 AI가 아니라)
     assert body["briefing"]["evidence"] == [{"source_id": src.source_id, "reviewer_id": src.reviewer_id,
                                              "kind": "quote", "text": part}]
     _report_client(monkeypatch, tmp_path)
     assert _report(client, body["briefing"]["evidence"]).status_code == 200
 
 
-def test_rule_based_briefing_carries_sourced_evidence(client):
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
-    try:
+def test_rule_based_briefing_carries_sourced_evidence(client, ai_client):
+    with ai_client(None):
         body = client.post("/api/whatif", json=SWAP).json()
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
     ev = body["briefing"]["evidence"]
     assert ev, "규칙 기반 브리핑도 출처 붙은 근거를 낸다"
     assert all(set(e) == {"source_id", "reviewer_id", "kind", "text"} for e in ev)
@@ -193,19 +186,16 @@ def _upload(client, tmp_path, synthetic, long_item=False):
     assert client.post("/api/datasets", content=_zip(root), headers=ZIP).status_code == 200
 
 
-def test_whatif_survives_review_items_longer_than_the_response_limit(client, monkeypatch, tmp_path):
+def test_whatif_survives_review_items_longer_than_the_response_limit(client, monkeypatch, tmp_path, ai_client):
     """실데이터의 긴 리뷰 항목이 응답 스키마 상한(2000자)을 넘어도 500이 아니라 잘린 근거로 답한다
     (K5 연결 리뷰 M1). 잘린 근거는 PDF로 다시 보내도 받는다."""
     _upload(client, tmp_path, synthetic=False, long_item=True)
     people = [p["id"] for p in client.get("/api/meta").json()["people"]]
     project = client.get("/api/meta").json()["projects"][0]["id"]
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
-    try:
+    with ai_client(None):
         res = client.post("/api/whatif", json={
             "entries": [{"person_id": people[0], "project_id": project, "alloc": 0.5}],
             "swap": {"out_person_id": people[0], "in_person_id": people[1], "project_id": project}})
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
     assert res.status_code == 200, res.text
     ev = res.json()["briefing"]["evidence"]
     assert ev and all(e["kind"] == "label" and len(e["text"]) == 2000 for e in ev)

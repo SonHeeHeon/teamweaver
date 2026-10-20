@@ -15,6 +15,7 @@ lifespan에 `os.environ.get("TEAMWEAVER_SKIP_WARM") != "1"` 가드를 넣을
 미만) 돌 수 있게 한다. FastAPI의 `app.dependency_overrides`는 앱 소스를
 건드리지 않는 표준 테스트 기법이다."""
 import sqlite3
+from contextlib import contextmanager
 
 import pytest
 from fastapi.testclient import TestClient
@@ -78,6 +79,45 @@ def data_dir(monkeypatch, tmp_path):
     THROTTLE._state.clear()
     THROTTLE._inflight.clear()
     return path
+
+
+def ai_dependencies() -> list:
+    """라우트가 실제로 쥔 설명 AI 의존성 함수들(이름으로 찾는다, 2026-10-20 claude-b 확인 권장 처리).
+    `api.deps.get_openai_client_or_none`을 열쇠로 쓰면, 다른 시험이 그 이름을 바꿔 끼웠거나 모듈을 다시 불러온 뒤에는
+    열쇠가 라우트의 함수와 달라 override가 조용히 안 먹는다 -- 그때 시험은 진짜 클라이언트로 돈다."""
+    found: list = []
+
+    def walk(dep):
+        for d in dep.dependencies:
+            if getattr(d.call, "__name__", "") == "get_openai_client_or_none" and d.call not in found:
+                found.append(d.call)
+            walk(d)
+
+    def visit(routes):
+        for r in routes:
+            if getattr(r, "dependant", None) is not None:
+                walk(r.dependant)
+            if getattr(r, "original_router", None) is not None:      # FastAPI 0.14x: include_router가 감싼 라우터
+                visit(r.original_router.routes)
+    visit(app.routes)
+    return found
+
+
+@pytest.fixture
+def ai_client():
+    """`with ai_client(fake):` -- 설명 AI 클라이언트를 바꾼 채 실행한다(가짜·None). 라우트가 쥔 함수를 모두 바꾼다."""
+    @contextmanager
+    def use(value):
+        keys = ai_dependencies()
+        assert keys, "설명 AI 의존성을 쓰는 라우트를 찾지 못했다"
+        for k in keys:
+            app.dependency_overrides[k] = lambda: value
+        try:
+            yield
+        finally:
+            for k in keys:
+                app.dependency_overrides.pop(k, None)
+    return use
 
 
 @pytest.fixture
