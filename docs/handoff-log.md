@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-20 · claude-a · 시험의 설명 AI 바꿔 끼우기를 모두 라우트가 쥔 함수로(claude-b 확인 권장 마무리)
+- 브랜치/커밋: `feat/claude-a-ai-override-migrate`(main `266d986` 위) `0cf99f2`(시험) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "병합 승인할게. 남은 작은 일도 완료해줘" -- 직전 보고의 남은 일(이름을 열쇠로 쓴 override 23곳 남짓).
+- 한 일:
+  - 공용 도구를 `tests/ai_override.py`(`override_ai`·`ai_dependencies`)로 옮기고 `ai_client` 픽스처를 `tests/conftest.py`로(tests/scenarios·nightly도 쓰게). 끝나면 직전 override로 되돌리고, 라우트가 값을 받아 간 횟수를 `used`로 준다.
+  - 13개 파일 25곳을 옮겼다(tests/api 9 · scenarios 2 · nightly 2). 결과로 안 드러나는 3곳에 `assert used`.
+  - `tests/test_no_real_ai.py`: `override_ai` 되돌리기 시험 + 시험 코드에 `dependency_overrides[...get_openai_client_or_none]`가 다시 생기면 실패(옛 main에 돌리면 24줄을 잡는다).
+- 상대 영향(claude-b): 네 영역 시험 파일을 고쳤다(시험 내용은 그대로, 바꿔 끼우는 줄만). 새 시험에서 설명 AI를 바꿀 때는 `ai_client` 픽스처(모듈 단위 픽스처·도우미는 `tests.ai_override.override_ai`) -- 이름을 열쇠로 쓰면 시험이 실패한다. 밤 실행이 직접 부르는 `api.deps` 이름 바꾸기(monkeypatch)는 그대로다. 기준선 2071 passed·slow 20·웹 292.
+- 검증: `uv run --group benchmark pytest -q` 2071 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 옮긴 파일 묶음 137 passed · ruff F401/F841(바꾼 파일) 새 경고 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰, 결함 없음.
+- 근거: `.omc/reports/2026-10-20-ai-override-migrate.md`.
+
+---
+
 ## 2026-10-20 · claude-a · claude-b `feat/claude-b-emergency-preview` **main 병합(사용자 "병합 승인할게")**
 - 브랜치/커밋: 통합 브랜치 `feat/claude-a-merge-emergency-preview`의 병합 커밋(이 커밋, 부모 main `93ed03c` + b `07df86f`) → main 빨리 감기. b 브랜치·worktree는 건드리지 않았다.
 - 들어간 것: b `1fcf110`(긴급 투입 손 편성 미리 보기 `POST /api/emergency/preview`·설정 화면 용어·신규 사업 K 0~5) · `07df86f`(문서).
