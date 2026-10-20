@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AllocChange, AssignEntry, Person, Project } from "../api/types";
 import { formatAlloc, formatMonthly, monthLabel } from "./allocFormat";
 import { LifecycleChips } from "./LifecycleChips";
-import { projectPeriod } from "./lifecycle";
+import { absoluteMonth, projectPeriod } from "./lifecycle";
 import { practicalCredits, skillChips } from "./skillLabel";
 import { ProjectCode } from "../ui";
 
@@ -125,10 +125,11 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
   const hits = q ? entries.filter((e) => hit(e.person_id)) : [];
   const ordered = [...byProject.entries()].sort(([a, la], [b, lb]) => {
     const ja = jById.get(a), jb = jById.get(b);
-    const startOf = (j?: Project) => j?.period?.start ?? String(j?.start_month ?? 0).padStart(7, "0");
-    const endOf = (j?: Project) => j?.period?.end ?? String(j?.end_month ?? 0).padStart(7, "0");
-    const by = sort === "start" ? startOf(ja).localeCompare(startOf(jb))
-      : sort === "end" ? endOf(ja).localeCompare(endOf(jb))
+    // 시작·끝은 절대 달 번호 하나로 비교한다(원래 기간과 계획 안 순번을 섞지 않는다 -- lifecycle.absoluteMonth)
+    const at = (j: Project | undefined, w: "start" | "end") =>
+      !j ? Number.MAX_SAFE_INTEGER : absoluteMonth(j, w, horizonStart) ?? (w === "start" ? j.start_month : j.end_month);
+    const by = sort === "start" ? at(ja, "start") - at(jb, "start")
+      : sort === "end" ? at(ja, "end") - at(jb, "end")
       : sort === "size" ? lb.length - la.length
       : sort === "vacancy" ? (vac.get(b) ?? 0) - (vac.get(a) ?? 0) : 0;
     return by || a.localeCompare(b);

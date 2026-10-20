@@ -56,6 +56,30 @@ describe("배치 명단 압축(사용자 2026-10-20)", () => {
     expect(screen.getByText("배치 명단에 없음")).toBeInTheDocument();
   });
 
+  it("시작·끝 정렬은 계획 밖 원래 기간과 계획 안 사업을 같은 달력으로 비교한다(사용자 2026-10-21 '왜 j001부터')", () => {
+    // 연말형 묶음 모양: 계획 26.10~27.3. J001·J018은 계획 안에서만 돌아 period가 없고, J005·J007은 계획 전에 시작했다.
+    // 예전에는 "0000000"(순번)과 "2024-02"(원래 기간)를 글자로 비교해 J001이 늘 맨 앞이었다.
+    const mixed = [
+      { id: "J001", name: "가", start_month: 0, end_month: 5 },
+      { id: "J005", name: "나", start_month: 0, end_month: 5, period: { start: "2024-02", end: "2028-07" } },
+      { id: "J007", name: "다", start_month: 0, end_month: 2, period: { start: "2026-02", end: "2026-12" } },
+      { id: "J018", name: "라", start_month: 1, end_month: 5 },
+    ] as unknown as Project[];
+    const es = mixed.map((j, k) => ({ person_id: ["A", "B", "C", "A"][k], project_id: j.id, alloc: 1 }));
+    const { unmount } = render(<AssignmentTable entries={es} people={people} projects={mixed} horizonStart="2026-10" />);
+    fireEvent.change(screen.getByLabelText("사업 정렬 기준"), { target: { value: "start" } });
+    expect(order()).toEqual(["J005 배치 명단", "J007 배치 명단", "J001 배치 명단", "J018 배치 명단"]);
+    fireEvent.change(screen.getByLabelText("사업 정렬 기준"), { target: { value: "end" } });
+    expect(order()).toEqual(["J007 배치 명단", "J001 배치 명단", "J018 배치 명단", "J005 배치 명단"]);
+    unmount();
+    // 계획 시작 달을 모르면 원래 기간을 쓰지 않고 계획 안 순번끼리만(같으면 코드순)
+    render(<AssignmentTable entries={es} people={people} projects={mixed} />);
+    fireEvent.change(screen.getByLabelText("사업 정렬 기준"), { target: { value: "start" } });
+    expect(order()).toEqual(["J001 배치 명단", "J005 배치 명단", "J007 배치 명단", "J018 배치 명단"]);
+    fireEvent.change(screen.getByLabelText("사업 정렬 기준"), { target: { value: "end" } });
+    expect(order()).toEqual(["J007 배치 명단", "J001 배치 명단", "J005 배치 명단", "J018 배치 명단"]);
+  });
+
   it("기술 창은 바깥을 누르면 닫힌다", () => {
     render(<AssignmentTable entries={entries} people={people} projects={projects} />);
     fireEvent.click(screen.getByRole("button", { name: "가나다 기술 보기" }));

@@ -26,3 +26,19 @@ export function projectPeriod(p: Project, start: string | null | undefined): str
     : `${monthLabel(p.start_month, start).slice(0, -1)}~${monthLabel(p.end_month, start)}`;
   return p.period ? `${shortMonth(p.period.start)}~${shortMonth(p.period.end)}월 · 계획 안 ${inPlan}` : inPlan;
 }
+
+const YM = /^(\d{4})-(\d{2})$/;
+const abs = (ym: string | null | undefined): number | null => {
+  const m = YM.exec(ym ?? "");
+  return m ? Number(m[1]) * 12 + Number(m[2]) - 1 : null;
+};
+
+/** 사업 시작·끝의 절대 달 번호(연×12+월-1) -- 배치 명단 정렬용(2026-10-21 사용자 "시작 빠른 순인데 왜 j001부터").
+ *  계획 밖까지 이어지는 사업은 원래 기간(period), 아니면 계획 시작 달 + 계획 안 순번. 계획 시작 달을 모르면 null --
+ *  그때는 모든 사업을 계획 안 순번으로만 비교한다(원래 기간과 순번을 섞으면 순서가 틀린다: 예전에 글자로 섞어 비교해
+ *  "0000000"이 "2024-02"보다 앞에 와서 계획 안에서만 도는 사업이 늘 맨 앞이었다). */
+export function absoluteMonth(p: Project, which: "start" | "end", horizonStart: string | null | undefined): number | null {
+  const base = abs(horizonStart);
+  if (base === null) return null;
+  return abs(p.period?.[which]) ?? base + (which === "start" ? p.start_month : p.end_month);
+}
