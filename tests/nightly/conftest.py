@@ -43,6 +43,9 @@ def _isolated(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("OPENAI_BASE_URL", "http://llm.invalid/v1")
     import api.deps as deps
+    # 앱(라우트)을 이름 바꾸기 **전에** 불러 둔다 -- 이 파일의 시험만 따로 돌리면 앱이 아래 monkeypatch 뒤 처음 불려 라우트가 가짜 lambda를
+    # 쥐고, override_ai가 진짜 함수를 찾지 못했다(전체 실행에선 다른 시험이 먼저 불러 가려졌다, 2026-10-21)
+    import api.main  # noqa: F401
     monkeypatch.setattr(deps, "get_openai_client_or_none", lambda: None)        # 밤 실행이 부르는 이름
     from tests.ai_override import override_ai
     from api.admin import THROTTLE
