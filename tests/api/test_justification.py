@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_openai_client_or_none
 from core.ingest.org_profile import generate_org_bundle
 
 
@@ -21,14 +20,12 @@ def bundle_root(tmp_path_factory):
 
 
 @pytest.fixture
-def jc(bundle_root, monkeypatch):
+def jc(bundle_root, monkeypatch, ai_client):
     monkeypatch.setenv("TEAMWEAVER_DEMO_DIR", str(bundle_root))
     monkeypatch.setenv("TEAMWEAVER_DEMO_BUNDLE", str(bundle_root / "org-n100-operating"))
     from api.main import app
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
-    with TestClient(app) as c:
+    with ai_client(None), TestClient(app) as c:
         yield c, app
-    app.dependency_overrides.pop(get_openai_client_or_none, None)
 
 
 def _body(c, **kw):
@@ -53,8 +50,8 @@ def test_template_first_then_no_client(jc):
     assert out["method"] == "template" and out["fallback_reason"] == "no_client"
 
 
-def test_ai_text_is_never_sent_and_rejected_sentences_stay_hidden(jc):
-    c, app = jc
+def test_ai_text_is_never_sent_and_rejected_sentences_stay_hidden(jc, ai_client):
+    c, _ = jc
     fake = MagicMock()
     fake.base_url = "https://api.openai.com/v1/"
     fake.with_options.return_value = fake
@@ -62,8 +59,8 @@ def test_ai_text_is_never_sent_and_rejected_sentences_stay_hidden(jc):
     fake.chat.completions.create.return_value = MagicMock(
         choices=[MagicMock(message=MagicMock(content=json.dumps({"text": secret})))],
         usage=MagicMock(prompt_tokens=10, completion_tokens=5))
-    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
-    out = c.post("/api/justification", json=_body(c)).json()
+    with ai_client(fake):
+        out = c.post("/api/justification", json=_body(c)).json()
     assert fake.chat.completions.create.called                       # 가상 시연 데이터라 AI를 부른다
     assert out["method"] == "template" and out["fallback_reason"].startswith("verify:")
     dumped = json.dumps(out, ensure_ascii=False)
@@ -71,14 +68,15 @@ def test_ai_text_is_never_sent_and_rejected_sentences_stay_hidden(jc):
     assert out["verification"]["ok"] is False and out["verification"]["rules"]
 
 
-def test_real_data_is_not_sent_to_an_external_llm(jc, monkeypatch):
+def test_real_data_is_not_sent_to_an_external_llm(jc, monkeypatch, ai_client):
     c, app = jc
     fake = MagicMock()
     fake.base_url = "https://api.openai.com/v1/"
-    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
     monkeypatch.delenv("TEAMWEAVER_REVIEW_ALLOW_EXTERNAL", raising=False)
     monkeypatch.setattr(app.state.dataset, "info", dataclasses.replace(app.state.dataset.info, synthetic=False))
-    out = c.post("/api/justification", json=_body(c)).json()
+    with ai_client(fake) as used:
+        out = c.post("/api/justification", json=_body(c)).json()
+    assert used                                                       # 가짜 클라이언트가 정말 들어갔다(막힘이 "클라이언트 없음" 탓이 아니다)
     assert out["fallback_reason"] == "external_blocked" and out["ai_unavailable_reason"] == "external_blocked"
     fake.chat.completions.create.assert_not_called()
 
@@ -163,17 +161,18 @@ def test_pdf_time_allowance_grows_with_the_number_of_projects():
     assert _justify_allowance(req(6)) == AI_TIMEOUT_S + 30 and _justify_allowance(req(30)) == 5 * AI_TIMEOUT_S + 30
 
 
-def test_ai_falls_back_to_the_template_when_too_many_ai_texts_run(jc, monkeypatch):
+def test_ai_falls_back_to_the_template_when_too_many_ai_texts_run(jc, monkeypatch, ai_client):
     # 동시 AI 호출 상한(폴백 리뷰 SHOULD): 상한이 차 있으면 AI를 부르지 않고 정해진 틀로, 이유 busy
     import threading
     import api.routes.justification as jr
-    c, app = jc
+    c, _ = jc
     fake = MagicMock()
     fake.base_url = "https://api.openai.com/v1/"
-    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
     monkeypatch.setattr(jr, "AI_SLOTS", threading.BoundedSemaphore(1))
     assert jr.AI_SLOTS.acquire(blocking=False)
-    out = c.post("/api/justification", json=_body(c)).json()
+    with ai_client(fake) as used:
+        out = c.post("/api/justification", json=_body(c)).json()
+    assert used
     assert out["method"] == "template" and out["fallback_reason"] == "busy"
     fake.chat.completions.create.assert_not_called()
     jr.AI_SLOTS.release()

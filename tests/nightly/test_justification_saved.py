@@ -94,8 +94,7 @@ def fake_ai(monkeypatch):
     """AI 클라이언트·글 생성을 가짜로(실제 호출 없음). calls = AI로 쓴 사업 목록."""
     import api.deps as deps
     import api.rag.justification as rag
-    from api.main import app
-    from api.routes import justification as jr
+    from tests.ai_override import override_ai
     fake = FakeClient()
     calls = []
 
@@ -108,9 +107,8 @@ def fake_ai(monkeypatch):
                 "fallback_reason": None, "usage": {"model": model, "cost_usd": 0.001, "latency_s": 0.1}}
     monkeypatch.setattr(rag, "generate_justification", gen)
     monkeypatch.setattr(deps, "get_openai_client_or_none", lambda: fake)
-    app.dependency_overrides[jr.get_openai_client_or_none] = lambda: fake
-    yield calls
-    app.dependency_overrides[jr.get_openai_client_or_none] = lambda: None
+    with override_ai(fake):                         # 화면 라우트(끝나면 conftest의 None으로 되돌아간다)
+        yield calls
 
 
 @pytest.fixture(scope="module")
