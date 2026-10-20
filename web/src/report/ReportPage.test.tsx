@@ -60,6 +60,7 @@ describe("ReportPage", () => {
     await waitFor(() => expect(window.__REPORT_READY__).toBe(true));
     expect(screen.getByText(/규칙 기반\(결정론적\) 생성기/)).toBeInTheDocument();
     expect(screen.getByText(/검토한 교체: 김일번 → 이이번/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "XAI 브리핑" })).toBeInTheDocument();   // 사용자 2026-10-20 원복
     expect(screen.getByText(/현행 점수 기준 종합 점수 -0.25/)).toBeInTheDocument();
     expect(screen.queryByText(/교체 검토 경고/)).not.toBeInTheDocument();
   });

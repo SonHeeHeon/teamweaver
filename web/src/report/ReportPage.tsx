@@ -199,7 +199,7 @@ function PlanReport() {
 
       {data.briefing && (
         <section className="mt-6">
-          <h2 className="mb-2 text-base font-semibold">AI 교체 설명</h2>
+          <h2 className="mb-2 text-base font-semibold">XAI 브리핑</h2>
           {data.swap && (
             <p className="text-xs text-slate-500">
               검토한 교체: {nameOf(data.swap.out_person_id)} → {nameOf(data.swap.in_person_id)}

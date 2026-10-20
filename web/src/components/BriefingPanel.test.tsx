@@ -26,6 +26,13 @@ describe("BriefingPanel", () => {
     expect(screen.getByText("규칙 기반(실데이터라 외부 AI로 보내지 않음)")).toBeInTheDocument();
   });
 
+  it("제목은 'XAI 브리핑'(사용자 2026-10-20 원복), 뜻은 ⓘ 설명", () => {
+    render(<BriefingPanel result={RESULT} loading={false} />);
+    expect(screen.getByRole("heading", { name: /XAI 브리핑/ })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip")).toHaveTextContent("설명할 수 있는 AI");
+    expect(screen.queryByText("AI 교체 설명")).toBeNull();
+  });
+
   it("명분·리스크·대안을 모두 보인다", () => {
     render(<BriefingPanel result={RESULT} loading={false} />);
     expect(screen.getByText(/p052로 교체 검토/)).toBeInTheDocument();

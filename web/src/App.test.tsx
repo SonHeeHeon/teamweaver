@@ -154,7 +154,7 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
     fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
 
     expect(postWhatif).toHaveBeenCalledTimes(1);
-    await screen.findByText("AI 교체 설명 쓰는 중…");
+    await screen.findByText("XAI 브리핑 쓰는 중…");
 
     // 응답이 오기 전에 Plan B로 전환한다
     fireEvent.click(screen.getByText("Plan B"));
@@ -170,7 +170,7 @@ describe("App — 플랜 전환 중 진행 중이던 what-if 응답", () => {
       expect(screen.queryByText(/이 문장은 Plan A 기준으로 계산된 것/)).not.toBeInTheDocument();
     });
     // busy 상태로 멈춰 있지도 않아야 한다 (finally 가드 확인).
-    expect(screen.queryByText("AI 교체 설명 쓰는 중…")).not.toBeInTheDocument();
+    expect(screen.queryByText("XAI 브리핑 쓰는 중…")).not.toBeInTheDocument();
     expect(screen.getByText(/교체 효과 보기.를 누르면/)).toBeInTheDocument();
   });
 });

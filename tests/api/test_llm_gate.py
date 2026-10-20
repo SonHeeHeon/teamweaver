@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from api import review_judge as rj
-from api.deps import get_openai_client_or_none, llm_client_for
+from api.deps import llm_client_for
 from api.main import app
 
 
@@ -41,16 +41,15 @@ def test_llm_client_for_without_client():
     assert llm_client_for(_ds(True), None) == (None, "no_client")
 
 
-def test_whatif_does_not_send_real_data_to_openai(client, monkeypatch):
+def test_whatif_does_not_send_real_data_to_openai(client, monkeypatch, ai_client):
     fake = MagicMock()
     fake.base_url = "https://api.openai.com/v1/"
     fake.chat.completions.create.return_value = MagicMock(choices=[MagicMock(message=MagicMock(content=json.dumps(
         {"rationale": "x", "risks": [], "alternatives": []})))])
-    app.dependency_overrides[get_openai_client_or_none] = lambda: fake
     monkeypatch.delenv(rj.ALLOW_EXTERNAL_ENV, raising=False)
     import dataclasses
     monkeypatch.setattr(app.state.dataset, "info", dataclasses.replace(app.state.dataset.info, synthetic=False))  # 실데이터처럼
-    try:
+    with ai_client(fake):
         meta = client.get("/api/meta").json()
         project, people = meta["projects"][0], meta["people"]
         body = {"entries": [{"person_id": people[0]["id"], "project_id": project["id"], "alloc": 1.0}],
@@ -62,8 +61,7 @@ def test_whatif_does_not_send_real_data_to_openai(client, monkeypatch):
         monkeypatch.setenv(rj.ALLOW_EXTERNAL_ENV, "1")                    # 허용하면 보낸다
         out = client.post("/api/whatif", json=body).json()
         assert out["fallback_used"] is False and out["fallback_reason"] is None
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
+        fake.chat.completions.create.assert_called_once()                # 가짜가 정말 쓰였다(바꿔 끼우기가 빗나가면 여기서 걸린다)
 
 
 def test_llm_client_for_honors_explicit_onprem_but_not_for_openai(monkeypatch):
