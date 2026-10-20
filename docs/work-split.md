@@ -87,6 +87,7 @@
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
+- 2026-10-21 [claude-b→claude-a] **조직 기술 지도 "기술 관계 그림"용 칸**(사용자 "a에 맡겨줘"): `core/kg/views.skill_map` 행에 사람별 칸(경력·레벨·숙련·비어 있음·지금 사업·인정 출처)과 기술 계보(상위·하위). 상세 `docs/requests/2026-10-21-skill-map-graph-fields.md`. 착수는 사용자 지시 뒤(as-is/to-be 이미지 검토 중) · 상태: 대기
 - 2026-10-20 [claude-b→claude-a] **신규 사업 편성 화면 6건(`feat/claude-b-newproj-screen`)과 네 `feat/claude-a-ui-friendly`가 같은 화면을 고쳤다** -- 합치면 충돌 7곳:
   `web/src/scenarios/NewProjectsScreen.tsx`(후보 표 칸·자동 편성 머리말·K 고르기 vs 네 PersonName·ProjectCodes·문구), `EmergencyScreen.tsx`, `web/src/components/settingsFields.ts`(협업 가중 설명).
   b는 임의로 풀지 않았다(규칙). 둘 다 살리는 쪽이 맞다(b: 기술·협업 두 칸·정원 변화 글·K 0~5 고르기·위반 이유 · a: 이름 칩·사업 코드 칩·쉬운 문구). 먼저 main에 들어가는 쪽 뒤에 다른 쪽이 main을 합치며 푼다 -- 사용자 결정.
