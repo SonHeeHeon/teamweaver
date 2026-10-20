@@ -58,18 +58,32 @@ export function Tabs<T extends string>({ value, onChange, items, right, label }:
   );
 }
 
-export function Dialog({ title, children, actions, labelId = "dialog-title" }: {
+export function Dialog({ title, children, actions, labelId = "dialog-title", wide = false }: {
   title: ReactNode; children?: ReactNode; actions: ReactNode; labelId?: string;
+  /** 글이 긴 창(소명 미리보기·확정 취소 미리 보기) */
+  wide?: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(21,55,47,.32)] px-4" role="dialog"
          aria-modal="true" aria-labelledby={labelId}>
-      <div className="panel w-full max-w-[480px] p-6">
+      <div className={`panel w-full ${wide ? "max-w-[640px]" : "max-w-[480px]"} p-6`}>
         <h3 id={labelId} className="text-lg font-bold text-slate-900">{title}</h3>
         <div className="mt-1.5 text-[13.5px] text-slate-600">{children}</div>
         <div className="mt-5 flex justify-end gap-2">{actions}</div>
       </div>
     </div>
+  );
+}
+
+/** 기다리는 동안 표시(2026-10-21 사용자 "로딩이 걸린다는 뭔가 액션이 있어야"): 도는 원 + 글자.
+ *  창·칸 안에 홀로 놓으면 status(화면 낭독기가 읽음), 버튼 글자 안에 넣을 때는 status={false}(버튼 이름이 이미 바뀐다). */
+export function Spinner({ label, status = true, className = "" }: { label?: ReactNode; status?: boolean; className?: string }) {
+  return (
+    <span role={status ? "status" : undefined} className={`inline-flex items-center gap-1.5 ${className}`}>
+      <span aria-hidden="true" data-spinner=""
+            className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent opacity-70" />
+      {label && <span>{label}</span>}
+    </span>
   );
 }
 

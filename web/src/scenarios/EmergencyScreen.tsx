@@ -3,7 +3,7 @@
  *  상황(필요 기술·인원·등급·빼 오기 허용)을 적으면 최선 조합과 후보 순위가 나온다. 확정하면 그 사업의 정원·예산·요구 기술이
  *  늘어난 새 판이 된다(서버가 계산한 apply_hint 그대로). */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } from "../ui";
+import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Spinner, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ScoreSplitNote } from "../components/ScoreSplitNote";
 import { seatsText, signedPts, splitText } from "../components/scoreSplit";
@@ -314,7 +314,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
             </div>
             <p className="text-xs text-slate-500">빼 오기 = 다른 진행 사업에서 데려와도 되는 사람 수(그 사업 빈자리는 메움). 고정한 사람은 빼 오지 않습니다.</p>
             <button className="btn-primary w-full" disabled={!projectId || busy} onClick={() => void search()}>
-              {busy ? "찾는 중…" : "후보 찾기"}
+              {busy ? <Spinner status={false} label="찾는 중…" /> : "후보 찾기"}
             </button>
           </div>
         </Panel>
@@ -429,7 +429,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       {support && plan && (
         <Dialog title={`${project?.name ?? projectId} — 프로젝트 동시 수행으로 지원`} actions={<>
           <button className="btn-ghost" onClick={() => setSupport(null)} disabled={busy}>취소</button>
-          <button className="btn-primary" disabled={busy} onClick={() => void applySupport(support)}>{busy ? "처리 중…" : "확정"}</button>
+          <button className="btn-primary" disabled={busy} onClick={() => void applySupport(support)}>{busy ? <Spinner status={false} label="처리 중…" /> : "확정"}</button>
         </>}>
           {support.name}은(는) 지금 사업을 그대로 하면서 이 사업도 사업 끝까지 100%로 맡습니다(두 사업 모두 100%, 예산도 각각 전액).
           {support.needs_grant ? " 확정하면 이 사람에게 프로젝트 동시 수행 허용(사유: 긴급 지원)이 함께 기록됩니다." : ""}
@@ -442,7 +442,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       {pickConfirm && plan && pickDraft && (
         <Dialog title={`${project?.name ?? projectId} 긴급 투입 확정(고른 ${pickList.length}명)`} actions={<>
           <button className="btn-ghost" onClick={() => setPickConfirm(false)} disabled={busy}>취소</button>
-          <button className="btn-primary" disabled={busy} onClick={() => void applyPicks()}>{busy ? "처리 중…" : "확정"}</button>
+          <button className="btn-primary" disabled={busy} onClick={() => void applyPicks()}>{busy ? <Spinner status={false} label="처리 중…" /> : "확정"}</button>
         </>}>
           {pickList.map((r) => r.name).join(", ")}을(를) 지금부터 사업이 끝날 때까지 넣습니다. {hintText(pickDraft.apply_hint, "함께")}
           {pickBody.some((p) => p.grant) ? " 원래 사업을 유지하는 사람에게는 프로젝트 동시 수행 허용(사유: 긴급 지원)이 함께 기록됩니다." : ""}
@@ -451,7 +451,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       {confirming && plan && (
         <Dialog title={`${project?.name ?? projectId} 긴급 투입 확정`} actions={<>
           <button className="btn-ghost" onClick={() => setConfirming(false)} disabled={busy}>취소</button>
-          <button className="btn-primary" disabled={busy} onClick={() => void apply()}>{busy ? "처리 중…" : "확정"}</button>
+          <button className="btn-primary" disabled={busy} onClick={() => void apply()}>{busy ? <Spinner status={false} label="처리 중…" /> : "확정"}</button>
         </>}>
           {plan.best.added?.map((a) => a.name).join(", ")}을(를) 지금부터 사업이 끝날 때까지 넣습니다.
         </Dialog>

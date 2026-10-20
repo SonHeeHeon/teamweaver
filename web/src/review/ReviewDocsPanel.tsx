@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminLoginRequiredError } from "../api/client";
 import { ReviewDoc } from "./ReviewDoc";
+import { Spinner } from "../ui";
 import {
   ReviewConflictError, createReviewDoc, downloadReviewPdf, draftReviewDoc, fetchConfirms, fetchReviewDoc, saveReviewDoc,
   type ConfirmRow, type EditPatch, type ReviewDocView,
@@ -33,10 +34,15 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
     setBusy(true); setError(null); setNotice(null);
     try { await fn(); } catch (e) { fail(e); } finally { setBusy(false); }
   };
-  const openDoc = (version: string, projectId: string, exists: boolean) => run(async () => {
-    setDoc(exists ? await fetchReviewDoc(version, projectId) : await createReviewDoc(version, projectId, adminToken));
-    reload();
-  });
+  /** 여는 중인 자료(그 버튼에 "여는 중…" -- 새로 만들 때는 확정 전후를 평가해 몇 초 걸린다) */
+  const [opening, setOpening] = useState<string | null>(null);
+  const openDoc = (version: string, projectId: string, exists: boolean) => {
+    setOpening(`${version}/${projectId}`);
+    return run(async () => {
+      setDoc(exists ? await fetchReviewDoc(version, projectId) : await createReviewDoc(version, projectId, adminToken));
+      reload();
+    }).finally(() => setOpening(null));
+  };
   useEffect(() => {
     if (open) {
       void openDoc(open.version, open.projectId, false);   // 만들기는 이미 있으면 그대로 돌려준다
@@ -100,7 +106,7 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
                 <b>{r.kind === "emergency" ? "긴급 투입" : "신규 사업 편성"}</b>
                 <span className="text-slate-500">{r.at ? new Date(r.at).toLocaleString("ko-KR") : ""} · {r.note}</span>
                 {r.active && <span className="rounded-full bg-pine-100 px-2 text-[11px] text-pine-800">지금 판</span>}
-                {r.reverted && <span className="rounded-full bg-red-100 px-2 text-[11px] text-red-700">되돌려짐</span>}
+                {r.reverted && <span className="rounded-full bg-red-100 px-2 text-[11px] text-red-700">{r.cancelled ? "확정 취소됨" : "되돌려짐"}</span>}
               </div>
               <ul className="mt-2 space-y-1.5">
                 {r.projects.map((p) => (
@@ -114,7 +120,8 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
                     <button type="button" className={p.exists ? "btn" : "btn-primary"} disabled={busy || (!p.exists && !r.active)}
                             title={!p.exists && !r.active ? "그 확정이 지금 판일 때만 새로 만들 수 있습니다" : undefined}
                             onClick={() => void openDoc(r.version, p.project_id, p.exists)}>
-                      {p.exists ? "열기" : "자료 만들기"}
+                      {opening === `${r.version}/${p.project_id}` ? <Spinner status={false} label={p.exists ? "여는 중…" : "만드는 중…"} />
+                        : p.exists ? "열기" : "자료 만들기"}
                     </button>
                   </li>
                 ))}

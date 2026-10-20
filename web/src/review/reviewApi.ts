@@ -70,6 +70,8 @@ export interface ReviewDocView {
   status: "draft" | "exported";
   exported_at: string | null;
   reverted: boolean;
+  /** 확정 취소(2026-10-21)로 잠긴 자료 -- reverted도 함께 참이다 */
+  cancelled?: boolean;
   /** in_history · reverted(되돌림 기록) · out_of_history(다른 데이터로 바꿨거나 20판 밖 -- 고치고 내보낼 수 있고 새 초안만 안 됨) */
   history?: "in_history" | "reverted" | "out_of_history";
   active: boolean;
@@ -77,7 +79,7 @@ export interface ReviewDocView {
 }
 
 export interface ConfirmRow {
-  version: string; kind: ConfirmKind; at: string | null; note: string; active: boolean; reverted: boolean;
+  version: string; kind: ConfirmKind; at: string | null; note: string; active: boolean; reverted: boolean; cancelled?: boolean;
   projects: { project_id: string; name: string; exists: boolean; status: string | null; movers: number; objections: number }[];
 }
 
