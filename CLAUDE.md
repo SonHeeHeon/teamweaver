@@ -142,6 +142,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
   소명 글은 확정 때 화면에서 쓰고 `api/justification_cache`(키 = 데이터 버전·명단·설정·AI·소명 재료 해시·생성기 코드 지문)가 저장해 다시 돈 내지 않는다. 점검 보고서 `GET /api/nightly`.
   `TEAMWEAVER_NIGHTLY=off`로 끈다 -- `tests/conftest.py`가 시험 전체에서 끈다. **시험에서 밤 실행·소명을 돌릴 때는 설명 AI를 막는다**(`tests/nightly/conftest.py` -- lifespan의 `load_env`가 `.env` 키를 올린다).
+  시험 전체에서 실제 OpenAI 채팅 호출은 막혀 있다(`tests/conftest._no_real_ai_calls`, 2026-10-20 -- 올라간 키는 세션 끝까지 남는다). 설명 AI를 바꿔 끼울 때는 tests/api의 `ai_client` 픽스처(라우트가 쥔 함수를 찾아 바꿈)를 쓰고 가짜가 정말 쓰였는지 확인한다 -- `api.deps` 이름을 열쇠로 쓰면 다른 시험이 그 이름을 바꿔 끼운 뒤엔 빗나간다(claude-b 확인 권장).
 - **인사팀 검토 자료**(2026-10-19, claude-a `api/review_docs.py`·`routes/review_docs.py`·`core/evaluate/review_moves.py`·`web/src/review/`): 확정(`apply_auto|manual|emergency`) × 사람이 새로 들어간 사업마다 한 편.
   전 = 확정 직전 판 zip의 현재 배치, 후 = 확정 판 -- 옮겨 온 사람의 출처·원래 사업이 잃는 것·메움을 평가기로 잰다. **시스템 사실은 만들 때 계산해 자료에 저장**하고(그래서 그 확정이 지금 판일 때만 만든다),
   PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
@@ -209,6 +210,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
   단순 규칙 비교는 탭이 보일 때 저절로 계산(`BaselineCard active`), PDF 소명 포함은 내려받을 때 창으로 묻는다(하위 탭 옆 체크박스 없앰).
+  교체 설명 이름은 **"XAI 브리핑" 그대로**(사용자 2026-10-20 "표현이 멋있어서" -- 한때 "AI 교체 설명"으로 바꿨다가 되돌림), 뜻은 화면 제목의 ⓘ. 버튼은 "교체 효과 보기".
   PDF 협업 그림은 **팀별 협업 지도**(`web/src/report/TeamNetworks`, 사용자 "pdf에 들어갈 괜찮은 협업 네트워크 그림"): 사업마다 팀원을 원 위에 놓고 팀 안 협업선만(굵기 = 개월, 색 = 평가, 13명부터 한 줄 카드).
   리포트 meta 협업선은 **같은 사업 쌍만**·평가 극성은 가상 데이터만(`report._report_meta(reveal_reviews=)`) -- 예전엔 배치된 사람끼리 전부(시연 100명 약 4,000개, 300명은 PDF 데이터 상한 압박). 힘 시뮬레이션 그림 `StaticNetwork`와 `d3-force`·`react-force-graph-2d`는 지웠다.
 - 필수 기술은 **하드 제약이 아니다**(S 점수로만 유도). 프로젝트에 기재되지 않은 등급은 정원식
@@ -225,7 +227,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 b 신규 사업 편성 화면 6건 + a What-if 정리·PDF 팀별 협업 지도 통합(claude-a `feat/claude-a-merge-newproj`) **2064 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 289 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 XAI 브리핑 원복·시험 AI 차단(claude-a, b 신규 사업 화면·PDF 팀별 협업 지도 main 병합 위) **2065 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 290 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

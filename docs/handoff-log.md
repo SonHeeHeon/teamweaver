@@ -22,6 +22,25 @@
 
 ---
 
+## 2026-10-20 · claude-a · "XAI 브리핑" 이름 원복 · 긴급 투입 빼 오는 사람 코드 칩 · 시험 AI 바꿔 끼우기 정리(claude-b 확인 권장) -- main 병합
+- 브랜치/커밋: `feat/claude-a-xai-followups`(main `d9ff898` 위) `a4f3d0f`(XAI 브리핑) · `8e39766`(빼 오는 사람 코드 칩) · `aa15363`(시험) · 이 커밋(문서) → main 병합(사용자 "Main엔 병합해줘 · 후속 작업은 진행해줘").
+- 사용자: "Xai 브리핑을 Ai 교체 설명 로 바꾼건 다시 원복하자. XAI 브리핑 표현이 멋있어서 그대로 두고싶어."
+- 한 일:
+  - 화면 제목·대기·빈 상태·PDF 절 제목 "XAI 브리핑"(제목 옆 ⓘ에 뜻), 버튼 "교체 효과 보기"는 그대로.
+  - 긴급 투입 "빼 오는 사람: 이름(J008→J003)"의 코드를 `ProjectCodes`로.
+  - tests/api `ai_client` 픽스처(라우트가 쥔 `get_openai_client_or_none`을 찾아 바꿈 -- FastAPI 0.141 `_IncludedRouter.original_router`까지), `test_llm_gate`·`test_evidence_connect`가 쓰고 가짜가 정말 쓰였는지 확인.
+  - `tests/conftest._no_real_ai_calls`: 시험 세션 전체에서 진짜 OpenAI 채팅 호출 차단(+ `tests/test_no_real_ai.py`).
+  - 진단(막고 기록하는 플러그인으로 전체 실행): 실제 호출 0건이었다 -- 잠재 위험 예방.
+- 상대 영향(claude-b):
+  - 네 진행 중 `feat/claude-b-emergency-preview`(커밋 전)와 같은 파일(`EmergencyScreen.tsx` 277행 한 줄, `scenarios.test.tsx` 240·248행, `ReportPage.tsx` 202행, `ReportPage.test.tsx` 63행)을 고쳤지만 네 덩어리와 8줄 이상 떨어져 있다 -- main을 합칠 때 충돌 없을 것.
+  - 시험에서 설명 AI를 바꿔 끼울 때는 `ai_client` 픽스처를 써 달라. 진짜 채팅 호출은 이제 RuntimeError다.
+  - 기준선 2065 passed·slow 20·웹 290.
+- 검증: `uv run --group benchmark pytest -q` 2065 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 290 · `npx tsc -b`·build.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰(라우트 탐색이 처음 0개 → included router 따라가게 고침).
+- 근거: `.omc/reports/2026-10-20-xai-followups.md`.
+
+---
+
 ## 2026-10-20 · claude-a · `feat/claude-a-merge-newproj` **main 병합(사용자 승인 "Main엔 병합해줘")**
 - 커밋: `ccb781f`(merge --no-ff, main `1fd65b5` 위 -- 통합 브랜치가 main을 품고 있어 합친 트리 = 브랜치 트리) + 이 커밋(일지).
 - 들어간 것: b 신규 사업 편성 화면 6건(`218785a`·`d0bd98f`·`2b7947f`·`dd7fc0c`), a PDF 팀별 협업 지도(`7ece886`·`cc77c82`·`f693d99`), 충돌 해결(`75e684b`).
