@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-20 · claude-b · 긴급 투입 손 편성 미리 보기 · 설정 화면 용어 정리 · 신규 사업 K 0~5 고르기(사용자 결정)
+- 브랜치/커밋: `feat/claude-b-emergency-preview`(claude-a 통합 `75e684b` 위) `1fcf110` · 이 문서 커밋. main 미병합(a 통합 브랜치가 들어간 뒤 -- 사용자 "a가 충돌을 해결하고있으니 끝나면 하자").
+- 사용자: "1. 긴급 투입에도 미리 보기 기능 추가해줘 2. 설정 화면 용어 정리해줘", "k를 3~5명 스콥으로 하지말고 0~5명 스콥으로".
+- 한 일: `POST /api/emergency/preview`(고른 사람 + 확정 때 적을 증원 `_apply_hint` 적용 상태를 확정과 같은 판정으로, 동시 수행 지원은 그 사람만 2곳, 다시 매긴 후보 함께, 요구 기술 그래프 재사용) ·
+  긴급 투입 화면 넣기·고른 사람 줄·증원 문장·"고른 n명 확정"(서버 배치·증원 그대로) · 설정 이름을 화면 말로(계산 멈춤 기준·익숙한 쌍 …, 저장 키 그대로, 측정 숫자는 "근거·측정") · 신규 사업 최대 K 0~5.
+- 상대 영향(claude-a): `settingsFields` 이름이 바뀌어 화면 문구로 찾는 시험(`tests/api/test_ui_e2e.py` 고침)·PDF 계산 기준 줄 문구가 바뀌었다. `api/settings.py` 오류 문구 한 줄. 기준선 2068 passed·slow 20·웹 291.
+- 검증: `uv run --group benchmark pytest -q` 2068 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 291 · `npx tsc -b`·build · oxlint 12(모두 이 브랜치가 안 건드린 파일, `75e684b`에 있던 것) · 브라우저 긴급 투입 2명 넣기 → 미리 계산 → 확정 → 검토 자료 버튼, 설정 새 이름, 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백 1라운드 needs-attention(MUST: 느린 E2E가 옛 설정 이름을 찾음 -- 실측 2 실패 → 고침, SHOULD 3 반영) → 2라운드 approve(NIT 반영).
+- 근거: 루트 `.omc/reports/2026-10-20-emergency-preview.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-20-emergency-preview.md`.
+
+---
+
 ## 2026-10-20 · claude-a · **b 신규 사업 편성 화면 6건 + a What-if 정리·PDF 팀별 협업 지도 통합**(사용자 "너가 충돌이 생기는 부분은 잘 해결해봐")
 - 브랜치/커밋: `feat/claude-a-merge-newproj` = b `dd7fc0c` + `feat/claude-a-pdf-network`(main `1fd65b5` 포함)의 병합 커밋(이 커밋). b 브랜치·worktree는 건드리지 않았다. main 미병합(승인 대기).
 - 푼 충돌(둘 다 살림, 대체로 "짜임은 b · 표시와 말은 a"):
