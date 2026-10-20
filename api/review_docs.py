@@ -163,14 +163,63 @@ def record_undone(version: str, root: Path | None = None) -> None:
             pass
 
 
+def _cancelled_path(root: Path | None = None) -> Path:
+    return (root if root is not None else data_dir()) / "review_docs" / "cancelled.json"
+
+
+def cancelled_records(root: Path | None = None) -> set[tuple[str, str]]:
+    """확정 취소한 확정 (판 버전, 확정 시각) -- 이력 20판 밖으로 밀려도 남는 기록(2026-10-21 폴백 리뷰 S3)."""
+    try:
+        data = json.loads(_cancelled_path(root).read_text("utf-8"))
+    except (OSError, ValueError):
+        return set()
+    return {(str(v), str(a)) for v, a in data if isinstance(v, str)} if isinstance(data, list) else set()
+
+
+def record_cancelled(version: str, at: str, cancelled: bool, root: Path | None = None) -> None:
+    """확정 취소를 남기거나(취소) 지운다(그 취소 판을 되돌리기로 꺼냄). 쓰기 실패는 판 변경을 막지 않게 올리지 않는다."""
+    with _LOCK:
+        seen = cancelled_records(root)
+        key = (str(version), str(at))
+        if (key in seen) == cancelled:
+            return
+        seen = seen | {key} if cancelled else seen - {key}
+        p = _cancelled_path(root)
+        try:
+            ensure_private_dir(p.parent)
+            atomic_write(p, json.dumps(sorted(seen), ensure_ascii=False).encode("utf-8"))
+        except OSError:
+            pass
+
+
+def is_cancelled(history_entries: list[dict], entry: dict) -> bool:
+    """이 확정 항목이 취소됐는가: 이력의 확정 취소 판(api.workspace.cancelled_keys -- 판 버전 + 확정 시각) 또는 오래 남는 기록."""
+    from api.workspace import cancelled_keys
+    key = (str(entry.get("version")), str(entry.get("at")))
+    return key in cancelled_keys(history_entries) or key in cancelled_records()
+
+
+def confirm_cancelled(history_entries: list[dict], version: str) -> bool:
+    """그 판 버전의 확정이 이력에 있고 모두 취소됐는가(화면 꼬리표 "확정 취소됨")."""
+    live = [e for e in history_entries if e.get("kind") in CONFIRM_KINDS and e.get("version") == version]
+    if live:
+        return all(is_cancelled(history_entries, e) for e in live)
+    return any(v == version for v, _ in cancelled_records())          # 이력 밖으로 밀린 취소된 확정(2차 리뷰 NIT)
+
+
 def history_state(history_entries: list[dict], confirm: dict) -> str:
     """확정의 지금 상태: "in_history"(이력에 있음) · "reverted"(되돌리기 기록에 있고 지금 이력에는 없음) ·
     "out_of_history"(다른 데이터로 바꿨거나 20판 밖으로 밀려남 -- 되돌린 것이 아니므로 열고 고치고 내보낼 수 있다).
     이력에 남은 판으로 되돌림을 짐작하면 두 방향으로 틀렸다(폴백 리뷰 2라운드) -- 실제 되돌리기 기록으로만 판정한다.
     같은 명단을 다시 확정하면 같은 판 버전이 이력에 돌아오므로 "in_history"가 된다."""
     # 확정 항목(apply_*)으로 있을 때만 "이력에 있음" -- 되돌린 뒤 같은 데이터를 다시 열어 생긴 시작 판(base)은 재확정이 아니다(Codex Stop 훅)
-    if confirm["version"] in {e.get("version") for e in history_entries if e.get("kind") in CONFIRM_KINDS}:
-        return "in_history"
+    live = [e for e in history_entries if e.get("kind") in CONFIRM_KINDS and e.get("version") == confirm["version"]]
+    if live:
+        # 확정 취소(2026-10-21)는 판을 꺼내지 않고 위에 쌓는다 -- 이력에 남아 있어도 취소됐으면 되돌린 것과 같이 잠근다
+        # (같은 명단을 다시 확정해 취소되지 않은 확정이 하나라도 있으면 살아 있다)
+        return "in_history" if any(not is_cancelled(history_entries, e) for e in live) else "reverted"
+    if (str(confirm.get("version")), str(confirm.get("at"))) in cancelled_records():
+        return "reverted"                       # 이력 밖으로 밀린 취소된 확정도 잠근다
     return "reverted" if confirm["version"] in undone_versions() else "out_of_history"
 
 
@@ -290,9 +339,9 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
             "status": "draft", "exported_at": None, "exported_facts": None}
 
 
-def view(doc: dict, *, reverted: bool, active: bool, history: str = "in_history") -> dict:
+def view(doc: dict, *, reverted: bool, active: bool, history: str = "in_history", cancelled: bool = False) -> dict:
     """화면·PDF로 보내는 모양: 해명·이의마다 근거 사실이 지금 자료에 있는지(orphan), 확정이 되돌려졌는지."""
     keys = {f["key"] for f in doc["facts"]}
     notes = [{**n, "orphan": n["key"] not in keys} for n in doc.get("notes", [])]
-    return {**doc, "notes": notes, "reverted": reverted, "active": active, "history": history,
+    return {**doc, "notes": notes, "reverted": reverted, "active": active, "history": history, "cancelled": cancelled,
             "body_edited": doc.get("body") is not None and doc.get("body") != doc.get("body_ai")}

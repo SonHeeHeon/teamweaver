@@ -137,6 +137,13 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **긴급 투입 손 편성 미리 보기**(2026-10-20 사용자 "긴급 투입에도 미리 보기", claude-b): `POST /api/emergency/preview {picks(grant), skills, pull_budget}` -- 지금 배치 − 빼 오는 배치 + 고른 사람에
   확정 때 적을 증원(`_apply_hint`)을 적용한 그래프로 확정과 같은 판정(`new_or_worse`), 동시 수행 지원(grant)은 그 사람만 같은 달 2곳. 응답 `draft.entries`·`apply_hint`를 그대로 확정에 쓴다.
   고른 사람을 팀원으로 친 후보 다시 매기기를 함께 준다(최선 조합은 다시 풀지 않음). 요구 기술을 더한 그래프는 (판·사업·기술·인원) 키로 4개까지 재사용(`_augmented_graph`).
+  **확정 취소**(2026-10-21 사용자 요청 3, claude-b -- 결정: 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함): `GET|POST /api/workspace/cancel`은 되돌리기(마지막 판부터)와 달리
+  그 확정만 **지금 판 위에서 거꾸로** 적용한 새 판(kind `cancel`, summary `target_version`+`target_at` -- 같은 명단을 다시 확정하면 판 버전이 같아 시각까지 본다)이다.
+  `workspace_edits.revert_ops`가 확정 직전(B)·확정(A)·지금(N) 판을 칸마다(배치·등급 정원·예산·요구 기술·동시 수행 허용) 견줘 N==A인 칸만 B로, 그 뒤 바뀐 칸·고정한 배치·없어진 사람/사업은 건너뛴다.
+  원래 사업 복귀가 위반이면(위반 종류별 `_implicates`) 그 복귀만 빼 대기로 둔다. 되돌릴 것이 모두 빠지면 422(확정을 "취소됨"으로 잠그지 않게). 계산 뒤 판이 바뀌었으면 409(옛 판 덮어쓰기 방지).
+  취소는 `review_docs/cancelled.json`에도 남아(20판 밖에서도 검토 자료 잠금) 취소 판을 되돌리면 지운다. 되돌리기는 확정을 꺼낼 때만 `record_undone`(취소 판은 앞 판과 버전이 같을 수 있다).
+  **자동 편성 K 행 설명**(사용자 요청 1): 둘째 줄 = 신규 사업마다 `4/4명 · 대기 · 이동 · 원래 · 동시 수행` + 소명 버튼, "명단" 펼치기 = 이름·옮김 사슬·K−1보다 새로 옮긴 사람 -- `web/src/scenarios/autoView.ts`가 K 행의 `entries`·`diff`만으로 만든다(서버 계산 그대로).
+  **기다림 표시**(사용자 요청 2): 공통 `ui.Spinner` -- 소명 미리보기는 창을 바로 열고 "쓰는 중"(멈출 수 있음), 판을 바꾸는 버튼·검토 자료 AI 초안·PDF에도.
   **설정 화면 이름은 화면 말로**(2026-10-20 사용자 "설정 화면 용어 정리"): 계산 멈춤 기준(gap)·계산 시간(안 하나당)·익숙한 쌍 기준/감점/볼 기간·협업 반영 정도·동시에 풀어 볼 갈래 수·같은 달 최대 사업 수·"나눠 투입 · …" -- 저장 키는 그대로(이름은 `settingsFields.FIELDS`·`MODE_LABEL` 한 곳).
   **운영 중 비교 K는 0~5**(`api/routes/operating.OPERATING_KS` -- 화면 기본·밤 배치 `DEFAULT_KS`·시연 미리 계산이 같은 목록, 2026-10-20 사용자 "k는 최대 5까지"). 미리 계산·밤 행은
   요청 K 목록이 저장된 목록의 **앞부분**이면 잘라 준다(`demo_precomputed.operating_rows` -- K 행은 앞 K만 이어받는다). 시연 운영 중 묶음 4개는 0~5로 다시 풀었다(0~3 행은 예전과 같았다).
@@ -231,7 +238,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 시험 가짜 AI 끼우기 모두 `ai_client`로(claude-a, b 긴급 투입 미리 보기 main 병합 위) **2071 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 296(10-21 What-if 화면 3건) -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 b 확정 취소·K 행 설명 + a 시험 AI 정리·What-if 화면 3건 합친 트리 **2081 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 301 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

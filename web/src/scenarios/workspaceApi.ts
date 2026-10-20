@@ -25,7 +25,16 @@ export interface PipelineItem extends ProjectItem {
   parent?: string | null; external_headcount?: number;
 }
 export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean; addons?: string[] }
-export interface HistoryEntry { version: string; at: string; kind: string; note: string }
+export interface HistoryEntry { version: string; at: string; kind: string; note: string;
+  /** 확정 취소(2026-10-21): 이 확정을 취소한 판이 이력에 있다 · 지금 취소할 수 있다(확정이고 직전 판이 남아 있음) */
+  cancelled?: boolean; cancellable?: boolean }
+/** 확정 취소 미리 보기 -- 돌릴 것·건너뛸 것(그 뒤 다른 변경)·위반이라 하지 않을 것(대기로 남음)·남는 새 위반 */
+export interface CancelPreview {
+  target: { version: string; kind: string; note: string; at: string };
+  revert: string[]; skipped: string[]; dropped: string[]; new_violations: string[]; ok: boolean;
+  /** 취소할 수 없는 까닭(되돌릴 것이 남지 않음 · 새 위반) -- ok면 null */
+  blocked?: string | null;
+}
 /** 프로젝트 동시 수행 허용 사유(2026-10-19 사용자 결정 -- 사람 단위, 사유 필수). core/ingest/concurrency.REASONS와 같다. */
 export const CONCURRENCY_REASONS = ["인력 부족", "기술 지원", "긴급 지원", "기타"] as const;
 export type ConcurrencyReason = (typeof CONCURRENCY_REASONS)[number];
@@ -174,6 +183,12 @@ export interface ShortfallHint { project_id: string; grade: Grade; missing: numb
 export const fetchConcurrencyCandidates = (v: string, entries: AssignEntry[], weights: Record<string, number> = {}) =>
   call<{ dataset_version: string; shortfalls: ShortfallHint[] }>("/api/concurrency/candidates",
                                                                json("POST", { dataset_version: v, entries, weights }));
+export const fetchCancelPreview = (v: string, h: { version: string; at: string }, signal?: AbortSignal) =>
+  call<CancelPreview>(`/api/workspace/cancel?dataset_version=${encodeURIComponent(v)}&version=${encodeURIComponent(h.version)}`
+                      + `&at=${encodeURIComponent(h.at)}`, { signal });
+export const postCancel = (v: string, h: { version: string; at: string }) =>
+  call<WithWs & { cancel: CancelPreview }>("/api/workspace/cancel",
+                                          json("POST", { dataset_version: v, target_version: h.version, target_at: h.at }));
 export const postUndo = (v: string) => call<WithWs>("/api/workspace/undo", json("POST", { dataset_version: v }));
 /** 후보 세 갈래. picks(넣기로 고른 사람)가 있으면 그 사람들을 팀원으로 친 다시 채점 + 고른 사람 전체 미리 계산(draft) -- 데이터는 바뀌지 않는다. */
 export const fetchCandidates = (id: string, v: string, picks: Pick[] = []) =>
