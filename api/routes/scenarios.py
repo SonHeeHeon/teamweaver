@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import math
+import threading
 from typing import Annotated
 
 import anyio
@@ -509,6 +510,144 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
             "standby": [{**r, "name": nm.get(r["person_id"], r["person_id"])} for r in standby],
             "unavailable": unavailable_for(dataset, body.project_id),
             "apply_hint": hint, "note": NOT_CALIBRATED}
+
+
+class EmergencyPickIn(PickIn):
+    """긴급 투입에서 "넣기"로 고른 사람. grant = 원래 사업을 그대로 두고 들어오는 동시 수행 지원(확정 때 허용을 함께 적는다)."""
+    grant: bool = False
+
+
+class EmergencyPreviewIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version: str | None = None
+    project_id: str = Field(min_length=1, max_length=32)
+    skills: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(default=[], max_length=10)
+    picks: list[EmergencyPickIn] = Field(min_length=1, max_length=10)
+    # "후보 찾기"의 빼 오기 허용 -- 고른 사람을 팀원으로 친 후보 다시 매기기에 쓴다(빼 오기 후보를 낼지)
+    pull_budget: int = Field(default=0, ge=0, le=5)
+
+
+_AUG_LOCK = threading.Lock()
+_AUG_KEEP = 4
+
+
+def _augmented_graph(request: Request, dataset, project_id: str, extra: list[dict], n: int):
+    """요구 기술을 더한 그래프(긴급 투입 미리 보기용) -- 고를 때마다 데이터 묶음을 다시 만들지 않게 (판·사업·기술·인원) 키로 몇 개만 둔다
+    (대체 리뷰 SHOULD 2026-10-20: 매번 zip 풀기·로드·SQLite까지 다시 돌아 가벼운 계산 자리를 잡았다). 그래프는 메모리 값이라 데이터 묶음은 바로 닫는다."""
+    if not extra:
+        return dataset.graph
+    key = (dataset.info.version, project_id, tuple(sorted((s["name"], int(s["min_months"])) for s in extra)), n)
+    cache = getattr(request.app.state, "emergency_aug_graphs", None)
+    if cache is None:
+        cache = request.app.state.emergency_aug_graphs = {}
+    with _AUG_LOCK:
+        if key in cache:
+            cache[key] = cache.pop(key)                 # 최근 사용을 뒤로
+            return cache[key]
+    cand = _augmented(request, dataset, project_id, extra, n)
+    try:
+        graph = cand.graph
+    finally:
+        cand.retire()
+    with _AUG_LOCK:
+        cache[key] = graph
+        while len(cache) > _AUG_KEEP:
+            cache.pop(next(iter(cache)))
+    return graph
+
+
+def emergency_draft(graph, S, C, params, base, project_id: str, picks: list[EmergencyPickIn], extra: list[dict],
+                    names: dict[str, str]) -> dict:
+    """고른 사람을 넣고 확정 때 적을 증원(`_apply_hint`)을 적용한 상태를 지금과 비교한다(2026-10-20 사용자 "긴급 투입에도 미리 보기").
+    확정(`/api/workspace/apply`)과 같은 판정: 증원을 적은 데이터로 평가하고, 새로 생기거나 커진 위반(`new_or_worse`). 동시 수행 지원(grant)은
+    그 사람만 같은 달 2곳까지 친다(확정이 허용을 함께 적는 것과 같은 조건)."""
+    from dataclasses import replace as dc_replace
+
+    from api.routes.justification import with_names
+    from api.violation_diff import new_or_worse
+    from core.evaluate.plan_eval import evaluate_plan
+    from core.evaluate.staffing_sim import graph_with_extra_seats
+    from core.optimize.types import AssignEntry
+    pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
+    after_entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
+        AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
+    hint = _apply_hint(graph, project_id, base, after_entries, extra, len(picks))
+    add = {Grade(g): c for g, c in (hint["headcount_add"].get(project_id) or {}).items()}
+    g2 = graph_with_extra_seats(graph, project_id, add, hint["budget_add"].get(project_id, 0))
+    grants = {pk.person_id for pk in picks if pk.grant}
+    if grants:
+        g2 = dc_replace(g2, people=[p.model_copy(update={"max_concurrent": max(2, p.max_concurrent)}) if p.id in grants else p
+                                    for p in g2.people], _within_cache={})
+    before, after = evaluate_plan(graph, S, C, params, base), evaluate_plan(g2, S, C, params, after_entries)
+    bp, ap = _parts(before), _parts(after)
+    d = {k: ap[k] - bp[k] for k in ap}
+    j = g2.projects[g2.project_index[project_id]]
+    grade_of = {p.id: p.grade.value for p in graph.people}
+    need = {g.value: n for g, n in j.grade_headcount.items()}
+    filled: dict[str, int] = {}
+    for e in after_entries:
+        if e.project_id == project_id:
+            filled[grade_of[e.person_id]] = filled.get(grade_of[e.person_id], 0) + 1
+    picked = {pk.person_id for pk in picks}
+    team = sorted({e.person_id for e in after_entries if e.project_id == project_id})
+    rules = _pair_rules(graph, C, params)
+    pairs = [{"a": a, "a_name": names.get(a, a), "b": b, "b_name": names.get(b, b), **term}
+             for x, a in enumerate(team) for b in team[x + 1:] if a in picked or b in picked
+             for term in pair_terms(graph, C, params, rules, a, b, project_id)]
+    unfilled = float(d.get("unfilled", 0.0))
+    return {"seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in [x.value for x in Grade]
+                      if need.get(g, 0) or filled.get(g, 0)},
+            "seat_effects": seat_effects(graph, _seat_gaps(graph, before), _seat_gaps(g2, after)),
+            "delta_total": round(d["total"], 4), "skill_delta": round(d.get("skill", 0.0), 4),
+            "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
+            "unfilled_seats_delta": int(round(unfilled / params.slack_penalty)) if params.slack_penalty else 0,
+            "new_violations": [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)],
+            "pairs": pairs, "apply_hint": hint, "entries": [e.model_dump() for e in after_entries], "_graph": g2}
+
+
+@router.post("/api/emergency/preview")
+async def emergency_preview(body: EmergencyPreviewIn, request: Request, dataset: ActiveDataset = Depends(get_dataset)) -> dict:
+    """긴급 투입 손 편성 미리 계산(확정 전, 데이터를 바꾸지 않는다) -- 고른 사람·증원·위반·쌍과 확정에 쓸 apply_hint."""
+    check_dataset_version(body.dataset_version, dataset)
+    if body.project_id not in dataset.graph.project_index:
+        raise HTTPException(status_code=404, detail=f"없는 사업 ID: {body.project_id}")
+    if not any(c.project_id == body.project_id for c in dataset.current):
+        raise HTTPException(status_code=422, detail="진행 중인 사업(현재 배치가 있는 사업)만 긴급 투입할 수 있다")
+    _check_picks(dataset, body.project_id, body.picks)
+    for pk in body.picks:
+        if pk.grant and pk.pulled_from:
+            raise HTTPException(status_code=422, detail=f"{pk.person_id}: 동시 수행 지원은 원래 사업에서 빼 오지 않는다")
+    from core.scoring.engine import ScoringEngine
+    params = _params(request.app, dataset)
+    skill_names, extra = _extra_skills(dataset, body.project_id, body.skills)
+    nm = _names(dataset)
+
+    def go():
+        from core.evaluate.staffing_sim import rank_candidates
+        graph = _augmented_graph(request, dataset, body.project_id, extra, len(body.picks))
+        eng = ScoringEngine(graph)
+        S, C = eng.skill_matrix({n: 5 for n in skill_names}), eng.synergy_matrix()
+        draft = emergency_draft(graph, S, C, params, _entries(dataset), body.project_id, body.picks, extra, nm)
+        g2 = draft.pop("_graph")                 # 증원을 적은 그래프 -- 다시 매기기도 확정 뒤 상태를 기준으로(2라운드 리뷰 NIT)
+        # 고른 사람을 팀원으로 친 후보 다시 매기기(신규 사업 후보와 같은 방식, 대체 리뷰 SHOULD) -- 최선 조합은 다시 풀지 않는다
+        from core.optimize.types import AssignEntry
+        after = [AssignEntry(**e) for e in draft["entries"]]
+        locked = _locked(dataset)
+        rows = rank_candidates(g2, S, C, params, after, body.project_id, include_pull=body.pull_budget > 0, top=20, locked=locked)
+        concurrent = (rank_candidates(g2, S, C, params, after, body.project_id, top=10, locked=locked, offer_concurrency=True)
+                      if params.allocation_mode == "full" else [])
+        rows = [split_unfilled(r, params.slack_penalty)
+                for r in pair_view(g2, C, params, after, body.project_id,
+                                   with_worse(g2, S, C, params, after, body.project_id, rows + concurrent), nm)]
+        return draft, rows
+    async with _light(request.app):
+        draft, rows = await anyio.to_thread.run_sync(go)
+    groups = classify(dataset, body.project_id, rows)
+    return {"dataset_version": dataset.info.version, "project_id": body.project_id, "draft": draft,
+            "candidates": {"bench": groups["bench"],
+                           "spare": [r for r in groups["ending"] + groups["pull"] if r["source"] != "pull"],
+                           "pull": [r for r in groups["ending"] + groups["pull"] if r["source"] == "pull"]},
+            "note": NOT_CALIBRATED}
 
 
 @router.get("/api/emergency/standby")

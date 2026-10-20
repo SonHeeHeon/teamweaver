@@ -182,6 +182,14 @@ export const fetchCandidates = (id: string, v: string, picks: Pick[] = []) =>
     : call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates?dataset_version=${encodeURIComponent(v)}`);
 export const postEmergency = (body: { dataset_version: string; project_id: string; n: number; grade: Grade | null;
   skills: string[]; pull_budget: number; note: string }) => call<EmergencyPlan>("/api/emergency/plan", json("POST", body));
+/** 긴급 투입에서 "넣기"로 고른 사람(grant = 동시 수행 지원 -- 확정 때 허용을 함께 적는다) */
+export interface EmergencyPick extends Pick { grant?: boolean }
+/** 긴급 투입 손 편성 미리 계산(2026-10-20) -- 확정할 배치와 서버가 계산한 증원(apply_hint)까지 */
+export interface EmergencyDraft extends DraftSummary { apply_hint: ApplyHint; entries: AssignEntry[] }
+export const postEmergencyPreview = (body: { dataset_version: string; project_id: string; skills: string[]; picks: EmergencyPick[];
+                                             pull_budget: number }, signal?: AbortSignal) =>
+  call<{ dataset_version: string; project_id: string; draft: EmergencyDraft; candidates: EmergencyPlan["candidates"]; note: string }>(
+    "/api/emergency/preview", { ...json("POST", body), signal });
 export const fetchStandby = (v: string, projectId: string) =>
   call<{ source: string | null; computed_at: string | null; projects: Record<string, StandbyRow[]> }>(
     `/api/emergency/standby?dataset_version=${encodeURIComponent(v)}&project_id=${encodeURIComponent(projectId)}`);

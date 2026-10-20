@@ -23,6 +23,8 @@ import {
 
 type Group = "bench" | "ending" | "pull";
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", ending: "끝나 가는 인력", pull: "진행 사업에서 빼 오기" };
+/** 100명 연말형 실측(2026-10-20, 시드 4): K 0부터 그 K까지 차례로 풀 때 누적 초(화면 안내용 어림값) */
+const K_SECONDS_100 = [7, 13, 21, 28, 35, 45];
 type SignedRow = OperatingRow & { plan_label?: string; plan_token?: string };
 
 /** 등급별 자리(채움/정원). after가 있으면 "넣기로 고른 사람"을 넣었을 때의 값을 화살표로 함께(확정 전 미리 계산, 2026-10-20). */
@@ -111,7 +113,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const kTouched = useRef(false);
   useEffect(() => {
     const ks = ws?.operating_ks ?? [];
-    if (!kTouched.current && ks.length && ks[0] === 0 && ks.every((k, i) => k === i) && ks[ks.length - 1] >= 3)
+    if (!kTouched.current && ks.length && ks[0] === 0 && ks.every((k, i) => k === i))
       setKMax(Math.min(5, ks[ks.length - 1]));
   }, [ws?.operating_ks]); // eslint-disable-line react-hooks/exhaustive-deps
   const abort = useRef<AbortController | null>(null);
@@ -403,7 +405,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                           </td>
                           <td className="text-right">
                             <button className={`btn px-2 py-0.5 text-xs ${picked ? "border-ink font-semibold" : ""}`} aria-pressed={picked}
-                                    aria-label={`${r.name} ${picked ? "빼기" : "넣기"}`}
+                                    aria-label={`${r.name} 넣기`}
                                     onClick={() => setDraft((d) => { const n = { ...d }; if (picked) delete n[r.person_id]; else n[r.person_id] = r; return n; })}>
                               {picked ? "넣음" : "넣기"}
                             </button>
@@ -433,16 +435,18 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
         </ActionBar>
       )}
 
-      <Panel title="자동 편성 — 몇 명까지 옮길까" sub={`신규 사업을 채울 때 진행 사업에서 데려와도 되는 사람 수(K)를 0~${kMax}명으로 바꿔 가며 계산해 나란히 보여 줍니다. 품질이 높고 빈자리가 적은 줄을 고르면 됩니다. 고정한 사람은 옮기지 않습니다.`}
+      <Panel title="자동 편성 — 몇 명까지 옮길까" sub={kMax === 0 ? "진행 사업에서 아무도 옮기지 않고(K=0) 쉬는·끝나 가는 인력으로만 신규 사업을 채워 봅니다. 고정한 사람은 옮기지 않습니다."
+                  : `신규 사업을 채울 때 진행 사업에서 데려와도 되는 사람 수(K)를 0~${kMax}명으로 바꿔 가며 계산해 나란히 보여 줍니다. 품질이 높고 빈자리가 적은 줄을 고르면 됩니다. 고정한 사람은 옮기지 않습니다.`}
              actions={<>
                <label className="flex items-center gap-1.5 text-xs text-slate-600">최대
                  <select className="rounded border border-slate-300 px-1.5 py-1 text-xs" value={kMax} disabled={autoState === "running"}
                          aria-label="옮길 수 있는 최대 인원" onChange={(e) => { kTouched.current = true; setKMax(Number(e.target.value)); }}>
-                   {[3, 4, 5].map((k) => <option key={k} value={k}>{k}명</option>)}
+                   {/* 0~5명(사용자 2026-10-20 "3~5명 스콥으로 하지말고 0~5명") -- 0이면 옮기지 않는 K=0 한 줄만 */}
+                   {[0, 1, 2, 3, 4, 5].map((k) => <option key={k} value={k}>{k === 0 ? "0명(옮기지 않음)" : `${k}명`}</option>)}
                  </select>
                </label>
                <button className="btn" disabled={autoState === "running" || busy} onClick={() => void runAuto()}>
-                 {autoState === "running" ? `계산 중…(100명 약 ${kMax >= 5 ? 45 : kMax === 4 ? 35 : 30}초)` : "옮길 인원별로 계산"}
+                 {autoState === "running" ? `계산 중…(100명 약 ${K_SECONDS_100[kMax]}초)` : "옮길 인원별로 계산"}
                </button>
              </>}>
         {rows.length === 0 ? (

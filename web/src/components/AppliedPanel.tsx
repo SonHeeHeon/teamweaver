@@ -54,7 +54,7 @@ export function AppliedPanel({ label, history, violations, people, horizonStart,
       )}
       {allocs > 0 && (
         <p className="mt-2 text-xs text-indigo-800">
-          달별 투입률이 들어간 명단은 최적화율 분모(이론상 최댓값)를 '달마다 따로' 기준으로 계산한다. 이 상한이 더 커서
+          달별 투입률이 들어간 명단은 최적화율 분모(이론상 최댓값)를 '달마다 다른 비율' 기준으로 계산한다. 이 상한이 더 커서
           조정이 작아도 최적화율이 몇 % 낮아 보일 수 있다 -- 품질이 그만큼 나빠졌다는 뜻이 아니다.
         </p>
       )}

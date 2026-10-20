@@ -115,7 +115,7 @@ describe("ReportPage — 계산 기준 표기(K8)", () => {
       clique_threshold_months: 6, lam: 0.3, mu: 0.2, time_limit: 120, gap: 0.05, max_concurrent_projects: 1, allocation_mode: "fixed" as const, time_limit_auto: false } };
     render(<ReportPage />);
     expect(await screen.findByText(/최소 투입률 30%/)).toBeInTheDocument();
-    expect(screen.getByText(/동시 프로젝트 최대 1개/)).toBeInTheDocument();
+    expect(screen.getByText(/같은 달 최대 사업 수 1개/)).toBeInTheDocument();
   });
 
   it("설정 없이 계산한 플랜은 모델 기본값임을 밝힌다", async () => {

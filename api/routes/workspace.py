@@ -317,7 +317,7 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
     dataset = request.app.state.dataset
     check_dataset_version(body.dataset_version, dataset)
     if any(e.monthly_alloc for e in body.entries):
-        raise HTTPException(status_code=422, detail="달별 투입률이 있는 명단은 확정할 수 없다(기간 내내 한 비율만)")
+        raise HTTPException(status_code=422, detail="달별 투입률이 있는 명단은 확정할 수 없다(기간 내내 같은 비율만)")
     ids_p, ids_j = dataset.graph.pid_index, dataset.graph.project_index
     bad = sorted({e.person_id for e in body.entries if e.person_id not in ids_p}
                  | {e.project_id for e in body.entries if e.project_id not in ids_j}

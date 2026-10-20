@@ -7,12 +7,14 @@ import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Tabs } 
 import { UnavailableList } from "./UnavailableList";
 import { ScoreSplitNote } from "../components/ScoreSplitNote";
 import { seatsText, signedPts, splitText } from "../components/scoreSplit";
-import { partnersText, skillCollab, violationReasons } from "./pickView";
+import { hintText, partnersText, skillCollab, violationReasons } from "./pickView";
 import { PersonName, ProjectCodes } from "../components/PersonName";
+import { PickDraft } from "./PickDraft";
 import type { Person, Project } from "../api/types";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
-  withPersistNote, type CandidateRow, type EmergencyPlan, type Grade, type SkillDictEntry, type StandbyRow, type Workspace,
+  postEmergencyPreview, withPersistNote, type CandidateRow, type EmergencyDraft, type EmergencyPlan, type Grade, type SkillDictEntry,
+  type StandbyRow, type Workspace,
 } from "./workspaceApi";
 
 type Group = "bench" | "spare" | "pull";
@@ -20,6 +22,8 @@ type Group = "bench" | "spare" | "pull";
 // 원문은 situation으로 따로 가니 이 둘은 잘라 보낸다(폴백 리뷰 S2, 2026-10-19)
 const NOTE_MAX = 300;
 const GRANT_MEMO_MAX = 200;
+/** 한 번에 고를 수 있는 사람 수(서버 EmergencyPreviewIn.picks 10) */
+const PICK_MAX = 10;
 /** 글자(코드 포인트) 단위로 자른다 -- UTF-16 단위로 자르면 이모지가 경계에서 반쪽이 되어 서버가 422로 거절한다(2라운드 리뷰 NIT) */
 const clip = (s: string, n: number) => Array.from(s).slice(0, n).join("");
 const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
@@ -58,6 +62,16 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
   const [support, setSupport] = useState<CandidateRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // 손 편성 미리 보기(2026-10-20 사용자 "긴급 투입에도 미리 보기"): 후보 표에서 "넣기"로 고른 사람 -- 확정 전, 서버가 증원까지 계산한다.
+  // 미리 계산은 그것을 계산한 선택(판·사업·기술·고른 사람)의 키와 함께 둔다 -- 지금 선택과 다르면 보이지 않고 확정을 막는다(신규 사업 화면과 같은 규칙)
+  const [picks, setPicks] = useState<Record<string, CandidateRow>>({});
+  const [preview, setPreview] = useState<{ key: string; draft: EmergencyDraft; candidates: EmergencyPlan["candidates"] } | null>(null);
+  const [previewErr, setPreviewErr] = useState<{ key: string; msg: string } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewRetry, setPreviewRetry] = useState(0);
+  const [pickConfirm, setPickConfirm] = useState(false);
+  /** "후보 찾기" 때의 빼 오기 허용 -- 다시 매기기는 그 값으로(입력칸을 나중에 바꿔도 결과와 맞게, 2라운드 리뷰 NIT) */
+  const [searchedPull, setSearchedPull] = useState(0);
 
   useEffect(() => { fetchSkillDictionary().then(setDict).catch(() => setDict([])); }, []);
   // 처음과, 다른 화면에서 데이터가 바뀌었을 때 다시 읽는다
@@ -89,6 +103,33 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
     return () => { live = false; };
   }, [ws, projectId]);
 
+  useEffect(() => { setPicks({}); setPreview(null); setPreviewErr(null); setPickConfirm(false); }, [plan]);
+  const pickList = Object.values(picks);
+  const pickBody = pickList.map((r) => ({ person_id: r.person_id, alloc: r.alloc, pulled_from: r.pulled_from,
+                                         grant: r.source === "concurrent" && !!r.needs_grant }));
+  const pickKey = `${plan?.dataset_version}|${plan?.project_id}|${(plan?.skills ?? []).join(",")}|${JSON.stringify(pickBody)}`;
+  useEffect(() => {
+    if (!plan || !pickBody.length) { setPreviewing(false); return; }
+    let live = true;
+    const key = pickKey;
+    const ctl = new AbortController();                  // 바뀐 선택의 옛 요청은 끊는다(서버 계산 자리를 오래 잡지 않게, 대체 리뷰 SHOULD)
+    setPreviewing(true);
+    const t = window.setTimeout(() => {
+      postEmergencyPreview({ dataset_version: plan.dataset_version, project_id: plan.project_id, skills: plan.skills, picks: pickBody,
+                             pull_budget: searchedPull }, ctl.signal)
+        .then((r) => { if (live) { setPreview({ key, draft: r.draft, candidates: r.candidates }); setPreviewErr(null); } })
+        .catch((e) => { if (live && (e as Error).name !== "AbortError") setPreviewErr({ key, msg: `미리 계산을 하지 못했습니다: ${(e as Error).message}` }); })
+        .finally(() => { if (live) setPreviewing(false); });
+    }, 250);
+    return () => { live = false; window.clearTimeout(t); ctl.abort(); };
+  }, [pickKey, previewRetry]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pickFresh = !!preview && preview.key === pickKey && !previewing;
+  const pickDraft = pickFresh ? preview!.draft : null;
+  const pickBlocked = !pickDraft || pickDraft.new_violations.length > 0;
+  /** 고른 사람이 있으면 그 사람들을 팀원으로 친 후보(미리 계산과 함께 온 다시 매기기 -- 다시 계산하는 동안은 직전 것을 흐리게), 없으면 "후보 찾기" 결과 */
+  const shown = pickList.length && preview ? preview.candidates : plan?.candidates;
+  const shownStale = pickList.length > 0 && !pickFresh;
+
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -104,7 +145,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
     try {
       const res = await postEmergency({ dataset_version: ws.dataset_version, project_id: projectId, n,
                                         grade: grade || null, skills, pull_budget: pull, note });
-      if (gen === reqGen.current && res.project_id === projectId) setPlan(res);
+      if (gen === reqGen.current && res.project_id === projectId) { setSearchedPull(pull); setPlan(res); }
     } catch (e) {
       if (gen === reqGen.current) setError((e as Error).message);
     } finally {
@@ -170,16 +211,45 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
     }
   }
 
+  async function applyPicks() {
+    // 지금 선택의 미리 계산(서버가 만든 배치·증원)으로만 확정한다
+    if (!ws || !plan || !pickDraft || pickBlocked || plan.dataset_version !== ws.dataset_version || plan.project_id !== projectId) {
+      setPickConfirm(false);
+      return;
+    }
+    setBusy(true);
+    try {
+      const pid = plan.project_id;
+      const grants = pickBody.filter((p) => p.grant);
+      const res = await postApply(plan.dataset_version, {
+        entries: pickDraft.entries, source: "emergency",
+        note: clip(`${pid} 긴급 투입(손 편성)${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...pickDraft.apply_hint,
+        ...(grants.length ? { concurrency_add: grants.map((g) => ({ person_id: g.person_id, memo: clip(note || `${pid} 긴급 투입`, GRANT_MEMO_MAX) })) } : {}),
+      });
+      setWs(res.workspace);
+      setConfirmed({ version: res.workspace.dataset_version, projectId: pid, seen: datasetVersion ?? null });
+      setPlan(null);
+      setNotice(withPersistNote(`${project?.name ?? pid}에 ${pickList.map((r) => r.name).join(", ")}을(를) 넣었다(사업 끝까지).`, res));
+      onDatasetChanged();
+    } catch (e) {
+      setError((e as Error).message);
+      if (isDatasetChanged(e)) { setPlan(null); reloadWorkspace(); onDatasetChanged(); }
+    } finally {
+      setBusy(false);
+      setPickConfirm(false);
+    }
+  }
+
   if (!ws) return error ? <Notice tone="bad">{error}</Notice> : <p className="text-sm text-slate-500">작업 데이터를 불러오는 중…</p>;
   if (!ws.editable || ws.ongoing.length === 0) {
     return <Panel title="긴급 투입"><EmptyState title="진행 중인 사업이 없습니다"
                   body={ws.reason ?? "현재 배치가 있는 운영 중 데이터에서 씁니다 — 편성 기록에서 운영 중 데이터를 여세요."} /></Panel>;
   }
-  const rows: CandidateRow[] = plan ? plan.candidates[group] : [];
+  const rows: CandidateRow[] = shown ? shown[group] : [];
   const pulled = plan?.best.diff?.moved ?? [];
   const pById = new Map((people ?? []).map((p) => [p.id, p]));
   // 전일 투입이면 모두 100% -- 투입률 칸은 100%가 아닌 후보가 있을 때만(사용자 2026-10-20 "100프로는 빼도")
-  const splitAlloc = (plan ? Object.values(plan.candidates).flat() : []).some((r) => Math.abs(r.alloc - 1) > 1e-9);
+  const splitAlloc = (shown ? Object.values(shown).flat() : []).some((r) => Math.abs(r.alloc - 1) > 1e-9);
   return (
     <div className="max-w-[1180px] space-y-4">
       {notice && <Notice>{notice}</Notice>}
@@ -283,16 +353,24 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                     )}
                   </>
                 )}
+                <PickDraft projectId={plan.project_id} picks={pickList} summary={pickDraft} recalculating={previewing}
+                           noSeatChange="이 사업은 아래 증원으로 채웁니다"
+                           failed={!previewing && previewErr?.key === pickKey} onRetry={() => setPreviewRetry((x) => x + 1)}
+                           named={(id) => { const nm = projects?.find((x) => x.id === id)?.name; return nm ? `${id} ${nm}` : id; }}
+                           onRemove={(id) => setPicks((d) => { const nx = { ...d }; delete nx[id]; return nx; })} />
+                {pickDraft && <p className="text-xs text-slate-500">{hintText(pickDraft.apply_hint, "고른 사람으로 확정하면")}</p>}
+                {pickList.length > 0 && <p className="text-xs text-slate-500">{pickFresh
+                  ? "아래 후보는 고른 사람을 팀원으로 친 다시 계산입니다(위 최선 조합은 그대로)." : "고른 사람을 반영해 후보를 다시 계산하는 중…"}</p>}
                 <Tabs label="후보 갈래" value={group} onChange={setGroup}
                       items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${
-                        g === "spare" && plan.candidates.spare.some((r) => r.source === "concurrent") ? "동시 수행으로 지원" : GROUP_LABEL[g]
-                      } ${plan.candidates[g].length}`])} />
+                        g === "spare" && (shown ?? plan.candidates).spare.some((r) => r.source === "concurrent") ? "동시 수행으로 지원" : GROUP_LABEL[g]
+                      } ${(shown ?? plan.candidates)[g].length}`])} />
                 {rows.length === 0 ? <p className="text-slate-500">이 갈래에는 후보가 없습니다.</p> : (
-                  <table className="w-full">
+                  <table className={`w-full ${shownStale ? "opacity-60" : ""}`} aria-busy={shownStale}>
                     <thead className="text-left text-xs text-slate-500"><tr><th>이름</th><th>등급</th>{splitAlloc && <th className="text-right">투입률</th>}
                       <th className="text-right" title="모든 사업 빈자리 합의 변화 -- 아래 설명">빈자리 변화 ⓘ</th>
                       <th className="text-right" title="이 사업 요구 기술에 맞는 정도">기술</th>
-                      <th className="pr-3 text-right" title="두 사람 사이 점수 -- 이 사업 팀원과의 쌍만 셉니다">협업 ⓘ</th><th>비고</th></tr></thead>
+                      <th className="pr-3 text-right" title="두 사람 사이 점수 -- 이 사업 팀원과의 쌍만 셉니다">협업 ⓘ</th><th>비고</th><th><span className="sr-only">넣기</span></th></tr></thead>
                     <tbody>
                       {rows.map((r) => { const sc = skillCollab(r); const who = partnersText(r); return (
                         <tr key={r.person_id} className="border-t border-slate-100 align-top">
@@ -308,8 +386,18 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                             {r.source === "concurrent" && r.new_violations.length === 0 && r.apply_hint && (
                               <button type="button" className="ml-2 rounded border border-violet-300 px-1.5 py-0.5 text-violet-800"
                                       aria-label={`${r.name} 동시 수행으로 지원`}
-                                      disabled={busy} onClick={() => setSupport(r)}>동시 수행으로 지원</button>
+                                      disabled={busy || pickList.length > 0} title={pickList.length > 0 ? "넣기로 고른 사람이 있으면 그 확정을 먼저 합니다" : undefined}
+                                      onClick={() => setSupport(r)}>동시 수행으로 지원</button>
                             )}</td>
+                          <td className="text-right">
+                            <button type="button" className={`btn px-2 py-0.5 text-xs ${picks[r.person_id] ? "border-ink font-semibold" : ""}`}
+                                    aria-pressed={!!picks[r.person_id]} aria-label={`${r.name} 넣기`}
+                                    disabled={busy || (!picks[r.person_id] && pickList.length >= PICK_MAX)}
+                                    title={!picks[r.person_id] && pickList.length >= PICK_MAX ? `한 번에 ${PICK_MAX}명까지 고릅니다` : undefined}
+                                    onClick={() => setPicks((d) => { const nx = { ...d }; if (nx[r.person_id]) delete nx[r.person_id]; else nx[r.person_id] = r; return nx; })}>
+                              {picks[r.person_id] ? "넣음" : "넣기"}
+                            </button>
+                          </td>
                         </tr>
                       ); })}
                     </tbody>
@@ -322,7 +410,15 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
           )}
         </div>
       </div>
-      {plan?.best.accepted && (plan.best.new_violations?.length ?? 0) === 0 && (
+      {plan && pickList.length > 0 && (
+        <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠지고, 사업 정원·예산은 미리 계산한 만큼 늘어납니다.">
+          <button className="btn-primary" disabled={busy || pickBlocked} onClick={() => setPickConfirm(true)}
+                  title={!pickDraft ? "미리 계산이 끝나야 확정할 수 있습니다" : pickBlocked ? "확정하면 규칙 위반이 생깁니다" : undefined}>
+            고른 {pickList.length}명 확정</button>
+          <button className="btn-ghost" onClick={() => setPicks({})}>고른 것 지우기</button>
+        </ActionBar>
+      )}
+      {plan?.best.accepted && (plan.best.new_violations?.length ?? 0) === 0 && pickList.length === 0 && (
         <ActionBar note="확정하면 지금 배치가 바뀐 새 판이 됩니다(변경 이력에서 되돌릴 수 있음).">
           <button className="btn-primary" disabled={busy} onClick={() => setConfirming(true)}>이 조합 확정</button>
         </ActionBar>
@@ -338,6 +434,15 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
             ? <> 확정하면 사업 정원{Object.values(support.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
                 {Object.values(support.apply_hint.budget_add).map((b) => ` · 월 예산 +${b.toLocaleString()}`)}이(가) 함께 늘어납니다.</>
             : " 지금 정원·예산 안에서 들어갑니다."}
+        </Dialog>
+      )}
+      {pickConfirm && plan && pickDraft && (
+        <Dialog title={`${project?.name ?? projectId} 긴급 투입 확정(고른 ${pickList.length}명)`} actions={<>
+          <button className="btn-ghost" onClick={() => setPickConfirm(false)} disabled={busy}>취소</button>
+          <button className="btn-primary" disabled={busy} onClick={() => void applyPicks()}>{busy ? "처리 중…" : "확정"}</button>
+        </>}>
+          {pickList.map((r) => r.name).join(", ")}을(를) 지금부터 사업이 끝날 때까지 넣습니다. {hintText(pickDraft.apply_hint, "함께")}
+          {pickBody.some((p) => p.grant) ? " 원래 사업을 유지하는 사람에게는 프로젝트 동시 수행 허용(사유: 긴급 지원)이 함께 기록됩니다." : ""}
         </Dialog>
       )}
       {confirming && plan && (

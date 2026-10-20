@@ -152,7 +152,7 @@ describe("SettingsTab 전일 투입", () => {
     render(<SettingsTab data={data} onSave={vi.fn()} />);
     expect(screen.getByLabelText("전일 투입(100%)")).toBeChecked();
     expect(screen.queryByLabelText(/최소 투입률/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText("기간 내내 한 비율"));
+    fireEvent.click(screen.getByLabelText("나눠 투입 · 기간 내내 같은 비율"));
     expect(screen.getByLabelText(/최소 투입률/)).toBeInTheDocument();
   });
 });

@@ -110,18 +110,18 @@ export function SettingsTab({ data, onSave }: Props) {
             ))}
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            전일 투입(기본): 한 사람은 들어간 사업 기간 동안 100%로 일한다. 여러 사업을 같은 달에 맡는 <b>프로젝트 동시 수행</b>은
-            부서장이 사람마다 사유와 함께 허용한 사람만 할 수 있고, 그 사람은 사업마다 100%·예산 전액으로 센다. 그 사업 기간에 쉬는 달(육아휴직 등)이
-            있는 사람은 그 사업에 넣지 않는다. 아래 두 방식은 예전 투입률 나누기 방식이다.
+            전일 투입(기본): 들어간 사업 기간 동안 100%로 일합니다. 같은 달 여러 사업(<b>프로젝트 동시 수행</b>)은 부서장이 사람마다 사유와 함께
+            허용한 사람만 합니다. 쉬는 달(육아휴직 등)이 겹치는 사업에는 넣지 않습니다. 아래 두 "나눠 투입"은 예전 방식입니다.
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            달마다 따로: 다른 프로젝트가 끝나 한가해진 달에 더 많이 배치할 수 있다. 가상 조직 데이터 측정(Plan A)에서 끝까지
-            풀면 100명 +20.5%, 200명 +15.4%, 300명 +15.0%였지만 시간이 2~4배 더 든다(300명 약 5분). 시간이 모자라면 오히려
-            낮을 수 있으니(300명 180초: −1.6%) 아래 계산 시간을 권장값 이상으로 둔다. 교체 검토·PDF는 가용률·예산을 달별로 확인한다.
-          </p>
+          <details className="mt-1 text-xs text-slate-500">
+            <summary className="cursor-pointer select-none">근거·측정</summary>
+            <p className="mt-1">동시 수행자는 사업마다 100%·예산 전액으로 셉니다. 나눠 투입 · 달마다 다른 비율은 다른 사업이 끝나 한가해진 달에 더 많이
+              배치할 수 있습니다. 가상 조직 데이터 측정(안 A)에서 끝까지 풀면 100명 +20.5%, 200명 +15.4%, 300명 +15.0%였지만 시간이 2~4배 들고
+              (300명 약 5분), 시간이 모자라면 오히려 낮을 수 있습니다(300명 180초: −1.6%). 교체 검토·PDF는 가용률·예산을 달별로 확인합니다.</p>
+          </details>
         </fieldset>
         <fieldset>
-          <legend className="block text-sm font-medium text-slate-800">반복 협업 조회 기간</legend>
+          <legend className="block text-sm font-medium text-slate-800">익숙한 쌍을 볼 기간</legend>
           <div className="mt-1 flex flex-wrap gap-4 text-sm">
             {[...WINDOW_OPTIONS,
               ...(WINDOW_OPTIONS.some((o) => o.value === savedWindow) ? []
@@ -134,14 +134,16 @@ export function SettingsTab({ data, onSave }: Props) {
             ))}
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            이 기간 안에서 아래 '반복 협업 기준' 개월 이상 함께 일한 두 사람을 같은 프로젝트에 넣으면 감점한다. 협업 점수(시너지)는
-            이 값과 상관없이 최근 10년 이력을 쓴다. 가상 조직 데이터 비교(현행 10년 중 6개월 · 5년 중 12개월 · 3년 중 12개월)에서
-            '최근 3년 중 12개월'만 100·200·300명 모두 같은 시간 안에 빈자리 없이 안정적으로 풀렸다(2026-10-06 결정).
-            함께 일한 달 정보가 없는 데이터(예전 고정 데모 데이터)는 기간을 적용할 수 없어 전체 이력으로 센다.
+            이 기간 안에서 아래 '익숙한 쌍 기준' 개월 이상 함께 일한 두 사람을 같은 사업에 또 넣으면 조금 감점합니다. 협업 점수는 이 값과 상관없이 최근 10년을 봅니다.
           </p>
+          <details className="mt-1 text-xs text-slate-500">
+            <summary className="cursor-pointer select-none">근거·측정</summary>
+            <p className="mt-1">가상 조직 데이터 비교(10년 중 6개월 · 5년 중 12개월 · 3년 중 12개월)에서 '최근 3년 중 12개월'만 100·200·300명 모두
+              같은 시간 안에 빈자리 없이 안정적으로 풀렸습니다(2026-10-06 결정). 함께 일한 달 정보가 없는 데이터(예전 고정 데모 데이터)는 전체 이력으로 셉니다.</p>
+          </details>
         </fieldset>
         <div>
-          <label className="block text-sm font-medium text-slate-800" htmlFor="set-solver_seeds">동시 탐색 수</label>
+          <label className="block text-sm font-medium text-slate-800" htmlFor="set-solver_seeds">동시에 풀어 볼 갈래 수</label>
           <select id="set-solver_seeds" value={seeds === null ? "" : String(seeds)}
                   onChange={(e) => setSeeds(e.target.value === "" ? null : Number(e.target.value))}
                   className="mt-1 rounded-md border border-slate-300 px-2 py-1 text-sm">
@@ -152,14 +154,16 @@ export function SettingsTab({ data, onSave }: Props) {
             ))}
           </select>
           <p className="mt-1 text-xs text-slate-500">
-            같은 문제를 출발점만 바꿔 동시에 몇 갈래로 풀지 정합니다(= 계산에 쓰는 CPU 코어 수). 늘리면 같은 시간 안에 더 좋은 안·대안을
-            찾을 가능성이 높아지지만 서버 자원을 그만큼 씁니다(코어 4개 이상이면 4 권장). 100명 30초 실측: 1이면 대안이 안 나오고 안 A만,
-            4면 안 A~D가 모두 나왔습니다.
+            같은 문제를 출발점만 바꿔 동시에 몇 갈래로 풀지입니다(= 계산에 쓰는 CPU 코어 수). 늘리면 더 좋은 안·대안을 찾기 쉽지만 서버 자원을 그만큼 씁니다. 4 권장.
           </p>
+          <details className="mt-1 text-xs text-slate-500">
+            <summary className="cursor-pointer select-none">근거·측정</summary>
+            <p className="mt-1">100명 30초 실측: 1이면 대안이 나오지 않고 안 A만, 4면 안 A~D가 모두 나왔습니다(코어 4개 이상인 서버 기준).</p>
+          </details>
         </div>
         {mode === "full" && (
           <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            최소 투입률·동시 프로젝트 최대는 전일 투입에서 쓰지 않는다(투입률을 나누는 예전 방식 전용 -- 값은 그대로 저장된다).
+            최소 투입률·같은 달 최대 사업 수는 전일 투입에서 쓰지 않습니다(나눠 투입 전용 -- 값은 그대로 저장됩니다).
           </p>
         )}
         {FIELDS.filter((f) => !(mode === "full" && SPLIT_ONLY.includes(f.key))).map((f) => (
