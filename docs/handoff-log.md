@@ -22,6 +22,32 @@
 
 ---
 
+## 2026-10-21 · claude-a · 등급 대체(사유 필수·예산 증액) · b 확정 취소 브랜치 합침 · What-if 편성안 닫힘 안내 · 시험 고정 순서 결함
+- 브랜치/커밋: `feat/claude-a-grade-swap`(`feat/claude-a-whatif-ui-fixes` 위) `df9cf43`(b `feat/claude-b-newproj-explain-cancel` 병합 -- b 브랜치는 건드리지 않음) · `e00a179`(시험) · `2dd4a21`(등급 대체) · `043644a`(What-if 안내) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자. 해당 작업은 a 너가 맡아서 해줘." · "편성안을 가져왔고 신규 사업 편성에서 새로운 사업을 만드니 what-if 대시보드에서 보였던 편성안이 없어졌어 …"
+- 한 일:
+  - `core/evaluate/grade_swap`(새로 넘친 등급 × 모자란 자리). 신규 사업 후보·draft와 긴급 투입 hint·미리 보기가 대체를 적용한 정원·예산으로 판정한다.
+  - `/api/workspace/apply` `grade_swaps`(사유 필수, 같은 규칙으로 대조) → 정원 표 수정·이력 summary. 검토 자료 사실 `MOVE_GRADE`. 화면 `GradeSwapBox`(신규 사업·긴급 투입 세 확정 경로).
+  - 상황 화면이 데이터를 바꿔 What-if 편성안을 닫으면 빈 화면에 이유·다음 할 일을 보인다.
+  - 정정: 바로 아래 내 항목(What-if 화면 3건)에 "b 브랜치와 같은 바탕"이라 적었으나 b 브랜치는 main `266d986`에서 나왔다(커밋 목록을 잘못 읽었다).
+- 상대 영향(claude-b):
+  - **네 영역을 고쳤다**(사용자가 a에 맡김):
+    - `api/routes/workspace.py`(`GradeSwapIn`·`_check_grade_swaps`·summary).
+    - `api/workspace_edits.py`(`swap_grade_seats`).
+    - `api/review_docs.py`(`confirms`의 `grade_swaps`·`grade_swap_facts`).
+    - `routes/scenarios`(`_apply_hint`·`emergency_draft`·`draft_summary`·`rescore_unchanged`·`classify` 정렬·`swap_graph`).
+    - `NewProjectsScreen`·`EmergencyScreen`·`pickView.hintText`·`workspaceApi` 타입.
+  - **후보 행의 `new_violations`가 비어도 `grade_swap`이 있으면 확정에 사유가 필요하다** -- 네 `test_cancel_confirm`의 후보 고르기 조건 4곳에 `not r.get("grade_swap")`을 더했다.
+  - `tests/nightly/conftest._isolated`가 이름 바꾸기 전에 `api.main`을 불러 둔다(따로 돌리면 override_ai가 실패하던 결함 -- 내 migrate 브랜치에서 생김).
+  - 기준선 2090 passed·slow 20·웹 304.
+- 검증:
+  - `uv run --group benchmark pytest -q` 2089 passed + 1(작업 폴더 탓 상대 경로 `test_e4_judges` -- 저장소 루트에서 21 passed) · `-m slow` 20 passed · 웹 304 · `npx tsc -b`·build · ruff F 계열 0.
+  - 브라우저(연말형 기록, 임시 폴더): J018에 중급 둘 → 둘째가 "등급 대체(고급 자리)" → 사유 칸 → 확정 → 정원 고급 0·중급 2, 이력 사유, 검토 자료 `MOVE_GRADE`(확인할 사실), What-if 빈 화면 안내.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰.
+- 근거: `.omc/reports/2026-10-21-grade-substitution.md`, 계획 `.omc/plan/2026-10-21-grade-substitution.md`.
+
+---
+
 ## 2026-10-21 · claude-b · 신규 사업 편성: 자동 편성 K 행 설명 · 기다림 표시 · 확정 취소(사용자 요청 3건)
 - 브랜치/커밋: `feat/claude-b-newproj-explain-cancel`(main `266d986`에서) `a1f1232` · 이 문서 커밋. main 미병합(승인 대기).
 - 사용자: "1. … k=n일때 각 row에서 신규 사업에 대해 각각 어떻게 편성을 했는지 … 한줄 혹은 두줄 … 간단 명료하게", "2. 소명 미리보기 … 로딩이 걸린다는 뭔가 액션 … 다른 화면에서도",

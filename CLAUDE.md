@@ -148,6 +148,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **운영 중 비교 K는 0~5**(`api/routes/operating.OPERATING_KS` -- 화면 기본·밤 배치 `DEFAULT_KS`·시연 미리 계산이 같은 목록, 2026-10-20 사용자 "k는 최대 5까지"). 미리 계산·밤 행은
   요청 K 목록이 저장된 목록의 **앞부분**이면 잘라 준다(`demo_precomputed.operating_rows` -- K 행은 앞 K만 이어받는다). 시연 운영 중 묶음 4개는 0~5로 다시 풀었다(0~3 행은 예전과 같았다).
   긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
+- **등급 대체**(2026-10-21 사용자 결정 "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자", claude-a `core/evaluate/grade_swap.py`): 손 편성 확정(신규 사업 넣기·긴급 투입 세 경로)에서
+  **이 확정으로 새로 넘친 등급 × 확정 뒤 모자란 자리**를 짝지어(가까운 등급부터, 같으면 위 자리) 데이터 정원을 자리 −n·들어간 등급 +n으로 바꾼다 -- 막지 않고 사유를 받는다.
+  사유는 확정 이력 summary `grade_swaps`(검토 자료 사실 `MOVE_GRADE`, 아래 등급 대체는 확인할 사실), 대체가 있으면 넘친 만큼 `budget_add`. 화면 미리 계산(`routes/scenarios.swap_graph`·`_apply_hint`)과
+  확정 검증(`routes/workspace._check_grade_swaps`)이 같은 함수라 다르면 422. 원래 넘쳐 있던 등급·정원 표에 없는 등급은 대체가 아니다. 확정 취소·되돌리기가 정원·예산을 함께 돌린다.
+  계산 모델(MILP·평가기·검증기)은 그대로 -- 자동 편성은 대체하지 않고 빈자리로 보인다(부족 신호를 묻지 않게). 후보 목록은 같은 등급이 먼저(`classify`). 긴급 투입은 모자란 자리가 있으면 증원 대신 대체(예전엔 넘친 등급 정원만 늘려 빈자리가 남았다).
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -238,7 +243,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 b 확정 취소·K 행 설명 + a 시험 AI 정리·What-if 화면 3건 합친 트리 **2081 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 301 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 등급 대체(claude-a, b 확정 취소·What-if 화면 3건 합친 트리 위) **2090 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 304 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
