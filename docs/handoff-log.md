@@ -52,6 +52,26 @@
 
 ---
 
+## 2026-10-21 · claude-b · 신규 사업 편성: 자동 편성 K 행 설명 · 기다림 표시 · 확정 취소(사용자 요청 3건)
+- 브랜치/커밋: `feat/claude-b-newproj-explain-cancel`(main `266d986`에서) `a1f1232` · 이 문서 커밋. main 미병합(승인 대기).
+- 사용자: "1. … k=n일때 각 row에서 신규 사업에 대해 각각 어떻게 편성을 했는지 … 한줄 혹은 두줄 … 간단 명료하게", "2. 소명 미리보기 … 로딩이 걸린다는 뭔가 액션 … 다른 화면에서도",
+  "3. 신규 플젝 인력 확정한거 취소할 수 있는 기능 … 되돌리기는 되돌리고 싶은 버전까지 다 되돌려야". 결정: 두 줄 + 명단 펼치기 · 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함.
+- 한 일:
+  - K 행 둘째 줄(신규 사업별 `4/4명 · 대기 · 이동`·소명 버튼)·명단(이름·옮김 사슬·K−1 대비) -- `web/src/scenarios/autoView.ts`(서버 변경 없음).
+  - `ui.Spinner` · 소명 미리보기 창 즉시 열기(멈춤 가능) · 단계·고정·허용 해제·검토 자료 AI 초안/저장/PDF/열기·긴급 투입 확정 창·자동 편성 계산 버튼.
+  - 확정 취소 `GET|POST /api/workspace/cancel`(`workspace_edits.revert_ops`·`apply_revert`, `routes/workspace.cancel_plan`) · 이력 `cancelled`·`cancellable` · 검토 자료 "확정 취소됨"(`review_docs/cancelled.json`).
+- 상대 영향(claude-a):
+  - **`api/review_docs.history_state`가 취소된 확정을 "reverted"로 본다**(이력에 남아 있어도), 뷰·목록에 `cancelled`.
+  - `api.workspace.undo`는 꺼낸 항목이 확정일 때만 `record_undone`(취소 판을 꺼내면 취소 기록을 지움).
+  - 목록은 같은 판 버전 확정을 최신 하나만 보이고 `_find_confirm`도 최신을 고른다.
+  - 기준선 2079 passed·slow 20·웹 297.
+- 검증: `uv run --group benchmark pytest -q` 2079 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 297 · `npx tsc -b`·build · oxlint 12(전과 같음) ·
+  브라우저(연말형): K 행 둘째 줄·명단(사슬 J007→J015→J020), 소명 창 0.2초에 "쓰는 중" → 15초 뒤 글, K=1 확정 → J001 고정 → 확정 취소 → 고정 유지·"확정 취소됨", 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백 적대적 1라운드 needs-attention(MUST 2: 되돌릴 것 없는 취소 커밋·계산 중 판 바뀜 덮어쓰기, SHOULD 4: 없어진 사업 복귀·넓은 위반 제외·20판 밖 취소 상태·취소 되돌림 기록 -- 모두 반영·시험 추가) → 2라운드 approve(NIT 2 반영).
+- 근거: 루트 `.omc/reports/2026-10-21-newproj-explain-cancel.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-21-newproj-explain-cancel.md`.
+
+---
+
 ## 2026-10-20 · claude-b · 긴급 투입 손 편성 미리 보기 · 설정 화면 용어 정리 · 신규 사업 K 0~5 고르기(사용자 결정)
 - 브랜치/커밋: `feat/claude-b-emergency-preview`(claude-a 통합 `75e684b` 위) `1fcf110` · 이 문서 커밋. main 미병합(a 통합 브랜치가 들어간 뒤 -- 사용자 "a가 충돌을 해결하고있으니 끝나면 하자").
 - 사용자: "1. 긴급 투입에도 미리 보기 기능 추가해줘 2. 설정 화면 용어 정리해줘", "k를 3~5명 스콥으로 하지말고 0~5명 스콥으로".
