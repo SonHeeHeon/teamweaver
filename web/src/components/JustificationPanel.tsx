@@ -45,10 +45,12 @@ interface Props {
   planLabel: string;
   planToken: string | null;
   onDatasetChanged: () => void;
+  /** 탭이 보이는가(아니면 만들지 않는다 -- 기본 true) */
+  visible?: boolean;
 }
 
 export function JustificationPanel({ meta, datasetVersion, entries, applied, weights, params, planLabel, planToken,
-                                    onDatasetChanged }: Props) {
+                                    onDatasetChanged, visible = true }: Props) {
   const staffed = useMemo(() => meta.projects.filter((p) => entries.some((e) => e.project_id === p.id)),
                           [meta.projects, entries]);
   const [project, setProject] = useState<string>(staffed[0]?.id ?? "");
@@ -93,13 +95,17 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
     }
   }
 
-  // 사업·명단·기준이 바뀌면 다시 만든다(템플릿 먼저, AI 글이 가능하면 이어서)
+  // 사업·명단·기준이 바뀌면 다시 만든다(템플릿 먼저, AI 글이 가능하면 이어서). 탭이 보일 때만 -- 숨은 탭에서 편성안을 고를 때마다
+  // AI를 부르지 않게(2026-10-21 화면 검토, 단순 규칙 비교 BaselineCard active와 같은 방식)
+  const [madeFor, setMadeFor] = useState<string | null>(null);
   useEffect(() => {
+    if (!visible || madeFor === reqKey) return;
+    setMadeFor(reqKey);
     setResult(null);
     setActive(null);
     void load(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqKey]);
+  }, [reqKey, visible]);
 
   function cite(id: string) {
     setActive(id);

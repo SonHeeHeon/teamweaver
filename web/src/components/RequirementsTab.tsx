@@ -4,6 +4,7 @@ import { LifecycleChips } from "./LifecycleChips";
 import { projectPeriod } from "./lifecycle";
 
 const DEFAULT_WEIGHT = 3;   // core/config.py 의 DEFAULT_WEIGHT 와 같은 값
+const GRADE_ORDER = ["특급", "고급", "중급", "초급"];   // 정원은 위 등급부터(원천 행 순서대로 섞여 보였다, 2026-10-21 화면 검토)
 
 interface Props {
   meta: Meta;
@@ -82,7 +83,8 @@ export function RequirementsTab({ meta, weights, onWeightsChange, onRun, running
                   </td>
                   <td className="px-3 py-2 text-slate-600">{p.sector} · {p.phase}</td>
                   <td className="px-3 py-2 text-slate-600">
-                    {Object.entries(p.grade_headcount).map(([g, n]) => `${g} ${n}`).join(", ")}
+                    {Object.entries(p.grade_headcount).sort(([a], [b]) => GRADE_ORDER.indexOf(a) - GRADE_ORDER.indexOf(b))
+                      .map(([g, n]) => `${g} ${n}`).join(", ")}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums text-slate-900">
                     {p.monthly_budget.toLocaleString()}

@@ -15,6 +15,12 @@ const META: Meta = {
 };
 
 describe("RequirementsTab", () => {
+  it("사업 조건의 정원은 위 등급부터(원천 행 순서와 상관없이, 2026-10-21 화면 검토)", () => {
+    const meta = { ...META, projects: [{ ...META.projects[0], grade_headcount: { 중급: 3, 초급: 1, 고급: 1 } }] } as Meta;
+    render(<RequirementsTab meta={meta} weights={{}} onWeightsChange={() => {}} onRun={() => {}} running={false} />);
+    expect(screen.getByText("고급 1, 중급 3, 초급 1")).toBeInTheDocument();
+  });
+
   it("모든 스킬에 슬라이더를 그리고 기본값 3을 보인다", () => {
     render(<RequirementsTab meta={META} weights={{}} onWeightsChange={() => {}}
                             onRun={() => {}} running={false} />);

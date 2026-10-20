@@ -30,6 +30,21 @@ function panel() {
 describe("JustificationPanel", () => {
   beforeEach(() => vi.mocked(postJustification).mockReset());
 
+  it("탭이 숨어 있으면 만들지 않고(AI도 부르지 않음), 보이면 그때 만든다(2026-10-21 화면 검토)", async () => {
+    vi.mocked(postJustification).mockResolvedValue(base({ ai_available: false }));
+    const props = { meta: META, datasetVersion: "v1", entries: ENTRIES, applied: null, weights: {}, params: null,
+                    planLabel: "A", planToken: "tok", onDatasetChanged: vi.fn() };
+    const { rerender } = render(<JustificationPanel {...props} visible={false} />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(postJustification).not.toHaveBeenCalled();
+    rerender(<JustificationPanel {...props} visible />);
+    await waitFor(() => expect(postJustification).toHaveBeenCalledTimes(1));
+    rerender(<JustificationPanel {...props} visible={false} />);
+    rerender(<JustificationPanel {...props} visible />);                  // 같은 명단이면 다시 만들지 않는다
+    await new Promise((r) => setTimeout(r, 20));
+    expect(postJustification).toHaveBeenCalledTimes(1);
+  });
+
   it("정해진 틀을 먼저 보이고 AI 글이 오면 바꾼다. 근거 칩을 누르면 사실을 강조하고, 서버 덧붙임은 따로 보인다", async () => {
     const add = "다만 다음 사항도 함께 확인이 필요합니다: 요구 Python 미달[F2].";
     vi.mocked(postJustification)

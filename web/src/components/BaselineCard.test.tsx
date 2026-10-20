@@ -18,7 +18,7 @@ describe("BaselineCard — 단순 규칙 대비", () => {
     expect(await screen.findByText("+26.60")).toBeInTheDocument();   // 버튼 없이 저절로(사용자 2026-10-20)
     expect(load).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: /비교/ })).toBeNull();
-    expect(screen.getByText(/1건 \(budget 1\)/)).toBeInTheDocument();
+    expect(screen.getByText(/1건 \(예산 초과 1\)/)).toBeInTheDocument();   // 내부 코드 대신 화면 말(2026-10-21)
     expect(screen.getByText(/자리당 평균 기술 적합은 이 배치가 더 낮다/)).toBeInTheDocument();
     expect(screen.getByText(/NOT_CALIBRATED/)).toBeInTheDocument();
   });

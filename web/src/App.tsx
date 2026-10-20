@@ -897,7 +897,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                       meta={meta} datasetVersion={planBasis.datasetVersion} entries={current.entries}
                       applied={edit && original ? { base: original.entries, steps: edit.history.map(stepBody) } : null}
                       weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
-                      planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
+                      planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()}
+                      visible={subTab === "justify"} />
                   </div>
                 )}
                 <div className={subTab === "baseline" ? "" : "hidden"}>

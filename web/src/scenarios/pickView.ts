@@ -55,7 +55,7 @@ export function duosText(pairs: (PairTerm & { a: string; a_name: string; b: stri
   return [...by.values()].map((e) => `${e.a}·${e.b} ${termsText(e.terms)}`).join(" · ");
 }
 
-const VIOLATION_LABEL: Record<string, string> = {
+export const VIOLATION_LABEL: Record<string, string> = {
   grade_over: "등급 정원 초과", budget: "예산 초과", availability: "투입 불가 달", concurrent_projects: "동시 수행 상한",
   alloc_range: "투입률 범위",
 };
