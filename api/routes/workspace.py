@@ -32,7 +32,7 @@ from api.schemas import MAX_PLAN_ENTRIES, EntryIn
 from api.workspace import History, WorkspaceUnavailable, cancelled_keys, commit, current_files, undo
 from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, apply_revert,
                                  concurrency_of, pipeline_of, project_form, read_manifest, read_table, remove_project,
-                                 revert_ops, set_concurrency, set_lock, update_project)
+                                 revert_ops, set_concurrency, set_lock, swap_grade_seats, update_project)
 
 router = APIRouter()
 GRADE_ORDER = ("특급", "고급", "중급", "초급")
@@ -286,6 +286,16 @@ class SkillAdd(BaseModel):
     headcount: int = Field(default=1, ge=1, le=50)
 
 
+class GradeSwapIn(BaseModel):
+    """등급 대체 한 건(2026-10-21): project_id의 seat 자리 count개를 grade 사람으로. 사유 필수(사용자 결정 "사유는 전부 받고")."""
+    model_config = ConfigDict(extra="forbid")
+    project_id: str = Field(min_length=1, max_length=32)
+    seat: Literal["특급", "고급", "중급", "초급"]
+    grade: Literal["특급", "고급", "중급", "초급"]
+    count: int = Field(ge=1, le=10)
+    reason: str = Field(max_length=200)
+
+
 class ApplyIn(_Versioned):
     entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     note: str = Field(default="", max_length=300)
@@ -297,6 +307,43 @@ class ApplyIn(_Versioned):
     budget_add: dict[str, Annotated[int, Field(ge=0, le=10_000_000)]] = {}
     skills_add: dict[str, list[SkillAdd]] = Field(default={}, max_length=10)
     concurrency_add: list[GrantIn] = Field(default=[], max_length=20)
+    grade_swaps: list[GradeSwapIn] = Field(default=[], max_length=20)
+
+
+def _check_grade_swaps(dataset, body: "ApplyIn") -> list[dict]:
+    """요청의 등급 대체가 서버 계산(이 확정으로 새로 넘친 등급 × 모자란 자리, core.evaluate.grade_swap)과 같고 사유가 다 있는가.
+    화면 미리 계산(routes/scenarios._apply_hint·swap_grade)과 같은 함수라 맞아야 한다 -- 다르면 판이 바뀌었거나 옛 미리 계산이다."""
+    from core.evaluate.grade_swap import plan_swaps, same_swaps, team_grades
+    asked: dict[str, list[dict]] = {}
+    for s in body.grade_swaps:
+        if s.seat == s.grade:
+            raise HTTPException(status_code=422, detail=f"같은 등급끼리는 대체가 아니다: {s.project_id} {s.seat}")
+        if not s.reason.strip():
+            raise HTTPException(status_code=422, detail=f"등급 대체 사유를 적어야 한다: {s.project_id} {s.seat} 자리 → {s.grade}")
+        asked.setdefault(s.project_id, []).append(s.model_dump())
+    graph = dataset.graph
+    grade_of = {p.id: p.grade.value for p in graph.people}
+    cur = _entries_of(dataset)
+    new = [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries]
+
+    def teams(es):
+        out: dict[str, set] = {}
+        for e in es:
+            out.setdefault(e["project_id"], set()).add(e["person_id"])
+        return out
+    tb, ta = teams(cur), teams(new)
+    touched = {j for j in set(tb) | set(ta) if tb.get(j) != ta.get(j)} | set(asked)
+    for jid in sorted(touched):
+        if jid not in graph.project_index:
+            raise HTTPException(status_code=422, detail=f"이 데이터에 없는 사업: {jid}")
+        j = graph.projects[graph.project_index[jid]]
+        want = plan_swaps({g.value: n for g, n in j.grade_headcount.items()},
+                          team_grades(cur, jid, grade_of), team_grades(new, jid, grade_of))
+        if not same_swaps(want, asked.get(jid, [])):
+            raise HTTPException(status_code=422, detail={
+                "message": "등급 대체가 미리 계산과 다르다 -- 화면을 다시 계산하고 대체마다 사유를 적어 확정한다.",
+                "project_id": jid, "expected": want})
+    return [s.model_dump() | {"reason": s.reason.strip()} for s in body.grade_swaps]
 
 
 def _violations(app, dataset, entries) -> dict[tuple[str, str], object]:
@@ -332,11 +379,15 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                  | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+    swaps = _check_grade_swaps(dataset, body)
     before = _files(request)
     files, changes = _edit(apply_entries, before, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
                            budget_add=dict(body.budget_add),
                            skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()})
+    if swaps:
+        # 등급 대체: 정원 표를 자리 등급 −n, 들어간 등급 +n으로(같은 판 -- 확정 취소·되돌리기가 함께 돌린다)
+        files = _edit(swap_grade_seats, files, swaps)
     if body.concurrency_add:
         # 동시 수행으로 지원하는 사람의 허용(사유)을 같은 판에 함께 적는다 -- 되돌리면 둘 다 사라진다(설계 3.5).
         # 이미 그만큼 허용된 사람은 기존 기록(사유·메모·시각)을 그대로 둔다(폴백 리뷰 P2: 기본값으로 덮어썼다)
@@ -365,6 +416,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                        summary={**changes, "headcount_add": body.headcount_add, "budget_add": body.budget_add,
                                 "skills_add": {p: [s.name for s in v] for p, v in body.skills_add.items()},
                                 "concurrency_add": [g.model_dump() for g in body.concurrency_add],
+                                # 등급 대체와 사유(2026-10-21) -- 인사팀 검토 자료 사실(MOVE_GRADE)의 원천
+                                "grade_swaps": swaps,
                                 # 긴급 투입만 -- 다른 확정의 검토 자료에는 상황 메모 칸이 없어 보이지 않는 값으로 남는다(폴백 리뷰 S1)
                                 "situation": body.situation.strip() if body.source == "emergency" else ""},
                        check=check)

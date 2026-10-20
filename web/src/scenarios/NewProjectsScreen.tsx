@@ -14,6 +14,7 @@ import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
 import { CandidateGuide, PickDraft } from "./PickDraft";
+import { GradeSwapBox, swapBody, swapsReady, type SwapReasons } from "./GradeSwapBox";
 import { partnersText, seatLines, skillCollab, violationReasons } from "./pickView";
 import { chainText, changesFromPrev, mixText, moveChains, projectMix, type ProjectMix } from "./autoView";
 import {
@@ -127,6 +128,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [cands, setCands] = useState<Candidates | null>(null);
   const [group, setGroup] = useState<Group>("bench");
   const [draft, setDraft] = useState<Record<string, CandidateRow>>({});
+  /** 등급 대체 사유(2026-10-21) -- 열쇠 = 사업:자리>등급 */
+  const [swapReasons, setSwapReasons] = useState<SwapReasons>({});
   const [formOpen, setFormOpen] = useState(false);
   /** 진행 사업 행의 "추가 과제 붙이기"로 연 양식의 상위 사업(2026-10-19) */
   const [formParent, setFormParent] = useState<string | null>(null);
@@ -227,6 +230,9 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   /** 지금 선택의 계산이 실패했다(고른 직후 요청 전 한 프레임은 실패가 아니다 -- 리뷰 N1) */
   const failedNow = !recalc && candError?.key === forKey;
   const draftBlocked = fresh && (cands?.draft?.new_violations.length ?? 0) > 0;
+  /** 고른 사람으로 생기는 등급 대체(사유를 받아야 확정) */
+  const draftSwaps = fresh && project ? (cands?.draft?.grade_swaps ?? []).map((swap) => ({ projectId: project.project_id, swap })) : [];
+  const swapMissing = !swapsReady(draftSwaps, swapReasons);
 
   /** 판을 바꾸는 요청 하나 -- 성공하면 새 작업 데이터로 바꾸고 App에도 알린다. */
   async function mutate(run: () => Promise<{ workspace: Workspace }>, done: string, review?: { projectId: string | null },
@@ -262,11 +268,19 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     const entries: AssignEntry[] = currentEntries(ws).filter((e) => !pulled.has(`${e.person_id}@${e.project_id}`));
     for (const r of draftList) entries.push({ person_id: r.person_id, project_id: project.project_id, alloc: r.alloc });
     const names = draftList.map((r) => r.name).join(", ");
+    // 등급 대체(사유)·대체로 넘는 예산은 미리 계산 값 그대로 보낸다 -- 서버가 같은 규칙으로 다시 계산해 맞춰 본다
+    const swaps = swapBody(draftSwaps, swapReasons);
+    const budget = cands?.draft?.budget_add ?? 0;
     setConfirm({
       title: `${project.name}에 ${draftList.length}명 확정`,
-      body: `${names}을(를) 넣는다.${pulled.size ? ` 빼 오는 배치 ${pulled.size}건은 원래 사업에서 빠진다.` : ""} 지금 배치가 바뀐 새 판이 된다(되돌릴 수 있다).`,
+      body: `${names}을(를) 넣는다.${pulled.size ? ` 빼 오는 배치 ${pulled.size}건은 원래 사업에서 빠진다.` : ""}`
+        + (swaps.length ? ` 등급 대체(${swaps.map((x) => `${x.seat} 자리 ${x.count}개를 ${x.grade}으로`).join(", ")})로 이 사업 정원이 바뀐다.` : "")
+        + (budget > 0 ? ` 월 예산 +${budget.toLocaleString()}.` : "")
+        + " 지금 배치가 바뀐 새 판이 된다(되돌릴 수 있다).",
       run: () => mutate(() => postApply(ws.dataset_version, { entries, source: "manual",
-                                                               note: `${project.project_id} 손 편성: ${names}` }),
+                                                               note: `${project.project_id} 손 편성: ${names}`,
+                                                               ...(swaps.length ? { grade_swaps: swaps } : {}),
+                                                               ...(budget > 0 ? { budget_add: { [project.project_id]: budget } } : {}) }),
                         `${project.name}에 ${draftList.length}명을 넣었다.`, { projectId: project.project_id }),
     });
   }
@@ -465,6 +479,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
               <PickDraft projectId={project.project_id} picks={draftList} summary={fresh ? cands?.draft : null} recalculating={recalc}
                          failed={failedNow} onRetry={() => setRetry((n) => n + 1)} named={named}
                          onRemove={(id) => setDraft((d) => { const n = { ...d }; delete n[id]; return n; })} />
+              <GradeSwapBox items={draftSwaps} budgetAdd={cands?.draft?.budget_add} reasons={swapReasons} named={named} disabled={busy}
+                            onReason={(k, v) => setSwapReasons((r) => ({ ...r, [k]: v }))} />
               {failedNow && candError && <Notice tone="bad">{candError.msg}</Notice>}
               <Tabs label="후보 갈래" value={group} onChange={setGroup}
                     items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${GROUP_LABEL[g]} ${cands ? cands[g].length : ""}`])} />
@@ -504,6 +520,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                             {r.pulled_from.length ? <><ProjectCodes ids={r.pulled_from} projects={projects} />에서 빼 옴</> : r.source === "partly_free" ? "남는 시간으로"
                               : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
                             {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>}
+                            {(r.grade_swap?.length ?? 0) > 0 && (
+                              <span className="ml-1 text-amber-700" title="다른 등급 빈자리를 메웁니다 -- 확정할 때 사유를 적고 그 사업 정원을 바꿉니다">
+                                등급 대체({r.grade_swap!.map((x) => `${x.seat} 자리`).join(", ")})</span>
+                            )}
                           </td>
                           <td className="text-right">
                             <button className={`btn px-2 py-0.5 text-xs ${picked ? "border-ink font-semibold" : ""}`} aria-pressed={picked}
@@ -530,9 +550,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
       {draftList.length > 0 && project && (
         <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠집니다.">
-          <button className="btn-primary" disabled={busy || !fresh || draftBlocked} onClick={applyDraft}
+          <button className="btn-primary" disabled={busy || !fresh || draftBlocked || swapMissing} onClick={applyDraft}
                   title={!fresh ? "고른 사람의 미리 계산이 끝나야 확정할 수 있습니다"
-                    : draftBlocked ? "확정하면 규칙 위반이 생깁니다(위 '넣기로 고른 사람' 참고)" : undefined}>{draftList.length}명 확정</button>
+                    : draftBlocked ? "확정하면 규칙 위반이 생깁니다(위 '넣기로 고른 사람' 참고)"
+                    : swapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다(위 '등급 대체')" : undefined}>{draftList.length}명 확정</button>
           <button className="btn-ghost" onClick={() => setDraft({})}>고른 것 지우기</button>
         </ActionBar>
       )}

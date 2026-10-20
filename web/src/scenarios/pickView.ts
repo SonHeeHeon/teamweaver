@@ -80,5 +80,9 @@ export function hintText(h: ApplyHint, lead: string): string {
   const parts = [...(hc.length ? [`정원 ${hc.join(" · ")}`] : []),
                  ...(budget.length ? [`월 예산 +${budget.map((b) => b.toLocaleString()).join(", ")}`] : []),
                  ...(skills.length ? [`요구 기술 ${skills.join(", ")}`] : [])];
-  return parts.length ? `${lead} 사업 ${parts.join(" · ")}이(가) 늘어납니다(증원).` : `${lead} 지금 정원·예산 안에서 들어갑니다.`;
+  // 등급 대체(2026-10-21): 빈자리를 다른 등급으로 메운다 -- 증원과 따로 적는다
+  const swaps = Object.values(h.grade_swaps ?? {}).flat().map((s) => `${s.seat} 자리 ${s.count}개 → ${s.grade}`);
+  const swapText = swaps.length ? ` 등급 대체: ${swaps.join(", ")}(사유 필요).` : "";
+  return parts.length ? `${lead} 사업 ${parts.join(" · ")}이(가) 늘어납니다(증원).${swapText}`
+    : swaps.length ? `${lead}${swapText}` : `${lead} 지금 정원·예산 안에서 들어갑니다.`;
 }

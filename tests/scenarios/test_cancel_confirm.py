@@ -33,11 +33,11 @@ def _cancel(c, ws, h):
 def _pick(c, ws, pid="J018"):
     """신규 사업 후보 중 넣어도 위반이 없는 대기 인력 하나·빼 오기 하나."""
     cand = c.get(f"/api/pipeline/{pid}/candidates", params={"dataset_version": ws["dataset_version"]}).json()
-    bench = next(r for r in cand["bench"] if not r["new_violations"])
+    bench = next(r for r in cand["bench"] if not r["new_violations"] and not r.get("grade_swap"))
     # 고른 사람을 팀원으로 친 다시 채점(화면 "넣기"와 같은 길) -- 따로 고르면 같은 등급 자리가 넘칠 수 있다
     cand = c.post(f"/api/pipeline/{pid}/candidates", json={"dataset_version": ws["dataset_version"], "picks": [
         {"person_id": bench["person_id"], "alloc": bench["alloc"], "pulled_from": []}]}).json()
-    pull = next(r for r in cand["pull"] if not r["new_violations"] and len(r["pulled_from"]) == 1)
+    pull = next(r for r in cand["pull"] if not r["new_violations"] and not r.get("grade_swap") and len(r["pulled_from"]) == 1)
     return bench, pull
 
 
@@ -96,7 +96,8 @@ def test_a_later_lock_on_a_confirmed_seat_is_kept_and_reported(yearend):
         first, _ = _pick(c, ws)
         cand = c.post("/api/pipeline/J018/candidates", json={"dataset_version": ws["dataset_version"], "picks": [
             {"person_id": first["person_id"], "alloc": 1.0, "pulled_from": []}]}).json()
-        two = [first["person_id"], next(r["person_id"] for r in cand["bench"] if not r["new_violations"])]
+        # 등급 대체 후보(2026-10-21 -- 사유가 있어야 확정)는 빼고 등급이 맞는 사람
+        two = [first["person_id"], next(r["person_id"] for r in cand["bench"] if not r["new_violations"] and not r.get("grade_swap"))]
         ws = _apply(c, ws, _entries(ws) + [{"person_id": p, "project_id": "J018", "alloc": 1.0} for p in two])
         confirm = _confirm_entry(ws, "apply_manual")
         ws = c.post("/api/workspace/lock", json={"dataset_version": ws["dataset_version"], "project_id": "J018",
@@ -112,7 +113,7 @@ def test_nothing_left_to_cancel_is_refused(yearend):
     with TestClient(app) as c:
         ws = _ws(c)
         cand = c.get("/api/pipeline/J018/candidates", params={"dataset_version": ws["dataset_version"]}).json()
-        p = next(r["person_id"] for r in cand["bench"] if not r["new_violations"])
+        p = next(r["person_id"] for r in cand["bench"] if not r["new_violations"] and not r.get("grade_swap"))
         ws = _apply(c, ws, _entries(ws) + [{"person_id": p, "project_id": "J018", "alloc": 1.0}])
         confirm = _confirm_entry(ws, "apply_manual")
         ws = _apply(c, ws, [e for e in _entries(ws) if e["person_id"] != p or e["project_id"] != "J018"])   # 그 뒤 손으로 뺐다

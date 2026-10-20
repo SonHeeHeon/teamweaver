@@ -107,7 +107,9 @@ def confirms(history_entries: list[dict]) -> list[dict]:
                         "before_version": history_entries[i - 1].get("version"),
                         "before_content_version": history_entries[i - 1]["content_version"],
                         "kind": kind, "at": e.get("at"), "note": e.get("note", ""),
-                        "situation": (e.get("summary") or {}).get("situation", "")})
+                        "situation": (e.get("summary") or {}).get("situation", ""),
+                        # 등급 대체와 사유(2026-10-21) -- 그 사업 자료의 MOVE_GRADE 사실
+                        "grade_swaps": (e.get("summary") or {}).get("grade_swaps") or []})
     return out
 
 
@@ -293,6 +295,21 @@ def move_facts(moves: dict, evidence: dict, grants: dict | None = None) -> list[
     return out
 
 
+def grade_swap_facts(confirm: dict, project_id: str) -> list[dict]:
+    """이 확정의 등급 대체(2026-10-21 사용자 결정 "위 아래 모두 허용하고, 사유는 전부 받고") -- 잠긴 사실. 아래 등급으로 채운 것은
+    검토자가 볼 "확인할 사실"(불리), 위 등급은 비용만 늘어 참고. 결론은 쓰지 않는다(부서장 판단 칸)."""
+    from core.evaluate.grade_swap import ORDER
+    out = []
+    for s in confirm.get("grade_swaps") or []:
+        if s.get("project_id") != project_id:
+            continue
+        down = ORDER.index(s["grade"]) > ORDER.index(s["seat"])
+        out.append(_fact("MOVE_GRADE", f"{project_id}: 등급 대체 — {s['seat']} 자리 {s['count']}개를 {s['grade']}으로 채움"
+                         f"({'아래' if down else '위'} 등급), 사유 {s['reason']}. 이 확정으로 정원 {s['seat']} −{s['count']} · "
+                         f"{s['grade']} +{s['count']}", adverse=down, section="move"))
+    return out
+
+
 def base_facts(inp, *, focus_people: set[str] | None) -> list[dict]:
     """지금 소명 사실(core.kg.justify). 불리한 사실은 "확인할 사실", 나머지는 부록. 긴급 투입은 새로 들어온 사람 사실만 자세히,
     기존 팀원은 부록에 등급·투입률(MEM)만."""
@@ -324,7 +341,8 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
     for j in moves["joined"]:                  # 화면 표시용: 동시 수행 허용으로 들어온 사람
         if j["origin"] == "partly_free" and j["person_id"] in grants:
             j["concurrency"] = grants[j["person_id"]]
-    facts = move_facts(moves, inp.evidence, grants) + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None)
+    facts = (move_facts(moves, inp.evidence, grants) + grade_swap_facts(confirm, project_id)
+             + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None))
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]
     # 검토 자료 안에서는 상황 글을 상황 메모(부서장이 고치는 칸) 한 곳에만 둔다 -- 고치거나 지운 뒤에도 confirm에 원문이 따로

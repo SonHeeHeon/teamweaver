@@ -538,6 +538,29 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
     return files, changes
 
 
+def swap_grade_seats(files: Files, swaps: list[dict]) -> Files:
+    """등급 대체(2026-10-21 사용자 결정 "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자"): 사업마다 자리 등급 −n,
+    들어간 등급 +n(정원 표). 자리가 모자라면 EditError. 사유는 확정 이력 summary에 남는다(정원·예산은 확정 취소·되돌리기가 함께 돌린다)."""
+    files = _copy(files)
+    h, rows = read_table(files, GRADE_REQS)
+    for s in swaps:
+        pid, seat, grade, n = s["project_id"], s["seat"], s["grade"], int(s["count"])
+        if seat not in GRADES or grade not in GRADES or seat == grade or n <= 0:
+            raise EditError(f"등급 대체가 아니다: {pid} {seat} → {grade} ×{n}")
+        row = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == seat), None)
+        if row is None or int(row["headcount"]) < n:
+            raise EditError(f"{pid}의 {seat} 정원이 {n}보다 적어 대체할 수 없다")
+        row["headcount"] = str(int(row["headcount"]) - n)
+        got = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == grade), None)
+        if got is None:
+            rows.append({"project_id": pid, "career_grade": grade, "headcount": str(n)})
+        else:
+            got["headcount"] = str(int(got["headcount"]) + n)
+    write_table(files, GRADE_REQS, h, rows)
+    rehash(files)
+    return files
+
+
 # --- 확정 취소(2026-10-21 사용자 요청 3 "확정한거 취소 … 되돌리기는 되돌리고 싶은 버전까지 다 되돌려야") ---------------
 # 확정 한 건을 git revert처럼 지금 판 위에서 거꾸로 적용한다: 그 확정 직전 판(B)·확정 판(A)·지금 판(N)을 칸마다 비교해
 # N이 A와 같으면(확정 뒤로 아무도 안 건드림) B로 돌리고, 다르면(그 뒤 다른 변경) 건드리지 않고 "건너뜀"으로 알린다.

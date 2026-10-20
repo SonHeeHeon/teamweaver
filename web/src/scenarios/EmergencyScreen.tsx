@@ -10,6 +10,7 @@ import { seatsText, signedPts, splitText } from "../components/scoreSplit";
 import { hintText, partnersText, skillCollab, violationReasons } from "./pickView";
 import { PersonName, ProjectCodes } from "../components/PersonName";
 import { PickDraft } from "./PickDraft";
+import { GradeSwapBox, hintBody, swapList, swapsReady, type SwapReasons } from "./GradeSwapBox";
 import type { Person, Project } from "../api/types";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
@@ -70,6 +71,9 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
   const [previewing, setPreviewing] = useState(false);
   const [previewRetry, setPreviewRetry] = useState(0);
   const [pickConfirm, setPickConfirm] = useState(false);
+  /** 등급 대체 사유(2026-10-21) -- 열쇠 = 사업:자리>등급, 세 확정 경로가 함께 쓴다 */
+  const [swapReasons, setSwapReasons] = useState<SwapReasons>({});
+  const onSwapReason = (k: string, v: string) => setSwapReasons((r) => ({ ...r, [k]: v }));
   /** "후보 찾기" 때의 빼 오기 허용 -- 다시 매기기는 그 값으로(입력칸을 나중에 바꿔도 결과와 맞게, 2라운드 리뷰 NIT) */
   const [searchedPull, setSearchedPull] = useState(0);
 
@@ -126,6 +130,8 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
   const pickFresh = !!preview && preview.key === pickKey && !previewing;
   const pickDraft = pickFresh ? preview!.draft : null;
   const pickBlocked = !pickDraft || pickDraft.new_violations.length > 0;
+  const pickSwapMissing = !!pickDraft && !swapsReady(swapList(pickDraft.apply_hint.grade_swaps), swapReasons);
+  const bestSwapMissing = !swapsReady(swapList(plan?.apply_hint?.grade_swaps), swapReasons);
   /** 고른 사람이 있으면 그 사람들을 팀원으로 친 후보(미리 계산과 함께 온 다시 매기기 -- 다시 계산하는 동안은 직전 것을 흐리게), 없으면 "후보 찾기" 결과 */
   const shown = pickList.length && preview ? preview.candidates : plan?.candidates;
   const shownStale = pickList.length > 0 && !pickFresh;
@@ -163,9 +169,9 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
     setBusy(true);
     try {
       const hint = plan.apply_hint ?? { headcount_add: {}, budget_add: {}, skills_add: {} };
-      // 결과를 계산한 판·사업 그대로 확정한다
+      // 결과를 계산한 판·사업 그대로 확정한다(등급 대체는 사유를 붙여서)
       const res = await postApply(plan.dataset_version, { entries: plan.best.entries, source: "emergency",
-        note: clip(`${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...hint });
+        note: clip(`${plan.project_id} 긴급 투입${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...hintBody(hint, swapReasons) });
       setWs(res.workspace);
       setConfirmed({ version: res.workspace.dataset_version, projectId: plan.project_id, seen: datasetVersion ?? null });
       setPlan(null);
@@ -193,7 +199,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       const res = await postApply(ws.dataset_version, {
         entries: [...currentEntries(ws), { person_id: row.person_id, project_id: pid, alloc: 1 }], source: "emergency",
         note: clip(`${pid} 긴급 투입(프로젝트 동시 수행 지원)${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(),
-        ...row.apply_hint,                      // 서버가 이 사람으로 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술)
+        ...hintBody(row.apply_hint, swapReasons),   // 서버가 이 사람으로 계산한 증원(넘친 만큼의 정원·예산 + 더할 요구 기술)·등급 대체
         // 이미 허용된 사람은 기존 허용 기록(사유·메모)을 그대로 둔다 -- 새 허용이 필요할 때만 긴급 지원으로 적는다
         ...(row.needs_grant ? { concurrency_add: [{ person_id: row.person_id, memo: clip(note || `${pid} 긴급 투입`, GRANT_MEMO_MAX) }] } : {}),
       });
@@ -223,7 +229,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       const grants = pickBody.filter((p) => p.grant);
       const res = await postApply(plan.dataset_version, {
         entries: pickDraft.entries, source: "emergency",
-        note: clip(`${pid} 긴급 투입(손 편성)${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...pickDraft.apply_hint,
+        note: clip(`${pid} 긴급 투입(손 편성)${note ? `: ${note}` : ""}`, NOTE_MAX), situation: note.trim(), ...hintBody(pickDraft.apply_hint, swapReasons),
         ...(grants.length ? { concurrency_add: grants.map((g) => ({ person_id: g.person_id, memo: clip(note || `${pid} 긴급 투입`, GRANT_MEMO_MAX) })) } : {}),
       });
       setWs(res.workspace);
@@ -354,6 +360,9 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                         {Object.values(plan.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
                         {Object.values(plan.apply_hint.budget_add).map((b) => ` · 월 예산 +${b}`)}이(가) 늘어납니다(증원).</p>
                     )}
+                    {pickList.length === 0 && (
+                      <GradeSwapBox items={swapList(plan.apply_hint?.grade_swaps)} reasons={swapReasons} onReason={onSwapReason} disabled={busy} />
+                    )}
                   </>
                 )}
                 <PickDraft projectId={plan.project_id} picks={pickList} summary={pickDraft} recalculating={previewing}
@@ -362,6 +371,8 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                            named={(id) => { const nm = projects?.find((x) => x.id === id)?.name; return nm ? `${id} ${nm}` : id; }}
                            onRemove={(id) => setPicks((d) => { const nx = { ...d }; delete nx[id]; return nx; })} />
                 {pickDraft && <p className="text-xs text-slate-500">{hintText(pickDraft.apply_hint, "고른 사람으로 확정하면")}</p>}
+                {pickDraft && <GradeSwapBox items={swapList(pickDraft.apply_hint.grade_swaps)} reasons={swapReasons} onReason={onSwapReason}
+                                            budgetAdd={Object.values(pickDraft.apply_hint.budget_add).reduce((a, b) => a + b, 0)} disabled={busy} />}
                 {pickList.length > 0 && <p className="text-xs text-slate-500">{pickFresh
                   ? "아래 후보는 고른 사람을 팀원으로 친 다시 계산입니다(위 최선 조합은 그대로)." : "고른 사람을 반영해 후보를 다시 계산하는 중…"}</p>}
                 <Tabs label="후보 갈래" value={group} onChange={setGroup}
@@ -415,21 +426,24 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
       </div>
       {plan && pickList.length > 0 && (
         <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠지고, 사업 정원·예산은 미리 계산한 만큼 늘어납니다.">
-          <button className="btn-primary" disabled={busy || pickBlocked} onClick={() => setPickConfirm(true)}
-                  title={!pickDraft ? "미리 계산이 끝나야 확정할 수 있습니다" : pickBlocked ? "확정하면 규칙 위반이 생깁니다" : undefined}>
+          <button className="btn-primary" disabled={busy || pickBlocked || pickSwapMissing} onClick={() => setPickConfirm(true)}
+                  title={!pickDraft ? "미리 계산이 끝나야 확정할 수 있습니다" : pickBlocked ? "확정하면 규칙 위반이 생깁니다"
+                    : pickSwapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다" : undefined}>
             고른 {pickList.length}명 확정</button>
           <button className="btn-ghost" onClick={() => setPicks({})}>고른 것 지우기</button>
         </ActionBar>
       )}
       {plan?.best.accepted && (plan.best.new_violations?.length ?? 0) === 0 && pickList.length === 0 && (
         <ActionBar note="확정하면 지금 배치가 바뀐 새 판이 됩니다(변경 이력에서 되돌릴 수 있음).">
-          <button className="btn-primary" disabled={busy} onClick={() => setConfirming(true)}>이 조합 확정</button>
+          <button className="btn-primary" disabled={busy || bestSwapMissing} onClick={() => setConfirming(true)}
+                  title={bestSwapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다(결과 아래 '등급 대체')" : undefined}>이 조합 확정</button>
         </ActionBar>
       )}
       {support && plan && (
         <Dialog title={`${project?.name ?? projectId} — 프로젝트 동시 수행으로 지원`} actions={<>
           <button className="btn-ghost" onClick={() => setSupport(null)} disabled={busy}>취소</button>
-          <button className="btn-primary" disabled={busy} onClick={() => void applySupport(support)}>{busy ? <Spinner status={false} label="처리 중…" /> : "확정"}</button>
+          <button className="btn-primary" disabled={busy || !swapsReady(swapList(support.apply_hint?.grade_swaps), swapReasons)}
+                  onClick={() => void applySupport(support)}>{busy ? <Spinner status={false} label="처리 중…" /> : "확정"}</button>
         </>}>
           {support.name}은(는) 지금 사업을 그대로 하면서 이 사업도 사업 끝까지 100%로 맡습니다(두 사업 모두 100%, 예산도 각각 전액).
           {support.needs_grant ? " 확정하면 이 사람에게 프로젝트 동시 수행 허용(사유: 긴급 지원)이 함께 기록됩니다." : ""}
@@ -437,6 +451,7 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
             ? <> 확정하면 사업 정원{Object.values(support.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
                 {Object.values(support.apply_hint.budget_add).map((b) => ` · 월 예산 +${b.toLocaleString()}`)}이(가) 함께 늘어납니다.</>
             : " 지금 정원·예산 안에서 들어갑니다."}
+          <div className="mt-2"><GradeSwapBox items={swapList(support.apply_hint?.grade_swaps)} reasons={swapReasons} onReason={onSwapReason} disabled={busy} /></div>
         </Dialog>
       )}
       {pickConfirm && plan && pickDraft && (
