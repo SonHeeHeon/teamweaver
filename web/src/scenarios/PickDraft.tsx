@@ -17,10 +17,12 @@ interface DraftProps {
   onRetry?: () => void;
   /** 사업 번호 → "J013 사업명" */
   named?: (projectId: string) => string;
+  /** 정원 변화가 없을 때 글(긴급 투입은 대상 사업을 증원으로 채운다 -- 기본은 신규 사업 문구) */
+  noSeatChange?: string;
   onRemove: (personId: string) => void;
 }
 
-export function PickDraft({ projectId, picks, summary, recalculating, failed, onRetry, named = (id) => id, onRemove }: DraftProps) {
+export function PickDraft({ projectId, picks, summary, recalculating, failed, onRetry, named = (id) => id, noSeatChange, onRemove }: DraftProps) {
   if (!picks.length) return null;
   const lines = summary ? seatLines(summary.seat_effects, projectId) : [];
   return (
@@ -51,7 +53,7 @@ export function PickDraft({ projectId, picks, summary, recalculating, failed, on
             <span className="text-slate-500">정원 변화 </span>
             {lines.length ? lines.map((l, i) => (
               <span key={i} className={`mr-2 ${l.tone === "warn" ? "text-amber-700" : "text-pine-800"}`} title={l.title}>{l.text}</span>
-            )) : <span>없음(정원 밖 등급이거나 이미 찬 등급)</span>}
+            )) : <span>{noSeatChange ?? "없음(정원 밖 등급이거나 이미 찬 등급)"}</span>}
             <span className="text-slate-500"> · 기술 </span><span className="num">{signedPts(summary.skill_delta)}</span>
             <span className="text-slate-500"> · 협업 </span><span className="num">{signedPts(summary.collab_delta)}</span>
           </p>

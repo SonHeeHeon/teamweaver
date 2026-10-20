@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-20 · claude-a · claude-b `feat/claude-b-emergency-preview` **main 병합(사용자 "병합 승인할게")**
+- 브랜치/커밋: 통합 브랜치 `feat/claude-a-merge-emergency-preview`의 병합 커밋(이 커밋, 부모 main `93ed03c` + b `07df86f`) → main 빨리 감기. b 브랜치·worktree는 건드리지 않았다.
+- 들어간 것: b `1fcf110`(긴급 투입 손 편성 미리 보기 `POST /api/emergency/preview`·설정 화면 용어·신규 사업 K 0~5) · `07df86f`(문서).
+- 충돌: `CLAUDE.md` 기준선 줄(합친 트리 실측으로 다시 적음), 이 일지 맨 위(양쪽 항목을 시간 순으로 모두 -- main 대비 지운 줄 0). 코드 파일은 자동 병합(긴급 투입 "빼 오는 사람" 코드 칩 + b 넣기·미리 보기가 함께 있음).
+- 상대 영향(claude-b): 네 브랜치를 이어 쓸 때는 main을 합치면 된다. 기준선 2069 passed·slow 20·웹 292.
+- 검증: `uv run --group benchmark pytest -q` 2069 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 292(38 files) · `npx tsc -b`·build.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰(충돌 해결·자동 병합된 화면), 결함 없음.
+- 근거: `.omc/reports/2026-10-20-merge-emergency-preview.md`.
+
+---
+
 ## 2026-10-20 · claude-a · "XAI 브리핑" 이름 원복 · 긴급 투입 빼 오는 사람 코드 칩 · 시험 AI 바꿔 끼우기 정리(claude-b 확인 권장) -- main 병합
 - 브랜치/커밋: `feat/claude-a-xai-followups`(main `d9ff898` 위) `a4f3d0f`(XAI 브리핑) · `8e39766`(빼 오는 사람 코드 칩) · `aa15363`(시험) · 이 커밋(문서) → main 병합(사용자 "Main엔 병합해줘 · 후속 작업은 진행해줘").
 - 사용자: "Xai 브리핑을 Ai 교체 설명 로 바꾼건 다시 원복하자. XAI 브리핑 표현이 멋있어서 그대로 두고싶어."
@@ -38,6 +49,18 @@
 - 검증: `uv run --group benchmark pytest -q` 2065 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 290 · `npx tsc -b`·build.
 - 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰(라우트 탐색이 처음 0개 → included router 따라가게 고침).
 - 근거: `.omc/reports/2026-10-20-xai-followups.md`.
+
+---
+
+## 2026-10-20 · claude-b · 긴급 투입 손 편성 미리 보기 · 설정 화면 용어 정리 · 신규 사업 K 0~5 고르기(사용자 결정)
+- 브랜치/커밋: `feat/claude-b-emergency-preview`(claude-a 통합 `75e684b` 위) `1fcf110` · 이 문서 커밋. main 미병합(a 통합 브랜치가 들어간 뒤 -- 사용자 "a가 충돌을 해결하고있으니 끝나면 하자").
+- 사용자: "1. 긴급 투입에도 미리 보기 기능 추가해줘 2. 설정 화면 용어 정리해줘", "k를 3~5명 스콥으로 하지말고 0~5명 스콥으로".
+- 한 일: `POST /api/emergency/preview`(고른 사람 + 확정 때 적을 증원 `_apply_hint` 적용 상태를 확정과 같은 판정으로, 동시 수행 지원은 그 사람만 2곳, 다시 매긴 후보 함께, 요구 기술 그래프 재사용) ·
+  긴급 투입 화면 넣기·고른 사람 줄·증원 문장·"고른 n명 확정"(서버 배치·증원 그대로) · 설정 이름을 화면 말로(계산 멈춤 기준·익숙한 쌍 …, 저장 키 그대로, 측정 숫자는 "근거·측정") · 신규 사업 최대 K 0~5.
+- 상대 영향(claude-a): `settingsFields` 이름이 바뀌어 화면 문구로 찾는 시험(`tests/api/test_ui_e2e.py` 고침)·PDF 계산 기준 줄 문구가 바뀌었다. `api/settings.py` 오류 문구 한 줄. 기준선 2068 passed·slow 20·웹 291.
+- 검증: `uv run --group benchmark pytest -q` 2068 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 291 · `npx tsc -b`·build · oxlint 12(모두 이 브랜치가 안 건드린 파일, `75e684b`에 있던 것) · 브라우저 긴급 투입 2명 넣기 → 미리 계산 → 확정 → 검토 자료 버튼, 설정 새 이름, 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백 1라운드 needs-attention(MUST: 느린 E2E가 옛 설정 이름을 찾음 -- 실측 2 실패 → 고침, SHOULD 3 반영) → 2라운드 approve(NIT 반영).
+- 근거: 루트 `.omc/reports/2026-10-20-emergency-preview.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-20-emergency-preview.md`.
 
 ---
 

@@ -7,7 +7,7 @@ vi.mock("./workspaceApi", async (importOriginal) => {
     ...real,
     fetchWorkspace: vi.fn(), fetchCandidates: vi.fn(), fetchSkillDictionary: vi.fn(), fetchProjectForm: vi.fn(),
     postProject: vi.fn(), patchStage: vi.fn(), dropProject: vi.fn(), postLock: vi.fn(), postApply: vi.fn(), postUndo: vi.fn(),
-    postEmergency: vi.fn(), fetchStandby: vi.fn(),
+    postEmergency: vi.fn(), fetchStandby: vi.fn(), postEmergencyPreview: vi.fn(),
   };
 });
 vi.mock("../api/client", () => ({
@@ -181,6 +181,13 @@ describe("NewProjectsScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "옮길 인원별로 계산" }));
     await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(2));
     expect(vi.mocked(streamOperatingCompare).mock.calls[1][0]).toMatchObject({ ks: [0, 1, 2, 3] });
+    // 0~5명 모두 고를 수 있다(사용자 2026-10-20 "0~5명 스콥") -- 0이면 K=0 한 줄만
+    fireEvent.change(screen.getByLabelText("옮길 수 있는 최대 인원"), { target: { value: "0" } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "옮길 인원별로 계산" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "옮길 인원별로 계산" }));
+    await waitFor(() => expect(streamOperatingCompare).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(streamOperatingCompare).mock.calls[2][0]).toMatchObject({ ks: [0] });
+    expect(screen.getAllByRole("option").map((o) => (o as HTMLOptionElement).value)).toEqual(["0", "1", "2", "3", "4", "5"]);
   });
 
   it("예전 편성 기록처럼 미리 계산이 K 0~3뿐이면 기본 최대 K는 3, 위반이 예상되는 넣기는 확정을 막는다(리뷰 S2·N6)", async () => {
@@ -258,6 +265,65 @@ describe("EmergencyScreen", () => {
                                  situation: "운영 이관 중 장애" });                      // 검토 자료 상황 메모의 처음 값(부서장 점검 f6)
     fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
     expect(review).toHaveBeenCalledWith(WS.dataset_version, "J003");
+  });
+});
+
+describe("EmergencyScreen — 손 편성 미리 보기(2026-10-20 사용자 \"긴급 투입에도 미리 보기\")", () => {
+  it("후보를 넣기로 고르면 증원까지 미리 계산하고, 그 배치·증원·동시 수행 허용으로 확정한다", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchSkillDictionary).mockResolvedValue([]);
+    vi.mocked(api.fetchStandby).mockResolvedValue({ source: null, computed_at: null, projects: {} });
+    const support = cand({ person_id: "P5", name: "최유진", source: "concurrent", needs_grant: true, category: "pull" });
+    vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J003", skills: ["Kubernetes"], added_requirements: [],
+      best: { accepted: true, entries: [], added: [], new_violations: [] },
+      candidates: { bench: [cand({})], spare: [support], pull: [] }, standby: [], apply_hint: null, note: "" });
+    const hint = { headcount_add: { J003: { 고급: 2 } }, budget_add: { J003: 1800 }, skills_add: { J003: [{ name: "Kubernetes", min_months: 12, headcount: 2 }] } };
+    const entries = [{ person_id: "P9", project_id: "J003", alloc: 1 }, { person_id: "P5", project_id: "J003", alloc: 1 }];
+    vi.mocked(api.postEmergencyPreview).mockResolvedValue({ dataset_version: "v1", project_id: "J003", note: "",
+      draft: { seats: { 고급: { need: 3, filled: 3 } }, seat_effects: [], delta_total: 2.4, skill_delta: 2, collab_delta: 0.4,
+               unfilled_seats_delta: 0, new_violations: [], pairs: [], apply_hint: hint, entries },
+      // 고른 사람을 팀원으로 친 다시 매기기(서버) -- 고른 쉬는 인력은 빠지고 지원 후보는 남는다
+      candidates: { bench: [], spare: [support], pull: [] } });
+    vi.mocked(api.postApply).mockResolvedValue({ workspace: WS, changes: { added: [], removed: [], changed: [] } });
+    render(<EmergencyScreen onDatasetChanged={vi.fn()} />);
+    fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
+    fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "박지훈 넣기" }));
+    fireEvent.click(screen.getByRole("tab", { name: /동시 수행으로 지원/ }));
+    fireEvent.click(screen.getByRole("button", { name: "최유진 넣기" }));
+    const draft = await screen.findByRole("region", { name: "넣기로 고른 사람" });
+    expect(within(draft).getByText("최유진")).toBeInTheDocument();
+    expect(await screen.findByText(/고른 사람으로 확정하면 사업 정원 고급 \+2 · 월 예산 \+1,800 · 요구 기술 Kubernetes이\(가\) 늘어납니다/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "이 조합 확정" })).toBeNull();          // 고른 사람이 있으면 그 확정만
+    expect(screen.getByText(/아래 후보는 고른 사람을 팀원으로 친 다시 계산입니다/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "박지훈 넣기" })).toBeNull();          // 고른 사람은 표에서 빠져 위 줄로
+    expect(vi.mocked(api.postEmergencyPreview).mock.calls.at(-1)![0]).toMatchObject({ project_id: "J003", skills: ["Kubernetes"],
+      picks: [{ person_id: "P9", grant: false }, { person_id: "P5", grant: true }], pull_budget: 0 });
+    fireEvent.click(screen.getByRole("button", { name: "고른 2명 확정" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
+    await waitFor(() => expect(api.postApply).toHaveBeenCalled());
+    const [version, body] = vi.mocked(api.postApply).mock.calls[0];
+    expect(version).toBe("v1");
+    expect(body).toMatchObject({ source: "emergency", entries, ...hint, concurrency_add: [{ person_id: "P5" }] });
+  });
+
+  it("미리 계산에 위반이 있으면 확정을 막는다", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchSkillDictionary).mockResolvedValue([]);
+    vi.mocked(api.fetchStandby).mockResolvedValue({ source: null, computed_at: null, projects: {} });
+    vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J003", skills: [], added_requirements: [],
+      best: { accepted: false }, candidates: { bench: [cand({})], spare: [], pull: [] }, standby: [], apply_hint: null, note: "" });
+    vi.mocked(api.postEmergencyPreview).mockResolvedValue({ dataset_version: "v1", project_id: "J003", note: "",
+      draft: { seats: {}, seat_effects: [], delta_total: 0, skill_delta: 0, collab_delta: 0, unfilled_seats_delta: 0,
+               new_violations: ["박지훈의 계획 3번째 달 가용률이 0.00라 전일 투입할 수 없다"], pairs: [],
+               apply_hint: { headcount_add: {}, budget_add: {}, skills_add: {} }, entries: [] },
+      candidates: { bench: [], spare: [], pull: [] } });
+    render(<EmergencyScreen onDatasetChanged={vi.fn()} />);
+    fireEvent.change(await screen.findByLabelText("긴급 투입할 사업"), { target: { value: "J003" } });
+    fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "박지훈 넣기" }));
+    expect(await screen.findByText(/확정하면 규칙 위반: 박지훈의 계획 3번째 달/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "고른 1명 확정" })).toBeDisabled();
   });
 });
 

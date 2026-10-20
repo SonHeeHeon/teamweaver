@@ -97,7 +97,7 @@ class PlacementSettings(BaseModel):
     def _threshold_fits_window(self):
         # 기간보다 긴 기준이면 아무도 걸리지 않아 감점이 조용히 꺼진다(Opus 리뷰 nit)
         if self.clique_window_months is not None and self.clique_threshold_months > self.clique_window_months:
-            raise ValueError("반복 협업 기준 개월이 조회 기간보다 길다")
+            raise ValueError("익숙한 쌍 기준 개월이 익숙한 쌍을 볼 기간보다 길다")
         return self
     lam: float = Field(default=0.3, ge=0.0, le=1.0)
     mu: float = Field(default=0.2, ge=0.0, le=1.0)

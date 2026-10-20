@@ -21,7 +21,7 @@ describe("SettingsTab", () => {
     render(<SettingsTab data={DATA} onSave={onSave} />);
     const minAlloc = screen.getByLabelText(/최소 투입률/) as HTMLInputElement;
     expect(minAlloc.value).toBe("30");
-    expect((screen.getByLabelText(/허용 최적성 차이/) as HTMLInputElement).value).toBe("5");
+    expect((screen.getByLabelText(/계산 멈춤 기준/) as HTMLInputElement).value).toBe("5");
     fireEvent.change(minAlloc, { target: { value: "25" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     await waitFor(() => expect(onSave).toHaveBeenCalledWith({ ...DATA.settings, min_alloc: 0.25 }));
@@ -54,18 +54,18 @@ describe("SettingsTab", () => {
     fireEvent.change(screen.getByLabelText(/최소 투입률/), { target: { value: "3" } });
     expect(screen.getByText("5~100% 범위여야 한다")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/최소 투입률/), { target: { value: "30" } });
-    fireEvent.change(screen.getByLabelText(/계산 시간 한도/), { target: { value: "12.5" } });
+    fireEvent.change(screen.getByLabelText(/계산 시간\(안 하나당\)/), { target: { value: "12.5" } });
     expect(screen.getByText("정수여야 한다")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/계산 시간 한도/), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/계산 시간\(안 하나당\)/), { target: { value: "" } });
     expect(screen.getByText("값을 입력해야 한다")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
   });
 
   it("0x10·1e1 같은 표기는 숫자로 받지 않는다", () => {
     render(<SettingsTab data={DATA} onSave={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText(/계산 시간 한도/), { target: { value: "0x10" } });
+    fireEvent.change(screen.getByLabelText(/계산 시간\(안 하나당\)/), { target: { value: "0x10" } });
     expect(screen.getByText("숫자가 아니다")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/계산 시간 한도/), { target: { value: "1e2" } });
+    fireEvent.change(screen.getByLabelText(/계산 시간\(안 하나당\)/), { target: { value: "1e2" } });
     expect(screen.getByText("숫자가 아니다")).toBeInTheDocument();
   });
 
@@ -121,7 +121,7 @@ describe("SettingsTab — 서버 값이 바뀌면", () => {
     rerender(<SettingsTab data={{ ...DATA, settings: { ...DATA.settings, gap: 0.1 },
                                   updated_at: "2026-10-05T01:00:00+00:00" }}
                           onSave={onSave} />);
-    expect((screen.getByLabelText(/허용 최적성 차이/) as HTMLInputElement).value).toBe("10");
+    expect((screen.getByLabelText(/계산 멈춤 기준/) as HTMLInputElement).value).toBe("10");
     expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/최소 투입률/), { target: { value: "40" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
@@ -142,7 +142,7 @@ describe("SettingsTab — 권장 계산 시간 안내(claude-a 요청)", () => {
     const withHint = { ...DATA, recommended_time: { n_people: 100, per_solve_s: 30, worst_case_total_s: 120,
                                                     measured: true, basis: "100명 리허설 측정" } };
     render(<SettingsTab data={withHint} onSave={vi.fn()} />);
-    expect(screen.getByText(/지금 데이터\(100명, 기간 내내 한 비율\) 권장: 30초/)).toBeInTheDocument();
+    expect(screen.getByText(/지금 데이터\(100명, 나눠 투입 · 기간 내내 같은 비율\) 권장: 30초/)).toBeInTheDocument();
   });
 });
 
@@ -153,14 +153,14 @@ describe("SettingsTab — 투입률 방식(월별 투입률)", () => {
     render(<SettingsTab data={{ ...DATA, recommended_time: hint(180), recommended_time_monthly: hint(480) }}
                         onSave={vi.fn()} />);
     expect(screen.getByText(/권장: 180초/)).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText("달마다 따로"));
-    expect(screen.getByText(/달마다 따로\) 권장: 480초/)).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("나눠 투입 · 달마다 다른 비율"));
+    expect(screen.getByText(/달마다 다른 비율\) 권장: 480초/)).toBeInTheDocument();
   });
 
   it("방식을 바꾸면 저장에 실린다", async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(<SettingsTab data={DATA} onSave={onSave} />);
-    fireEvent.click(screen.getByLabelText("달마다 따로"));
+    fireEvent.click(screen.getByLabelText("나눠 투입 · 달마다 다른 비율"));
     fireEvent.click(screen.getByRole("button", { name: /저장/ }));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     expect(onSave.mock.calls[0][0].allocation_mode).toBe("monthly");
@@ -174,7 +174,7 @@ describe("SettingsTab — 계산 시간 자동(claude-a 요청)", () => {
     const hint = { n_people: 100, per_solve_s: 30, worst_case_total_s: 120, measured: true, basis: "측정" };
     render(<SettingsTab data={{ ...DATA, settings: { ...DATA.settings, time_limit_auto: true },
                                 recommended_time: hint }} onSave={onSave} />);
-    const input = screen.getByLabelText(/계산 시간 한도/) as HTMLInputElement;
+    const input = screen.getByLabelText(/계산 시간\(안 하나당\)/) as HTMLInputElement;
     expect(input.disabled).toBe(true);
     expect(input.value).toBe("30");
     fireEvent.click(screen.getByLabelText("자동(인원 기준)"));
@@ -189,7 +189,7 @@ describe("SettingsTab — 동시 탐색 수", () => {
   it("서버 기본(지금 값)과 1~8을 고르고, 고른 값을 저장한다", async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     render(<SettingsTab data={{ ...DATA, effective_solver_seeds: 2 }} onSave={onSave} />);
-    const select = screen.getByLabelText("동시 탐색 수");
+    const select = screen.getByLabelText("동시에 풀어 볼 갈래 수");
     expect(select).toHaveValue("");
     expect(screen.getByRole("option", { name: "서버 기본(지금 2)" })).toBeInTheDocument();
     fireEvent.change(select, { target: { value: "4" } });

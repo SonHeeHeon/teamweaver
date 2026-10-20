@@ -1,7 +1,7 @@
 /** 신규 사업 편성 후보 표·"넣기로 고른 사람" 줄의 글 규칙(2026-10-20 사용자 요청 2·4·5번, claude-b).
  *  - 정원 변화: 한 숫자(모든 사업 빈자리 합)가 아니라 사업별로 "이 사업 1자리 채움" · "J013에 1자리 빔".
  *  - 협업: 두 사람 사이 점수라 "누구와"를 함께 쓴다("이보람과 +0.17"). 익숙한 쌍 감점은 "(익숙한 쌍)". */
-import type { CandidateRow, PairTerm, SeatEffect } from "./workspaceApi";
+import type { ApplyHint, CandidateRow, PairTerm, SeatEffect } from "./workspaceApi";
 import { signedPts } from "../components/scoreSplit";
 
 export interface SeatLine { text: string; tone: "good" | "warn"; /** 사업 이름(마우스를 올리면) */ title?: string }
@@ -70,4 +70,15 @@ export function violationReasons(v: unknown[]): string {
 export function skillCollab(r: CandidateRow): { skill: number | undefined; collab: number | undefined } {
   if (typeof r.skill_delta === "number" && typeof r.collab_delta === "number") return { skill: r.skill_delta, collab: r.collab_delta };
   return { skill: r.delta_excl_unfilled ?? r.delta_total, collab: undefined };
+}
+
+/** 긴급 투입 확정 때 함께 늘어날 것(서버 apply_hint) 한 문장: "… 사업 정원 중급 +2 · 월 예산 +1,404 · 요구 기술 Kubernetes이(가) 늘어납니다(증원)." */
+export function hintText(h: ApplyHint, lead: string): string {
+  const hc = Object.values(h.headcount_add).flatMap((x) => Object.entries(x)).map(([g, c]) => `${g} +${c}`);
+  const budget = Object.values(h.budget_add);
+  const skills = Object.values(h.skills_add).flat().map((x) => x.name);
+  const parts = [...(hc.length ? [`정원 ${hc.join(" · ")}`] : []),
+                 ...(budget.length ? [`월 예산 +${budget.map((b) => b.toLocaleString()).join(", ")}`] : []),
+                 ...(skills.length ? [`요구 기술 ${skills.join(", ")}`] : [])];
+  return parts.length ? `${lead} 사업 ${parts.join(" · ")}이(가) 늘어납니다(증원).` : `${lead} 지금 정원·예산 안에서 들어갑니다.`;
 }

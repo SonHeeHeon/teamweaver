@@ -124,11 +124,11 @@ function PlanReport() {
           ? (data.milp_params.allocation_mode === "full"
               ? "전일 투입(들어가면 100%) · 프로젝트 동시 수행은 부서장이 허용한 사람만 · "
               : `최소 투입률 ${Math.round(data.milp_params.min_alloc * 10000) / 100}% · `
-                + `동시 프로젝트 최대 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
-                + `투입률 ${data.milp_params.allocation_mode === "monthly" ? "달마다 따로" : "기간 내내 한 비율"} · `)
-            + `반복 협업 기준 ${data.milp_params.clique_window_months ? `최근 ${data.milp_params.clique_window_months}개월 중 ` : "전체 이력 중 "}`
+                + `같은 달 최대 사업 수 ${data.milp_params.max_concurrent_projects ?? 3}개 · `
+                + `나눠 투입 ${data.milp_params.allocation_mode === "monthly" ? "달마다 다른 비율" : "기간 내내 같은 비율"} · `)
+            + `익숙한 쌍 기준 ${data.milp_params.clique_window_months ? `최근 ${data.milp_params.clique_window_months}개월 중 ` : "전체 이력 중 "}`
             + `${data.milp_params.clique_threshold_months}개월 이상 · `
-            + `협업 가중 ${data.milp_params.lam} · 반복 협업 감점 ${data.milp_params.mu}`
+            + `협업 반영 정도 ${data.milp_params.lam} · 익숙한 쌍 감점 ${data.milp_params.mu}`
           : "서버 모델 기본값(배치 설정 미적용)"}
       </p>
 
@@ -153,7 +153,7 @@ function PlanReport() {
           <p className="mb-2 text-xs text-slate-600">
             Plan {data.plan_label}에 아래 변경(교체·달별 투입률 조정)을 순서대로 적용한 명단이다.
             {(data.entries ?? []).some((e: any) => e.monthly_alloc)
-              ? " 달별 투입률이 들어간 명단의 최적화율은 '달마다 따로' 기준 상한(더 큼)으로 나눈 값이다."
+              ? " 달별 투입률이 들어간 명단의 최적화율은 '달마다 다른 비율' 기준 상한(더 큼)으로 나눈 값이다."
               : ""} 최적화가 고른 명단이
             아니며, 지표는 적용 후 명단을 현행 점수 기준으로 다시 계산한 참고값이다.
           </p>

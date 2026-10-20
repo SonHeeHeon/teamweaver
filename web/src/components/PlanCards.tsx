@@ -67,7 +67,7 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props)
               </div>
             )}
             {!edited && p.time_limited && p.termination === undefined && (
-              <p className="mt-2 text-xs text-amber-600" title="계산 시간 한도에 걸려 멈춘 답이다. 더 좋은 답이 있을 수 있다.">
+              <p className="mt-2 text-xs text-amber-600" title="계산 시간(안 하나당)에 걸려 멈춘 답이다. 더 좋은 답이 있을 수 있다.">
                 시간 한도 도달(최선 증명 전)
               </p>
             )}

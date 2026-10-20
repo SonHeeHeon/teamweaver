@@ -134,6 +134,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   나머지 후보를 다시 채점하고 `draft`(등급별 자리·사업별 정원 변화·점수 나눔·새 위반 문장·팀 안 쌍)를 준다 -- 데이터는 확정 때만 바뀐다. 후보 행은 `seat_effects`(평가기 `shortfalls` 전후, 사업별 채움+/빔−),
   `skill_delta`·`collab_delta`(협업 시너지 + 익숙한 쌍 감점, 모든 사업), `partners`(이 사업 팀원과의 쌍 중 계산에 들어가는 것 -- 평가기와 같은 `pruned_pairs`·익숙한 쌍·감점 예외)를 단다.
   협업 점수 C는 **두 사람 사이 값**이라 사람 자체의 협업 점수는 없다 -- 화면은 "누구와 +0.17"로 보인다. 긴급 투입 후보도 같은 칸(`pair_view`).
+  **긴급 투입 손 편성 미리 보기**(2026-10-20 사용자 "긴급 투입에도 미리 보기", claude-b): `POST /api/emergency/preview {picks(grant), skills, pull_budget}` -- 지금 배치 − 빼 오는 배치 + 고른 사람에
+  확정 때 적을 증원(`_apply_hint`)을 적용한 그래프로 확정과 같은 판정(`new_or_worse`), 동시 수행 지원(grant)은 그 사람만 같은 달 2곳. 응답 `draft.entries`·`apply_hint`를 그대로 확정에 쓴다.
+  고른 사람을 팀원으로 친 후보 다시 매기기를 함께 준다(최선 조합은 다시 풀지 않음). 요구 기술을 더한 그래프는 (판·사업·기술·인원) 키로 4개까지 재사용(`_augmented_graph`).
+  **설정 화면 이름은 화면 말로**(2026-10-20 사용자 "설정 화면 용어 정리"): 계산 멈춤 기준(gap)·계산 시간(안 하나당)·익숙한 쌍 기준/감점/볼 기간·협업 반영 정도·동시에 풀어 볼 갈래 수·같은 달 최대 사업 수·"나눠 투입 · …" -- 저장 키는 그대로(이름은 `settingsFields.FIELDS`·`MODE_LABEL` 한 곳).
   **운영 중 비교 K는 0~5**(`api/routes/operating.OPERATING_KS` -- 화면 기본·밤 배치 `DEFAULT_KS`·시연 미리 계산이 같은 목록, 2026-10-20 사용자 "k는 최대 5까지"). 미리 계산·밤 행은
   요청 K 목록이 저장된 목록의 **앞부분**이면 잘라 준다(`demo_precomputed.operating_rows` -- K 행은 앞 K만 이어받는다). 시연 운영 중 묶음 4개는 0~5로 다시 풀었다(0~3 행은 예전과 같았다).
   긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
@@ -227,7 +231,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 XAI 브리핑 원복·시험 AI 차단(claude-a, b 신규 사업 화면·PDF 팀별 협업 지도 main 병합 위) **2065 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 290 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 b 긴급 투입 미리 보기·설정 용어·K 0~5 main 병합(a XAI 브리핑 원복·시험 AI 차단 위) **2069 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 292 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
