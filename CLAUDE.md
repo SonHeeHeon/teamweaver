@@ -142,6 +142,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `workspace_edits.revert_ops`가 확정 직전(B)·확정(A)·지금(N) 판을 칸마다(배치·등급 정원·예산·요구 기술·동시 수행 허용) 견줘 N==A인 칸만 B로, 그 뒤 바뀐 칸·고정한 배치·없어진 사람/사업은 건너뛴다.
   원래 사업 복귀가 위반이면(위반 종류별 `_implicates`) 그 복귀만 빼 대기로 둔다. 되돌릴 것이 모두 빠지면 422(확정을 "취소됨"으로 잠그지 않게). 계산 뒤 판이 바뀌었으면 409(옛 판 덮어쓰기 방지).
   취소는 `review_docs/cancelled.json`에도 남아(20판 밖에서도 검토 자료 잠금) 취소 판을 되돌리면 지운다. 되돌리기는 확정을 꺼낼 때만 `record_undone`(취소 판은 앞 판과 버전이 같을 수 있다).
+  확정 취소 버튼은 변경 이력 + 신규 사업 "지금 팀" 줄 오른쪽(사용자 후속 요청) -- 후자는 그 확정이 넣은 사람(이력 항목 `joined`)이 **지금 팀에 남아 있는** 가장 최근 확정을 고른다.
   **자동 편성 K 행 설명**(사용자 요청 1): 둘째 줄 = 신규 사업마다 `4/4명 · 대기 · 이동 · 원래 · 동시 수행` + 소명 버튼, "명단" 펼치기 = 이름·옮김 사슬·K−1보다 새로 옮긴 사람 -- `web/src/scenarios/autoView.ts`가 K 행의 `entries`·`diff`만으로 만든다(서버 계산 그대로).
   **기다림 표시**(사용자 요청 2): 공통 `ui.Spinner` -- 소명 미리보기는 창을 바로 열고 "쓰는 중"(멈출 수 있음), 판을 바꾸는 버튼·검토 자료 AI 초안·PDF에도.
   **설정 화면 이름은 화면 말로**(2026-10-20 사용자 "설정 화면 용어 정리"): 계산 멈춤 기준(gap)·계산 시간(안 하나당)·익숙한 쌍 기준/감점/볼 기간·협업 반영 정도·동시에 풀어 볼 갈래 수·같은 달 최대 사업 수·"나눠 투입 · …" -- 저장 키는 그대로(이름은 `settingsFields.FIELDS`·`MODE_LABEL` 한 곳).
@@ -238,7 +239,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 b 자동 편성 K 행 설명·기다림 표시·확정 취소(main `266d986` 위) **2079 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 297 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 b 자동 편성 K 행 설명·기다림 표시·확정 취소(main `266d986` 위) **2079 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 299 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
