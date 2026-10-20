@@ -102,8 +102,10 @@ export function PageHeader({ tab, context, actions }: { tab: Tab; context?: Reac
 }
 
 /** 편성안이 아직 없을 때(사용자 지시 3: 빈 화면만 보이면 당황한다). 할 수 있는 일 두 가지를 버튼과 함께. */
-export function WhatifEmpty({ dataset, onCompute, onRecords }: {
+export function WhatifEmpty({ dataset, onCompute, onRecords, closedBy }: {
   dataset: DatasetInfo | null; onCompute: () => void; onRecords: () => void;
+  /** 상황 화면이 데이터를 바꿔 보던 편성안을 닫았으면 그 화면 이름(2026-10-21 사용자 "편성안이 없어졌어 … 다시 계산해야한다는거지?") */
+  closedBy?: string | null;
 }) {
   return (
     <div>
@@ -114,6 +116,13 @@ export function WhatifEmpty({ dataset, onCompute, onRecords }: {
         ))}
       </div>
       <section className="panel mx-auto mt-10 max-w-[640px] px-6 py-7 md:px-9 md:py-8" aria-labelledby="whatif-empty">
+        {closedBy && (
+          <p role="note" className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900">
+            <b>{closedBy}에서 데이터를 바꿔 보던 편성안을 닫았습니다.</b> 편성안은 계산할 때의 데이터(판)에 묶여 있어서, 사업이 늘거나 배치가 바뀐
+            새 판에서는 교체 검토·PDF가 맞지 않습니다. 새 판으로 다시 계산하세요 — 전체를 다시 짜려면 연간 계획, 신규 사업만 채워 보려면 신규 사업 편성의
+            자동 편성입니다. 편성 기록을 다시 열면 기록 당시 데이터로 돌아가 방금 바꾼 내용이 빠집니다.
+          </p>
+        )}
         <h2 id="whatif-empty" className="text-xl font-bold text-slate-900">아직 볼 편성안이 없습니다</h2>
         <p className="mt-1.5 text-slate-500">
           이 화면은 계산한 편성안을 보여 줍니다.

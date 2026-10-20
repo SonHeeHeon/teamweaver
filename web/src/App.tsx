@@ -81,6 +81,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   }, []);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
+  /** 상황 화면이 데이터를 바꿔 편성안을 닫았을 때 그 화면 이름(What-if 빈 화면이 이유를 보인다, 2026-10-21 사용자 질문) */
+  const [closedBy, setClosedBy] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   // 새로 푸는 계산의 실행 번호(SSE start) -- "계산 멈추기"가 쓴다. 캐시·미리 계산이면 없다(멈출 것이 없다).
@@ -227,6 +229,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setRunning(false);
     setRecordOperating(null);
     setSubTab("roster");
+    setClosedBy(null);
     // 인원이 바뀌면 자동 계산 시간도 바뀐다 -- 설정 탭이 이전 데이터 기준 값을 보이지 않게 다시 읽는다(리뷰 S2).
     fetchSettings().then(setSettings).catch(() => {});
     try {
@@ -253,10 +256,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     }
   }
 
-  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다. */
-  async function ownSwitch() {
+  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다.
+   *  편성안이 있었으면 닫힌 이유를 What-if 빈 화면에 남긴다(편성안은 계산한 판에 묶여 새 판에서는 교체 검토·PDF가 맞지 않는다). */
+  async function ownSwitch(by?: string) {
+    const hadPlans = plans.length > 0;
     try {
       await datasetSwitched(await fetchActiveDataset());
+      if (hadPlans && by) setClosedBy(by);
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -278,6 +284,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setStopping(false);
     setStoppedNote(null);
     setError(null);
+    setClosedBy(null);
     setPlans([]);
     setAltShortfall(null);
     commitEdits({});
@@ -697,11 +704,11 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         {tab === "pipeline" && <NightlyBanner refreshKey={dataset?.version ?? ""} />}
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
-                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("신규 사업 편성"); }}
                              onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
         </div>
         <div className={tab === "emergency" ? "" : "hidden"}>
-          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("긴급 투입"); }}
                            onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
         </div>
         {error && (
@@ -779,7 +786,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                            onStop={runId ? () => void stopRunning() : null} stopping={stopping}
                            onOpenOperating={() => setTab("pipeline")} />
         ) : !showResults ? (
-          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} />
+          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} closedBy={closedBy} />
         ) : (
           <div className="space-y-5">
             {plans.length > 0 && planBasis && settings && (
