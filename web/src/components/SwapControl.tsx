@@ -108,6 +108,8 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, 
     && !entries.some((x) => x.person_id === e.person_id && x.project_id === outEntry?.project_id));
   const movableBy = new Map<string, AssignEntry[]>();
   for (const e of movable) movableBy.set(e.project_id, [...(movableBy.get(e.project_id) ?? []), e]);
+  const placedBy = new Map<string, AssignEntry[]>();
+  for (const e of entries) placedBy.set(e.project_id, [...(placedBy.get(e.project_id) ?? []), e]);
   const nameOf = (id: string) => byId.get(id)?.name ?? id;
 
   /** 끄는 칩을 이 칸에 놓을 수 있나 -- 안 되면 이유(사용자 2026-10-20 "이 노드는 여기에 들어갈수 없습니다 라던지 이런게 떠야지") */
@@ -174,10 +176,17 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, 
           <select id="swap-out" aria-label="교체 대상" value={outKey} onChange={(e) => setOutKey(e.target.value)}
                   className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm">
             <option value="">선택…</option>
-            {entries.map((e) => {
-              const k = entryKey(e.person_id, e.project_id);
-              return <option key={k} value={k}>{nameOf(e.person_id)} · {e.project_id}{jName.get(e.project_id) ? ` ${jName.get(e.project_id)}` : ""}</option>;
-            })}
+            {/* 사업마다 묶는다(교체 투입의 "다른 사업에서 데려오기"와 같은 모양, 사용자 2026-10-21). 사업 이름은 묶음 제목에만 --
+                항목의 사업 코드는 남긴다(고른 뒤 닫힌 상자에는 항목 글만 보인다) */}
+            {[...placedBy.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([jid, list]) => (
+              <optgroup key={jid} label={`${jid}${jName.get(jid) ? ` ${jName.get(jid)}` : ""}`}>
+                {list.map((e) => {
+                  const k = entryKey(e.person_id, e.project_id);
+                  const g = byId.get(e.person_id)?.grade;
+                  return <option key={k} value={k}>{nameOf(e.person_id)}{g ? ` (${g})` : ""} · {jid}</option>;
+                })}
+              </optgroup>
+            ))}
           </select>
         </div>
         <div>

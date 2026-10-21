@@ -25,7 +25,7 @@ def _confirm(c, *, source: str, situation: str) -> str:
     return r.json()["workspace"]["dataset_version"]
 
 
-def test_emergency_situation_prefills_the_review_memo_and_never_reaches_the_ai(yearend, monkeypatch):
+def test_emergency_situation_prefills_the_review_memo_and_never_reaches_the_ai(yearend, monkeypatch, ai_client):
     from api.main import app
     calls = []
 
@@ -33,9 +33,7 @@ def test_emergency_situation_prefills_the_review_memo_and_never_reaches_the_ai(y
         calls.append(inp)
         return {"summary": None, "summary_method": None}
     monkeypatch.setattr("api.rag.justification.generate_summary", fake_summary)
-    from api.routes import review_docs as rd       # 라우트가 쥔 의존성 함수(api.deps를 다시 불러온 시험이 있어도 맞게)
-    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
-    try:
+    with ai_client(SimpleNamespace()) as used:
         with TestClient(app) as c:
             v = _confirm(c, source="emergency", situation=f"  {SITUATION}  ")
             doc = c.post(f"/api/review-docs/{v}/{TGT}").json()
@@ -47,8 +45,7 @@ def test_emergency_situation_prefills_the_review_memo_and_never_reaches_the_ai(y
             got = c.get(f"/api/review-docs/{v}/{TGT}").json()
             r = c.put(f"/api/review-docs/{v}/{TGT}", json={"revision": got["revision"], "situation_memo": "고친 메모"})
             assert r.status_code == 200 and r.json()["situation_memo"] == "고친 메모"
-    finally:
-        app.dependency_overrides.clear()
+    assert used                                       # 가짜 AI가 정말 들어갔다
 
 
 def test_new_project_confirm_keeps_an_empty_memo(yearend):

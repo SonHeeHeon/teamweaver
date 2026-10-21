@@ -36,6 +36,8 @@ export interface Project {
   lifecycle?: Lifecycle | null;
   /** 계획 밖까지 이어지는 사업의 원래 기간("YYYY-MM") -- 없으면 start_month·end_month가 원래 기간 */
   period?: { start: string; end: string } | null;
+  /** 사업이 요구하는 기술(최소 레벨 = 경력 개월의 대리 레벨, 필요 인원) -- 연간 계획 사업 조건 표(2026-10-21) */
+  requirements?: { skill: string; min_level: number; headcount: number }[];
 }
 
 export interface Cowork {
@@ -159,6 +161,9 @@ export interface WhatifResponse {
   fallback_used: boolean;
   /** 규칙 기반으로 쓴 이유: no_client · external_blocked(실데이터를 외부 AI로 보내지 않음) · llm_error. */
   fallback_reason?: string | null;
+  /** What-if(지금 배치): 지금 배치 대비 등급 대체(사업별)·대체로 넘는 예산 -- 확정할 때 사유를 받는다 */
+  grade_swaps?: Record<string, { seat: string; grade: string; count: number }[]>;
+  budget_add?: Record<string, number>;
 }
 
 export interface Swap {
@@ -269,6 +274,8 @@ export interface ApplySwapResponse {
   optimization_ratio: number | null;
   unfilled: string[];
   warnings: string[];
+  grade_swaps?: Record<string, { seat: string; grade: string; count: number }[]>;
+  budget_add?: Record<string, number>;
 }
 
 /** 관리자 배치 설정(K8) -- api/settings.py PlacementSettings 미러. */

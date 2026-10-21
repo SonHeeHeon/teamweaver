@@ -46,7 +46,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`). 인사 시스템 API 받기 `hr_api.py`(서버 `api/hr_source.py`), 진행 중 사업 기술 경력 늘리기 `aging.py`.
   숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월). 개월 비율 직접 쓰기는 채택 안 함(사용자 결정 2026-10-12, 근거 `docs/skill-score-decision.md`).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
-- `web/` Vite+React+TS+Tailwind. 메뉴(`components/Shell.tsx`, 2026-10-18)는 3상황 중심 -- 신규 사업 편성(첫 화면)·긴급 투입·연간 계획(예전 요건 설정), 공통 부품 `web/src/ui/`. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
+- `web/` Vite+React+TS+Tailwind. 메뉴(`components/Shell.tsx`, 2026-10-18)는 3상황 중심 -- 신규 사업 편성(첫 화면)·긴급 투입·연간 계획(① 조건·계산 `annual` → ② 편성안 비교·확정 `plans` = 예전 What-if 대시보드), 지금 배치 › What-if(`whatif`, 지금 배치에서 바꿔 보기, `web/src/whatif/`), 공통 부품 `web/src/ui/`. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
 
 ## 코드만 봐서는 모르는 함정
 
@@ -125,7 +125,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - **3가지 핵심 상황**(2026-10-19, claude-b, 설계 `.omc/plan/2026-10-18-three-scenarios.md`): 신규 사업 편성(`web/src/scenarios/NewProjectsScreen`)·긴급 투입(`EmergencyScreen`)·연간 계획(기존 요건 설정).
   **작업 데이터 판**(`api/workspace.py`·`workspace_edits.py`·`routes/workspace.py`): 신규 사업 등록·단계(예정/제안/수주)·떨어짐·고정(사업·사람 = `current_assignments.locked`)·확정은
   모두 원천 CSV 묶음을 고쳐 **업로드와 같은 경로**(`validate_and_build` → `_activate` → `DatasetStore.save`)로 켠다 -- 계산 버전이 바뀐다. 단계·이전 사업은 manifest `pipeline`(CSV 계약은 그대로),
-  "적힌 0명 = 그 등급 금지"라 양식은 네 등급을 다 보낸다. 이력·되돌리기는 `<데이터 폴더>/workspace/`(켜기 **전에** 쓴다). `mapping.json` 묶음은 편집 불가.
+  "적힌 0명 = 그 등급 금지"(자동 편성 기준 -- 손 편성은 다른 등급 빈자리를 메울 때 등급 대체로 사유와 함께 바뀐다, 2026-10-21)라 양식은 네 등급을 다 보낸다. 이력·되돌리기는 `<데이터 폴더>/workspace/`(켜기 **전에** 쓴다). `mapping.json` 묶음은 편집 불가.
   확정은 평가기로 **새로 생기거나 커진 위반**(한도와의 거리)·잠긴 배치 빼기를 거절한다. 신규 사업 후보는 등록한 정원·예산 그대로 다시 채점(`rescore_unchanged` -- 보강 계산은 자리를 늘린다),
   "끝나 가는 인력" = 지금 사업이 모두 신규 사업 **시작 전**에 끝나는 사람. 긴급 투입 확정은 서버가 계산한 증원(`apply_hint`: 정원·예산·요구 기술)을 데이터에 적는다.
   시연은 `demo/org-n100-yearend`(`scripts/make_yearend_demo.py`: 운영 중 묶음 + 4개 사업 12월 종료, 사람·평가 글 같음 → 판정 동봉 그대로).
@@ -137,16 +137,34 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **긴급 투입 손 편성 미리 보기**(2026-10-20 사용자 "긴급 투입에도 미리 보기", claude-b): `POST /api/emergency/preview {picks(grant), skills, pull_budget}` -- 지금 배치 − 빼 오는 배치 + 고른 사람에
   확정 때 적을 증원(`_apply_hint`)을 적용한 그래프로 확정과 같은 판정(`new_or_worse`), 동시 수행 지원(grant)은 그 사람만 같은 달 2곳. 응답 `draft.entries`·`apply_hint`를 그대로 확정에 쓴다.
   고른 사람을 팀원으로 친 후보 다시 매기기를 함께 준다(최선 조합은 다시 풀지 않음). 요구 기술을 더한 그래프는 (판·사업·기술·인원) 키로 4개까지 재사용(`_augmented_graph`).
+  **확정 취소**(2026-10-21 사용자 요청 3, claude-b -- 결정: 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함): `GET|POST /api/workspace/cancel`은 되돌리기(마지막 판부터)와 달리
+  그 확정만 **지금 판 위에서 거꾸로** 적용한 새 판(kind `cancel`, summary `target_version`+`target_at` -- 같은 명단을 다시 확정하면 판 버전이 같아 시각까지 본다)이다.
+  `workspace_edits.revert_ops`가 확정 직전(B)·확정(A)·지금(N) 판을 칸마다(배치·등급 정원·예산·요구 기술·동시 수행 허용) 견줘 N==A인 칸만 B로, 그 뒤 바뀐 칸·고정한 배치·없어진 사람/사업은 건너뛴다.
+  원래 사업 복귀가 위반이면(위반 종류별 `_implicates`) 그 복귀만 빼 대기로 둔다. 되돌릴 것이 모두 빠지면 422(확정을 "취소됨"으로 잠그지 않게). 계산 뒤 판이 바뀌었으면 409(옛 판 덮어쓰기 방지).
+  취소는 `review_docs/cancelled.json`에도 남아(20판 밖에서도 검토 자료 잠금) 취소 판을 되돌리면 지운다. 되돌리기는 확정을 꺼낼 때만 `record_undone`(취소 판은 앞 판과 버전이 같을 수 있다).
+  확정 취소 버튼은 변경 이력 + 신규 사업 "지금 팀" 줄 오른쪽(사용자 후속 요청) -- 후자는 그 확정이 넣은 사람(이력 항목 `joined`)이 **지금 팀에 남아 있는** 가장 최근 확정을 고른다.
+  **자동 편성 K 행 설명**(사용자 요청 1): 둘째 줄 = 신규 사업마다 `4/4명 · 대기 · 이동 · 원래 · 동시 수행` + 소명 버튼, "명단" 펼치기 = 이름·옮김 사슬·K−1보다 새로 옮긴 사람 -- `web/src/scenarios/autoView.ts`가 K 행의 `entries`·`diff`만으로 만든다(서버 계산 그대로).
+  **기다림 표시**(사용자 요청 2): 공통 `ui.Spinner` -- 소명 미리보기는 창을 바로 열고 "쓰는 중"(멈출 수 있음), 판을 바꾸는 버튼·검토 자료 AI 초안·PDF에도.
   **설정 화면 이름은 화면 말로**(2026-10-20 사용자 "설정 화면 용어 정리"): 계산 멈춤 기준(gap)·계산 시간(안 하나당)·익숙한 쌍 기준/감점/볼 기간·협업 반영 정도·동시에 풀어 볼 갈래 수·같은 달 최대 사업 수·"나눠 투입 · …" -- 저장 키는 그대로(이름은 `settingsFields.FIELDS`·`MODE_LABEL` 한 곳).
   **운영 중 비교 K는 0~5**(`api/routes/operating.OPERATING_KS` -- 화면 기본·밤 배치 `DEFAULT_KS`·시연 미리 계산이 같은 목록, 2026-10-20 사용자 "k는 최대 5까지"). 미리 계산·밤 행은
   요청 K 목록이 저장된 목록의 **앞부분**이면 잘라 준다(`demo_precomputed.operating_rows` -- K 행은 앞 K만 이어받는다). 시연 운영 중 묶음 4개는 0~5로 다시 풀었다(0~3 행은 예전과 같았다).
   긴급 투입 최선 조합(갭 0)은 운영 중 보강·밤 배치처럼 `OPERATING_TIME_LIMIT_MAX`(600초)에서 자른다 -- 12개월 자동 한도(최대 900초)를 그대로 쓰면 가벼운 계산 슬롯을 15분 잡는다.
+- **등급 대체**(2026-10-21 사용자 결정 "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자", claude-a `core/evaluate/grade_swap.py`): 손 편성 확정(신규 사업 넣기·긴급 투입 세 경로)에서
+  **이 확정으로 새로 넘친 등급 × 확정 뒤 모자란 자리**를 짝지어(가까운 등급부터, 같으면 위 자리) 데이터 정원을 자리 −n·들어간 등급 +n으로 바꾼다 -- 막지 않고 사유를 받는다.
+  사유는 확정 이력 summary `grade_swaps`(검토 자료 사실 `MOVE_GRADE`, 아래 등급 대체는 확인할 사실), 대체가 있으면 넘친 만큼 `budget_add`. 화면 미리 계산(`routes/scenarios.swap_graph`·`_apply_hint`)과
+  확정 검증(`routes/workspace._check_grade_swaps`)이 같은 함수라 다르면 422. 원래 넘쳐 있던 등급·정원 표에 없는 등급은 대체가 아니다. 확정 취소·되돌리기가 정원·예산을 함께 돌린다.
+  계산 모델(MILP·평가기·검증기)은 그대로 -- 자동 편성은 대체하지 않고 빈자리로 보인다(부족 신호를 묻지 않게). 후보 목록은 같은 등급이 먼저(`classify`). 긴급 투입은 모자란 자리가 있으면 증원 대신 대체(예전엔 넘친 등급 정원만 늘려 빈자리가 남았다).
+- **연간 계획·What-if 분리**(2026-10-21 사용자 "what if는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 … 지금의 화면은 연간 계획 화면과 맞물려있는 개념", claude-a): 계산한 안 A~D 위에서 바꿔 보는 화면은 연간 계획 ② 편성안 비교·확정(`plans`),
+  What-if(`whatif`, `web/src/whatif/CurrentWhatif`)는 **작업 데이터의 지금 배치**에서 바꿔 보고(`/api/whatif`·`/api/plans/apply-swap`에 `grade_swap: true` -- 지금 배치 대비 등급 대체·예산 증액을 적용해 평가, 확정과 같은 `core.evaluate.grade_swap.substitution`) 담은 변경을 한 번에 확정한다(손 편성 `apply_manual` → 검토 자료).
+  확정 창 `components/ConfirmChanges`는 연간 계획 "안 X로 확정"(source `plan`, 검토 자료 없음)과 What-if가 함께 쓰고, 서버 `POST /api/workspace/preview`(옮김·새로·빠짐·등급 대체·예산 증액·새 위반·고정 충돌, 데이터 그대로)로 미리 계산한다.
+  지금 배치가 있으면 안 카드·배치 명단에 "지금 대비 옮김"(`components/rosterDiff`, 서버 preview와 같은 정의). ② 다듬기(plans)는 `grade_swap` 없이 예전처럼 등급이 바뀐 교체를 경고로 본다.
+  **기술 가중치 칸은 없앴다**(화면 요청 `weights` = 빈 값 = 기본, API 칸은 옛 기록 재현용) -- ① 조건·계산은 `/api/meta` 사업 `requirements`(기술·최소 레벨·인원)를 보인다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
   소명 글은 확정 때 화면에서 쓰고 `api/justification_cache`(키 = 데이터 버전·명단·설정·AI·소명 재료 해시·생성기 코드 지문)가 저장해 다시 돈 내지 않는다. 점검 보고서 `GET /api/nightly`.
   `TEAMWEAVER_NIGHTLY=off`로 끈다 -- `tests/conftest.py`가 시험 전체에서 끈다. **시험에서 밤 실행·소명을 돌릴 때는 설명 AI를 막는다**(`tests/nightly/conftest.py` -- lifespan의 `load_env`가 `.env` 키를 올린다).
-  시험 전체에서 실제 OpenAI 채팅 호출은 막혀 있다(`tests/conftest._no_real_ai_calls`, 2026-10-20 -- 올라간 키는 세션 끝까지 남는다). 설명 AI를 바꿔 끼울 때는 tests/api의 `ai_client` 픽스처(라우트가 쥔 함수를 찾아 바꿈)를 쓰고 가짜가 정말 쓰였는지 확인한다 -- `api.deps` 이름을 열쇠로 쓰면 다른 시험이 그 이름을 바꿔 끼운 뒤엔 빗나간다(claude-b 확인 권장).
+  시험 전체에서 실제 OpenAI 채팅 호출은 막혀 있다(`tests/conftest._no_real_ai_calls`, 2026-10-20 -- 올라간 키는 세션 끝까지 남는다). 설명 AI를 바꿔 끼울 때는 `ai_client` 픽스처(`tests/conftest.py`, 모듈 단위 픽스처·도우미는 `tests/ai_override.override_ai` -- 라우트가 쥔 함수를 찾아 바꾸고 끝나면 직전 override로 되돌림)를 쓰고, `with ai_client(fake) as used:`의 `used`로 가짜가 정말 쓰였는지 확인한다 -- `api.deps` 이름을 열쇠로 쓰면 다른 시험이 그 이름을 바꿔 끼운 뒤엔 빗나간다(claude-b 확인 권장). 이름을 열쇠로 쓴 `dependency_overrides[...get_openai_client_or_none]`는 `tests/test_no_real_ai.py`가 실패시킨다(10-20 모두 옮김).
 - **인사팀 검토 자료**(2026-10-19, claude-a `api/review_docs.py`·`routes/review_docs.py`·`core/evaluate/review_moves.py`·`web/src/review/`): 확정(`apply_auto|manual|emergency`) × 사람이 새로 들어간 사업마다 한 편.
   전 = 확정 직전 판 zip의 현재 배치, 후 = 확정 판 -- 옮겨 온 사람의 출처·원래 사업이 잃는 것·메움을 평가기로 잰다. **시스템 사실은 만들 때 계산해 자료에 저장**하고(그래서 그 확정이 지금 판일 때만 만든다),
   PUT은 사실을 받지 않는다(extra=forbid). 결론 문장은 서버가 쓰지 않는다(사용자 결정 -- 부서장 판단 칸). 해명·이의는 사실 지문 `core.kg.justify.fact_key`에 붙는다.
@@ -205,11 +223,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   manifest `skill_months_owner`="source"면 늘리지 않는다(설정 화면 "데이터 원천"에서 관리자가 바꿈 → 새 판). 규칙 표지 `aging.AGING_RULES`가 계산 버전에 들어간다.
   계획 기간 안에서 달마다 올리지는 않는다. 시연 묶음은 `as_of` = 계획 직전 달·경력이 그 달까지 세어져 늘어나는 달 0(숫자 그대로, 미리 계산은 버전만 옮김).
 - **What-if 대시보드 정리·화면 친절하게**(2026-10-20 사용자 점검, claude-a -- b 영역 포함, 설계 `.omc/plan/2026-10-20-ui-friendly.md`):
-  배치 명단은 사업 카드(머리 한 줄 + 이름표 줄, 2~3열, 정렬·사람 찾기, 100%는 숨김, 이름표를 누르면 기술 창 -- `AssignmentTable`). 사업 코드는 코드 그대로 + 마우스를 올리면 이름(`ui.ProjectCode`·`PersonName.ProjectCodes`).
+  배치 명단은 사업 카드(머리 한 줄 + 이름표 줄, 2~3열, 정렬·사람 찾기, 100%는 숨김, 이름표를 누르면 기술 창 -- `AssignmentTable`). 시작·끝 정렬은 절대 달 번호(`lifecycle.absoluteMonth` -- 원래 기간 `period`와 계획 안 순번을 글자로 섞어 비교하면 계획 안에서만 도는 사업이 늘 맨 앞에 온다, 10-21 사용자 지적). 사업 코드는 코드 그대로 + 마우스를 올리면 이름(`ui.ProjectCode`·`PersonName.ProjectCodes`).
   **교체 검토 데려오기·맞바꾸기**: `SwapIn.in_from_project_id`(그 사업에서 뺌)·`exchange`(나간 사람이 그 자리로) -- `whatif._swapped_entries` 한 곳이 whatif·적용·저장 재생·PDF 재생을 모두 맡고,
   기본값 칸은 저장 모양에 나오지 않는다(예전 교체 서명 그대로). 원래 사업의 빈자리는 서버가 위험 항목 맨 앞에 정해진 문장으로 붙인다(`source_loss_notes` -- AI 지시문은 안 바꿈).
   AI 설명에 넘기는 점수 변화는 소수 둘째 자리로 반올림한다. 끌어 놓기는 섹션 밖으로 못 나가고(DragOverlay + 경계 modifier) 못 놓는 칸이면 이유를 띄운다.
-  오른쪽 협업 관계망은 **팀원과의 관계 목록**(`TeamRelations`)으로 바꿨다 -- `/api/meta` coworks `review`(두 사람 평가 극성)는 **가상 데이터만**(`build_meta(reveal_reviews=)`, 실데이터 K5).
+  오른쪽 협업 관계망은 **팀원과의 관계**(`TeamRelations`)로 바꿨다 -- 10-21부터 관계 그림(왼쪽 빠질 사람·가운데 그 사업 팀원·오른쪽 들어올 사람, 선 굵기 = 개월·색 = 평가, 숫자 목록은 "목록으로 보기"). 색·굵기 규칙은 PDF 팀별 협업 지도와 공용(`components/relationTone.ts`·`RelationLegend.tsx`). `/api/meta` coworks `review`(두 사람 평가 극성)는 **가상 데이터만**(`build_meta(reveal_reviews=)`, 실데이터 K5).
   **인사팀 소명 요약**(`core/kg/justify.verify_summary`·`rule_summary_raw`, `api/rag/justification.generate_summary`): 본문과 같은 자리표시 문법·검사 + 맺음말 빼고 3문장·자리표시 2~4개·불리한 사실 하나 이상(Y1~Y4),
   걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
@@ -231,7 +249,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-20 b 긴급 투입 미리 보기·설정 용어·K 0~5 main 병합(a XAI 브리핑 원복·시험 AI 차단 위) **2069 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 292 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 연간 계획·What-if 분리(claude-a, b 확정 취소 지금 팀 옆 버튼 합친 트리 위) **2093 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 312 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

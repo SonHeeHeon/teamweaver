@@ -9,6 +9,8 @@
 - POST   /api/workspace/concurrency        프로젝트 동시 수행 허용(사유 필수)/해제(사람 단위, 2026-10-19 claude-a) → 새 판
 - POST   /api/workspace/apply              확정(자동 편성 행·손 편성·긴급 투입 결과) → 새 위반이 없을 때만 새 판
 - POST   /api/workspace/undo               직전 판으로
+- GET    /api/workspace/cancel             확정 한 건 취소 미리 보기(2026-10-21) -- 돌릴 것·건너뛸 것·대기로 둘 사람
+- POST   /api/workspace/cancel             확정 한 건 취소 → 새 판(그 뒤 변경은 그대로, git revert처럼)
 - GET    /api/skills/dictionary            양식의 기술 검색(대표 이름·별칭)
 
 판을 바꾸는 요청은 관리자만, 화면이 든 판(dataset_version)이 지금 판과 같을 때만(409) 받는다.
@@ -27,10 +29,10 @@ from api.deps import check_dataset_version
 from api.lifecycle import lifecycle_of
 from api.settings import horizon_months_of
 from api.schemas import MAX_PLAN_ENTRIES, EntryIn
-from api.workspace import History, WorkspaceUnavailable, commit, current_files, undo
-from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, concurrency_of,
-                                 pipeline_of, project_form, read_manifest, read_table, remove_project, set_concurrency,
-                                 set_lock, update_project)
+from api.workspace import History, WorkspaceUnavailable, cancelled_keys, commit, current_files, undo
+from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, apply_revert,
+                                 concurrency_of, pipeline_of, project_form, read_manifest, read_table, remove_project,
+                                 revert_ops, set_concurrency, set_lock, swap_grade_seats, update_project)
 
 router = APIRouter()
 GRADE_ORDER = ("특급", "고급", "중급", "초급")
@@ -112,6 +114,13 @@ def workspace_view(request: Request) -> dict:
                             "ends_in_horizon": bool(item["end"]) and item["end"] < (_horizon_last(m) or "")})
     entries = History().entries()
     history = list(reversed(entries)) if entries and entries[-1].get("version") == info.version else []
+    # 확정 취소(2026-10-21): 이력의 확정마다 취소됐는지·취소할 수 있는지(직전 판이 있어야 차이를 안다)
+    gone = cancelled_keys(history)
+    history = [{**e, "cancelled": (e.get("version"), e.get("at")) in gone,
+                "cancellable": e.get("kind") in CANCELABLE and (e.get("version"), e.get("at")) not in gone and i < len(history) - 1,
+                # 그 확정이 사람을 새로 넣은 사업 -- 신규 사업 화면의 "지금 팀" 옆 확정 취소가 이 사업의 마지막 확정을 찾는다(2026-10-21)
+                "projects": sorted(_joined_of(e)), "joined": _joined_of(e)}
+               for i, e in enumerate(history)]
     from api.unavailable import horizon_reason
     bench = [person(p, unavailable=horizon_reason(dataset, p)) for p in (m.get("bench") or []) if isinstance(p, str)]
     # 프로젝트 동시 수행 허용 인력(사람 단위, 사유와 함께) -- 화면 목록·해제
@@ -279,6 +288,16 @@ class SkillAdd(BaseModel):
     headcount: int = Field(default=1, ge=1, le=50)
 
 
+class GradeSwapIn(BaseModel):
+    """등급 대체 한 건(2026-10-21): project_id의 seat 자리 count개를 grade 사람으로. 사유 필수(사용자 결정 "사유는 전부 받고")."""
+    model_config = ConfigDict(extra="forbid")
+    project_id: str = Field(min_length=1, max_length=32)
+    seat: Literal["특급", "고급", "중급", "초급"]
+    grade: Literal["특급", "고급", "중급", "초급"]
+    count: int = Field(ge=1, le=10)
+    reason: str = Field(max_length=200)
+
+
 class ApplyIn(_Versioned):
     entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     note: str = Field(default="", max_length=300)
@@ -290,6 +309,37 @@ class ApplyIn(_Versioned):
     budget_add: dict[str, Annotated[int, Field(ge=0, le=10_000_000)]] = {}
     skills_add: dict[str, list[SkillAdd]] = Field(default={}, max_length=10)
     concurrency_add: list[GrantIn] = Field(default=[], max_length=20)
+    grade_swaps: list[GradeSwapIn] = Field(default=[], max_length=20)
+
+
+def expected_grade_swaps(dataset, entries: list[dict]) -> dict[str, list[dict]]:
+    """지금 배치 → entries로 확정할 때의 등급 대체(사업별, 대체가 있는 사업만) -- `core.evaluate.grade_swap.substitution`."""
+    from core.evaluate.grade_swap import substitution
+    return substitution(dataset.graph, _entries_of(dataset), entries)[1]
+
+
+def _check_grade_swaps(dataset, body: "ApplyIn") -> list[dict]:
+    """요청의 등급 대체가 서버 계산(이 확정으로 새로 넘친 등급 × 모자란 자리, core.evaluate.grade_swap)과 같고 사유가 다 있는가.
+    화면 미리 계산(routes/scenarios._apply_hint·swap_grade)과 같은 함수라 맞아야 한다 -- 다르면 판이 바뀌었거나 옛 미리 계산이다."""
+    from core.evaluate.grade_swap import same_swaps
+    asked: dict[str, list[dict]] = {}
+    for s in body.grade_swaps:
+        if s.seat == s.grade:
+            raise HTTPException(status_code=422, detail=f"같은 등급끼리는 대체가 아니다: {s.project_id} {s.seat}")
+        if not s.reason.strip():
+            raise HTTPException(status_code=422, detail=f"등급 대체 사유를 적어야 한다: {s.project_id} {s.seat} 자리 → {s.grade}")
+        asked.setdefault(s.project_id, []).append(s.model_dump())
+    unknown = sorted(j for j in asked if j not in dataset.graph.project_index)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"이 데이터에 없는 사업: {unknown[0]}")
+    expected = expected_grade_swaps(dataset, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries])
+    for jid in sorted(set(expected) | set(asked)):
+        want = expected.get(jid, [])
+        if not same_swaps(want, asked.get(jid, [])):
+            raise HTTPException(status_code=422, detail={
+                "message": "등급 대체가 미리 계산과 다르다 -- 화면을 다시 계산하고 대체마다 사유를 적어 확정한다.",
+                "project_id": jid, "expected": want})
+    return [s.model_dump() | {"reason": s.reason.strip()} for s in body.grade_swaps]
 
 
 def _violations(app, dataset, entries) -> dict[tuple[str, str], object]:
@@ -312,6 +362,63 @@ def _entries_of(dataset) -> list[dict]:
     return [{"person_id": c.person_id, "project_id": c.project_id, "alloc": c.alloc} for c in dataset.current]
 
 
+class PreviewIn(_Versioned):
+    entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
+
+
+@router.post("/api/workspace/preview")
+async def post_preview(body: PreviewIn, request: Request) -> dict:
+    """확정 전 미리 계산(2026-10-21 -- 연간 계획 "이 안으로 확정"·What-if 확정 창): 지금 배치 → entries를 확정할 때와 같은 규칙으로
+    옮김·새로·빠짐, 등급 대체(사유를 받을 것)와 대체로 넘는 예산 증액, 새로 생기거나 커진 위반, 고정한 배치를 빼는지를 돌려준다.
+    데이터는 바꾸지 않는다. 화면은 여기서 받은 대체·증액을 그대로 확정에 보낸다(확정이 같은 함수로 다시 맞춰 본다)."""
+    dataset = request.app.state.dataset
+    check_dataset_version(body.dataset_version, dataset)
+    if any(e.monthly_alloc for e in body.entries):
+        raise HTTPException(status_code=422, detail="달별 투입률이 있는 명단은 확정할 수 없다(기간 내내 같은 비율만)")
+    ids_p, ids_j = dataset.graph.pid_index, dataset.graph.project_index
+    bad = sorted({e.person_id for e in body.entries if e.person_id not in ids_p}
+                 | {e.project_id for e in body.entries if e.project_id not in ids_j})
+    if bad:
+        raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+
+    def work() -> dict:
+        from api.routes.justification import display_names, with_names
+        from api.violation_diff import new_or_worse
+        from core.evaluate.grade_swap import substitution
+        from core.evaluate.plan_eval import evaluate_plan
+        from core.optimize.types import AssignEntry
+        from core.scoring.engine import ScoringEngine
+        graph = dataset.graph
+        names = display_names(dataset)
+        new = [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries]
+        cur = _entries_of(dataset)
+        g2, swaps, budget = substitution(graph, cur, new)     # 확정 뒤 정원(대체)·예산(증액)으로 판정 -- 확정의 판정과 같다
+        params = dataset_params(request.app, dataset)
+        eng = ScoringEngine(graph)
+        S, C = eng.skill_matrix({}), eng.synergy_matrix()
+        before = evaluate_plan(graph, S, C, params, [AssignEntry(**e) for e in cur])
+        after = evaluate_plan(g2, S, C, params, [AssignEntry(**e) for e in new])
+        worse = [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)]
+
+        def by_person(es):
+            out: dict[str, set] = {}
+            for e in es:
+                out.setdefault(e["person_id"], set()).add(e["project_id"])
+            return out
+        pb, pa = by_person(cur), by_person(new)
+        row = lambda p: {"person_id": p, "name": names.get(p, p), "from": sorted(pb.get(p, ())), "to": sorted(pa.get(p, ()))}  # noqa: E731
+        moved = [row(p) for p in sorted(set(pb) & set(pa)) if pb[p] != pa[p]]
+        joined = [row(p) for p in sorted(set(pa) - set(pb))]
+        left = [row(p) for p in sorted(set(pb) - set(pa))]
+        kept = {(e["person_id"], e["project_id"]) for e in new}
+        locked = sorted(f"{names.get(c.person_id, c.person_id)}@{c.project_id}" for c in dataset.current
+                        if c.locked and (c.person_id, c.project_id) not in kept)
+        return {"dataset_version": dataset.info.version, "moved": moved, "joined": joined, "left": left,
+                "changed": bool(moved or joined or left), "grade_swaps": swaps, "budget_add": budget,
+                "new_violations": worse, "locked_dropped": locked}
+    return await anyio.to_thread.run_sync(work)
+
+
 @router.post("/api/workspace/apply", dependencies=[Depends(require_admin)])
 async def post_apply(body: ApplyIn, request: Request) -> dict:
     dataset = request.app.state.dataset
@@ -325,11 +432,15 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                  | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+    swaps = _check_grade_swaps(dataset, body)
     before = _files(request)
     files, changes = _edit(apply_entries, before, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
                            budget_add=dict(body.budget_add),
                            skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()})
+    if swaps:
+        # 등급 대체: 정원 표를 자리 등급 −n, 들어간 등급 +n으로(같은 판 -- 확정 취소·되돌리기가 함께 돌린다)
+        files = _edit(swap_grade_seats, files, swaps)
     if body.concurrency_add:
         # 동시 수행으로 지원하는 사람의 허용(사유)을 같은 판에 함께 적는다 -- 되돌리면 둘 다 사라진다(설계 3.5).
         # 이미 그만큼 허용된 사람은 기존 기록(사유·메모·시각)을 그대로 둔다(폴백 리뷰 P2: 기본값으로 덮어썼다)
@@ -358,6 +469,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                        summary={**changes, "headcount_add": body.headcount_add, "budget_add": body.budget_add,
                                 "skills_add": {p: [s.name for s in v] for p, v in body.skills_add.items()},
                                 "concurrency_add": [g.model_dump() for g in body.concurrency_add],
+                                # 등급 대체와 사유(2026-10-21) -- 인사팀 검토 자료 사실(MOVE_GRADE)의 원천
+                                "grade_swaps": swaps,
                                 # 긴급 투입만 -- 다른 확정의 검토 자료에는 상황 메모 칸이 없어 보이지 않는 값으로 남는다(폴백 리뷰 S1)
                                 "situation": body.situation.strip() if body.source == "emergency" else ""},
                        check=check)
@@ -384,3 +497,263 @@ def skills_dictionary() -> list[dict]:
 
 
 __all__ = ["router", "workspace_view", "CURRENT"]
+
+
+def _joined_of(entry: dict) -> dict[str, list[str]]:
+    """확정이 사업마다 새로 넣은 사람(summary.added "P@J") -- 화면이 "지금 팀"에 아직 남은 사람을 넣은 확정을 고른다(3차 리뷰 S1)."""
+    if entry.get("kind") not in CANCELABLE:
+        return {}
+    out: dict[str, list[str]] = {}
+    for a in (entry.get("summary") or {}).get("added") or []:
+        if "@" in str(a):
+            p, j = str(a).split("@", 1)
+            out.setdefault(j, []).append(p)
+    return {j: sorted(v) for j, v in sorted(out.items())}
+
+
+# --- 확정 취소(2026-10-21 사용자 요청 3, 결정: 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함) ---------------
+# 되돌리기(undo)는 마지막 판만 꺼낸다 -- 확정 뒤 고정·등록을 했으면 그것까지 사라졌다. 취소는 그 확정의 변경만 지금 판 위에서
+# 거꾸로 적용한 **새 판**이다(api.workspace_edits.revert_ops: 확정 뒤 바뀐 칸은 건너뜀). 취소도 판이라 되돌리기로 무를 수 있다.
+
+CANCELABLE = ("apply_auto", "apply_manual", "apply_emergency")
+MAX_DROP_ROUNDS = 5
+
+
+def _cancel_target(dataset, version: str, at: str) -> tuple[list[dict], int]:
+    entries = History().entries()
+    if not entries or entries[-1].get("version") != dataset.info.version:
+        raise HTTPException(status_code=409, detail="지금 데이터의 변경 이력이 없다(다른 데이터로 바꿨다).")
+    i = next((k for k, e in enumerate(entries) if e.get("version") == version and e.get("at") == at), None)
+    if i is None or i == 0:
+        raise HTTPException(status_code=404, detail="이 확정은 지금 이력(최근 20판)에 없다.")
+    if entries[i].get("kind") not in CANCELABLE:
+        raise HTTPException(status_code=422, detail="확정(자동 편성·손 편성·긴급 투입)만 취소할 수 있다.")
+    if (version, at) in cancelled_keys(entries):
+        raise HTTPException(status_code=409, detail="이미 취소한 확정이다.")
+    return entries, i
+
+
+def _graph_of(files):
+    """원천 묶음으로 계산 그래프만 만든다(위반 판정용 -- 평가 글 판정은 위반에 쓰이지 않아 부르지 않는다)."""
+    import tempfile
+    from pathlib import Path
+    from api.datasets import extract_bundle_zip
+    from api.workspace import zip_files
+    from core.graph.memory_graph import MemoryGraph
+    from core.ingest.convert import to_dataset
+    from core.ingest.loader import load_bundle
+    with tempfile.TemporaryDirectory(prefix="teamweaver-cancel-") as tmp:
+        root = extract_bundle_zip(zip_files(files), Path(tmp) / "bundle")
+        bundle, report = load_bundle(root)
+        try:
+            ds, parsed = to_dataset(bundle, report)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"취소한 데이터가 검증을 통과하지 못한다: {exc}") from exc
+        return MemoryGraph.build(ds, parsed)
+
+
+def _violations_of(app, graph, files) -> list:
+    from core.evaluate.plan_eval import evaluate_plan
+    from core.optimize.types import AssignEntry
+    from core.scoring.engine import ScoringEngine
+    from api.workspace_edits import current_table
+    _, rows = current_table(files)
+    entries = [AssignEntry(person_id=r["person_id"], project_id=r["project_id"], alloc=float(r["alloc"])) for r in rows
+               if r["person_id"] in graph.pid_index and r["project_id"] in graph.project_index]
+    params = app.state.settings_store.current().settings.to_milp_params(n_people=len(graph.people),
+                                                                        months=horizon_months_of(graph))
+    eng = ScoringEngine(graph)
+    return list(evaluate_plan(graph, eng.skill_matrix({}), eng.synergy_matrix(), params, entries).violations)
+
+
+def _implicates(v, o: dict, grade_of: dict[str, str]) -> bool:
+    """이 위반을 이 되돌림 작업이 만들었을 수 있는가 -- 위반 종류마다 좁게(폴백 리뷰 S2: 사업 ID만 맞춰 보면 J007 특급 초과 하나로
+    J007에 돌아가는 모든 등급의 사람·예산 되돌림이 함께 빠졌다). 확정이 넣은 배치를 빼는 작업(to None)은 위반을 만들지 않는다."""
+    loc = v.location.split(":")
+    if o["op"] == "assign":
+        if o["to"] is None:
+            return False
+        pid, jid = o["key"].split("@", 1)
+        if v.code == "grade_over":
+            return loc[0] == jid and grade_of.get(pid) == loc[1]
+        if v.code == "budget":
+            return loc[0] == jid
+        if v.code == "alloc_range":
+            return loc[:2] == [pid, jid]
+        return loc[0] == pid                    # availability · concurrent_projects 등 사람 위반
+    if o["op"] == "grade":
+        return v.code == "grade_over" and ":".join(loc[:2]) == o["key"].replace("@", ":")
+    if o["op"] == "budget":
+        return v.code == "budget" and loc[0] == o["key"]
+    if o["op"] == "grant":
+        return v.code == "concurrent_projects" and loc[0] == o["key"]
+    return False
+
+
+def cancel_plan(request: Request, version: str, at: str) -> dict:
+    """취소 계획: 돌릴 작업·건너뛸 작업·위반 때문에 대기로 둘 작업·남는 새 위반. 미리 보기와 확정이 같은 함수를 쓴다."""
+    from api.violation_diff import new_or_worse
+    from api.workspace import _read_zip
+    app, dataset = request.app, request.app.state.dataset
+    entries, i = _cancel_target(dataset, version, at)
+    hist = History()
+    blobs = [hist.load_zip(str(entries[k].get("content_version"))) for k in (i - 1, i)]
+    if any(b is None for b in blobs):
+        raise HTTPException(status_code=409, detail="이 확정의 보관 판이 남아 있지 않다(최근 20판만 보관한다).")
+    before, after = (_read_zip(b) for b in blobs)
+    now = _files(request)
+    ops, skipped = _edit(revert_ops, before, after, now)
+    if not ops:
+        raise HTTPException(status_code=422, detail="되돌릴 것이 없다 -- 이 확정의 변경은 모두 그 뒤 다른 변경으로 바뀌었다.")
+    old = _violations_of(app, dataset.graph, now)
+    grade_of = {p.id: p.grade.value for p in dataset.graph.people}
+    dropped: list[dict] = []
+    files, new = now, []
+    for round_ in range(MAX_DROP_ROUNDS + 1):
+        if not ops:
+            break
+        files = _edit(apply_revert, before, now, ops)
+        new = new_or_worse(old, _violations_of(app, _graph_of(files), files))
+        if not new or round_ == MAX_DROP_ROUNDS:
+            break
+        # 원래 사업 복귀·정원·예산 줄이기·허용 해제 중 그 위반을 만든 것만 하지 않는다(그 사람은 대기로)
+        drop = [o for o in ops if any(_implicates(v, o, grade_of) for v in new)]
+        if not drop:
+            break
+        dropped += [{**o, "why": "violation", "violations": [v.message for v in new if _implicates(v, o, grade_of)][:2]}
+                    for o in drop]
+        ops = [o for o in ops if o not in drop]
+    if not ops:                                         # 모두 빠졌으면 바뀌는 것도, 생기는 위반도 없다(2차 리뷰 NIT)
+        files, new = now, []
+    from api.workspace_edits import current_table
+    _, rows = current_table(files)
+    assigned = {r["person_id"] for r in rows}
+    for d in dropped:                                   # "대기로 남는다"는 정말 배치가 없을 때만(폴백 리뷰 M1)
+        d["bench_after"] = d["op"] == "assign" and d["key"].split("@", 1)[0] not in assigned
+    return {"entries": entries, "index": i, "before": before, "now": now, "ops": ops, "skipped": skipped,
+            "dropped": dropped, "files": files, "new_violations": [asdict(v) for v in new or []],
+            # 위반·고정으로 되돌릴 작업이 모두 빠지면 바뀌는 것이 없다 -- 그래도 커밋하면 확정이 "취소됨"으로 잠겼다(폴백 리뷰 M1)
+            "nothing": not ops, "version": dataset.info.version}
+
+
+_DIGIT_RO = {"0": "으로", "1": "로", "2": "로", "3": "으로", "4": "로", "5": "로", "6": "으로", "7": "로", "8": "로", "9": "로"}
+
+
+def _ro(code: str) -> str:
+    """사업 코드 뒤 '(으)로' -- 끝 숫자의 읽는 소리 받침으로 고른다(J015 → J015로, J010 → J010으로)."""
+    return code + _DIGIT_RO.get(code[-1:], "(으)로")
+
+
+def _revert_lines(ops: list[dict], names: dict[str, str]) -> list[str]:
+    """돌릴 작업을 사람마다 한 줄로: 확정이 넣은 곳에서 빼고 원래 사업으로 돌아가면 "박시우: J020 → J015로 돌아간다"."""
+    people: dict[str, dict[str, list]] = {}
+    rest = []
+    for o in ops:
+        if o["op"] != "assign" or (o["from"] is not None and o["to"] is not None):
+            rest.append(_op_text(o, names))
+            continue
+        pid, jid = o["key"].split("@", 1)
+        people.setdefault(pid, {"out": [], "back": []})["out" if o["to"] is None else "back"].append(jid)
+    lines = []
+    for pid, d in sorted(people.items(), key=lambda kv: names.get(kv[0], kv[0])):
+        who = names.get(pid, pid)
+        if d["back"]:
+            src = f"{', '.join(d['out'])} → " if d["out"] else ""
+            lines.append(f"{who}: {src}{_ro(', '.join(d['back']))} 돌아간다(원래 사업)")
+        else:
+            lines.append(f"{who}: {', '.join(d['out'])}에서 뺀다")
+    return lines + rest
+
+
+def _op_text(o: dict, names: dict[str, str]) -> str:
+    n = lambda pid: names.get(pid, pid)                         # noqa: E731
+    k = o["op"]
+    if k == "assign":
+        pid, jid = o["key"].split("@", 1)
+        if o["to"] is None:
+            return f"{n(pid)}: {jid}에서 뺀다"
+        if o["from"] is None:
+            return f"{n(pid)}: {_ro(jid)} 돌아간다"
+        return f"{n(pid)}: {jid} 투입률 {o['from']:.0%} → {o['to']:.0%}"
+    if k == "grade":
+        jid, g = o["key"].split("@", 1)
+        return f"{jid} {g} 정원 {o['from'] or 0}명 → {o['to'] or 0}명"
+    if k == "budget":
+        return f"{o['key']} 월 예산 {o['from']:,} → {o['to']:,}"
+    if k == "skill":
+        jid, _ = o["key"].split("@", 1)
+        name = (o["confirmed"] or o["to"] or ("?",))[0]
+        return f"{jid} 요구 기술 {name} {'뺀다' if o['to'] is None else '되살린다'}"
+    if k == "grant":
+        return (f"{n(o['key'])}: 프로젝트 동시 수행 허용 해제" if o["to"] is None
+                else f"{n(o['key'])}: 프로젝트 동시 수행 최대 {o['to']}개로")
+    return o["key"]
+
+
+_SKIP_WHY = {"changed": "확정 뒤 다른 변경으로 바뀌어 그대로 둔다", "locked": "확정 뒤 고정해 그대로 둔다(고정을 풀면 취소된다)",
+             "gone": "그 사람이나 사업이 지금 데이터에 없어 그대로 둔다"}
+
+
+def _plan_view(plan: dict, names: dict[str, str]) -> dict:
+    t = plan["entries"][plan["index"]]
+    dropped = []
+    for o in plan["dropped"]:
+        msg = "; ".join(o.get("violations") or [])
+        dropped.append(f"{_op_text(o, names)} -- 하지 않는다(규칙 위반{': ' + msg if msg else ''})"
+                       + (" · 대기 인력으로 남는다" if o.get("bench_after") else ""))
+    return {"target": {k: t.get(k) for k in ("version", "kind", "note", "at")},
+            "revert": _revert_lines(plan["ops"], names),
+            "skipped": [f"{_op_text({**o, 'from': o['confirmed']}, names)} -- {_SKIP_WHY[o['why']]}" for o in plan["skipped"]],
+            "dropped": dropped,
+            "new_violations": [v["message"] for v in plan["new_violations"]][:10],
+            "blocked": ("되돌릴 수 있는 것이 없다 -- 남은 변경은 모두 그 뒤 고정했거나 되돌리면 규칙 위반이다." if plan["nothing"]
+                        else "취소하면 새 위반이 생긴다." if plan["new_violations"] else None),
+            "ok": not plan["new_violations"] and not plan["nothing"]}
+
+
+@router.get("/api/workspace/cancel")
+async def get_cancel_preview(request: Request, dataset_version: str = Query(...), version: str = Query(...),
+                             at: str = Query(...)) -> dict:
+    check_dataset_version(dataset_version, request.app.state.dataset)
+    plan = await anyio.to_thread.run_sync(cancel_plan, request, version, at)
+    return _plan_view(plan, _names(request.app.state.dataset))
+
+
+class CancelIn(_Versioned):
+    target_version: str = Field(min_length=1, max_length=200)
+    target_at: str = Field(min_length=1, max_length=64)
+
+
+@router.post("/api/workspace/cancel", dependencies=[Depends(require_admin)])
+async def post_cancel(body: CancelIn, request: Request) -> dict:
+    dataset = request.app.state.dataset
+    check_dataset_version(body.dataset_version, dataset)
+    plan = await anyio.to_thread.run_sync(cancel_plan, request, body.target_version, body.target_at)
+    # 계산하는 몇 초 사이에 다른 변경(고정·등록·밤 인사 자료 받기·데이터 전환)이 켜졌으면 옛 판 위의 계획이다 -- 덮어쓰지 않는다
+    # (폴백 리뷰 M2). 여기부터 commit의 _begin까지 await가 없다.
+    check_dataset_version(body.dataset_version, request.app.state.dataset)
+    if plan["version"] != request.app.state.dataset.info.version:
+        raise HTTPException(status_code=409, detail="취소를 계산하는 동안 데이터가 바뀌었다 -- 다시 미리 본다.")
+    dataset = request.app.state.dataset
+    view = _plan_view(plan, _names(dataset))
+    if not view["ok"]:
+        raise HTTPException(status_code=422, detail={"message": f"{view['blocked']} 취소하지 않았다.",
+                                                     "violations": plan["new_violations"][:20]})
+    from api.violation_diff import new_or_worse
+    old = _violations(request.app, dataset, _entries_of(dataset))
+
+    def check(candidate) -> None:
+        # 켜기 전 마지막 확인은 확정과 같은 판정(새로 생기거나 커진 위반이면 켜지 않는다)
+        new = [asdict(v) for v in new_or_worse(old.values(), _violations(request.app, candidate, _entries_of(candidate)).values())]
+        if new:
+            raise HTTPException(status_code=422, detail={"message": "취소하면 새 위반이 생긴다 -- 취소하지 않았다.",
+                                                         "violations": new[:20]})
+    t = view["target"]
+    out = await commit(request, plan["now"], plan["files"], kind="cancel", note=f"확정 취소: {t['note'] or t['kind']}",
+                       summary={"target_version": t["version"], "target_at": t["at"], "target_kind": t["kind"], "target_note": t["note"],
+                                "revert": view["revert"], "skipped": view["skipped"], "dropped": view["dropped"]},
+                       check=check)
+    # 취소를 이력 밖에서도 기억한다 -- 20판 밖으로 밀리면 검토 자료가 다시 열려 내보낼 수 있었다(폴백 리뷰 S3). 되돌리기가 지운다
+    from api.review_docs import record_cancelled
+    record_cancelled(t["version"], t["at"], True)
+    return await _done(request, out, cancel=view)

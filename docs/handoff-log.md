@@ -22,6 +22,135 @@
 
 ---
 
+## 2026-10-21 · claude-a · 연간 계획·What-if 분리 + 화면 검토 결정 3건(연간 계획 확정 · 지금 대비 옮김 · 가중치 대신 요구 기술)
+- 브랜치/커밋: `feat/claude-a-annual-whatif`(`feat/claude-a-grade-swap` 위, b `newproj-explain-cancel` 3b7230a·4f54867 합침 `37700b5`) · 서버·웹·문서 커밋(아래 검증 줄). main 미병합(승인 대기).
+- 사용자: "결정이 필요한 3건은 다 진행하자" · "what if 는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 어떤지 보기 위한 메뉴인데 … 이 두개는 분리가 필요할거같은데. 지금의 화면은 연간 계획 화면과 맞물려있는 개념".
+- 한 일:
+  - 메뉴: 연간 계획 ① 조건·계산(`annual`) → ② 편성안 비교·확정(`plans`, 예전 What-if 대시보드), 지금 배치 › What-if(`whatif`, 새 화면 `web/src/whatif/CurrentWhatif`).
+  - 새 What-if: 지금 배치에서 바꿔 보기 → 담기 → 한 번에 확정(손 편성, 검토 자료). `/api/whatif`·`apply-swap`에 `grade_swap`(지금 배치 대비 등급 대체 적용 평가, 확정과 같은 `core.evaluate.grade_swap.substitution`).
+  - `POST /api/workspace/preview`(확정 미리 계산) + `components/ConfirmChanges`(공용 확정 창).
+  - ② "안 X로 확정"(source `plan`).
+  - 안 카드·배치 명단 "지금 대비 옮김·새로·빠짐"(`components/rosterDiff`).
+  - 기술 가중치 칸 삭제(`WeightSlider.tsx` 삭제), `/api/meta` 사업 `requirements` → 사업 조건 표 "요구 기술".
+- 상대 영향(claude-b):
+  - 네 영역 `api/routes/workspace.py`(`expected_grade_swaps`가 `substitution` 사용, `/api/workspace/preview` 추가)·`scenarios/workspaceApi.ts`(`postPreview`·타입)를 고쳤다.
+  - 메뉴 탭 이름: 예전 `whatif` → `plans`, 새 `whatif`. `App`의 `setTab("whatif")`를 쓰던 곳은 `plans`.
+  - 화면 문구 "What-if 대시보드"를 찾는 시험은 "편성안 비교·확정"으로.
+  - 조직 기술 지도 요청(4f54867)은 사용자 지시 전이라 손대지 않았다.
+- 검증: 아래 문서 커밋 메시지 · 웹 312 · 브라우저(연간 기록 안 A 확정 82명 → What-if 대체 −0.73·사유 확정 → 연말 기록 카드 "지금 대비 옮김 46명").
+- 근거: `.omc/reports/2026-10-21-annual-whatif-split.md`, 계획 `.omc/plan/2026-10-21-annual-whatif-split.md`.
+
+---
+
+## 2026-10-21 · claude-a · 화면 전체 검토(사용자 "기조에 맞게 … 쭉 검토") + 작은 고침 3건
+- 브랜치/커밋: `feat/claude-a-grade-swap` `36e1f20`(작은 고침) · `e04b06e`(양식 문구) · 이 커밋(문서). main 미병합.
+- 사용자: "내가 너에게도 그렇고 b에게도 그렇고 요청한 그 화면 변경 포인트들을 잘 이해하고 그 기조에 맞게 화면에서 다른거 또 변경할게 없는지 쭉 검토해봐 줘 … 내부 로직 및 기능을 바꿔야하는 것들도".
+- 고친 것:
+  - 연간 계획 사업 조건 정원을 위 등급부터.
+  - 단순 규칙 비교의 위반 코드를 화면 말로, 차이 0은 색 없음.
+  - **인사팀 소명은 탭이 보일 때만 만든다**(숨은 탭이 편성안·명단이 바뀔 때마다 AI까지 불렀다 -- `JustificationPanel visible`).
+  - 신규 사업 양식 "0명 등급" 문구를 등급 대체에 맞춤.
+- 제안(사용자 결정 대기, 리포트 `2026-10-21-screen-review.md`):
+  - P1-1 연간 계획을 데이터로 확정하는 화면 길 없음(API `source: "plan"`만 있음).
+  - P1-2 운영 중 What-if 안 A~D에 "지금 대비 옮김 n명" 없음.
+  - P1-3 기술 가중치 숨김 + 사업별 요구 기술 보이기(`/api/meta` 사업에 요구 기술 칸 필요).
+  - P2 검토 자료 점검표 f1·f10·f11·f12·f13, 기간 변경 보고서, 단계 표시.
+  - P3 What-if 등급 바뀐 교체를 "등급 대체" 말로(f14), 신규 사업 예산 초과 처리, "쉬는 인력 10명/11" 이름, 계산 용어(f15).
+- 상대 영향(claude-b): `scenarios/pickView.VIOLATION_LABEL`을 내보냈다(단순 규칙 비교가 같은 이름을 씀). `ProjectForm` 정원 안내 한 줄. 기준선 웹 306.
+- 검증: 웹 306(41 files)·tsc·build. 전체·느린 시험은 문서 커밋 메시지에.
+- 근거: `.omc/reports/2026-10-21-screen-review.md`(+ `.eli5.html`).
+
+---
+
+## 2026-10-21 · claude-a · 등급 대체(사유 필수·예산 증액) · b 확정 취소 브랜치 합침 · What-if 편성안 닫힘 안내 · 시험 고정 순서 결함
+- 브랜치/커밋: `feat/claude-a-grade-swap`(`feat/claude-a-whatif-ui-fixes` 위) `df9cf43`(b `feat/claude-b-newproj-explain-cancel` 병합 -- b 브랜치는 건드리지 않음) · `e00a179`(시험) · `2dd4a21`(등급 대체) · `043644a`(What-if 안내) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자. 해당 작업은 a 너가 맡아서 해줘." · "편성안을 가져왔고 신규 사업 편성에서 새로운 사업을 만드니 what-if 대시보드에서 보였던 편성안이 없어졌어 …"
+- 한 일:
+  - `core/evaluate/grade_swap`(새로 넘친 등급 × 모자란 자리). 신규 사업 후보·draft와 긴급 투입 hint·미리 보기가 대체를 적용한 정원·예산으로 판정한다.
+  - `/api/workspace/apply` `grade_swaps`(사유 필수, 같은 규칙으로 대조) → 정원 표 수정·이력 summary. 검토 자료 사실 `MOVE_GRADE`. 화면 `GradeSwapBox`(신규 사업·긴급 투입 세 확정 경로).
+  - 상황 화면이 데이터를 바꿔 What-if 편성안을 닫으면 빈 화면에 이유·다음 할 일을 보인다.
+  - 정정: 바로 아래 내 항목(What-if 화면 3건)에 "b 브랜치와 같은 바탕"이라 적었으나 b 브랜치는 main `266d986`에서 나왔다(커밋 목록을 잘못 읽었다).
+- 상대 영향(claude-b):
+  - **네 영역을 고쳤다**(사용자가 a에 맡김):
+    - `api/routes/workspace.py`(`GradeSwapIn`·`_check_grade_swaps`·summary).
+    - `api/workspace_edits.py`(`swap_grade_seats`).
+    - `api/review_docs.py`(`confirms`의 `grade_swaps`·`grade_swap_facts`).
+    - `routes/scenarios`(`_apply_hint`·`emergency_draft`·`draft_summary`·`rescore_unchanged`·`classify` 정렬·`swap_graph`).
+    - `NewProjectsScreen`·`EmergencyScreen`·`pickView.hintText`·`workspaceApi` 타입.
+  - **후보 행의 `new_violations`가 비어도 `grade_swap`이 있으면 확정에 사유가 필요하다** -- 네 `test_cancel_confirm`의 후보 고르기 조건 4곳에 `not r.get("grade_swap")`을 더했다.
+  - `tests/nightly/conftest._isolated`가 이름 바꾸기 전에 `api.main`을 불러 둔다(따로 돌리면 override_ai가 실패하던 결함 -- 내 migrate 브랜치에서 생김).
+  - 기준선 2090 passed·slow 20·웹 304.
+- 검증:
+  - `uv run --group benchmark pytest -q` 2089 passed + 1(작업 폴더 탓 상대 경로 `test_e4_judges` -- 저장소 루트에서 21 passed) · `-m slow` 20 passed · 웹 304 · `npx tsc -b`·build · ruff F 계열 0.
+  - 브라우저(연말형 기록, 임시 폴더): J018에 중급 둘 → 둘째가 "등급 대체(고급 자리)" → 사유 칸 → 확정 → 정원 고급 0·중급 2, 이력 사유, 검토 자료 `MOVE_GRADE`(확인할 사실), What-if 빈 화면 안내.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰.
+- 근거: `.omc/reports/2026-10-21-grade-substitution.md`, 계획 `.omc/plan/2026-10-21-grade-substitution.md`.
+
+---
+
+## 2026-10-21 · claude-b · 확정 취소 버튼을 신규 사업 "지금 팀" 줄 오른쪽에도(사용자 후속 요청)
+- 브랜치/커밋: `feat/claude-b-newproj-explain-cancel` 이 커밋. main 미병합.
+- 사용자: "신규 사업 편성 화면 상단에 '지금팀' 인력 명단 ~~ 이 섹션 오른쪽에 확정 취소가 있는게 더 직관적인거같아".
+- 한 일: `/api/workspace` 이력 항목에 `projects`·`joined`(확정이 사업마다 새로 넣은 사람). 화면은 그 사람이 지금 팀에 남아 있는 가장 최근 확정을 "지금 팀" 옆 [확정 취소 시각]으로(같은 미리 보기 창, 함께 바뀐 사업·지워질 넣기 후보 안내).
+- 상대 영향: 없음(이력 항목에 칸 추가). 기준선 웹 299.
+- 검증: pytest 전체 2079 passed · slow 20 · 바뀐 뒤 cancel·workspace 시험 26 passed · 웹 299 · tsc·build · 브라우저(K=1 확정 → 지금 팀 옆 버튼 → 창 "J015 · J018 · J019 · J020에 함께" → 취소 → 지금 팀 "아직 없음").
+- 리뷰: Opus 폴백 3라운드 approve(SHOULD 1: 넣은 사람이 이미 빠진 확정을 고름 → 지금 팀에 남은 사람 기준으로 고침, NIT 2 반영).
+
+---
+
+## 2026-10-21 · claude-b · 신규 사업 편성: 자동 편성 K 행 설명 · 기다림 표시 · 확정 취소(사용자 요청 3건)
+- 브랜치/커밋: `feat/claude-b-newproj-explain-cancel`(main `266d986`에서) `a1f1232` · 이 문서 커밋. main 미병합(승인 대기).
+- 사용자: "1. … k=n일때 각 row에서 신규 사업에 대해 각각 어떻게 편성을 했는지 … 한줄 혹은 두줄 … 간단 명료하게", "2. 소명 미리보기 … 로딩이 걸린다는 뭔가 액션 … 다른 화면에서도",
+  "3. 신규 플젝 인력 확정한거 취소할 수 있는 기능 … 되돌리기는 되돌리고 싶은 버전까지 다 되돌려야". 결정: 두 줄 + 명단 펼치기 · 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함.
+- 한 일:
+  - K 행 둘째 줄(신규 사업별 `4/4명 · 대기 · 이동`·소명 버튼)·명단(이름·옮김 사슬·K−1 대비) -- `web/src/scenarios/autoView.ts`(서버 변경 없음).
+  - `ui.Spinner` · 소명 미리보기 창 즉시 열기(멈춤 가능) · 단계·고정·허용 해제·검토 자료 AI 초안/저장/PDF/열기·긴급 투입 확정 창·자동 편성 계산 버튼.
+  - 확정 취소 `GET|POST /api/workspace/cancel`(`workspace_edits.revert_ops`·`apply_revert`, `routes/workspace.cancel_plan`) · 이력 `cancelled`·`cancellable` · 검토 자료 "확정 취소됨"(`review_docs/cancelled.json`).
+- 상대 영향(claude-a):
+  - **`api/review_docs.history_state`가 취소된 확정을 "reverted"로 본다**(이력에 남아 있어도), 뷰·목록에 `cancelled`.
+  - `api.workspace.undo`는 꺼낸 항목이 확정일 때만 `record_undone`(취소 판을 꺼내면 취소 기록을 지움).
+  - 목록은 같은 판 버전 확정을 최신 하나만 보이고 `_find_confirm`도 최신을 고른다.
+  - 기준선 2079 passed·slow 20·웹 297.
+- 검증: `uv run --group benchmark pytest -q` 2079 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 297 · `npx tsc -b`·build · oxlint 12(전과 같음) ·
+  브라우저(연말형): K 행 둘째 줄·명단(사슬 J007→J015→J020), 소명 창 0.2초에 "쓰는 중" → 15초 뒤 글, K=1 확정 → J001 고정 → 확정 취소 → 고정 유지·"확정 취소됨", 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백 적대적 1라운드 needs-attention(MUST 2: 되돌릴 것 없는 취소 커밋·계산 중 판 바뀜 덮어쓰기, SHOULD 4: 없어진 사업 복귀·넓은 위반 제외·20판 밖 취소 상태·취소 되돌림 기록 -- 모두 반영·시험 추가) → 2라운드 approve(NIT 2 반영).
+- 근거: 루트 `.omc/reports/2026-10-21-newproj-explain-cancel.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-21-newproj-explain-cancel.md`.
+
+---
+
+## 2026-10-21 · claude-a · What-if 화면 3건(배치 명단 정렬 · 교체 대상 사업별 묶음 · 팀원과의 관계 그림) + 등급 대체 검토(제안만)
+- 브랜치/커밋: `feat/claude-a-whatif-ui-fixes`(`feat/claude-a-ai-override-migrate` `24e6ee0` 위 -- b 브랜치와 같은 바탕) `cb5ca12`(화면) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "배치 명단 … 시작 빠른 순인데 왜 j001부터", "교체 대상 셀렉 박스 … 프로젝트 단위로 카테고리화", "팀원들과의 관계 … 지식그래프로 나오긴 좀 어려운가?"
+- 한 일:
+  - 정렬 열쇠가 원래 기간 "2024-02"와 계획 안 순번 "0000000"을 글자로 섞어 비교해 계획 안에서만 도는 사업(J001 등)이 늘 맨 앞이었다. `lifecycle.absoluteMonth`(절대 달 번호)로 고쳤다. 끝나 가는 순도 같은 버그였다.
+  - 교체 대상 셀렉트를 사업별 `optgroup`으로 묶었다(항목 "이름 (등급) · 코드", 값은 그대로).
+  - 팀원과의 관계를 SVG 그림으로 바꿨다(왼쪽 빠질 사람·가운데 팀원·오른쪽 들어올 사람, 굵기 = 개월·색 = 평가). 색·굵기 규칙은 `components/relationTone.ts`·`RelationLegend.tsx`로 옮겨 PDF 팀별 협업 지도와 함께 쓴다.
+  - 등급 대체(중급 자리에 고급·초급) 검토: 화면마다 다르게 처리한다(신규 사업 = 막음 · 긴급 투입 `_apply_hint` = 그 등급 정원을 사유 없이 늘림 · What-if = 경고). 제안 문서만 썼고 코드는 그대로다(`.omc/plan/2026-10-21-grade-substitution.md`, 사용자 결정 대기).
+- 상대 영향(claude-b):
+  - 네 진행 중 경로(`web/src/scenarios/**`·`review/**`·`ui/**`)는 건드리지 않았다(`ui/ProjectCode`는 import만).
+  - `TeamRelations`가 더 이상 `reviewWord`를 내보내지 않는다 -- `components/relationTone`에서 가져온다.
+  - 등급 대체를 하기로 하면 네 경로(확정 API·신규 사업·긴급 투입 화면)가 바뀐다 -- 순서는 사용자 결정.
+  - 기준선 2071 passed·slow 20·웹 296.
+- 검증: `uv run --group benchmark pytest -q` 2071 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 296(38 files) · `npx tsc -b`·build · 정렬 시험이 고치기 전 코드에서 실패 확인 · 브라우저(연말형 기록): 시작 빠른 순 J005(24.2) 먼저·J001(26.10)은 J014 뒤, 끝나 가는 순 26.12 끝 사업 넷 먼저, 교체 대상 묶음 20개, 관계 그림.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰, 결함 없음.
+- 근거: `.omc/reports/2026-10-21-whatif-ui-fixes.md`, 등급 대체 `.omc/plan/2026-10-21-grade-substitution.md`.
+
+---
+
+## 2026-10-20 · claude-a · 시험의 설명 AI 바꿔 끼우기를 모두 라우트가 쥔 함수로(claude-b 확인 권장 마무리)
+- 브랜치/커밋: `feat/claude-a-ai-override-migrate`(main `266d986` 위) `0cf99f2`(시험) · 이 커밋(문서). main 미병합(승인 대기).
+- 사용자: "병합 승인할게. 남은 작은 일도 완료해줘" -- 직전 보고의 남은 일(이름을 열쇠로 쓴 override 23곳 남짓).
+- 한 일:
+  - 공용 도구를 `tests/ai_override.py`(`override_ai`·`ai_dependencies`)로 옮기고 `ai_client` 픽스처를 `tests/conftest.py`로(tests/scenarios·nightly도 쓰게). 끝나면 직전 override로 되돌리고, 라우트가 값을 받아 간 횟수를 `used`로 준다.
+  - 13개 파일 25곳을 옮겼다(tests/api 9 · scenarios 2 · nightly 2). 결과로 안 드러나는 3곳에 `assert used`.
+  - `tests/test_no_real_ai.py`: `override_ai` 되돌리기 시험 + 시험 코드에 `dependency_overrides[...get_openai_client_or_none]`가 다시 생기면 실패(옛 main에 돌리면 24줄을 잡는다).
+- 상대 영향(claude-b): 네 영역 시험 파일을 고쳤다(시험 내용은 그대로, 바꿔 끼우는 줄만). 새 시험에서 설명 AI를 바꿀 때는 `ai_client` 픽스처(모듈 단위 픽스처·도우미는 `tests.ai_override.override_ai`) -- 이름을 열쇠로 쓰면 시험이 실패한다. 밤 실행이 직접 부르는 `api.deps` 이름 바꾸기(monkeypatch)는 그대로다. 기준선 2071 passed·slow 20·웹 292.
+- 검증: `uv run --group benchmark pytest -q` 2071 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 옮긴 파일 묶음 137 passed · ruff F401/F841(바꾼 파일) 새 경고 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰, 결함 없음.
+- 근거: `.omc/reports/2026-10-20-ai-override-migrate.md`.
+
+---
+
 ## 2026-10-20 · claude-a · claude-b `feat/claude-b-emergency-preview` **main 병합(사용자 "병합 승인할게")**
 - 브랜치/커밋: 통합 브랜치 `feat/claude-a-merge-emergency-preview`의 병합 커밋(이 커밋, 부모 main `93ed03c` + b `07df86f`) → main 빨리 감기. b 브랜치·worktree는 건드리지 않았다.
 - 들어간 것: b `1fcf110`(긴급 투입 손 편성 미리 보기 `POST /api/emergency/preview`·설정 화면 용어·신규 사업 K 0~5) · `07df86f`(문서).
@@ -51,6 +180,7 @@
 - 근거: `.omc/reports/2026-10-20-xai-followups.md`.
 
 ---
+
 
 ## 2026-10-20 · claude-b · 긴급 투입 손 편성 미리 보기 · 설정 화면 용어 정리 · 신규 사업 K 0~5 고르기(사용자 결정)
 - 브랜치/커밋: `feat/claude-b-emergency-preview`(claude-a 통합 `75e684b` 위) `1fcf110` · 이 문서 커밋. main 미병합(a 통합 브랜치가 들어간 뒤 -- 사용자 "a가 충돌을 해결하고있으니 끝나면 하자").
@@ -368,8 +498,6 @@
 - 검증: `uv run --group benchmark pytest -q` → 1836 passed(main `738aa67` 기준), main `fa9be61`을 합치고 대체 리뷰 반영 뒤 **1840 passed, 1 skipped, 19 deselected**. 실서버 스모크(임시 데이터 폴더, 시연 org-n100, 시드 4): ① 기본 설정 -- 기본 요청은 시연 미리 계산 보호로 건너뜀, 소명 글 실제 AI 20편 모두 통과($0.016) ② 낮 한도 20초로 바꾼 설정 -- 안 A~D를 151초씩 풀어 저장(안 A 59.60), 소명 17번 호출 16편 통과·1편 서버 검사 S4로 틀 대체, 아침 `/api/optimize` 0.16초 "미리 계산", 소명 글 저장본 0.3~0.7초(새로 쓰면 10초).
 - Codex: adversarial-review 2라운드(gpt-6.1-sol). 1라운드 3건(준비 중 멈춤 유실·AI 자리 대기 뒤 재확인·소명 키에 평가 코드 누락) → 반영, 2라운드 2건(실패 묶음 영속·늦은 저장이 지금 데이터 저장본 삭제) → 반영. 그 뒤 Codex 한도 소진(21:31까지, Stop 게이트·수동 리뷰 2회 실패) → 게이트 끄고 **Claude Opus 대체 리뷰 2라운드**: MUST 1(멈춤·마감으로 덜 풀린 묶음이 저장돼 아침 결과로 굳음 → 낮 cacheable과 같은 기준으로 저장 안 함), SHOULD 3(solve_failed 행·전환 중 넣기 재확인·소명 라우트가 옛 데이터 글 정리), NIT 5 반영 → 2라운드 MUST·SHOULD 0.
 - 근거: `.omc/reports/2026-10-18-nightly-batch.md`(로컬), 계획 `.omc/plan/2026-10-18-nightly-batch.md`.
-
----
 
 ---
 

@@ -1,8 +1,6 @@
 """월별 투입률의 API 경로: 최적화 결과에 달별 값이 실리고, 교체는 그 값을 이어받고, 서명은 그 값까지 묶는다."""
 import json
 
-from api.deps import get_openai_client_or_none
-from api.main import app
 from api.plan_token import sign_plan, verify_plan
 from core.optimize.milp import MilpParams
 
@@ -54,7 +52,7 @@ def test_plan_token_binds_monthly_values_and_ignores_empty_ones():
     assert verify_plan(t_plain, "v", "A", [{**plain[0], "monthly_alloc": None}], {}, p)
 
 
-def test_whatif_on_a_valid_monthly_roster_reports_no_false_violations(client):
+def test_whatif_on_a_valid_monthly_roster_reports_no_false_violations(client, ai_client):
     """정상 월별 명단의 교체 검토는 '교체 전에도 위반'이 아니어야 한다(평가기가 달별로 검사)."""
     meta = client.get("/api/meta").json()
     g = client.app.state.dataset.graph
@@ -69,11 +67,8 @@ def test_whatif_on_a_valid_monthly_roster_reports_no_false_violations(client):
     body = {"entries": [{"person_id": same[0], "project_id": pa.id, "alloc": mean, "monthly_alloc": prof}],
             "swap": {"out_person_id": same[0], "in_person_id": same[1], "project_id": pa.id},
             "weights": {}, "milp_params": {"allocation_mode": "monthly", "min_alloc": 0.2}}
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
-    try:
+    with ai_client(None):
         res = client.post("/api/whatif", json=body)
-    finally:
-        app.dependency_overrides.pop(get_openai_client_or_none, None)
     assert res.status_code == 200, res.text
     out = res.json()
     assert out["new_violations"] == [] and out["feasible"] is True

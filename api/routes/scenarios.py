@@ -99,7 +99,8 @@ def classify(dataset, project_id: str, rows: list[dict], *, predecessor: str | N
                          "parent_team": pid in parent_team,
                          "current_projects": [{"project_id": p, "end_month_index": e} for p, e in mine]})
     for cat in out:
-        out[cat].sort(key=lambda x: (not (x["predecessor_team"] or x["parent_team"]), -x["delta_total"]))
+        # 등급 대체 후보(2026-10-21)는 같은 갈래에서 등급이 맞는 후보 뒤 -- 대체는 "어쩔 수 없을 때"
+        out[cat].sort(key=lambda x: (not (x["predecessor_team"] or x["parent_team"]), bool(x.get("grade_swap")), -x["delta_total"]))
     return out
 
 
@@ -167,14 +168,17 @@ def rescore_unchanged(graph, S, C, params, entries, project_id: str, rows: list[
     base = evaluate_plan(graph, S, C, params, entries)
     base_parts, base_gaps = _parts(base), _seat_gaps(graph, base)
     out = []
+    graphs: dict = {}                  # 같은 대체·예산이면 그래프 하나(같은 등급 후보는 대체가 같다)
     for r in rows:
         drop = {(r["person_id"], src) for src in r.get("pulled_from", [])}
         new = [e for e in entries if (e.person_id, e.project_id) not in drop] + [
             AssignEntry(person_id=r["person_id"], project_id=project_id, alloc=r["alloc"])]
-        after = evaluate_plan(graph, S, C, params, new)
+        # 등급 대체(2026-10-21): 다른 등급 빈자리를 메우는 후보는 위반이 아니라 대체 -- 확정 뒤 정원·예산으로 채점한다
+        g_r, swaps, budget_add = swap_graph(graph, project_id, entries, new, cache=graphs)
+        after = evaluate_plan(g_r, S, C, params, new)
         a = _parts(after)
         d = {k: a[k] - base_parts[k] for k in a}
-        after_gaps = _seat_gaps(graph, after)
+        after_gaps = _seat_gaps(g_r, after)
         # 새로 생기거나 커진 위반 -- 확정(routes/workspace.apply)과 같은 판정(api.violation_diff)
         sim = {"new_violations": sorted({(v.code, v.location) for v in new_or_worse(base.violations, after.violations)})}
         partners = [{"person_id": t, "name": names.get(t, t), **term}
@@ -184,9 +188,31 @@ def rescore_unchanged(graph, S, C, params, entries, project_id: str, rows: list[
                     "skill_delta": round(d.get("skill", 0.0), 4),
                     "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
                     "seat_effects": seat_effects(graph, base_gaps, after_gaps), "partners": partners,
-                    "new_violations": [list(v) for v in sim["new_violations"]], "budget_added": 0})
-    out.sort(key=lambda x: (bool(x["new_violations"]), -x["delta_total"], x["person_id"]))
+                    "new_violations": [list(v) for v in sim["new_violations"]], "budget_added": budget_add,
+                    **({"grade_swap": swaps} if swaps else {})})
+    # 위반 없는 후보 → 그중 등급이 맞는 후보 먼저(대체는 "어쩔 수 없을 때" -- 사용자 2026-10-21) → 점수
+    out.sort(key=lambda x: (bool(x["new_violations"]), bool(x.get("grade_swap")), -x["delta_total"], x["person_id"]))
     return out
+
+
+def swap_graph(graph, project_id: str, before, after, *, cache: dict | None = None):
+    """손 편성(before → after)의 등급 대체를 적용한 그래프·대체 목록·월 예산 증액(대체가 있을 때 예산을 넘는 만큼 -- 사용자 결정
+    "예산을 넘으면 증액을 함께 적자"). 대체가 없으면 (graph, [], 0). 확정(`routes/workspace.post_apply`)이 같은 규칙으로 맞춰 본다."""
+    from core.evaluate.grade_swap import graph_with_seats, overrun, plan_swaps, swapped_need, team_grades
+    j = graph.projects[graph.project_index[project_id]]
+    grade_of = {p.id: p.grade.value for p in graph.people}
+    need = {g.value: c for g, c in j.grade_headcount.items()}
+    swaps = plan_swaps(need, team_grades(before, project_id, grade_of), team_grades(after, project_id, grade_of))
+    if not swaps:
+        return graph, [], 0
+    budget_add = overrun(graph, project_id, after)
+    key = (tuple((s["seat"], s["grade"], s["count"]) for s in swaps), budget_add)
+    if cache is not None and key in cache:
+        return cache[key], swaps, budget_add
+    g = graph_with_seats(graph, project_id, swapped_need(need, swaps), budget_add)
+    if cache is not None:
+        cache[key] = g
+    return g, swaps, budget_add
 
 
 # 사람 단위 위반(사업 정원·예산은 긴급 투입 확정이 apply_hint로 늘려 메운다 -- 그 둘은 보강 계산의 판정을 그대로 둔다)
@@ -278,10 +304,12 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
     pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
     entries_after = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
         AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
+    # 등급 대체(2026-10-21): 고른 사람이 다른 등급 빈자리를 메우면 확정 뒤 정원(대체 적용)·예산(넘친 만큼 증액)으로 판정한다
+    g2, swaps, budget_add = swap_graph(graph, project_id, base, entries_after)
     before = evaluate_plan(graph, S, C, params, base)
-    after = evaluate_plan(graph, S, C, params, entries_after)
+    after = evaluate_plan(g2, S, C, params, entries_after)
     sim = {"entries": entries_after, "delta": {k: v - _parts(before)[k] for k, v in _parts(after).items()}}
-    j = graph.projects[graph.project_index[project_id]]
+    j = g2.projects[g2.project_index[project_id]]
     grade_of = {p.id: p.grade.value for p in graph.people}
     need = {g.value: n for g, n in j.grade_headcount.items()}
     filled: dict[str, int] = {}
@@ -298,13 +326,13 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
     unfilled = float(d.get("unfilled", 0.0))
     return {"seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in [x.value for x in Grade]
                       if need.get(g, 0) or filled.get(g, 0)},
-            "seat_effects": seat_effects(graph, _seat_gaps(graph, before), _seat_gaps(graph, after)),
+            "seat_effects": seat_effects(graph, _seat_gaps(graph, before), _seat_gaps(g2, after)),
             "delta_total": round(d["total"], 4), "skill_delta": round(d.get("skill", 0.0), 4),
             "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
             "unfilled_seats_delta": int(round(unfilled / params.slack_penalty)) if params.slack_penalty else 0,
             # 새로 생기거나 커진 위반(확정과 같은 판정) -- 확정하면 거절될 이유를 미리 보인다
             "new_violations": [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)],
-            "pairs": pairs}
+            "pairs": pairs, "grade_swaps": swaps, "budget_add": budget_add}
 
 
 async def _candidates(request: Request, dataset: ActiveDataset, project_id: str, picks: list[PickIn], top: int) -> dict:
@@ -334,10 +362,12 @@ async def _candidates(request: Request, dataset: ActiveDataset, project_id: str,
         pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
         entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
             AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
-        rows = rank_candidates(dataset.graph, S, C, params, entries, project_id, include_pull=True, top=top,
+        # 고른 사람의 등급 대체를 먼저 적용한 정원·예산에서 나머지 후보를 채점한다(2026-10-21 -- 대체한 자리를 또 빈자리로 세지 않게)
+        gp = swap_graph(dataset.graph, project_id, base, entries)[0] if picks else dataset.graph
+        rows = rank_candidates(gp, S, C, params, entries, project_id, include_pull=True, top=top,
                                locked=_locked(dataset))
         rows = [split_unfilled(r, params.slack_penalty)
-                for r in rescore_unchanged(dataset.graph, S, C, params, entries, project_id, rows, names=names)]
+                for r in rescore_unchanged(gp, S, C, params, entries, project_id, rows, names=names)]
         groups = classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
         draft = draft_summary(dataset.graph, S, C, params, base, project_id, picks, names) if picks else None
         return groups, draft
@@ -411,21 +441,24 @@ def _augmented(request: Request, dataset, project_id: str, extra: list[dict], n:
 
 
 def _apply_hint(graph, project_id: str, entries_before, entries_after, extra: list[dict], n: int) -> dict:
-    """확정할 때 데이터에 적을 증원(등급 정원·월 예산)과 더할 기술 -- 적지 않으면 평가기가 정원·예산 초과로 본다."""
+    """확정할 때 데이터에 적을 증원(등급 정원·월 예산)과 더할 기술 -- 적지 않으면 평가기가 정원·예산 초과로 본다.
+    2026-10-21 등급 대체: 다른 등급 빈자리가 있으면 그 자리를 넘친 등급으로 먼저 메우고(`grade_swaps`, 확정 때 사유를 받는다 --
+    예전엔 넘친 등급 정원만 늘려 원래 빈자리가 남았다), 남은 넘침만 증원한다. 확정(`routes/workspace.post_apply`)이 같은 함수로 맞춰 본다."""
+    from core.evaluate.grade_swap import plan_swaps, swapped_need, team_grades
     j = graph.projects[graph.project_index[project_id]]
     grade_of = {p.id: p.grade.value for p in graph.people}
     rate = {p.id: p.monthly_rate for p in graph.people}
-    team: dict[str, int] = {}
-    for e in entries_after:
-        if e.project_id == project_id:
-            team[grade_of[e.person_id]] = team.get(grade_of[e.person_id], 0) + 1
-    need = {g.value: c for g, c in j.grade_headcount.items()}
+    team = team_grades(entries_after, project_id, grade_of)
+    need0 = {g.value: c for g, c in j.grade_headcount.items()}
+    swaps = plan_swaps(need0, team_grades(entries_before, project_id, grade_of), team)
+    need = swapped_need(need0, swaps)
     headcount_add = {g: c - need.get(g, 0) for g, c in team.items() if c > need.get(g, 0)}
     cost = sum(rate[e.person_id] * e.alloc for e in entries_after if e.project_id == project_id)
     budget_add = max(0, math.ceil(cost - j.monthly_budget - 1e-9))
     return {"headcount_add": {project_id: headcount_add} if headcount_add else {},
             "budget_add": {project_id: budget_add} if budget_add else {},
-            "skills_add": {project_id: [{**s, "headcount": n} for s in extra]} if extra else {}}
+            "skills_add": {project_id: [{**s, "headcount": n} for s in extra]} if extra else {},
+            **({"grade_swaps": {project_id: swaps}} if swaps else {})}
 
 
 @router.post("/api/emergency/plan")
@@ -565,15 +598,20 @@ def emergency_draft(graph, S, C, params, base, project_id: str, picks: list[Emer
 
     from api.routes.justification import with_names
     from api.violation_diff import new_or_worse
+    from core.evaluate.grade_swap import graph_with_seats, swapped_need
     from core.evaluate.plan_eval import evaluate_plan
-    from core.evaluate.staffing_sim import graph_with_extra_seats
     from core.optimize.types import AssignEntry
     pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
     after_entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
         AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
     hint = _apply_hint(graph, project_id, base, after_entries, extra, len(picks))
-    add = {Grade(g): c for g, c in (hint["headcount_add"].get(project_id) or {}).items()}
-    g2 = graph_with_extra_seats(graph, project_id, add, hint["budget_add"].get(project_id, 0))
+    # 확정 뒤 정원 = 등급 대체를 적용한 정원 + 증원(정원 표에 있는 등급만 -- 예전 graph_with_extra_seats와 같은 규칙)
+    j0 = graph.projects[graph.project_index[project_id]]
+    need = swapped_need({g.value: c for g, c in j0.grade_headcount.items()}, (hint.get("grade_swaps") or {}).get(project_id, []))
+    for g, c in (hint["headcount_add"].get(project_id) or {}).items():
+        if g in need:
+            need[g] += c
+    g2 = graph_with_seats(graph, project_id, need, hint["budget_add"].get(project_id, 0))
     grants = {pk.person_id for pk in picks if pk.grant}
     if grants:
         g2 = dc_replace(g2, people=[p.model_copy(update={"max_concurrent": max(2, p.max_concurrent)}) if p.id in grants else p

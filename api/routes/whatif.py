@@ -32,6 +32,9 @@ class WhatifRequest(BaseModel):
     weights: dict[str, Annotated[int, Field(ge=1, le=5)]] = {}
     milp_params: MilpParamsIn = MilpParamsIn()
     dataset_version: str | None = None      # 화면이 본 데이터셋. 다르면 409(K9)
+    # What-if(지금 배치, 2026-10-21): 지금 배치 → 이 명단을 확정할 때와 같은 등급 대체(사유를 받을 것)·예산 증액을 적용해 평가한다.
+    # 안 A~D 다듬기(연간 계획 ②)는 끈 채로 둔다 -- 거기서는 등급이 바뀐 교체가 지금처럼 경고로 보인다.
+    grade_swap: bool = False
 
 
 def _swapped_entries(graph: MemoryGraph, entries: list[EntryIn],
@@ -123,8 +126,9 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
     before_entries, after_entries = _swapped_entries(graph, req.entries, req.swap)
-    before = _evaluate(graph, S, C, params, before_entries)
-    after = _evaluate(graph, S, C, params, after_entries)
+    g_before, g_after, swaps, budget = substituted(graph, dataset, req, before_entries, after_entries)
+    before = _evaluate(g_before, S, C, params, before_entries)
+    after = _evaluate(g_after, S, C, params, after_entries)
 
     old_violations = {(v.code, v.location) for v in before.violations}
     new_violations = [asdict(v) for v in after.violations
@@ -173,8 +177,27 @@ def whatif(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
         "new_violations": new_violations,
         "new_shortfalls": new_shortfalls,
         "feasible": not after.violations,
-        "briefing": _named(clamp_briefing({**briefing, "risks": source_loss_notes(req.swap, new_shortfalls)
+        "briefing": _named(clamp_briefing({**briefing, "risks": grade_swap_notes(swaps) + source_loss_notes(req.swap, new_shortfalls)
                                                        + list(briefing.get("risks") or [])}), dataset),
         "fallback_used": fallback_used,
         "fallback_reason": fallback_reason if fallback_used else None,
+        "grade_swaps": swaps, "budget_add": budget,
     }
+
+
+def substituted(graph, dataset, req: WhatifRequest, before_entries, after_entries):
+    """grade_swap이면 지금 배치 대비 등급 대체·예산 증액을 적용한 (교체 전 그래프, 교체 뒤 그래프, 뒤의 대체, 뒤의 증액) -- 확정 미리 계산과 같은
+    `core.evaluate.grade_swap.substitution`. 아니면 원래 그래프 그대로."""
+    if not req.grade_swap:
+        return graph, graph, {}, {}
+    from core.evaluate.grade_swap import substitution
+    current = [AssignEntry(person_id=c.person_id, project_id=c.project_id, alloc=c.alloc) for c in dataset.current]
+    g_before = substitution(graph, current, before_entries)[0]
+    g_after, swaps, budget = substitution(graph, current, after_entries)
+    return g_before, g_after, swaps, budget
+
+
+def grade_swap_notes(swaps: dict) -> list[str]:
+    """등급 대체를 위험 항목 맨 앞에 정해진 문장으로(AI 지시문은 바꾸지 않는다 -- source_loss_notes와 같은 방식)."""
+    return [f"등급 대체 — {jid}의 {s['seat']} 자리 {s['count']}개를 {s['grade']}으로 채운다(확정할 때 사유를 적고 그 사업 정원이 바뀐다)"
+            for jid, xs in swaps.items() for s in xs]

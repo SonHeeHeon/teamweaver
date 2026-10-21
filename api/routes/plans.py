@@ -127,8 +127,8 @@ def apply_one(graph: MemoryGraph, S, C, params, weights: dict, entries, swap,
     return apply_step(graph, S, C, params, weights, entries, swap, ubs)
 
 
-def _evaluated(graph, S, C, params, weights, before_entries, after_entries, ubs) -> dict:
-    before = _evaluate(graph, S, C, params, before_entries)
+def _evaluated(graph, S, C, params, weights, before_entries, after_entries, ubs, *, g_before=None) -> dict:
+    before = _evaluate(g_before if g_before is not None else graph, S, C, params, before_entries)
     after = _evaluate(graph, S, C, params, after_entries)
     unfilled = _unfilled(after.shortfalls)
     feasible = not after.violations
@@ -165,6 +165,13 @@ def apply_swap(req: WhatifRequest, graph: MemoryGraph = Depends(get_graph),
     params = req.milp_params.to_milp_params()
     eng = ScoringEngine(graph)
     S, C = eng.skill_matrix(req.weights), eng.synergy_matrix()
+    if req.grade_swap:
+        # What-if(지금 배치): 검토(/api/whatif)와 같은 등급 대체·증액을 적용해 평가한다(2026-10-21)
+        from api.routes.whatif import substituted
+        before_entries, after_entries = _swapped_entries(graph, req.entries, req.swap)
+        g_before, g_after, swaps, budget = substituted(graph, dataset, req, before_entries, after_entries)
+        out = _evaluated(g_after, S, C, params, req.weights, before_entries, after_entries, None, g_before=g_before)
+        return {**out, "grade_swaps": swaps, "budget_add": budget}
     return apply_one(graph, S, C, params, req.weights, req.entries, req.swap)
 
 

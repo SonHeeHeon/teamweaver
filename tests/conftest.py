@@ -33,7 +33,15 @@ def _no_real_ai_calls():
     real = cc.Completions.create
 
     def blocked(self, *args, **kwargs):
-        raise RuntimeError("시험 중 실제 AI 호출을 막았다 -- tests/api의 ai_client 픽스처나 dependency_overrides로 가짜를 넣어라")
+        raise RuntimeError("시험 중 실제 AI 호출을 막았다 -- ai_client 픽스처(tests/ai_override.py)로 가짜를 넣어라")
     cc.Completions.create = blocked
     yield
     cc.Completions.create = real
+
+
+@pytest.fixture
+def ai_client():
+    """`with ai_client(fake) as used:` -- 설명 AI 클라이언트를 바꾼 채 실행한다(가짜·None). 라우트가 실제로 쥔 함수를 모두 바꾸고,
+    끝나면 직전 override로 되돌린다. `used`는 라우트가 그 값을 받아 간 횟수(tests/ai_override.py)."""
+    from tests.ai_override import override_ai
+    return override_ai

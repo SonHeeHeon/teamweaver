@@ -3,6 +3,7 @@ import type {
   AgreementStatus, BodyCheck, EditPatch, Judgment, ReviewDocView, ReviewFact, ReviewNote,
 } from "./reviewApi";
 import { fallbackLabel } from "./reviewApi";
+import { Spinner } from "../ui";
 
 /** 인사팀 검토 자료(A 문서형, 2026-10-19 사용자 선택 -- 시안 justification-layout.html).
  *  세 층을 눈으로 구분한다: 시스템 사실(잠김·회색) · 본문(AI 초안 → 부서장 수정, 노란 밑줄) · 부서장 의견·해명(초록 줄)·이의(빨간 줄).
@@ -148,6 +149,12 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
   const [bodyText, setBodyText] = useState("");
   useEffect(() => { setD(draftOf(doc)); setEditingBody(false); }, [doc]);
   const can = editable && !doc.reverted;
+  /** 누른 버튼(AI 초안·PDF·저장)에 "…중"을 보인다 -- AI 초안은 수십 초 걸릴 수 있다(2026-10-21 사용자 요청 2 "로딩 액션") */
+  const [doing, setDoing] = useState<null | "draft" | "pdf" | "save">(null);
+  const act = async (what: "draft" | "pdf" | "save", fn: () => Promise<void>) => {
+    setDoing(what);
+    try { await fn(); } finally { setDoing(null); }
+  };
   // 본문 편집창이 열려 있으면(아직 "본문 반영" 전) 그것도 저장 안 한 변경이다 -- PDF·AI가 응답으로 편집을 덮지 않게(Codex 리뷰)
   const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(doc)) || editingBody;
   const name = (id: string) => doc.names[id] ?? id;
@@ -195,7 +202,7 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
       </header>
       {doc.reverted && (
         <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
-          이 확정은 되돌려졌습니다. 자료는 읽기만 할 수 있고 내보낼 수 없습니다.
+          {doc.cancelled ? "이 확정은 취소됐습니다(변경 이력의 확정 취소)." : "이 확정은 되돌려졌습니다."} 자료는 읽기만 할 수 있고 내보낼 수 없습니다.
         </p>
       )}
       {doc.history === "out_of_history" && (
@@ -228,8 +235,9 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
               {onDraft && <button type="button" className="btn" disabled={busy || !doc.active || dirty}
                                   title={!doc.active ? "이후 다른 변경이 있어 새 초안을 만들 수 없습니다"
                                     : dirty ? "저장하지 않은 변경이 있습니다 -- 먼저 저장합니다" : undefined}
-                                  onClick={() => void onDraft(Boolean(doc.body_ai))}>
-                {doc.body_ai ? "AI 초안 다시 만들기" : "AI 초안 만들기"}
+                                  onClick={() => void act("draft", () => onDraft(Boolean(doc.body_ai)))}>
+                {doing === "draft" ? <Spinner status={false} label="AI 초안 쓰는 중…(보통 10초 안팎)" />
+                  : doc.body_ai ? "AI 초안 다시 만들기" : "AI 초안 만들기"}
               </button>}
               {!editingBody && <button type="button" className="btn" onClick={() => { setBodyText(d.body ?? doc.body_ai ?? ""); setEditingBody(true); }}>본문 고치기</button>}
             </div>
@@ -327,9 +335,10 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
         <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-paper py-3">
           {dirty && <span className="text-[12.5px] text-amber-700">저장하지 않은 변경이 있습니다</span>}
           <button type="button" className="btn-primary" disabled={busy || editingBody || JSON.stringify(d) === JSON.stringify(draftOf(doc))}
-                  onClick={() => void save()}>저장</button>
+                  onClick={() => void act("save", save)}>{doing === "save" ? <Spinner status={false} label="저장 중…" /> : "저장"}</button>
           {onPdf && <button type="button" className="btn" disabled={busy || dirty} title={dirty ? "먼저 저장합니다" : undefined}
-                            onClick={() => void onPdf()}>PDF 내보내기</button>}
+                            onClick={() => void act("pdf", onPdf)}>
+            {doing === "pdf" ? <Spinner status={false} label="PDF 만드는 중…" /> : "PDF 내보내기"}</button>}
         </div>
       )}
       </fieldset>

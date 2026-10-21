@@ -536,3 +536,199 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
     write_manifest(files, m)
     rehash(files)
     return files, changes
+
+
+def swap_grade_seats(files: Files, swaps: list[dict]) -> Files:
+    """등급 대체(2026-10-21 사용자 결정 "위 아래 모두 허용하고, 사유는 전부 받고, 예산을 넘으면 증액을 함께 적자"): 사업마다 자리 등급 −n,
+    들어간 등급 +n(정원 표). 자리가 모자라면 EditError. 사유는 확정 이력 summary에 남는다(정원·예산은 확정 취소·되돌리기가 함께 돌린다)."""
+    files = _copy(files)
+    h, rows = read_table(files, GRADE_REQS)
+    for s in swaps:
+        pid, seat, grade, n = s["project_id"], s["seat"], s["grade"], int(s["count"])
+        if seat not in GRADES or grade not in GRADES or seat == grade or n <= 0:
+            raise EditError(f"등급 대체가 아니다: {pid} {seat} → {grade} ×{n}")
+        row = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == seat), None)
+        if row is None or int(row["headcount"]) < n:
+            raise EditError(f"{pid}의 {seat} 정원이 {n}보다 적어 대체할 수 없다")
+        row["headcount"] = str(int(row["headcount"]) - n)
+        got = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == grade), None)
+        if got is None:
+            rows.append({"project_id": pid, "career_grade": grade, "headcount": str(n)})
+        else:
+            got["headcount"] = str(int(got["headcount"]) + n)
+    write_table(files, GRADE_REQS, h, rows)
+    rehash(files)
+    return files
+
+
+# --- 확정 취소(2026-10-21 사용자 요청 3 "확정한거 취소 … 되돌리기는 되돌리고 싶은 버전까지 다 되돌려야") ---------------
+# 확정 한 건을 git revert처럼 지금 판 위에서 거꾸로 적용한다: 그 확정 직전 판(B)·확정 판(A)·지금 판(N)을 칸마다 비교해
+# N이 A와 같으면(확정 뒤로 아무도 안 건드림) B로 돌리고, 다르면(그 뒤 다른 변경) 건드리지 않고 "건너뜀"으로 알린다.
+# 빼 온 사람은 원래 사업으로 돌아간다(사용자 결정 2026-10-21). 긴급 투입의 증원·요구 기술·동시 수행 허용도 같은 규칙.
+
+def _assign_map(files: Files) -> dict[tuple[str, str], dict]:
+    _, rows = current_table(files)
+    return {(str(r.get("person_id") or "").strip(), str(r.get("project_id") or "").strip()): r for r in rows
+            if r.get("person_id") and r.get("project_id")}
+
+
+def _alloc(r: dict | None) -> float | None:
+    return None if r is None else round(float(r.get("alloc") or 0), 6)
+
+
+def _grade_map(files: Files) -> dict[tuple[str, str], int]:
+    if GRADE_REQS not in files:
+        return {}
+    _, rows = read_table(files, GRADE_REQS)
+    return {(r["project_id"], r["career_grade"]): int(r["headcount"]) for r in rows if r.get("project_id") and r.get("career_grade")}
+
+
+def _budget_map(files: Files) -> dict[str, int]:
+    _, rows = read_table(files, PROJECTS)
+    return {r["project_id"]: int(float(r["monthly_budget"])) for r in rows if r.get("project_id") and r.get("monthly_budget")}
+
+
+def _skill_map(files: Files) -> dict[tuple[str, str], dict]:
+    if SKILL_REQS not in files:
+        return {}
+    _, rows = read_table(files, SKILL_REQS)
+    return {(r["project_id"], r["skill_name"].strip().lower()): r for r in rows if r.get("project_id") and r.get("skill_name")}
+
+
+def _grant_map(files: Files) -> dict[str, dict]:
+    return {e["person_id"]: e for e in concurrency_of(read_manifest(files))}
+
+
+def _skill_key(r: dict | None):
+    return None if r is None else (r.get("skill_name", "").strip(), str(r.get("min_experience_months", "")).strip(),
+                                   str(r.get("headcount", "")).strip())
+
+
+def _grant_key(e: dict | None):
+    return None if e is None else int(e.get("max_projects", 1))
+
+
+def revert_ops(before: Files, after: Files, now: Files) -> tuple[list[dict], list[dict]]:
+    """확정(before → after)을 지금 판(now) 위에서 거꾸로 돌릴 작업 목록과 건너뛸 목록. 각 항목:
+    {op: "assign"|"grade"|"budget"|"skill"|"grant", key: 문자열 열쇠, ids: [관련 사람·사업 ID], from: 지금 값, to: 돌릴 값, why?}.
+    값 없음(None) = 행이 없다. why: "changed"(그 뒤 다른 변경) · "locked"(그 뒤 고정한 배치)."""
+    ops: list[dict] = []
+    skipped: list[dict] = []
+    # 지금 판에 없는 사람·사업(떨어짐·인사 자료에서 빠짐)으로는 되돌릴 수 없다 -- 그 작업만 건너뛴다(폴백 리뷰 S1: 묶음 검증이 통째로 실패했다)
+    _, people_now = read_table(now, "people.csv")
+    _, projects_now = read_table(now, PROJECTS)
+    alive = ({str(r.get("person_id") or "").strip() for r in people_now}
+             | {str(r.get("project_id") or "").strip() for r in projects_now})
+
+    def three_way(kind: str, b: dict, a: dict, n: dict, norm, ids_of) -> None:
+        for key in sorted(set(b) | set(a), key=str):
+            vb, va = norm(b.get(key)), norm(a.get(key))
+            if vb == va:
+                continue
+            vn = norm(n.get(key))
+            item = {"op": kind, "key": "@".join(key) if isinstance(key, tuple) else key, "ids": ids_of(key),
+                    "from": vn, "to": vb, "confirmed": va}
+            if vn != va:
+                skipped.append({**item, "why": "changed"})
+            elif vb is not None and not set(item["ids"]) <= alive:
+                skipped.append({**item, "why": "gone"})
+            elif kind == "assign" and n.get(key) is not None and is_locked(n[key]):
+                skipped.append({**item, "why": "locked"})
+            else:
+                ops.append(item)
+
+    three_way("assign", _assign_map(before), _assign_map(after), _assign_map(now), _alloc, lambda k: [k[0], k[1]])
+    three_way("grade", _grade_map(before), _grade_map(after), _grade_map(now), lambda v: v, lambda k: [k[0]])
+    bb, ba, bn = _budget_map(before), _budget_map(after), _budget_map(now)
+    # 사업 행 자체가 지금 없으면(떨어짐 등) 예산은 돌릴 곳이 없다 -- 건너뜀
+    three_way("budget", {k: v for k, v in bb.items() if k in ba}, {k: v for k, v in ba.items() if k in bb},
+              {k: v for k, v in bn.items()}, lambda v: v, lambda k: [k])
+    three_way("skill", _skill_map(before), _skill_map(after), _skill_map(now), _skill_key, lambda k: [k[0]])
+    three_way("grant", _grant_map(before), _grant_map(after), _grant_map(now), _grant_key, lambda k: [k])
+    for s in skipped:                                   # 예산은 사업 행이 없어진 경우도 "changed"로 잡힌다
+        if s["op"] == "budget" and s["from"] is None:
+            s["why"] = "gone"
+    return ops, skipped
+
+
+def apply_revert(before: Files, now: Files, ops: list[dict]) -> Files:
+    """revert_ops가 고른 작업만 지금 판에 적용한 새 판. 돌릴 값(B)의 원문 행을 그대로 쓴다(잠김 표시 포함)."""
+    files = _copy(now)
+    by = {}
+    for o in ops:
+        by.setdefault(o["op"], {})[o["key"]] = o
+    if "assign" in by:
+        h, rows = current_table(files)
+        b = {f"{p}@{j}": r for (p, j), r in _assign_map(before).items()}
+        keep = []
+        done = set()
+        for r in rows:
+            k = f"{str(r.get('person_id') or '').strip()}@{str(r.get('project_id') or '').strip()}"
+            o = by["assign"].get(k)
+            if o is None:
+                keep.append(r)
+            elif o["to"] is not None:
+                keep.append({**r, "alloc": b[k]["alloc"]})
+                done.add(k)
+            else:
+                done.add(k)                              # 확정이 넣은 배치 -- 뺀다
+        for k, o in by["assign"].items():
+            if k not in done and o["to"] is not None:   # 확정이 뺀 배치 -- 원래대로 다시 넣는다
+                keep.append({**b[k], "locked": b[k].get("locked") or "N"})
+        write_table(files, CURRENT, h, keep)
+    if "grade" in by:
+        h, rows = read_table(files, GRADE_REQS)
+        out, seen = [], set()
+        for r in rows:
+            k = f"{r.get('project_id')}@{r.get('career_grade')}"
+            o = by["grade"].get(k)
+            seen.add(k)
+            if o is None:
+                out.append(r)
+            elif o["to"] is not None:
+                out.append({**r, "headcount": str(o["to"])})
+        for k, o in by["grade"].items():
+            if k not in seen and o["to"] is not None:
+                pid, g = k.split("@", 1)
+                out.append({"project_id": pid, "career_grade": g, "headcount": str(o["to"])})
+        write_table(files, GRADE_REQS, h, out)
+    if "budget" in by:
+        h, rows = read_table(files, PROJECTS)
+        for r in rows:
+            o = by["budget"].get(r.get("project_id"))
+            if o is not None:
+                r["monthly_budget"] = str(o["to"])
+        write_table(files, PROJECTS, h, rows)
+    if "skill" in by:
+        h, rows = read_table(files, SKILL_REQS)
+        b = {f"{p}@{s}": r for (p, s), r in _skill_map(before).items()}
+        out, seen = [], set()
+        for r in rows:
+            k = f"{r.get('project_id')}@{(r.get('skill_name') or '').strip().lower()}"
+            o = by["skill"].get(k)
+            seen.add(k)
+            if o is None:
+                out.append(r)
+            elif o["to"] is not None:
+                out.append(b[k])
+        for k, o in by["skill"].items():
+            if k not in seen and o["to"] is not None:
+                out.append(b[k])
+        write_table(files, SKILL_REQS, h, out)
+    m = read_manifest(files)
+    if "grant" in by:
+        b = _grant_map(before)
+        grants = {e["person_id"]: e for e in concurrency_of(m)}
+        for pid, o in by["grant"].items():
+            if o["to"] is None:
+                grants.pop(pid, None)
+            else:
+                grants[pid] = dict(b[pid])
+        if grants:
+            m["concurrency"] = sorted(grants.values(), key=lambda e: e["person_id"])
+        else:
+            m.pop("concurrency", None)
+    _refresh_bench(files, m)
+    write_manifest(files, m)
+    rehash(files)
+    return files

@@ -37,7 +37,10 @@ import { BaselineCard } from "./components/BaselineCard";
 import { EmergencyScreen } from "./scenarios/EmergencyScreen";
 import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
-import { datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { AnnualSteps, datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
+import { ConfirmChanges } from "./components/ConfirmChanges";
+import { CurrentWhatif } from "./whatif/CurrentWhatif";
+import { currentEntries, fetchWorkspace } from "./scenarios/workspaceApi";
 import { withPeople } from "./components/headcount";
 import { horizonRange } from "./components/allocFormat";
 import { ExportRecordDialog } from "./components/ExportRecordDialog";
@@ -81,6 +84,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   }, []);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
+  /** 상황 화면이 데이터를 바꿔 편성안을 닫았을 때 그 화면 이름(What-if 빈 화면이 이유를 보인다, 2026-10-21 사용자 질문) */
+  const [closedBy, setClosedBy] = useState<string | null>(null);
+  /** 연간 계획 "이 안으로 확정"(2026-10-21 화면 검토 P1-1): 확정 창을 띄운 안과, 확정 뒤 안내 문장 */
+  const [planConfirmOpen, setPlanConfirmOpen] = useState(false);
+  const [planConfirmed, setPlanConfirmed] = useState<string | null>(null);
+  /** 지금 배치(작업 데이터) -- 안 A~D가 지금 대비 몇 명을 옮기는지(P1-2). 백지면 빈 목록, 읽지 못하면 null */
+  const [currentBase, setCurrentBase] = useState<AssignEntry[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   // 새로 푸는 계산의 실행 번호(SSE start) -- "계산 멈추기"가 쓴다. 캐시·미리 계산이면 없다(멈출 것이 없다).
@@ -201,6 +211,15 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     refreshAdmin();
   }, []);
 
+  // 지금 배치(작업 데이터) -- 안 A~D의 "지금 대비 옮김"(2026-10-21 P1-2). 데이터 판이 바뀔 때마다 다시 읽는다(편집할 수 없는 데이터면 비교하지 않음)
+  useEffect(() => {
+    if (!dataset?.version) { setCurrentBase(null); return; }
+    let live = true;
+    fetchWorkspace().then((w) => { if (live) setCurrentBase(w.editable ? currentEntries(w) : null); })
+      .catch(() => { if (live) setCurrentBase(null); });
+    return () => { live = false; };
+  }, [dataset?.version]);
+
   // 관리자 탭을 열 때마다 로그인 상태를 다시 본다(세션 만료·다른 탭의 로그아웃 반영).
   useEffect(() => {
     if (tab === "settings" || tab === "data" || tab === "records" || tab === "reviews") refreshAdmin();
@@ -227,6 +246,9 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setRunning(false);
     setRecordOperating(null);
     setSubTab("roster");
+    setClosedBy(null);
+    setPlanConfirmed(null);
+    setPlanConfirmOpen(false);
     // 인원이 바뀌면 자동 계산 시간도 바뀐다 -- 설정 탭이 이전 데이터 기준 값을 보이지 않게 다시 읽는다(리뷰 S2).
     fetchSettings().then(setSettings).catch(() => {});
     try {
@@ -253,10 +275,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     }
   }
 
-  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다. */
-  async function ownSwitch() {
+  /** 상황 화면(신규 사업 편성·긴급 투입)이 직접 데이터를 바꾼 뒤 -- 새 판을 읽되 "다른 사용자가 바꿨다" 경고는 띄우지 않는다.
+   *  편성안이 있었으면 닫힌 이유를 What-if 빈 화면에 남긴다(편성안은 계산한 판에 묶여 새 판에서는 교체 검토·PDF가 맞지 않는다). */
+  async function ownSwitch(by?: string) {
+    const hadPlans = plans.length > 0;
     try {
       await datasetSwitched(await fetchActiveDataset());
+      if (hadPlans && by) setClosedBy(by);
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -278,6 +303,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     setStopping(false);
     setStoppedNote(null);
     setError(null);
+    setClosedBy(null);
+    setPlanConfirmed(null);
     setPlans([]);
     setAltShortfall(null);
     commitEdits({});
@@ -318,7 +345,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
           setPlans((prev) => [...prev, ev.data]);
           void restoreEdits(ev.data, gen);
           setSelected((cur) => cur ?? ev.data.label);
-          setTab("whatif");
+          setTab("plans");
         } else if (ev.event === "done") {
           const requested = ev.data.requested_alternatives;
           const found = Math.max(0, ev.data.count - 1);
@@ -353,7 +380,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     await datasetSwitched(res.dataset);
     setWeights(res.request.weights);
     setRecordOperating((res.operating_params as unknown as PlacementSettings | null) ?? null);
-    setTab("whatif");
+    setTab("plans");
     await run(false, { request: res.request, datasetVersion: res.dataset.version });
   }
 
@@ -656,7 +683,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   const edit = selected ? edits[selected] : undefined;
 
   const horizon = meta ? horizonRange(meta.horizon_start, meta.horizon_months ?? 6) : "";
-  const pageContext = tab === "whatif" && dataset
+  const pageContext = tab === "plans" && dataset
     ? `${withPeople(datasetLabel(dataset), dataset.people)} · 사업 ${dataset.projects}건${horizon ? ` · 계획 기간 ${horizon}` : ""}`
     : undefined;
   const showResults = plans.length > 0 || running;
@@ -668,9 +695,14 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                  adminLogout().catch(() => {}).finally(() => (onLoggedOut ? onLoggedOut() : window.location.reload()));
                } : null} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <PageHeader tab={tab} context={pageContext} actions={tab === "whatif" && current ? (
+        <PageHeader tab={tab} context={pageContext} actions={tab === "plans" && current ? (
           <>
             <button className="btn" onClick={() => setExportOpen(true)}>편성 기록 내보내기</button>
+            {dataset && (
+              <button className="btn" onClick={() => setPlanConfirmOpen(true)} disabled={running}
+                      title="이 안(화면에서 바꾼 것 포함)을 지금 배치(작업 데이터)로 확정합니다 -- 그 뒤 신규 사업 편성·긴급 투입·What-if로 이어집니다">
+                안 {current.label}로 확정</button>
+            )}
             <button className="btn-primary" disabled={pdfBusy} onClick={() => (kgData ? setPdfAsk(true) : void downloadPdf(false))}>
               {pdfBusy ? (pdfJustify && kgData ? "PDF 생성 중…(사업별 소명 포함, 1~2분)" : "PDF 생성 중…") : "PDF 내려받기"}
             </button>
@@ -697,12 +729,18 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         {tab === "pipeline" && <NightlyBanner refreshKey={dataset?.version ?? ""} />}
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
-                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+                             datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("신규 사업 편성"); }}
                              onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
         </div>
         <div className={tab === "emergency" ? "" : "hidden"}>
-          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch(); }}
+          <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("긴급 투입"); }}
                            onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
+        </div>
+        {/* What-if(지금 배치, 2026-10-21): 담은 변경이 메뉴를 오가도 남게 숨김 방식 */}
+        <div className={tab === "whatif" ? "" : "hidden"}>
+          <CurrentWhatif active={tab === "whatif"} datasetVersion={dataset?.version ?? null} meta={meta}
+                         settings={settings ? effectiveSettings(settings) : null}
+                         onDatasetChanged={() => { void ownSwitch("What-if"); }} onReviewDoc={openReviewDoc} />
         </div>
         {error && (
           <p className="mb-4 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
@@ -771,17 +809,25 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
               {settingsError ? "배치 설정을 불러오지 못했다." : "배치 설정을 불러오는 중…"}
             </p>
           )
-        ) : tab === "pipeline" || tab === "emergency" ? null : tab === "skills" ? (
+        ) : tab === "pipeline" || tab === "emergency" || tab === "whatif" ? null : tab === "skills" ? (
           <SkillMapTab datasetVersion={meta.dataset_version} onDatasetChanged={() => void externalSwitch()} />
         ) : tab === "annual" ? (
-          <RequirementsTab meta={meta} weights={weights} onWeightsChange={setWeights}
+          <>
+          <AnnualSteps tab={tab} onTab={setTab} hasPlans={plans.length > 0} />
+          <RequirementsTab meta={meta}
                            onRun={run} running={running} operating={dataset?.scenario === "operating"}
                            onStop={runId ? () => void stopRunning() : null} stopping={stopping}
                            onOpenOperating={() => setTab("pipeline")} />
+          </>
         ) : !showResults ? (
-          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} />
+          <>
+          <AnnualSteps tab={tab} onTab={setTab} hasPlans={false} />
+          <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} closedBy={closedBy}
+                       confirmed={planConfirmed} />
+          </>
         ) : (
           <div className="space-y-5">
+            <AnnualSteps tab={tab} onTab={setTab} hasPlans />
             {plans.length > 0 && planBasis && settings && (
               planBasis.params === null
               || describeChanges(planBasis.params, effectiveSettings(settings)).length > 0) && (
@@ -821,7 +867,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
               </p>
             )}
             <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan}
-                       editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))} />
+                       editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))}
+                       baseline={currentBase ?? undefined} />
             {altShortfall && (
               <p className="mt-2 text-xs text-slate-500">
                 {altShortfall.solverFailed
@@ -855,7 +902,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                                    onAdjust={planBasis?.params?.allocation_mode === "full" ? undefined : applyAllocChange}
                                    busy={applyBusy}
                                    minAlloc={planBasis?.params?.min_alloc ?? 0.2} horizonStart={meta.horizon_start}
-                                   unfilled={current.unfilled} />
+                                   unfilled={current.unfilled} baseline={currentBase ?? undefined} />
                   {planBasis?.params?.allocation_mode === "full" && current.unfilled.length > 0 && (
                     <div className="mt-4">
                       <ConcurrencyPanel datasetVersion={planBasis.datasetVersion} entries={current.entries}
@@ -890,7 +937,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                       meta={meta} datasetVersion={planBasis.datasetVersion} entries={current.entries}
                       applied={edit && original ? { base: original.entries, steps: edit.history.map(stepBody) } : null}
                       weights={planBasis.weights} params={planBasis.params} planLabel={original?.label ?? current.label}
-                      planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()} />
+                      planToken={original?.plan_token ?? null} onDatasetChanged={() => void externalSwitch()}
+                      visible={subTab === "justify"} />
                   </div>
                 )}
                 <div className={subTab === "baseline" ? "" : "hidden"}>
@@ -917,6 +965,22 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
           배치 명단·점수·교체 이력이 담긴 PDF를 만듭니다. 사업마다 "왜 이 팀인가"를 설명하는 <b>인사팀 소명</b>을 함께 넣을까요?
           넣으면 AI가 사업마다 글을 써서 1~2분 더 걸립니다(이미 써 둔 글은 다시 쓰지 않습니다).
         </Dialog>
+      )}
+      {planConfirmOpen && current && dataset && (
+        <ConfirmChanges datasetVersion={dataset.version} entries={current.entries} source="plan" projects={meta?.projects}
+                        title={`안 ${current.label}을(를) 지금 배치로 확정`}
+                        lead={currentBase && currentBase.length > 0
+                          ? "이 안은 모두를 처음부터 다시 짠 결과라 지금 배치에서 많은 사람이 옮겨질 수 있습니다. 아래 수를 확인하고 확정하세요. 몇 명만 바꾸려면 What-if나 신규 사업 편성의 자동 편성(K)이 맞습니다."
+                          : "이 안이 지금 배치가 됩니다. 그 뒤 신규 사업 편성·긴급 투입·What-if로 이어서 씁니다."}
+                        note={`연간 계획 확정: 안 ${current.label}${edit?.history.length ? ` + 변경 ${edit.history.length}건` : ""}`}
+                        onClose={() => setPlanConfirmOpen(false)}
+                        onStale={() => { setPlanConfirmOpen(false); void externalSwitch(); }}
+                        onDone={(msg) => {
+                          const label = current.label;
+                          setPlanConfirmOpen(false);
+                          void ownSwitch().then(() => setPlanConfirmed(
+                            `안 ${label}을(를) 지금 배치로 ${msg} 이제 신규 사업 편성·긴급 투입·What-if에서 이어서 씁니다.`));
+                        }} />
       )}
       {exportOpen && current && planBasis && (
         <ExportRecordDialog

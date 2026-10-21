@@ -145,6 +145,13 @@ class History:
         self._write([])
 
 
+def cancelled_keys(entries: list[dict]) -> set[tuple[str, str]]:
+    """이력에 남은 확정 취소 판이 가리키는 확정 (판 버전, 확정 시각) -- 같은 명단을 다시 확정하면 판 버전이 같아지므로 시각까지 본다
+    (2026-10-21 확정 취소). 취소 판을 되돌리기로 꺼내면 여기서 빠져 그 확정이 다시 살아난다."""
+    return {(str(s.get("target_version")), str(s.get("target_at"))) for e in entries if e.get("kind") == "cancel"
+            for s in (e.get("summary") or {},)}
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -255,8 +262,14 @@ async def undo(request: Request) -> dict:
         def prepare(_a) -> None:
             hist.pop()
             # 되돌린 판을 남긴다 -- 인사팀 검토 자료가 "되돌려짐"을 이력 추정이 아니라 이 기록으로 판정한다(claude-a 2026-10-19, 폴백 리뷰)
-            from api.review_docs import record_undone
-            record_undone(str(entries[-1].get("version")))
+            from api.review_docs import CONFIRM_KINDS, record_cancelled, record_undone
+            popped = entries[-1]
+            # 확정만 "되돌려짐"으로 남긴다 -- 취소 판은 앞 판과 같은 버전일 수 있어 다른 확정을 잠갔다(폴백 리뷰 S4)
+            if popped.get("kind") in CONFIRM_KINDS:
+                record_undone(str(popped.get("version")))
+            elif popped.get("kind") == "cancel":           # 취소를 무르면 그 확정이 다시 살아난다
+                summary = popped.get("summary") or {}
+                record_cancelled(str(summary.get("target_version")), str(summary.get("target_at")), False)
         active, report, persist_error = await _activate_blob(request, data, prepare=prepare)
         state.workspace_files = (active.info.version, _read_zip(data))
         return {"dataset": active.info.to_dict(), "report": report, "persisted": persist_error is None,

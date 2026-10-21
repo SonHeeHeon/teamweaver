@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { VIOLATION_LABEL } from "../scenarios/pickView";
 import { DatasetChangedError } from "../api/client";
 import type { AssignEntry, BaselineResult, BaselineSummary } from "../api/types";
 
@@ -29,7 +30,8 @@ function fmt(v: number | null | undefined, digits = 2): string {
 
 function violations(v: Record<string, number>): string {
   const n = Object.values(v).reduce((a, b) => a + b, 0);
-  return n === 0 ? "없음" : `${n}건 (${Object.entries(v).map(([k, c]) => `${k} ${c}`).join(", ")})`;
+  // 내부 코드(budget 등) 대신 화면 말로(2026-10-21 화면 검토 -- 후보 표 "넣으면 위반"과 같은 이름)
+  return n === 0 ? "없음" : `${n}건 (${Object.entries(v).map(([k, c]) => `${VIOLATION_LABEL[k] ?? k} ${c}`).join(", ")})`;
 }
 
 export function BaselineCard({ entries, load, onDatasetChanged, active = true }: Props) {
@@ -79,7 +81,8 @@ export function BaselineCard({ entries, load, onDatasetChanged, active = true }:
               {ROWS.map((r) => {
                 const a = res.optimized[r.key] as number | null, b = res.baseline[r.key] as number | null;
                 const d = a != null && b != null ? a - b : null;
-                const good = d == null || r.better == null ? null : (r.better === "up" ? d > 1e-9 : d < -1e-9);
+                // 차이가 없으면 색을 칠하지 않는다(빈자리 0 → 0이 빨갛게 보였다)
+                const good = d == null || r.better == null || Math.abs(d) <= 1e-9 ? null : (r.better === "up" ? d > 0 : d < 0);
                 return (
                   <tr key={r.key} className="border-t border-slate-100">
                     <td className="py-1">{r.label}</td>

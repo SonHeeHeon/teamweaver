@@ -19,8 +19,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from api.admin import admin_id, require_admin
 from api.deps import get_openai_client_or_none
-from api.review_docs import (AGREEMENT, ReviewDocError, ReviewDocStore, build_doc, confirm_entries, confirms, history_state, now,
-                             view)
+from api.review_docs import (AGREEMENT, ReviewDocError, ReviewDocStore, build_doc, confirm_cancelled, confirm_entries, confirms,
+                             history_state, now, view)
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,13 +32,14 @@ def _history():
 
 
 def _find_confirm(version: str) -> dict | None:
-    return next((c for c in confirms(_history().entries()) if c["version"] == version), None)
+    return next((c for c in reversed(confirms(_history().entries())) if c["version"] == version), None)   # 같은 버전이면 최신 확정
 
 
 def _names_view(doc: dict, *, history: str, active: bool) -> dict:
     from api.routes.justification import with_names
     names = doc.get("names") or {}
-    out = view(doc, reverted=history == "reverted", active=active, history=history)
+    out = view(doc, reverted=history == "reverted", active=active, history=history,
+               cancelled=history == "reverted" and confirm_cancelled(_history().entries(), doc["confirm"]["version"]))
     out["facts"] = [{**f, "text": with_names(f["text"], names)} for f in out["facts"]]
     if out.get("exported_facts"):
         out["exported_facts"] = [{**f, "text": with_names(f["text"], names)} for f in out["exported_facts"]]
@@ -68,6 +69,8 @@ def list_review_docs(request: Request) -> dict:
     out = []
     seen_versions = set()
     for c in reversed(confirms(entries)):
+        if c["version"] in seen_versions:       # 취소 뒤 같은 명단을 다시 확정하면 같은 판 버전이 두 번 나온다 -- 최신 것만
+            continue
         seen_versions.add(c["version"])
         try:
             before, after = confirm_entries(hist, c, graph if c["version"] == active_version else None)
@@ -82,8 +85,9 @@ def list_review_docs(request: Request) -> dict:
             projects.append({"project_id": pid, "name": name, "exists": d is not None, "status": (d or {}).get("status"),
                              "movers": sum(1 for j in (d or {}).get("moves", {}).get("joined", []) if j["origin"] == "moved"),
                              "objections": sum(1 for n in (d or {}).get("notes", []) if n.get("type") == "objection")})
+        gone = confirm_cancelled(entries, c["version"])       # 확정 취소(2026-10-21) -- 이력에 남지만 잠근다
         out.append({**{k: c[k] for k in ("version", "kind", "at", "note")}, "active": c["version"] == active_version,
-                    "reverted": False, "projects": projects})
+                    "reverted": gone, "cancelled": gone, "projects": projects})
     # 되돌려진 확정의 자료도 목록에 남긴다(열 수는 있고 내보내기는 잠김)
     for (v, pid), d in sorted(stored.items(), key=lambda kv: kv[1]["confirm"].get("at") or "", reverse=True):
         if v in seen_versions:

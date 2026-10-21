@@ -5,7 +5,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_graph, get_openai_client_or_none, get_sqlite_conn
+from api.deps import get_graph, get_sqlite_conn
 from api.main import app
 from core.domain.models import (
     Dataset, Grade, Person, Project, ProjectPhase, Sector, SkillRequirement,
@@ -28,7 +28,7 @@ def _project(pid, budget=10_000, headcount=None):
 
 
 @pytest.fixture
-def tiny_client(tmp_path):
+def tiny_client(tmp_path, ai_client):
     people = [_person("p0", python=2), _person("p1", python=4),
               _person("p2", avail=0.3), _person("p3", grade=Grade.SENIOR),
               _person("p4", rate=5_000)]
@@ -39,8 +39,7 @@ def tiny_client(tmp_path):
     conn = sqlite3.connect(tmp_path / "tiny.db", check_same_thread=False)
     app.dependency_overrides[get_graph] = lambda: graph
     app.dependency_overrides[get_sqlite_conn] = lambda: conn
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
-    with TestClient(app) as c:
+    with ai_client(None), TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
     conn.close()

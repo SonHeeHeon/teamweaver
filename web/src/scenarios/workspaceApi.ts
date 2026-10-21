@@ -25,7 +25,20 @@ export interface PipelineItem extends ProjectItem {
   parent?: string | null; external_headcount?: number;
 }
 export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean; addons?: string[] }
-export interface HistoryEntry { version: string; at: string; kind: string; note: string }
+export interface HistoryEntry { version: string; at: string; kind: string; note: string;
+  /** 확정 취소(2026-10-21): 이 확정을 취소한 판이 이력에 있다 · 지금 취소할 수 있다(확정이고 직전 판이 남아 있음) */
+  cancelled?: boolean; cancellable?: boolean;
+  /** 그 확정이 사람을 새로 넣은 사업(확정만) -- "지금 팀" 옆 확정 취소가 이 사업의 마지막 확정을 찾는다 */
+  projects?: string[];
+  /** 그 확정이 사업마다 새로 넣은 사람 -- "지금 팀"에 아직 남은 사람을 넣은 확정을 고른다 */
+  joined?: Record<string, string[]> }
+/** 확정 취소 미리 보기 -- 돌릴 것·건너뛸 것(그 뒤 다른 변경)·위반이라 하지 않을 것(대기로 남음)·남는 새 위반 */
+export interface CancelPreview {
+  target: { version: string; kind: string; note: string; at: string };
+  revert: string[]; skipped: string[]; dropped: string[]; new_violations: string[]; ok: boolean;
+  /** 취소할 수 없는 까닭(되돌릴 것이 남지 않음 · 새 위반) -- ok면 null */
+  blocked?: string | null;
+}
 /** 프로젝트 동시 수행 허용 사유(2026-10-19 사용자 결정 -- 사람 단위, 사유 필수). core/ingest/concurrency.REASONS와 같다. */
 export const CONCURRENCY_REASONS = ["인력 부족", "기술 지원", "긴급 지원", "기타"] as const;
 export type ConcurrencyReason = (typeof CONCURRENCY_REASONS)[number];
@@ -63,7 +76,11 @@ export interface CandidateRow {
   skill_delta?: number; collab_delta?: number;
   /** 이 사업에서 함께하게 될 사람과의 쌍 중 계산에 들어가는 것(협업은 두 사람 사이 값이다) */
   partners?: (PairTerm & { person_id: string; name: string })[];
+  /** 이 사람을 넣으면 다른 등급 빈자리를 메우는 등급 대체(2026-10-21) -- 위반이 아니라 확정 때 사유를 받아 정원을 바꾼다 */
+  grade_swap?: GradeSwap[];
 }
+/** 등급 대체(2026-10-21 사용자 결정 "위 아래 모두 허용, 사유는 전부, 예산을 넘으면 증액"): seat 자리를 grade 사람으로 count개 */
+export interface GradeSwap { seat: Grade; grade: Grade; count: number }
 export interface SeatEffect { project_id: string; name: string; change: number }
 /** synergy = 협업 시너지(함께 일한 경력·서로 남긴 평가, 상위 쌍만), familiar = 최근 너무 오래 함께해 익숙한 쌍 감점 */
 export interface PairTerm { kind: "synergy" | "familiar"; value: number; c?: number }
@@ -72,6 +89,8 @@ export interface DraftSummary {
   seats: PipelineItem["seats"]; seat_effects: SeatEffect[]; delta_total: number; skill_delta: number; collab_delta: number;
   unfilled_seats_delta: number; new_violations: string[];
   pairs: (PairTerm & { a: string; a_name: string; b: string; b_name: string })[];
+  /** 신규 사업: 고른 사람으로 생기는 등급 대체와, 대체가 있을 때 예산을 넘는 만큼의 월 예산 증액(확정에 그대로 보낸다) */
+  grade_swaps?: GradeSwap[]; budget_add?: number;
 }
 export interface Pick { person_id: string; alloc: number; pulled_from: string[] }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
@@ -84,6 +103,8 @@ export interface StandbyRow { person_id: string; name: string; grade: Grade; all
 export interface ApplyHint {
   headcount_add: Record<string, Partial<Record<Grade, number>>>; budget_add: Record<string, number>;
   skills_add: Record<string, SkillNeed[]>;
+  /** 빈자리를 다른 등급으로 메우는 대체(사업별) -- 확정 때 사유를 붙여 grade_swaps로 보낸다. 남은 넘침만 headcount_add(증원) */
+  grade_swaps?: Record<string, GradeSwap[]>;
 }
 export interface EmergencyPlan {
   dataset_version: string; project_id: string; skills: string[]; added_requirements: { name: string }[];
@@ -158,9 +179,19 @@ export const postApply = (v: string, body: { entries: AssignEntry[]; note?: stri
   /** 긴급 투입 "무슨 일인지" 원문 -- 검토 자료 상황 메모의 처음 값(AI에 보내지 않음) */
   situation?: string;
   source: "auto" | "manual" | "emergency" | "plan";
-  concurrency_add?: { person_id: string; memo?: string; reason?: ConcurrencyReason }[] } & Partial<ApplyHint>) =>
+  concurrency_add?: { person_id: string; memo?: string; reason?: ConcurrencyReason }[];
+  /** 등급 대체(사유 필수) -- 서버가 같은 규칙으로 다시 계산해 맞춰 본다 */
+  grade_swaps?: (GradeSwap & { project_id: string; reason: string })[] } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
     "/api/workspace/apply", json("POST", { dataset_version: v, ...body }));
+/** 확정 전 미리 계산(2026-10-21): 지금 배치 → entries를 확정하면 생길 옮김·등급 대체·예산 증액·새 위반·고정 충돌(데이터는 그대로) */
+export interface PreviewMove { person_id: string; name: string; from: string[]; to: string[] }
+export interface ConfirmPreview {
+  dataset_version: string; moved: PreviewMove[]; joined: PreviewMove[]; left: PreviewMove[]; changed: boolean;
+  grade_swaps: Record<string, GradeSwap[]>; budget_add: Record<string, number>; new_violations: string[]; locked_dropped: string[];
+}
+export const postPreview = (v: string, entries: AssignEntry[], signal?: AbortSignal) =>
+  call<ConfirmPreview>("/api/workspace/preview", { ...json("POST", { dataset_version: v, entries }), signal });
 export const postConcurrency = (v: string, personId: string, allow: boolean, reason?: ConcurrencyReason, memo?: string,
                                 maxProjects: 2 | 3 = 2) =>
   call<WithWs>("/api/workspace/concurrency", json("POST", { dataset_version: v, person_id: personId, allow,
@@ -174,6 +205,12 @@ export interface ShortfallHint { project_id: string; grade: Grade; missing: numb
 export const fetchConcurrencyCandidates = (v: string, entries: AssignEntry[], weights: Record<string, number> = {}) =>
   call<{ dataset_version: string; shortfalls: ShortfallHint[] }>("/api/concurrency/candidates",
                                                                json("POST", { dataset_version: v, entries, weights }));
+export const fetchCancelPreview = (v: string, h: { version: string; at: string }, signal?: AbortSignal) =>
+  call<CancelPreview>(`/api/workspace/cancel?dataset_version=${encodeURIComponent(v)}&version=${encodeURIComponent(h.version)}`
+                      + `&at=${encodeURIComponent(h.at)}`, { signal });
+export const postCancel = (v: string, h: { version: string; at: string }) =>
+  call<WithWs & { cancel: CancelPreview }>("/api/workspace/cancel",
+                                          json("POST", { dataset_version: v, target_version: h.version, target_at: h.at }));
 export const postUndo = (v: string) => call<WithWs>("/api/workspace/undo", json("POST", { dataset_version: v }));
 /** 후보 세 갈래. picks(넣기로 고른 사람)가 있으면 그 사람들을 팀원으로 친 다시 채점 + 고른 사람 전체 미리 계산(draft) -- 데이터는 바뀌지 않는다. */
 export const fetchCandidates = (id: string, v: string, picks: Pick[] = []) =>

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from fastapi.testclient import TestClient
 
-from api.deps import get_evidence, get_graph, get_openai_client_or_none, get_sqlite_conn
+from api.deps import get_evidence, get_graph, get_sqlite_conn
 from api.main import app
 from core.datagen.generator import generate_dataset
 from core.datagen.parse_reviews import parse_reviews_rule_based
@@ -17,7 +17,7 @@ from core.graph.sqlite_store import build_sqlite
 
 
 @pytest.fixture
-def shared_conn_client(tmp_path):
+def shared_conn_client(tmp_path, ai_client):
     ds = generate_dataset(15, 3, seed=1)
     parsed = parse_reviews_rule_based(ds.reviews)
     graph = MemoryGraph.build(ds, parsed)
@@ -30,8 +30,7 @@ def shared_conn_client(tmp_path):
     app.dependency_overrides[get_graph] = lambda: graph
     app.dependency_overrides[get_sqlite_conn] = lambda: conn
     app.dependency_overrides[get_evidence] = lambda: None
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None     # 규칙 설명 -- 근거 조회만 겹치게
-    with TestClient(app) as c:
+    with ai_client(None), TestClient(app) as c:                     # 규칙 설명 -- 근거 조회만 겹치게
         yield c, ds
     app.dependency_overrides.clear()
     conn.close()

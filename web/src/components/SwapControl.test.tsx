@@ -52,6 +52,19 @@ describe("SwapControl", () => {
       out_person_id: "p000", in_person_id: "p001", project_id: "j01",
     });
   });
+
+  it("교체 대상은 사업마다 묶고, 항목에는 사업 이름 없이 이름·등급·코드만(사용자 2026-10-21)", () => {
+    const es: AssignEntry[] = [
+      { person_id: "p001", project_id: "J2", alloc: 1 }, { person_id: "p000", project_id: "J1", alloc: 1 },
+      { person_id: "p002", project_id: "J2", alloc: 1 },
+    ];
+    const projects = [{ id: "J1", name: "포털", start_month: 0, end_month: 5 }, { id: "J2", name: "차세대", start_month: 0, end_month: 5 }] as never;
+    render(<SwapControl people={people} entries={es} onSwap={() => {}} busy={false} projects={projects} />);
+    const groups = [...screen.getByLabelText("교체 대상").querySelectorAll("optgroup")];
+    expect(groups.map((g) => g.label)).toEqual(["J1 포털", "J2 차세대"]);   // 사업 코드순
+    expect([...groups[1].querySelectorAll("option")].map((o) => [o.value, o.textContent]))
+      .toEqual([["p001::J2", "이 (고급) · J2"], ["p002::J2", "박 (초급) · J2"]]);
+  });
 });
 
 describe("resolveDrop — 드래그 드롭 규칙", () => {

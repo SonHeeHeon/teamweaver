@@ -212,7 +212,7 @@ def test_list_has_one_doc_per_target_project(yearend):
         assert [j["person_id"] for j in d15["moves"]["joined"]] == [BENCH2]
 
 
-def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
+def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch, ai_client):
     """검토 자료 AI 초안 = 짧은 요약 + 사실 검사(2026-10-20 사용자 "간단 명료하게 요약 … 사실에 근거한 정보만 있는지 검토하는 프로세스"):
     AI는 한 번(요약만, 긴 본문은 부르지 않는다), 저장한 글은 검사기를 다시 통과한 것이고 인용 사실이 기록된다."""
     from api.main import app
@@ -226,9 +226,7 @@ def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
         return {"summary": render(raw, inp), "summary_method": "graphrag", "summary_fallback_reason": None, "summary_raw": raw}
     monkeypatch.setattr("api.rag.justification.generate_summary", fake_summary)
     monkeypatch.setattr("api.rag.justification.generate_justification", lambda *a, **k: full.append(1))
-    from api.routes import review_docs as rd       # 라우트가 쥔 의존성 함수(api.deps를 다시 불러온 시험이 있어도 맞게)
-    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
-    try:
+    with ai_client(SimpleNamespace()):
         with TestClient(app) as c:
             v = _confirm(c, source="emergency")
             doc = _create(c, v)
@@ -248,8 +246,6 @@ def test_draft_uses_ai_once_and_keeps_manager_body(yearend, monkeypatch):
             c.post(f"/api/review-docs/{v}/{TGT}/draft", params={"force": True})
             got = c.get(f"/api/review-docs/{v}/{TGT}").json()
             assert len(calls) == 2 and got["body"] == "부서장 본문"
-    finally:
-        app.dependency_overrides.clear()
 
 
 def test_draft_without_ai_is_a_checked_rule_summary(yearend):
@@ -265,20 +261,16 @@ def test_draft_without_ai_is_a_checked_rule_summary(yearend):
 
 
 def _draft_with(c, monkeypatch, fake, *, busy=False):
-    from api.main import app
     import api.routes.justification as jr
-    import api.routes.review_docs as rd             # 라우트가 쥔 의존성 함수(다른 시험이 api.deps를 다시 불러와도 맞게)
+    from tests.ai_override import override_ai
     monkeypatch.setattr("api.rag.justification.generate_summary", fake)
     if busy:
         monkeypatch.setattr(jr.AI_SLOTS, "acquire", lambda blocking=False: False)
-    app.dependency_overrides[rd.get_openai_client_or_none] = lambda: SimpleNamespace()
-    try:
+    with override_ai(SimpleNamespace()):
         v = _confirm(c, source="emergency")
         _create(c, v)
         # 저장소는 시험 세션 데이터 폴더에 있어 같은 확정 판이면 이전 시험의 초안이 남는다 -- 새로 만든다
         return c.post(f"/api/review-docs/{v}/{TGT}/draft", params={"force": True}).json()
-    finally:
-        app.dependency_overrides.clear()
 
 
 def _rule_after_verify(client, model, inp, **kw):

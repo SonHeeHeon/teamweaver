@@ -206,7 +206,7 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
                          onChange={(e) => set({ grades: { ...form.grades, [g]: Math.max(0, Number(e.target.value)) } })} />
                 </label>
               ))}
-              <p className="col-span-2 text-xs text-slate-500">0을 적은 등급은 이 사업에 넣지 않는다는 뜻이다.</p>
+              <p className="col-span-2 text-xs text-slate-500">0을 적은 등급은 자동 편성이 넣지 않는다. 손으로 고른 사람이 다른 등급 빈자리를 메우면 확정할 때 사유를 받아 그 자리를 이 등급으로 바꾼다(등급 대체).</p>
             </div>
           )}
           {step === 3 && (

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { AllocChange, AssignEntry, Person, Project } from "../api/types";
 import { formatAlloc, formatMonthly, monthLabel } from "./allocFormat";
 import { LifecycleChips } from "./LifecycleChips";
-import { projectPeriod } from "./lifecycle";
+import { absoluteMonth, projectPeriod } from "./lifecycle";
 import { practicalCredits, skillChips } from "./skillLabel";
 import { ProjectCode } from "../ui";
+import { rosterDiff } from "./rosterDiff";
 
 interface Props {
   entries: AssignEntry[];
@@ -19,6 +20,8 @@ interface Props {
   horizonStart?: string | null;
   /** 결과의 빈자리("J003:중급:1명 미충원") -- 카드에 빈자리 수, "빈자리 있는 사업 먼저" 정렬 */
   unfilled?: string[];
+  /** 지금 배치(작업 데이터). 주면 새로 들어온·옮긴 사람에 표시를 붙이고 사업마다 빠진 사람을 적는다(2026-10-21 -- 운영 중 안 A~D·What-if) */
+  baseline?: AssignEntry[];
 }
 
 
@@ -94,7 +97,8 @@ function vacancies(unfilled: string[] | undefined): Map<string, number> {
 
 /** 배치 명단(2026-10-20 사용자 "프로젝트 당 인력 나열을 최소화해서 … 한 모니터 화면에 많이 담았으면"): 사업 카드 = 머리 한 줄 + 이름표 줄,
  *  카드를 여러 열로. 오른쪽에서 정렬·이름 찾기. 이름표를 누르면 기술 창. 전일 투입(100%)은 숫자를 보이지 않는다(100%가 아닌 옛 기록만). */
-export function AssignmentTable({ entries, people, projects, onAdjust, busy, minAlloc = 0.2, horizonStart, unfilled }: Props) {
+export function AssignmentTable({ entries, people, projects, onAdjust, busy, minAlloc = 0.2, horizonStart, unfilled, baseline }: Props) {
+  const diff = baseline && baseline.length ? rosterDiff(baseline, entries) : null;
   const pName = new Map(people.map((p) => [p.id, p]));
   const jById = new Map(projects.map((j) => [j.id, j]));
   const [editing, setEditing] = useState<string | null>(null);
@@ -125,10 +129,11 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
   const hits = q ? entries.filter((e) => hit(e.person_id)) : [];
   const ordered = [...byProject.entries()].sort(([a, la], [b, lb]) => {
     const ja = jById.get(a), jb = jById.get(b);
-    const startOf = (j?: Project) => j?.period?.start ?? String(j?.start_month ?? 0).padStart(7, "0");
-    const endOf = (j?: Project) => j?.period?.end ?? String(j?.end_month ?? 0).padStart(7, "0");
-    const by = sort === "start" ? startOf(ja).localeCompare(startOf(jb))
-      : sort === "end" ? endOf(ja).localeCompare(endOf(jb))
+    // 시작·끝은 절대 달 번호 하나로 비교한다(원래 기간과 계획 안 순번을 섞지 않는다 -- lifecycle.absoluteMonth)
+    const at = (j: Project | undefined, w: "start" | "end") =>
+      !j ? Number.MAX_SAFE_INTEGER : absoluteMonth(j, w, horizonStart) ?? (w === "start" ? j.start_month : j.end_month);
+    const by = sort === "start" ? at(ja, "start") - at(jb, "start")
+      : sort === "end" ? at(ja, "end") - at(jb, "end")
       : sort === "size" ? lb.length - la.length
       : sort === "vacancy" ? (vac.get(b) ?? 0) - (vac.get(a) ?? 0) : 0;
     return by || a.localeCompare(b);
@@ -193,12 +198,16 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
                 {horizonStart && j && <span>{projectPeriod(j, horizonStart)}</span>}
                 {j && <LifecycleChips lc={j.lifecycle} name={j.name} />}
               </div>
+              {(diff?.leftBy.get(jid)?.length ?? 0) > 0 && (
+                <p className="text-[11.5px] text-red-700">빠짐(지금 배치 대비): {diff!.leftBy.get(jid)!.map((p) => pName.get(p)?.name ?? p).join(", ")}</p>
+              )}
               <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label={`${jid} 배치 명단`}>
                 {list.map((e) => {
                   const p = pName.get(e.person_id);
                   const key = `${e.person_id}-${e.project_id}`;
                   const name = p?.name ?? e.person_id;
                   const full = Math.abs(e.alloc - 1) < 1e-9 && !e.monthly_alloc;
+                  const t = diff?.tag.get(`${e.person_id}|${e.project_id}`);
                   return (
                     <li key={key} className="relative" data-skill-pop={skillsOf === key ? "" : undefined}>
                       <button type="button" onClick={() => setSkillsOf(skillsOf === key ? null : key)}
@@ -208,10 +217,12 @@ export function AssignmentTable({ entries, people, projects, onAdjust, busy, min
                                 : undefined}
                               className={`rounded-full border px-2 py-0.5 text-[12.5px] ${hit(e.person_id)
                                 ? "border-amber-500 bg-amber-100 ring-2 ring-amber-300"
+                                : t ? "border-sky-400 bg-sky-50"
                                 : concurrent.has(e.person_id) ? "border-violet-300 bg-violet-50" : "border-slate-200 bg-slate-50 hover:bg-slate-100"}`}>
                         <span className="text-slate-900">{name}</span>
                         <span className="ml-1 text-[11px] text-slate-500">{GRADE_SHORT[p?.grade ?? ""] ?? p?.grade}</span>
                         {concurrent.has(e.person_id) && <span className="ml-1 text-[11px] text-violet-700">동시 수행</span>}
+                        {t && <span className="ml-1 text-[11px] text-sky-800">{t.kind === "new" ? "새로" : t.kind === "moved" ? `옮김(${t.from.join("·")}에서)` : "추가"}</span>}
                         {!full && <span className="ml-1 tabular-nums text-[11px] text-slate-600">{formatAlloc(e.alloc)}</span>}
                       </button>
                       {e.monthly_alloc && (

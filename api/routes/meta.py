@@ -45,7 +45,9 @@ def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | No
                            start_month=j.start_month, end_month=j.end_month,
                            grade_headcount={g.value: n for g, n in j.grade_headcount.items()},
                            monthly_budget=j.monthly_budget,
-                           lifecycle=(lifecycle or {}).get(j.id), period=(periods or {}).get(j.id))
+                           lifecycle=(lifecycle or {}).get(j.id), period=(periods or {}).get(j.id),
+                           requirements=[{"skill": r.skill, "min_level": r.min_level, "headcount": r.headcount}
+                                         for r in j.requirements])
                 for j in graph.projects]
     return MetaResponse(people=people, projects=projects,
                         skills=sorted(graph.skill_index.keys()),

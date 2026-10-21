@@ -37,20 +37,22 @@ def _isolated(monkeypatch, tmp_path):
     monkeypatch.delenv(rj.REASONING_ENV, raising=False)
     monkeypatch.setattr(rj, "judge_reviews", lambda ds, parsed, **kw: list(parsed))
     # 설명 글 AI도 부르지 않는다: lifespan의 load_env는 이미 있는 값을 덮지 않으므로(setdefault) 닿지 않는 주소·가짜 키를 먼저 둔다.
-    # 밤 실행은 api.deps.get_openai_client_or_none을 직접 부르고, 화면 라우트는 의존성으로 부른다 -- 둘 다 기본 None.
+    # 밤 실행은 api.deps.get_openai_client_or_none을 직접 부르고, 화면 라우트는 의존성으로 부른다 -- 둘 다 기본 None
+    # (라우트 쪽은 이름이 아니라 라우트가 쥔 함수를 바꾼다 -- tests/ai_override.py).
     # AI가 필요한 시험은 fake_ai 픽스처로 바꾼다(2026-10-18: 이 막음이 없어 시험이 실제 외부 AI를 42번 불렀다).
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-real")
     monkeypatch.setenv("OPENAI_BASE_URL", "http://llm.invalid/v1")
     import api.deps as deps
-    original = deps.get_openai_client_or_none
-    monkeypatch.setattr(deps, "get_openai_client_or_none", lambda: None)
-    from api.main import app
-    app.dependency_overrides[original] = lambda: None
+    # 앱(라우트)을 이름 바꾸기 **전에** 불러 둔다 -- 이 파일의 시험만 따로 돌리면 앱이 아래 monkeypatch 뒤 처음 불려 라우트가 가짜 lambda를
+    # 쥐고, override_ai가 진짜 함수를 찾지 못했다(전체 실행에선 다른 시험이 먼저 불러 가려졌다, 2026-10-21)
+    import api.main  # noqa: F401
+    monkeypatch.setattr(deps, "get_openai_client_or_none", lambda: None)        # 밤 실행이 부르는 이름
+    from tests.ai_override import override_ai
     from api.admin import THROTTLE
     THROTTLE._state.clear()
     THROTTLE._inflight.clear()
-    yield tmp_path
-    app.dependency_overrides.pop(original, None)
+    with override_ai(None):                                                      # 화면 라우트가 쥔 의존성
+        yield tmp_path
 
 
 @pytest.fixture

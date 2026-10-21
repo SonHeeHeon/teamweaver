@@ -2,14 +2,16 @@ import type { ReactNode } from "react";
 import type { DatasetInfo } from "../api/types";
 import { Brand } from "./LoginScreen";
 
-/** 메뉴(2026-10-18 사용자 결정 — 3가지 핵심 상황 중심): 신규 사업 편성(가장 잦음, 첫 화면) · 긴급 투입 · 연간 계획(드묾),
- *  그 아래 편성안·분석과 관리. 상황 2·3 화면은 claude-b가 이 틀 위에 만든다 -- 그때까지는 운영 중 편성(K 비교·보강)이 그 자리에 있다. */
-export type Tab = "pipeline" | "emergency" | "annual" | "whatif" | "skills" | "reviews" | "records" | "data" | "settings";
+/** 메뉴(2026-10-18 사용자 결정 — 3가지 핵심 상황 중심): 신규 사업 편성(가장 잦음, 첫 화면) · 긴급 투입 · 연간 계획(드묾), 그 아래 지금 배치와 관리.
+ *  2026-10-21 사용자 "what if는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 … 지금의 화면은 연간 계획 화면과 맞물려있는 개념":
+ *  예전 What-if 대시보드(계산한 안 A~D 위에서 바꿔 보기)는 연간 계획 ② 편성안 비교·확정(`plans`)이 되고,
+ *  What-if(`whatif`)는 지금 실제 배치(작업 데이터)에서 바꿔 보는 새 화면이다. */
+export type Tab = "pipeline" | "emergency" | "annual" | "plans" | "whatif" | "skills" | "reviews" | "records" | "data" | "settings";
 
-export const NAV: { group: string; items: { id: Tab; label: string; hint?: string }[] }[] = [
+export const NAV: { group: string; items: { id: Tab; label: string; hint?: string; sub?: boolean }[] }[] = [
   { group: "핵심 상황", items: [{ id: "pipeline", label: "신규 사업 편성" }, { id: "emergency", label: "긴급 투입" },
-                                { id: "annual", label: "연간 계획", hint: "백지" }] },
-  { group: "편성안·분석", items: [{ id: "whatif", label: "What-if 대시보드" }, { id: "skills", label: "조직 기술 지도" }] },
+                                { id: "annual", label: "연간 계획", hint: "백지" }, { id: "plans", label: "편성안 비교·확정", sub: true }] },
+  { group: "지금 배치", items: [{ id: "whatif", label: "What-if" }, { id: "skills", label: "조직 기술 지도" }] },
   { group: "관리", items: [{ id: "reviews", label: "검토 자료" }, { id: "records", label: "편성 기록" }, { id: "data", label: "데이터" },
                            { id: "settings", label: "배치 설정" }] },
 ];
@@ -17,8 +19,9 @@ export const NAV: { group: string; items: { id: Tab; label: string; hint?: strin
 export const PAGE: Record<Tab, { title: string; sub: string }> = {
   pipeline: { title: "신규 사업 편성", sub: "발주 예정·제안 중인 사업에 팀을 꾸립니다 — 쉬는 인력, 끝나 가는 인력, 진행 사업에서 몇 명만 옮기기" },
   emergency: { title: "긴급 투입", sub: "진행 사업에 이슈가 생겼을 때 사람을 더 넣습니다 — 후보 순위와 최선 조합" },
-  annual: { title: "연간 계획", sub: "백지에서 기술 가중치를 정하고 편성안 A~D를 계산합니다" },
-  whatif: { title: "What-if 대시보드", sub: "편성안을 비교하고, 사람을 바꿔 보고, PDF로 냅니다" },
+  annual: { title: "연간 계획 · ① 조건·계산", sub: "사업마다 등급별 인원·요구 기술·예산을 확인하고 편성안 A~D를 계산합니다" },
+  plans: { title: "연간 계획 · ② 편성안 비교·확정", sub: "계산한 안 A~D를 비교하고, 사람을 바꿔 다듬고, 고른 안을 지금 배치로 확정하거나 PDF로 냅니다" },
+  whatif: { title: "What-if", sub: "지금 실제 배치에서 사람을 바꿔 보고 점수·규칙·팀 관계 변화를 봅니다 — 마음에 들면 확정합니다" },
   skills: { title: "조직 기술 지도", sub: "기술마다 실무 가능·숙련 인원과 요구 사업을 봅니다" },
   reviews: { title: "인사팀 검토 자료", sub: "확정한 편성마다 사업별 소명 자료를 고치고 PDF로 냅니다" },
   records: { title: "편성 기록", sub: "지난 편성을 파일로 내보내고 다시 열어 봅니다" },
@@ -59,11 +62,11 @@ export function Sidebar({ tab, onTab, dataset, user, onLogout }: SidebarProps) {
             <div className="hidden px-2 pb-1.5 pt-3.5 text-xs text-[#8FB0A5] md:block">{g.group}</div>
             {g.items.map((it) => (
               <button key={it.id} onClick={() => onTab(it.id)} aria-current={tab === it.id ? "page" : undefined}
-                      className={`flex w-full items-center justify-between whitespace-nowrap rounded-md px-2.5 py-[7px] text-left
-                                  text-sm ${tab === it.id
+                      className={`flex w-full items-center justify-between whitespace-nowrap rounded-md py-[7px] text-left
+                                  ${it.sub ? "pl-6 pr-2.5 text-[13px]" : "px-2.5 text-sm"} ${tab === it.id
                                     ? "bg-[#24504A] font-semibold text-white shadow-[inset_3px_0_0_#9FD0BE]"
                                     : "text-[#DCE7E2] hover:bg-[#1C443B]"}`}>
-                {it.label}
+                <span>{it.sub && <span aria-hidden className="mr-1 text-[#8FB0A5]">└</span>}{it.label}</span>
                 {it.hint && <small aria-hidden className="ml-3 hidden text-[11.5px] font-normal text-[#8FB0A5] md:inline">{it.hint}</small>}
               </button>
             ))}
@@ -89,6 +92,25 @@ export function Sidebar({ tab, onTab, dataset, user, onLogout }: SidebarProps) {
   );
 }
 
+/** 연간 계획 두 단계(2026-10-21): ① 조건·계산 → ② 편성안 비교·확정. 두 화면 위에 같은 줄로 보여 어디쯤인지 알게 한다. */
+export function AnnualSteps({ tab, onTab, hasPlans }: { tab: Tab; onTab: (t: Tab) => void; hasPlans: boolean }) {
+  const steps: [Tab, string][] = [["annual", "① 조건·계산"], ["plans", "② 편성안 비교·확정"]];
+  return (
+    <nav aria-label="연간 계획 단계" className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+      {steps.map(([id, label], i) => (
+        <span key={id} className="flex items-center gap-2">
+          {i > 0 && <span aria-hidden className="text-slate-400">→</span>}
+          <button type="button" onClick={() => onTab(id)} aria-current={tab === id ? "step" : undefined}
+                  className={`rounded-full border px-3 py-1 ${tab === id ? "border-ink bg-ink font-semibold text-white"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}>
+            {label}{id === "plans" && !hasPlans ? <span className="ml-1 text-xs font-normal opacity-70">(아직 없음)</span> : null}
+          </button>
+        </span>
+      ))}
+    </nav>
+  );
+}
+
 export function PageHeader({ tab, context, actions }: { tab: Tab; context?: ReactNode; actions?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line bg-paper px-4 py-4 md:px-8 md:pb-4 md:pt-6">
@@ -102,8 +124,12 @@ export function PageHeader({ tab, context, actions }: { tab: Tab; context?: Reac
 }
 
 /** 편성안이 아직 없을 때(사용자 지시 3: 빈 화면만 보이면 당황한다). 할 수 있는 일 두 가지를 버튼과 함께. */
-export function WhatifEmpty({ dataset, onCompute, onRecords }: {
+export function WhatifEmpty({ dataset, onCompute, onRecords, closedBy, confirmed }: {
   dataset: DatasetInfo | null; onCompute: () => void; onRecords: () => void;
+  /** 연간 계획 "이 안으로 확정" 뒤 안내(2026-10-21) */
+  confirmed?: string | null;
+  /** 상황 화면이 데이터를 바꿔 보던 편성안을 닫았으면 그 화면 이름(2026-10-21 사용자 "편성안이 없어졌어 … 다시 계산해야한다는거지?") */
+  closedBy?: string | null;
 }) {
   return (
     <div>
@@ -114,6 +140,16 @@ export function WhatifEmpty({ dataset, onCompute, onRecords }: {
         ))}
       </div>
       <section className="panel mx-auto mt-10 max-w-[640px] px-6 py-7 md:px-9 md:py-8" aria-labelledby="whatif-empty">
+        {confirmed && (
+          <p role="status" className="mb-4 rounded-md border border-pine-200 bg-pine-50 px-3 py-2.5 text-[13px] text-pine-800">{confirmed}</p>
+        )}
+        {closedBy && !confirmed && (
+          <p role="note" className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900">
+            <b>{closedBy}에서 데이터를 바꿔 보던 편성안을 닫았습니다.</b> 편성안은 계산할 때의 데이터(판)에 묶여 있어서, 사업이 늘거나 배치가 바뀐
+            새 판에서는 교체 검토·PDF가 맞지 않습니다. 새 판으로 다시 계산하세요 — 전체를 다시 짜려면 연간 계획, 신규 사업만 채워 보려면 신규 사업 편성의
+            자동 편성입니다. 편성 기록을 다시 열면 기록 당시 데이터로 돌아가 방금 바꾼 내용이 빠집니다.
+          </p>
+        )}
         <h2 id="whatif-empty" className="text-xl font-bold text-slate-900">아직 볼 편성안이 없습니다</h2>
         <p className="mt-1.5 text-slate-500">
           이 화면은 계산한 편성안을 보여 줍니다.
@@ -124,9 +160,9 @@ export function WhatifEmpty({ dataset, onCompute, onRecords }: {
           <div className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-line px-4 py-3.5">
             <div>
               <b className="block font-semibold">새로 계산하기</b>
-              <span className="text-[13px] text-slate-500">연간 계획에서 기술 가중치를 정하고 최적화를 실행합니다. 안 하나에 100명 6개월 기준 약 30초(12개월 계획은 약 4배)입니다.</span>
+              <span className="text-[13px] text-slate-500">① 조건·계산에서 사업 조건을 확인하고 최적화를 실행합니다. 안 하나에 100명 6개월 기준 약 30초(12개월 계획은 약 4배)입니다.</span>
             </div>
-            <button className="btn-primary" onClick={onCompute}>연간 계획으로</button>
+            <button className="btn-primary" onClick={onCompute}>① 조건·계산으로</button>
           </div>
           <div className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border border-line px-4 py-3.5">
             <div>

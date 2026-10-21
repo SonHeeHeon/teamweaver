@@ -19,10 +19,10 @@ import pytest
 import uvicorn
 from pypdf import PdfReader
 
-from api.deps import get_openai_client_or_none
 from api.main import app
 from core.config import REPO_ROOT
 from core.ingest.synthetic import generate_bundle
+from tests.ai_override import override_ai
 
 pytestmark = pytest.mark.slow
 
@@ -48,8 +48,8 @@ def _run_server(data: Path, admin_password: str | None = None):
     if admin_password:
         from api.admin import hash_password
         os.environ["TEAMWEAVER_ADMIN_PASSWORD_HASH"] = hash_password(admin_password)
-    prev_override = app.dependency_overrides.get(get_openai_client_or_none)
-    app.dependency_overrides[get_openai_client_or_none] = lambda: None
+    ai = contextlib.ExitStack()
+    ai.enter_context(override_ai(None))                 # 규칙 기반 브리핑(라우트가 쥔 함수를 바꾸고 끝나면 되돌린다)
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
@@ -67,10 +67,7 @@ def _run_server(data: Path, admin_password: str | None = None):
     finally:
         srv.should_exit = True
         t.join(timeout=10)
-        if prev_override is None:
-            app.dependency_overrides.pop(get_openai_client_or_none, None)
-        else:
-            app.dependency_overrides[get_openai_client_or_none] = prev_override
+        ai.close()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)
