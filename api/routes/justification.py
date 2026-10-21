@@ -258,9 +258,12 @@ async def justification(req: JustificationRequest, request: Request, dataset: Ac
         # 같은 명단·설정·AI·생성기로 이미 쓴 AI 글(밤 배치가 미리 썼거나 낮에 쓴 것)이 있으면 그대로 -- AI를 다시 부르지 않는다
         inp = build_input(kg, req.project_id, entries, dataset.graph, S, C, params)
         key = saved_key(dataset, req.project_id, entries, req.weights, params, client, inp) if req.ai else None
+        # 근거 한눈에(표·그림 재료) -- 저장본에는 넣지 않고 응답마다 같은 재료에서 붙인다
+        from api.justification_evidence import evidence_view   # 화면 모양만 -- 저장본 코드 지문(_CODE_FILES) 밖에 둔다
+        evidence = evidence_view(getattr(inp, "evidence", None), display_names(dataset))
         saved = load_saved(dataset, key)
         if saved is not None:
-            return saved
+            return {**saved, "evidence": evidence}
         use_ai = req.ai and client is not None and AI_SLOTS.acquire(blocking=False)
         try:
             out = justify_one(dataset, kg, req.project_id, entries, dataset.graph, S, C, params,
@@ -274,7 +277,7 @@ async def justification(req: JustificationRequest, request: Request, dataset: Ac
             out["fallback_reason"] = blocked          # no_client | external_blocked
         elif req.ai and not use_ai:
             out["fallback_reason"] = "busy"           # 다른 AI 글이 많이 돌고 있다 -- 정해진 틀로, 잠시 뒤 '다시 쓰기'
-        return out
+        return {**out, "evidence": evidence}
     out = await anyio.to_thread.run_sync(go)
     from api.rag.justification import justification_settings
     return {**out, "dataset_version": dataset.info.version, "ai_available": client is not None,

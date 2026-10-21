@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, postJustification } from "../api/client";
 import type { AssignEntry, Justification, JustFact, Meta, PlacementSettings, Step } from "../api/types";
 import { KIND_LABEL, KIND_ORDER, fallbackText, segmentsOf } from "./justification";
+import { EvidenceGlance } from "./EvidenceGlance";
 
 /** 인사팀 소명 글(claude-a 계약 docs/requests/2026-10-09-hr-justification.md).
  *  정해진 틀(템플릿)을 먼저 보이고 AI 글(GraphRAG, 모델마다 다름 -- 서버의 ai_expected_s: 외부 약 8초·사내 Flash 약 60초)이 오면 바꾼다. 글 속 [F12]을 누르면 옆 사실 목록에서 강조한다.
@@ -175,6 +176,8 @@ export function JustificationPanel({ meta, datasetVersion, entries, applied, wei
           <Prose text={result.summary} facts={result.facts} onCite={cite} active={active} />
         </div>
       )}
+      {/* 근거 한눈에(2026-10-21) -- 요약과 긴 글 사이. 글과 같은 재료라 숫자가 같다 */}
+      {result?.evidence && <EvidenceGlance evidence={result.evidence} meta={meta} />}
       {result && (
         <details open={!result.summary} className="mt-3">
           <summary className="cursor-pointer text-sm font-medium text-slate-700">

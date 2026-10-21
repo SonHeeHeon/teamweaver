@@ -577,4 +577,23 @@ export interface Justification {
   /** 3문장 요약(2026-10-20, 본문과 같은 문법·검사 -- graphrag: AI 구성 통과, rule: 규칙 요약). 없으면 null */
   summary?: string | null;
   summary_method?: "graphrag" | "rule" | null;
+  /** 근거 한눈에(2026-10-21): 소명 재료의 지식 그래프 근거를 표·그림용으로. 이름은 가상 데이터만(실데이터는 null → ID) */
+  evidence?: JustEvidence | null;
+}
+
+export type ReqStatus = "met" | "below" | "missing";
+export interface JustEvidence {
+  project_id: string;
+  industry?: string | null;
+  requirements: { skill: string; headcount: number; min_level: number; met_by: number; status: "met" | "short" }[];
+  members: {
+    person_id: string; name: string | null; grade: string | null; skill_fit: number | null;
+    requirements: { skill: string; months: number; level: number; min_level: number; status: ReqStatus;
+                    /** 하위 기술 경력에서 일부 인정: 출처 기술·그 경력 개월·실제 비율(credit^깊이) */
+                    credited_from?: { skill: string; months: number | null; ratio: number | null } }[];
+    same_industry_projects: number | null; same_industry_months: number | null;
+  }[];
+  /** 팀원마다 같은 등급 다른 사람(기술 적합 상위 5명)으로 한 명씩 바꾸면(재최적화 아님 -- 평가기로 다시 잼) 가장 나은 1명 */
+  alternatives: Record<string, { person_id: string; name: string | null; skill_fit: number | null; delta_total: number;
+                                 delta_skill: number; delta_synergy: number; new_violations: number }[]>;
 }

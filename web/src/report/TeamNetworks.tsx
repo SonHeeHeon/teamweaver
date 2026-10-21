@@ -49,9 +49,13 @@ export function teamCards(entries: { person_id: string; project_id: string }[], 
 }
 
 const W = 200;                                       // PDF 본문 폭 3열 카드 안쪽
-const WIDE_W = 640, WIDE_FROM = 13;                  // 13명부터는 한 줄을 다 쓴다(작은 원에서는 위아래 이름이 겹친다)
+const WIDE_W = 640;
+export const WIDE_FROM = 13;                  // 13명부터는 한 줄을 다 쓴다(작은 원에서는 위아래 이름이 겹친다)
 
-function Card({ card }: { card: TeamCard }) {
+/** 사업 하나의 원 그림 카드. scale: 화면에서 크게 볼 때(인사팀 소명 "근거 한눈에", 2026-10-21) -- 같은 그림을 비율만 키운다(PDF는 1). */
+export function TeamCircleCard({ card, scale = 1, fit = false }: { card: TeamCard; scale?: number;
+  /** 화면: 카드 테두리가 그림 폭을 따라가게(가로 스크롤 안에서 그림 중간에 테두리가 끊기지 않게) -- PDF는 칸 폭 */
+  fit?: boolean }) {
   const n = card.members.length, wide = n >= WIDE_FROM, w = wide ? WIDE_W : W;
   const R = n <= 1 ? 0 : n === 2 ? 44 : wide ? Math.min(150, 6 * n) : Math.min(60, Math.max(34, 22 + 5 * n));
   const H = n <= 1 ? 40 : n === 2 ? 34 : 2 * R + 40;                 // 위아래 이름 자리 + 꼬리 글과 띄우기
@@ -61,12 +65,12 @@ function Card({ card }: { card: TeamCard }) {
   const pos = new Map(card.members.map((m, i) => [m.id, { x: cx + R * Math.cos(angle(i)), y: cy + R * Math.sin(angle(i)), t: angle(i) }]));
   const ties = [...card.ties].sort((p, q) => DRAW_ORDER.indexOf(p.tone) - DRAW_ORDER.indexOf(q.tone));
   return (
-    <div className={`rounded border border-slate-200 p-2${wide ? " col-span-3" : ""}`} style={{ breakInside: "avoid" }} data-testid={`team-${card.id}`}>
+    <div className={`rounded border border-slate-200 p-2${wide && !fit ? " col-span-3" : ""}${fit ? " w-max" : ""}`} style={{ breakInside: "avoid" }} data-testid={`team-${card.id}`}>
       <p className="flex justify-between gap-1 text-[11px]">
         <span className="truncate"><b>{card.id}</b> {card.name}</span>
         <span className="shrink-0 text-slate-500">{n}명</span>
       </p>
-      <svg width={w} height={H} viewBox={`0 0 ${w} ${H}`} overflow="visible" role="img" aria-label={`${card.id} 팀 협업 관계`}>
+      <svg width={w * scale} height={H * scale} viewBox={`0 0 ${w} ${H}`} overflow="visible" role="img" aria-label={`${card.id} 팀 협업 관계`}>
         {ties.map((t) => {
           const a = pos.get(t.a)!, b = pos.get(t.b)!;
           return <line key={`${t.a}|${t.b}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} {...lineStyle(t.tone, t.months)} data-tone={t.tone} />;
@@ -118,7 +122,7 @@ export function TeamNetworks({ entries, people, projects, coworks }: {
       <RelationLegend hasReview={hasReview} extra={
         <span><svg width={10} height={10} className="mr-1 inline-block align-middle"><circle cx={5} cy={5} r={3.5} fill="#fff" stroke="#64748b" strokeWidth={1.5} /></svg>팀에 아는 사람 없음</span>} />
       <div className="mt-2 grid grid-cols-3 gap-2">
-        {cards.map((c) => <Card key={c.id} card={c} />)}
+        {cards.map((c) => <TeamCircleCard key={c.id} card={c} />)}
       </div>
     </div>
   );

@@ -295,3 +295,60 @@ def test_meta_carries_skill_credit(jc):
         sk, cr = next(iter(credited[0]["skill_credit"].items()))
         assert {"source", "months", "depth", "own_months"} <= set(cr) and cr["months"] > cr["own_months"]
         assert sk in credited[0]["skills"]
+
+
+def test_evidence_at_a_glance_rides_with_the_justification(jc):
+    """근거 한눈에(2026-10-21): 소명 재료의 지식 그래프 근거를 표·그림용으로 -- 사실 목록과 같은 숫자, 평가 극성·인용은 싣지 않는다."""
+    c, _ = jc
+    body = _body(c, ai=False)
+    out = c.post("/api/justification", json=body).json()
+    ev = out["evidence"]
+    team = sorted({e["person_id"] for e in body["entries"] if e["project_id"] == body["project_id"]})
+    assert ev["project_id"] == body["project_id"] and sorted(m["person_id"] for m in ev["members"]) == team
+    req_skills = [r["skill"] for r in ev["requirements"]]
+    for m in ev["members"]:
+        assert [r["skill"] for r in m["requirements"]] == req_skills                # 모든 팀원이 같은 열(요구 기술)
+        assert all(r["status"] in ("met", "below", "missing") for r in m["requirements"])
+        assert m["name"] and m["name"] != m["person_id"]                               # 가상 데이터는 이름
+    for r in ev["requirements"]:                                                       # 사업 줄 = 사람 칸에서 센 충족 수
+        assert r["met_by"] == sum(1 for m in ev["members"] for x in m["requirements"] if x["skill"] == r["skill"] and x["status"] == "met")
+    assert set(ev["alternatives"]) <= set(team) and all(len(v) <= 1 for v in ev["alternatives"].values())
+    # 글의 사실과 같은 재료: 요구 기술 사실(REQ)은 표의 "필요 n명 · 해당자 n명"과 같은 숫자, 대안 사실(ALT)은 대안 막대와 같은 점수 변화
+    req_texts = [f["text"] for f in out["facts"] if f["kind"] == "REQ"]
+    for r in ev["requirements"]:
+        assert any(r["skill"] in t and f"{r['headcount']}명" in t and f"해당자 {r['met_by']}명" in t for t in req_texts), r
+    alt_texts = " ".join(f["text"] for f in out["facts"] if f["kind"] == "ALT")
+    for rows in ev["alternatives"].values():
+        assert f"{rows[0]['delta_total']:+.2f}".lstrip("+") in alt_texts
+    dumped = json.dumps(ev, ensure_ascii=False)
+    assert "polarity" not in dumped and "quotes" not in dumped and "reviews" not in dumped
+
+
+def test_evidence_credit_ratio_follows_the_depth():
+    """하위 기술 인정 비율 = credit^깊이(Spring Boot→Java 깊이 2면 49%) -- credit만 보내면 70%로 보였다(폴백 리뷰 SHOULD)."""
+    from api.justification_evidence import evidence_view
+    ev = {"project_id": "J1", "requirements": [{"skill": "Java", "headcount": 1, "min_months": 36, "met_by": 1, "status": "met"}],
+          "members": [{"person_id": "P1", "grade": "고급", "skill_fit": 1.0, "same_industry_projects": 0, "same_industry_months": 0,
+                       "requirements": [{"skill": "Java", "months": 19, "level": 2, "min_level": 3, "status": "below",
+                                         "implied_from": {"skill": "Spring Boot", "months": 40, "depth": 2, "credit": 0.7}}]}],
+          "alternatives": {}}
+    c = evidence_view(ev, {})["members"][0]["requirements"][0]["credited_from"]
+    assert c == {"skill": "Spring Boot", "months": 40, "ratio": 0.49}
+
+
+def test_evidence_uses_ids_for_real_data(jc, monkeypatch):
+    c, app = jc
+    monkeypatch.setattr(app.state.dataset, "info", dataclasses.replace(app.state.dataset.info, synthetic=False))
+    ev = c.post("/api/justification", json=_body(c, ai=False)).json()["evidence"]
+    assert all(m["name"] is None for m in ev["members"])
+    assert all(r["name"] is None for rows in ev["alternatives"].values() for r in rows)
+
+
+def test_a_saved_ai_text_also_gets_the_evidence(jc, monkeypatch):
+    """밤 배치·낮에 미리 쓴 AI 글(저장본)을 꺼낼 때도 근거 한눈에가 붙는다 -- 저장본 자체에는 넣지 않는다."""
+    import api.routes.justification as j
+    c, _ = jc
+    monkeypatch.setattr(j, "load_saved", lambda dataset, key: {"project_id": "x", "method": "graphrag", "text": "저장된 글",
+                                                                 "facts": [], "addendum": None, "appended_adverse": []})
+    out = c.post("/api/justification", json=_body(c)).json()
+    assert out["text"] == "저장된 글" and out["evidence"]["members"]
