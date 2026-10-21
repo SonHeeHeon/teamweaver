@@ -549,7 +549,17 @@ export interface SkillMapRow {
   coverage: number | null; scarce: boolean;
   demand: { project_id: string; project: string; proposal: boolean; headcount: number; min_months: number | null;
             qualified_people: number }[];
-  practical_people: { id: string; name: string | null; credited: boolean }[];
+  practical_people: SkillPerson[];
+  /** 기술 계보(사전) -- claude-a skill_map 칸(2026-10-21 요청). 없으면 그리지 않는다 */
+  broader?: string[];
+  narrower?: ({ skill: string; practical?: number } | string)[];
+}
+/** 실무 가능한 사람. months~credited_from은 claude-a skill_map 칸(2026-10-21 요청) -- `free`가 있으면 화면이 기술 관계 그림을 그린다 */
+export interface SkillPerson {
+  id: string; name: string | null; credited: boolean;
+  months?: number; level?: number; expert?: boolean; free?: boolean; on?: string[];
+  /** 하위 기술 인정 출처(서버가 [{기술, 그 경력 개월, 비율 = credit^깊이}]로 맞춘다). 표시는 `credited`(인정 덕에 실무 가능)일 때만 */
+  credited_from?: { skill: string; months: number | null; ratio: number | null }[] | null;
 }
 export interface SkillMap {
   dataset_version: string; rows: SkillMapRow[]; note: string;

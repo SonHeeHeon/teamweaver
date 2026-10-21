@@ -352,3 +352,55 @@ def test_a_saved_ai_text_also_gets_the_evidence(jc, monkeypatch):
                                                                  "facts": [], "addendum": None, "appended_adverse": []})
     out = c.post("/api/justification", json=_body(c)).json()
     assert out["text"] == "저장된 글" and out["evidence"]["members"]
+
+
+def _skill_map_with(row: dict, synthetic: bool = False, names: dict | None = None) -> dict:
+    from types import SimpleNamespace
+    from api.routes.skill_map import build_skill_map
+    import core.kg.views as views
+    kg = SimpleNamespace(nodes_of=lambda t: [{"id": "skill:Java", "label": "Java"}], inc=lambda nid, et: [])
+    people = [SimpleNamespace(id=k, name=v) for k, v in (names or {}).items()]
+    ds = SimpleNamespace(knowledge_graph=lambda: kg, info=SimpleNamespace(synthetic=synthetic, version="v"),
+                         graph=SimpleNamespace(people=people))
+    orig = views.skill_map
+    views.skill_map = lambda k: [row]
+    try:
+        return build_skill_map(ds)["rows"][0]
+    finally:
+        views.skill_map = orig
+
+
+_BASE_ROW = {"skill": "Java", "practical": 2, "proposal_gap": 0, "demand_headcount": 1, "scarce": False,
+             "broader": [], "narrower": [{"skill": "Spring", "practical": 5}]}
+
+
+@pytest.mark.parametrize("shape", ["dicts", "dicts_person_id", "detail_map", "detail_list"])
+def test_skill_map_passes_person_fields_through_in_any_shape(shape):
+    """기술 관계 그림(2026-10-21): claude-a에 요청한 사람별 칸(비어 있음·지금 사업·숙련·인정 출처)과 계보가 오면 화면 모양으로 --
+    사람 목록이 사전이든(`id`·`person_id`), 칸이 따로 오든 받는다. 인정 비율은 credit^깊이."""
+    fields = {"A": {"months": 40, "level": 3, "expert": True, "free": True, "on": []},
+              "B": {"months": 20, "level": 2, "expert": False, "free": False, "on": "J001",
+                    "credited_from": {"skill": "Spring Boot", "months": 41, "depth": 2, "credit": 0.7}}}
+    key = "person_id" if shape == "dicts_person_id" else "id"
+    row = {**_BASE_ROW, "practical_people": [{key: k, **v} for k, v in fields.items()]} if shape.startswith("dicts") else \
+          {**_BASE_ROW, "practical_people": list(fields), "practical_detail": fields if shape == "detail_map"
+           else [{"id": k, **v} for k, v in fields.items()]}
+    r = _skill_map_with(row)
+    a, b = r["practical_people"]
+    assert a == {"id": "A", "name": None, "credited": False, **fields["A"]}
+    assert b["free"] is False and b["on"] == ["J001"]                                  # 문자열 하나도 목록으로
+    assert b["credited_from"] == [{"skill": "Spring Boot", "months": 41, "ratio": 0.49}]
+    assert "practical_detail" not in r and r["narrower"] == [{"skill": "Spring", "practical": 5}]
+
+
+def test_skill_map_person_fields_fallbacks_and_names():
+    """칸이 없는 사람은 예전 모양(이름·인정만), 인정 출처가 문자열·None이어도 받는다, 이름은 가상 데이터만(K5)."""
+    row = {**_BASE_ROW, "practical_people": ["A", "B", "C"],
+           "practical_detail": {"A": {"free": True, "credited_from": None}, "B": {"free": False, "credited_from": "Spring"}}}
+    r = _skill_map_with(row, synthetic=True, names={"A": "김민준", "B": "이서연", "C": "박지훈"})
+    a, b, c = r["practical_people"]
+    assert a["name"] == "김민준" and a["credited_from"] is None
+    assert b["credited_from"] == [{"skill": "Spring", "months": None, "ratio": None}]
+    assert c == {"id": "C", "name": "박지훈", "credited": False}
+    real = _skill_map_with(row, synthetic=False, names={"A": "김민준"})
+    assert all(p["name"] is None for p in real["practical_people"])
