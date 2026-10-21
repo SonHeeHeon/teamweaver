@@ -159,6 +159,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   확정 창 `components/ConfirmChanges`는 연간 계획 "안 X로 확정"(source `plan`, 검토 자료 없음)과 What-if가 함께 쓰고, 서버 `POST /api/workspace/preview`(옮김·새로·빠짐·등급 대체·예산 증액·새 위반·고정 충돌, 데이터 그대로)로 미리 계산한다.
   지금 배치가 있으면 안 카드·배치 명단에 "지금 대비 옮김"(`components/rosterDiff`, 서버 preview와 같은 정의). ② 다듬기(plans)는 `grade_swap` 없이 예전처럼 등급이 바뀐 교체를 경고로 본다.
   **기술 가중치 칸은 없앴다**(화면 요청 `weights` = 빈 값 = 기본, API 칸은 옛 기록 재현용) -- ① 조건·계산은 `/api/meta` 사업 `requirements`(기술·최소 레벨·인원)를 보인다.
+  **전부 다시 짜는 안 A~D(`/api/optimize`)는 고정(`current_assignments.locked`)을 보지 않는다**(고정은 운영 중 K 계산 `core/optimize/incremental`만 지킨다) -- 진행 사업 배치가 고정된 데이터(연초 6개월 시연 `org-n100`: 4건)에서는 "안 X로 확정"이 고정 충돌로 막힌다(2026-10-21 측정). 그래서 시연 연간 계획 장면은 백지 연간 기록(`org-n100-annual`)으로 한다(`docs/demo-script.md` D2~D5, 숫자 `python -m rehearsal.whatif_scene_numbers`).
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.

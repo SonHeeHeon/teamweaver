@@ -22,6 +22,30 @@
 
 ---
 
+## 2026-10-21 · claude-a · 시연 대본·슬라이드·결과 보고서 갱신(새 장면 "안 A로 확정"·What-if) + 화면 문구 2곳
+- 브랜치/커밋: `docs/claude-a-demo-report-1021`(main `4d55462`에서) — `3b9daf6`(화면 문구) · 리허설 스크립트 커밋 · 문서 커밋(아래). main 미병합(승인 대기).
+- 사용자: "병합 승인 하고 7,2번 시연 대본에 넣어주고, 시연 전체 와 보고서 업데이트 해줘"(7 = What-if 담기 → 확정, 2 = 연간 계획 "안 A로 확정").
+- 한 일:
+  - `docs/demo-script.md` 다시 짬(9분 40초): 새 D4 안 A로 확정 · D5 What-if(예전 D4 교체 검토를 지금 배치로 옮기고 담기·사유 확정), 뒤 번호 하나씩 밀림. 화면 전체를 Playwright로 다시 눌러 버튼 이름·숫자 확인(교체 효과 보기 · 옮길 인원별로 계산 · K 0~5 · 소명 요약). 내레이션 음절 수 다시 셈(약 2,200음절 ≈ 7분 20초).
+  - **기존 대본 순서 결함 수정**: 검토 자료는 그 확정이 지금 판일 때만 새로 만든다 — J004 긴급 투입 자료를 J015 동시 수행 지원 확정 **전에** 만든다(D7).
+  - 연간 계획 장면(D2~D5)은 백지 연간 기록으로 — 연초 6개월 기록은 고정 4건 때문에 안 확정이 막힌다(CLAUDE.md 함정에 한 줄).
+  - `rehearsal/whatif_scene_numbers.py`(새) → `rehearsal/results/whatif-scenes-1021.json`: D2~D5 숫자(같은 API·같은 순서, AI 없이). `scenario_numbers`·`plan_scene_numbers`는 지금 main에서 다시 돌려 숫자 같음 확인(이름 머리말 "[제안]"·"[실행]"과 날짜만 달라 결과 파일은 그대로 둠).
+  - 슬라이드 4장(시연 흐름 9칸)·5·6장(K=5 +2.8%, 시험 2,093). 결과 보고서: 현업 요구 2행(What-if·확정 취소, 등급 대체), 기능 표·수행 경과(10-20~21), K 0~5(100·200·300명 +2.8·+3.6·+2.5%), 소명 요약 측정, 시험 2,093·웹 312, 설계 판단 2행, 한계 1행. **PDF 10쪽**(긴 문장을 줄이고 긴 표는 행 단위로 쪽을 넘기게, 인쇄 줄 간격 1.5 → 1.46).
+  - 화면 문구(`3b9daf6`): 확정 창 "안 A을(를)" → "안 A를", What-if의 교체 안내 "'적용'해야 바뀝니다" → "'이 변경 담기'로 모아 두고, 확정해야 지금 배치가 바뀝니다"(`SwapControl applyNote`, 편성안 다듬기는 예전 문장).
+- 상대 영향(claude-b): `SwapControl`에 선택 prop `applyNote`(기본값은 예전 문장). README 기능 표 3행·제출물 쪽수/시간, `docs/project-context.md` 2곳. 발견(결정 대기, 요청에 적음): 긴급 투입 최선 조합 화면에 빼 온 자리를 메우는 사람이 안 보인다(검토 자료에만), 전부 다시 짜는 안이 고정을 안 본다.
+- 검증: 웹 312 passed(44 files)·tsc -b·build. 리허설 스크립트 두 번 돌려 같은 결과, 대본 숫자 13항목 JSON 대조 일치. 슬라이드 7장 넘침 없음. PDF 10쪽(쪽마다 그림 확인). 금지어 0. Codex는 10-25까지 한도 소진 — 문서·문구 변경이라 자체 점검.
+- 근거: `.omc/reports/2026-10-21-demo-report-update.md`, 계획 `.omc/plan/2026-10-21-demo-report-update.md`.
+
+---
+
+## 2026-10-21 · claude-a · main 병합: 등급 대체 · What-if 고침 · AI 교체 이전 · 연간 계획/What-if 분리
+- 브랜치/커밋: `feat/claude-a-ai-override-migrate` → `whatif-ui-fixes` → `grade-swap` → `annual-whatif`(b `newproj-explain-cancel` 4f54867까지 포함)를 사용자 승인("병합 승인")으로 main에 `--no-ff` 병합 `4d55462`, push.
+- 한 일: 병합만. 병합 트리는 검증한 `f0df597`과 같다(diff 0줄).
+- 상대 영향(claude-b): main 기준선 2093 passed · slow 20 · 웹 312. b의 새 브랜치 `feat/claude-b-kg-views`(9c34092 위)는 승인 밖이라 넣지 않았다 — main을 합칠 때 메뉴 탭 `plans`/`whatif`와 `/api/workspace/preview`를 확인.
+- 검증: `git diff f0df597 main` 0줄(그 트리에서 pytest 2093 passed · slow 20 · 웹 312).
+
+---
+
 ## 2026-10-21 · claude-a · 연간 계획·What-if 분리 + 화면 검토 결정 3건(연간 계획 확정 · 지금 대비 옮김 · 가중치 대신 요구 기술)
 - 브랜치/커밋: `feat/claude-a-annual-whatif`(`feat/claude-a-grade-swap` 위, b `newproj-explain-cancel` 3b7230a·4f54867 합침 `37700b5`) · 서버·웹·문서 커밋(아래 검증 줄). main 미병합(승인 대기).
 - 사용자: "결정이 필요한 3건은 다 진행하자" · "what if 는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 어떤지 보기 위한 메뉴인데 … 이 두개는 분리가 필요할거같은데. 지금의 화면은 연간 계획 화면과 맞물려있는 개념".
