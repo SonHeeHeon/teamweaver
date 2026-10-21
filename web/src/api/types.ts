@@ -557,6 +557,10 @@ export interface SkillMapRow {
   demand: { project_id: string; project: string; proposal: boolean; headcount: number; min_months: number | null;
             qualified_people: number }[];
   practical_people: SkillPerson[];
+  /** 조직 기술 분포(2026-10-22): 보유자 경력 구간 인원 [1년 미만, 1~3년, 3~5년, 5~8년, 8년+] · 5년+ 인원 · 실무 가능자 평균 경력(개월) */
+  levels?: number[]; senior?: number; avg_months?: number | null;
+  /** 5년+ 중 하위 기술 인정분 덕에 넘긴 사람(본인 경력만으로는 5년 미만) */
+  senior_credited?: number;
   /** 기술 계보(사전) -- claude-a skill_map 칸(2026-10-21 요청). 없으면 그리지 않는다 */
   broader?: string[];
   narrower?: ({ skill: string; practical?: number } | string)[];

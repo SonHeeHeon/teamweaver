@@ -221,6 +221,30 @@ def test_skill_map_on_bundle_data(jc):
     assert res.status_code == 409 and res.json()["detail"]["code"] == "dataset_changed"
 
 
+def test_skill_map_carries_the_experience_spread(jc):
+    """조직 기술 분포(2026-10-22): 기술마다 경력 구간 인원(1년 미만·1~3·3~5·5~8·8년+), 5년+ 인원, 실무 가능자 평균 경력 --
+    표의 실무 가능(12개월+)·숙련(36개월+)과 같은 경력에서 센다."""
+    c, _ = jc
+    for r in c.get("/api/skill-map").json()["rows"]:
+        lv = r["levels"]
+        assert len(lv) == 5 and sum(lv) == r["holders"]
+        assert sum(lv[1:]) == r["practical"] and sum(lv[2:]) == r["expert"] and sum(lv[3:]) == r["senior"]
+        assert (r["avg_months"] is None) == (r["practical"] == 0)
+        assert 0 <= r["senior_credited"] <= r["senior"]
+        if r["avg_months"] is not None:
+            assert 12 <= r["avg_months"] <= 120
+
+
+def test_skill_map_spread_counts_credit_only_seniors_separately():
+    """5년+ 중 하위 기술 인정분 덕에 넘긴 사람(senior_credited) -- 본인 경력만으로 5년+인 사람은 세지 않는다."""
+    from api.routes.skill_map import _spread
+    edges = [{"months": 70, "own_months": 0, "implied_from": {"skill": "메타데이터 관리"}},     # 인정분만
+             {"months": 80, "own_months": 65, "implied_from": {"skill": "x"}},                 # 본인만으로도 5년+
+             {"months": 40, "own_months": 40}, {"months": 6, "own_months": 6}]
+    sp = _spread(edges, 12)
+    assert sp["levels"] == [1, 0, 1, 2, 0] and sp["senior"] == 2 and sp["senior_credited"] == 1 and sp["avg_months"] == 63.3
+
+
 def test_skill_map_needs_bundle_data(client):
     assert client.get("/api/skill-map").status_code == 409
 

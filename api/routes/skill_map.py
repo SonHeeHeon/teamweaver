@@ -77,6 +77,31 @@ def _person(p, names: dict[str, str], credited: set[str], detail: dict[str, dict
     return {"id": pid, "name": names.get(pid), "credited": pid in credited, **_norm(extra)}
 
 
+# 조직 기술 분포(2026-10-22 사용자 "우리 조직 인력들의 기술 분포 … 이런 기술에 대해 경력이 높구나, 이 기술에 강하겠구나"):
+# 기술마다 보유자의 경력 구간 인원(입력 단계 레벨 경계 12·36·60·96개월 = 1년 미만·1~3년·3~5년·5~8년·8년+),
+# 5년 이상 인원, 실무 가능자 평균 경력. 지식 그래프의 경력 개월(인정분 포함 -- S 점수와 같은 경력)을 세기만 한다.
+SENIOR_MONTHS = 60
+
+
+def _spread(edges, practical_months: int) -> dict:
+    """경력은 S 점수와 같은 개월(본인 + 하위 기술 인정분 중 큰 값). 인정분 덕에 5년을 넘긴 사람은 따로 센다 --
+    "데이터 거버넌스"처럼 실무 가능 전원이 인정분뿐인 기술이 그림에서 강점으로만 보이지 않게(폴백 리뷰 MUST, 사용자 결정 10-11 "인정 경력은 구분")."""
+    from core.ingest.convert import level_from_months
+    levels = [0, 0, 0, 0, 0]
+    practical, senior_credited = [], 0
+    for e in edges:
+        m = e.get("months") or 0
+        if m <= 0:
+            continue
+        levels[level_from_months(m) - 1] += 1
+        if m >= practical_months:
+            practical.append(m)
+            if m >= SENIOR_MONTHS and e.get("implied_from") and (e.get("own_months") or 0) < SENIOR_MONTHS:
+                senior_credited += 1
+    return {"levels": levels, "senior": sum(1 for m in practical if m >= SENIOR_MONTHS), "senior_credited": senior_credited,
+            "avg_months": round(sum(practical) / len(practical), 1) if practical else None}
+
+
 def build_skill_map(dataset: ActiveDataset) -> dict:
     kg = dataset.knowledge_graph()
     if kg is None:
@@ -86,11 +111,14 @@ def build_skill_map(dataset: ActiveDataset) -> dict:
     rows = skill_map(kg)
     names = display_names(dataset)
     credited: dict[str, set[str]] = {}               # 기술 이름 → 하위 기술에서 인정받아 실무 가능이 된 사람
+    spread: dict[str, dict] = {}                     # 기술 이름 → 경력 분포(조직 기술 분포 그림)
     for sk in kg.nodes_of("skill"):
+        edges = kg.inc(sk["id"], "HAS_SKILL")
         # 인정분 덕분에 실무 가능이 된 사람만(본인 경력만으로 이미 12개월 이상이면 인정 없이도 실무 가능 -- Codex 리뷰 P2)
-        credited[sk["label"]] = {e["src"].split(":", 1)[1] for e in kg.inc(sk["id"], "HAS_SKILL")
+        credited[sk["label"]] = {e["src"].split(":", 1)[1] for e in edges
                                  if e.get("implied_from") and (e.get("months") or 0) >= PRACTICAL_MONTHS
                                  and (e.get("own_months") or 0) < PRACTICAL_MONTHS}
+        spread[sk["label"]] = _spread(edges, PRACTICAL_MONTHS)
     out = []
     for r in rows:
         cr = credited.get(r["skill"], set())
@@ -98,7 +126,7 @@ def build_skill_map(dataset: ActiveDataset) -> dict:
         people = [x for x in (_person(p, names, cr, detail) for p in r["practical_people"]) if x is not None]
         out.append({**{k: v for k, v in r.items() if k not in ("practical_people", "practical_detail")},
                     "practical_credited": len(cr & {p["id"] for p in people}),
-                    "practical_people": people})
+                    "practical_people": people, **spread.get(r["skill"], _spread([], PRACTICAL_MONTHS))})
     return {"dataset_version": dataset.info.version, "rows": out, "note": NOTE,
             "summary": {"skills": len(out), "scarce": sum(r["scarce"] for r in out),
                         "proposal_gap_skills": sum(1 for r in out if r["proposal_gap"] > 0),

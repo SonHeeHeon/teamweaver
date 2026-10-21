@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, fetchSkillMap } from "../api/client";
 import type { SkillMap, SkillMapRow } from "../api/types";
+import { SkillDistribution } from "./SkillDistribution";
 import { SkillRelation } from "./SkillRelation";
 import { barOf, barScale, graphMode } from "./skillMapView";
 
@@ -85,6 +86,9 @@ export function SkillMapTab({ datasetVersion, onDatasetChanged }: { datasetVersi
           신규 제안에 지금 비어 있는 사람이 모자란 기술 {s.proposal_gap_skills}개
         </p>
       </div>
+      {/* 조직 기술 분포(2026-10-22) -- 아래 공급/수요 표와 별개로 조직 전체(필터와 상관없이) */}
+      <SkillDistribution rows={data.rows} />
+      <h3 className="pt-2 text-sm font-semibold text-slate-900">기술별 공급과 수요</h3>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {([["demanded", "요구 있는 기술"], ["gap", "신규 제안 부족"], ["scarce", "희소(2명 이하)"], ["all", "전체"]] as const).map(([k, label]) => (
           <label key={k} className="flex items-center gap-1">
