@@ -1,0 +1,453 @@
+{
+ "record": "2026년 10월 연간 편성(12개월, 백지) · 100명",
+ "D2": {
+  "bundle": "org-n100-annual",
+  "projects": 40,
+  "plans": [
+   {
+    "label": "A",
+    "objective": 119.49,
+    "eval_objective": 119.49,
+    "assignments": 134,
+    "people": 82,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.825,
+    "fulfillment": 0.522,
+    "termination": "time_limit_incumbent",
+    "time_limited": true,
+    "gap_to_bound": 0.025,
+    "elapsed_s": 120.81
+   },
+   {
+    "label": "B",
+    "objective": 118.74,
+    "eval_objective": 118.74,
+    "assignments": 134,
+    "people": 80,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.813,
+    "fulfillment": 0.512,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.041,
+    "elapsed_s": 189.6
+   },
+   {
+    "label": "C",
+    "objective": 117.89,
+    "eval_objective": 117.89,
+    "assignments": 134,
+    "people": 81,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.821,
+    "fulfillment": 0.527,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.047,
+    "elapsed_s": 238.66
+   },
+   {
+    "label": "D",
+    "objective": 118.52,
+    "eval_objective": 118.52,
+    "assignments": 134,
+    "people": 85,
+    "unfilled_seats": 0,
+    "violations": 0,
+    "optimization_ratio": 0.824,
+    "fulfillment": 0.524,
+    "termination": "Optimal",
+    "time_limited": false,
+    "gap_to_bound": 0.044,
+    "elapsed_s": 321.24
+   }
+  ]
+ },
+ "D3": {
+  "project": "J001",
+  "team": [
+   "노민준",
+   "주성진",
+   "김슬기",
+   "김우진",
+   "전채원",
+   "이가영",
+   "김서현",
+   "하예준"
+  ],
+  "facts": 77,
+  "adverse_facts": 6
+ },
+ "D4_plan_confirm": {
+  "current_entries_before": 0,
+  "plan_a_entries": 134,
+  "moved": 0,
+  "joined": 82,
+  "left": 0,
+  "grade_swaps": {},
+  "budget_add": {},
+  "new_violations": [],
+  "locked_dropped": [],
+  "changes": {
+   "added": [
+    "DP0001@J004",
+    "DP0001@J028",
+    "DP0002@J026",
+    "DP0002@J033",
+    "DP0003@J004",
+    "DP0003@J008",
+    "DP0003@J040",
+    "DP0005@J013",
+    "DP0005@J039",
+    "DP0006@J018",
+    "DP0006@J036",
+    "DP0007@J013",
+    "DP0008@J019",
+    "DP0009@J017",
+    "DP0009@J029",
+    "DP0010@J034",
+    "DP0011@J018",
+    "DP0011@J039",
+    "DP0012@J028",
+    "DP0014@J037",
+    "DP0015@J039",
+    "DP0016@J034",
+    "DP0018@J037",
+    "DP0019@J016",
+    "DP0019@J033",
+    "DP0020@J014",
+    "DP0021@J006",
+    "DP0021@J027",
+    "DP0021@J030",
+    "DP0022@J006",
+    "DP0022@J025",
+    "DP0022@J027",
+    "DP0022@J028",
+    "DP0023@J003",
+    "DP0023@J022",
+    "DP0025@J032",
+    "DP0026@J002",
+    "DP0026@J008",
+    "DP0026@J037",
+    "DP0027@J016",
+    "DP0027@J027",
+    "DP0027@J040",
+    "DP0028@J001",
+    "DP0029@J017",
+    "DP0029@J029",
+    "DP0030@J003",
+    "DP0030@J005",
+    "DP0030@J022",
+    "DP0031@J021",
+    "DP0032@J009",
+    "DP0032@J024",
+    "DP0032@J033",
+    "DP0033@J010",
+    "DP0035@J017",
+    "DP0035@J026",
+    "DP0035@J029",
+    "DP0036@J016",
+    "DP0036@J038",
+    "DP0037@J020",
+    "DP0037@J039",
+    "DP0038@J003",
+    "DP0038@J005",
+    "DP0038@J022",
+    "DP0038@J024",
+    "DP0038@J025",
+    "DP0039@J013",
+    "DP0040@J001",
+    "DP0041@J012",
+    "DP0041@J023",
+    "DP0041@J034",
+    "DP0042@J017",
+    "DP0043@J016",
+    "DP0043@J024",
+    "DP0043@J040",
+    "DP0044@J001",
+    "DP0046@J035",
+    "DP0048@J002",
+    "DP0048@J007",
+    "DP0048@J035",
+    "DP0049@J038",
+    "DP0050@J019",
+    "DP0050@J030",
+    "DP0052@J021",
+    "DP0053@J034",
+    "DP0055@J032",
+    "DP0056@J008",
+    "DP0058@J030",
+    "DP0059@J038",
+    "DP0060@J009",
+    "DP0060@J029",
+    "DP0061@J011",
+    "DP0064@J014",
+    "DP0065@J011",
+    "DP0066@J018",
+    "DP0066@J038",
+    "DP0068@J009",
+    "DP0068@J033",
+    "DP0069@J001",
+    "DP0072@J009",
+    "DP0072@J036",
+    "DP0074@J023",
+    "DP0075@J020",
+    "DP0075@J036",
+    "DP0076@J012",
+    "DP0076@J037",
+    "DP0077@J037",
+    "DP0078@J001",
+    "DP0079@J020",
+    "DP0079@J026",
+    "DP0079@J031",
+    "DP0080@J011",
+    "DP0081@J001",
+    "DP0082@J026",
+    "DP0082@J031",
+    "DP0083@J015",
+    "DP0084@J002",
+    "DP0084@J007",
+    "DP0085@J032",
+    "DP0086@J010",
+    "DP0087@J020",
+    "DP0087@J036",
+    "DP0088@J015",
+    "DP0090@J020",
+    "DP0091@J001",
+    "DP0092@J035",
+    "DP0093@J013",
+    "DP0094@J010",
+    "DP0096@J019",
+    "DP0096@J035",
+    "DP0097@J032",
+    "DP0098@J030",
+    "DP0099@J001",
+    "DP0100@J012",
+    "DP0100@J037"
+   ],
+   "removed": [],
+   "changed": []
+  }
+ },
+ "D5_start": {
+  "current_entries": 134,
+  "team": [
+   "노민준(특급)",
+   "전채원(고급)",
+   "이가영(고급)",
+   "하예준(고급)",
+   "김슬기(중급)",
+   "김우진(중급)",
+   "김서현(중급)",
+   "주성진(초급)"
+  ],
+  "bench": [
+   "손하윤(중급)",
+   "최가은(초급)",
+   "김태윤(중급)",
+   "박재민(중급)",
+   "정진우(중급)",
+   "황성진(초급)",
+   "이서윤(초급)",
+   "류서현(중급)",
+   "이시후(초급)",
+   "최서윤(중급)",
+   "장진우(중급)",
+   "정은비(초급)",
+   "박진우(중급)",
+   "한태호(초급)",
+   "주경민(특급)",
+   "김도현(초급)",
+   "정우진(특급)",
+   "정지윤(초급)"
+  ]
+ },
+ "D5_tried": 144,
+ "D5_same_grade_options": [
+  {
+   "out": "주성진",
+   "out_grade": "초급",
+   "in": "정지윤",
+   "in_grade": "초급",
+   "delta": -0.083
+  },
+  {
+   "out": "주성진",
+   "out_grade": "초급",
+   "in": "황성진",
+   "in_grade": "초급",
+   "delta": -0.125
+  },
+  {
+   "out": "노민준",
+   "out_grade": "특급",
+   "in": "주경민",
+   "in_grade": "특급",
+   "delta": -0.193
+  },
+  {
+   "out": "주성진",
+   "out_grade": "초급",
+   "in": "최가은",
+   "in_grade": "초급",
+   "delta": -0.246
+  },
+  {
+   "out": "주성진",
+   "out_grade": "초급",
+   "in": "이서윤",
+   "in_grade": "초급",
+   "delta": -0.333
+  }
+ ],
+ "D5_grade_swap_options": [
+  {
+   "out": "하예준",
+   "out_grade": "고급",
+   "in": "주경민",
+   "in_grade": "특급",
+   "delta": 0.0
+  },
+  {
+   "out": "전채원",
+   "out_grade": "고급",
+   "in": "주경민",
+   "in_grade": "특급",
+   "delta": -0.189
+  },
+  {
+   "out": "이가영",
+   "out_grade": "고급",
+   "in": "주경민",
+   "in_grade": "특급",
+   "delta": -0.242
+  },
+  {
+   "out": "하예준",
+   "out_grade": "고급",
+   "in": "정우진",
+   "in_grade": "특급",
+   "delta": -0.26
+  },
+  {
+   "out": "주성진",
+   "out_grade": "초급",
+   "in": "류서현",
+   "in_grade": "중급",
+   "delta": -0.292
+  }
+ ],
+ "D5_same_grade": {
+  "out": "주성진",
+  "out_grade": "초급",
+  "in": "정지윤",
+  "in_grade": "초급",
+  "delta": -0.083,
+  "parts": {
+   "skill": -0.083,
+   "synergy": 0.0,
+   "overfamiliarity": 0.0,
+   "unfilled": 0.0
+  },
+  "feasible": true,
+  "new_violations": [],
+  "new_shortfalls": 0,
+  "grade_swaps": {},
+  "budget_add": {},
+  "risks": [
+   "그래프 수치상 뚜렷한 리스크가 관측되지 않는다."
+  ],
+  "fallback": true
+ },
+ "D5_grade_swap": {
+  "out": "하예준",
+  "out_grade": "고급",
+  "in": "주경민",
+  "in_grade": "특급",
+  "delta": 0.0,
+  "parts": {
+   "skill": 0.0,
+   "synergy": 0.0,
+   "overfamiliarity": 0.0,
+   "unfilled": 0.0
+  },
+  "feasible": true,
+  "new_violations": [],
+  "new_shortfalls": 0,
+  "grade_swaps": {
+   "J001": [
+    {
+     "seat": "고급",
+     "grade": "특급",
+     "count": 1
+    }
+   ]
+  },
+  "budget_add": {},
+  "risks": [
+   "등급 대체 — J001의 고급 자리 1개를 특급으로 채운다(확정할 때 사유를 적고 그 사업 정원이 바뀐다)",
+   "그래프 수치상 뚜렷한 리스크가 관측되지 않는다."
+  ],
+  "fallback": true
+ },
+ "D5_confirm": {
+  "moved": 0,
+  "joined": 1,
+  "left": 1,
+  "grade_swaps": {
+   "J001": [
+    {
+     "seat": "고급",
+     "grade": "특급",
+     "count": 1
+    }
+   ]
+  },
+  "budget_add": {},
+  "new_violations": [],
+  "locked_dropped": [],
+  "lines": [
+   "주경민: 대기 → J001",
+   "하예준: J001 → 대기"
+  ],
+  "changes": {
+   "added": [
+    "DP0071@J001"
+   ],
+   "removed": [
+    "DP0099@J001"
+   ],
+   "changed": []
+  },
+  "seats_after": {
+   "특급": {
+    "need": 2,
+    "filled": 2
+   },
+   "고급": {
+    "need": 2,
+    "filled": 2
+   },
+   "중급": {
+    "need": 3,
+    "filled": 3
+   },
+   "초급": {
+    "need": 1,
+    "filled": 1
+   }
+  }
+ },
+ "D5_review_doc": {
+  "facts": 84,
+  "adverse": 7,
+  "move_facts": [
+   "이 확정으로 J001 사업 점수 8.24 → 8.24, 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "주경민(특급): 대기 인력, J001 투입률 1, 이 사업 요구 기술 중 충족: 메타데이터 관리, ETL, 비정형 문서 처리(OCR), 금융 업무",
+   "J001: 등급 대체 — 고급 자리 1개를 특급으로 채움(위 등급), 사유 데이터 정제·적재 범위라 이 등급으로 충분, 발주처와 협의함. 이 확정으로 정원 고급 −1 · 특급 +1"
+  ]
+ }
+}
