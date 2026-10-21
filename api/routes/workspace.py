@@ -117,7 +117,9 @@ def workspace_view(request: Request) -> dict:
     # 확정 취소(2026-10-21): 이력의 확정마다 취소됐는지·취소할 수 있는지(직전 판이 있어야 차이를 안다)
     gone = cancelled_keys(history)
     history = [{**e, "cancelled": (e.get("version"), e.get("at")) in gone,
-                "cancellable": e.get("kind") in CANCELABLE and (e.get("version"), e.get("at")) not in gone and i < len(history) - 1}
+                "cancellable": e.get("kind") in CANCELABLE and (e.get("version"), e.get("at")) not in gone and i < len(history) - 1,
+                # 그 확정이 사람을 새로 넣은 사업 -- 신규 사업 화면의 "지금 팀" 옆 확정 취소가 이 사업의 마지막 확정을 찾는다(2026-10-21)
+                "projects": sorted(_joined_of(e)), "joined": _joined_of(e)}
                for i, e in enumerate(history)]
     from api.unavailable import horizon_reason
     bench = [person(p, unavailable=horizon_reason(dataset, p)) for p in (m.get("bench") or []) if isinstance(p, str)]
@@ -444,6 +446,18 @@ def skills_dictionary() -> list[dict]:
 
 
 __all__ = ["router", "workspace_view", "CURRENT"]
+
+
+def _joined_of(entry: dict) -> dict[str, list[str]]:
+    """확정이 사업마다 새로 넣은 사람(summary.added "P@J") -- 화면이 "지금 팀"에 아직 남은 사람을 넣은 확정을 고른다(3차 리뷰 S1)."""
+    if entry.get("kind") not in CANCELABLE:
+        return {}
+    out: dict[str, list[str]] = {}
+    for a in (entry.get("summary") or {}).get("added") or []:
+        if "@" in str(a):
+            p, j = str(a).split("@", 1)
+            out.setdefault(j, []).append(p)
+    return {j: sorted(v) for j, v in sorted(out.items())}
 
 
 # --- 확정 취소(2026-10-21 사용자 요청 3, 결정: 확정 한 건 통째 · 빼 온 사람은 원래 사업으로 · 긴급 투입 포함) ---------------

@@ -7,7 +7,7 @@ vi.mock("./workspaceApi", async (importOriginal) => {
     ...real,
     fetchWorkspace: vi.fn(), fetchCandidates: vi.fn(), fetchSkillDictionary: vi.fn(), fetchProjectForm: vi.fn(),
     postProject: vi.fn(), patchStage: vi.fn(), dropProject: vi.fn(), postLock: vi.fn(), postApply: vi.fn(), postUndo: vi.fn(),
-    postEmergency: vi.fn(), fetchStandby: vi.fn(), postEmergencyPreview: vi.fn(),
+    postEmergency: vi.fn(), fetchStandby: vi.fn(), postEmergencyPreview: vi.fn(), fetchCancelPreview: vi.fn(), postCancel: vi.fn(),
   };
 });
 vi.mock("../api/client", () => ({
@@ -201,6 +201,42 @@ describe("NewProjectsScreen", () => {
     fireEvent.click(await screen.findByRole("button", { name: "박지훈 넣기" }));
     expect(await screen.findByText(/확정하면 규칙 위반: J014 월 비용/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1명 확정" })).toBeDisabled();
+  });
+
+  it("지금 팀 옆 '확정 취소'는 이 사업의 마지막 확정을 미리 보기 뒤 취소한다(사용자 2026-10-21)", async () => {
+    const team = [{ person_id: "P9", name: "박지훈", grade: "고급" as const, alloc: 1, locked: false }];
+    const confirm = { version: "v2", at: "2026-10-21T01:00:00+00:00", kind: "apply_auto", note: "자동 편성 확정(K=1)",
+                      cancellable: true, cancelled: false, projects: ["J014", "J020"], joined: { J014: ["P9"], J020: ["P7"] } };
+    const ws = { ...WS, dataset_version: "v2", pipeline: [{ ...WS.pipeline[0], team }],
+                 history: [confirm, { version: "v1", at: "2026-10-21T00:59:00+00:00", kind: "base", note: "시작 데이터" }] };
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(ws);
+    vi.mocked(api.fetchCandidates).mockResolvedValue({ predecessor: null, bench: [], ending: [], pull: [], unavailable: [], note: "" } as never);
+    vi.mocked(api.fetchCancelPreview).mockResolvedValue({ target: confirm, revert: ["박지훈: J014에서 뺀다"], skipped: [], dropped: [],
+                                                         new_violations: [], ok: true, blocked: null });
+    vi.mocked(api.postCancel).mockResolvedValue({ workspace: { ...WS, dataset_version: "v3" }, cancel: {} } as never);
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "보험사 B 고도화 확정 취소" }));
+    const dlg = await screen.findByRole("dialog");
+    expect(await within(dlg).findByText("박지훈: J014에서 뺀다")).toBeTruthy();
+    expect(within(dlg).getByText(/J014 · J020에 함께 사람을 넣었습니다/)).toBeTruthy();
+    expect(api.fetchCancelPreview).toHaveBeenCalledWith("v2", confirm, expect.anything());
+    fireEvent.click(within(dlg).getByRole("button", { name: "이 확정 취소" }));
+    await waitFor(() => expect(api.postCancel).toHaveBeenCalledWith("v2", confirm));
+  });
+
+  it("넣은 사람이 이미 지금 팀에 없는 확정은 '지금 팀' 옆에서 고르지 않는다(3차 리뷰 S1)", async () => {
+    const team = [{ person_id: "P9", name: "박지훈", grade: "고급" as const, alloc: 1, locked: false }];
+    const gone = { version: "v3", at: "2026-10-21T02:00:00+00:00", kind: "apply_manual", note: "손 편성: X",
+                   cancellable: true, cancelled: false, projects: ["J014"], joined: { J014: ["PX"] } };
+    const made = { version: "v2", at: "2026-10-21T01:00:00+00:00", kind: "apply_manual", note: "손 편성: 박지훈",
+                   cancellable: true, cancelled: false, projects: ["J014"], joined: { J014: ["P9"] } };
+    vi.mocked(api.fetchWorkspace).mockResolvedValue({ ...WS, pipeline: [{ ...WS.pipeline[0], team }], history: [gone, made,
+      { version: "v1", at: "2026-10-21T00:59:00+00:00", kind: "base", note: "시작 데이터" }] });
+    vi.mocked(api.fetchCandidates).mockResolvedValue({ predecessor: null, bench: [], ending: [], pull: [], unavailable: [], note: "" } as never);
+    vi.mocked(api.fetchCancelPreview).mockReturnValue(new Promise(() => {}));
+    render(<NewProjectsScreen milpParams={null} onDatasetChanged={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "보험사 B 고도화 확정 취소" }));
+    expect(api.fetchCancelPreview).toHaveBeenCalledWith("v1", made, expect.anything());
   });
 
   it("진행 사업의 사람 한 명을 고정한다", async () => {
