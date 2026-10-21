@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] feat/claude-a-annual-whatif · web/src/App.tsx, web/src/components/{Shell,RequirementsTab,AssignmentTable,PlanCards,ConfirmChanges}*, web/src/whatif/**(새), api/routes/workspace.py(preview), api/routes/meta.py·schemas(요구 기술), 대본·README 메뉴 이름 · 2026-10-21 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
