@@ -4,7 +4,7 @@
 바꾸는 규칙(결정적): 아래 표의 개념마다 그 이름을 가진 사람 행을 사람 번호 순으로 세 명 중 한 명꼴로 바꾸고, 사업 요구 행도 표에 있으면 하나 바꾼다.
 표의 표기는 실행할 때 사전으로 다시 확인해 사전이 알아보는 것은 빼고 알린다(사전이 바뀌어도 "낯선 이름"만 남게).
 
-  uv run python scripts/make_messy_skill_demo.py [출력 폴더]      # 기본 demo/org-n100-messy-skills
+  uv run python scripts/make_messy_skill_demo.py [출력 폴더]      # 기본 demo/org-n100-messy-skills (+ 같은 이름의 .zip -- 화면에서 올리기용)
 """
 from __future__ import annotations
 
@@ -65,6 +65,12 @@ def main(out: Path = OUT) -> dict:
     out.mkdir(parents=True)
     for name, text in files.items():
         (out / name).write_text(text, "utf-8")
+    # 화면에서 올리는 zip(시연 D1 -- 데이터 탭 "인력·사업 데이터 올리기"): 같은 파일들. 가상 데이터라 평가 글 판정은 동봉 값을 쓴다(AI 다시 안 부름)
+    import zipfile
+    zpath = out.with_suffix(".zip")
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+        for name in sorted(files):                       # 시각을 고정해 다시 만들어도 같은 바이트
+            z.writestr(zipfile.ZipInfo(name, date_time=(2026, 10, 22, 0, 0, 0)), files[name], compress_type=zipfile.ZIP_DEFLATED)
     info = {"out": str(out.relative_to(ROOT)) if out.is_relative_to(ROOT) else str(out), "person_rows_changed": changed,
             "requirement_rows_changed": req_changed, "variants": len(variants), "skipped_known": skipped}
     print(json.dumps(info, ensure_ascii=False))

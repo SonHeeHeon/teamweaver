@@ -1,0 +1,241 @@
+{
+ "experiment": "skill-mapping",
+ "when": "2026-10-22T01:29:51+09:00",
+ "commit": "1907dc7",
+ "model": "gpt-6-luna",
+ "dictionary_version": "2026-10-11.1",
+ "held_out_total": 621,
+ "held_out": {
+  "skipped_still_known": 99,
+  "string": {
+   "n": 522,
+   "top1": 142,
+   "top1_rate": 0.272,
+   "top1_ci": [
+    0.236,
+    0.312
+   ],
+   "alias_exact": 142,
+   "recall3": 280,
+   "recall3_rate": 0.536,
+   "recall3_ci": [
+    0.494,
+    0.579
+   ],
+   "wrong_merge": 30,
+   "wrong_merge_confusable": 5,
+   "said_new_or_not_skill": 350,
+   "wrong_examples": [
+    [
+     "비관계형 데이터베이스",
+     "nosql",
+     "rdbms",
+     "alias"
+    ],
+    [
+     ".NET Core",
+     "dotnet",
+     "aspnet",
+     "alias"
+    ],
+    [
+     "스프링 배치",
+     "spring_batch",
+     "spring",
+     "alias"
+    ],
+    [
+     "AWS EKS",
+     "eks",
+     "aws",
+     "alias"
+    ],
+    [
+     "넥스트JS",
+     "nextjs",
+     "nestjs",
+     "alias"
+    ],
+    [
+     "에스큐엘",
+     "sql",
+     "mysql",
+     "alias"
+    ],
+    [
+     "PM",
+     "pm",
+     "bpm",
+     "alias"
+    ],
+    [
+     "정보계 시스템",
+     "info_system",
+     "core_banking",
+     "alias"
+    ],
+    [
+     "네스트JS",
+     "nestjs",
+     "nextjs",
+     "alias"
+    ],
+    [
+     "AWS 람다",
+     "aws_lambda",
+     "aws",
+     "alias"
+    ],
+    [
+     "관계형 데이터베이스",
+     "rdbms",
+     "nosql",
+     "alias"
+    ],
+    [
+     "JSP",
+     "jsp",
+     "javascript",
+     "alias"
+    ],
+    [
+     "테스트",
+     "testing",
+     "perf_test",
+     "alias"
+    ],
+    [
+     "WebSphere MQ",
+     "ibm_mq",
+     "websphere",
+     "alias"
+    ],
+    [
+     "ES6",
+     "javascript",
+     "eai",
+     "alias"
+    ]
+   ]
+  },
+  "ai": {
+   "n": 522,
+   "top1": 497,
+   "top1_rate": 0.952,
+   "top1_ci": [
+    0.93,
+    0.967
+   ],
+   "alias_exact": 448,
+   "recall3": 522,
+   "recall3_rate": 1.0,
+   "recall3_ci": [
+    0.993,
+    1.0
+   ],
+   "wrong_merge": 1,
+   "wrong_merge_confusable": 0,
+   "said_new_or_not_skill": 24,
+   "wrong_examples": [
+    [
+     "Text Analytics",
+     "text_analysis",
+     "data_analysis",
+     "alias"
+    ]
+   ]
+  }
+ },
+ "demo_variants": {
+  "string": {
+   "n": 14,
+   "top1": 8,
+   "top1_rate": 0.571,
+   "top1_ci": [
+    0.326,
+    0.786
+   ],
+   "alias_exact": 8,
+   "recall3": 12,
+   "recall3_rate": 0.857,
+   "recall3_ci": [
+    0.601,
+    0.96
+   ],
+   "wrong_merge": 0,
+   "wrong_merge_confusable": 0,
+   "said_new_or_not_skill": 6,
+   "wrong_examples": []
+  },
+  "ai": {
+   "n": 14,
+   "top1": 14,
+   "top1_rate": 1.0,
+   "top1_ci": [
+    0.785,
+    1.0
+   ],
+   "alias_exact": 13,
+   "recall3": 14,
+   "recall3_rate": 1.0,
+   "recall3_ci": [
+    0.785,
+    1.0
+   ],
+   "wrong_merge": 0,
+   "wrong_merge_confusable": 0,
+   "said_new_or_not_skill": 0,
+   "wrong_examples": []
+  }
+ },
+ "negatives": {
+  "string": {
+   "n": 20,
+   "not_merged": 19,
+   "merged": 1,
+   "merged_names": [
+    [
+     "Svelte",
+     "etl"
+    ]
+   ],
+   "decision_exact": 9,
+   "not_merged_ci": [
+    0.764,
+    0.991
+   ]
+  },
+  "ai": {
+   "n": 20,
+   "not_merged": 20,
+   "merged": 0,
+   "merged_names": [],
+   "decision_exact": 20,
+   "not_merged_ci": [
+    0.839,
+    1.0
+   ]
+  }
+ },
+ "score_recovery": {
+  "pairs": 2100,
+  "pairs_changed_before": 729,
+  "share_changed_before": 0.347,
+  "max_abs_diff_before": 0.5,
+  "pairs_changed_after": 0,
+  "max_abs_diff_after": 0.0
+ },
+ "ai_usage": {
+  "calls": 27,
+  "cost_usd": 0.02493,
+  "in": 129240,
+  "latency_s": 179.73
+ },
+ "gates": {
+  "ai_ids_in_dictionary": true,
+  "negatives_merged_le_2": true,
+  "score_diff_zero_after_approval": true
+ },
+ "gates_pass": true,
+ "wall_s": 183.7
+}
