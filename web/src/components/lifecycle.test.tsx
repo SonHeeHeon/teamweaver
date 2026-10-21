@@ -55,7 +55,7 @@ const META: Meta = { people: [{ id: "P1", name: "김민준", grade: "고급", sk
 
 describe("화면에 붙은 사업 이력", () => {
   it("연간 계획 사업 표에 기간 줄과 꼬리표가 있다", () => {
-    render(<RequirementsTab meta={META} weights={{}} onWeightsChange={() => {}} onRun={() => {}} running={false} />);
+    render(<RequirementsTab meta={META} onRun={() => {}} running={false} />);
     const row = screen.getByText("[추가 과제] 금융사 아 클라우드 마이그레이션").closest("tr")!;
     expect(within(row).getByText("상위 J021")).toBeInTheDocument();
     expect(within(row).getByText("외주 3명(참고)")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("화면에 붙은 사업 이력", () => {
   });
 
   it("계획 시작 달을 모르면(예전 고정 데이터) 기간 줄을 그리지 않는다", () => {
-    render(<RequirementsTab meta={{ ...META, horizon_start: null }} weights={{}} onWeightsChange={() => {}} onRun={() => {}}
+    render(<RequirementsTab meta={{ ...META, horizon_start: null }} onRun={() => {}}
                             running={false} />);
     expect(screen.queryByText(/계획 안/)).toBeNull();
     expect(screen.getByText("[추가 과제] 금융사 아 클라우드 마이그레이션")).toBeInTheDocument();

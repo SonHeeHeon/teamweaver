@@ -116,13 +116,16 @@ export async function saveSettings(
 export async function postWhatif(
   entries: AssignEntry[], swap: Swap, weights: Record<string, number>,
   milpParams: PlacementSettings | null, datasetVersion: string | null = null,
+  /** What-if(지금 배치): 지금 배치 대비 등급 대체를 적용해 평가한다(확정과 같은 규칙, 2026-10-21) */
+  opts: { gradeSwap?: boolean } = {},
 ): Promise<WhatifResponse> {
   const res = await fetch(`${API_BASE}/api/whatif`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ entries, swap, weights,
                            ...(milpParams ? { milp_params: milpParams } : {}),
-                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}) }),
+                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}),
+                           ...(opts.gradeSwap ? { grade_swap: true } : {}) }),
   });
   await throwIfDatasetChanged(res);
   if (!res.ok) throw new Error(`POST /api/whatif 실패: ${res.status}`);
@@ -134,13 +137,15 @@ export async function postWhatif(
 export async function applySwap(
   entries: AssignEntry[], swap: Swap, weights: Record<string, number>,
   milpParams: PlacementSettings | null, datasetVersion: string | null,
+  opts: { gradeSwap?: boolean } = {},
 ): Promise<ApplySwapResponse> {
   const res = await fetch(`${API_BASE}/api/plans/apply-swap`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ entries, swap, weights,
                            ...(milpParams ? { milp_params: milpParams } : {}),
-                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}) }),
+                           ...(datasetVersion ? { dataset_version: datasetVersion } : {}),
+                           ...(opts.gradeSwap ? { grade_swap: true } : {}) }),
   });
   await throwIfDatasetChanged(res);
   if (!res.ok) {

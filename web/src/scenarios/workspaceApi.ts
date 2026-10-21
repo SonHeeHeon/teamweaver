@@ -184,6 +184,14 @@ export const postApply = (v: string, body: { entries: AssignEntry[]; note?: stri
   grade_swaps?: (GradeSwap & { project_id: string; reason: string })[] } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
     "/api/workspace/apply", json("POST", { dataset_version: v, ...body }));
+/** 확정 전 미리 계산(2026-10-21): 지금 배치 → entries를 확정하면 생길 옮김·등급 대체·예산 증액·새 위반·고정 충돌(데이터는 그대로) */
+export interface PreviewMove { person_id: string; name: string; from: string[]; to: string[] }
+export interface ConfirmPreview {
+  dataset_version: string; moved: PreviewMove[]; joined: PreviewMove[]; left: PreviewMove[]; changed: boolean;
+  grade_swaps: Record<string, GradeSwap[]>; budget_add: Record<string, number>; new_violations: string[]; locked_dropped: string[];
+}
+export const postPreview = (v: string, entries: AssignEntry[], signal?: AbortSignal) =>
+  call<ConfirmPreview>("/api/workspace/preview", { ...json("POST", { dataset_version: v, entries }), signal });
 export const postConcurrency = (v: string, personId: string, allow: boolean, reason?: ConcurrencyReason, memo?: string,
                                 maxProjects: 2 | 3 = 2) =>
   call<WithWs>("/api/workspace/concurrency", json("POST", { dataset_version: v, person_id: personId, allow,
