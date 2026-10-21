@@ -103,12 +103,6 @@ function CancelList({ title, lines, tone }: { title: string; lines: string[]; to
   );
 }
 
-/** 버튼에 붙이는 짧은 확정 시각("01:28") */
-const shortTime = (iso: string) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
-};
-
 /** 서버는 UTC로 남긴다 -- 화면은 브라우저 지역 시각으로 */
 const localTime = (iso: string) => {
   const d = new Date(iso);
@@ -493,7 +487,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   <button className="btn shrink-0 px-2.5 py-1 text-xs" disabled={busy || !!cancelling}
                           title={`${lastConfirm.note} · ${localTime(lastConfirm.at)} -- 이 확정만 취소합니다(그 뒤 변경은 그대로)`}
                           aria-label={`${project.name} 확정 취소`} onClick={() => void openCancel(lastConfirm)}>
-                    확정 취소 <span className="num text-slate-400">{shortTime(lastConfirm.at)}</span>
+                    확정 취소
                   </button>
                 )}
               </div>
