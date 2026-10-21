@@ -1,6 +1,7 @@
-import type { PlanEvent } from "../api/types";
+import type { AssignEntry, PlanEvent } from "../api/types";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { formatPrecomputedAt } from "./precomputed";
+import { diffText, rosterDiff } from "./rosterDiff";
 
 interface Props {
   plans: PlanEvent[];
@@ -8,6 +9,8 @@ interface Props {
   onSelect: (label: string) => void;
   /** 플랜별 화면에서 적용한 변경(교체·투입률 조정) 수 -- 저장 결과 배지를 "원안 + 변경 n건"으로 바꾼다. */
   editCounts?: Record<string, number>;
+  /** 지금 배치(작업 데이터, 비었으면 백지). 주면 안마다 "지금 대비 옮김·새로·빠짐"(2026-10-21 화면 검토 P1-2 -- 운영 중 안 A~D는 모두를 다시 짠 결과다) */
+  baseline?: AssignEntry[];
 }
 
 const pct = (v: number | null) => (v === null ? "산정 불가" : `${(v * 100).toFixed(1)}%`);
@@ -15,7 +18,7 @@ const pct = (v: number | null) => (v === null ? "산정 불가" : `${(v * 100).t
 /** 편성안 카드(2026-10-18 개편 -- 이 화면에서 힘을 준 한 곳). 큰 글자와 인주색 "검증" 도장으로 "솔버 답을 서버가 다시
  *  검사해 통과했다"를 한눈에. 주 지표는 전체 목적값(협업·익숙함·빈자리까지 포함한 점수) -- 기술항 비율(최적화율)과 헷갈리지
  *  않게 둘을 나눠 적는다(Codex 평가 2026-10-18 UX 지적). */
-export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props) {
+export function PlanCards({ plans, selected, onSelect, editCounts = {}, baseline }: Props) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {plans.map((p) => {
@@ -43,6 +46,11 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {} }: Props)
               <dt className="cursor-help text-slate-500" title="사업이 요구한 기술·레벨을 배치된 사람이 실제로 채운 비율(보조 지표). 요구가 까다로울수록 낮게 나옵니다.">충족률 ⓘ</dt><dd>{pct(p.fulfillment)}</dd>
               <dt className="text-slate-500">배치</dt><dd>{p.entries.length}건</dd>
             </dl>
+            {baseline && baseline.length > 0 && (
+              <p className="mt-2 rounded bg-sky-50 px-2 py-1 text-xs text-sky-900"
+                 title="이 안은 모두를 처음부터 다시 짠 결과입니다. 지금 실제 배치와 비교해 사업이 바뀌는 사람 수입니다.">
+                지금 대비 {diffText(rosterDiff(baseline, p.entries))}</p>
+            )}
             {p.precomputed_at != null && !p.precomputed_label ? (
               <p className="mt-2 text-xs text-slate-500" title={formatPrecomputedAt(p.precomputed_at, true)}>
                 {edited ? `미리 계산 원안 + 변경 ${edited}건`

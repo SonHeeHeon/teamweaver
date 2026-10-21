@@ -46,6 +46,26 @@
 
 ---
 
+## 2026-10-21 · claude-a · 연간 계획·What-if 분리 + 화면 검토 결정 3건(연간 계획 확정 · 지금 대비 옮김 · 가중치 대신 요구 기술)
+- 브랜치/커밋: `feat/claude-a-annual-whatif`(`feat/claude-a-grade-swap` 위, b `newproj-explain-cancel` 3b7230a·4f54867 합침 `37700b5`) · 서버·웹·문서 커밋(아래 검증 줄). main 미병합(승인 대기).
+- 사용자: "결정이 필요한 3건은 다 진행하자" · "what if 는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 어떤지 보기 위한 메뉴인데 … 이 두개는 분리가 필요할거같은데. 지금의 화면은 연간 계획 화면과 맞물려있는 개념".
+- 한 일:
+  - 메뉴: 연간 계획 ① 조건·계산(`annual`) → ② 편성안 비교·확정(`plans`, 예전 What-if 대시보드), 지금 배치 › What-if(`whatif`, 새 화면 `web/src/whatif/CurrentWhatif`).
+  - 새 What-if: 지금 배치에서 바꿔 보기 → 담기 → 한 번에 확정(손 편성, 검토 자료). `/api/whatif`·`apply-swap`에 `grade_swap`(지금 배치 대비 등급 대체 적용 평가, 확정과 같은 `core.evaluate.grade_swap.substitution`).
+  - `POST /api/workspace/preview`(확정 미리 계산) + `components/ConfirmChanges`(공용 확정 창).
+  - ② "안 X로 확정"(source `plan`).
+  - 안 카드·배치 명단 "지금 대비 옮김·새로·빠짐"(`components/rosterDiff`).
+  - 기술 가중치 칸 삭제(`WeightSlider.tsx` 삭제), `/api/meta` 사업 `requirements` → 사업 조건 표 "요구 기술".
+- 상대 영향(claude-b):
+  - 네 영역 `api/routes/workspace.py`(`expected_grade_swaps`가 `substitution` 사용, `/api/workspace/preview` 추가)·`scenarios/workspaceApi.ts`(`postPreview`·타입)를 고쳤다.
+  - 메뉴 탭 이름: 예전 `whatif` → `plans`, 새 `whatif`. `App`의 `setTab("whatif")`를 쓰던 곳은 `plans`.
+  - 화면 문구 "What-if 대시보드"를 찾는 시험은 "편성안 비교·확정"으로.
+  - 조직 기술 지도 요청(4f54867)은 사용자 지시 전이라 손대지 않았다.
+- 검증: 아래 문서 커밋 메시지 · 웹 312 · 브라우저(연간 기록 안 A 확정 82명 → What-if 대체 −0.73·사유 확정 → 연말 기록 카드 "지금 대비 옮김 46명").
+- 근거: `.omc/reports/2026-10-21-annual-whatif-split.md`, 계획 `.omc/plan/2026-10-21-annual-whatif-split.md`.
+
+---
+
 ## 2026-10-21 · claude-a · 화면 전체 검토(사용자 "기조에 맞게 … 쭉 검토") + 작은 고침 3건
 - 브랜치/커밋: `feat/claude-a-grade-swap` `36e1f20`(작은 고침) · `e04b06e`(양식 문구) · 이 커밋(문서). main 미병합.
 - 사용자: "내가 너에게도 그렇고 b에게도 그렇고 요청한 그 화면 변경 포인트들을 잘 이해하고 그 기조에 맞게 화면에서 다른거 또 변경할게 없는지 쭉 검토해봐 줘 … 내부 로직 및 기능을 바꿔야하는 것들도".
@@ -89,6 +109,16 @@
   - 브라우저(연말형 기록, 임시 폴더): J018에 중급 둘 → 둘째가 "등급 대체(고급 자리)" → 사유 칸 → 확정 → 정원 고급 0·중급 2, 이력 사유, 검토 자료 `MOVE_GRADE`(확인할 사실), What-if 빈 화면 안내.
 - 리뷰: Codex 한도 소진(10-25 16:31) → 직접 리뷰.
 - 근거: `.omc/reports/2026-10-21-grade-substitution.md`, 계획 `.omc/plan/2026-10-21-grade-substitution.md`.
+
+---
+
+## 2026-10-21 · claude-b · 확정 취소 버튼을 신규 사업 "지금 팀" 줄 오른쪽에도(사용자 후속 요청)
+- 브랜치/커밋: `feat/claude-b-newproj-explain-cancel` 이 커밋. main 미병합.
+- 사용자: "신규 사업 편성 화면 상단에 '지금팀' 인력 명단 ~~ 이 섹션 오른쪽에 확정 취소가 있는게 더 직관적인거같아".
+- 한 일: `/api/workspace` 이력 항목에 `projects`·`joined`(확정이 사업마다 새로 넣은 사람). 화면은 그 사람이 지금 팀에 남아 있는 가장 최근 확정을 "지금 팀" 옆 [확정 취소 시각]으로(같은 미리 보기 창, 함께 바뀐 사업·지워질 넣기 후보 안내).
+- 상대 영향: 없음(이력 항목에 칸 추가). 기준선 웹 299.
+- 검증: pytest 전체 2079 passed · slow 20 · 바뀐 뒤 cancel·workspace 시험 26 passed · 웹 299 · tsc·build · 브라우저(K=1 확정 → 지금 팀 옆 버튼 → 창 "J015 · J018 · J019 · J020에 함께" → 취소 → 지금 팀 "아직 없음").
+- 리뷰: Opus 폴백 3라운드 approve(SHOULD 1: 넣은 사람이 이미 빠진 확정을 고름 → 지금 팀에 남은 사람 기준으로 고침, NIT 2 반영).
 
 ---
 

@@ -88,4 +88,12 @@ describe("PlanCards — 검증 도장(2026-10-18)", () => {
     rerender(<PlanCards plans={[plan]} selected="A" onSelect={() => {}} editCounts={{ A: 1 }} />);
     expect(screen.queryByText("검증")).not.toBeInTheDocument();
   });
+  it("지금 배치가 있으면 안마다 지금 대비 옮김·새로·빠짐을 보인다(2026-10-21 -- 운영 중 안은 모두를 다시 짠 결과)", () => {
+    const p = { ...plan("A", 0.9), entries: [{ person_id: "a", project_id: "J2", alloc: 1 }, { person_id: "c", project_id: "J1", alloc: 1 }] };
+    const base = [{ person_id: "a", project_id: "J1", alloc: 1 }, { person_id: "b", project_id: "J1", alloc: 1 }];
+    const { rerender } = render(<PlanCards plans={[p]} selected="A" onSelect={() => {}} baseline={base} />);
+    expect(screen.getByText("지금 대비 옮김 1명 · 새로 1명 · 빠짐 1명")).toBeInTheDocument();
+    rerender(<PlanCards plans={[p]} selected="A" onSelect={() => {}} baseline={[]} />);   // 백지면 비교하지 않는다
+    expect(screen.queryByText(/지금 대비/)).toBeNull();
+  });
 });

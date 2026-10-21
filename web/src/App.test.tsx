@@ -204,7 +204,7 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     await waitFor(() => expect(saveSettings).toHaveBeenCalledWith(changed, null, null));
 
     // 결과 화면에는 "이전 설정으로 계산됨" 안내가 뜬다.
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.click(screen.getByRole("button", { name: "편성안 비교·확정" }));
     expect(await screen.findByText(/바뀐 설정: 최소 투입률 30%→50%/)).toBeInTheDocument();
 
     // 교체 검토는 플랜을 계산한 30% 기준으로 보낸다(50%가 아니다).
@@ -217,24 +217,6 @@ describe("App — 배치 설정(K8)이 계산과 교체 검토에 같은 기준�
     fireEvent.click(await screen.findByRole("button", { name: "PDF 내려받기" }));
     await waitFor(() => expect(downloadReport).toHaveBeenCalled());
     expect(vi.mocked(downloadReport).mock.calls[0][3]).toEqual(SETTINGS.settings);
-  });
-
-  it("계산 후 가중치를 바꿔도 교체 검토는 계산 당시 가중치를 쓴다", async () => {
-    vi.mocked(fetchMeta).mockResolvedValue({ ...META, skills: ["Java"] });
-    vi.mocked(streamOptimize).mockReset().mockReturnValue(planStream());
-    vi.mocked(postWhatif).mockReset().mockResolvedValue(STALE_RESULT);
-
-    render(<App initialTab="annual" />);
-    fireEvent.click(await screen.findByRole("button", { name: "최적화 실행" }));
-    await screen.findByText("Plan A");
-    fireEvent.click(screen.getByRole("button", { name: "연간 계획" }));
-    fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
-    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p1::j1" } });
-    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p3" } });
-    fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
-    await waitFor(() => expect(postWhatif).toHaveBeenCalledTimes(1));
-    expect(vi.mocked(postWhatif).mock.calls[0][2]).toEqual({});
   });
 
   it("실행할 때마다 서버 설정을 다시 읽어 다른 관리자가 바꾼 값도 반영한다", async () => {
@@ -305,7 +287,7 @@ describe("App — 데이터셋 전환(K9)", () => {
     await waitFor(() => expect(fetchMeta).toHaveBeenCalledTimes(2));
     expect(screen.getAllByText(/synthetic-n1/).length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.click(screen.getByRole("button", { name: "편성안 비교·확정" }));
     expect(screen.queryByText("Plan A")).not.toBeInTheDocument();
   });
 
@@ -330,7 +312,7 @@ describe("App — 데이터셋 전환(K9)", () => {
     fireEvent.click(screen.getByRole("button", { name: "검증 후 전환" }));
     await screen.findByText(/이 데이터로 전환했다/);
     await act(async () => { gate.resolve(); await Promise.resolve(); });
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.click(screen.getByRole("button", { name: "편성안 비교·확정" }));
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByText("Plan B")).not.toBeInTheDocument();
   });
@@ -501,7 +483,7 @@ describe("App — 교체 적용(K10)", () => {
     fireEvent.change(await screen.findByLabelText(/최소 투입률/), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
     await waitFor(() => expect(saveSettings).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "What-if 대시보드" }));
+    fireEvent.click(screen.getByRole("button", { name: "편성안 비교·확정" }));
     fireEvent.click(await screen.findByRole("button", { name: "이 교체 적용" }));
     await screen.findByText(/교체 1건 적용/);
     expect(vi.mocked(applySwap).mock.calls[0][3]).toEqual(SETTINGS.settings);
@@ -1198,7 +1180,7 @@ describe("App — 3상황 메뉴(2026-10-18, claude-b 요청 1)", () => {
   it("첫 화면은 신규 사업 편성이고, 편성 기록은 메뉴가 따로 있어 데이터 화면에는 없다", async () => {
     render(<App />);
     expect(await screen.findByRole("heading", { level: 1, name: "신규 사업 편성" })).toBeInTheDocument();
-    for (const name of ["긴급 투입", "연간 계획", "What-if 대시보드", "조직 기술 지도", "검토 자료", "편성 기록", "데이터", "배치 설정"]) {
+    for (const name of ["긴급 투입", "연간 계획", "편성안 비교·확정", "What-if", "조직 기술 지도", "검토 자료", "편성 기록", "데이터", "배치 설정"]) {
       expect(screen.getAllByRole("button", { name: new RegExp(`^${name}`) }).length).toBeGreaterThan(0);
     }
     fireEvent.click(screen.getByRole("button", { name: "편성 기록" }));

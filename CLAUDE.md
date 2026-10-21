@@ -46,7 +46,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 - `core/ingest/` 실데이터 CSV 묶음 → `Dataset`(계약·검증 리포트·가상 묶음 생성, `python -m core.ingest generate|check`). 인사 시스템 API 받기 `hr_api.py`(서버 `api/hr_source.py`), 진행 중 사업 기술 경력 늘리기 `aging.py`.
   숙련도는 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꾼다(경계 12/36/60/96개월). 개월 비율 직접 쓰기는 채택 안 함(사용자 결정 2026-10-12, 근거 `docs/skill-score-decision.md`).
 - `api/` FastAPI: `/api/meta`, `/api/optimize`(SSE), `/api/whatif`, `/api/report`(Playwright PDF).
-- `web/` Vite+React+TS+Tailwind. 메뉴(`components/Shell.tsx`, 2026-10-18)는 3상황 중심 -- 신규 사업 편성(첫 화면)·긴급 투입·연간 계획(예전 요건 설정), 공통 부품 `web/src/ui/`. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
+- `web/` Vite+React+TS+Tailwind. 메뉴(`components/Shell.tsx`, 2026-10-18)는 3상황 중심 -- 신규 사업 편성(첫 화면)·긴급 투입·연간 계획(① 조건·계산 `annual` → ② 편성안 비교·확정 `plans` = 예전 What-if 대시보드), 지금 배치 › What-if(`whatif`, 지금 배치에서 바꿔 보기, `web/src/whatif/`), 공통 부품 `web/src/ui/`. `experiments/phase0/`, `experiments/phase1/` 검증·벤치 도구.
 
 ## 코드만 봐서는 모르는 함정
 
@@ -142,6 +142,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `workspace_edits.revert_ops`가 확정 직전(B)·확정(A)·지금(N) 판을 칸마다(배치·등급 정원·예산·요구 기술·동시 수행 허용) 견줘 N==A인 칸만 B로, 그 뒤 바뀐 칸·고정한 배치·없어진 사람/사업은 건너뛴다.
   원래 사업 복귀가 위반이면(위반 종류별 `_implicates`) 그 복귀만 빼 대기로 둔다. 되돌릴 것이 모두 빠지면 422(확정을 "취소됨"으로 잠그지 않게). 계산 뒤 판이 바뀌었으면 409(옛 판 덮어쓰기 방지).
   취소는 `review_docs/cancelled.json`에도 남아(20판 밖에서도 검토 자료 잠금) 취소 판을 되돌리면 지운다. 되돌리기는 확정을 꺼낼 때만 `record_undone`(취소 판은 앞 판과 버전이 같을 수 있다).
+  확정 취소 버튼은 변경 이력 + 신규 사업 "지금 팀" 줄 오른쪽(사용자 후속 요청) -- 후자는 그 확정이 넣은 사람(이력 항목 `joined`)이 **지금 팀에 남아 있는** 가장 최근 확정을 고른다.
   **자동 편성 K 행 설명**(사용자 요청 1): 둘째 줄 = 신규 사업마다 `4/4명 · 대기 · 이동 · 원래 · 동시 수행` + 소명 버튼, "명단" 펼치기 = 이름·옮김 사슬·K−1보다 새로 옮긴 사람 -- `web/src/scenarios/autoView.ts`가 K 행의 `entries`·`diff`만으로 만든다(서버 계산 그대로).
   **기다림 표시**(사용자 요청 2): 공통 `ui.Spinner` -- 소명 미리보기는 창을 바로 열고 "쓰는 중"(멈출 수 있음), 판을 바꾸는 버튼·검토 자료 AI 초안·PDF에도.
   **설정 화면 이름은 화면 말로**(2026-10-20 사용자 "설정 화면 용어 정리"): 계산 멈춤 기준(gap)·계산 시간(안 하나당)·익숙한 쌍 기준/감점/볼 기간·협업 반영 정도·동시에 풀어 볼 갈래 수·같은 달 최대 사업 수·"나눠 투입 · …" -- 저장 키는 그대로(이름은 `settingsFields.FIELDS`·`MODE_LABEL` 한 곳).
@@ -153,6 +154,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   사유는 확정 이력 summary `grade_swaps`(검토 자료 사실 `MOVE_GRADE`, 아래 등급 대체는 확인할 사실), 대체가 있으면 넘친 만큼 `budget_add`. 화면 미리 계산(`routes/scenarios.swap_graph`·`_apply_hint`)과
   확정 검증(`routes/workspace._check_grade_swaps`)이 같은 함수라 다르면 422. 원래 넘쳐 있던 등급·정원 표에 없는 등급은 대체가 아니다. 확정 취소·되돌리기가 정원·예산을 함께 돌린다.
   계산 모델(MILP·평가기·검증기)은 그대로 -- 자동 편성은 대체하지 않고 빈자리로 보인다(부족 신호를 묻지 않게). 후보 목록은 같은 등급이 먼저(`classify`). 긴급 투입은 모자란 자리가 있으면 증원 대신 대체(예전엔 넘친 등급 정원만 늘려 빈자리가 남았다).
+- **연간 계획·What-if 분리**(2026-10-21 사용자 "what if는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 … 지금의 화면은 연간 계획 화면과 맞물려있는 개념", claude-a): 계산한 안 A~D 위에서 바꿔 보는 화면은 연간 계획 ② 편성안 비교·확정(`plans`),
+  What-if(`whatif`, `web/src/whatif/CurrentWhatif`)는 **작업 데이터의 지금 배치**에서 바꿔 보고(`/api/whatif`·`/api/plans/apply-swap`에 `grade_swap: true` -- 지금 배치 대비 등급 대체·예산 증액을 적용해 평가, 확정과 같은 `core.evaluate.grade_swap.substitution`) 담은 변경을 한 번에 확정한다(손 편성 `apply_manual` → 검토 자료).
+  확정 창 `components/ConfirmChanges`는 연간 계획 "안 X로 확정"(source `plan`, 검토 자료 없음)과 What-if가 함께 쓰고, 서버 `POST /api/workspace/preview`(옮김·새로·빠짐·등급 대체·예산 증액·새 위반·고정 충돌, 데이터 그대로)로 미리 계산한다.
+  지금 배치가 있으면 안 카드·배치 명단에 "지금 대비 옮김"(`components/rosterDiff`, 서버 preview와 같은 정의). ② 다듬기(plans)는 `grade_swap` 없이 예전처럼 등급이 바뀐 교체를 경고로 본다.
+  **기술 가중치 칸은 없앴다**(화면 요청 `weights` = 빈 값 = 기본, API 칸은 옛 기록 재현용) -- ① 조건·계산은 `/api/meta` 사업 `requirements`(기술·최소 레벨·인원)를 보인다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -247,7 +253,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 b 지식 그래프 화면 2건(소명 근거 한눈에·기술 지도 막대/관계 그림, claude-a 등급 대체 `9c34092` 위) **2099 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 321 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 연간 계획·What-if 분리(claude-a, b 확정 취소 지금 팀 옆 버튼 합친 트리 위) **2093 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 312 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

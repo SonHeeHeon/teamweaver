@@ -103,6 +103,12 @@ function CancelList({ title, lines, tone }: { title: string; lines: string[]; to
   );
 }
 
+/** 버튼에 붙이는 짧은 확정 시각("01:28") */
+const shortTime = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+};
+
 /** 서버는 UTC로 남긴다 -- 화면은 브라우저 지역 시각으로 */
 const localTime = (iso: string) => {
   const d = new Date(iso);
@@ -392,6 +398,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   }
 
   const groupRows = cands ? cands[group] : [];
+  /** 고른 신규 사업에 사람을 넣은 마지막 확정(아직 취소하지 않은 것) -- 이력은 최신이 앞이다 */
+  // 그 확정이 넣은 사람이 지금 팀에 남아 있어야 한다 -- 그 뒤 빠졌으면 취소해도 바뀌는 게 없다(3차 리뷰 S1)
+  const lastConfirm = project ? ws.history.find((h) => h.cancellable
+    && (h.joined?.[project.project_id] ?? []).some((pid) => project.team.some((m) => m.person_id === pid))) : undefined;
   /** 사업 번호 → "J003 은행 A 데이터"(번호만 보이면 부서장이 다시 찾아야 한다 -- 점검표 f7 기조, 2026-10-20) */
   const named = (id: string) => { const n = [...ws.ongoing, ...ws.pipeline].find((x) => x.project_id === id)?.name; return n ? `${id} ${n}` : id; };
   const projectName = (id: string) => [...ws.pipeline, ...ws.ongoing].find((x) => x.project_id === id)?.name;
@@ -468,13 +478,24 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </span>
                 )}
               </div>
-              <div className="text-sm">
-                <span className="text-slate-500">지금 팀</span>{" "}
-                {project.team.length ? project.team.map((m) => (
-                  <span key={m.person_id} className="mr-1.5 inline-flex items-center gap-1">
-                    {m.grade && <Chip tone={GRADE_TONE[m.grade]}>{m.grade}</Chip>}{m.name}
-                  </span>
-                )) : <span className="text-slate-400">아직 없음</span>}
+              <div className="flex flex-wrap items-start gap-2 text-sm">
+                <div className="min-w-0 flex-1">
+                  <span className="text-slate-500">지금 팀</span>{" "}
+                  {project.team.length ? project.team.map((m) => (
+                    <span key={m.person_id} className="mr-1.5 inline-flex items-center gap-1">
+                      {m.grade && <Chip tone={GRADE_TONE[m.grade]}>{m.grade}</Chip>}{m.name}
+                    </span>
+                  )) : <span className="text-slate-400">아직 없음</span>}
+                </div>
+                {lastConfirm && (
+                  // 이 사업에 사람을 넣은 마지막 확정을 여기서 바로 취소(2026-10-21 사용자 "지금 팀 … 오른쪽에 확정 취소가 더 직관적") --
+                  // 변경 이력의 버튼과 같은 미리 보기 창. 자동 편성 확정이면 함께 바꾼 다른 사업도 같이 취소된다(창에 적음)
+                  <button className="btn shrink-0 px-2.5 py-1 text-xs" disabled={busy || !!cancelling}
+                          title={`${lastConfirm.note} · ${localTime(lastConfirm.at)} -- 이 확정만 취소합니다(그 뒤 변경은 그대로)`}
+                          aria-label={`${project.name} 확정 취소`} onClick={() => void openCancel(lastConfirm)}>
+                    확정 취소 <span className="num text-slate-400">{shortTime(lastConfirm.at)}</span>
+                  </button>
+                )}
               </div>
               <PickDraft projectId={project.project_id} picks={draftList} summary={fresh ? cands?.draft : null} recalculating={recalc}
                          failed={failedNow} onRetry={() => setRetry((n) => n + 1)} named={named}
@@ -792,6 +813,12 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                 </>}>
           <p className="font-medium text-slate-800">{cancelling.entry.note} <span className="num text-xs font-normal text-slate-400">{localTime(cancelling.entry.at)}</span></p>
           <p className="mt-1 text-xs text-slate-500">이 확정이 바꾼 배치만 원래대로 돌립니다(빼 온 사람은 원래 사업으로). 그 뒤의 변경은 그대로 두고, 취소도 새 판으로 남습니다(되돌리기로 무를 수 있음).</p>
+          {draftList.length > 0 && (
+            <p className="mt-1 text-xs text-amber-700">넣기로 고른 후보 {draftList.length}명은 취소하면 지워집니다(새 판이 됩니다).</p>
+          )}
+          {(cancelling.entry.projects?.length ?? 0) > 1 && (
+            <p className="mt-1 text-xs text-amber-700">이 확정은 {cancelling.entry.projects!.join(" · ")}에 함께 사람을 넣었습니다 -- 확정 한 건 전체가 취소됩니다.</p>
+          )}
           {cancelling.error && <div className="mt-2"><Notice tone="bad">{cancelling.error}</Notice></div>}
           {!cancelling.preview && !cancelling.error && <div className="py-5 text-center"><Spinner label="취소하면 무엇이 바뀌는지 계산하는 중…" /></div>}
           {cancelling.preview && (

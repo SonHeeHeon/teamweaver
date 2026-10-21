@@ -54,6 +54,8 @@ def test_cancel_restores_the_pulled_person_and_keeps_a_later_lock(yearend):
         assert {bench["person_id"], pull["person_id"]} <= _team(ws, "J018")
         confirm = _confirm_entry(ws, "apply_manual")
         assert confirm["cancellable"] is True and confirm["cancelled"] is False
+        assert confirm["projects"] == ["J018"]                  # "지금 팀" 옆 확정 취소가 이 사업의 마지막 확정을 찾는다
+        assert confirm["joined"] == {"J018": sorted([bench["person_id"], pull["person_id"]])}
         # 확정 뒤 다른 변경: J001 사업 고정 -- 되돌리기라면 이것까지 사라졌다
         ws = c.post("/api/workspace/lock", json={"dataset_version": ws["dataset_version"], "project_id": "J001",
                                                  "locked": True}).json()["workspace"]

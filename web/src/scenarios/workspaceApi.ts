@@ -27,7 +27,11 @@ export interface PipelineItem extends ProjectItem {
 export interface OngoingItem extends ProjectItem { locked_all: boolean; locked_count: number; ends_in_horizon: boolean; addons?: string[] }
 export interface HistoryEntry { version: string; at: string; kind: string; note: string;
   /** 확정 취소(2026-10-21): 이 확정을 취소한 판이 이력에 있다 · 지금 취소할 수 있다(확정이고 직전 판이 남아 있음) */
-  cancelled?: boolean; cancellable?: boolean }
+  cancelled?: boolean; cancellable?: boolean;
+  /** 그 확정이 사람을 새로 넣은 사업(확정만) -- "지금 팀" 옆 확정 취소가 이 사업의 마지막 확정을 찾는다 */
+  projects?: string[];
+  /** 그 확정이 사업마다 새로 넣은 사람 -- "지금 팀"에 아직 남은 사람을 넣은 확정을 고른다 */
+  joined?: Record<string, string[]> }
 /** 확정 취소 미리 보기 -- 돌릴 것·건너뛸 것(그 뒤 다른 변경)·위반이라 하지 않을 것(대기로 남음)·남는 새 위반 */
 export interface CancelPreview {
   target: { version: string; kind: string; note: string; at: string };
@@ -180,6 +184,14 @@ export const postApply = (v: string, body: { entries: AssignEntry[]; note?: stri
   grade_swaps?: (GradeSwap & { project_id: string; reason: string })[] } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
     "/api/workspace/apply", json("POST", { dataset_version: v, ...body }));
+/** 확정 전 미리 계산(2026-10-21): 지금 배치 → entries를 확정하면 생길 옮김·등급 대체·예산 증액·새 위반·고정 충돌(데이터는 그대로) */
+export interface PreviewMove { person_id: string; name: string; from: string[]; to: string[] }
+export interface ConfirmPreview {
+  dataset_version: string; moved: PreviewMove[]; joined: PreviewMove[]; left: PreviewMove[]; changed: boolean;
+  grade_swaps: Record<string, GradeSwap[]>; budget_add: Record<string, number>; new_violations: string[]; locked_dropped: string[];
+}
+export const postPreview = (v: string, entries: AssignEntry[], signal?: AbortSignal) =>
+  call<ConfirmPreview>("/api/workspace/preview", { ...json("POST", { dataset_version: v, entries }), signal });
 export const postConcurrency = (v: string, personId: string, allow: boolean, reason?: ConcurrencyReason, memo?: string,
                                 maxProjects: 2 | 3 = 2) =>
   call<WithWs>("/api/workspace/concurrency", json("POST", { dataset_version: v, person_id: personId, allow,
