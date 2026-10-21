@@ -312,10 +312,16 @@ class ApplyIn(_Versioned):
     grade_swaps: list[GradeSwapIn] = Field(default=[], max_length=20)
 
 
+def expected_grade_swaps(dataset, entries: list[dict]) -> dict[str, list[dict]]:
+    """지금 배치 → entries로 확정할 때의 등급 대체(사업별, 대체가 있는 사업만) -- `core.evaluate.grade_swap.substitution`."""
+    from core.evaluate.grade_swap import substitution
+    return substitution(dataset.graph, _entries_of(dataset), entries)[1]
+
+
 def _check_grade_swaps(dataset, body: "ApplyIn") -> list[dict]:
     """요청의 등급 대체가 서버 계산(이 확정으로 새로 넘친 등급 × 모자란 자리, core.evaluate.grade_swap)과 같고 사유가 다 있는가.
     화면 미리 계산(routes/scenarios._apply_hint·swap_grade)과 같은 함수라 맞아야 한다 -- 다르면 판이 바뀌었거나 옛 미리 계산이다."""
-    from core.evaluate.grade_swap import plan_swaps, same_swaps, team_grades
+    from core.evaluate.grade_swap import same_swaps
     asked: dict[str, list[dict]] = {}
     for s in body.grade_swaps:
         if s.seat == s.grade:
@@ -323,24 +329,12 @@ def _check_grade_swaps(dataset, body: "ApplyIn") -> list[dict]:
         if not s.reason.strip():
             raise HTTPException(status_code=422, detail=f"등급 대체 사유를 적어야 한다: {s.project_id} {s.seat} 자리 → {s.grade}")
         asked.setdefault(s.project_id, []).append(s.model_dump())
-    graph = dataset.graph
-    grade_of = {p.id: p.grade.value for p in graph.people}
-    cur = _entries_of(dataset)
-    new = [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries]
-
-    def teams(es):
-        out: dict[str, set] = {}
-        for e in es:
-            out.setdefault(e["project_id"], set()).add(e["person_id"])
-        return out
-    tb, ta = teams(cur), teams(new)
-    touched = {j for j in set(tb) | set(ta) if tb.get(j) != ta.get(j)} | set(asked)
-    for jid in sorted(touched):
-        if jid not in graph.project_index:
-            raise HTTPException(status_code=422, detail=f"이 데이터에 없는 사업: {jid}")
-        j = graph.projects[graph.project_index[jid]]
-        want = plan_swaps({g.value: n for g, n in j.grade_headcount.items()},
-                          team_grades(cur, jid, grade_of), team_grades(new, jid, grade_of))
+    unknown = sorted(j for j in asked if j not in dataset.graph.project_index)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"이 데이터에 없는 사업: {unknown[0]}")
+    expected = expected_grade_swaps(dataset, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries])
+    for jid in sorted(set(expected) | set(asked)):
+        want = expected.get(jid, [])
         if not same_swaps(want, asked.get(jid, [])):
             raise HTTPException(status_code=422, detail={
                 "message": "등급 대체가 미리 계산과 다르다 -- 화면을 다시 계산하고 대체마다 사유를 적어 확정한다.",
@@ -366,6 +360,63 @@ def dataset_params(app, dataset):
 
 def _entries_of(dataset) -> list[dict]:
     return [{"person_id": c.person_id, "project_id": c.project_id, "alloc": c.alloc} for c in dataset.current]
+
+
+class PreviewIn(_Versioned):
+    entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
+
+
+@router.post("/api/workspace/preview")
+async def post_preview(body: PreviewIn, request: Request) -> dict:
+    """확정 전 미리 계산(2026-10-21 -- 연간 계획 "이 안으로 확정"·What-if 확정 창): 지금 배치 → entries를 확정할 때와 같은 규칙으로
+    옮김·새로·빠짐, 등급 대체(사유를 받을 것)와 대체로 넘는 예산 증액, 새로 생기거나 커진 위반, 고정한 배치를 빼는지를 돌려준다.
+    데이터는 바꾸지 않는다. 화면은 여기서 받은 대체·증액을 그대로 확정에 보낸다(확정이 같은 함수로 다시 맞춰 본다)."""
+    dataset = request.app.state.dataset
+    check_dataset_version(body.dataset_version, dataset)
+    if any(e.monthly_alloc for e in body.entries):
+        raise HTTPException(status_code=422, detail="달별 투입률이 있는 명단은 확정할 수 없다(기간 내내 같은 비율만)")
+    ids_p, ids_j = dataset.graph.pid_index, dataset.graph.project_index
+    bad = sorted({e.person_id for e in body.entries if e.person_id not in ids_p}
+                 | {e.project_id for e in body.entries if e.project_id not in ids_j})
+    if bad:
+        raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+
+    def work() -> dict:
+        from api.routes.justification import display_names, with_names
+        from api.violation_diff import new_or_worse
+        from core.evaluate.grade_swap import substitution
+        from core.evaluate.plan_eval import evaluate_plan
+        from core.optimize.types import AssignEntry
+        from core.scoring.engine import ScoringEngine
+        graph = dataset.graph
+        names = display_names(dataset)
+        new = [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries]
+        cur = _entries_of(dataset)
+        g2, swaps, budget = substitution(graph, cur, new)     # 확정 뒤 정원(대체)·예산(증액)으로 판정 -- 확정의 판정과 같다
+        params = dataset_params(request.app, dataset)
+        eng = ScoringEngine(graph)
+        S, C = eng.skill_matrix({}), eng.synergy_matrix()
+        before = evaluate_plan(graph, S, C, params, [AssignEntry(**e) for e in cur])
+        after = evaluate_plan(g2, S, C, params, [AssignEntry(**e) for e in new])
+        worse = [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)]
+
+        def by_person(es):
+            out: dict[str, set] = {}
+            for e in es:
+                out.setdefault(e["person_id"], set()).add(e["project_id"])
+            return out
+        pb, pa = by_person(cur), by_person(new)
+        row = lambda p: {"person_id": p, "name": names.get(p, p), "from": sorted(pb.get(p, ())), "to": sorted(pa.get(p, ()))}  # noqa: E731
+        moved = [row(p) for p in sorted(set(pb) & set(pa)) if pb[p] != pa[p]]
+        joined = [row(p) for p in sorted(set(pa) - set(pb))]
+        left = [row(p) for p in sorted(set(pb) - set(pa))]
+        kept = {(e["person_id"], e["project_id"]) for e in new}
+        locked = sorted(f"{names.get(c.person_id, c.person_id)}@{c.project_id}" for c in dataset.current
+                        if c.locked and (c.person_id, c.project_id) not in kept)
+        return {"dataset_version": dataset.info.version, "moved": moved, "joined": joined, "left": left,
+                "changed": bool(moved or joined or left), "grade_swaps": swaps, "budget_add": budget,
+                "new_violations": worse, "locked_dropped": locked}
+    return await anyio.to_thread.run_sync(work)
 
 
 @router.post("/api/workspace/apply", dependencies=[Depends(require_admin)])

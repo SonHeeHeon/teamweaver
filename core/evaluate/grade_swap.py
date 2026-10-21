@@ -91,3 +91,34 @@ def overrun(graph, project_id: str, entries: Iterable) -> int:
             pid = e.person_id if hasattr(e, "person_id") else e["person_id"]
             cost += rate[pid] * float(e.alloc if hasattr(e, "alloc") else e["alloc"])
     return max(0, math.ceil(cost - j.monthly_budget - 1e-9))
+
+
+def _teams(entries: Iterable) -> dict[str, set]:
+    out: dict[str, set] = {}
+    for e in entries:
+        pid = e.person_id if hasattr(e, "person_id") else e["person_id"]
+        jid = e.project_id if hasattr(e, "project_id") else e["project_id"]
+        out.setdefault(jid, set()).add(pid)
+    return out
+
+
+def substitution(graph, current: Iterable, entries: Iterable):
+    """지금 배치(current) → entries를 확정할 때의 등급 대체(팀이 바뀐 사업만, 사업별)·대체로 넘는 월 예산과, 그것을 적용한 그래프.
+    확정 검증(`routes/workspace._check_grade_swaps`)·확정 미리 계산(`/api/workspace/preview`)·What-if(지금 배치) 평가가 이 함수 하나를 쓴다
+    -- 화면이 보인 점수·대체와 확정이 어긋나지 않게(2026-10-21: What-if가 특급 자리에 초급을 "빈자리 −100"으로 보였는데 확정은 대체로 받았다)."""
+    current, entries = list(current), list(entries)
+    grade_of = {p.id: p.grade.value for p in graph.people}
+    tb, ta = _teams(current), _teams(entries)
+    swaps: dict[str, list[dict]] = {}
+    for jid in sorted(j for j in set(tb) | set(ta) if tb.get(j) != ta.get(j) and j in graph.project_index):
+        j = graph.projects[graph.project_index[jid]]
+        s = plan_swaps({g.value: n for g, n in j.grade_headcount.items()},
+                       team_grades(current, jid, grade_of), team_grades(entries, jid, grade_of))
+        if s:
+            swaps[jid] = s
+    budget = {jid: b for jid in swaps if (b := overrun(graph, jid, entries)) > 0}
+    g2 = graph
+    for jid, xs in swaps.items():
+        pj = g2.projects[g2.project_index[jid]]
+        g2 = graph_with_seats(g2, jid, swapped_need({g.value: n for g, n in pj.grade_headcount.items()}, xs), budget.get(jid, 0))
+    return g2, swaps, budget

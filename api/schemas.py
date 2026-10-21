@@ -42,6 +42,13 @@ class LifecycleOut(BaseModel):
     external_headcount: int | None = None       # 추가 과제의 외주 인원(참고값)
 
 
+class RequirementOut(BaseModel):
+    """사업이 요구하는 기술 한 줄(2026-10-21 연간 계획 "사업 조건"에 보인다): 최소 레벨(경력 개월의 대리 레벨)·필요 인원."""
+    skill: str
+    min_level: int
+    headcount: int
+
+
 class ProjectOut(BaseModel):
     id: str
     name: str
@@ -54,6 +61,7 @@ class ProjectOut(BaseModel):
     lifecycle: LifecycleOut | None = None
     # 계획 기간 밖으로 이어지는 사업만 원문 기간 {"start","end"}("YYYY-MM") -- 나머지는 start_month·end_month가 원래 기간이다
     period: dict[str, str] | None = None
+    requirements: list[RequirementOut] = []
 
 
 class CoworkOut(BaseModel):
@@ -131,6 +139,9 @@ class WhatifResponse(BaseModel):
     fallback_used: bool
     # 규칙 기반으로 쓴 이유: no_client(키 없음) · external_blocked(실데이터를 외부로 보내지 않음) · llm_error
     fallback_reason: str | None = None
+    # What-if(지금 배치, grade_swap): 지금 배치 대비 등급 대체(사업별)·대체로 넘는 예산 -- 확정할 때 사유를 받는다
+    grade_swaps: dict[str, list[dict]] = {}
+    budget_add: dict[str, int] = {}
 
 
 class MilpParamsIn(BaseModel):
@@ -216,6 +227,8 @@ class ApplySwapResponse(BaseModel):
     optimization_ratio: float | None
     unfilled: list[str]
     warnings: list[str]           # 이 교체로 새로 생긴 위반·미충원 문장
+    grade_swaps: dict[str, list[dict]] = {}   # What-if(지금 배치)일 때만 -- 지금 배치 대비 등급 대체
+    budget_add: dict[str, int] = {}
 
 
 class PlanEditIn(BaseModel):
