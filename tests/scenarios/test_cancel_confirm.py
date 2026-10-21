@@ -2,6 +2,8 @@
 그 뒤 다른 변경(고정 등)은 그대로, 그 뒤 바뀐 배치는 건너뜀, 원래 사업 복귀가 위반이면 대기, 긴급 투입은 증원까지."""
 from fastapi.testclient import TestClient
 
+from tests.scenarios.holes import waivers
+
 from tests.scenarios.test_workspace_api import _entries, _ws
 
 
@@ -10,6 +12,7 @@ def _team(ws, pid):
 
 
 def _apply(c, ws, entries, source="manual", **kw):
+    kw.setdefault("seat_waivers", waivers(c, ws["dataset_version"], entries))     # 빼 온 자리는 "메우지 않음"(2026-10-21)
     r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries,
                                              "source": source, **kw})
     assert r.status_code == 200, r.text
@@ -47,6 +50,7 @@ def test_cancel_restores_the_pulled_person_and_keeps_a_later_lock(yearend):
         ws = _ws(c)
         bench, pull = _pick(c, ws)
         src = pull["pulled_from"][0]
+        need = next(o for o in ws["ongoing"] if o["project_id"] == src)["seats"][pull["grade"]]["need"]
         entries = [e for e in _entries(ws) if not (e["person_id"] == pull["person_id"] and e["project_id"] == src)]
         entries += [{"person_id": bench["person_id"], "project_id": "J018", "alloc": 1.0},
                     {"person_id": pull["person_id"], "project_id": "J018", "alloc": 1.0}]
@@ -66,7 +70,10 @@ def test_cancel_restores_the_pulled_person_and_keeps_a_later_lock(yearend):
         assert view["ok"] is True and not view["skipped"] and not view["dropped"]
         # 사람마다 한 줄: 빼 온 사람은 "J018 → J008로 돌아간다(원래 사업)", 대기 인력은 "J018에서 뺀다"
         assert any(f"J018 → {src}" in line and "돌아간다(원래 사업)" in line for line in view["revert"])
-        assert sum("J018에서 뺀다" in line for line in view["revert"]) == 1 and len(view["revert"]) == 2
+        assert sum("J018에서 뺀다" in line for line in view["revert"]) == 1
+        # 확정 때 "메우지 않음"으로 줄인 원래 사업 정원도 그 사람이 돌아오며 되살아난다(2026-10-21)
+        assert [line for line in view["revert"] if "정원" in line] == [f"{src} {pull['grade']} 정원 {need - 1}명 → {need}명"]
+        assert len(view["revert"]) == 3
 
         r = _cancel(c, ws, confirm)
         assert r.status_code == 200, r.text
@@ -132,10 +139,11 @@ def test_a_refilled_source_seat_leaves_the_returning_person_on_the_bench(yearend
         ws = _apply(c, ws, [e for e in _entries(ws) if not (e["person_id"] == mover and e["project_id"] == src)]
                     + [{"person_id": mover, "project_id": "J018", "alloc": 1.0}])
         confirm = _confirm_entry(ws, "apply_manual")
-        # 그 뒤 원래 사업의 빈자리를 같은 등급 대기 인력으로 메운다
+        # 그 뒤 원래 사업에 같은 등급 대기 인력을 넣는다 -- 첫 확정이 그 자리를 "메우지 않음"으로 줄였으니(2026-10-21) 긴급 투입 증원으로
         grade = next(t["grade"] for o in ws["pipeline"] for t in o["team"] if t["person_id"] == mover)
         filler = next(b["person_id"] for b in ws["bench"] if b["grade"] == grade and not b.get("unavailable"))
-        ws = _apply(c, ws, _entries(ws) + [{"person_id": filler, "project_id": src, "alloc": 1.0}])
+        ws = _apply(c, ws, _entries(ws) + [{"person_id": filler, "project_id": src, "alloc": 1.0}], source="emergency",
+                    headcount_add={src: {grade: 1}})
         view = _preview(c, ws, confirm).json()
         assert view["ok"] is True and len(view["dropped"]) == 1 and "대기 인력으로 남는다" in view["dropped"][0]
         ws = _cancel(c, ws, confirm).json()["workspace"]

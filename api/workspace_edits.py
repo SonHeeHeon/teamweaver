@@ -565,6 +565,25 @@ def swap_grade_seats(files: Files, swaps: list[dict]) -> Files:
     return files
 
 
+def waive_seats(files: Files, waivers: list[dict]) -> Files:
+    """빼 온 자리 "메우지 않음"(2026-10-21 사용자 "못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로"):
+    사업 정원 표의 그 등급을 −n(0이면 행은 0으로 남는다 -- 등급 대체와 같다). 예산은 그대로. 사유는 확정 이력 summary에 남는다
+    (정원은 확정 취소·되돌리기가 함께 돌린다)."""
+    files = _copy(files)
+    h, rows = read_table(files, GRADE_REQS)
+    for w in waivers:
+        pid, grade, n = w["project_id"], w["grade"], int(w["count"])
+        if grade not in GRADES or n <= 0:
+            raise EditError(f"메우지 않을 자리가 아니다: {pid} {grade} ×{n}")
+        row = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == grade), None)
+        if row is None or int(row["headcount"]) < n:
+            raise EditError(f"{pid}의 {grade} 정원이 {n}보다 적어 줄일 수 없다")
+        row["headcount"] = str(int(row["headcount"]) - n)
+    write_table(files, GRADE_REQS, h, rows)
+    rehash(files)
+    return files
+
+
 # --- 확정 취소(2026-10-21 사용자 요청 3 "확정한거 취소 … 되돌리기는 되돌리고 싶은 버전까지 다 되돌려야") ---------------
 # 확정 한 건을 git revert처럼 지금 판 위에서 거꾸로 적용한다: 그 확정 직전 판(B)·확정 판(A)·지금 판(N)을 칸마다 비교해
 # N이 A와 같으면(확정 뒤로 아무도 안 건드림) B로 돌리고, 다르면(그 뒤 다른 변경) 건드리지 않고 "건너뜀"으로 알린다.

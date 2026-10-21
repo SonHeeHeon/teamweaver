@@ -6,6 +6,8 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.scenarios.holes import waivers
+
 PULLED, BENCH, SRC, TGT = "DP0043", "DP0053", "J004", "J018"
 BENCH2, TGT2 = "DP0048", "J019"                          # 둘째 신규 사업(예정, 특급 1·중급 2)
 
@@ -25,7 +27,8 @@ def _confirm(c, ws=None, source="manual"):
     ws = ws or _ws(c)
     entries = [e for e in _entries(ws) if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
     entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": TGT, "alloc": 1.0}]
-    r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": source})
+    r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": source,
+                                             "seat_waivers": waivers(c, ws["dataset_version"], entries)})
     assert r.status_code == 200, r.text
     return r.json()["workspace"]["dataset_version"]
 
@@ -201,7 +204,8 @@ def test_list_has_one_doc_per_target_project(yearend):
         ws = _ws(c)
         entries = [e for e in _entries(ws) if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
         entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH2, "project_id": TGT2, "alloc": 1.0}]
-        r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "auto"})
+        r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "auto",
+                                                 "seat_waivers": waivers(c, ws["dataset_version"], entries)})
         assert r.status_code == 200, r.text
         v = r.json()["workspace"]["dataset_version"]
         row = c.get("/api/review-docs").json()["confirms"][0]

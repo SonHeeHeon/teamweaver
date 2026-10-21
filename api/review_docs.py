@@ -109,7 +109,9 @@ def confirms(history_entries: list[dict]) -> list[dict]:
                         "kind": kind, "at": e.get("at"), "note": e.get("note", ""),
                         "situation": (e.get("summary") or {}).get("situation", ""),
                         # 등급 대체와 사유(2026-10-21) -- 그 사업 자료의 MOVE_GRADE 사실
-                        "grade_swaps": (e.get("summary") or {}).get("grade_swaps") or []})
+                        "grade_swaps": (e.get("summary") or {}).get("grade_swaps") or [],
+                        # 메우지 않기로 한 빼 온 자리와 사유(2026-10-21) -- 그 사람을 데려온 사업 자료의 MOVE_FILL 사실
+                        "seat_waivers": (e.get("summary") or {}).get("seat_waivers") or []})
     return out
 
 
@@ -242,8 +244,12 @@ def _num(x: float) -> str:
     return f"{x:.2f}"
 
 
-def move_facts(moves: dict, evidence: dict, grants: dict | None = None) -> list[dict]:
-    """옮겨 온 인력 카드의 잠긴 사실(설계 2.2). 원래 사업이 잃는 줄은 불리한 사실이다."""
+def move_facts(moves: dict, evidence: dict, grants: dict | None = None, waivers: list[dict] | None = None) -> list[dict]:
+    """옮겨 온 인력 카드의 잠긴 사실(설계 2.2). 원래 사업이 잃는 줄은 불리한 사실이다.
+    waivers: 이 확정에서 "메우지 않음"으로 정원을 줄인 빼 온 자리(사유) -- 확정 뒤 정원이 줄어 빈자리 수로는 안 보인다(2026-10-21)."""
+    waived: dict[str, list[dict]] = {}
+    for w in waivers or []:
+        waived.setdefault(w["project_id"], []).append(w)
     out: list[dict] = []
     target = moves["target"]
     g = moves["target_gain"]
@@ -287,6 +293,11 @@ def move_facts(moves: dict, evidence: dict, grants: dict | None = None) -> list[
                 fill = ", ".join(f"{b['person_id']}({b['grade']}, {'대기 인력' if b['from_bench'] else '다른 사업에서'})"
                                  for b in s["backfill"])
                 fill_text, bad = f"{src}의 자리를 같은 확정에서 {fill}이(가) 채움", False
+            elif waived.get(src):
+                ws = waived[src]
+                fill_text = (f"{src}의 자리는 메우지 않기로 함 — 사유 {'; '.join(w['reason'] for w in ws)}. 이 확정으로 정원 "
+                             + " · ".join(f"{w['grade']} −{w['count']}" for w in ws) + "(예산은 그대로)")
+                bad = True
             elif s["unfilled_after"] > s["unfilled_before"]:
                 fill_text, bad = f"{src}의 자리는 채우지 않아 빈자리로 남음", True
             else:
@@ -341,7 +352,7 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
     for j in moves["joined"]:                  # 화면 표시용: 동시 수행 허용으로 들어온 사람
         if j["origin"] == "partly_free" and j["person_id"] in grants:
             j["concurrency"] = grants[j["person_id"]]
-    facts = (move_facts(moves, inp.evidence, grants) + grade_swap_facts(confirm, project_id)
+    facts = (move_facts(moves, inp.evidence, grants, confirm.get("seat_waivers")) + grade_swap_facts(confirm, project_id)
              + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None))
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]
