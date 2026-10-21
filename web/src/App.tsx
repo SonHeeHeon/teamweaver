@@ -40,6 +40,7 @@ import { effectiveSettings, stepBody } from "./api/types";
 import { AnnualSteps, datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
 import { ConfirmChanges } from "./components/ConfirmChanges";
 import { LockChoiceDialog } from "./components/LockChoiceDialog";
+import { SkillNamesPanel } from "./components/SkillNamesPanel";
 import { CurrentWhatif } from "./whatif/CurrentWhatif";
 import { currentEntries, fetchWorkspace } from "./scenarios/workspaceApi";
 import { withPeople } from "./components/headcount";
@@ -792,6 +793,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <DatasetTab active={dataset} onSwitched={datasetSwitched} showRecords={false}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
+            {/* 낯선 기술 이름 정리(2026-10-22) -- AI 제안 → 관리자가 고른 것만 새 판 */}
+            <SkillNamesPanel datasetVersion={dataset?.version ?? null} onChanged={() => { void ownSwitch("기술 이름 정리"); }} />
           </div>
         ) : tab === "settings" ? (
           settings ? (

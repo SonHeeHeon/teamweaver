@@ -248,6 +248,37 @@ export const postEmergencyPreview = (body: { dataset_version: string; project_id
                                              pull_budget: number; fills?: FillPick[] }, signal?: AbortSignal) =>
   call<{ dataset_version: string; project_id: string; draft: EmergencyDraft; candidates: EmergencyPlan["candidates"]; note: string }>(
     "/api/emergency/preview", { ...json("POST", body), signal });
+/** 긴급 투입 "상황을 말로"(2026-10-22): 상황 글 → 요구 초안. 사람은 AI에 가지 않는다 -- 추천은 기존 계산, 결정은 부서장. */
+export interface ParsedSkill { id: string; name: string; quote: string; start: number; end: number; kind: "explicit" | "implied";
+                               source: "alias" | "ai" }
+export interface ParsedRequest {
+  text: string; skills: ParsedSkill[]; headcount: number | null; grade: Grade | null; grade_at_least: boolean;
+  unmapped_terms: string[]; question: string | null; warnings: string[]; method: "ai" | "rule"; fallback_reason: string | null;
+  ai_available: boolean; usage: { latency_s: number; cost_usd: number } | null;
+}
+export const postEmergencyParse = (v: string, text: string, signal?: AbortSignal) =>
+  call<ParsedRequest>("/api/emergency/parse", { ...json("POST", { dataset_version: v, text }), signal });
+
+/** 낯선 기술 이름 정리(2026-10-22): 사전에 없는 이름 → AI 제안 → 관리자 승인(새 판). */
+export type SkillDecision = "alias" | "narrower" | "new" | "not_skill";
+export interface SkillCandidate { id: string; label: string; score: number; matched?: string }
+export interface UnknownSkill { name: string; people: number; projects: string[]; works: number; co_skills: string[]; candidates: SkillCandidate[] }
+export interface SkillSuggestion extends UnknownSkill {
+  decision: SkillDecision; concept: string | null; concept_label: string | null; alternatives: { id: string; label: string }[];
+  reason: string; confidence: "high" | "check"; flags: string[]; method: "ai" | "string";
+}
+export interface DecidedSkill { name: string; decision: SkillDecision; concept: string | null; reason: string; method?: string; at?: string }
+export const fetchUnknownSkills = (v: string) =>
+  call<{ dataset_version: string; dictionary_version: string; items: UnknownSkill[]; decided: DecidedSkill[] }>(
+    `/api/skills/unknown?dataset_version=${encodeURIComponent(v)}`);
+export const postSkillSuggest = (v: string, names?: string[]) =>
+  call<{ items: SkillSuggestion[]; method: "ai" | "string"; fallback_reason: string | null; ai_available: boolean;
+         usage: { calls: number; cost_usd: number; latency_s: number } | null }>(
+    "/api/skills/unknown/suggest", json("POST", { dataset_version: v, ...(names ? { names } : {}) }));
+export const postSkillNames = (v: string, decisions: { name: string; decision: SkillDecision; concept: string | null; reason: string;
+                                                       method: "ai" | "string" | "manual" }[]) =>
+  call<WithWs>("/api/skills/names", json("POST", { dataset_version: v, decisions }));
+
 export const fetchStandby = (v: string, projectId: string) =>
   call<{ source: string | null; computed_at: string | null; projects: Record<string, StandbyRow[]> }>(
     `/api/emergency/standby?dataset_version=${encodeURIComponent(v)}&project_id=${encodeURIComponent(projectId)}`);

@@ -12,6 +12,7 @@ import { PersonName, ProjectCodes } from "../components/PersonName";
 import { PickDraft } from "./PickDraft";
 import { GradeSwapBox, hintBody, swapList, swapsReady, type SwapReasons } from "./GradeSwapBox";
 import { SeatHoleBox, holesReady, waiverBody, type WaiverReasons } from "./SeatHoleBox";
+import { RequestReader, type ReadRequest } from "./RequestReader";
 import type { Person, Project } from "../api/types";
 import {
   currentEntries, fetchSkillDictionary, fetchStandby, fetchWorkspace, GRADES, isDatasetChanged, postApply, postEmergency,
@@ -153,15 +154,18 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
   }, [dict, query]);
   const project = ws?.ongoing.find((o) => o.project_id === projectId) ?? null;
 
-  async function search() {
+  /** over: "상황을 말로"에서 읽은 요구(2026-10-22) -- 칸을 그 값으로 바꾸고 바로 찾는다(상태가 바뀌기 전 값으로 찾지 않게 직접 넘긴다) */
+  async function search(over?: { skills: string[]; n: number; grade: Grade | "" }) {
     if (!ws || !projectId) return;
     const gen = ++reqGen.current;
+    const useSkills = over?.skills ?? skills, useN = over?.n ?? n, useGrade = over ? over.grade : grade;
+    const usePull = Math.min(pull, useN);
     setBusy(true);
     setError(null);
     try {
-      const res = await postEmergency({ dataset_version: ws.dataset_version, project_id: projectId, n,
-                                        grade: grade || null, skills, pull_budget: pull, note });
-      if (gen === reqGen.current && res.project_id === projectId) { setSearchedPull(pull); setPlan(res); }
+      const res = await postEmergency({ dataset_version: ws.dataset_version, project_id: projectId, n: useN,
+                                        grade: useGrade || null, skills: useSkills, pull_budget: usePull, note });
+      if (gen === reqGen.current && res.project_id === projectId) { setSearchedPull(usePull); setPlan(res); }
     } catch (e) {
       if (gen === reqGen.current) setError((e as Error).message);
     } finally {
@@ -290,10 +294,20 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                 {ws.ongoing.map((o) => <option key={o.project_id} value={o.project_id}>{o.project_id} {o.name}</option>)}
               </select>
             </label>
-            <label className="block">무슨 일인지(기록용, AI에 보내지 않음)
+            <label className="block">무슨 일인지(검토 자료에 남는다 · "AI로 요구 읽기"를 누를 때만 이 글을 AI에 보낸다)
               <textarea className="field mt-1" rows={2} value={note} maxLength={300} onChange={(e) => setNote(e.target.value)}
-                        placeholder="예: 운영 이관 중 장애 — 쿠버네티스 경험자 필요" />
+                        placeholder="예: 운영 이관 중 장애 — k8s랑 배치 데이터 적재 아는 사람 두 명, 고급 이상" />
             </label>
+            {/* 상황을 말로(2026-10-22): 글 → 요구 → 기존 계산의 추천안 → 부서장이 고른다 */}
+            <RequestReader datasetVersion={ws.dataset_version} text={note} disabled={busy || !projectId}
+                           onApply={(r: ReadRequest) => {
+                             const nn = Math.min(5, Math.max(1, r.n ?? n));
+                             setSkills(r.skills);
+                             setN(nn);
+                             setGrade(r.grade ?? "");
+                             setPull(Math.min(pull, nn));
+                             void search({ skills: r.skills, n: nn, grade: r.grade ?? "" });
+                           }} />
             <label className="block">필요한 기술(선택)
               <input className="field mt-1" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="기술 검색"
                      onKeyDown={(e) => { if (e.key === "Enter" && (matches[0] || query.trim())) { e.preventDefault();
