@@ -249,6 +249,12 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `pruned_pairs`/`_overfamiliar_pairs`를 import하므로, MILP 정식이 바뀌면 평가기도 함께 확인한다.
 - 숫자 세 개를 혼동하지 않는다: 최적화율(~0.93, 기술항/LP 완화 상한) · 기술 충족률(~0.55, 보조 지표)
   · 솔버 gap(≤5%, 현행 절삭 목적 기준). 분모가 모두 다르다.
+- **편성안 카드 점수 표시**(2026-10-22 사용자 "a안이 b안보다 점수가 더 낮은데 a안인 이유" · "빈자리 -100점이 너무 크리티컬", claude-b `web/src/components/planScore.ts`·`PlanCards`):
+  A~D 이름은 **계산 순서**다(A = 먼저 푼 기준안, 허용 차이 1%·시간 한도 -- 뒤의 대안이 더 높을 수 있다, 시연 미리 계산 8개 중 4개가 A 시간 한도). 카드 큰 숫자는
+  **배치 품질 = 종합 점수 + `slack_penalty` × 빈자리**(`/api/optimize` plan 이벤트 `slack_penalty`, 표시용 -- 서명 밖), 빈자리 n석은 따로, 종합 점수는 빈자리가 있을 때만 작게.
+  모델·감점·안 순서는 그대로(감점을 낮추면 품질 몇 점에 자리를 비운다). "가장 높음" = 위반 없는 안 중 종합 점수 1위, 품질 1% 안 = "사실상 같은 수준" --
+  **"계산 오차"라고 쓰지 않는다**(솔버 허용 차이는 종합 점수 기준이라 분모가 다르다, 폴백 리뷰). 빈자리가 있으면 계산 신뢰도 배지 차이를 %가 아니라 점수로(`ConfidenceBadge inPoints` --
+  카드·운영 중 K 표·PDF, PDF는 서버가 원안 빈자리 `base_unfilled`를 싣는다). 종합 점수가 0 근처면 상대 허용 차이가 아주 좁아져 A가 시간 한도에 더 걸린다(기록만, 조치 안 함).
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는
@@ -256,7 +262,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-22 b 조직 기술 분포(지식 그래프 화면 2건 + main 연간 계획·What-if 분리 합친 트리 위) **2104 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 336 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-22 b 편성안 카드 점수 표시(main `1f4ca6a` 위) **2106 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 351 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
