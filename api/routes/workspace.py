@@ -543,9 +543,9 @@ async def post_undo(body: UndoIn, request: Request) -> dict:
 
 
 @router.get("/api/skills/dictionary")
-def skills_dictionary() -> list[dict]:
-    from core.ingest.skills import load_dictionary
-    d = load_dictionary()
+def skills_dictionary(request: Request) -> list[dict]:
+    from core.ingest.skill_mapping import dictionary_of_active
+    d = dictionary_of_active(request.app.state.dataset)      # 이 데이터에서 승인한 기술 이름까지(2026-10-22)
     return [{"name": c.get("label"), "aliases": list(c.get("aliases") or []), "category": c.get("category")}
             for c in d.concepts.values()]
 

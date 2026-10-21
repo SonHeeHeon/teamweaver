@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from api.datasets import ActiveDataset
-from api.deps import check_dataset_version, get_dataset
+from api.deps import check_dataset_version, get_dataset, get_openai_client_or_none
 from api.settings import horizon_months_of
 from core.domain.models import Grade
 
@@ -465,8 +465,8 @@ class EmergencyIn(BaseModel):
 
 def _extra_skills(dataset, project_id: str, skills: list[str]) -> tuple[list[str], list[dict]]:
     """(가중치에 쓸 대표 이름, 사업 요구에 새로 더할 기술). 사전에 있으면 대표 이름으로 바꾼다."""
-    from core.ingest.skills import load_dictionary
-    d = load_dictionary()
+    from core.ingest.skill_mapping import dictionary_of_active
+    d = dictionary_of_active(dataset)                 # 이 데이터에서 승인한 기술 이름까지(2026-10-22)
     names = []
     for s in skills:
         c = d.lookup(s)
@@ -632,6 +632,40 @@ class EmergencyPreviewIn(BaseModel):
     pull_budget: int = Field(default=0, ge=0, le=5)
     # 빼 온 자리를 메울 사람(2026-10-21) -- 미리 계산의 fill_options에서 고른다
     fills: list[FillIn] = Field(default=[], max_length=20)
+
+
+class ParseIn(BaseModel):
+    """긴급 투입 "상황을 말로"(2026-10-22) -- 상황 글을 요구(기술·인원·등급)로 읽는다. 사람은 AI에 보내지 않는다."""
+    model_config = ConfigDict(extra="forbid")
+    dataset_version: str | None = None
+    text: str = Field(min_length=1, max_length=300)
+
+
+@router.post("/api/emergency/parse")
+async def emergency_parse(body: ParseIn, request: Request, dataset: ActiveDataset = Depends(get_dataset),
+                          client=Depends(get_openai_client_or_none)) -> dict:
+    """상황 글 → 요구 초안(`api.rag.request_parse`). AI가 없거나(키 없음·실데이터 외부 차단) 실패하면 사전 별칭 찾기 + 숫자·등급 규칙으로.
+    부서장이 확인한 뒤 화면이 그 값으로 후보 찾기(`/api/emergency/plan`)를 부른다 -- 추천은 기존 계산이 한다."""
+    check_dataset_version(body.dataset_version, dataset)
+    from api.deps import llm_client_for
+    from api.rag.justification import justification_settings
+    from api.rag.request_parse import parse_request
+    from api.routes.justification import ai_model, ai_timeout_s
+    from core.config import load_pricing
+    from core.ingest.skill_mapping import dictionary_of_active
+    use, why = llm_client_for(dataset, client)
+    model = ai_model()
+    sd = dictionary_of_active(dataset)
+
+    def go():
+        c = use.with_options(timeout=ai_timeout_s(model), max_retries=0) if use is not None else None
+        return parse_request(body.text, sd, client=c, model=model,
+                             reasoning_effort=justification_settings(model)["reasoning_effort"],
+                             price=load_pricing().get("models", {}).get(model, {}))
+    out = await anyio.to_thread.run_sync(go)
+    if use is None:
+        out["fallback_reason"] = why
+    return {**out, "dataset_version": dataset.info.version, "ai_available": use is not None}
 
 
 _AUG_LOCK = threading.Lock()

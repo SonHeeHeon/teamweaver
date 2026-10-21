@@ -21,9 +21,26 @@ def _skills_of(kg: KnowledgeGraph, person_node: str) -> dict[str, dict]:
 
 def skill_map(kg: KnowledgeGraph, *, busy: set[str] | None = None) -> list[dict]:
     """기술마다 공급(실무 가능 보유자·숙련자·지금 비어 있는 보유자)과 수요(요구하는 진행·제안 사업, 필요 인원).
-    busy: 지금 사업에 들어가 있는 사람 id(없으면 CURRENT_ON 간선으로 센다)."""
+    busy: 지금 사업에 들어가 있는 사람 id(없으면 CURRENT_ON 간선으로 센다).
+
+    기술 관계 그림용 칸(2026-10-22 claude-b 요청 `docs/requests/2026-10-21-skill-map-graph-fields.md`, 사용자 "b가 요청한 사람별 정보를 넣어줘"):
+    - `practical_detail`: 실무 가능 보유자마다 {id, months(인정 포함), level, expert, free, on(지금 사업 id), credited_from(인정분 덕에 실무 가능이 된
+      사람만 [{skill, months, depth, credit}])} -- `practical_people`(id 목록)는 그대로 둔다(하위 호환).
+    - `broader`·`narrower`: 사전 계보 중 이 데이터에 있는 기술. narrower는 [{skill, practical}](그 하위 기술의 실무 가능 인원)."""
     if busy is None:
         busy = {e["src"].split(":", 1)[1] for e in kg.edges_of("CURRENT_ON")}
+    on: dict[str, list[str]] = {}
+    for e in kg.edges_of("CURRENT_ON"):
+        pj = kg.nodes.get(e["dst"]) or {}
+        on.setdefault(e["src"].split(":", 1)[1], []).append(pj.get("project_id") or e["dst"].split(":", 1)[1])
+    skills = {sk["label"]: sk for sk in kg.nodes_of("skill")}
+    practical_n = {label: sum(1 for e in kg.inc(sk["id"], "HAS_SKILL") if (e.get("months") or 0) >= PRACTICAL_MONTHS)
+                   for label, sk in skills.items()}
+    narrower: dict[str, list[str]] = {}
+    for label, sk in skills.items():
+        for b in sk.get("broader") or []:
+            if b in skills:
+                narrower.setdefault(b, []).append(label)
     rows = []
     for sk in kg.nodes_of("skill"):
         holders = [e for e in kg.inc(sk["id"], "HAS_SKILL")]
@@ -52,9 +69,22 @@ def skill_map(kg: KnowledgeGraph, *, busy: set[str] | None = None) -> list[dict]
             "scarce": need > 0 and len(practical) <= 2,
             "demand": sorted(demand, key=lambda d: (-d["headcount"], d["project_id"])),
             "practical_people": sorted(e["src"].split(":", 1)[1] for e in practical),
+            "practical_detail": sorted((_person_detail(e, busy, on) for e in practical), key=lambda d: d["id"]),
+            "broader": [b for b in sk.get("broader") or [] if b in skills],
+            "narrower": [{"skill": n, "practical": practical_n.get(n, 0)} for n in sorted(narrower.get(sk["label"], []))],
         })
     return sorted(rows, key=lambda r: (not r["scarce"], -r["proposal_gap"],
                                        r["coverage"] if r["coverage"] is not None else 1e9, -r["demand_headcount"], r["skill"]))
+
+
+def _person_detail(e: dict, busy: set[str], on: dict[str, list[str]]) -> dict:
+    pid = e["src"].split(":", 1)[1]
+    m = e.get("months") or 0
+    imp = e.get("implied_from")
+    # 인정분 덕분에 실무 가능이 된 사람만 출처를 단다(본인 경력만으로 12개월 이상이면 인정 없이도 실무 가능 -- 화면 "인정" 판정과 같다)
+    credited = [dict(imp)] if imp and (e.get("own_months") or 0) < PRACTICAL_MONTHS else []
+    return {"id": pid, "months": m, "level": level_from_months(m), "expert": m >= EXPERT_MONTHS, "free": pid not in busy,
+            "on": sorted(on.get(pid, [])), "credited_from": credited}
 
 
 def project_evidence(kg: KnowledgeGraph, project_id: str, entries, *, graph=None, S=None, C=None, params=None,
