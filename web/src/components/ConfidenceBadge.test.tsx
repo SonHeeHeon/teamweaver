@@ -31,4 +31,9 @@ describe("ConfidenceBadge — 계산 신뢰도", () => {
     render(<ConfidenceBadge termination="time_limit_incumbent" objective={100} bestBound={112} gapAllowed={0.05} />);
     expect(screen.getByText("시간 한도 도달 · 최적값이 이 해보다 최대 12% 높을 수 있음")).toBeInTheDocument();
   });
+
+  it("점수로 보이기: 빈자리 감점이 섞여 종합 점수가 0 근처면 %가 부풀려진다(2026-10-22 폴백 리뷰 S3)", () => {
+    render(<ConfidenceBadge termination="time_limit_incumbent" objective={-12.51} bestBound={-11} gapAllowed={0.01} inPoints />);
+    expect(screen.getByText("시간 한도 도달 · 최적값이 이 해보다 최대 1.51점 높을 수 있음")).toBeInTheDocument();
+  });
 });

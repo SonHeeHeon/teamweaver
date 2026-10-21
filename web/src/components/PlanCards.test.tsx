@@ -30,10 +30,90 @@ describe("PlanCards", () => {
     expect(onSelect).toHaveBeenCalledWith("B");
   });
 
-  it("미충원이 있으면 경고를 보인다", () => {
-    const p = { ...plan("A", 0.9), unfilled: ["j00:중급:1명 미충원"] };
+  it("빈자리가 있으면 '빈자리 n석'을 따로, 큰 숫자는 빈자리 감점을 뺀 배치 품질(2026-10-22)", () => {
+    const p = { ...plan("A", 0.9), objective: -12.51, unfilled: ["j00:중급:1명 미충원"], slack_penalty: 100 };
     render(<PlanCards plans={[p]} selected="A" onSelect={() => {}} />);
-    expect(screen.getByText(/미충원/)).toBeInTheDocument();
+    expect(screen.getByText("1석")).toBeInTheDocument();
+    expect(screen.getByText("87.49")).toBeInTheDocument();               // 배치 품질
+    expect(screen.getByText("-12.51")).toBeInTheDocument();              // 종합 점수는 작게 함께
+    expect(screen.queryByText("가장 높음")).not.toBeInTheDocument();     // 안이 하나면 견주지 않는다
+  });
+
+  it("빈자리가 없으면 종합 점수 줄을 따로 보이지 않는다(배치 품질과 같은 숫자)", () => {
+    render(<PlanCards plans={[plan("A", 0.9)]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("12.30")).toBeInTheDocument();
+    expect(screen.queryByText("종합 점수 ⓘ")).not.toBeInTheDocument();
+    expect(screen.getByText("없음")).toBeInTheDocument();
+  });
+
+  it("사용자 사례: A -12.51 · B -12.29(둘 다 빈자리 1석) -- 가장 높은 안은 B, A는 1% 안이라 사실상 같은 수준이라고 알린다", () => {
+    const a = { ...plan("A", 0.886), objective: -12.51, unfilled: ["j00:중급:1명 미충원"], slack_penalty: 100 };
+    const b = { ...plan("B", 0.892), objective: -12.29, unfilled: ["j01:초급:1명 미충원"], slack_penalty: 100 };
+    render(<PlanCards plans={[a, b]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("가장 높음").closest("button")).toHaveTextContent("Plan B");
+    expect(screen.getByText("먼저 계산한 기준안")).toBeInTheDocument();
+    expect(screen.getByText("가장 높은 안(B)과 0.22점 차이 — 1% 안, 사실상 같은 수준")).toBeInTheDocument();
+    expect(screen.queryByText(/계산 오차/)).not.toBeInTheDocument();      // 솔버 허용 차이는 종합 점수 기준이라 "계산 오차"라 부르지 않는다(폴백 리뷰 S1)
+  });
+
+  it("A가 시간 한도에서 멈춘 해면 설명에 그 이유를, 빈자리가 있으면 배지 차이는 %가 아니라 점수로(폴백 리뷰 S1·S3)", () => {
+    const a = { ...plan("A", 0.886), objective: -12.51, unfilled: ["j00:중급:1명 미충원"], slack_penalty: 100,
+                termination: "time_limit_incumbent", time_limited: true, best_bound: -11.0, gap_allowed: 0.01 };
+    const b = { ...plan("B", 0.892), objective: -12.29, unfilled: ["j01:초급:1명 미충원"], slack_penalty: 100 };
+    render(<PlanCards plans={[a, b]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("먼저 계산한 기준안")).toHaveAttribute("title", expect.stringContaining("계산 시간 한도에서 멈춘 해"));
+    expect(screen.getByText(/시간 한도 도달 · 최적값이 이 해보다 최대 1\.51점 높을 수 있음/)).toBeInTheDocument();
+    expect(screen.queryByText(/최대 12/)).not.toBeInTheDocument();
+  });
+
+  it("화면에서 바꿔 제약 위반이 생긴 안은 '가장 높음'에서 빼고 위반 수를 보인다(폴백 리뷰 S2)", () => {
+    const a = { ...plan("A", 0.9), objective: 10 };
+    const b = { ...plan("B", 0.9), objective: 12 };
+    render(<PlanCards plans={[a, b]} selected="A" onSelect={() => {}} editCounts={{ B: 1 }} violationCounts={{ B: 2 }} />);
+    expect(screen.getByText("가장 높음").closest("button")).toHaveTextContent("Plan A");
+    expect(screen.getByText("제약 위반 2건").closest("button")).toHaveTextContent("Plan B");
+    expect(screen.queryByText(/가장 높은 안/)).not.toBeInTheDocument();    // 위반 안에 "−2.00점 차이 — 같은 수준"을 찍지 않는다(2차 리뷰 M1)
+  });
+
+  it("위반 안이 빈자리가 더 적어도 '빈자리 적지만 종합 점수는 낮음'이라고 하지 않는다(2차 리뷰 M1)", () => {
+    const c = { ...plan("C", 0.9), objective: 50, unfilled: ["j00:중급:1명 미충원"] };
+    const d = { ...plan("D", 0.9), objective: 95, unfilled: [] };
+    render(<PlanCards plans={[c, d]} selected="C" onSelect={() => {}} editCounts={{ D: 1 }} violationCounts={{ D: 1 }} />);
+    expect(screen.getByText("가장 높음").closest("button")).toHaveTextContent("Plan C");
+    expect(screen.queryByText(/가장 높은 안/)).not.toBeInTheDocument();
+  });
+
+  it("가장 높은 안보다 배치 품질이 높은 안이 있으면(빈자리가 더 많아서) 배지에 이유를 보인다(2차 리뷰 S1)", () => {
+    const a = { ...plan("A", 0.9), objective: -12.5, unfilled: ["j00:중급:1명 미충원"], slack_penalty: 100 };   // 품질 87.5
+    const b = { ...plan("B", 0.9), objective: 80, unfilled: [], slack_penalty: 100 };                          // 품질 80
+    render(<PlanCards plans={[a, b]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("가장 높음 · 빈자리 적음").closest("button")).toHaveTextContent("Plan B");
+    expect(screen.getByText("가장 높은 안(B)보다 빈자리 1석 많음")).toBeInTheDocument();
+  });
+
+  it("계산 중에는 '가장 높음'·차이 안내를 숨긴다(대안이 도착하며 옮겨 다니지 않게)", () => {
+    render(<PlanCards plans={[{ ...plan("A", 0.9), objective: 10 }, { ...plan("B", 0.9), objective: 12 }]}
+                      selected="A" onSelect={() => {}} settled={false} />);
+    expect(screen.queryByText("가장 높음")).not.toBeInTheDocument();
+    expect(screen.queryByText(/가장 높은 안/)).not.toBeInTheDocument();
+  });
+
+  it("감점이 100이 아니면 그 값으로 품질을 셈하고, 빈자리가 더 적은데 종합 점수가 낮은 안은 그렇다고", () => {
+    const a = { ...plan("A", 0.9), objective: 70, unfilled: ["j00:중급:1명 미충원"], slack_penalty: 10 };   // 품질 80
+    const b = { ...plan("B", 0.9), objective: 60, unfilled: [], slack_penalty: 10 };                        // 품질 60
+    render(<PlanCards plans={[a, b]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("80.00")).toBeInTheDocument();
+    expect(screen.getAllByText("빈자리 ⓘ")[0]).toHaveAttribute("title", expect.stringContaining("1자리 감점 10)"));
+    expect(screen.getByText("가장 높은 안(A)보다 빈자리 1석 적지만 종합 점수는 낮음")).toBeInTheDocument();
+  });
+
+  it("빈자리가 더 많은 안은 그렇다고, 1% 넘는 품질 차이는 숫자로", () => {
+    const a = { ...plan("A", 0.9), objective: 90, unfilled: [] };
+    const b = { ...plan("B", 0.9), objective: -15, unfilled: ["j00:중급:1명 미충원"] };
+    const c = { ...plan("C", 0.9), objective: 80, unfilled: [] };
+    render(<PlanCards plans={[a, b, c]} selected="A" onSelect={() => {}} />);
+    expect(screen.getByText("가장 높은 안(A)보다 빈자리 1석 많음")).toBeInTheDocument();
+    expect(screen.getByText("가장 높은 안(A)보다 품질 10.00 낮음")).toBeInTheDocument();
   });
 });
 

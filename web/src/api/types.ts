@@ -98,6 +98,8 @@ export interface PlanEvent {
   precomputed_at?: string | null;
   /** 편성 기록에서 연 결과면 그 기록 제목(2026-10-18). */
   precomputed_label?: string | null;
+  /** 빈자리 1자리 감점(계산 설정, 2026-10-22) -- 카드가 "배치 품질"(종합 점수 + 감점 × 빈자리)을 따로 보인다 */
+  slack_penalty?: number;
   /** 밤 배치가 풀어 둔 결과면 "nightly"(2026-10-19) -- "밤사이 계산"으로 보인다. */
   precomputed_source?: string | null;
 }

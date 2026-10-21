@@ -11,6 +11,7 @@ import { ReviewDoc } from "../review/ReviewDoc";
 import type { ReviewDocView } from "../review/reviewApi";
 import { creditedLine } from "../components/skillLabel";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
+import { unfilledSeats } from "../components/planScore";
 import { placedText } from "../components/headcount";
 
 /** PDF의 소명 글: 근거 문구에 밑줄 + 사실 목록 번호(위 첨자). 'F12' 같은 내부 번호는 보이지 않는다(사용자 결정 2026-10-11). */
@@ -116,7 +117,9 @@ function PlanReport() {
                 (이 K의 최선 증명이 아니다)</span>
             : <ConfidenceBadge termination={data.solve_evidence.termination} timeLimited={data.solve_evidence.time_limited}
                                objective={data.solve_evidence.objective} bestBound={data.solve_evidence.best_bound}
-                               gapAllowed={data.solve_evidence.gap_allowed} within={data.solve_evidence.within ?? undefined} />}
+                               gapAllowed={data.solve_evidence.gap_allowed} within={data.solve_evidence.within ?? undefined}
+                               // 원안에 빈자리가 있으면 목적값이 0 근처라 %가 부풀려진다 -- 결과 카드처럼 점수로(2026-10-22)
+                               inPoints={unfilledSeats(data.base_unfilled ?? (data.solve_evidence.changed ? [] : data.unfilled ?? [])) > 0} />}
         </div>
       )}
       <p className="text-xs text-slate-500">

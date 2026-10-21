@@ -868,7 +868,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             )}
             <PlanCards plans={plans.map(shown)} selected={selected} onSelect={selectPlan}
                        editCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.length]))}
-                       baseline={currentBase ?? undefined} />
+                       violationCounts={Object.fromEntries(Object.entries(edits).map(([l, e]) => [l, e.stack.at(-1)?.violations.length ?? 0]))}
+                       settled={!running} baseline={currentBase ?? undefined} />
             {altShortfall && (
               <p className="mt-2 text-xs text-slate-500">
                 {altShortfall.solverFailed
@@ -880,7 +881,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                       {altShortfall.found === 0
                         ? "조건을 만족하는 대안 없음"
                         : `조건을 만족하는 대안 ${altShortfall.found}개(요청 ${altShortfall.requested}개)`}
-                      {" — 대안은 Plan A와 구성이 달라야 하고, 품질이 A의 95% 이상이며, 미충원이 A보다 많지 않아야 한다."}
+                      {" — 대안은 Plan A와 구성이 달라야 하고, 종합 점수가 A보다 5% 넘게 낮지 않으며, 미충원이 A보다 많지 않아야 한다."}
                     </>}
               </p>
             )}
