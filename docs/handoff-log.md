@@ -22,6 +22,30 @@
 
 ---
 
+## 2026-10-21 · claude-b · 지식 그래프 화면 2건 -- 소명 "근거 한눈에" · 조직 기술 지도 막대/관계 그림(사용자 결정 ①② 순서, ③ 보류)
+- 브랜치/커밋: `feat/claude-b-kg-views`(claude-a `feat/claude-a-grade-swap` `9c34092` 위 -- a 브랜치는 건드리지 않음) `5050ea0`(①) · `62efb31`(②) · 이 커밋(문서). main 미병합.
+- 사용자: "조직 기술지도에도 지식 그래프가 들어갈만한 포인트 … 다른 화면에서도 지식 그래프 활용", "텍스트가 많다보니 … 보기 편하게 변환"(제안서 루트 `.omc/plan/2026-10-21-kg-and-visuals.md`), "1,2는 순차대로 진행해주고, 3번은 일단 킵"(③ 연간 계획 월별 인원 -- a가 연간 계획 화면 작업 중), 기술 지도 데이터 칸은 "a에 맡겨줘".
+- 한 일:
+  - ① `/api/justification` `evidence`(`api/justification_evidence.py`) + `EvidenceGlance`(충족표·팀 협업 지도·대안 막대).
+  - ② 기술 지도 공급/수요 막대(지금 데이터로 동작) + 관계 그림(사람별 칸이 오면 켜짐, 지금은 예전 목록) + `api/routes/skill_map` 칸 정규화.
+- 상대 영향(claude-a):
+  - **요청 `docs/requests/2026-10-21-skill-map-graph-fields.md` 대기** -- 칸 이름 `free`·`on`·`expert`·`months`·`level`·`credited_from`(+`broader`·`narrower`).
+    - 사람 목록을 사전으로 바꾸든 `practical_detail`로 따로 주든 route가 받는다(`id`/`person_id`, `on` 문자열, `credited_from` 사전·목록·문자열·None, 비율 credit^깊이).
+    - 넣으면 화면이 저절로 그림을 그린다.
+  - `report/TeamNetworks.tsx`의 `Card`를 `TeamCircleCard`(scale·fit)로 export -- PDF는 그대로(scale 1).
+  - `api/routes/justification.py`를 고쳐 저장된 AI 글 코드 지문이 한 번 바뀌었다(다음 소명 요청 때 AI가 다시 씀). 화면용 재료는 지문 밖 모듈.
+  - 기준선 2099 passed·slow 20·웹 321.
+- 검증: `uv run --group benchmark pytest -q` 2099 passed, 1 skipped, 20 deselected · `-m slow` 20 passed(새 dist) · 웹 321 · `npx tsc -b`·build · oxlint 새 경고 0 · 커밋 ①만 꺼내 tsc·시험 41 통과 ·
+  브라우저: org-n100 기록 소명 J001 -- 충족표 9줄·협업 지도·결론 "오르는 것 없음", 연말형 기술 지도 막대(Private Cloud 1명 부족이 보임) · 임시로 칸을 채운 확인용 서버에서 관계 그림, 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백.
+  - ①: 1차 needs-attention(MUST 1: 위반 대안만 오를 때 "모두 내려감" -- 실측 18개 사업 중 4개, SHOULD 4) → 2차 approve.
+  - ②: 1차 needs-attention(SHOULD 7: 막대 눈금·정보 손실·명단 가림·인정 판정·깊이·키 견고성·원 글자) → 2차 approve.
+  - NIT는 모두 반영.
+- 알림: ① 1차 리뷰어 실측이 데이터 폴더를 따로 두지 않고 돌아 `~/.teamweaver/justifications`(저장된 소명 AI 글)를 정리했다. 데이터·작업 판·기록은 그대로다.
+- 근거: 루트 `.omc/reports/2026-10-21-kg-views.md`(+ `.eli5.html`).
+
+---
+
 ## 2026-10-21 · claude-a · 화면 전체 검토(사용자 "기조에 맞게 … 쭉 검토") + 작은 고침 3건
 - 브랜치/커밋: `feat/claude-a-grade-swap` `36e1f20`(작은 고침) · `e04b06e`(양식 문구) · 이 커밋(문서). main 미병합.
 - 사용자: "내가 너에게도 그렇고 b에게도 그렇고 요청한 그 화면 변경 포인트들을 잘 이해하고 그 기조에 맞게 화면에서 다른거 또 변경할게 없는지 쭉 검토해봐 줘 … 내부 로직 및 기능을 바꿔야하는 것들도".
