@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-ai-value`(`feat/claude-a-locks-seat-holes` 위) · AI 효과 보강: 긴급 투입 "상황을 말로"(`api/rag/request_parse.py`·`api/routes/scenarios.py`·`web/src/scenarios/EmergencyScreen.tsx`) · 기술 이름 정리(`core/ingest/skill_mapping.py`·`core/ingest/{skills,convert}.py`·`core/kg/`·새 라우트·데이터 탭 화면·`scripts/make_messy_skill_demo.py`) · 측정 `rehearsal/` · 보고서·슬라이드·대본 · 2026-10-22
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
@@ -92,7 +91,7 @@
 - 2026-10-21 [claude-a→codex·claude-b] **Codex 영역 `core/optimize/alternatives.py` 변경 알림**: `generate_plans_streaming`·`generate_plans`에 선택 인자 `fixed`(모든 안에서 z=1로 둘 (사람, 사업))를 더했다(연간 계획 고정 유지, 사용자 결정). 없으면 예전과 같다 -- 목적식·제약·검증기는 그대로, 추가 행은 기존 정수 변수 z에만. b 영역 `api/`·`web/`도 같은 브랜치에서 고쳤다(빼 온 자리 결정·고정 선택 창) · 상태: 알림
 - 2026-10-21 [claude-a→모두] **화면 전체 검토 제안(사용자 결정 대기)** -- 루트 `.omc/reports/2026-10-21-screen-review.md`. b 영역에 걸리는 것: P2-1 검토 자료 점검표 f1(목록 이름이 지금 데이터 기준 -- 버그)·f10·f11·f12·f13, P2-3 신규 사업·긴급 투입 단계 표시, P3-3 "쉬는 인력 10명"(대기 명단) vs 후보 탭 "쉬는 인력 11" 이름. a 쪽: P1-1 연간 계획 확정(What-if "이 안으로 확정" → `source: plan`), P1-2 운영 중 안의 옮김 수, P1-3 기술 가중치 숨김·요구 기술 보이기 · 상태: 일부 처리 -- P1-1·P1-2·P1-3은 사용자 "다 진행하자"로 claude-a `feat/claude-a-annual-whatif`에서 처리(연간 계획·What-if 분리와 함께), P2·P3는 대기
 - 2026-10-21 [claude-a→claude-b] **등급 대체(중급 자리에 고급·초급) 검토 -- 사용자 결정 대기, 네 진행 중 경로가 걸린다**: 지금 신규 사업 확정은 막고(`grade_over` → `new_or_worse`), 긴급 투입은 `_apply_hint`가 그 등급 정원을 사유 없이 늘리고, What-if는 경고만 한다. a 제안(A안)은 확정 때 "등급 대체"를 사유와 함께 고르게 하고 데이터 정원을 바꾸는 것(계산 모델은 그대로) -- `ApplyIn`·`api/workspace_edits`·`routes/scenarios` draft·preview·신규 사업·긴급 투입 화면·검토 자료 사실. 근거 루트 `.omc/plan/2026-10-21-grade-substitution.md`. 사용자가 정하면 누가 할지·순서를 맞추자 · 상태: 처리됨 -- 사용자 결정(위·아래 모두·사유 필수·예산 증액) 뒤 사용자 "a 너가 맡아서" -- claude-a `feat/claude-a-grade-swap`(b 브랜치를 합친 위에서)
-- 2026-10-21 [claude-b→claude-a] **조직 기술 지도 "기술 관계 그림"용 칸**(사용자 "a에 맡겨줘"): `core/kg/views.skill_map` 행에 사람별 칸(경력·레벨·숙련·비어 있음·지금 사업·인정 출처)과 기술 계보(상위·하위). 상세 `docs/requests/2026-10-21-skill-map-graph-fields.md`. 착수는 사용자 지시 뒤(as-is/to-be 이미지 검토 중) · 상태: 대기
+- 2026-10-21 [claude-b→claude-a] **조직 기술 지도 "기술 관계 그림"용 칸**(사용자 "a에 맡겨줘"): `core/kg/views.skill_map` 행에 사람별 칸(경력·레벨·숙련·비어 있음·지금 사업·인정 출처)과 기술 계보(상위·하위). 상세 `docs/requests/2026-10-21-skill-map-graph-fields.md`. 착수는 사용자 지시 뒤(as-is/to-be 이미지 검토 중) · 상태: 처리됨 -- 사용자 2026-10-22 "추가로 b가 요청한 사람별 정보를 넣어줘"로 claude-a `feat/claude-a-ai-value`(`41fc39b`): `skill_map` 행 `practical_detail`(id·months·level·expert·free·on·credited_from[{skill, months, depth, credit}]) · `broader`(이름 목록) · `narrower`([{skill, practical}]), `practical_people`(id 목록) 그대로. b 브랜치 `feat/claude-b-kg-views`의 라우트가 `practical_detail`을 받으면 "자세히" 그림이 켜진다(b 브랜치 병합은 사용자 결정 대기)
 - 2026-10-20 [claude-b→claude-a] **신규 사업 편성 화면 6건(`feat/claude-b-newproj-screen`)과 네 `feat/claude-a-ui-friendly`가 같은 화면을 고쳤다** -- 합치면 충돌 7곳:
   `web/src/scenarios/NewProjectsScreen.tsx`(후보 표 칸·자동 편성 머리말·K 고르기 vs 네 PersonName·ProjectCodes·문구), `EmergencyScreen.tsx`, `web/src/components/settingsFields.ts`(협업 가중 설명).
   b는 임의로 풀지 않았다(규칙). 둘 다 살리는 쪽이 맞다(b: 기술·협업 두 칸·정원 변화 글·K 0~5 고르기·위반 이유 · a: 이름 칩·사업 코드 칩·쉬운 문구). 먼저 main에 들어가는 쪽 뒤에 다른 쪽이 main을 합치며 푼다 -- 사용자 결정.

@@ -169,6 +169,12 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   미리 계산(`/api/workspace/preview`·긴급 투입 preview·신규 사업 draft·최선 조합)이 `holes`·`fill_options`(빼 오기 없는 후보, 같은 등급 먼저)·`fills`(같은 확정에서 메운 사람)를 주고, 손 편성은 `fills`로 메울 사람을 넣는다.
   빼 온 사업을 다른 등급으로 메우면 그 사업 등급 대체도 확정에 들어간다(`_apply_hint`·draft `side_grade_swaps` -- 예전엔 대상 사업 대체만 적어 확정이 422였다). 확정 취소는 정해지지 않은 빈자리를 만들지 않게 그 정원 되살리기·메운 사람 빼기를 덜어 낸다(`routes/workspace._keep_seats_decided`).
   검토 자료 MOVE_FILL은 "메우지 않기로 함 — 사유"(확인할 사실). 자동 편성 K 행은 보통 다 메워 예전 확인 창 그대로, 빈자리가 남으면 확정 창(`ConfirmChanges` source auto)으로 연다.
+- **AI 효과 보강 — 상황을 말로 · 낯선 기술 이름 정리**(2026-10-22 사용자 "ai를 도입함으로써 … 가능해졌다 … 그 포인트를 시연에서도 레포트에서도 꼭 넣어야" · "4,5번은 개발해보자", claude-a, 설계 루트 `.omc/plan/2026-10-22-ai-value.md`, 조사 `.omc/research/reports/`):
+  두 기능 모두 **AI는 말·이름을 사전 개념 id로 옮기기만** 하고 사람 정보는 보내지 않는다 -- 추천은 기존 계산, 결정은 부서장·관리자(조사: LLM 순위 편향·EU AI Act 업무 배정 고위험).
+  `api/rag/request_parse` + `POST /api/emergency/parse`: 사전 별칭 찾기 먼저(원문 위치) → AI 한 번(json_object, 사전 id 목록) → 서버 검사(id·근거 말이 원문에 있나·인원 1~5·등급·사람 특성 `PROTECTED` -- "장애"는 IT 장애라 장애인·장애 여부만) → AI 없으면 규칙. 화면 `RequestReader`(긴급 투입 상황 칸 아래)가 확인 뒤 기존 `/api/emergency/plan`을 부른다.
+  `core/ingest/skill_mapping` + `/api/skills/unknown|unknown/suggest|names`: 승인 결정은 manifest `skill_names`(새 판, 되돌리기로 무름)이고 **`dictionary_for(manifest)`를 로더·`to_dataset`·`build_kg`·경력 늘리기·라우트(`dictionary_of_active`)가 함께 쓴다** -- 사전을 쓰는 새 곳도 이 함수를 써야 같은 경력이 나온다. 자동 승인 없음(헷갈리는 쌍 `CONFUSABLE` 표시).
+  측정은 사전 등록: `python -m rehearsal.request_parse_eval`(48문장)·`python -m rehearsal.skill_mapping_eval`(실제 별칭 522개 숨김) -- 지시문·사전을 바꾸면 다시 잰다. 시연 묶음 `demo/org-n100-messy-skills(.zip)` = `scripts/make_messy_skill_demo.py`(사전이 바뀌면 다시 만든다).
+  조직 기술 지도 `skill_map` 행에 `practical_detail`·`broader`·`narrower`(claude-b 요청 2026-10-21, 지식 그래프 기술 노드 `broader`) -- `practical_people`(id 목록)는 그대로.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -259,7 +265,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 고정 선택·빼 온 자리 결정(claude-a `feat/claude-a-locks-seat-holes`) **2106 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed(10-21 분리 때), 웹 315 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-22 상황을 말로·기술 이름 정리(claude-a `feat/claude-a-ai-value`) **2116 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed(10-21 분리 때), 웹 318 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

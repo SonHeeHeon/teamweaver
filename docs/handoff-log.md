@@ -22,6 +22,23 @@
 
 ---
 
+## 2026-10-22 · claude-a · AI 효과 보강 — 상황을 말로 · 낯선 기술 이름 정리 · AI 없이와의 비교(보고서·슬라이드·대본) + b 요청 사람별 칸
+- 브랜치/커밋: `feat/claude-a-ai-value`(`feat/claude-a-locks-seat-holes` 위) — `41fc39b`(서버·시험) · `1907dc7`(사전 등록 측정 기준) · `b1a3a00`(화면) · `912537b`(측정 결과·시연 zip) · 문서 커밋. main 미병합(승인 대기, 아래 두 브랜치와 함께).
+- 사용자: "ai를 도입함으로써 … 기존에는 어려웠던게 … 가능해졌다 혹은 … 훨씬 더 효율적이거나 성능이 훨씬 좋아졌다 … 그 포인트를 시연에서도 레포트에서도 꼭 넣어야" → "1,2,3,4,5번 다 좋다. 4,5번은 개발해보자. 4번은 말로 하게되면 추천안(인력)을 받아 선택하도록" · 진행 중 "추가로 b가 요청한 사람별 정보를 넣어줘".
+- 한 일:
+  - 긴급 투입 **상황을 말로**: `POST /api/emergency/parse`(`api/rag/request_parse`) — 사전 별칭 → AI 한 번(사전 id 안) → 서버 검사(근거 말 위치·범위·사람 특성 경고) → AI 없으면 규칙. 화면 `RequestReader`가 확인한 요구로 기존 `/api/emergency/plan`을 부른다(AI는 사람을 보지 않음).
+  - **낯선 기술 이름 정리**: `/api/skills/unknown`·`/unknown/suggest`·`/names`(관리자) — 승인 = manifest `skill_names` 새 판, 사전은 어디서나 `core/ingest/skill_mapping.dictionary_for(manifest)`. 데이터 탭 `SkillNamesPanel`. 시연 묶음 `demo/org-n100-messy-skills(.zip)`.
+  - 측정(사전 등록): 요구 읽기 재현율 0.836 → 1.00(정밀도 1.00 → 0.93) · 기술 이름 실제 별칭 522개 1위 27.2% → 95.2%, 상위 3 53.6% → 100%, 시연 묶음 틀린 기술 점수 34.7% → 0.
+  - 보고서 3.3 "AI가 바꾼 것"(전후 표 + 평가 글·소명 글 나란히) · 8.3 사람 시간 추정(근거 등급), 슬라이드 7 새로(8장), 대본 9분 45초(D1·D7·T2b). D7 말로 받은 추천 = 예전과 같은 배치(`scenarios-1019.json` `emergency_spoken`, +1.25 → +1.30).
+  - 사용자가 낸 "동료 6명 채택" 가짜 평가는 넣지 않았다(사용자에게 알림, 실제 블라인드 비교는 결정 대기).
+- 상대 영향(claude-b):
+  - **b 요청 처리**(`docs/requests/2026-10-21-skill-map-graph-fields.md`): `skill_map` 행 `practical_detail`·`broader`·`narrower`, 지식 그래프 기술 노드 `broader`. `practical_people`는 그대로 — b의 `feat/claude-b-kg-views` 라우트가 `practical_detail`을 쓰면 "자세히" 그림이 켜진다.
+  - 사전을 읽는 새 코드는 `load_dictionary()` 대신 `dictionary_for(manifest)`(데이터) 또는 `dictionary_of_active()`(라우트)를 써야 승인한 이름이 반영된다. `/api/skills/dictionary`도 데이터 사전을 준다.
+  - 새 이력 kind `skill_names`(되돌리기 대상). 긴급 투입 화면 상황 칸 아래에 버튼·결과 상자가 생겼다(`EmergencyScreen` -- b 영역, 사용자 지시로 a가 고침).
+  - 시험 기준선: 파이썬 2116 passed · 1 skipped · 20 deselected · 웹 318.
+- 검증: `uv run --group benchmark pytest -q` → 2116 passed, 1 skipped, 20 deselected(8분 34초) · `cd web && npm test`(318) · `npx tsc -b` · build · 실제 AI 브라우저 확인(임시 데이터 폴더: 기술 이름 AI 제안 14개 5초·$0.0007 → 확실한 10개 반영, 긴급 투입 말로 4.4초 → 이지유 +1.30) · 보고서 PDF 10쪽 · 슬라이드 넘침 0. Codex 한도 소진(10-25 16:31) → 자체 리뷰.
+- 근거: `.omc/plan/2026-10-22-ai-value.md` · `.omc/reports/2026-10-22-ai-value.md` · 조사 `.omc/research/reports/자연어 인력 요청과 기술명 정규화.md` · `rehearsal/results/request-parse.json`·`skill-mapping.json`.
+
 ## 2026-10-21 · claude-a · 연간 계획 고정 선택(유지/풀기) + 빼 온 자리 결정(메움/메우지 않음)
 - 브랜치/커밋: `feat/claude-a-locks-seat-holes`(`docs/claude-a-demo-report-1021` 위) — `ed6a9b7`(고정 선택 서버) · `158432b`(빼 온 자리 서버) · `a7f57a4`(화면) · 문서 커밋. main 미병합(승인 대기).
 - 사용자: ① "안을 짜는걸 요청할 때 고정된 사람이 있으면 팝업을 띄워서 먼저 고정된 사람은 계속 고정할지 아니면 고정 풀고 그 사람들도 다시 배치를 할지 물어보고 그 결정을 따라서" ② "빼간 자리를 매꿔야한다는게 있어야할거같네. 못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로" → "너 추천대로"(모든 확정 경로·예산 그대로).

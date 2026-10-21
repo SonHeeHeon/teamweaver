@@ -116,13 +116,13 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <h2>시연 흐름</h2>
   <p class="lead">100명 가상 조직: 1년 계획(백지) → 확정 → 지금 배치에서 바꿔 보기 → 연말 운영 중(신규 사업·긴급 투입) → 300명</p>
   <div class="steps8 steps9">
-    <div class="card"><h3><span class="n">1</span>데이터 검증</h3>틀린 파일은 오류만 보이고 전환하지 않음</div>
+    <div class="card"><h3><span class="n">1</span>데이터 검증</h3>틀린 파일은 오류만 · 낯선 기술 이름은 AI 제안 → 승인</div>
     <div class="card"><h3><span class="n">2</span>연간 계획</h3>안 A~D · 계산 신뢰도 · 계산 멈추기 · 요구 기술</div>
     <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 세 문장 요약 · 근거 사실 연결</div>
     <div class="card"><h3><span class="n">4</span>안 확정</h3>고른 안이 실제 배치로 — 지금 대비 옮김·새로·빠짐</div>
     <div class="card"><h3><span class="n">5</span>What-if</h3>지금 배치에서 교체 · AI 설명 · 담기 → 사유 적고 확정</div>
     <div class="card"><h3><span class="n">6</span>신규 사업 편성</h3>K별 자동 편성 · 고도화 과제 등록 · 이전 팀원</div>
-    <div class="card"><h3><span class="n">7</span>긴급 투입</h3>빼 오기와 그 자리 메움 · 동시 수행으로 지원</div>
+    <div class="card"><h3><span class="n">7</span>긴급 투입</h3>상황을 말로 → 추천안 · 빼 온 자리 메움 · 동시 수행</div>
     <div class="card"><h3><span class="n">8</span>인사팀 검토 자료</h3>잠긴 사실 + 부서장 판단 → PDF</div>
     <div class="card"><h3><span class="n">9</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
   </div>
@@ -138,9 +138,10 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3><span class="n">2</span>독립 검증기 · 평가기</h3>
       솔버가 낸 답을 원자료로 다시 계산 — 정수성·범위·제약·목적값.<br>교체·What-if·확정 미리 계산·편성 기록 확인도 같은 평가기로 채점.<br>신규 사업 편성은 이동 인원 K 제약을 더해 최선까지 증명.</div>
     <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3><ul>
-      <li>평가 글을 읽어 협업 점수에 반영 — 항목만 세는 규칙은 글에 쓴 부정의 88%를 놓친다</li>
-      <li>교체 설명 — 인용을 원문과 한 글자씩 대조, 규칙 위반이면 "보류"</li>
-      <li>소명 글(GraphRAG) — AI는 사실 번호만 고르고 숫자는 서버가</li></ul></div>
+      <li>평가 글을 읽어 협업 점수에 — 항목만 세면 글에 쓴 부정의 88%를 놓친다</li>
+      <li>교체 설명 — 인용을 원문과 대조, 위반이면 "보류"</li>
+      <li>소명 글(GraphRAG) — AI는 사실 번호만, 숫자는 서버가</li>
+      <li>상황 글·낯선 기술 이름 — 사전 말로만 옮기고 사람이 고른다</li></ul></div>
     <div class="card"><h3><span class="n">4</span>지식 그래프 · 기술 이름 사전</h3>
       기술 개념 228개로 여러 이름을 하나로("postgres" = PostgreSQL).<br>하위 기술 경력은 70%만 상위 기술에 인정하고 출처를 표시.<br>조직 기술 지도 · 소명 글의 근거 사실.</div>
   </div>
@@ -158,6 +159,25 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><div class="num">28 → 0</div><div class="cap">나쁘게 평가한 사이가 협업 보상에 든 수 — 항목만 세는 규칙 → 글을 읽는 AI(100명) · 같은 팀 배치 9 → 4</div></div>
   </div>
   <div class="foot">모든 수치는 가상 데이터와 설계한 점수표 안에서 잰 것이다. 사업 효과는 검증 전(NOT_CALIBRATED).</div>
+</section>
+
+<section class="slide">
+  <div class="kicker">성과 · AI가 바꾼 것</div>
+  <h2>AI가 있어서 달라진 것 — 같은 데이터로 AI 없이와 비교</h2>
+  <div class="grid g2" style="margin-top:14px;font-size:25px">
+    <div class="card" style="font-size:25px"><h3>평가 글 한 건(가상)</h3>
+      <div class="cap">체크: 좋은 점 5 · 아쉬운 점 2</div>
+      <p style="margin:10px 0;font-size:27px;color:var(--ink)">"자기 범위만 챙기고 팀 일에는 무관심했습니다 … 다시 함께 일정을 잡고 싶지 않습니다."</p><ul>
+      <li>항목만 세면 <b>+0.43</b>&nbsp;→ "궁합 좋은 쌍"으로 같은 팀에</li>
+      <li>AI가 글을 읽으면 <b>−0.80</b>&nbsp;→ 협업 보상에서 뺌</li></ul></div>
+    <div class="card" style="font-size:25px"><h3>AI 없이 → AI</h3><ul>
+      <li>글에만 쓴 혹평 찾기 12%&nbsp;→&nbsp;<b>100%</b> · 나쁜 사이 협업 보상 28&nbsp;→&nbsp;<b>0</b></li>
+      <li>"왜 이 팀인가" 77줄 나열 → <b>세 문장</b>(검사 통과 99%)</li>
+      <li>상황을 말로: 일로만 설명한 요구 0%&nbsp;→&nbsp;<b>100%</b></li>
+      <li>낯선 기술 이름: 후보 3개 안 정답 54%&nbsp;→&nbsp;<b>100%</b> · 틀린 기술 점수 35%&nbsp;→&nbsp;0</li></ul>
+      <div class="cap" style="margin-top:8px">사람 시간(추정): 평가 글 4,012건 33시간 → 약 2시간 · 소명 한 편 37~40% 단축(통제 실험)</div></div>
+  </div>
+  <div class="foot">AI는 읽고 · 쓰고 · 사전 말로 옮기기만 — 배치 결정은 최적화, 최종 선택은 사람. 모두 가상 데이터 측정.</div>
 </section>
 
 <section class="slide">

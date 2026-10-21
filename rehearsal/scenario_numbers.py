@@ -20,6 +20,7 @@ OUT = ROOT / "rehearsal" / "results" / "scenarios-1019.json"
 PREDECESSOR = "J007"       # 연말형(생성기 v4)에서 올해 말 끝나는 개발 사업 -- 고도화 과제의 이전 사업
 SUPPORT = "J015"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀, v4 고도화 9명)
 EMERGENCY = "J004"         # 긴급 투입 장면의 진행 사업(끝나지 않는 9명 개발 사업 -- v4에서 J007은 올해 말에 끝난다)
+SPOKEN = "데이터 마트 적재가 계속 실패해요 — 스파크랑 금융 업무 아는 중급 한 명 급히"   # D7 상황을 말로(2026-10-22)
 
 
 def _entries(ws):
@@ -88,8 +89,29 @@ def main() -> None:
                                                 "pull_budget": 1, "note": "장애 대응"})
         r.raise_for_status()
         plan = r.json()
+        # 상황을 말로(2026-10-22 D7): 같은 판에서 상황 글을 요구로 읽고(AI 없이 -- 이 글의 기술·인원·등급은 사전 별칭·규칙만으로 같다)
+        # 그 요구로 추천을 받으면 무엇이 나오나. 화면은 AI로 읽어도 글에 쓴 기술은 같다(미루어 본 기술은 기본 꺼짐)
+        from api.rag.request_parse import parse_request
+        from core.ingest.skills import load_dictionary
+        said = parse_request(SPOKEN, load_dictionary())
+        skills = [x["name"] for x in said["skills"] if x["kind"] == "explicit"]
+        r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": said["headcount"] or 1,
+                                                "grade": said["grade"], "skills": skills, "pull_budget": 1, "note": SPOKEN})
+        r.raise_for_status()
+        spoken = r.json()
+        same = sorted((e["person_id"], e["project_id"]) for e in spoken["best"]["entries"]) == sorted(
+            (e["person_id"], e["project_id"]) for e in plan["best"]["entries"])
+        out["emergency_spoken"] = {"text": SPOKEN, "skills": skills, "headcount": said["headcount"], "grade": said["grade"],
+                                   "added": spoken["best"]["added"], "delta": spoken["best"].get("delta"),
+                                   "fills": spoken["best"].get("fills"), "holes": spoken["best"].get("holes"),
+                                   "apply_hint": spoken["apply_hint"], "same_entries_as_plain": same,
+                                   "standby": [x.get("name") for x in spoken.get("standby", [])[:3]]}   # 요구 기술로 다시 매긴 대기 순위
+        # 화면 "지금 바로 넣을 수 있는 사람"은 사업을 고를 때 기술 없이 뽑은 순위다 -- 말로 받기 전 계산의 것을 남긴다
+        plain_standby = [x.get("name") for x in plan.get("standby", [])[:3]]
+        if same:                                        # 같은 배치면 아래 확정·검토 자료 숫자는 그대로다 -- 화면 흐름대로 말로 받은 추천을 확정한다
+            plan = spoken
         out["emergency"] = {"added": plan["best"]["added"], "delta": plan["best"].get("delta"), "apply_hint": plan["apply_hint"],
-                            "standby": [x.get("name") for x in plan.get("standby", [])[:3]],
+                            "standby": plain_standby,
                             "moved": plan["best"].get("diff", {}).get("moved")}
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": plan["best"]["entries"],
                                                  "source": "emergency", "note": f"{EMERGENCY} 장애 대응", **plan["apply_hint"]})
