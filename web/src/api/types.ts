@@ -556,7 +556,21 @@ export interface SkillMapRow {
   coverage: number | null; scarce: boolean;
   demand: { project_id: string; project: string; proposal: boolean; headcount: number; min_months: number | null;
             qualified_people: number }[];
-  practical_people: { id: string; name: string | null; credited: boolean }[];
+  practical_people: SkillPerson[];
+  /** 조직 기술 분포(2026-10-22): 보유자 경력 구간 인원 [1년 미만, 1~3년, 3~5년, 5~8년, 8년+] · 5년+ 인원 · 실무 가능자 평균 경력(개월) */
+  levels?: number[]; senior?: number; avg_months?: number | null;
+  /** 5년+ 중 하위 기술 인정분 덕에 넘긴 사람(본인 경력만으로는 5년 미만) */
+  senior_credited?: number;
+  /** 기술 계보(사전) -- claude-a skill_map 칸(2026-10-21 요청). 없으면 그리지 않는다 */
+  broader?: string[];
+  narrower?: ({ skill: string; practical?: number } | string)[];
+}
+/** 실무 가능한 사람. months~credited_from은 claude-a skill_map 칸(2026-10-21 요청) -- `free`가 있으면 화면이 기술 관계 그림을 그린다 */
+export interface SkillPerson {
+  id: string; name: string | null; credited: boolean;
+  months?: number; level?: number; expert?: boolean; free?: boolean; on?: string[];
+  /** 하위 기술 인정 출처(서버가 [{기술, 그 경력 개월, 비율 = credit^깊이}]로 맞춘다). 표시는 `credited`(인정 덕에 실무 가능)일 때만 */
+  credited_from?: { skill: string; months: number | null; ratio: number | null }[] | null;
 }
 export interface SkillMap {
   dataset_version: string; rows: SkillMapRow[]; note: string;
@@ -584,4 +598,23 @@ export interface Justification {
   /** 3문장 요약(2026-10-20, 본문과 같은 문법·검사 -- graphrag: AI 구성 통과, rule: 규칙 요약). 없으면 null */
   summary?: string | null;
   summary_method?: "graphrag" | "rule" | null;
+  /** 근거 한눈에(2026-10-21): 소명 재료의 지식 그래프 근거를 표·그림용으로. 이름은 가상 데이터만(실데이터는 null → ID) */
+  evidence?: JustEvidence | null;
+}
+
+export type ReqStatus = "met" | "below" | "missing";
+export interface JustEvidence {
+  project_id: string;
+  industry?: string | null;
+  requirements: { skill: string; headcount: number; min_level: number; met_by: number; status: "met" | "short" }[];
+  members: {
+    person_id: string; name: string | null; grade: string | null; skill_fit: number | null;
+    requirements: { skill: string; months: number; level: number; min_level: number; status: ReqStatus;
+                    /** 하위 기술 경력에서 일부 인정: 출처 기술·그 경력 개월·실제 비율(credit^깊이) */
+                    credited_from?: { skill: string; months: number | null; ratio: number | null } }[];
+    same_industry_projects: number | null; same_industry_months: number | null;
+  }[];
+  /** 팀원마다 같은 등급 다른 사람(기술 적합 상위 5명)으로 한 명씩 바꾸면(재최적화 아님 -- 평가기로 다시 잼) 가장 나은 1명 */
+  alternatives: Record<string, { person_id: string; name: string | null; skill_fit: number | null; delta_total: number;
+                                 delta_skill: number; delta_synergy: number; new_violations: number }[]>;
 }

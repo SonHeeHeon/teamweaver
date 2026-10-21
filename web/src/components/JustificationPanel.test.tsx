@@ -30,6 +30,19 @@ function panel() {
 describe("JustificationPanel", () => {
   beforeEach(() => vi.mocked(postJustification).mockReset());
 
+  it("응답에 근거가 있으면 요약 아래 '근거 한눈에'를 그린다(2026-10-21), 없으면 그리지 않는다", async () => {
+    const evidence = {
+      project_id: "P1", requirements: [{ skill: "Java", headcount: 1, min_level: 2, met_by: 1, status: "met" as const }],
+      members: [{ person_id: "p1", name: "김민준", grade: "고급", skill_fit: 1, same_industry_projects: 2, same_industry_months: 30,
+                  requirements: [{ skill: "Java", months: 60, level: 4, min_level: 2, status: "met" as const }] }],
+      alternatives: {},
+    };
+    vi.mocked(postJustification).mockResolvedValue(base({ ai_available: false, summary: "요약", evidence }));
+    panel();
+    expect(await screen.findByRole("region", { name: "근거 한눈에" })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "요구 기술 충족표" })).toHaveTextContent("✓ 레벨 4");
+  });
+
   it("탭이 숨어 있으면 만들지 않고(AI도 부르지 않음), 보이면 그때 만든다(2026-10-21 화면 검토)", async () => {
     vi.mocked(postJustification).mockResolvedValue(base({ ai_available: false }));
     const props = { meta: META, datasetVersion: "v1", entries: ENTRIES, applied: null, weights: {}, params: null,

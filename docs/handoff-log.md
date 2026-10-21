@@ -22,6 +22,50 @@
 
 ---
 
+## 2026-10-22 · claude-b · 조직 기술 분포(넓이×깊이 사분면·경력 띠) · 확정 취소 버튼 시각 빼기 · main 합침
+- 브랜치/커밋: `feat/claude-b-kg-views` `2d70e0e`(main `4d55462` 합침) · `72a9b9f`(버튼 시각) · `d5ed4dd`(기술 분포) · 이 커밋(문서). main 미병합.
+- 사용자:
+  - "조직 기술 지도에서 … 우리 조직 인력들의 기술 분포 … 딱 보고 이런 기술에 대해 경력이 높구나 이 기술에 강하겠구나 … 지금 해준거는 그대로" → 시안 A·B·C 중 **C + B**, 숫자는 "b가 화면 서버에서".
+  - "확정 취소 옆에 시간은 빼자".
+  - main 합침 충돌(문서 2곳)은 "둘 다 살리고 기준선은 다시 재기".
+- 한 일:
+  - `api/routes/skill_map` `levels`·`senior`·`senior_credited`·`avg_months`.
+  - `web/src/components/{SkillDistribution.tsx, skillDistView.ts}`: 사분면(이 조직 가운데 값 기준 상대 비교, 인정분 절반 이상은 점선·"(인정)", 눈금·반지름은 조직 규모에 맞춤, 이름표 겹침 피하기) + 경력 띠(5년+ 많은 순, 한 격자).
+  - 신규 사업 "지금 팀" 옆 확정 취소 버튼에서 시각 뺌(설명 툴팁에는 남김).
+- 상대 영향(claude-a):
+  - 기술 지도 행에 칸 4개 추가(화면용 집계, `core/kg/views` 안 고침).
+  - main 합침에서 작업 공유 기록 두 항목을 모두 남겼고 기준선은 합친 트리에서 다시 쟀다.
+  - 기준선 2104 passed·slow 20·웹 336.
+- 검증: `uv run --group benchmark pytest -q` 2104 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 336 · tsc·build · 새 파일 oxlint 0 · 브라우저(연말형, 따로 둔 데이터 폴더): 요약 "상대적 강점: 메타데이터 관리 · ETL · SQL · Python · Text Analysis 외 8개", 데이터 거버넌스·IDP 점선, 경력 띠, 콘솔 오류 0.
+- 리뷰: Codex 한도(10-25 16:31) → Claude Opus 폴백 1차 needs-attention(MUST: 인정분만인 기술이 강점으로 보임, SHOULD: 상대 비교 문구·규모 대응) → 2차 approve(SHOULD: 띠 막대 칸 폭이 줄마다 다름 → 한 격자), NIT 반영. 리뷰어에게 임시 데이터 폴더만 쓰게 지시함.
+- 근거: 루트 `.omc/reports/2026-10-22-skill-distribution.md`(+ `.eli5.html`).
+
+---
+
+## 2026-10-21 · claude-b · 지식 그래프 화면 2건 -- 소명 "근거 한눈에" · 조직 기술 지도 막대/관계 그림(사용자 결정 ①② 순서, ③ 보류)
+- 브랜치/커밋: `feat/claude-b-kg-views`(claude-a `feat/claude-a-grade-swap` `9c34092` 위 -- a 브랜치는 건드리지 않음) `5050ea0`(①) · `62efb31`(②) · 이 커밋(문서). main 미병합.
+- 사용자: "조직 기술지도에도 지식 그래프가 들어갈만한 포인트 … 다른 화면에서도 지식 그래프 활용", "텍스트가 많다보니 … 보기 편하게 변환"(제안서 루트 `.omc/plan/2026-10-21-kg-and-visuals.md`), "1,2는 순차대로 진행해주고, 3번은 일단 킵"(③ 연간 계획 월별 인원 -- a가 연간 계획 화면 작업 중), 기술 지도 데이터 칸은 "a에 맡겨줘".
+- 한 일:
+  - ① `/api/justification` `evidence`(`api/justification_evidence.py`) + `EvidenceGlance`(충족표·팀 협업 지도·대안 막대).
+  - ② 기술 지도 공급/수요 막대(지금 데이터로 동작) + 관계 그림(사람별 칸이 오면 켜짐, 지금은 예전 목록) + `api/routes/skill_map` 칸 정규화.
+- 상대 영향(claude-a):
+  - **요청 `docs/requests/2026-10-21-skill-map-graph-fields.md` 대기** -- 칸 이름 `free`·`on`·`expert`·`months`·`level`·`credited_from`(+`broader`·`narrower`).
+    - 사람 목록을 사전으로 바꾸든 `practical_detail`로 따로 주든 route가 받는다(`id`/`person_id`, `on` 문자열, `credited_from` 사전·목록·문자열·None, 비율 credit^깊이).
+    - 넣으면 화면이 저절로 그림을 그린다.
+  - `report/TeamNetworks.tsx`의 `Card`를 `TeamCircleCard`(scale·fit)로 export -- PDF는 그대로(scale 1).
+  - `api/routes/justification.py`를 고쳐 저장된 AI 글 코드 지문이 한 번 바뀌었다(다음 소명 요청 때 AI가 다시 씀). 화면용 재료는 지문 밖 모듈.
+  - 기준선 2099 passed·slow 20·웹 321.
+- 검증: `uv run --group benchmark pytest -q` 2099 passed, 1 skipped, 20 deselected · `-m slow` 20 passed(새 dist) · 웹 321 · `npx tsc -b`·build · oxlint 새 경고 0 · 커밋 ①만 꺼내 tsc·시험 41 통과 ·
+  브라우저: org-n100 기록 소명 J001 -- 충족표 9줄·협업 지도·결론 "오르는 것 없음", 연말형 기술 지도 막대(Private Cloud 1명 부족이 보임) · 임시로 칸을 채운 확인용 서버에서 관계 그림, 콘솔 오류 0.
+- 리뷰: Codex 한도 소진(10-25 16:31) → Claude Opus 폴백.
+  - ①: 1차 needs-attention(MUST 1: 위반 대안만 오를 때 "모두 내려감" -- 실측 18개 사업 중 4개, SHOULD 4) → 2차 approve.
+  - ②: 1차 needs-attention(SHOULD 7: 막대 눈금·정보 손실·명단 가림·인정 판정·깊이·키 견고성·원 글자) → 2차 approve.
+  - NIT는 모두 반영.
+- 알림: ① 1차 리뷰어 실측이 데이터 폴더를 따로 두지 않고 돌아 `~/.teamweaver/justifications`(저장된 소명 AI 글)를 정리했다. 데이터·작업 판·기록은 그대로다.
+- 근거: 루트 `.omc/reports/2026-10-21-kg-views.md`(+ `.eli5.html`).
+
+---
+
 ## 2026-10-21 · claude-a · 연간 계획·What-if 분리 + 화면 검토 결정 3건(연간 계획 확정 · 지금 대비 옮김 · 가중치 대신 요구 기술)
 - 브랜치/커밋: `feat/claude-a-annual-whatif`(`feat/claude-a-grade-swap` 위, b `newproj-explain-cancel` 3b7230a·4f54867 합침 `37700b5`) · 서버·웹·문서 커밋(아래 검증 줄). main 미병합(승인 대기).
 - 사용자: "결정이 필요한 3건은 다 진행하자" · "what if 는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 어떤지 보기 위한 메뉴인데 … 이 두개는 분리가 필요할거같은데. 지금의 화면은 연간 계획 화면과 맞물려있는 개념".

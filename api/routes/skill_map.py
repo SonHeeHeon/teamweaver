@@ -19,6 +19,89 @@ NOTE = ("실무 가능 = 해당 기술 경력 12개월 이상, 숙련 = 36개월
         "투입률·가용률·예산은 보지 않는다 -- 배치 가능 여부는 최적화가 판단한다. 계산상 지표이며 사업 효과는 NOT_CALIBRATED.")
 
 
+# 기술 관계 그림(2026-10-21 사용자 "조직 기술지도에도 지식 그래프", 칸은 claude-a `core.kg.views.skill_map`에 요청 --
+# docs/requests/2026-10-21-skill-map-graph-fields.md): 사람별 칸이 오면 그대로 넘긴다. 사람 목록이 ID여도, 칸이 담긴 사전이어도,
+# 칸이 따로(`practical_detail`) 와도 받는다 -- 화면은 `free` 칸이 있으면 그림, 없으면 예전 목록을 보인다.
+PERSON_FIELDS = ("months", "level", "expert", "free", "on", "credited_from")
+
+
+def _pid(p) -> str | None:
+    if isinstance(p, dict):
+        v = p.get("id") or p.get("person_id")
+        return str(v) if v else None
+    return str(p) if p else None
+
+
+def _credit_list(v) -> list[dict] | None:
+    """인정 출처를 [{skill, months, ratio}]로. 비율 = credit^깊이(0.7² = 49% -- 소명 근거와 같은 규칙, 폴백 리뷰 SHOULD).
+    사전·목록·문자열 무엇으로 와도 받는다."""
+    items = v if isinstance(v, list) else [v] if v else []
+    out = []
+    for x in items:
+        if isinstance(x, str):
+            out.append({"skill": x, "months": None, "ratio": None})
+        elif isinstance(x, dict) and (x.get("skill") or x.get("from")):
+            credit, depth = x.get("credit"), x.get("depth") or 1
+            ratio = x.get("ratio") if x.get("ratio") is not None else (
+                round(credit ** depth, 4) if isinstance(credit, (int, float)) else None)
+            out.append({"skill": str(x.get("skill") or x.get("from")), "months": x.get("months") or x.get("from_months"),
+                        "ratio": ratio})
+    return out or None
+
+
+def _norm(extra: dict) -> dict:
+    out = {k: extra[k] for k in PERSON_FIELDS if k in extra}
+    if "on" in out:                                    # 사업 하나를 문자열로 줘도 목록으로("J001"의 첫 글자 'J'로 묶이지 않게)
+        on = out["on"]
+        out["on"] = [str(x) for x in on] if isinstance(on, (list, tuple)) else ([str(on)] if on else [])
+    if "credited_from" in out:
+        out["credited_from"] = _credit_list(out["credited_from"])
+    return out
+
+
+def _detail_index(detail) -> dict[str, dict]:
+    """칸이 따로 올 때(`practical_detail`) 사람 → 칸 색인을 행마다 한 번 만든다(사람마다 찾으면 수천 명에서 느렸다)."""
+    if isinstance(detail, dict):
+        return {str(k): v for k, v in detail.items() if isinstance(v, dict)}
+    if isinstance(detail, list):
+        return {pid: x for x in detail if isinstance(x, dict) and (pid := _pid(x))}
+    return {}
+
+
+def _person(p, names: dict[str, str], credited: set[str], detail: dict[str, dict]) -> dict | None:
+    pid = _pid(p)
+    if pid is None:
+        return None
+    # 사람이 사전으로 와도 칸이 없으면 따로 온 칸(practical_detail)을 본다(폴백 리뷰 NIT)
+    extra = p if isinstance(p, dict) and any(k in p for k in PERSON_FIELDS) else detail.get(pid, {})
+    return {"id": pid, "name": names.get(pid), "credited": pid in credited, **_norm(extra)}
+
+
+# 조직 기술 분포(2026-10-22 사용자 "우리 조직 인력들의 기술 분포 … 이런 기술에 대해 경력이 높구나, 이 기술에 강하겠구나"):
+# 기술마다 보유자의 경력 구간 인원(입력 단계 레벨 경계 12·36·60·96개월 = 1년 미만·1~3년·3~5년·5~8년·8년+),
+# 5년 이상 인원, 실무 가능자 평균 경력. 지식 그래프의 경력 개월(인정분 포함 -- S 점수와 같은 경력)을 세기만 한다.
+SENIOR_MONTHS = 60
+
+
+def _spread(edges, practical_months: int) -> dict:
+    """경력은 S 점수와 같은 개월(본인 + 하위 기술 인정분 중 큰 값). 인정분 덕에 5년을 넘긴 사람은 따로 센다 --
+    "데이터 거버넌스"처럼 실무 가능 전원이 인정분뿐인 기술이 그림에서 강점으로만 보이지 않게(폴백 리뷰 MUST, 사용자 결정 10-11 "인정 경력은 구분")."""
+    from core.ingest.convert import level_from_months
+    levels = [0, 0, 0, 0, 0]
+    practical, senior_credited = [], 0
+    for e in edges:
+        m = e.get("months") or 0
+        if m <= 0:
+            continue
+        levels[level_from_months(m) - 1] += 1
+        if m >= practical_months:
+            practical.append(m)
+            if m >= SENIOR_MONTHS and e.get("implied_from") and (e.get("own_months") or 0) < SENIOR_MONTHS:
+                senior_credited += 1
+    return {"levels": levels, "senior": sum(1 for m in practical if m >= SENIOR_MONTHS), "senior_credited": senior_credited,
+            "avg_months": round(sum(practical) / len(practical), 1) if practical else None}
+
+
 def build_skill_map(dataset: ActiveDataset) -> dict:
     kg = dataset.knowledge_graph()
     if kg is None:
@@ -28,17 +111,22 @@ def build_skill_map(dataset: ActiveDataset) -> dict:
     rows = skill_map(kg)
     names = display_names(dataset)
     credited: dict[str, set[str]] = {}               # 기술 이름 → 하위 기술에서 인정받아 실무 가능이 된 사람
+    spread: dict[str, dict] = {}                     # 기술 이름 → 경력 분포(조직 기술 분포 그림)
     for sk in kg.nodes_of("skill"):
+        edges = kg.inc(sk["id"], "HAS_SKILL")
         # 인정분 덕분에 실무 가능이 된 사람만(본인 경력만으로 이미 12개월 이상이면 인정 없이도 실무 가능 -- Codex 리뷰 P2)
-        credited[sk["label"]] = {e["src"].split(":", 1)[1] for e in kg.inc(sk["id"], "HAS_SKILL")
+        credited[sk["label"]] = {e["src"].split(":", 1)[1] for e in edges
                                  if e.get("implied_from") and (e.get("months") or 0) >= PRACTICAL_MONTHS
                                  and (e.get("own_months") or 0) < PRACTICAL_MONTHS}
+        spread[sk["label"]] = _spread(edges, PRACTICAL_MONTHS)
     out = []
     for r in rows:
         cr = credited.get(r["skill"], set())
-        out.append({**{k: v for k, v in r.items() if k != "practical_people"},
-                    "practical_credited": len(cr & set(r["practical_people"])),
-                    "practical_people": [{"id": p, "name": names.get(p), "credited": p in cr} for p in r["practical_people"]]})
+        detail = _detail_index(r.get("practical_detail"))
+        people = [x for x in (_person(p, names, cr, detail) for p in r["practical_people"]) if x is not None]
+        out.append({**{k: v for k, v in r.items() if k not in ("practical_people", "practical_detail")},
+                    "practical_credited": len(cr & {p["id"] for p in people}),
+                    "practical_people": people, **spread.get(r["skill"], _spread([], PRACTICAL_MONTHS))})
     return {"dataset_version": dataset.info.version, "rows": out, "note": NOTE,
             "summary": {"skills": len(out), "scarce": sum(r["scarce"] for r in out),
                         "proposal_gap_skills": sum(1 for r in out if r["proposal_gap"] > 0),

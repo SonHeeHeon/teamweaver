@@ -37,6 +37,19 @@ describe("SkillMapTab", () => {
     expect(vi.mocked(fetchSkillMap).mock.calls[0][0]).toBe("v1");          // 화면이 본 데이터 버전을 보낸다
   });
 
+  it("표는 공급/수요 막대 한 칸, 사람별 칸이 오면 자세히는 기술 관계 그림(2026-10-21)", async () => {
+    const withFields = row({ practical_people: [
+      { id: "DP1", name: "김민준", credited: false, months: 40, expert: true, free: true, on: [] },
+      { id: "DP2", name: null, credited: true, months: 14, expert: false, free: false, on: ["J9"] }] });
+    vi.mocked(fetchSkillMap).mockResolvedValue({ ...MAP, rows: [withFields] });
+    render(<SkillMapTab datasetVersion="v1" onDatasetChanged={vi.fn()} />);
+    expect(await screen.findByRole("img", { name: "Java 공급 3명(비어 있음 1명), 필요 2명(신규 제안 2명)" })).toBeInTheDocument();
+    expect(screen.getByText("1명 부족")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Java 자세히" }));
+    expect(screen.getByRole("img", { name: "Java 기술 관계" })).toBeInTheDocument();
+    expect(screen.getByText("목록으로 보기")).toBeInTheDocument();          // 그림 밖 사람 이름은 목록으로
+  });
+
   it("묶음 데이터가 아니면 서버 이유를 보인다", async () => {
     vi.mocked(fetchSkillMap).mockRejectedValue(new Error("조직 기술 지도는 CSV 묶음 데이터에서만"));
     render(<SkillMapTab datasetVersion="v1" onDatasetChanged={vi.fn()} />);

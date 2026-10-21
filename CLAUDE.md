@@ -228,6 +228,13 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   기본값 칸은 저장 모양에 나오지 않는다(예전 교체 서명 그대로). 원래 사업의 빈자리는 서버가 위험 항목 맨 앞에 정해진 문장으로 붙인다(`source_loss_notes` -- AI 지시문은 안 바꿈).
   AI 설명에 넘기는 점수 변화는 소수 둘째 자리로 반올림한다. 끌어 놓기는 섹션 밖으로 못 나가고(DragOverlay + 경계 modifier) 못 놓는 칸이면 이유를 띄운다.
   오른쪽 협업 관계망은 **팀원과의 관계**(`TeamRelations`)로 바꿨다 -- 10-21부터 관계 그림(왼쪽 빠질 사람·가운데 그 사업 팀원·오른쪽 들어올 사람, 선 굵기 = 개월·색 = 평가, 숫자 목록은 "목록으로 보기"). 색·굵기 규칙은 PDF 팀별 협업 지도와 공용(`components/relationTone.ts`·`RelationLegend.tsx`). `/api/meta` coworks `review`(두 사람 평가 극성)는 **가상 데이터만**(`build_meta(reveal_reviews=)`, 실데이터 K5).
+  **소명 "근거 한눈에"**(2026-10-21 사용자 "다른 화면에서도 지식 그래프", claude-b): `/api/justification` 응답 `evidence` = 소명 재료 `inp.evidence`(`project_evidence`)를 화면용으로 추린 것(`api/justification_evidence.py` -- 저장된 AI 글 코드 지문 `_CODE_FILES` **밖**에 둔다: 화면 모양을 고칠 때마다 밤 배치 글이 버려지지 않게).
+  인정 비율은 `credit^깊이`(Spring Boot→Java 49%), 이름은 가상 데이터만, 평가 극성·인용·고객사는 싣지 않는다. 화면 `EvidenceGlance`: 충족표 · PDF 원 그림 재사용(`report/TeamNetworks.TeamCircleCard scale/fit`) · 대안 막대(결론 4종 -- 위반 대안이 점수만 오르면 "모두 위반"으로 따로, 묶어서 "내려감"이라 하면 글의 불리한 사실을 뒤집었다).
+  **조직 기술 분포**(2026-10-22 사용자 "우리 인력이 어떤 기술에 강한지 딱 보이게", claude-b): 기술 지도 맨 위 넓이(실무 가능 인원)×깊이(실무 가능자 평균 경력) 사분면 + 경력 띠.
+  `api/routes/skill_map`이 `levels`(1년 미만·1~3·3~5·5~8·8년+)·`senior`(5년+)·`senior_credited`(인정분 덕에 5년+)·`avg_months`를 센다(경력 = S와 같은 개월, 인정분 포함).
+  칸은 **이 조직 가운데 값 기준 상대 비교**(화면에 적음), 인정분이 절반 이상인 기술은 점선 원·"(인정)" -- 표시를 빼면 "데이터 거버넌스"(실무 54명 전원 인정분)가 강점으로만 보였다.
+  **조직 기술 지도 막대·관계 그림**(같은 날, claude-b): 막대 눈금은 **수요 쪽**(필요·신규 제안·비어 있음 ×1.5) -- 실무 가능 최대치에 맞추면 1명 부족이 몇 px로 눌렸다. 관계 그림은 사람별 칸(free·on·expert·months·credited_from)과 계보(broader·narrower)가 오면 켜진다 --
+  그 칸은 claude-a `core/kg/views.skill_map`에 요청(`docs/requests/2026-10-21-skill-map-graph-fields.md`, 사용자 "a에 맡겨줘"). `api/routes/skill_map`이 어느 모양(ID·사전·`practical_detail`)이든 정규화하고, "인정" 표시는 route의 `credited` 판정만 따른다.
   **인사팀 소명 요약**(`core/kg/justify.verify_summary`·`rule_summary_raw`, `api/rag/justification.generate_summary`): 본문과 같은 자리표시 문법·검사 + 맺음말 빼고 3문장·자리표시 2~4개·불리한 사실 하나 이상(Y1~Y4),
   걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
@@ -249,7 +256,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 연간 계획·What-if 분리(claude-a, b 확정 취소 지금 팀 옆 버튼 합친 트리 위) **2093 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 312 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-22 b 조직 기술 분포(지식 그래프 화면 2건 + main 연간 계획·What-if 분리 합친 트리 위) **2104 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 336 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
