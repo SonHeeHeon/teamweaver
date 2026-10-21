@@ -310,6 +310,8 @@ class ApplyIn(_Versioned):
     skills_add: dict[str, list[SkillAdd]] = Field(default={}, max_length=10)
     concurrency_add: list[GrantIn] = Field(default=[], max_length=20)
     grade_swaps: list[GradeSwapIn] = Field(default=[], max_length=20)
+    # 연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정(2026-10-21) -- 빠지는 고정 배치를 함께 푼다(source plan만)
+    release_locks: bool = False
 
 
 def expected_grade_swaps(dataset, entries: list[dict]) -> dict[str, list[dict]]:
@@ -432,12 +434,15 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                  | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+    if body.release_locks and body.source != "plan":
+        raise HTTPException(status_code=422, detail="고정 풀기는 연간 계획 안 확정에서만 한다(고정은 신규 사업 편성의 진행 사업 줄에서 푼다)")
     swaps = _check_grade_swaps(dataset, body)
     before = _files(request)
     files, changes = _edit(apply_entries, before, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
                            budget_add=dict(body.budget_add),
-                           skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()})
+                           skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()},
+                           release_locks=body.release_locks)
     if swaps:
         # 등급 대체: 정원 표를 자리 등급 −n, 들어간 등급 +n으로(같은 판 -- 확정 취소·되돌리기가 함께 돌린다)
         files = _edit(swap_grade_seats, files, swaps)

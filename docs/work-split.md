@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-locks-seat-holes`(`docs/claude-a-demo-report-1021` 위) · 고정 유지/풀기 선택(`api/routes/optimize.py`·`api/cache.py`·`api/records.py`·`core/optimize/alternatives.py`의 고정 배치 제약 인자 하나 -- Codex 영역, 요청에 적음) · 빼 온 자리 메움/메우지 않음(`core/evaluate/`·`api/routes/{workspace,scenarios}.py`·`api/workspace_edits.py`·`api/review_docs.py`·`web/src/{App.tsx,components/ConfirmChanges.tsx,scenarios/}`) · 2026-10-21 13:30
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`

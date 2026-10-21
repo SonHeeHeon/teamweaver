@@ -170,6 +170,8 @@ class ExportIn(BaseModel):
     dataset_version: str | None = None
     plans: list[ExportPlan] = Field(min_length=1, max_length=7)
     stop_reason: str | None = Field(default=None, max_length=80)
+    # 고정을 지키며 짠 결과인가(2026-10-21) -- 기록 요청에 남아 다시 열 때 같은 계산 키로 나온다
+    keep_locked: bool = False
 
 
 @router.post("/api/records/export")
@@ -182,7 +184,7 @@ async def export(body: ExportIn, request: Request) -> Response:
         rec = await anyio.to_thread.run_sync(lambda: export_record(
             request.app, active, title=body.title, weights=body.weights, milp_params=body.milp_params,
             n_alternatives=body.n_alternatives, plans=[p.model_dump() for p in body.plans],
-            stop_reason=body.stop_reason))
+            stop_reason=body.stop_reason, keep_locked=body.keep_locked))
     except RecordError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     finally:

@@ -470,10 +470,12 @@ def _overlaps(files: Files, person_id: str) -> int:
 
 def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str, dict[str, int]] | None = None,
                   budget_add: dict[str, int] | None = None,
-                  skills_add: dict[str, list[dict]] | None = None) -> tuple[Files, dict]:
+                  skills_add: dict[str, list[dict]] | None = None, release_locks: bool = False) -> tuple[Files, dict]:
     """현재 배치를 entries로 바꾼다. 잠긴 배치는 그대로 있어야 한다(빠지면 EditError). 남는 배치는 잠김을 유지하고 새 배치는 N.
+    release_locks(연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정, 2026-10-21): 빠지는 잠긴 배치를 거절하지 않고 함께 푼다 --
+    바뀐 내용 locks_released에 남는다(확정 이력).
     긴급 투입이면 그 사업의 정원(+headcount_add)·월 예산(+budget_add)·요구 기술(skills_add)을 함께 올린다.
-    반환: (새 판, 바뀐 내용 {added, removed, changed})."""
+    반환: (새 판, 바뀐 내용 {added, removed, changed[, locks_released]})."""
     files = _copy(files)
     h, cur = current_table(files)
     seen: set[tuple[str, str]] = set()
@@ -491,7 +493,7 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
         new_rows.append({**(prev or {}), "person_id": key[0], "project_id": key[1], "alloc": f"{alloc:g}",
                          "locked": "Y" if prev is not None and is_locked(prev) else "N"})
     dropped_locked = sorted(f"{p}@{j}" for (p, j), r in old.items() if is_locked(r) and (p, j) not in seen)
-    if dropped_locked:
+    if dropped_locked and not release_locks:
         raise EditError("고정한 배치는 뺄 수 없다: " + ", ".join(dropped_locked[:5]))
     write_table(files, CURRENT, h, new_rows)
     new_alloc = {(r["person_id"], r["project_id"]): float(r["alloc"]) for r in new_rows}
@@ -499,6 +501,8 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
                "removed": sorted(f"{p}@{j}" for (p, j) in set(old) - seen),
                "changed": sorted(f"{p}@{j}" for (p, j) in seen & set(old)
                                  if abs(float(old[(p, j)]["alloc"]) - new_alloc[(p, j)]) > 1e-9)}
+    if dropped_locked:
+        changes["locks_released"] = dropped_locked
     if headcount_add:
         gh, grows = read_table(files, GRADE_REQS)
         for pid, adds in headcount_add.items():

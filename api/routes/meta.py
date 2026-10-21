@@ -32,7 +32,8 @@ def _cowork_edges(graph: MemoryGraph, reveal_reviews: bool = False) -> list[Cowo
 
 def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | None = None,
                leave: dict | None = None, concurrency: dict | None = None, *,
-               lifecycle: dict | None = None, periods: dict | None = None, reveal_reviews: bool = False) -> MetaResponse:
+               lifecycle: dict | None = None, periods: dict | None = None, reveal_reviews: bool = False,
+               locked: list[tuple[str, str]] | None = None) -> MetaResponse:
     """meta를 graph 하나에서 만든다. /api/report도 요청이 잡은 데이터셋으로 이걸 만들어
     PDF에 넣는다(렌더 중 전환돼도 이름이 섞이지 않게, K9).
     reveal_reviews: 두 사람이 서로 남긴 평가의 좋고 나쁨(교체 검토 관계 목록, 2026-10-20)을 싣는다 -- 가상 데이터만(실데이터는 평가 원문 비공개 K5와 같은 선)."""
@@ -55,7 +56,8 @@ def build_meta(graph: MemoryGraph, dataset_version: str, horizon_start: str | No
                         dataset_version=dataset_version,
                         coworks=_cowork_edges(graph, reveal_reviews),
                         horizon_start=horizon_start,
-                        horizon_months=len(graph.people[0].availability) if graph.people else 6)
+                        horizon_months=len(graph.people[0].availability) if graph.people else 6,
+                        locked_assignments=[{"person_id": p, "project_id": j} for p, j in (locked or [])])
 
 
 @router.get("/api/meta", response_model=MetaResponse)
@@ -63,4 +65,5 @@ def get_meta(graph: MemoryGraph = Depends(get_graph),
              dataset: ActiveDataset = Depends(get_dataset)) -> MetaResponse:
     return build_meta(graph, dataset.info.version, dataset.scenario.get("horizon_start"), dataset.scenario.get("leave"),
                       dataset.scenario.get("concurrency"), lifecycle=dataset.scenario.get("lifecycle"),
-                      periods=dataset.scenario.get("periods"), reveal_reviews=dataset.info.synthetic is True)
+                      periods=dataset.scenario.get("periods"), reveal_reviews=dataset.info.synthetic is True,
+                      locked=sorted((c.person_id, c.project_id) for c in dataset.current if c.locked))

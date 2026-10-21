@@ -47,6 +47,35 @@ class OptimizeRequest(BaseModel):
     dataset_version: str | None = None
     # 캐시(부팅 사전계산·시연 묶음의 미리 계산 결과 포함)를 쓰지 않고 다시 푼다 -- 화면의 "다시 계산"(2026-10-06)
     fresh: bool = False
+    # 고정 배치(current_assignments.locked)를 모든 안에서 그대로 둔다(2026-10-21 사용자 "고정된 사람은 계속 고정할지 아니면 고정 풀고
+    # 그 사람들도 다시 배치를 할지 물어보고"). 거짓 = 고정을 풀고 짠다(예전 계산과 같음 -- 그 안을 확정하면 고정이 함께 풀린다).
+    keep_locked: bool = False
+
+
+def locked_pairs(dataset) -> list[tuple[str, str]]:
+    """지금 데이터의 고정 배치(사람, 사업)."""
+    return sorted((c.person_id, c.project_id) for c in dataset.current if c.locked)
+
+
+def missing_locks(pairs: list[tuple[str, str]], entries) -> list[str]:
+    """안이 빠뜨린 고정 배치("사람@사업") -- 고정을 지켜 짠 안이라고 들어온 결과(편성 기록·밤 배치 저장본)를 받을 때 본다."""
+    have = {(e["person_id"], e["project_id"]) if isinstance(e, dict) else (e.person_id, e.project_id) for e in entries}
+    return [f"{p}@{j}" for p, j in pairs if (p, j) not in have]
+
+
+def unkeepable(dataset, params, pairs: list[tuple[str, str]]) -> list[str]:
+    """그대로 둘 수 없는 고정 배치(이유 문장) -- 전일 투입이면 그 사업 기간에 가용률 1.0이 아닌 달이 있는 사람은 그 사업에 들어갈 수 없다
+    (milp.full_eligible). 계산 전에 알린다 -- 풀면 "해 없음"으로만 끝난다."""
+    from api.routes.justification import display_names
+    from core.optimize.milp import full_eligible, full_mode
+    if not full_mode(params):
+        return []
+    g, names = dataset.graph, display_names(dataset)
+    out = []
+    for pid, jid in pairs:
+        if not full_eligible(g.people[g.pid_index[pid]], g.projects[g.project_index[jid]]):
+            out.append(f"{names.get(pid, pid)}({jid}): 그 사업 기간에 전일 투입할 수 없는 달(휴직 등)이 있다")
+    return out
 
 
 @router.post("/api/optimize")
@@ -60,7 +89,11 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
     # SSE error 프레임(HTTP 200)으로 숨지 않는다.
     check_dataset_version(req.dataset_version, dataset)
     params = req.milp_params.to_milp_params()
-    key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version)
+    fixed = locked_pairs(dataset) if req.keep_locked else []
+    if fixed and (bad := unkeepable(dataset, params, fixed)):
+        raise HTTPException(status_code=422, detail="고정을 지키며 짤 수 없다 -- " + "; ".join(bad[:5])
+                            + ". 그 고정을 풀거나 '고정 풀고 다시 배치'로 계산한다.")
+    key = ResultCache.key(req.weights, params, req.n_alternatives, dataset.info.version, keep_locked=bool(fixed))
 
     from api.demo_precomputed import forget, precomputed_at, precomputed_label, precomputed_source, precomputed_stop_reason
 
@@ -118,7 +151,7 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             slots.release()
             runs.unregister(app, run_id)
         solving = SyncStream(generate_plans_streaming, graph, S, C, params, req.n_alternatives, outcome,
-                             on_exit=finished, start=False)
+                             **({"fixed": fixed} if fixed else {}), on_exit=finished, start=False)
         run_id = runs.register(app, solving.stop)
         solving.start()
 

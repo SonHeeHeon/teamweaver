@@ -85,6 +85,8 @@ class MetaResponse(BaseModel):
     # 계획 기간(2026-10-19 계획기간 1년 확장): 달 순번 0..n-1이 실제로 어느 달인지. 시작 달은 CSV 묶음에만 있다(fixture는 None)
     horizon_start: str | None = None
     horizon_months: int = 6
+    # 지금 데이터의 고정 배치(2026-10-21) -- 연간 계획 계산 전에 "계속 고정 / 풀고 다시 배치"를 묻는 창의 목록
+    locked_assignments: list[dict[str, str]] = []
 
 
 class EvidenceOut(BaseModel):

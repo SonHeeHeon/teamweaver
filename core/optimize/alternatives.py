@@ -109,6 +109,15 @@ def _unfilled_cap(graph: MemoryGraph, max_unfilled: int):
     return cap
 
 
+def _keep_fixed(fixed: list[tuple[str, str]], pdx: dict[str, int], jdx: dict[str, int]):
+    """고정 배치(사람, 사업)를 모든 안에서 그대로 둔다: z_ij = 1(2026-10-21 사용자 "고정된 사람은 계속 고정할지 … 물어보고").
+    기존 정수 변수 z에 대한 행만 더한다 -- 보정·추가 행 독립 검증이 그대로 탄다(CLAUDE.md 추가 제약 콜백 규칙)."""
+    def keep(prob, z):
+        for pid, jid in fixed:
+            prob += z[pdx[pid]][jdx[jid]] == 1
+    return keep
+
+
 def _solve(graph, S, C, params, extra_constraints=None) -> tuple[PlanAssignment, str]:
     """플랜과 종료 사유. "time_limit_incumbent"면 시간 한도에서 멈춘 해다(milp.py)."""
     raw = solve_milp_diagnostic(graph, S, C, params, extra_constraints=extra_constraints)
@@ -143,7 +152,8 @@ def cacheable(outcome: dict) -> bool:
 
 def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
                              n_alternatives: int = 3,
-                             outcome: dict | None = None) -> Iterator[PlanAssignment]:
+                             outcome: dict | None = None,
+                             fixed: list[tuple[str, str]] | None = None) -> Iterator[PlanAssignment]:
     """generate_plans의 제너레이터판. API 레이어(Task 4)가 Plan A를 먼저
     yield받아 즉시 클라이언트로 흘리고, 이후 대안이 나오는 대로 흘릴 수 있게
     한다(A안: 점진 반환). 로직은 generate_plans와 동일 -- 반환 방식만 다르다.
@@ -156,9 +166,14 @@ def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
     implies. Plan A is solved exactly once (alternatives are solved n_alternatives times),
     so tightening just its gap is cheap -- solve it far closer to true-optimal and leave
     alternatives at the caller's (looser, faster) gap.
+
+    fixed: 모든 안에서 그대로 둘 (사람, 사업) -- 고정 배치를 지키며 짜기(api/routes/optimize keep_locked). 없으면 예전과 같다.
     """
+    jdx = graph.project_index
+    pdx = graph.pid_index
+    keep = _keep_fixed(fixed, pdx, jdx) if fixed else None
     plan_a_params = params.model_copy(update={"gap": min(params.gap, _PLAN_A_GAP)})
-    plan_a, status = _solve(graph, S, C, plan_a_params)
+    plan_a, status = _solve(graph, S, C, plan_a_params, extra_constraints=keep)
     if outcome is not None and status == "time_limit_incumbent":
         # 시간 한도에 걸린 해(incumbent)는 부하에 따라 달라진다 -- 호출부는 캐시하지 않는다(SHOULD-2).
         outcome["time_limited"] = True
@@ -169,8 +184,6 @@ def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
     # 느려졌다(실측 36초 → 47초, 대안 3개). 다른 항의 이득을 무시한 어림이라 경계 근처에서는 사후
     # 검사(rejection_reason "unfilled")로 멈출 수 있다 -- 정확성은 사후 검사가 지킨다.
     needs_cap = (1.0 - _QUALITY_FLOOR) * abs(plan_a.objective) >= params.slack_penalty
-    jdx = graph.project_index
-    pdx = graph.pid_index
     for _ in range(n_alternatives):
         prev_sets = [p.pairs() for p in plans]
         diversity = _diversity_cut(prev_sets, pdx, jdx)
@@ -180,6 +193,8 @@ def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
         def cut(prob, z, diversity=diversity, cap=cap):
             diversity(prob, z)
             cap(prob, z)
+            if keep is not None:
+                keep(prob, z)
         try:
             alt, status = _solve(graph, S, C, params, extra_constraints=cut)
             if outcome is not None and status == "time_limit_incumbent":
@@ -207,5 +222,6 @@ def generate_plans_streaming(graph: MemoryGraph, S, C, params: MilpParams,
 
 
 def generate_plans(graph: MemoryGraph, S, C, params: MilpParams,
-                   n_alternatives: int = 3, outcome: dict | None = None) -> list[PlanAssignment]:
-    return list(generate_plans_streaming(graph, S, C, params, n_alternatives, outcome))
+                   n_alternatives: int = 3, outcome: dict | None = None,
+                   fixed: list[tuple[str, str]] | None = None) -> list[PlanAssignment]:
+    return list(generate_plans_streaming(graph, S, C, params, n_alternatives, outcome, fixed))
