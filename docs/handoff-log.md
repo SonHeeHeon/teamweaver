@@ -22,6 +22,26 @@
 
 ---
 
+## 2026-10-21 · claude-a · 연간 계획·What-if 분리 + 화면 검토 결정 3건(연간 계획 확정 · 지금 대비 옮김 · 가중치 대신 요구 기술)
+- 브랜치/커밋: `feat/claude-a-annual-whatif`(`feat/claude-a-grade-swap` 위, b `newproj-explain-cancel` 3b7230a·4f54867 합침 `37700b5`) · 서버·웹·문서 커밋(아래 검증 줄). main 미병합(승인 대기).
+- 사용자: "결정이 필요한 3건은 다 진행하자" · "what if 는 현재 프로젝트 인력 배치에서 부서장이 이렇게 바꿔봤을때 어떤지 보기 위한 메뉴인데 … 이 두개는 분리가 필요할거같은데. 지금의 화면은 연간 계획 화면과 맞물려있는 개념".
+- 한 일:
+  - 메뉴: 연간 계획 ① 조건·계산(`annual`) → ② 편성안 비교·확정(`plans`, 예전 What-if 대시보드), 지금 배치 › What-if(`whatif`, 새 화면 `web/src/whatif/CurrentWhatif`).
+  - 새 What-if: 지금 배치에서 바꿔 보기 → 담기 → 한 번에 확정(손 편성, 검토 자료). `/api/whatif`·`apply-swap`에 `grade_swap`(지금 배치 대비 등급 대체 적용 평가, 확정과 같은 `core.evaluate.grade_swap.substitution`).
+  - `POST /api/workspace/preview`(확정 미리 계산) + `components/ConfirmChanges`(공용 확정 창).
+  - ② "안 X로 확정"(source `plan`).
+  - 안 카드·배치 명단 "지금 대비 옮김·새로·빠짐"(`components/rosterDiff`).
+  - 기술 가중치 칸 삭제(`WeightSlider.tsx` 삭제), `/api/meta` 사업 `requirements` → 사업 조건 표 "요구 기술".
+- 상대 영향(claude-b):
+  - 네 영역 `api/routes/workspace.py`(`expected_grade_swaps`가 `substitution` 사용, `/api/workspace/preview` 추가)·`scenarios/workspaceApi.ts`(`postPreview`·타입)를 고쳤다.
+  - 메뉴 탭 이름: 예전 `whatif` → `plans`, 새 `whatif`. `App`의 `setTab("whatif")`를 쓰던 곳은 `plans`.
+  - 화면 문구 "What-if 대시보드"를 찾는 시험은 "편성안 비교·확정"으로.
+  - 조직 기술 지도 요청(4f54867)은 사용자 지시 전이라 손대지 않았다.
+- 검증: 아래 문서 커밋 메시지 · 웹 312 · 브라우저(연간 기록 안 A 확정 82명 → What-if 대체 −0.73·사유 확정 → 연말 기록 카드 "지금 대비 옮김 46명").
+- 근거: `.omc/reports/2026-10-21-annual-whatif-split.md`, 계획 `.omc/plan/2026-10-21-annual-whatif-split.md`.
+
+---
+
 ## 2026-10-21 · claude-a · 화면 전체 검토(사용자 "기조에 맞게 … 쭉 검토") + 작은 고침 3건
 - 브랜치/커밋: `feat/claude-a-grade-swap` `36e1f20`(작은 고침) · `e04b06e`(양식 문구) · 이 커밋(문서). main 미병합.
 - 사용자: "내가 너에게도 그렇고 b에게도 그렇고 요청한 그 화면 변경 포인트들을 잘 이해하고 그 기조에 맞게 화면에서 다른거 또 변경할게 없는지 쭉 검토해봐 줘 … 내부 로직 및 기능을 바꿔야하는 것들도".
