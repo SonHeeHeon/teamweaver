@@ -968,7 +968,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       )}
       {planConfirmOpen && current && dataset && (
         <ConfirmChanges datasetVersion={dataset.version} entries={current.entries} source="plan" projects={meta?.projects}
-                        title={`안 ${current.label}을(를) 지금 배치로 확정`}
+                        title={`안 ${current.label}를 지금 배치로 확정`}
                         lead={currentBase && currentBase.length > 0
                           ? "이 안은 모두를 처음부터 다시 짠 결과라 지금 배치에서 많은 사람이 옮겨질 수 있습니다. 아래 수를 확인하고 확정하세요. 몇 명만 바꾸려면 What-if나 신규 사업 편성의 자동 편성(K)이 맞습니다."
                           : "이 안이 지금 배치가 됩니다. 그 뒤 신규 사업 편성·긴급 투입·What-if로 이어서 씁니다."}
@@ -979,7 +979,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                           const label = current.label;
                           setPlanConfirmOpen(false);
                           void ownSwitch().then(() => setPlanConfirmed(
-                            `안 ${label}을(를) 지금 배치로 ${msg} 이제 신규 사업 편성·긴급 투입·What-if에서 이어서 씁니다.`));
+                            `안 ${label}를 지금 배치로 ${msg} 이제 신규 사업 편성·긴급 투입·What-if에서 이어서 씁니다.`));
                         }} />
       )}
       {exportOpen && current && planBasis && (

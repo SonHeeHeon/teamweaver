@@ -41,6 +41,9 @@ describe("What-if — 지금 배치에서 바꿔 보기(2026-10-21 사용자 \"�
       left: [{ person_id: "P1", name: "김민준", from: ["J003"], to: [] }], changed: true, grade_swaps: {}, budget_add: {}, new_violations: [], locked_dropped: [] });
     render(<CurrentWhatif active datasetVersion="v1" meta={META} settings={null} onDatasetChanged={vi.fn()} />);
     expect(await screen.findByText("담은 변경 0건")).toBeInTheDocument();
+    // 교체 부품의 안내는 What-if의 길(담기 → 확정)을 말한다 -- 편성안 다듬기의 '적용'이 아니다
+    expect(screen.getByText(/'이 변경 담기'로 모아 두고, 확정해야 지금 배치가 바뀝니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/'적용'해야 바뀝니다/)).toBeNull();
     fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "P1::J003" } });
     fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "P9" } });
     fireEvent.click(screen.getByRole("button", { name: /교체 효과 보기/ }));
