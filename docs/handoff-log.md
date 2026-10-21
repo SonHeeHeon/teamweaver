@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-22 · claude-b · `feat/claude-b-kg-views` **main 병합(사용자 승인 "병합해줘")**
+- 커밋: `adc2488`(merge --no-ff, main `4d55462` 위 -- 브랜치가 main을 이미 담고 있어 합친 트리 = 브랜치 트리, `git diff` 0줄) + 이 커밋(일지). push는 하지 않음.
+- 들어간 것: 소명 "근거 한눈에"(`5050ea0`) · 기술 지도 공급/수요 막대·관계 그림(`62efb31`) · 조직 기술 분포(`d5ed4dd`) · 확정 취소 버튼 시각 빼기(`72a9b9f`).
+- 상대 영향(claude-a): main 기준선 2104 passed·slow 20·웹 336. 기술 지도 관계 그림용 칸 요청(`docs/requests/2026-10-21-skill-map-graph-fields.md`)은 그대로 대기.
+- 검증: 브랜치 최종 검증 그대로(2104 passed, 1 skipped, 20 deselected · slow 20 · 웹 336).
+
+---
+
 ## 2026-10-22 · claude-b · 조직 기술 분포(넓이×깊이 사분면·경력 띠) · 확정 취소 버튼 시각 빼기 · main 합침
 - 브랜치/커밋: `feat/claude-b-kg-views` `2d70e0e`(main `4d55462` 합침) · `72a9b9f`(버튼 시각) · `d5ed4dd`(기술 분포) · 이 커밋(문서). main 미병합.
 - 사용자:
