@@ -84,13 +84,28 @@ export interface GradeSwap { seat: Grade; grade: Grade; count: number }
 export interface SeatEffect { project_id: string; name: string; change: number }
 /** synergy = 협업 시너지(함께 일한 경력·서로 남긴 평가, 상위 쌍만), familiar = 최근 너무 오래 함께해 익숙한 쌍 감점 */
 export interface PairTerm { kind: "synergy" | "familiar"; value: number; c?: number }
+/** 빼 온 자리 결정(2026-10-21 사용자 "빼간 자리를 매꿔야한다는게 있어야할거같네. 못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건
+ *  컨트롤 안해도 되는걸로"): 이 확정으로 진행 사업에 새로 생긴 빈자리(사업 → 등급·수). 메우거나 "메우지 않음"(사유)이어야 확정된다. */
+export type Holes = Record<string, { grade: Grade; count: number }[]>;
+/** 빈자리를 메울 수 있는 사람(대기 인력 등 -- 다른 사업에서 또 빼 오지 않는다), 그 등급이 먼저 */
+export interface FillOption { person_id: string; name: string; grade: Grade; alloc: number; skill_fit: number; delta_total: number }
+/** 같은 확정에서 사람이 빠진 사업에 들어간 사람("J014 자리 ← 전다은") */
+export interface FillLine { project_id: string; person_id: string; name: string; grade: Grade; from_bench: boolean }
+export interface HoleView { holes?: Holes; fill_options?: Record<string, FillOption[]>; fills?: FillLine[] }
+/** 메울 사람(빼 온 사업에 넣는다) */
+export interface FillPick { person_id: string; project_id: string; alloc: number }
+/** 확정 요청의 "메우지 않음" -- 그 사업 그 등급 정원을 count만큼 줄인다(예산 그대로) */
+export interface SeatWaiver { project_id: string; grade: Grade; count: number; reason: string }
+
 /** "넣기"로 고른 사람 전체를 넣었을 때(확정 전 미리 계산, 2026-10-20) */
-export interface DraftSummary {
+export interface DraftSummary extends HoleView {
   seats: PipelineItem["seats"]; seat_effects: SeatEffect[]; delta_total: number; skill_delta: number; collab_delta: number;
   unfilled_seats_delta: number; new_violations: string[];
   pairs: (PairTerm & { a: string; a_name: string; b: string; b_name: string })[];
   /** 신규 사업: 고른 사람으로 생기는 등급 대체와, 대체가 있을 때 예산을 넘는 만큼의 월 예산 증액(확정에 그대로 보낸다) */
   grade_swaps?: GradeSwap[]; budget_add?: number;
+  /** 빼 온 사업을 다른 등급으로 메운 등급 대체·그로 넘는 예산(사업별, 2026-10-21) -- 확정에 함께 보낸다 */
+  side_grade_swaps?: Record<string, GradeSwap[]>; side_budget_add?: Record<string, number>;
 }
 export interface Pick { person_id: string; alloc: number; pulled_from: string[] }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
@@ -111,7 +126,9 @@ export interface EmergencyPlan {
   best: { accepted: boolean; entries?: AssignEntry[]; added?: { person_id: string; name: string }[];
           diff?: { moved?: { person_id: string; name?: string; from: string; to: string[] }[] };
           delta?: Record<string, number>; added_cost?: number; new_violations?: unknown[]; termination?: string | null;
-          unfilled_seats_delta?: number; delta_excl_unfilled?: number };
+          unfilled_seats_delta?: number; delta_excl_unfilled?: number;
+          /** 빼 온 자리: 같은 조합에서 메운 사람 · 못 메운 빈자리(확정 때 "메우지 않음" 사유, 2026-10-21) */
+          fills?: FillLine[]; holes?: Holes };
   candidates: { bench: CandidateRow[]; spare: CandidateRow[]; pull: CandidateRow[] };
   standby: StandbyRow[]; unavailable?: UnavailableRow[]; apply_hint: ApplyHint | null; note: string;
 }
@@ -181,12 +198,16 @@ export const postApply = (v: string, body: { entries: AssignEntry[]; note?: stri
   source: "auto" | "manual" | "emergency" | "plan";
   concurrency_add?: { person_id: string; memo?: string; reason?: ConcurrencyReason }[];
   /** 등급 대체(사유 필수) -- 서버가 같은 규칙으로 다시 계산해 맞춰 본다 */
-  grade_swaps?: (GradeSwap & { project_id: string; reason: string })[] } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
+  grade_swaps?: (GradeSwap & { project_id: string; reason: string })[];
+  /** 새로 생긴 빈자리 중 메우지 않을 것(사유 필수, 2026-10-21) */
+  seat_waivers?: SeatWaiver[];
+  /** 연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정 -- 빠지는 고정을 함께 푼다(source plan만) */
+  release_locks?: boolean } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
     "/api/workspace/apply", json("POST", { dataset_version: v, ...body }));
 /** 확정 전 미리 계산(2026-10-21): 지금 배치 → entries를 확정하면 생길 옮김·등급 대체·예산 증액·새 위반·고정 충돌(데이터는 그대로) */
 export interface PreviewMove { person_id: string; name: string; from: string[]; to: string[] }
-export interface ConfirmPreview {
+export interface ConfirmPreview extends HoleView {
   dataset_version: string; moved: PreviewMove[]; joined: PreviewMove[]; left: PreviewMove[]; changed: boolean;
   grade_swaps: Record<string, GradeSwap[]>; budget_add: Record<string, number>; new_violations: string[]; locked_dropped: string[];
 }
@@ -213,9 +234,9 @@ export const postCancel = (v: string, h: { version: string; at: string }) =>
                                           json("POST", { dataset_version: v, target_version: h.version, target_at: h.at }));
 export const postUndo = (v: string) => call<WithWs>("/api/workspace/undo", json("POST", { dataset_version: v }));
 /** 후보 세 갈래. picks(넣기로 고른 사람)가 있으면 그 사람들을 팀원으로 친 다시 채점 + 고른 사람 전체 미리 계산(draft) -- 데이터는 바뀌지 않는다. */
-export const fetchCandidates = (id: string, v: string, picks: Pick[] = []) =>
+export const fetchCandidates = (id: string, v: string, picks: Pick[] = [], fills: FillPick[] = []) =>
   picks.length
-    ? call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates`, json("POST", { dataset_version: v, picks }))
+    ? call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates`, json("POST", { dataset_version: v, picks, fills }))
     : call<Candidates>(`/api/pipeline/${encodeURIComponent(id)}/candidates?dataset_version=${encodeURIComponent(v)}`);
 export const postEmergency = (body: { dataset_version: string; project_id: string; n: number; grade: Grade | null;
   skills: string[]; pull_budget: number; note: string }) => call<EmergencyPlan>("/api/emergency/plan", json("POST", body));
@@ -224,7 +245,7 @@ export interface EmergencyPick extends Pick { grant?: boolean }
 /** 긴급 투입 손 편성 미리 계산(2026-10-20) -- 확정할 배치와 서버가 계산한 증원(apply_hint)까지 */
 export interface EmergencyDraft extends DraftSummary { apply_hint: ApplyHint; entries: AssignEntry[] }
 export const postEmergencyPreview = (body: { dataset_version: string; project_id: string; skills: string[]; picks: EmergencyPick[];
-                                             pull_budget: number }, signal?: AbortSignal) =>
+                                             pull_budget: number; fills?: FillPick[] }, signal?: AbortSignal) =>
   call<{ dataset_version: string; project_id: string; draft: EmergencyDraft; candidates: EmergencyPlan["candidates"]; note: string }>(
     "/api/emergency/preview", { ...json("POST", body), signal });
 export const fetchStandby = (v: string, projectId: string) =>

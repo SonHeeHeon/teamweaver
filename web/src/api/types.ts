@@ -60,6 +60,8 @@ export interface Meta {
   /** 계획 시작 달("2026-10")·개월 수(6 또는 12, 2026-10-19 계획기간 1년 확장). 시작 달은 CSV 묶음에만 있다. */
   horizon_start?: string | null;
   horizon_months?: number;
+  /** 지금 데이터의 고정 배치(2026-10-21) -- 연간 계획 계산 전에 "계속 고정 / 풀고 다시 배치"를 묻는다 */
+  locked_assignments?: { person_id: string; project_id: string }[];
 }
 
 export interface AssignEntry {
@@ -530,6 +532,8 @@ export interface RecordRequest {
   weights: Record<string, number>;
   milp_params: Record<string, unknown>;
   n_alternatives: number;
+  /** 고정을 지켜 짠 기록(2026-10-21) -- 없으면 고정을 보지 않은 계산(예전 기록) */
+  keep_locked?: boolean;
 }
 
 export interface OpenRecordResult {
