@@ -22,6 +22,20 @@
 
 ---
 
+## 2026-10-21 · claude-a · 연간 계획 고정 선택(유지/풀기) + 빼 온 자리 결정(메움/메우지 않음)
+- 브랜치/커밋: `feat/claude-a-locks-seat-holes`(`docs/claude-a-demo-report-1021` 위) — `ed6a9b7`(고정 선택 서버) · `158432b`(빼 온 자리 서버) · `a7f57a4`(화면) · 문서 커밋. main 미병합(승인 대기).
+- 사용자: ① "안을 짜는걸 요청할 때 고정된 사람이 있으면 팝업을 띄워서 먼저 고정된 사람은 계속 고정할지 아니면 고정 풀고 그 사람들도 다시 배치를 할지 물어보고 그 결정을 따라서" ② "빼간 자리를 매꿔야한다는게 있어야할거같네. 못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로" → "너 추천대로"(모든 확정 경로·예산 그대로).
+- 한 일:
+  - 고정 선택: 연간 계획 계산 전에 고정 배치가 있으면 창으로 묻는다(`LockChoiceDialog`, `/api/meta locked_assignments`). 유지 = `/api/optimize keep_locked` → 모든 안에서 고정 z=1(`core/optimize/alternatives` `fixed=` -- Codex 영역, 요청에 알림), 지킬 수 없는 고정은 계산 전 422. 키는 참일 때만 달라진다(풀기·예전 기록·미리 계산 그대로). 풀고 짠 안은 확정 창 "고정을 풀고 확정"(`release_locks`, 이력 `locks_released`). 기록·밤 배치도 선택을 담는다.
+  - 빼 온 자리: 모든 확정은 진행 사업에 새로 생긴 빈자리(`core/evaluate/seat_holes.new_holes`)를 메우거나 `seat_waivers`(사유)로 받아야 한다 — 메우지 않음 = 그 등급 정원 −n(예산 그대로). 편성 중인 신규 사업(pipeline·proposals)은 뺀다. 미리 계산 4곳이 `holes`·`fill_options`·`fills`를 주고 손 편성은 `fills`로 메운다. 화면 `SeatHoleBox`(긴급 투입 최선 조합·손 편성, 신규 사업 넣기, 확정 창). 최선 조합 화면에 "빼 온 자리를 메운 사람" 줄(예: J014 ← 전다은).
+  - 덤으로 고침: `_apply_hint`·신규 사업 draft가 빼 온 사업의 등급 대체·예산도 담는다(다른 등급으로 메우면 확정이 "대체가 미리 계산과 다르다"로 거절될 수 있었다). 확정 취소가 정해지지 않은 빈자리를 만들면 그 부분은 하지 않는다.
+  - 시연 대본(D7 메운 사람 줄, 막혔을 때 2행), 결과 보고서 6.2·9장 문장(PDF 10쪽 유지), CLAUDE.md 함정 2항.
+- 상대 영향(claude-b·codex): **확정 계약 변경** — 다른 사업에서 사람을 빼고 메우지 않는 확정은 `seat_waivers` 없이는 422다(시험 25개를 `tests/scenarios/holes.waivers`로 고침). `ApplyIn`에 `seat_waivers`·`release_locks`, 신규 사업 후보 POST·긴급 투입 preview에 `fills`, 응답에 `holes`·`fill_options`·`fills`·`side_grade_swaps`·`side_budget_add`, `ConfirmChanges` source `auto`·prop `keepLocked`. `generate_plans_streaming(fixed=)`(없으면 예전과 같음). 시험 기준선 2106·웹 315.
+- 검증: `uv run --group benchmark pytest -q` → 2106 passed, 1 skipped, 20 deselected(8분 34초). 웹 315 passed·`tsc -b`·build. 연초 100명 실측: 고정 유지 시 안 4개 모두 고정 4건 유지, 안 A 59.47 → 56.81(약 65초). 임시 데이터 폴더 브라우저 점검(고정 창·풀고 확정, 최선 조합 메운 사람 줄, 손 편성 빈자리 상자 → 메움 → 확정). 시연 숫자 스크립트 두 개 다시 돌려 숫자 같음. Codex 한도 소진(10-25까지) — 자체 리뷰.
+- 근거: `.omc/reports/2026-10-21-locks-seat-holes.md`, 계획 `.omc/plan/2026-10-21-locks-seat-holes.md`.
+
+---
+
 ## 2026-10-21 · claude-a · 시연 대본·슬라이드·결과 보고서 갱신(새 장면 "안 A로 확정"·What-if) + 화면 문구 2곳
 - 브랜치/커밋: `docs/claude-a-demo-report-1021`(main `4d55462`에서) — `3b9daf6`(화면 문구) · 리허설 스크립트 커밋 · 문서 커밋(아래). main 미병합(승인 대기).
 - 사용자: "병합 승인 하고 7,2번 시연 대본에 넣어주고, 시연 전체 와 보고서 업데이트 해줘"(7 = What-if 담기 → 확정, 2 = 연간 계획 "안 A로 확정").

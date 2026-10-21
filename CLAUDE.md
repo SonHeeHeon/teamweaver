@@ -159,7 +159,16 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   확정 창 `components/ConfirmChanges`는 연간 계획 "안 X로 확정"(source `plan`, 검토 자료 없음)과 What-if가 함께 쓰고, 서버 `POST /api/workspace/preview`(옮김·새로·빠짐·등급 대체·예산 증액·새 위반·고정 충돌, 데이터 그대로)로 미리 계산한다.
   지금 배치가 있으면 안 카드·배치 명단에 "지금 대비 옮김"(`components/rosterDiff`, 서버 preview와 같은 정의). ② 다듬기(plans)는 `grade_swap` 없이 예전처럼 등급이 바뀐 교체를 경고로 본다.
   **기술 가중치 칸은 없앴다**(화면 요청 `weights` = 빈 값 = 기본, API 칸은 옛 기록 재현용) -- ① 조건·계산은 `/api/meta` 사업 `requirements`(기술·최소 레벨·인원)를 보인다.
-  **전부 다시 짜는 안 A~D(`/api/optimize`)는 고정(`current_assignments.locked`)을 보지 않는다**(고정은 운영 중 K 계산 `core/optimize/incremental`만 지킨다) -- 진행 사업 배치가 고정된 데이터(연초 6개월 시연 `org-n100`: 4건)에서는 "안 X로 확정"이 고정 충돌로 막힌다(2026-10-21 측정). 그래서 시연 연간 계획 장면은 백지 연간 기록(`org-n100-annual`)으로 한다(`docs/demo-script.md` D2~D5, 숫자 `python -m rehearsal.whatif_scene_numbers`).
+  **고정 선택**(2026-10-21 사용자 "고정된 사람이 있으면 팝업을 띄워서 … 계속 고정할지 아니면 고정 풀고 … 다시 배치를 할지 물어보고"): 화면은 고정 배치가 있으면 계산 전에 묻고(`components/LockChoiceDialog`, `/api/meta locked_assignments`),
+  `/api/optimize keep_locked`면 모든 안에서 고정 z=1(`alternatives.generate_plans_streaming(fixed=)`, 지킬 수 없는 고정은 계산 전 422). **캐시 키에는 참일 때만 들어간다**(`ResultCache.key(keep_locked=)`) -- 풀고 짜기 = 예전 계산·키·미리 계산·기록 그대로.
+  풀고 짠 안의 확정은 확정 창 "고정을 풀고 확정"(`ApplyIn.release_locks`, source plan만 → 이력 `locks_released`). 편성 기록·밤 배치 저장본도 선택을 담고 고정이 빠진 안은 거절한다.
+  연초 6개월 시연 `org-n100`(고정 4건)의 기록 안은 풀고 짠 안이다(유지하면 안 A 59.47 → 56.81, 안 4개 약 65초 -- 2026-10-21 측정). 시연 연간 계획 장면은 묻는 창이 없는 백지 연간 기록(`org-n100-annual`)으로 한다(`docs/demo-script.md` D2~D5, 숫자 `python -m rehearsal.whatif_scene_numbers`).
+- **빼 온 자리 결정**(2026-10-21 사용자 "빼간 자리를 매꿔야한다는게 있어야 … 못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로", claude-a `core/evaluate/seat_holes.py`): 모든 확정(`/api/workspace/apply`)은
+  **이 확정으로 진행 사업에 새로 생긴 빈자리**(팀·정원이 바뀐 사업 × 등급, 등급 대체·증원을 적용한 정원 기준 -- `new_holes`)를 같은 확정에서 메우거나 `seat_waivers`("메우지 않음" + 사유)로 받아야 한다(다르면 422).
+  메우지 않음 = 그 사업 그 등급 정원 −n(`workspace_edits.waive_seats`, 예산 그대로, 정원은 사업 전체 기간 단위) → 그 뒤 모든 계산이 빈자리로 세지 않는다. **편성 중인 신규 사업**(manifest pipeline·proposals, `api.seat_fill.staffing_ids`)은 빼고 센다 -- 시작 전 빈자리는 정상이다.
+  미리 계산(`/api/workspace/preview`·긴급 투입 preview·신규 사업 draft·최선 조합)이 `holes`·`fill_options`(빼 오기 없는 후보, 같은 등급 먼저)·`fills`(같은 확정에서 메운 사람)를 주고, 손 편성은 `fills`로 메울 사람을 넣는다.
+  빼 온 사업을 다른 등급으로 메우면 그 사업 등급 대체도 확정에 들어간다(`_apply_hint`·draft `side_grade_swaps` -- 예전엔 대상 사업 대체만 적어 확정이 422였다). 확정 취소는 정해지지 않은 빈자리를 만들지 않게 그 정원 되살리기·메운 사람 빼기를 덜어 낸다(`routes/workspace._keep_seats_decided`).
+  검토 자료 MOVE_FILL은 "메우지 않기로 함 — 사유"(확인할 사실). 자동 편성 K 행은 보통 다 메워 예전 확인 창 그대로, 빈자리가 남으면 확정 창(`ConfirmChanges` source auto)으로 연다.
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -250,7 +259,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 연간 계획·What-if 분리(claude-a, b 확정 취소 지금 팀 옆 버튼 합친 트리 위) **2093 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed, 웹 312 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-21 고정 선택·빼 온 자리 결정(claude-a `feat/claude-a-locks-seat-holes`) **2106 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed(10-21 분리 때), 웹 315 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
