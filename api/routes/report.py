@@ -288,6 +288,7 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
         m = roster_metrics(graph, S, C, params, req.weights, req.entries)
         return {"objective": m["objective"], "fulfillment": m["fulfillment"],
                 "optimization_ratio": m["optimization_ratio"], "unfilled": m["unfilled"],
+                "base_unfilled": m["unfilled"],
                 "applied_swaps": [], "applied_violations": m["violations"]}
     ubs: dict = {}                                             # 방식별 상한을 요청당 한 번
     entries, records, last = req.base_entries, [], None
@@ -296,7 +297,10 @@ def _replay_applied_swaps(req: ReportRequest, graph: MemoryGraph) -> dict:
         records.append({**swap.model_dump(), "objective_delta": last["objective_delta"],
                         "feasible": last["feasible"], "warnings": last["warnings"]})
         entries = [EntryIn(**e) for e in last["entries"]]
-    return {"entries": last["entries"], "objective": last["objective"],
+    # 원안(솔버가 푼 명단)의 빈자리 -- PDF 계산 신뢰도 배지는 원안 목적값 기준이라, 원안에 빈자리가 있으면 목적값이 0 근처여서
+    # %가 부풀려진다. 화면 카드처럼 점수로 보이게 알려 준다(2026-10-22 폴백 리뷰 S2, 표시용 -- 서명 밖). 상한은 위에서 구해 둔 ubs를 쓴다.
+    base_unfilled = roster_metrics(graph, S, C, params, req.weights, req.base_entries, ubs)["unfilled"]
+    return {"entries": last["entries"], "objective": last["objective"], "base_unfilled": base_unfilled,
             "fulfillment": last["fulfillment"], "optimization_ratio": last["optimization_ratio"],
             "unfilled": last["unfilled"], "applied_swaps": records,
             "applied_violations": [v["message"] for v in last["evaluation"]["violations"]]}

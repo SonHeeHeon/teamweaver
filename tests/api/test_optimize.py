@@ -114,6 +114,8 @@ def test_plan_events_carry_fulfillment_and_optimization_ratio(small_graph_client
     for p in plans:
         assert 0.0 <= p["fulfillment"] <= 1.0
         assert 0.0 <= p["optimization_ratio"] <= 1.0 + 1e-6
+        # 화면이 "배치 품질 = 종합 점수 + 감점 × 빈자리"를 보이도록 빈자리 감점(계산 설정)을 싣는다(2026-10-22) -- 서명 묶음에는 없다
+        assert p["slack_penalty"] == 100.0 and "slack_penalty" not in p["evidence"]
 
 
 def test_cors_headers_allow_the_vite_dev_server(client):

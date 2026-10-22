@@ -21,10 +21,15 @@ interface Props {
   within?: string;
   /** 카드의 "검증" 도장이 이미 보이면 첫 칩(독립 검증 통과·서버 재채점 통과)을 뺀다. */
   hideVerified?: boolean;
+  /** 차이를 %가 아니라 점수로(2026-10-22 폴백 리뷰 S3) -- 빈자리 감점이 섞인 종합 점수는 0 근처라 %가 크게 부풀려진다. */
+  inPoints?: boolean;
 }
 
-export function ConfidenceBadge({ termination, timeLimited, objective, bestBound, gapAllowed, within, hideVerified }: Props) {
+export function ConfidenceBadge({ termination, timeLimited, objective, bestBound, gapAllowed, within, hideVerified, inPoints }: Props) {
   const x = gapPct(objective, bestBound);
+  const pts = objective != null && bestBound != null && Number.isFinite(objective) && Number.isFinite(bestBound)
+    ? Math.abs(bestBound - objective) : null;
+  const upTo = inPoints ? (pts != null ? `${pts.toFixed(2)}점` : null) : (x != null ? pct(x) : null);
   // 편성 기록에서 연 안(2026-10-18): 서버가 지금 평가기로 다시 채점해 제약 위반이 없음을 확인했다. 솔버 증명은 기록이 주장할 뿐
   // 이 서버가 확인할 수 없어 버렸다(api/records) -- "다시 계산"하면 증명이 붙는다.
   if (termination === "record") {
@@ -44,11 +49,11 @@ export function ConfidenceBadge({ termination, timeLimited, objective, bestBound
   let text: string;
   let tone: string;
   if (stopped) {
-    text = x != null ? `사용자가 멈춤 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${pct(x)} 높을 수 있음`
+    text = upTo != null ? `사용자가 멈춤 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${upTo} 높을 수 있음`
                      : "사용자가 멈춤 · 최선 증명 전";
     tone = "border-amber-300 bg-amber-50 text-amber-800";
   } else if (limited) {
-    text = x != null ? `시간 한도 도달 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${pct(x)} 높을 수 있음`
+    text = upTo != null ? `시간 한도 도달 · ${within ? `${within}의 ` : ""}최적값이 이 해보다 최대 ${upTo} 높을 수 있음`
                      : "시간 한도 도달 · 최선 증명 전";
     tone = "border-amber-300 bg-amber-50 text-amber-800";
   } else if (optimal) {

@@ -254,7 +254,7 @@ function MoveBudget({ state, common, who, proj, fail, onUseAsBase }:
                         </span>
                       ) : (
                         <ConfidenceBadge termination={r.termination} objective={r.objective} bestBound={r.best_bound}
-                                         gapAllowed={0} />
+                                         gapAllowed={0} inPoints={(r.unfilled_seats ?? 0) > 0} />
                       )}
                     </td>
                     <td><button onClick={() => setPick(r.k)} aria-label={`K=${r.k} 이동 보기`}

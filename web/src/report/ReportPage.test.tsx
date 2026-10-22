@@ -227,6 +227,20 @@ describe("ReportPage — 원 플랜 서명", () => {
     expect(box.textContent).toContain("솔버가 푼 원안 기준 — 이후 변경 2건");
   });
 
+  it("원안에 빈자리가 있으면 배지 차이를 %가 아니라 점수로(결과 카드와 같게, 2026-10-22)", async () => {
+    vi.mocked(fetchMeta).mockReset();
+    window.__REPORT_DATA__ = { plan_label: "A", entries: [], objective: -12.51, fulfillment: 1,
+      optimization_ratio: 1, unfilled: ["j00:중급:1명 미충원"], briefing: null, fallback_used: false, swap: null,
+      objective_delta: null, swap_violations: [], milp_params: null, meta: META,
+      dataset_version: META.dataset_version, applied_swaps: [], applied_violations: [],
+      plan_provenance: "verified", base_unfilled: ["j00:중급:1명 미충원"],
+      solve_evidence: { termination: "time_limit_incumbent", objective: -12.51, best_bound: -11, gap_allowed: 0.01,
+                        time_limited: true, within: null, changed: 0 } };
+    render(<ReportPage />);
+    const box = await screen.findByTestId("solve-evidence");
+    expect(box.textContent).toContain("시간 한도 도달 · 최적값이 이 해보다 최대 1.51점 높을 수 있음");
+  });
+
   it("이전 K의 해를 유지한 K 결과에는 그 K의 증명을 붙이지 않는다", async () => {
     vi.mocked(fetchMeta).mockReset();
     window.__REPORT_DATA__ = { plan_label: "K3", entries: [], objective: 1, fulfillment: 1,

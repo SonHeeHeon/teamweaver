@@ -92,6 +92,9 @@ async def optimize(req: OptimizeRequest, request: Request, graph: MemoryGraph = 
             "gap_allowed": getattr(plan, "gap_used", None) if getattr(plan, "gap_used", None) is not None
                            else params.gap,
             "dataset_version": dataset.info.version,
+            # 빈자리 1자리 감점(계산 설정) -- 화면이 "배치 품질"(종합 점수 + 감점 × 빈자리)과 빈자리 수를 따로 보인다(2026-10-22 사용자
+            # "빈자리가 -100점인게 너무 크리티컬해"). 표시용이라 서명에 넣지 않는다(설정은 plan_token이 이미 묶는다).
+            "slack_penalty": params.slack_penalty,
         }
         # 서버가 이 데이터셋·가중치·파라미터로 계산한 플랜이라는 서명(PDF가 검증, K10).
         out["plan_token"] = sign_plan(dataset.info.version, plan.label,

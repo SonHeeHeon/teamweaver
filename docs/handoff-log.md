@@ -22,6 +22,19 @@
 
 ---
 
+## 2026-10-22 · claude-b · 편성안 카드 점수 표시 -- 배치 품질·빈자리 따로, 가장 높은 안 표시, A안 뜻
+- 브랜치/커밋: `feat/claude-b-kg-views` `7b18e0c` + 이 커밋(문서). main 미병합(승인 대기).
+- 한 일: 사용자 "a안이 b안보다 점수가 더 낮은데 a안인 이유" · "빈자리 -100점이 너무 크리티컬" → 계산·감점·안 순서는 그대로 두고 표시만 바꿨다.
+  카드 큰 숫자 = 배치 품질(종합 + 감점 × 빈자리), 빈자리 n석 따로, "가장 높음"(위반 없는 안 중 종합 1위) + 나머지 안의 차이("1% 안, 사실상 같은 수준"), A = "먼저 계산한 기준안"(멈춘 이유 툴팁).
+  빈자리가 있으면 계산 신뢰도 배지 차이를 %가 아니라 점수로(카드·운영 중 K 표·PDF).
+- 상대 영향(claude-a):
+  - `/api/optimize` plan 이벤트에 `slack_penalty`(표시용, 서명 밖), PDF 데이터에 `base_unfilled`(원안 빈자리, `report._replay_applied_swaps`).
+  - `ConfidenceBadge`에 `inPoints` 선택 칸.
+  - 네 `feat/claude-a-ai-value`와 `App.tsx`·`api/types.ts`·`api/routes/optimize.py`를 같이 고쳤다(서로 다른 줄 -- 합칠 때 확인).
+  - 관찰(조치 안 함): 종합 점수가 0 근처면 A의 상대 허용 차이 1%가 아주 좁아져 시간 한도에 더 걸린다 -- 모델 영역, 필요하면 의논.
+- 검증: pytest 2106 passed, 1 skipped, 20 deselected · slow 20 · 웹 351 · tsc -b · build · 300명 운영 중 기록 화면 확인(B 가장 높음, A·C·D "1% 안", 콘솔 오류 0).
+- 근거: 루트 `.omc/plan/2026-10-22-plan-score-display.md`, `.omc/reports/2026-10-22-plan-score-display.md`.
+
 ## 2026-10-22 · claude-b · `feat/claude-b-kg-views` **main 병합(사용자 승인 "병합해줘")**
 - 커밋: `adc2488`(merge --no-ff, main `4d55462` 위 -- 브랜치가 main을 이미 담고 있어 합친 트리 = 브랜치 트리, `git diff` 0줄) + 이 커밋(일지). push는 하지 않음.
 - 들어간 것: 소명 "근거 한눈에"(`5050ea0`) · 기술 지도 공급/수요 막대·관계 그림(`62efb31`) · 조직 기술 분포(`d5ed4dd`) · 확정 취소 버튼 시각 빼기(`72a9b9f`).
