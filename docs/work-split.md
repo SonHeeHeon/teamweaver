@@ -84,7 +84,6 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `docs/claude-a-dedupe-1023` · 보고서·영상 중복 정리(사용자 "중복을 최소화해서 보여주자") — `outputs/demo-video-slides.html`·`outputs/final-report.html`·`.pdf`·`docs/demo-script.md`·README · 2026-10-23 · 없음
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
