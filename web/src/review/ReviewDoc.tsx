@@ -28,11 +28,11 @@ export function sentences(text: string | null | undefined): string[] {
 }
 
 /** 본문 속 근거 표식 [F12]의 번호(2026-10-22 부서장 점검 f13 -- 내부 번호를 그대로 보이지 않고 아래 "인용한 사실" 번호로).
- *  검사 기록의 인용 순서가 있으면 그 순서, 없으면(예전 자료) 본문에 나온 순서. */
+ *  본문에 나온 순서(1, 2, 3 …)로 매기고, 본문에 없는 인용 사실(부서장이 고쳐 지운 것)은 그 뒤에. 아래 목록도 이 번호 순서. */
 export function citeNumbers(text: string | null | undefined, cited: { id: string }[] | undefined): Map<string, number> {
   const out = new Map<string, number>();
-  for (const c of cited ?? []) if (!out.has(c.id)) out.set(c.id, out.size + 1);
   for (const m of (text ?? "").matchAll(/\[(F\d+)\]/g)) if (!out.has(m[1])) out.set(m[1], out.size + 1);
+  for (const c of cited ?? []) if (!out.has(c.id)) out.set(c.id, out.size + 1);
   return out;
 }
 
@@ -142,7 +142,7 @@ function BodyCheckLine({ check, edited, print, cites }: { check: BodyCheck; edit
       <p className="mt-1 text-slate-500">AI는 사실 번호만 고르고, 숫자·충족 여부 같은 문구는 시스템이 채웁니다. 만들 때 문장마다 검사해 걸리면 규칙 요약으로 바꾸고,
         저장 전에 저장할 글이 검사한 원문 그대로인지 한 번 더 확인합니다: {check.rules}.</p>
       <ul className="mt-1 list-disc pl-5">
-        {check.cited.map((c) => <li key={c.id}><span className="num text-slate-400">[{cites.get(c.id) ?? "*"}]</span> {c.text}{c.adverse && <span className="ml-1 text-amber-700">(불리한 사실)</span>}</li>)}
+        {[...check.cited].sort((a, b) => (cites.get(a.id) ?? 99) - (cites.get(b.id) ?? 99)).map((c) => <li key={c.id}><span className="num text-slate-400">[{cites.get(c.id) ?? "*"}]</span> {c.text}{c.adverse && <span className="ml-1 text-amber-700">(불리한 사실)</span>}</li>)}
       </ul>
     </details>
   );

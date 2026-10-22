@@ -74,9 +74,11 @@ describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
     const { container } = render(<ReviewDoc doc={{ ...DOC, body: null, body_ai: body, body_ai_check: check }} editable={false} />);
     expect(container.textContent).not.toMatch(/\[F\d+\]/);
     const sups = [...container.querySelectorAll("sup")].map((x) => x.textContent);
-    expect(sups).toEqual(["2", "1"]);                                    // 인용 목록 순서(F7=1, F1=2)
+    expect(sups).toEqual(["1", "2"]);                                    // 본문에 나온 순서(F1=1, F7=2)
     expect(screen.getByText(/J014는 Spring 요구 충족/).closest("p")).not.toHaveTextContent("Kafka");   // 문장마다 줄
-    expect(screen.getByText(/\[1\]/).closest("li")).toHaveTextContent("한지우 Kafka 경력 부족");
+    expect(screen.getByText(/\[2\]/).closest("li")).toHaveTextContent("한지우 Kafka 경력 부족");
+    const items = [...container.querySelectorAll("details li")].map((li) => li.textContent);
+    expect(items[0]).toMatch(/^\[1\] J014 요구 기술 Spring 충족/);         // 아래 목록도 번호 순서
   });
 
   it("주인 없는 '사업 전체' 결정(등급 대체·예산 증액)을 보이고, 2절은 새로 들어온 인력과 옮겨 온 사람 수를 나눠 말한다(f10)", () => {
