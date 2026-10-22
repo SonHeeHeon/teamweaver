@@ -6,7 +6,7 @@
 직원과 사업을 **기술 적합(S)·협업 이력(C)·월별 가용률·월 예산·등급 정원**을 한꺼번에 맞춰 배치하는 도구다.
 배치 결정은 수학 최적화(MILP, HiGHS)가 하고, 솔버가 낸 답은 원자료로 **다시 검사(독립 검증)**한 뒤에만 화면에 낸다.
 AI(LLM)는 배치를 정하지 않고 읽기와 쓰기를 맡는다 — 동료 평가 글을 읽어 협업 점수에 반영하고(항목만 세는 규칙은 글에 쓴 부정을 놓친다),
-교체 설명과 인사팀 소명 글을 쓰며, 부서장이 말로 쓴 긴급 요청과 인사 자료의 제각각인 기술 이름을 사전 말로 옮긴다(사람은 AI에 보내지 않고, 고르는 것은 사람).
+교체 설명과 인사팀 소명 글을 쓰며, 부서장이 말로 쓴 긴급 요청·신규 사업의 발주 자료·인사 자료의 제각각인 기술 이름을 사전 말로 옮긴다(사람은 AI에 보내지 않고, 고르는 것은 사람).
 AI 글·답은 기계 검사를 통과해야 나가고, 실패하면 정해진 틀·규칙으로 대신한다. AI 없이 할 때와의 비교는 결과 보고서 3.3.
 
 | 기능 | 하는 일 |
@@ -24,9 +24,9 @@ AI 글·답은 기계 검사를 통과해야 나가고, 실패하면 정해진 �
 
 | 문서 | 내용 |
 |---|---|
-| [`outputs/final-report.pdf`](outputs/final-report.pdf) · [`.html`](outputs/final-report.html) | **과제 결과 보고서**(A4 10쪽) — 정량·정성 성과, 시스템 구성, 적용 기술(모델 정식·검증·검사받는 AI), 설계 판단 근거, 한계. 영상과 겹치지 않게 영상으로 확인하기 어려운 내용 중심 |
+| [`outputs/final-report.pdf`](outputs/final-report.pdf) · [`.html`](outputs/final-report.html) | **과제 결과 보고서**(A4 10쪽) — 정량·정성 성과, 시스템 구성, 적용 기술(모델 정식·검증·검사받는 AI), 설계 판단 근거, 한계. 영상과 겹치는 것은 AI가 바꾼 것과 핵심 결과 셋뿐이고, 나머지는 영상으로 확인하기 어려운 내용 중심 |
 | [`docs/demo-script.md`](docs/demo-script.md) | **시연 영상 대본**(9분 45초) — 개요·구현·기술/성과 큐시트, 내레이션, 편집 지점, 녹화 준비, 장면별 숫자 |
-| [`outputs/demo-video-slides.html`](outputs/demo-video-slides.html) | 영상 개요·기술/성과 구간에 띄우는 슬라이드 8장(←/→, F 전체 화면) |
+| [`outputs/demo-video-slides.html`](outputs/demo-video-slides.html) | 영상 개요·기술/성과 구간에 띄우는 슬라이드 9장(←/→, F 전체 화면) — 7·8장이 "AI가 바꾼 것" |
 | [`docs/architecture.html`](docs/architecture.html) | 한 장 구조도 |
 | [`outputs/eli5-project-history-roadmap.html`](outputs/eli5-project-history-roadmap.html) | **프로젝트 전체 해설(최종판)** — 비전문가용, 배경·개발 이력·실험·신뢰 범위 |
 | [`docs/demo-notes.md`](docs/demo-notes.md) | 설계 판단 설명 노트(협업 쌍 상한 200, 익숙한 쌍 기준, 문헌 근거, "그냥 GPT에게 시키면?") |

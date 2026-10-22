@@ -1,0 +1,496 @@
+{
+ "note": "발주 자료 필요 기술 읽기 측정의 정답(2026-10-23, claude-a -- AI 측정 전에 커밋). 어려운 가상 자료 10편(rehearsal/data/rfp_docs/h*.txt). 쉬운 세트(claude-b 시연 자료 demo/project_docs)는 시연 묶음의 사업 요구 기술이 정답이라 여기 적지 않는다(rehearsal/rfp_read_eval.py가 묶음에서 읽는다).",
+ "fields": {
+  "required": "필수로 뽑아야 하는 기술 {skill: 사전 대표 이름, months: 요구 경력 개월 또는 null(채점 안 함), headcount: 인원 또는 null(채점 안 함)}",
+  "preferred": "우대로 뽑아야 하는 기술(필수로 뽑으면 필수 정밀도에서 틀림)",
+  "not_required": "자료에 나오지만 요구가 아닌 기술(현행 시스템·연계 대상·배경) -- 필수로 뽑으면 '요구 아닌 언급 오검출'",
+  "ok": "어느 쪽으로 뽑아도 틀리지 않는 기술(글에서 미루어 볼 만하거나 해석이 갈림) -- 정밀도·재현율 모두에서 뺀다"
+ },
+ "docs": [
+  {
+   "id": "h1",
+   "file": "h1.txt",
+   "style": "공공 RFP 문체(표 없음) · 현행 시스템 언급",
+   "required": [
+    {
+     "skill": "전자정부 표준프레임워크",
+     "months": 60,
+     "headcount": 2
+    },
+    {
+     "skill": "Java",
+     "months": 60,
+     "headcount": 2
+    },
+    {
+     "skill": "PostgreSQL",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "데이터 이행",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "Vue",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "시큐어 코딩",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "프로젝트 관리(PM)",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [],
+   "not_required": [
+    "Oracle Database",
+    "WebLogic"
+   ],
+   "ok": [
+    "공공 업무",
+    "HTML/CSS",
+    "취약점 진단",
+    "전자정부"
+   ]
+  },
+  {
+   "id": "h2",
+   "file": "h2.txt",
+   "style": "금융 과업지시서 · 표(이상 없이 '7년') · 우대 · 현행·연계 언급",
+   "required": [
+    {
+     "skill": "데이터 웨어하우스(DW)",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "ETL",
+     "months": 60,
+     "headcount": 2
+    },
+    {
+     "skill": "Airflow",
+     "months": 24,
+     "headcount": 1
+    },
+    {
+     "skill": "Tableau",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "데이터 모델링",
+     "months": 84,
+     "headcount": 1
+    },
+    {
+     "skill": "은행 업무",
+     "months": 60,
+     "headcount": 1
+    }
+   ],
+   "preferred": [
+    "Kafka",
+    "Spark"
+   ],
+   "not_required": [
+    "COBOL",
+    "IBM MQ",
+    "계정계"
+   ],
+   "ok": [
+    "정보계",
+    "대외계",
+    "금융 업무",
+    "BI Reporting"
+   ]
+  },
+  {
+   "id": "h3",
+   "file": "h3.txt",
+   "style": "한글 표기·약어(쿠버네티스·K8s·PySpark·에어플로) · 우대(있으면 좋음) · 사라질 기존 시스템",
+   "required": [
+    {
+     "skill": "Spark",
+     "months": 48,
+     "headcount": 2
+    },
+    {
+     "skill": "Kubernetes",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "Kafka",
+     "months": 24,
+     "headcount": 1
+    },
+    {
+     "skill": "Airflow",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "Docker",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "Jenkins",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "Python",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [
+    "유통 업무"
+   ],
+   "not_required": [],
+   "ok": [
+    "Private Cloud",
+    "Hadoop",
+    "CI/CD"
+   ]
+  },
+  {
+   "id": "h4",
+   "file": "h4.txt",
+   "style": "문장 속 요구(서수 나열) · 요구 문맥의 Oracle",
+   "required": [
+    {
+     "skill": "Spring Batch",
+     "months": 60,
+     "headcount": 2
+    },
+    {
+     "skill": "PL/SQL",
+     "months": 84,
+     "headcount": 1
+    },
+    {
+     "skill": "카드 업무",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "SQL 튜닝",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "Oracle Database",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [],
+   "not_required": [],
+   "ok": [
+    "Git",
+    "Jenkins",
+    "SQL",
+    "Spring",
+    "금융 업무"
+   ]
+  },
+  {
+   "id": "h5",
+   "file": "h5.txt",
+   "style": "제조 사업 개요 · 범위 밖 연계(SAP)",
+   "required": [
+    {
+     "skill": "MES",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "React",
+     "months": 24,
+     "headcount": 2
+    },
+    {
+     "skill": "Node.js",
+     "months": null,
+     "headcount": 1
+    },
+    {
+     "skill": "제조 업무",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [],
+   "not_required": [
+    "SAP ERP"
+   ],
+   "ok": [
+    "Microsoft SQL Server",
+    "ERP"
+   ]
+  },
+  {
+   "id": "h6",
+   "file": "h6.txt",
+   "style": "AI 사업 RFP · 유지되는 기존 챗봇 · 우대 여럿",
+   "required": [
+    {
+     "skill": "AI 에이전트 프레임워크",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "RAG·벡터DB",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "LLM Application",
+     "months": 24,
+     "headcount": 2
+    },
+    {
+     "skill": "Python",
+     "months": 60,
+     "headcount": 2
+    },
+    {
+     "skill": "보험 업무",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "개인정보보호",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "ML Ops",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [
+    "LangChain",
+    "LangGraph",
+    "PyTorch"
+   ],
+   "not_required": [
+    "챗봇"
+   ],
+   "ok": [
+    "Elasticsearch",
+    "LLM 파인튜닝",
+    "자연어 처리(NLP)",
+    "프롬프트 엔지니어링"
+   ]
+  },
+  {
+   "id": "h7",
+   "file": "h7.txt",
+   "style": "유지관리 과업지시서 · 기존 시스템 기술이 곧 요구",
+   "required": [
+    {
+     "skill": "프로젝트 관리(PM)",
+     "months": 120,
+     "headcount": 1
+    },
+    {
+     "skill": "Spring",
+     "months": 48,
+     "headcount": 2
+    },
+    {
+     "skill": "Tibero",
+     "months": 60,
+     "headcount": 1
+    },
+    {
+     "skill": "DB 관리(DBA)",
+     "months": 60,
+     "headcount": 1
+    },
+    {
+     "skill": "JEUS",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "WebtoB",
+     "months": 36,
+     "headcount": 1
+    }
+   ],
+   "preferred": [],
+   "not_required": [],
+   "ok": [
+    "공공 업무",
+    "JSP/Servlet",
+    "SQL 튜닝",
+    "WAS(웹 애플리케이션 서버)",
+    "웹 서버",
+    "정보보안",
+    "Tmax"
+   ]
+  },
+  {
+   "id": "h8",
+   "file": "h8.txt",
+   "style": "사전규격 · 옮겨 가기 전 환경(AWS·VMware) · 가점",
+   "required": [
+    {
+     "skill": "Naver Cloud Platform",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "Terraform",
+     "months": 24,
+     "headcount": 1
+    },
+    {
+     "skill": "Linux",
+     "months": 60,
+     "headcount": 1
+    },
+    {
+     "skill": "취약점 진단",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [
+    "ISMS-P"
+   ],
+   "not_required": [
+    "AWS",
+    "VMware"
+   ],
+   "ok": [
+    "IaC",
+    "공공 업무",
+    "정보보안",
+    "Private Cloud"
+   ]
+  },
+  {
+   "id": "h9",
+   "file": "h9.txt",
+   "style": "장문 공공 RFP · 현행 장비 목록·일반 요구사항(보안·접근성) 잡음 · 요구 문맥의 Oracle",
+   "required": [
+    {
+     "skill": "프로젝트 관리(PM)",
+     "months": 120,
+     "headcount": 1
+    },
+    {
+     "skill": "SQL 튜닝",
+     "months": 84,
+     "headcount": 1
+    },
+    {
+     "skill": "Python",
+     "months": 36,
+     "headcount": 2
+    },
+    {
+     "skill": "Oracle Database",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "테스트·QA",
+     "months": null,
+     "headcount": 1
+    }
+   ],
+   "preferred": [],
+   "not_required": [
+    "Unix",
+    "Linux",
+    "Tibero",
+    "JEUS",
+    "WebtoB"
+   ],
+   "ok": [
+    "공공 업무",
+    "데이터 모델링",
+    "개인정보보호",
+    "취약점 진단",
+    "시큐어 코딩",
+    "HTML/CSS",
+    "데이터 분석",
+    "BI Reporting",
+    "SQL",
+    "정보보안"
+   ]
+  },
+  {
+   "id": "h10",
+   "file": "h10.txt",
+   "style": "민간 RFP · 기존 시스템 구성 표(참고) · 문장 속 요구 · 사전에 없는 우대(지도 API)",
+   "required": [
+    {
+     "skill": "Kafka",
+     "months": 48,
+     "headcount": 2
+    },
+    {
+     "skill": "Spring Boot",
+     "months": 48,
+     "headcount": 2
+    },
+    {
+     "skill": "React",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "Amazon EKS",
+     "months": 24,
+     "headcount": 1
+    },
+    {
+     "skill": "CI/CD",
+     "months": null,
+     "headcount": null
+    },
+    {
+     "skill": "프로젝트 관리(PM)",
+     "months": 96,
+     "headcount": 1
+    },
+    {
+     "skill": "물류 업무",
+     "months": null,
+     "headcount": null
+    }
+   ],
+   "preferred": [],
+   "not_required": [
+    "SAP ERP",
+    "MySQL",
+    "RabbitMQ"
+   ],
+   "ok": [
+    "AWS",
+    "Java",
+    "Docker",
+    "Kubernetes",
+    "데이터 분석",
+    "Git",
+    "ERP"
+   ]
+  }
+ ]
+}

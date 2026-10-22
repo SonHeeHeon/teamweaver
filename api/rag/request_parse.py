@@ -49,8 +49,14 @@ def _ascii_word(c: str) -> bool:
     return c.isascii() and c.isalnum()
 
 
+def _hangul(c: str) -> bool:
+    return "가" <= c <= "힣"
+
+
 def alias_hits(sd: SkillDictionary, text: str) -> list[dict]:
-    """사전 이름(대표·별칭)이 글에 그대로 있는 곳 -- 긴 이름 먼저, 겹치지 않게. 영문 이름은 앞뒤가 영문·숫자로 이어지면 다른 단어다("Go" in "Google")."""
+    """사전 이름(대표·별칭)이 글에 그대로 있는 곳 -- 긴 이름 먼저, 겹치지 않게. 경계는 **원문 글자**로 본다(2026-10-23 고침 -- 띄어쓰기를 지운 글로 보면
+    "Python 5년"의 5, "JEUS·WebtoB"의 W를 붙은 글자로 보고 버렸고, "산출물은 행정"의 "은 행"을 "은행"으로 잡았다):
+    영문 이름은 원문 앞뒤가 영문·숫자로 이어지면 다른 단어("Go" in "Google"), 한글 이름은 원문에서 낱말 가운데서 시작하면 다른 말이다."""
     norm, idx = _norm_map(text)
     taken = [False] * len(norm)
     hits: list[dict] = []
@@ -63,14 +69,17 @@ def alias_hits(sd: SkillDictionary, text: str) -> list[dict]:
             start = pos + 1
             if any(taken[pos:end]):
                 continue
-            if _ascii_word(key[0]) and pos > 0 and _ascii_word(norm[pos - 1]):
+            s, e = idx[pos], idx[end - 1] + 1
+            before, after = text[s - 1] if s > 0 else "", text[e] if e < len(text) else ""
+            if _ascii_word(key[0]) and before and _ascii_word(before):
                 continue
-            if _ascii_word(key[-1]) and end < len(norm) and _ascii_word(norm[end]):
+            if _ascii_word(key[-1]) and after and _ascii_word(after):
+                continue
+            if _hangul(key[0]) and before and _hangul(before):
                 continue
             for k in range(pos, end):
                 taken[k] = True
             cid = sd.by_key[key]
-            s, e = idx[pos], idx[end - 1] + 1
             hits.append({"id": cid, "name": sd.concepts[cid]["label"], "quote": text[s:e], "start": s, "end": e,
                          "kind": "explicit", "source": "alias"})
     hits.sort(key=lambda h: h["start"])
