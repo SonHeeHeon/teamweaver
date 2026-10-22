@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위) · b 요청 "발주 자료에서 필요 기술 읽기(AI)"(b 작업 폴더의 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 결정 "a·b 나눠서") a 몫 — 새 `api/rag/rfp_read.py`·`rehearsal/rfp_read_eval.py`·`rehearsal/data/rfp_docs/`·`tests/test_rfp_read.py`, 측정 결과 `rehearsal/results/rfp-read.json`, 보고서 3.3·대본 D6 · 2026-10-23 · 외부 AI(OpenAI·Z.ai GLM) 측정 호출
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
