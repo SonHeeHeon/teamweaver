@@ -14,7 +14,7 @@ import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
 import { DocLinks, DocsDialog, RequirementLine } from "./ProjectDocs";
-import { fetchProjectDocs, fetchRequirements, uploadAll, type ProjectDoc, type Requirement } from "./projectDocsApi";
+import { fetchProjectDocs, fetchRequirements, uploadAll, type AiDestination, type ProjectDoc, type Requirement } from "./projectDocsApi";
 import { CandidateGuide, PickDraft } from "./PickDraft";
 import { BudgetRaiseBox, GradeSwapBox, raiseBody, raisesReady, swapBody, swapList, swapsReady, type RaiseReasons,
          type SwapReasons } from "./GradeSwapBox";
@@ -215,6 +215,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   // 판이 바뀌면 다시 읽는다. 자료는 판을 바꾸지 않으므로 올리기·지우기 뒤에는 자료만 다시 읽는다.
   const [docList, setDocList] = useState<Record<string, ProjectDoc[]>>({});
   const [reqs, setReqs] = useState<Record<string, Requirement[]> | null>(null);
+  const [aiDestination, setAiDestination] = useState<AiDestination | null>(null);
   const [docsFor, setDocsFor] = useState<string | null>(null);
   // 늦게 온 응답이 새 목록을 덮지 않게 마지막 요청만 반영하고, 읽기에 실패하면 지금 버튼을 그대로 둔다(폴백 리뷰)
   const docsSeq = useRef(0);
@@ -225,8 +226,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   useEffect(() => {
     if (!ws?.dataset_version) return;
     let live = true;
+    setDocList({});          // 옛 데이터의 받기 버튼이 남지 않게(목록 읽기가 실패해도 -- 2차 폴백 리뷰 NIT)
     loadDocs();
-    fetchRequirements().then((r) => { if (live) setReqs(r.requirements); }).catch(() => { if (live) setReqs(null); });
+    fetchRequirements().then((r) => { if (live) { setReqs(r.requirements); setAiDestination(r.ai_destination ?? null); } })
+      .catch(() => { if (live) setReqs(null); });
     return () => { live = false; };
   }, [ws?.dataset_version, loadDocs]);
   // 판이 바뀌면 그 전 판으로 계산한 자동 편성·열어 둔 확인 창은 버린다
@@ -856,6 +859,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
       {formOpen && (
         <ProjectForm start={ws.horizon_start} predecessors={predecessors} parents={parents} initialParent={formParent}
+                     datasetVersion={ws.dataset_version} aiDestination={aiDestination}
                      onCancel={() => { setFormOpen(false); setFormParent(null); }}
                      onSubmit={async (form, docs) => {
                        let res;

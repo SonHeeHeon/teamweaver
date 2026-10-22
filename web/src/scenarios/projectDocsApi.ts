@@ -22,8 +22,10 @@ export interface Requirement { skill: string; canonical: string | null; months: 
 
 const enc = encodeURIComponent;
 export const fetchProjectDocs = () => call<DocList>("/api/project-docs");
+/** 자료 글자를 AI로 보낼 곳: 회사 밖일 수 있음 · 사내 · 보내지 않음(키 없음·실데이터 외부 차단) -- 읽기 전에 화면이 알린다 */
+export type AiDestination = "external" | "onprem" | "none";
 export const fetchRequirements = () =>
-  call<{ dataset_version: string; requirements: Record<string, Requirement[]> }>("/api/project-requirements");
+  call<{ dataset_version: string; requirements: Record<string, Requirement[]>; ai_destination?: AiDestination }>("/api/project-requirements");
 export const uploadProjectDoc = (v: string, projectId: string, kind: DocKind, file: File) =>
   call<{ doc: ProjectDoc }>(`/api/project-docs/${enc(projectId)}?${new URLSearchParams({ dataset_version: v, kind, filename: file.name })}`,
                             { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file });
@@ -73,4 +75,37 @@ export async function uploadAll(version: string, projectId: string, docs: Pendin
     }
   }
   return { ok, failed };
+}
+
+/** 발주 자료에서 필요 기술 읽기(2026-10-23 사용자 "그 자료를 넣으면 llm … 을 통해서 분석해서 알아서 필요 기술에 대해 정의해서 등록해주고 사용자가 보고 …
+ *  수정 및 삭제", 결정 "a·b 나눠서" -- 읽기 함수·측정은 claude-a `api/rag/rfp_read`, 라우트·버튼은 b). 결과는 **제안**이다 -- 넣을지는 사람이 고른다. */
+export interface ReadSkill {
+  concept_id: string; name: string; months: number | null; headcount: number | null; quote: string; start: number; end: number;
+  kind: "required" | "preferred";
+}
+export interface ReadMention { concept_id: string; name: string; quote: string }
+export interface ReadResult {
+  skills: ReadSkill[]; mentioned_not_required: ReadMention[]; unmapped_terms: string[]; method: "ai" | "rule"; model: string | null;
+  warnings: string[]; fallback_reason: string | null; ai_available: boolean; usage?: { latency_s?: number } | null; chars: number;
+  /** 이번에 자료 글자를 보낸 곳(설정이 바뀌었으면 미리 읽은 안내와 다를 수 있다) */
+  ai_destination?: AiDestination;
+}
+/** 글자를 꺼낼 수 있는 형식 -- 옛 한글(HWP 5.x)·ZIP 묶음은 못 읽는다(PDF·HWPX로 저장해 올린다) */
+export const TEXT_EXTS = ["pdf", "hwpx", "docx", "pptx", "xlsx"] as const;
+export function readable(file: File): boolean {
+  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "";
+  return (TEXT_EXTS as readonly string[]).includes(ext);
+}
+/** 판 번호를 보내지 않는다 -- 읽기는 데이터를 바꾸지 않고(등록이 판을 확인한다), 옛 판으로 409만 반복되던 길을 없앤다(폴백 리뷰 S3) */
+export const readRequirements = (file: File, signal?: AbortSignal) =>
+  call<ReadResult>(`/api/project-requirements/read?${new URLSearchParams({ filename: file.name })}`,
+                   { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file, signal });
+
+/** AI를 쓰지 않은 까닭(화면 말) */
+export function fallbackText(reason: string | null): string {
+  if (!reason) return "";
+  if (reason === "no_client") return "AI 키가 없어";
+  if (reason === "external_blocked") return "실데이터는 회사 밖 AI로 보내지 않아";
+  if (reason.startsWith("llm_error")) return "AI 응답을 받지 못해";
+  return reason;
 }

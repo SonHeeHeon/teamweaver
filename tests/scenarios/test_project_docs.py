@@ -297,3 +297,196 @@ def test_pdf_header_may_follow_leading_bytes():
     store.check_bytes("pdf", b"\x00" * 100 + PDF)                                 # 규격: 첫 1024바이트 안
     with pytest.raises(store.DocError):
         store.check_bytes("pdf", b"\x00" * 2000 + PDF)
+
+
+# --- 발주 자료에서 필요 기술 읽기(2026-10-23, 사용자 결정 "a·b 나눠서": 글자 뽑기·라우트 = b, 읽기 함수 = claude-a) -----------
+
+def _zipped(name, xml):
+    import io
+    import zipfile
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr(name, xml)
+    return b.getvalue()
+
+
+def test_extract_text_reads_office_xml_in_reading_order_and_not_old_hwp():
+    """HWPX hp:t 안의 탭·줄바꿈 뒤 글자를 잃지 않고, 표 앞 글 → 표 칸 → 표 뒤 글 순서. 옛 HWP·ZIP은 None."""
+    import api.project_docs as store
+    hwpx = _zipped("Contents/section0.xml", '<hs:sec xmlns:hs="s" xmlns:hp="p"><hp:p><hp:run><hp:t>필요 기술:<hp:tab/>Java 5년 이상'
+                                            '<hp:lineBreak/>Oracle 3년</hp:t></hp:run></hp:p><hp:p><hp:run><hp:t>표 앞</hp:t><hp:tbl><hp:tr>'
+                                            '<hp:tc><hp:p><hp:run><hp:t>ETL 2명</hp:t></hp:run></hp:p></hp:tc></hp:tr></hp:tbl>'
+                                            '<hp:t>표 뒤</hp:t></hp:run></hp:p></hs:sec>')
+    assert store.extract_text("hwpx", hwpx) == "필요 기술: Java 5년 이상\nOracle 3년\n표 앞\nETL 2명\n표 뒤"
+    docx = _zipped("word/document.xml", '<w:document xmlns:w="w"><w:body><w:p><w:r><w:t>요구 기술: </w:t></w:r><w:r><w:t>Java 3년</w:t>'
+                                        '</w:r></w:p><w:p><w:r><w:t>ETL 2명</w:t></w:r></w:p></w:body></w:document>')
+    assert store.extract_text("docx", docx) == "요구 기술: Java 3년\nETL 2명"
+    assert store.extract_text("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10) is None
+    assert store.extract_text("zip", _zipped("a.txt", "x")) is None
+    assert store._part_key("sec²1tion12.xml")                               # "²"는 숫자가 아니다(예전엔 int()에서 터졌다)
+
+
+def test_extract_text_turns_broken_files_into_doc_errors():
+    import api.project_docs as store
+    broken = bytearray(_zipped("word/document.xml", "<w:document xmlns:w='w'><w:body><w:p><w:r><w:t>" + "x" * 500 +
+                                                     "</w:t></w:r></w:p></w:body></w:document>"))
+    broken[60] ^= 0xFF                                                           # 압축 본문 한 바이트 -- CRC가 깨진다
+    for ext, data in [("docx", bytes(broken)), ("docx", b"PK\x03\x04 not a zip"), ("pdf", b"%PDF-broken")]:
+        with pytest.raises(store.DocError):
+            store.extract_text(ext, data)
+
+
+def test_extract_text_is_linear_on_big_tables_and_deep_nesting():
+    """첫 판은 문단마다 하위 트리를 다시 돌아 4,000칸 표에 5.7초였다(폴백 리뷰 N-M1) -- 한 번만 돈다."""
+    import time
+    import api.project_docs as store
+    cell = '<hp:tc><hp:p><hp:run><hp:t>ETL 2명</hp:t></hp:run></hp:p></hp:tc>'
+    big = _zipped("Contents/section0.xml", '<hs:sec xmlns:hs="s" xmlns:hp="p"><hp:p><hp:run><hp:tbl><hp:tr>' + cell * 4000 +
+                                           '</hp:tr></hp:tbl></hp:run></hp:p></hs:sec>')
+    deep = _zipped("word/document.xml", "<w:document xmlns:w='w'><w:body>" + "<w:p>" * 50_000 + "<w:r><w:t>x</w:t></w:r>" +
+                                        "</w:p>" * 50_000 + "</w:body></w:document>")
+    t = time.monotonic()
+    assert store.extract_text("hwpx", big).count("ETL 2명") == 4000
+    assert store.extract_text("docx", deep) == "x"
+    assert time.monotonic() - t < 3.0
+
+
+def test_extract_text_limited_runs_apart_with_time_and_slot_limits(_no_demo_docs):
+    """서버 경로: 별도 프로세스(데이터는 시작 뒤 파이프로) + 시간 제한 + 동시 개수 상한(폴백 리뷰 S3·N-M2·N-S1)."""
+    import api.project_docs as store
+    data = (_no_demo_docs / "j018-rfp.pdf").read_bytes()
+    assert "가상 자료" in store.extract_text_limited("pdf", data)
+    assert store.extract_text_limited("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10) is None
+    with pytest.raises(store.DocError, match="넘겨 멈췄다"):
+        store.extract_text_limited("pdf", data, seconds=0.001)
+    with pytest.raises(store.DocError, match="PDF를 읽지 못했다"):
+        store.extract_text_limited("pdf", b"%PDF-broken")
+    held = [store._extract_slots.acquire(timeout=1) for _ in range(store.EXTRACT_PARALLEL)]
+    try:
+        assert all(held)
+        with pytest.raises(store.DocError, match="다른 자료를 읽는 중"):
+            store.extract_text_limited("pdf", data, seconds=0.2)
+    finally:
+        for _ in held:
+            store._extract_slots.release()
+
+
+def _read(c, data, *, filename="RFP.pdf", v=None, ctype="application/octet-stream"):
+    params = {"filename": filename, **({"dataset_version": v} if v else {})}
+    return c.post("/api/project-requirements/read", params=params, content=data, headers={"Content-Type": ctype})
+
+
+def test_read_route_without_ai_uses_rules_and_changes_nothing(yearend, _no_demo_docs, ai_client):
+    """AI가 없으면 규칙으로 읽는다. 시연 RFP(J018)의 요구 기술을 찾고, 데이터 판은 그대로다."""
+    from api.main import app
+    data = (_no_demo_docs / "j018-rfp.pdf").read_bytes()
+    with TestClient(app) as c:
+        v = _v(c)
+        with ai_client(None):
+            r = _read(c, data, v=v)
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["method"] == "rule" and body["ai_available"] is False and body["fallback_reason"] == "no_client"
+        assert {"ETL", "메타데이터 관리"} <= {s["name"] for s in body["skills"]} and body["chars"] > 200
+        assert all(s["quote"] for s in body["skills"])
+        assert _v(c) == v                                                         # 제안만 -- 데이터는 그대로
+
+
+def test_read_route_with_ai_passes_only_document_text(yearend, _no_demo_docs, ai_client):
+    import json
+    from types import SimpleNamespace
+    from api.main import app
+    from core.ingest.skills import load_dictionary
+    etl = next(cid for cid, c in load_dictionary().concepts.items() if c["label"] == "ETL")
+    calls = []
+
+    class Fake:
+        def __init__(self):
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+        def _create(self, **kw):
+            calls.append(kw)
+            msg = SimpleNamespace(content=json.dumps({"skills": [{"id": etl, "quote": "ETL 경력 5년 이상 2명", "kind": "required",
+                                                                  "months": 60, "headcount": 2}], "not_required": [], "unmapped_terms": []},
+                                                     ensure_ascii=False))
+            return SimpleNamespace(choices=[SimpleNamespace(message=msg)], usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5))
+
+        def with_options(self, **kw):
+            return self
+
+    data = (_no_demo_docs / "j018-rfp.pdf").read_bytes()
+    with TestClient(app) as c, ai_client(Fake()) as used:
+        people = [p["name"] for p in c.get("/api/meta").json()["people"]]
+        r = _read(c, data, v=_v(c))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert used and body["method"] == "ai" and body["ai_available"] is True
+    assert [(s["name"], s["months"], s["headcount"]) for s in body["skills"]] == [("ETL", 60, 2)]
+    sent = "\n".join(m["content"] for m in calls[0]["messages"])
+    assert "ETL 경력 5년 이상 2명" in sent                                        # 자료 글자는 간다
+    assert people and not [n for n in people if n in sent]                       # 사람 이름은 가지 않는다(자료 글자 + 사전만)
+
+
+def test_read_route_rejects_unreadable_wrong_type_and_stale(yearend, _no_demo_docs):
+    from api.main import app
+    with TestClient(app) as c:
+        assert _read(c, b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 64, filename="과업.hwp").status_code == 422   # 글자 못 읽는 형식
+        assert _read(c, b"%PDF-broken").status_code == 422
+        assert _read(c, PDF, filename="run.exe").status_code == 422
+        assert _read(c, PDF, ctype="text/plain").status_code == 415
+        assert _read(c, PDF, v="old-version").status_code == 409
+        big = PDF + b"0" * (3 * 1024 * 1024)                                     # 2MiB JSON 상한을 건너뛴다(자기 상한 20MiB)
+        assert _read(c, big).status_code in (200, 422)
+        assert _read(c, big).status_code != 413
+
+
+def test_extract_text_keeps_sibling_breaks_skips_phonetics_and_keeps_read_part():
+    """DOCX w:tab·w:br, PPTX a:br은 글자 요소의 형제다 -- 빠뜨리면 'Java5년 이상Oracle'로 붙어 규칙 읽기가 Java를 놓쳤다(폴백 리뷰 S1).
+    XLSX 후리가나(rPh)는 글자로 치지 않고, 잘린 XML도 그때까지 읽은 문단은 남긴다."""
+    import api.project_docs as store
+    docx = _zipped("word/document.xml", '<w:document xmlns:w="w"><w:body><w:p><w:pPr><w:tabs><w:tab w:val="left"/></w:tabs></w:pPr>'
+                                        '<w:r><w:t>Java</w:t><w:tab/><w:t>5년 이상</w:t><w:br/><w:t>Oracle 3년</w:t></w:r></w:p></w:body></w:document>')
+    assert store.extract_text("docx", docx) == "Java 5년 이상\nOracle 3년"
+    pptx = _zipped("ppt/slides/slide1.xml", '<p:sld xmlns:p="p" xmlns:a="a"><a:p><a:r><a:t>Spark</a:t></a:r><a:br/><a:r><a:t>Kafka</a:t></a:r>'
+                                            '</a:p></p:sld>')
+    assert store.extract_text("pptx", pptx) == "Spark\nKafka"
+    xlsx = _zipped("xl/sharedStrings.xml", '<sst xmlns="x"><si><t>ETL</t><rPh sb="0" eb="1"><t>イーティーエル</t></rPh></si></sst>')
+    assert store.extract_text("xlsx", xlsx) == "ETL"
+    cut = _zipped("word/document.xml", '<w:document xmlns:w="w"><w:body><w:p><w:r><w:t>앞 문단</w:t></w:r></w:p><w:p><w:r><w:t>뒤')
+    assert store.extract_text("docx", cut) == "앞 문단"
+
+
+def test_read_route_respects_the_external_block(yearend, _no_demo_docs, monkeypatch):
+    """실데이터처럼 외부 전송이 막히면(llm_client_for) AI를 부르지 않고 규칙으로 읽는다."""
+    import api.deps as deps
+    from api.main import app
+    monkeypatch.setattr(deps, "llm_client_for", lambda dataset, client: (None, "external_blocked"))
+    with TestClient(app) as c:
+        r = _read(c, (_no_demo_docs / "j018-rfp.pdf").read_bytes())
+    assert r.status_code == 200, r.text
+    assert r.json()["method"] == "rule" and r.json()["fallback_reason"] == "external_blocked" and r.json()["ai_available"] is False
+
+
+@pytest.mark.parametrize("base_url,expected", [(None, "none"), ("https://api.openai.com/v1", "external"), ("http://10.0.0.5/v1", "onprem")])
+def test_requirements_tell_where_document_text_would_go(yearend, ai_client, base_url, expected):
+    """읽기 전에 화면이 보내는 곳을 알린다(폴백 리뷰 S2) -- llm_client_for와 같은 사내 판정."""
+    from types import SimpleNamespace
+    from api.main import app
+    fake = None if base_url is None else SimpleNamespace(base_url=base_url, with_options=lambda **kw: fake)
+    with TestClient(app) as c, ai_client(fake):
+        assert c.get("/api/project-requirements").json()["ai_destination"] == expected
+
+
+def test_clean_text_keeps_a_pdf_with_lone_surrogates_or_control_characters_readable():
+    """pypdf가 남긴 짝 없는 대리 문자 하나·NUL 수만 개로 PDF 한 편이 통째로 실패하지 않게(2차 폴백 리뷰 SHOULD: JSON 답 회귀)."""
+    import json
+    import api.project_docs as store
+    out = store.clean_text("Java 5 years\ud800 required\x00\x07\n  ETL\t2명 ")
+    assert out == "Java 5 years� required\nETL 2명"
+    json.dumps({"value": out}, ensure_ascii=False).encode("utf-8")                # 자식 답으로 보낼 수 있다
+    assert store.clean_text("\x00" * 60_000) == ""
+    worst = json.dumps({"status": "ok", "value": "\u0001" * store.MAX_TEXT_CHARS}, ensure_ascii=False).encode("utf-8")
+    assert len(worst) <= store.REPLY_MAX_BYTES                                   # 정리 전이어도 답 상한 안
+    bad = _zipped("word/document.xml", '<?xml version="1.0" encoding="x-nope"?><w:document xmlns:w="w"/>')
+    with pytest.raises(store.DocError):                                          # 낯선 encoding도 DocError만
+        store.extract_text("docx", bad)

@@ -54,10 +54,11 @@ def _settings() -> PdfSettings:
 # 큰 본문을 보내면 다 읽어 파싱했다). 업로드(/api/datasets)는 자체 상한(api/routes/datasets)이 있어 뺀다.
 JSON_LIMIT_ENV = "TEAMWEAVER_MAX_JSON_BODY_BYTES"
 DEFAULT_MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
-OWN_LIMIT_PATHS = frozenset({"/api/datasets", "/api/records"})   # 편성 기록 불러오기는 20MB(api/records)
+OWN_LIMIT_PATHS = frozenset({"/api/datasets", "/api/records",   # 편성 기록 불러오기는 20MB(api/records)
+                             "/api/project-requirements/read"})   # 발주 자료 읽기 20MiB(api/routes/project_docs)
 # 발주 자료 올리기(POST /api/project-docs/{사업})는 한 파일 20MiB(api/routes/project_docs가 센다) -- 사업 번호가 경로에 들어가 모양으로 본다.
 # POST와 이 모양만 -- 같은 머리로 JSON 쓰기 라우트를 더해도 2MiB 상한이 꺼지지 않게(폴백 리뷰)
-OWN_LIMIT_POST = re.compile(r"^/api/project-docs/[A-Za-z0-9_.-]{1,32}$")
+OWN_LIMIT_POST = re.compile(r"/api/project-docs/[A-Za-z0-9_.-]{1,32}")   # fullmatch로 본다(끝 줄바꿈 허용 안 함)
 _BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
 
 
@@ -114,7 +115,7 @@ class ReportBodyLimit:
                 limit = DEFAULT_MAX_BODY_BYTES
             describe = _too_large
         elif (path.startswith("/api/") and path not in OWN_LIMIT_PATHS and scope.get("method") in _BODY_METHODS
-              and not (scope.get("method") == "POST" and OWN_LIMIT_POST.match(path))):
+              and not (scope.get("method") == "POST" and OWN_LIMIT_POST.fullmatch(path))):
             limit, describe = _json_limit(), _too_large_json
         else:
             await self.app(scope, receive, send)

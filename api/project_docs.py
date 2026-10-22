@@ -224,3 +224,246 @@ def demo_docs(dataset_id: str, synthetic: bool | None) -> list[dict]:
 
 def demo_path(doc: dict) -> Path:
     return DEMO_ROOT / doc["file"]
+
+
+# --- 글자 뽑기(AI 필요 기술 읽기용, 2026-10-23 사용자 "그 자료를 넣으면 llm … 을 통해서 분석해서 알아서 필요 기술에 대해 정의") -----------
+# 읽기 함수는 claude-a `api/rag/rfp_read`(사용자 결정 "a·b 나눠서") -- 여기는 파일 형식만 다룬다. 계약: 깨진 파일은 DocError만 낸다.
+# 옛 한글(HWP 5.x, 복합 문서·압축 본문)·ZIP 묶음은 None -- 화면이 "PDF·HWPX로 저장해 올린다"고 안내한다.
+# 남이 만든 파일이다: 서버는 extract_text_limited(별도 프로세스 + 시간 제한 + 동시 2개)로 부른다. 첫 판의 폴백 리뷰 지적(2026-10-23)을 고쳤다 --
+# 문단마다 하위 트리를 다시 돌던 O(n²)(4,000셀 표 5.7초) → 한 번만 도는 iterparse, 큰 데이터를 spawn 시작 인자로 넘겨 시간 제한 밖에서 멈춤 →
+# 시작 뒤 파이프로 보내고 타이머로 끝낸다(시드 포트폴리오와 같은 함정), 글자 없는 PDF 한 편이 9초·736MB → 동시 개수 상한.
+MAX_TEXT_CHARS = 60_000
+MAX_PDF_PAGES = 80
+EXTRACT_SECONDS = 20.0
+EXTRACT_PARALLEL = 2
+SLOT_WAIT_SECONDS = 5.0
+REPLY_MAX_BYTES = 6 * 60_000 + 4096          # 자식 답(JSON) 상한 -- 글자 하나가 \uXXXX(6바이트)로 바뀌어도 들어가게
+_MAX_XML_BYTES = 8 * 1024 * 1024          # 압축 안 한 XML 합계 상한(압축 폭탄 막기)
+_CHILD_MEMORY = 1536 * 1024 * 1024         # Linux에서만 자식 메모리 한도(macOS는 RLIMIT_AS가 강제되지 않는다)
+# 확장자 → (본문 XML 이름, 글자 태그, 문단 태그). hp:t·w:t·a:t 안에는 탭·줄바꿈 같은 자식이 섞인다(혼합 내용)
+_XML_PARTS = {
+    "hwpx": (r"Contents/section[0-9]+\.xml", "t", "p"),
+    "docx": (r"word/document\.xml", "t", "p"),
+    "pptx": (r"ppt/slides/slide[0-9]+\.xml", "t", "p"),
+    "xlsx": (r"xl/sharedStrings\.xml", "t", "si"),
+}
+_BREAKS = {"tab": " ", "lineBreak": "\n", "br": "\n", "cr": "\n"}
+# 글자로 치지 않는 하위 요소: XLSX 후리가나(rPh) -- 'ETLイーティーエル'처럼 붙어 나왔다(폴백 리뷰 NIT)
+_SKIP = {"rPh"}
+_extract_slots = threading.BoundedSemaphore(EXTRACT_PARALLEL)
+
+
+def _local(tag) -> str:
+    return tag.rsplit("}", 1)[-1] if isinstance(tag, str) else ""
+
+
+def _t_text(el) -> str:
+    """글자 요소 안의 글자 -- 자식(탭·줄바꿈·형광펜 등) 뒤에 이어지는 글자(tail)까지(첫 판은 el.text만 읽어 본문을 잃었다)."""
+    out = [el.text or ""]
+    for child in el:
+        out.append(_BREAKS.get(_local(child.tag), ""))
+        out.append("".join(child.itertext()))
+        out.append(child.tail or "")
+    return "".join(out)
+
+
+def _part_key(name: str) -> list:
+    # isdigit()는 "²"도 참이라 int()가 터진다 -- 십진 숫자만 숫자로 본다
+    return [int(x) if re.fullmatch(r"[0-9]+", x) else x for x in re.split(r"([0-9]+)", name)]
+
+
+def _xml_lines(raw: bytes, tag: str, para: str) -> list[str]:
+    """한 번만 돈다(iterparse). 문단마다 버퍼를 쌓고, 안쪽 문단(표 칸)이 시작되면 바깥 문단의 앞 글을 먼저 내보낸다(읽는 순서)."""
+    import io
+    from xml.etree import ElementTree as ET
+    lines: list[str] = []
+    stack: list[list[str]] = []
+    in_t = skip = 0
+
+    def flush(buf: list[str]) -> None:
+        line = "".join(buf)
+        if line.strip():
+            lines.append(line)
+        buf.clear()
+
+    try:
+        for event, el in ET.iterparse(io.BytesIO(raw), events=("start", "end")):
+            name = _local(el.tag)
+            if event == "start":
+                if name in _SKIP:
+                    skip += 1
+                elif name == para:
+                    if stack:
+                        flush(stack[-1])
+                    stack.append([])
+                elif name == tag:
+                    in_t += 1
+                continue
+            if name in _SKIP:
+                skip -= 1
+            elif name == tag:
+                in_t -= 1
+                if in_t == 0 and not skip:    # 글자 요소 안의 글자 요소는 바깥이 한 번에 읽는다
+                    text = _t_text(el)
+                    if stack:
+                        stack[-1].append(text)
+                    elif text.strip():        # 문단 밖 글자도 버리지 않는다
+                        lines.append(text)
+            elif name in _BREAKS and in_t == 0 and stack:
+                # DOCX w:tab·w:br, PPTX a:br은 글자 요소의 **형제**다 -- 빠뜨리면 'Java5년 이상Oracle'처럼 붙어 규칙 읽기가 기술을 놓친다(폴백 리뷰 S1)
+                stack[-1].append(_BREAKS[name])
+            elif name == para and stack:
+                flush(stack.pop())
+                el.clear()
+    except ET.ParseError:
+        pass                                  # 잘린 XML이어도 그때까지 읽은 문단은 남긴다(폴백 리뷰 NIT)
+    while stack:
+        flush(stack.pop())
+    return lines
+
+
+def _xml_text(data: bytes, pattern: str, tag: str, para: str) -> str:
+    import io
+    import zipfile
+    import zlib
+    rx = re.compile(pattern)
+    out, used = [], 0
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+        names = sorted((n for n in zf.namelist() if rx.fullmatch(n)), key=_part_key)
+        for n in names:
+            used += zf.getinfo(n).file_size
+            if used > _MAX_XML_BYTES:
+                break
+            with zf.open(n) as f:
+                raw = f.read(_MAX_XML_BYTES + 1)
+            if len(raw) > _MAX_XML_BYTES:
+                break
+            out += _xml_lines(raw, tag, para)       # 외부 엔티티를 풀지 않는다(표준 라이브러리), 엔티티 폭증은 expat 2.4.1+가 막는다
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, EOFError, zlib.error, ValueError,
+            OSError, KeyError, RecursionError, LookupError) as exc:     # LookupError: XML 선언의 낯선 encoding
+        # 깨진 압축(CRC)·암호 걸린 항목·지원 안 하는 압축 방식 -- 읽기 실패로만 알린다(호출자는 DocError만 잡는다)
+        raise DocError(f"문서를 읽지 못했다: {type(exc).__name__}") from exc
+    return "\n".join(out)
+
+
+def extract_text(ext: str, data: bytes) -> str | None:
+    """자료의 글자(앞 MAX_TEXT_CHARS자). 읽지 못하는 형식(HWP 5.x·ZIP 묶음)은 None. 깨진 파일은 DocError(그 밖의 예외는 내지 않는다).
+    서버 요청 경로에서는 extract_text_limited를 쓴다."""
+    ext = ext.lower()
+    if ext not in FORMATS:
+        return None
+    check_bytes(ext, data)
+    if ext == "pdf":
+        import io
+        from pypdf import PdfReader
+        try:
+            reader = PdfReader(io.BytesIO(data))
+            parts = []
+            for page in reader.pages[:MAX_PDF_PAGES]:
+                parts.append(page.extract_text() or "")
+                if sum(map(len, parts)) > MAX_TEXT_CHARS:
+                    break
+        except Exception as exc:       # 남이 만든 파일이라 pypdf가 어떤 예외든 낼 수 있다 -- 읽기 실패로만 알린다
+            raise DocError(f"PDF를 읽지 못했다: {type(exc).__name__}") from exc
+        text = "\n".join(parts)
+    elif ext in _XML_PARTS:
+        text = _xml_text(data, *_XML_PARTS[ext])
+    else:
+        return None
+    return clean_text(text)
+
+
+_SURROGATE = re.compile(r"[\ud800-\udfff]")
+_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def clean_text(text: str) -> str:
+    """뽑은 글자 정리: 짝 없는 대리 문자 → U+FFFD(pypdf는 잘못된 ToUnicode를 surrogatepass로 풀어 남긴다 -- UTF-8로 못 바꿔 한 편이 통째로 실패했다),
+    줄바꿈·탭 밖의 제어 문자 제거(ToUnicode 없는 CID 글꼴 PDF의 NUL 등), 공백 정리, 앞 MAX_TEXT_CHARS자(2차 폴백 리뷰 SHOULD)."""
+    text = _CONTROL.sub("", _SURROGATE.sub("\ufffd", unicodedata.normalize("NFC", text)))
+    text = re.sub(r"[ \t]+", " ", text)
+    return re.sub(r" *\n *", "\n", text).strip()[:MAX_TEXT_CHARS]         # 줄 앞뒤 공백은 뗀다
+
+
+def _reply(conn, status: str, value) -> None:
+    # 남이 만든 파일을 해석한 프로세스의 답은 pickle이 아니라 JSON 바이트로 받는다(폴백 리뷰 NIT -- 심층 방어)
+    conn.send_bytes(json.dumps({"status": status, "value": value}, ensure_ascii=False).encode("utf-8"))
+
+
+def _extract_child(conn) -> None:
+    """자식 프로세스: 확장자와 파일을 파이프로 받는다(시작 인자로 받지 않는다 -- 시작 중 죽으면 부모가 영원히 기다린다)."""
+    try:
+        import sys
+        if sys.platform.startswith("linux"):
+            import resource
+            resource.setrlimit(resource.RLIMIT_AS, (_CHILD_MEMORY, _CHILD_MEMORY))
+        ext = conn.recv_bytes(16).decode("ascii")
+        data = conn.recv_bytes(MAX_BYTES + 16)
+        _reply(conn, "ok", extract_text(ext, data))
+    except DocError as exc:
+        _reply(conn, "error", str(exc))
+    except BaseException as exc:     # noqa: BLE001 -- 자식 프로세스: 무엇이든 부모에게 실패로 돌려준다
+        try:
+            _reply(conn, "error", f"문서를 읽지 못했다: {type(exc).__name__}")
+        except Exception:            # noqa: BLE001 -- 부모가 이미 끊었다
+            pass
+    finally:
+        conn.close()
+
+
+def extract_text_limited(ext: str, data: bytes, *, seconds: float = EXTRACT_SECONDS) -> str | None:
+    """extract_text를 별도 프로세스(spawn)에서 시간 제한과 함께 돈다. 시작·보내기·읽기 어디서 막혀도 `seconds` 뒤 프로세스를 끝내고 DocError.
+    동시에 EXTRACT_PARALLEL개까지(남은 자리가 없으면 그 시간만큼 기다린 뒤 DocError). 부르는 쪽은 스레드에서 부른다(anyio.to_thread)."""
+    import multiprocessing as mp
+    import time
+    ext = ext.lower()
+    if ext not in FORMATS:
+        return None
+    check_bytes(ext, data)
+    if ext not in _XML_PARTS and ext != "pdf":
+        return None                           # 옛 HWP·ZIP -- 프로세스를 띄울 것 없다
+    # 자리 기다림은 따로 잰다 -- 늦게 얻은 자리가 시간 제한을 다 써 버려 "넘겨 멈췄다"로 잘못 알리지 않게(폴백 리뷰 NIT)
+    if not _extract_slots.acquire(timeout=min(seconds, SLOT_WAIT_SECONDS)):
+        raise DocError("다른 자료를 읽는 중이다 -- 잠시 뒤 다시 한다")
+    deadline = time.monotonic() + seconds
+    proc = parent = None
+    timer = None
+    try:
+        ctx = mp.get_context("spawn")
+        parent, child = ctx.Pipe(duplex=True)
+        proc = ctx.Process(target=_extract_child, args=(child,), daemon=True)
+        try:
+            proc.start()
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise DocError(f"문서 글자 읽기 프로세스를 시작하지 못했다: {type(exc).__name__}") from exc
+        child.close()
+        # 보내기가 막혀도(자식이 시작 중 멈춤) 시간 제한 안에 끝나게 -- 시간이 되면 자식을 끝내 파이프를 끊는다
+        timer = threading.Timer(max(0.0, deadline - time.monotonic()), proc.kill)
+        timer.daemon = True
+        timer.start()
+        try:
+            parent.send_bytes(ext.encode("ascii"))
+            parent.send_bytes(data)
+            ready = parent.poll(max(0.0, deadline - time.monotonic()))
+            if not ready:
+                raise DocError(f"문서 글자 읽기가 {seconds:g}초를 넘겨 멈췄다(쪽이 아주 많거나 복잡한 파일)")
+            reply = json.loads(parent.recv_bytes(REPLY_MAX_BYTES).decode("utf-8"))
+            status, value = reply["status"], reply["value"]
+        except (OSError, EOFError, ValueError, KeyError, TypeError) as exc:
+            if time.monotonic() >= deadline:
+                raise DocError(f"문서 글자 읽기가 {seconds:g}초를 넘겨 멈췄다(쪽이 아주 많거나 복잡한 파일)") from exc
+            raise DocError("문서 글자 읽기 프로세스가 결과 없이 끝났다") from exc
+    finally:
+        if timer is not None:
+            timer.cancel()
+        if proc is not None and proc.is_alive():
+            proc.kill()
+        if proc is not None and proc.pid is not None:
+            proc.join(timeout=5)
+        if parent is not None:
+            parent.close()
+        _extract_slots.release()
+    if status != "ok":
+        raise DocError(value)
+    return value

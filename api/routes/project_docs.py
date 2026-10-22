@@ -5,6 +5,7 @@ GET    /api/project-docs                      사업별 발주 자료(올린 것
 POST   /api/project-docs/{사업}?kind&filename  원본 본문 = 파일(multipart 의존성 없음 -- 데이터 업로드와 같은 방식), 관리자
 GET    /api/project-docs/{사업}/{자료}           내려받기(attachment · nosniff)
 DELETE /api/project-docs/{사업}/{자료}           올린 자료 지우기(시연 자료는 못 지움), 관리자
+POST   /api/project-requirements/read?filename  원본 본문 = 등록 전 자료 파일 → 필요 기술 제안(글자 뽑기 b + 읽기 함수 claude-a `api/rag/rfp_read`), 관리자
 
 설계 근거는 api/project_docs.py. 요구 기술의 레벨은 계산과 같은 함수(core.ingest.convert.level_from_months)로 붙이고,
 이름은 등록한 글자 그대로 + 사전 대표 이름이 다르면 함께(`canonical`) -- 계산은 대표 이름으로 합친 값을 쓴다.
@@ -18,7 +19,7 @@ from fastapi.responses import FileResponse
 from api import project_docs as docs_store
 from api.admin import require_admin
 from api.datasets import ActiveDataset
-from api.deps import check_dataset_version, get_dataset
+from api.deps import check_dataset_version, get_dataset, get_openai_client_or_none
 from api.workspace import WorkspaceUnavailable, current_files
 from api.workspace_edits import EditError, SKILL_REQS, pipeline_of, read_manifest, read_table
 
@@ -67,6 +68,13 @@ async def list_docs(request: Request, dataset: ActiveDataset = Depends(get_datas
             "max_bytes": docs_store.MAX_BYTES, "max_per_project": docs_store.MAX_PER_PROJECT, "docs": out}
 
 
+def _octet_stream(request: Request) -> None:
+    # 원본 본문은 application/octet-stream만 -- text/plain 같은 "단순 요청"은 다른 사이트 페이지도 보낼 수 있다(datasets·records 업로드와 같은 규칙)
+    ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
+    if ctype != "application/octet-stream":
+        raise HTTPException(status_code=415, detail="자료는 application/octet-stream 본문으로 올린다")
+
+
 async def _read_capped(request: Request) -> bytes:
     """본문을 상한까지만 읽는다(Content-Length를 믿지 않고 센다). 본문 상한 미들웨어는 이 경로를 건너뛴다(report.OWN_LIMIT_PREFIXES)."""
     cap = docs_store.MAX_BYTES
@@ -88,11 +96,7 @@ async def upload_doc(request: Request, project_id: str = _PID,
                      kind: str = Query(..., max_length=20), filename: str = Query(..., min_length=1, max_length=300),
                      dataset_version: str | None = Query(None, max_length=128),
                      dataset: ActiveDataset = Depends(get_dataset)) -> dict:
-    # 원본 본문은 application/octet-stream만 -- text/plain 같은 "단순 요청"은 다른 사이트 페이지도 보낼 수 있다(폴백 리뷰 S1,
-    # datasets·records 업로드와 같은 규칙)
-    ctype = request.headers.get("content-type", "").split(";")[0].strip().lower()
-    if ctype != "application/octet-stream":
-        raise HTTPException(status_code=415, detail="발주 자료는 application/octet-stream 본문으로 올린다")
+    _octet_stream(request)                      # 폴백 리뷰 S1
     check_dataset_version(dataset_version, dataset)
     if project_id not in _projects(request, dataset):
         raise HTTPException(status_code=404, detail=f"지금 데이터에 없는 사업: {project_id}")
@@ -150,8 +154,12 @@ async def delete_doc(request: Request, project_id: str = _PID, doc_id: str = _DO
 
 
 @router.get("/api/project-requirements")
-async def project_requirements(request: Request, dataset: ActiveDataset = Depends(get_dataset)) -> dict:
-    """사업별 요구 기술. CSV 묶음이면 등록한 원문(이름·경력 개월), 아니면 계산에 쓰는 요구(대표 이름·레벨)."""
+async def project_requirements(request: Request, dataset: ActiveDataset = Depends(get_dataset),
+                               client=Depends(get_openai_client_or_none)) -> dict:
+    """사업별 요구 기술. CSV 묶음이면 등록한 원문(이름·경력 개월), 아니면 계산에 쓰는 요구(대표 이름·레벨).
+    `ai_destination`: 등록 양식의 "자료에서 필요 기술 읽기"가 자료 글자를 보낼 곳(external·onprem·none) -- 화면이 읽기 전에 알린다
+    (폴백 리뷰 S2: 가상 데이터에서 비밀유지 대상 실제 RFP를 고르면 그대로 회사 밖 AI로 간다)."""
+    from api.deps import ai_destination
     from core.ingest.convert import level_from_months
     from core.ingest.skill_mapping import dictionary_for
     ids = [j.id for j in dataset.graph.projects]
@@ -181,4 +189,47 @@ async def project_requirements(request: Request, dataset: ActiveDataset = Depend
         for j in dataset.graph.projects:
             out[j.id] = [{"skill": r.skill, "canonical": None, "months": None, "level": r.min_level, "headcount": r.headcount}
                          for r in j.requirements]
-    return {"dataset_version": dataset.info.version, "requirements": out}
+    return {"dataset_version": dataset.info.version, "requirements": out, "ai_destination": ai_destination(dataset, client)}
+
+
+@router.post("/api/project-requirements/read", dependencies=[Depends(require_admin)])
+async def read_requirements_route(request: Request, filename: str = Query(..., min_length=1, max_length=300),
+                                  dataset_version: str | None = Query(None, max_length=128),
+                                  dataset: ActiveDataset = Depends(get_dataset), client=Depends(get_openai_client_or_none)) -> dict:
+    """등록 전 발주 자료 → 필요 기술 **제안**(2026-10-23 사용자 "자료를 넣으면 llm … 분석해서 알아서 필요 기술에 대해 정의해서 등록해주고 사용자가 보고 …").
+    글자 뽑기는 별도 프로세스 + 시간 제한(`extract_text_limited`), 읽기는 claude-a `read_requirements`(사전 개념 id 안에서만·근거 말 원문 확인).
+    AI는 자료 글자만 받는다(사람 정보 없음). 실데이터는 `llm_client_for`의 외부 차단 규칙을 따르고, AI가 없으면 규칙으로 읽는다.
+    데이터를 바꾸지 않는다 -- 화면이 고른 제안만 등록 양식에 넣는다."""
+    _octet_stream(request)
+    check_dataset_version(dataset_version, dataset)
+    data = await _read_capped(request)
+    try:
+        ext = docs_store.ext_of(docs_store.clean_filename(filename))
+        text = await anyio.to_thread.run_sync(lambda: docs_store.extract_text_limited(ext, data))
+    except docs_store.DocError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if text is None:
+        raise HTTPException(status_code=422, detail="이 형식(옛 한글 HWP·ZIP 묶음)은 글자를 읽지 못한다 -- PDF·HWPX·DOCX로 저장해 올린다")
+    from api.deps import llm_client_for
+    from api.rag.justification import justification_settings
+    from api.rag.rfp_read import read_requirements
+    from api.routes.justification import ai_model, ai_timeout_s
+    from core.config import load_pricing
+    from core.ingest.skill_mapping import dictionary_of_active
+    use, why = llm_client_for(dataset, client)
+    model = ai_model()
+    sd = dictionary_of_active(dataset)
+
+    def go():
+        c = use.with_options(timeout=ai_timeout_s(model), max_retries=0) if use is not None else None
+        return read_requirements(text, sd, client=c, model=model,
+                                 reasoning_effort=justification_settings(model)["reasoning_effort"],
+                                 price=load_pricing().get("models", {}).get(model, {}))
+    out = await anyio.to_thread.run_sync(go)
+    if use is None:
+        out["fallback_reason"] = why
+    from api.deps import ai_destination
+    # 보낸 곳도 싣는다 -- 설정에서 AI 주소만 바꾸면 미리 읽어 둔 안내가 낡는다(2차 폴백 리뷰 NIT)
+    return {**out, "dataset_version": dataset.info.version, "ai_available": use is not None, "chars": len(text),
+            "ai_destination": ai_destination(dataset, client)}
+

@@ -7,7 +7,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emptyForm, formProblems, normalizeGrades } from "./formRules";
 import { DocPicker } from "./ProjectDocs";
-import type { PendingDoc } from "./projectDocsApi";
+import { experience, type AiDestination, type PendingDoc } from "./projectDocsApi";
+import { SkillReader } from "./SkillReader";
 import {
   fetchProjectForm, fetchSkillDictionary, GRADES, SECTORS, STAGE_LABEL,
   type ProjectForm as Form, type SkillDictEntry, type Stage,
@@ -25,10 +26,14 @@ interface Props {
   initialParent?: string | null;
   /** docs = 등록한 뒤 올릴 발주 자료(사업 번호가 생겨야 올릴 수 있다) */
   onSubmit: (form: Form, docs: PendingDoc[]) => Promise<void>;
+  /** 지금 데이터 판 -- 있으면 ④에서 고른 자료의 필요 기술을 읽을 수 있다(AI, 2026-10-23) */
+  datasetVersion?: string;
+  /** 자료 글자를 AI로 보낼 곳(서버 `ai_destination`) -- 읽기 전에 알린다 */
+  aiDestination?: AiDestination | null;
   onCancel: () => void;
 }
 
-export function ProjectForm({ start, predecessors, parents = [], initialParent = null, onSubmit, onCancel }: Props) {
+export function ProjectForm({ start, predecessors, parents = [], initialParent = null, onSubmit, onCancel, datasetVersion, aiDestination }: Props) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(() => emptyForm(start));
   const [docs, setDocs] = useState<PendingDoc[]>([]);
@@ -45,6 +50,18 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
     ? `추가 과제 기간은 상위 사업 기간(${parentRow.start}~${parentRow.end}) 안이어야 한다` : null;
   const problems = [...formProblems(form, step), ...(parentProblem && step >= 1 ? [parentProblem] : [])];
   const known = useMemo(() => new Set(dict.flatMap((d) => [d.name, ...d.aliases].map((n) => n.toLowerCase()))), [dict]);
+  // 적은 이름(별칭 포함) → 사전 대표 이름 -- 자료에서 읽은 기술이 이미 적은 기술인지 가를 때
+  const canonical = useMemo(() => new Map(dict.flatMap((d) => [d.name, ...d.aliases].map((n) => [n.toLowerCase(), d.name] as const))), [dict]);
+  const canonicalOf = (name: string) => canonical.get(name.trim().toLowerCase()) ?? name.trim();
+  function mergeSkills(picked: Form["skills"]) {
+    const next = [...form.skills];
+    for (const p of picked) {
+      const i = next.findIndex((x) => canonicalOf(x.name).toLowerCase() === canonicalOf(p.name).toLowerCase());
+      if (i >= 0) next[i] = { ...next[i], min_months: p.min_months, headcount: p.headcount };
+      else next.push(p);
+    }
+    set({ skills: next });
+  }
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -217,6 +234,9 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
           )}
           {step === 3 && (
             <>
+              {datasetVersion && (
+                <SkillReader docs={docs} destination={aiDestination} current={form.skills} canonicalOf={canonicalOf} onApply={mergeSkills} />
+              )}
               <label className="block">기술 검색
                 <input className="field mt-1" value={query} placeholder="예: 파이썬, Kubernetes, 데이터 모델링"
                        onChange={(e) => setQuery(e.target.value)}
@@ -245,11 +265,11 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
                       최소 경력
-                      {MONTH_CHOICES.map((mo) => (
+                      {[...new Set([...MONTH_CHOICES, s.min_months])].sort((a, b) => a - b).map((mo) => (
                         <button key={mo} type="button" aria-pressed={s.min_months === mo}
                                 className={`btn px-2 py-0.5 text-xs ${s.min_months === mo ? "border-ink font-semibold" : ""}`}
                                 onClick={() => set({ skills: form.skills.map((x, j) => j === i ? { ...x, min_months: mo } : x) })}>
-                          {mo / 12}년
+                          {experience(mo)}
                         </button>
                       ))}
                       <label className="ml-2">인원
