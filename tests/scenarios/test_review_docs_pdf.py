@@ -7,6 +7,7 @@ import pytest
 import uvicorn
 
 from tests.api.test_pdf_report import _dist_missing, _extract_text, _free_port
+from tests.scenarios.holes import waivers
 from tests.scenarios.test_review_docs import BENCH, PULLED, SRC, TGT, _entries
 
 pytestmark = [pytest.mark.slow, pytest.mark.skipif(_dist_missing(), reason="web/dist 없음 -- `cd web && npm run build` 먼저")]
@@ -29,7 +30,9 @@ def test_review_pdf_has_layers_and_records_export(yearend, monkeypatch):
             ws = c.get("/api/workspace").json()
             entries = [e for e in _entries(ws) if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
             entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": TGT, "alloc": 1.0}]
-            r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "manual"})
+            # 빼 온 자리는 "메우지 않음"(2026-10-21 빼 온 자리 결정 -- 그 뒤 이 느린 시험이 422로 깨져 있었다, 2026-10-22 고침)
+            r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": "manual",
+                                                     "seat_waivers": waivers(c, ws["dataset_version"], entries)})
             assert r.status_code == 200, r.text
             v = r.json()["workspace"]["dataset_version"]
             doc = c.post(f"/api/review-docs/{v}/{TGT}").json()

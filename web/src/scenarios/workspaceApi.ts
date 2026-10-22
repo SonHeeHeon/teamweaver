@@ -274,9 +274,12 @@ export interface SkillSuggestion extends UnknownSkill {
   reason: string; confidence: "high" | "check"; flags: string[]; method: "ai" | "string";
 }
 export interface DecidedSkill { name: string; decision: SkillDecision; concept: string | null; reason: string; method?: string; at?: string }
-export const fetchUnknownSkills = (v: string) =>
-  call<{ dataset_version: string; dictionary_version: string; items: UnknownSkill[]; decided: DecidedSkill[] }>(
-    `/api/skills/unknown?dataset_version=${encodeURIComponent(v)}`);
+/** 읽기라 판 번호를 보내지 않는다 -- 데이터를 바꾸는 사이 옛 번호로 부르면 409가 브라우저 콘솔 오류로 남았다(느린 E2E, 2026-10-22).
+ *  응답의 dataset_version이 화면이 아는 판과 다르면 화면이 버린다(새 판을 알면 다시 부른다). */
+export const fetchUnknownSkills = () =>
+  call<{ dataset_version: string; dictionary_version: string | null; items: UnknownSkill[]; decided: DecidedSkill[];
+         /** 원천 묶음을 고칠 수 없는 데이터의 까닭(그때 items는 빈 목록) */
+         unavailable?: string }>("/api/skills/unknown");
 export const postSkillSuggest = (v: string, names?: string[]) =>
   call<{ items: SkillSuggestion[]; method: "ai" | "string"; fallback_reason: string | null; ai_available: boolean;
          usage: { calls: number; cost_usd: number; latency_s: number } | null }>(
