@@ -48,7 +48,8 @@ describe("formRules", () => {
     expect(formProblems({ ...f, name: "x", skills: [{ name: "Java", min_months: 24, headcount: 1 },
                                                     { name: "java", min_months: 12, headcount: 1 }] }, 3))
       .toContain("같은 기술이 두 번 들어 있다");
-    expect(formProblems({ ...f, name: "x" }, 4)).toEqual([]);
+    expect(formProblems({ ...f, name: "x" }, 3)).toContain("필요 기술을 하나 이상 고른다(기술 점수 계산에 필요)");   // 서버가 받지 않는다
+    expect(formProblems({ ...f, name: "x", skills: [{ name: "Java", min_months: 24, headcount: 1 }] }, 4)).toEqual([]);
   });
 });
 
@@ -396,7 +397,10 @@ describe("늦은 응답·판 바뀜(Codex 리뷰 2026-10-19)", () => {
     resolveCopy({ name: "은행 A", sector: "대내", start_month: "2026-10", end_month: "2026-12", monthly_budget: 1,
                   stage: "수주", predecessor: null, grades: { 특급: 9 }, skills: [] });
     await new Promise((r) => setTimeout(r, 0));
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    fireEvent.change(screen.getByLabelText("기술 검색"), { target: { value: "SQL" } });          // 기술 1개 이상(서버 규칙)
+    fireEvent.keyDown(screen.getByLabelText("기술 검색"), { key: "Enter" });
+    fireEvent.click(screen.getByRole("button", { name: "다음" }));
     fireEvent.click(screen.getByRole("button", { name: "등록" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(onSubmit.mock.calls[0][0]).toMatchObject({ predecessor: null, grades: { 특급: 0, 고급: 1, 중급: 1, 초급: 0 } });

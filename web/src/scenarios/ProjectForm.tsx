@@ -2,9 +2,12 @@
  *  다섯 단계: 기본 → 연결 사업(고도화 과제면 이전 사업 요구를 복사, 추가 과제면 진행 중인 상위 사업에서 미리 채움) → 필요 인원(등급별)
  *  → 필요 기술(사전에서 고르기) → 확인. 추가 과제(사용자 예: 운영 중 사업의 클라우드 마이그레이션, 내부 2명·6개월, 외주 여러 명)는
  *  상위 사업 기간 안이어야 하고 외주 인원은 참고로만 남는다.
- *  서버(POST /api/workspace/projects)가 같은 규칙으로 다시 검사한다 -- 여기서는 빈칸·순서만 미리 막는다. */
+ *  서버(POST /api/workspace/projects)가 같은 규칙으로 다시 검사한다 -- 여기서는 빈칸·순서만 미리 막는다.
+ *  ① 기본의 "발주 자료(선택)"(2026-10-23 사용자 "신규 사업 등록 할 때 첨부 할 수 있어야")는 사업 번호가 생긴 뒤 올린다 -- onSubmit이 받는다. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emptyForm, formProblems, normalizeGrades } from "./formRules";
+import { DocPicker } from "./ProjectDocs";
+import type { PendingDoc } from "./projectDocsApi";
 import {
   fetchProjectForm, fetchSkillDictionary, GRADES, SECTORS, STAGE_LABEL,
   type ProjectForm as Form, type SkillDictEntry, type Stage,
@@ -20,13 +23,15 @@ interface Props {
   parents?: { project_id: string; name: string; start: string | null; end: string | null }[];
   /** 진행 사업 행의 "추가 과제 붙이기"로 열면 그 사업 -- 열자마자 미리 채운다 */
   initialParent?: string | null;
-  onSubmit: (form: Form) => Promise<void>;
+  /** docs = 등록한 뒤 올릴 발주 자료(사업 번호가 생겨야 올릴 수 있다) */
+  onSubmit: (form: Form, docs: PendingDoc[]) => Promise<void>;
   onCancel: () => void;
 }
 
 export function ProjectForm({ start, predecessors, parents = [], initialParent = null, onSubmit, onCancel }: Props) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(() => emptyForm(start));
+  const [docs, setDocs] = useState<PendingDoc[]>([]);
   const [dict, setDict] = useState<SkillDictEntry[]>([]);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -103,7 +108,7 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
     setBusy(true);
     setError(null);
     try {
-      await onSubmit({ ...form, name: form.name.trim(), grades: normalizeGrades(form.grades) });
+      await onSubmit({ ...form, name: form.name.trim(), grades: normalizeGrades(form.grades) }, docs);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -163,6 +168,7 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
                   ))}
                 </div>
               </fieldset>
+              <DocPicker value={docs} onChange={setDocs} stage={form.stage} />
             </>
           )}
           {step === 1 && (
@@ -269,6 +275,8 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
               <dd>{GRADES.filter((g) => form.grades[g] !== undefined).map((g) => `${g} ${form.grades[g]}`).join(" · ")}</dd>
               <dt className="text-slate-500">필요 기술</dt>
               <dd>{form.skills.length ? form.skills.map((s) => `${s.name}(${s.min_months / 12}년·${s.headcount}명)`).join(", ") : "없음"}</dd>
+              <dt className="text-slate-500">발주 자료</dt>
+              <dd>{docs.length ? docs.map((d) => `${d.kind} ${d.file.name}`).join(", ") : "없음"}</dd>
             </dl>
           )}
           {problems.length > 0 && (step !== 1 || parentProblem) && (

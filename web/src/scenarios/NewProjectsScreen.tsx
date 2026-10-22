@@ -13,6 +13,8 @@ import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
+import { DocLinks, DocsDialog, RequirementLine } from "./ProjectDocs";
+import { fetchProjectDocs, fetchRequirements, uploadAll, type ProjectDoc, type Requirement } from "./projectDocsApi";
 import { CandidateGuide, PickDraft } from "./PickDraft";
 import { GradeSwapBox, swapBody, swapList, swapsReady, type SwapReasons } from "./GradeSwapBox";
 import { SeatHoleBox, holeList, holesReady, waiverBody, type WaiverReasons } from "./SeatHoleBox";
@@ -203,6 +205,24 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   useEffect(() => { if (datasetVersion && ws && datasetVersion !== ws.dataset_version) void load(); }, [datasetVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const project = ws?.pipeline.find((p) => p.project_id === selected) ?? null;
+  // 발주 자료·요구 기술(2026-10-23 사용자 "신규사업 제목 오른쪽에 그 자료를 다운 받을 수 있는 버튼" · "각 사업에 어떤 기술을 요하는지").
+  // 판이 바뀌면 다시 읽는다. 자료는 판을 바꾸지 않으므로 올리기·지우기 뒤에는 자료만 다시 읽는다.
+  const [docList, setDocList] = useState<Record<string, ProjectDoc[]>>({});
+  const [reqs, setReqs] = useState<Record<string, Requirement[]> | null>(null);
+  const [docsFor, setDocsFor] = useState<string | null>(null);
+  // 늦게 온 응답이 새 목록을 덮지 않게 마지막 요청만 반영하고, 읽기에 실패하면 지금 버튼을 그대로 둔다(폴백 리뷰)
+  const docsSeq = useRef(0);
+  const loadDocs = useCallback(() => {
+    const seq = ++docsSeq.current;
+    fetchProjectDocs().then((d) => { if (seq === docsSeq.current) setDocList(d.docs); }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!ws?.dataset_version) return;
+    let live = true;
+    loadDocs();
+    fetchRequirements().then((r) => { if (live) setReqs(r.requirements); }).catch(() => { if (live) setReqs(null); });
+    return () => { live = false; };
+  }, [ws?.dataset_version, loadDocs]);
   // 판이 바뀌면 그 전 판으로 계산한 자동 편성·열어 둔 확인 창은 버린다
   useEffect(() => {
     if (autoOf.current && ws && autoOf.current.version !== ws.dataset_version) {
@@ -474,7 +494,13 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
         </Panel>
 
         {project ? (
-          <Panel title={`${project.name}`} sub={`${project.project_id} · ${project.start} ~ ${project.end} · 월 예산 ${project.monthly_budget.toLocaleString()}`}
+          <Panel title={
+                   <span className="inline-flex flex-wrap items-center gap-2">
+                     <span>{project.name}</span>
+                     <DocLinks docs={docList[project.project_id] ?? []} />
+                     <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs font-normal" onClick={() => setDocsFor(project.project_id)}>
+                       {docList[project.project_id]?.length ? "자료 관리" : "+ 발주 자료"}</button>
+                   </span>} sub={`${project.project_id} · ${project.start} ~ ${project.end} · 월 예산 ${project.monthly_budget.toLocaleString()}`}
                  actions={<>
                    {(Object.keys(STAGE_LABEL) as Stage[]).map((s) => (
                      <button key={s} className={`btn px-2.5 py-1 text-xs ${project.stage === s ? "border-ink font-semibold" : ""}`}
@@ -502,6 +528,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </span>
                 )}
               </div>
+              <RequirementLine reqs={reqs?.[project.project_id]} />
               <div className="flex flex-wrap items-start gap-2 text-sm">
                 <div className="min-w-0 flex-1">
                   <span className="text-slate-500">지금 팀</span>{" "}
@@ -739,6 +766,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   {o.locked_count > 0 && !o.locked_all && <span className="ml-1.5 text-xs text-slate-500">고정 {o.locked_count}명</span>}
                   {(o.addons ?? []).map((a) => <span key={a} className="ml-1.5"><Chip tone="stage">추가 과제 {a}</Chip></span>)}
                 </button>
+                <DocLinks docs={docList[o.project_id] ?? []} />
                 <button className="btn ml-auto px-2.5 py-1 text-xs" disabled={busy} aria-label={`${o.name}에 추가 과제 붙이기`}
                         onClick={() => { setFormParent(o.project_id); setFormOpen(true); }}>
                   + 추가 과제
@@ -800,7 +828,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
       {formOpen && (
         <ProjectForm start={ws.horizon_start} predecessors={predecessors} parents={parents} initialParent={formParent}
                      onCancel={() => { setFormOpen(false); setFormParent(null); }}
-                     onSubmit={async (form) => {
+                     onSubmit={async (form, docs) => {
                        let res;
                        try {
                          res = await postProject(ws.dataset_version, form);
@@ -812,10 +840,33 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                        setFormParent(null);
                        setWs(res.workspace);
                        setSelected(res.project_id);
-                       setNotice(withPersistNote(`${form.name}(${res.project_id})을(를) 등록했다.`, res));
+                       const done = withPersistNote(`${form.name}(${res.project_id})을(를) 등록했다.`, res);
+                       setNotice(docs.length ? `${done} 발주 자료 ${docs.length}개를 올리는 중…` : done);
                        onDatasetChanged();
+                       if (docs.length) {
+                         // 사업 번호가 생긴 뒤 올린다 -- 등록은 이미 끝났으므로 실패한 자료만 알리고 "자료 관리"로 다시 올린다
+                         try {
+                           const up = await uploadAll(res.workspace.dataset_version, res.project_id, docs);
+                           setNotice(`${done} 발주 자료 ${up.ok}개를 올렸다.${up.failed.length ? ` 올리지 못한 자료: ${up.failed.join(", ")} — "자료 관리"에서 다시 올린다.` : ""}`);
+                         } catch (e) {
+                           if (!isDatasetChanged(e)) throw e;
+                           setNotice(`${done} 그사이 데이터가 바뀌어 발주 자료를 다 올리지 못했다 — 새 데이터로 다시 불러왔다. "자료 관리"에서 확인한다.`);
+                           void load();
+                           onDatasetChanged();
+                         } finally {
+                           loadDocs();
+                         }
+                       }
                      }} />
       )}
+      {docsFor && ws && (() => {
+        const it = ws.pipeline.find((p) => p.project_id === docsFor);
+        return it ? (
+          <DocsDialog projectId={it.project_id} projectName={it.name} stage={it.stage} docs={docList[it.project_id] ?? []}
+                      version={ws.dataset_version} onChanged={loadDocs} onClose={() => setDocsFor(null)}
+                      onStale={() => { setDocsFor(null); void load(); onDatasetChanged(); }} />
+        ) : null;
+      })()}
       {autoConfirm && autoConfirm.row.entries && (
         <ConfirmChanges datasetVersion={autoConfirm.version} entries={autoConfirm.row.entries} source="auto" projects={projects}
                         title={`자동 편성 K=${autoConfirm.row.k} 확정`}

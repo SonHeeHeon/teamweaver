@@ -19,6 +19,8 @@ export function formProblems(f: Form, step: number): string[] {
   if (step >= 3) {
     const names = f.skills.map((s) => s.name.trim().toLowerCase());
     if (new Set(names).size !== names.length) out.push("같은 기술이 두 번 들어 있다");
+    // 서버(입력 검증)는 기술 요구가 없는 사업을 받지 않는다 -- 등록 끝에서 "검증을 통과하지 못했다"로만 알리던 것을 여기서 막는다(2026-10-23 화면 확인)
+    if (names.length === 0) out.push("필요 기술을 하나 이상 고른다(기술 점수 계산에 필요)");
   }
   return out;
 }
