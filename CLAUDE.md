@@ -271,6 +271,14 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   모델·감점·안 순서는 그대로(감점을 낮추면 품질 몇 점에 자리를 비운다). "가장 높음" = 위반 없는 안 중 종합 점수 1위, 품질 1% 안 = "사실상 같은 수준" --
   **"계산 오차"라고 쓰지 않는다**(솔버 허용 차이는 종합 점수 기준이라 분모가 다르다, 폴백 리뷰). 빈자리가 있으면 계산 신뢰도 배지 차이를 %가 아니라 점수로(`ConfidenceBadge inPoints` --
   카드·운영 중 K 표·PDF, PDF는 서버가 원안 빈자리 `base_unfilled`를 싣는다). 종합 점수가 0 근처면 상대 허용 차이가 아주 좁아져 A가 시간 한도에 더 걸린다(기록만, 조치 안 함).
+- **발주 자료 · 요구 기술**(2026-10-23 사용자 "신규사업 제목 오른쪽에 그 자료를 다운 받을 수 있는 버튼" · "각 사업에 어떤 기술을 요하는지", claude-b `api/project_docs.py`·`routes/project_docs.py`·`web/src/scenarios/ProjectDocs.tsx`):
+  자료(사전규격·제안요청서(RFP)·과업지시서·사업 개요·기타 -- 사용자 결정 "발주 자료 + 종류")는 **계산 입력이 아니라 작업 데이터 판 밖**(`<데이터 폴더>/project_docs/<(가상 여부, 데이터 id) 해시>/`)에 둔다 --
+  manifest에 넣으면 올릴 때마다 계산 버전이 바뀐다. 사업 번호는 떨어짐·되돌리기 뒤 다시 쓰이므로(max+1) 자료는 올릴 때의 **등록 시각**(manifest pipeline `registered_at`, 없으면 None)이 지금과 **똑같을 때만** 보인다.
+  시연 자료 `demo/project_docs`(`scripts/make_demo_project_docs.py`, 데이터별 등록 시각을 목록에 적음)는 가상 데이터·데이터 id가 맞을 때만, 못 지운다 -- 연말형·운영 중 묶음의 사업·요구를 바꾸면 다시 만든다(`tests/test_demo_project_docs.py`가 잡는다).
+  올리기는 원본 본문(application/octet-stream만, multipart 의존성 없음)·확장자 + 첫 바이트·20MiB·사업당 10개, 받기는 attachment·nosniff·CSP sandbox. 진행 사업은 받기만(사용자 결정).
+  요구 기술 줄(`GET /api/project-requirements`)은 등록한 원문(이름·경력 개월) + 계산과 같은 `level_from_months` 레벨 + 사전 대표 이름. 등록 양식은 기술 0개면 넘어가지 않는다(서버가 원래 거절).
+  AI 필요 기술 읽기(사용자 "a·b 나눠서": 읽기 함수·측정 = claude-a, 글자 뽑기·라우트·양식 버튼 = b, `docs/requests/2026-10-23-rfp-skill-reading.md`)의 글자 뽑기는 **서버 경로에서 별도 프로세스 + 시간 제한 + 동시 개수 상한**으로 돈다 --
+  글자 없는 PDF가 CPU·메모리만 쓴다(폴백 리뷰 실측: 21KB 한 편 9초·736MB), 데이터는 시작 인자가 아니라 시작 뒤 파이프로(시드 포트폴리오와 같은 함정).
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는

@@ -22,6 +22,42 @@
 
 ---
 
+## 2026-10-23 · claude-b · 신규 사업 요구 기술 표시 · 발주 자료 첨부·받기 + AI 필요 기술 읽기 요청(a·b 나눔)
+- 브랜치/커밋: `feat/claude-b-kg-views` `c0c7256..` — `5bbc998`(서버·시연 자료) · `12cd154`(화면) · 이 커밋(문서). main(`db79300`) 위, main 미병합.
+- 사용자: 신규 사업 화면에 등록한 요구 기술(+레벨)을 보이고, 발주 자료를 등록 때 첨부해 제목 오른쪽에서 받게, 기존 사업도 몇 개는 받을 수 있게.
+  - 결정: "발주 자료 + 종류" · 진행 사업은 "진행 사업 — 고정" 표에 받기 버튼 · "지금, 새 파일 위주".
+  - 이어서 "자료를 넣으면 llm(openai api,glm5.3-flash 각각 성능 확인 필요)을 통해서 분석해서 알아서 필요 기술에 대해 정의" → 결정 "a·b 나눠서".
+- 한 일:
+  - 서버 `api/project_docs.py`·`routes/project_docs.py`
+    - 자료는 작업 데이터 판 **밖**(`<데이터 폴더>/project_docs/`)에 둔다 → 올려도 계산 버전 그대로.
+    - 올릴 때의 사업 **등록 시각과 같을 때만** 보인다(번호 재사용 대비).
+    - 올리기: octet-stream만, 확장자 + 첫 바이트, 20MiB, 사업당 10개.
+    - 받기: attachment·nosniff·CSP sandbox.
+    - `GET /api/project-requirements`: 등록 원문 + `level_from_months` 레벨.
+  - 시연 가상 자료 7개 `demo/project_docs`(`scripts/make_demo_project_docs.py`, 연말형·운영 중): 진행 J001·J003·J011, 신규 J018·J019·J020.
+  - 화면:
+    - 신규 사업 제목 옆 받기 버튼 + 자료 관리, 요구 기술 줄, 진행 사업 줄 받기.
+    - 등록 양식 "발주 자료(선택)"(등록 뒤 올림).
+    - 양식이 기술 0개를 막는다(서버가 원래 거절하던 것을 끝에서 알기 어려운 말로만 알렸다).
+- 상대 영향(claude-a):
+  - **`web/src/scenarios/NewProjectsScreen.tsx`를 네 `feat/claude-a-change-report`와 같이 고쳤다**(사용자 승인). 끼워 넣기만 했다: import 2줄, 상태·효과 한 덩어리, Panel 제목, 자리 아래 한 줄, 진행 사업 줄 한 줄, 등록 onSubmit, 창 하나. 병합 때 충돌을 확인한다.
+  - `api/main.py` 라우터 3줄, `api/routes/report.py` 본문 상한 예외(POST `/api/project-docs/{사업}`만).
+  - `workspaceApi.call`을 내보냈다.
+  - **요청**: AI 필요 기술 읽기 = 읽기 함수(`api/rag`)·OpenAI·GLM-5.3-Flash 사전 등록 측정·보고서 3.3·대본 D6(`docs/requests/2026-10-23-rfp-skill-reading.md`, work-split "요청"). 글자 뽑기는 b가 연결 때 준다 — a 함수는 글자를 받는다.
+  - 기준선(이 브랜치): **2145 passed, 1 skipped, 20 deselected · 웹 368**.
+- 미결:
+  - 글자 뽑기 초안은 2차 폴백 리뷰 MUST 2(큰 표 O(n²) · spawn 시작 인자로 큰 데이터)·SHOULD 1(동시 개수)로 이번 커밋에서 뺐다. AI 읽기 연결 때 고쳐 다시 리뷰받는다.
+  - NIT 이월: 본문 상한 `fullmatch`, 데이터 바뀐 뒤 목록 읽기 실패 시 옛 버튼, 양식 10개 상한이 기존 개수를 안 셈.
+  - 편성 기록·PDF에는 자료가 들어가지 않는다. 진행 사업 올리기는 없다(사용자 결정).
+- 검증:
+  - `uv run --group benchmark pytest -q` → 2145 passed, 1 skipped, 20 deselected.
+  - `cd web && npx tsc -b && npm test`(368) · lint exit 0 · build.
+  - 헤드리스 화면(임시 데이터 폴더, 연말형 기록): J018 제목 옆 RFP 받기 → PDF, 요구 기술 4줄, J001 과업지시서, 등록 + PDF 첨부 → 사전규격 버튼 → 지우기, 내려받기 헤더 확인, 콘솔 오류 0.
+  - Codex 한도 소진 → Opus 폴백 적대적 2라운드(1라운드 MUST 2·SHOULD 4 반영 확인, 2라운드 새 MUST 2는 뺀 글자 뽑기 안).
+- 근거: `.omc/plan/2026-10-23-project-docs.md` · `.omc/reports/2026-10-23-project-docs.md`
+
+---
+
 ## 2026-10-23 · claude-b · What-if 담기 뒤 "팀원과의 관계" 초기화
 - 브랜치/커밋: `feat/claude-b-kg-views` `d9bfb2f..a5ff4a6` + 이 커밋(일지). main(`db79300`) 위, main 미병합.
 - 사용자: "what if에서 xai로 교체 효과 보고 인력 담으면 팀원과의 관계는 두 인력의 관계 내용이 리셋돼서 처음 해당 탭에 들어갔을때럼 해당 섹션과 동일한 상태로 돌아갔으면 좋겠어."
