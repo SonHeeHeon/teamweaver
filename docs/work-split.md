@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-b] `feat/claude-b-kg-views` · What-if 담기 뒤 "팀원과의 관계" 초기화(사용자 2026-10-23) — `web/src/components/SwapControl.tsx`·`SwapControl.test.tsx`·`web/src/whatif/CurrentWhatif.test.tsx` · 2026-10-23 · 시험 서버 포트 8018
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
