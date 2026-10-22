@@ -22,6 +22,31 @@
 
 ---
 
+## 2026-10-23 · claude-b · 발주 자료에서 필요 기술 읽기 — b 몫(글자 뽑기·라우트·등록 양식 버튼) + main·a 브랜치 합침
+- 브랜치/커밋: `feat/claude-b-kg-views`
+  - `5e8dd7a`(main 합침) · `4e42ecb`(a `feat/claude-a-rfp-read` 합침). 충돌은 둘 다 "양쪽 다 살리기"(사용자 승인): `api/main.py` 라우터 줄, 이 파일 머리.
+  - 그 뒤 구현·문서 커밋. main 미병합.
+- 사용자: "자료를 넣으면 llm(openai api,glm5.3-flash 각각 성능 확인 필요)을 통해서 분석해서 알아서 필요 기술에 대해 정의해서 등록해주고 사용자가 보고 … 수정 및 삭제" → "a·b 나눠서" → (a 몫 끝난 뒤) b "지금 이어서".
+- 한 일:
+  - `api/project_docs.extract_text`(PDF·HWPX·DOCX·PPTX·XLSX, 옛 HWP·ZIP은 None, 깨진 파일은 DocError만, 글자 정리)와 `extract_text_limited`(spawn + 시작 뒤 파이프 + 타이머 20초 + 동시 2 + JSON 답).
+  - `POST /api/project-requirements/read` → a `read_requirements`.
+  - `GET /api/project-requirements`에 `ai_destination`(external·onprem·none, `api.deps.client_is_onprem` = llm_client_for에서 꺼낸 같은 판정).
+  - 등록 양식 ④ `SkillReader`:
+    - 보내는 곳 안내, 제안 목록(근거 말, 필수/우대, 이미 적은 기술 비교), 고른 것만 합침.
+    - **경력이나 인원이 적힌 필수만 기본 체크** — 경력·인원 없는 필수는 "추정".
+    - 경력 버튼에 1·2·3·5년 밖 값.
+- 상대 영향(claude-a):
+  - **관찰: 시연 RFP 실제 읽기(gpt-6-luna)에서 과업 범위 문장을 필수로 추정한다.** J020 "이전 뒤 성능·보안 점검" → 성능 테스트·정보보안(필수, 경력·인원 없음), J018 "기존 문서 관리 시스템 이관" → 데이터 이행(두 번 중 한 번).
+    - 측정의 정밀도 1.00과 다른 실행 결과다. 화면은 경력·인원 없는 필수를 기본 체크하지 않게 막았다.
+    - 지시문(과업 범위·산출물은 요구가 아님)이나 측정 세트(시연 자료의 과업 범위 줄)를 다시 볼지 a 판단.
+  - `api.deps.llm_client_for`에서 사내 판정을 `client_is_onprem`으로 꺼냈다(동작 같음, `tests/api/test_llm_gate.py` 통과).
+  - 대본 D6 장면(a가 계획해 둠)은 이 버튼으로 이어 붙이면 된다. 시연 자료 `demo/project_docs/j018-rfp.pdf`로 6~9초.
+  - 기준선(이 브랜치): 아래 검증.
+- 검증: `uv run --group benchmark pytest -q` → **2175 passed, 1 skipped, 21 deselected** · `cd web && npx tsc -b && npm test`(**382**) · lint · build · 헤드리스(임시 데이터 폴더, 연말형 기록): 등록 + j018-rfp.pdf → ④ 보내는 곳 "회사 밖 AI" 안내 → 실제 gpt-6-luna 6~9초 → 넣기 → 등록 → 요구 기술 줄, 콘솔 오류 0. Codex 한도 소진 → Opus 폴백 적대적 2라운드 approve(MUST 0, SHOULD 4 반영).
+- 근거: `.omc/plan/2026-10-23-rfp-read-wiring.md` · `.omc/reports/2026-10-23-rfp-read-wiring.md`
+
+---
+
 ## 2026-10-23 · claude-b · 신규 사업 요구 기술 표시 · 발주 자료 첨부·받기 + AI 필요 기술 읽기 요청(a·b 나눔)
 - 브랜치/커밋: `feat/claude-b-kg-views` `c0c7256..` — `5bbc998`(서버·시연 자료) · `12cd154`(화면) · 이 커밋(문서). main(`db79300`) 위, main 미병합.
 - 사용자: 신규 사업 화면에 등록한 요구 기술(+레벨)을 보이고, 발주 자료를 등록 때 첨부해 제목 오른쪽에서 받게, 기존 사업도 몇 개는 받을 수 있게.

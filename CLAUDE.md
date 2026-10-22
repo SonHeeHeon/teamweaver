@@ -289,8 +289,11 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   시연 자료 `demo/project_docs`(`scripts/make_demo_project_docs.py`, 데이터별 등록 시각을 목록에 적음)는 가상 데이터·데이터 id가 맞을 때만, 못 지운다 -- 연말형·운영 중 묶음의 사업·요구를 바꾸면 다시 만든다(`tests/test_demo_project_docs.py`가 잡는다).
   올리기는 원본 본문(application/octet-stream만, multipart 의존성 없음)·확장자 + 첫 바이트·20MiB·사업당 10개, 받기는 attachment·nosniff·CSP sandbox. 진행 사업은 받기만(사용자 결정).
   요구 기술 줄(`GET /api/project-requirements`)은 등록한 원문(이름·경력 개월) + 계산과 같은 `level_from_months` 레벨 + 사전 대표 이름. 등록 양식은 기술 0개면 넘어가지 않는다(서버가 원래 거절).
-  AI 필요 기술 읽기(사용자 "a·b 나눠서": 읽기 함수·측정 = claude-a, 글자 뽑기·라우트·양식 버튼 = b, `docs/requests/2026-10-23-rfp-skill-reading.md`)의 글자 뽑기는 **서버 경로에서 별도 프로세스 + 시간 제한 + 동시 개수 상한**으로 돈다 --
-  글자 없는 PDF가 CPU·메모리만 쓴다(폴백 리뷰 실측: 21KB 한 편 9초·736MB), 데이터는 시작 인자가 아니라 시작 뒤 파이프로(시드 포트폴리오와 같은 함정).
+  **AI 필요 기술 읽기**(사용자 "a·b 나눠서": 읽기 함수 `api/rag/rfp_read`·측정 = claude-a, 글자 뽑기·`POST /api/project-requirements/read`·등록 양식 ④ `SkillReader` = b):
+  글자 뽑기 `extract_text`는 서버 경로에서 **`extract_text_limited`(spawn 별도 프로세스 + 시간 제한 20초 + 동시 2개)**로 돈다 -- 글자 없는 PDF가 CPU·메모리만 쓴다(실측 21KB 9초·736MB),
+  데이터는 시작 인자가 아니라 시작 뒤 파이프로(시드 포트폴리오와 같은 함정), 자식 답은 JSON 바이트. XML은 iterparse 한 번(문단마다 다시 돌면 4,000칸 표 5.7초), DOCX·PPTX 탭·줄바꿈은 글자 요소의 **형제**다.
+  화면은 읽기 전에 보내는 곳(`GET /api/project-requirements`의 `ai_destination`, `api.deps.client_is_onprem` = llm_client_for와 같은 판정)을 알리고, 결과는 제안이다 --
+  경력이나 인원이 적힌 필수만 기본 체크(경력·인원 없는 필수는 과업 범위에서 추정한 것이 섞인다, 화면 확인), 우대·이미 적은 기술은 체크 안 함.
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는
