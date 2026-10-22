@@ -22,6 +22,18 @@
 
 ---
 
+## 2026-10-22 · claude-a · main 병합: 데모 문서 10-21 · 고정 선택·빼 온 자리 · AI 효과 보강(사용자 승인 "1 번 main 병합 승인할게 b 작업도 함께 병합해줘")
+- 브랜치/커밋: `docs/claude-a-demo-report-1021` → `feat/claude-a-locks-seat-holes` → `feat/claude-a-ai-value`를 main에 `--no-ff` 병합 `19827f4` + 이 커밋(대본 D2·일지). origin main push(b의 두 병합 `adc2488`·`8d5376c`도 함께 올라감).
+- b 작업: `feat/claude-b-kg-views`는 이미 main(`d4b5e5b`)과 같았다 — 새로 합친 것 없음.
+- 충돌: `CLAUDE.md` 기준선 줄(병합 트리에서 다시 잼), 이 파일 머리(양쪽 항목 모두, 최신 먼저). 코드 충돌 없음(`App.tsx`·`api/types.ts`·`api/routes/optimize.py`·`NewProjectsScreen.tsx` 자동 병합).
+- 사용자 결정: **"동료 실제 평가는 그럼 빼자"** — 10쌍 블라인드 비교는 하지 않는다(위 AI 효과 보강 항목의 "결정 대기"를 닫음). 보고서 3.3은 두 글을 나란히 보이는 것까지.
+- 대본: D2 "보이는 것"을 b 카드 표시에 맞춤 — 배치 품질 119.49/118.74/117.89/118.52(빈자리 0이라 종합 점수와 같음), 안 A "먼저 계산한 기준안"·**가장 높음**, B·D "1% 안, 사실상 같은 수준", C "품질 1.60 낮음"(브라우저 확인).
+- 상대 영향(claude-b): main 기준선 **2129 passed, 1 skipped, 20 deselected · 웹 357**. b의 기술 관계 그림이 a `practical_detail`로 켜짐(병합 서버 확인: 41행 중 사람별 칸 35행, 인정 출처 89명, 계보 16행).
+- 검증: 병합 트리 `uv run --group benchmark pytest -q` → 2129 passed, 1 skipped, 20 deselected(8분 28초) · `npx tsc -b` · build · `npm test` 357 passed · 병합 서버(임시 데이터 폴더) 조직 기술 지도 "자세히" 그림·연간 기록 카드 브라우저 확인. Codex 한도 소진(10-25 16:31) — 세 a 브랜치 Codex 리뷰는 그 뒤에.
+- 근거: `.omc/reports/2026-10-22-main-merge-ai-value.md`
+
+---
+
 ## 2026-10-22 · claude-a · AI 효과 보강 — 상황을 말로 · 낯선 기술 이름 정리 · AI 없이와의 비교(보고서·슬라이드·대본) + b 요청 사람별 칸
 - 브랜치/커밋: `feat/claude-a-ai-value`(`feat/claude-a-locks-seat-holes` 위) — `41fc39b`(서버·시험) · `1907dc7`(사전 등록 측정 기준) · `b1a3a00`(화면) · `912537b`(측정 결과·시연 zip) · 문서 커밋. main 미병합(승인 대기, 아래 두 브랜치와 함께).
 - 사용자: "ai를 도입함으로써 … 기존에는 어려웠던게 … 가능해졌다 혹은 … 훨씬 더 효율적이거나 성능이 훨씬 좋아졌다 … 그 포인트를 시연에서도 레포트에서도 꼭 넣어야" → "1,2,3,4,5번 다 좋다. 4,5번은 개발해보자. 4번은 말로 하게되면 추천안(인력)을 받아 선택하도록" · 진행 중 "추가로 b가 요청한 사람별 정보를 넣어줘".
