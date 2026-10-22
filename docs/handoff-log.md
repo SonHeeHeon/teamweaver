@@ -22,6 +22,27 @@
 
 ---
 
+## 2026-10-23 · claude-a · 변경 보고서(건별·기간 묶음 PDF) + 화면 검토 P2·P3 전부
+- 브랜치/커밋: `feat/claude-a-change-report`(main `db79300` 위) — `91d8ed1`(변경 기록·보고서 API) · `8986064`(예산 증액 사유·검토 자료 목록 이름·대안 비교 불리 판정) · `21b4576`(화면) · `01585ba`(느린 시험 복구·PDF 느린 시험·요약 재측정) · `40ed5cb`(각주 순서) · 문서 커밋. main 미병합(승인 대기).
+- 사용자: "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 어떤 변경들을 했는지 각각에 대한 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도 해줘." (대상: 10-21 화면 검토 P2·P3)
+- 한 일:
+  - **변경 기록** `api/change_log.py`(`<데이터 폴더>/change_log/log.json`, 지우지 않음) — `workspace.commit`·`undo`가 한 건씩. **변경 보고서** `GET /api/changes`·`POST /api/changes/report` → `/report` `kind: "changes"`, 검토 자료 메뉴 탭 "변경 보고서".
+  - **예산 증액하고 확정(사유)**: `core.evaluate.grade_swap.budget_raises` + `ApplyIn.budget_raises` + preview·신규 사업 draft의 `budget_raises` + 사실 `MOVE_BUDGET`.
+  - 검토 자료: 목록 이름(f1), 2절 "새로 들어온 인력"(f10), 대안 비교 불리 판정(f11, `core/kg/justify`), 본문 문장 줄·각주(f12·f13), 사업 전체 결정(등급 대체·증액)이 안 보이던 버그, 머리 이름을 이력 종류로(What-if 확정 = 손 편성).
+  - 화면: 단계 표시 `ui.Steps`(신규 사업·긴급 투입), 연간 계획 ② 등급 바뀐 교체 = "등급 대체" 줄, "대기 인력"/"넣을 수 있는 쉬는 인력", 닫힌 편성안 안내의 다시 계산 버튼, 계산 용어(도장 "위반 없음" 등).
+  - **느린 시험 2개가 깨져 있었다**: E2E(데이터 탭 `GET /api/skills/unknown` 409 → 콘솔 오류, 10-22 `b1a3a00`부터)와 검토 자료 PDF(빼 온 자리 결정 없이 확정, 10-21 규칙부터). 둘 다 고침.
+- 상대 영향(claude-b):
+  - **새 판 종류를 만들면** `api/change_log.KIND_LABEL`과 `api/routes/changes.reason_lines`에 이름·사유 줄을 더한다(없으면 종류 코드 그대로 보임).
+  - `ApplyIn`에 선택 칸 `budget_raises`, preview·신규 사업 draft 응답에 `budget_raises`(사업 → 금액). 증액을 적용해 판정하므로 예산만 넘는 손 편성은 `new_violations`에 예산이 안 나온다(사유를 받는 상자로).
+  - `core/kg/justify` 대안 비교 사실의 `adverse`가 바뀌었다(새 위반 있는 대안은 불리 아님) — 소명 덧붙임·요약 Y3에 영향. 요약 재측정 92.6%(전 93.0%).
+  - 검토 자료 목록 행에 `source`(이력 종류)·사업별 `joined`. 화면 문구 바뀜: 후보 탭 "넣을 수 있는 쉬는 인력", 카드 도장 "위반 없음", 배지 "규칙 위반 없음 확인(…)".
+  - `GET /api/skills/unknown`은 판 번호 없이 불러도 되고, 고칠 수 없는 데이터면 200 + `unavailable`.
+  - 시험 기준선: 파이썬 2140 passed · 1 skipped · 21 deselected · slow 21 passed · 웹 365.
+- 검증: `uv run --group benchmark pytest -q` → 2140 passed, 1 skipped, 21 deselected(9분 16초) · `pytest -m slow` 21 passed · 웹 365·`tsc -b`·build · 브라우저(임시 데이터 폴더): J019 예산 초과 950 → 사유 → 확정(예산 3,950 → 4,900) → 검토 자료 결정 줄 → AI 초안 각주 → 변경 보고서 탭 → 묶음 PDF 5쪽 화면 · 결과 보고서 PDF 10쪽. Codex 한도 소진(10-25 16:31) → 자체 검토.
+- 근거: `.omc/plan/2026-10-22-change-report.md` · `.omc/reports/2026-10-22-change-report.md`
+
+---
+
 ## 2026-10-22 · claude-a · main 병합: 데모 문서 10-21 · 고정 선택·빼 온 자리 · AI 효과 보강(사용자 승인 "1 번 main 병합 승인할게 b 작업도 함께 병합해줘")
 - 브랜치/커밋: `docs/claude-a-demo-report-1021` → `feat/claude-a-locks-seat-holes` → `feat/claude-a-ai-value`를 main에 `--no-ff` 병합 `19827f4` + 이 커밋(대본 D2·일지). origin main push(b의 두 병합 `adc2488`·`8d5376c`도 함께 올라감).
 - b 작업: `feat/claude-b-kg-views`는 이미 main(`d4b5e5b`)과 같았다 — 새로 합친 것 없음.

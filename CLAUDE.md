@@ -175,6 +175,14 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `core/ingest/skill_mapping` + `/api/skills/unknown|unknown/suggest|names`: 승인 결정은 manifest `skill_names`(새 판, 되돌리기로 무름)이고 **`dictionary_for(manifest)`를 로더·`to_dataset`·`build_kg`·경력 늘리기·라우트(`dictionary_of_active`)가 함께 쓴다** -- 사전을 쓰는 새 곳도 이 함수를 써야 같은 경력이 나온다. 자동 승인 없음(헷갈리는 쌍 `CONFUSABLE` 표시).
   측정은 사전 등록: `python -m rehearsal.request_parse_eval`(48문장)·`python -m rehearsal.skill_mapping_eval`(실제 별칭 522개 숨김) -- 지시문·사전을 바꾸면 다시 잰다. 시연 묶음 `demo/org-n100-messy-skills(.zip)` = `scripts/make_messy_skill_demo.py`(사전이 바뀌면 다시 만든다).
   조직 기술 지도 `skill_map` 행에 `practical_detail`·`broader`·`narrower`(claude-b 요청 2026-10-21, 지식 그래프 기술 노드 `broader`) -- `practical_people`(id 목록)는 그대로.
+- **변경 기록·변경 보고서**(2026-10-22 사용자 "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 … 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도", claude-a, 설계 루트 `.omc/plan/2026-10-22-change-report.md`):
+  작업 이력(`workspace/history.json`)은 되돌리기용이라 20판·다른 데이터를 열면 비운다 -- 보고 원천은 따로 **지우지 않는 `api/change_log`**(`<데이터 폴더>/change_log/log.json`). `workspace.commit`·`undo`의 prepare(이력 쓰기와 같은 자리·같은 시각)가 한 건씩 덧붙이고(실패해도 판 변경은 막지 않음),
+  사람 변화·**그때의** 이름(가상 데이터만, K5)·사업 이름·사유 summary·검토 자료 대상 사업을 담는다. 기록 전 이력은 읽을 때 보관 판 zip에서 메운다(`backfilled`). 같은 명단을 1초 안에 다시 확정하면 (판·시각·종류)가 같다 -- id에 번호를 붙이고 되돌림·취소 판정(`statuses`)은 시간 순서로 훑는다.
+  `GET /api/changes?start=&end=`·`POST /api/changes/report {ids}`(관리자) → `/report` `kind: "changes"`(표지·사람 표·사유 줄 `reason_lines`·확정의 검토 자료 전문, `web/src/review/ChangeReport`). **묶음 PDF는 검토 자료의 "내보냄"을 바꾸지 않는다**(결재 첨부는 자료별 PDF).
+  검토 자료 목록의 사업 이름 = 저장된 자료 → 변경 기록의 그때 이름 → (지금 판의 확정만) 지금 데이터(부서장 점검 f1). 새 판 종류를 만들면 `change_log.KIND_LABEL`·`routes/changes.reason_lines`에 이름·사유 줄을 더한다.
+  같은 날 함께: **예산 증액하고 확정(사유)**(`core.evaluate.grade_swap.budget_raises` -- 등급 대체 증액 뒤에도 이 확정으로 새로 넘친 몫만, 미리 계산(preview·신규 사업 draft)은 증액을 적용해 판정하고 `budget_raises`를 주며 확정 `ApplyIn.budget_raises`가 같은 함수로 맞춰 봄, 긴급 투입은 예전대로 apply_hint, 검토 자료 사실 `MOVE_BUDGET`),
+  대안 비교 사실(ALT)은 **새 위반이 없을 때만** 불리(E7 묶음 대안 사실 1,075건 중 657건이 "점수는 오르나 위반" -- 불리한 사실 2,348 → 1,691), 검토 자료 본문은 문장마다 줄·`[F#]`은 본문 순서 각주, 주인 없는 사업 전체 사실(등급 대체·예산 증액)은 2절 "이 확정의 정원·예산 결정"(예전엔 저장만 되고 화면·PDF에 안 보였다),
+  화면 단계 표시 `ui.Steps`(신규 사업·긴급 투입), 계산 용어(도장 "위반 없음", 배지 "규칙 위반 없음 확인"·"기록에서 연 결과 · 최적인지는 다시 계산해야 확인"), 연간 계획 ②의 등급 바뀐 교체는 "등급 대체" 줄(`whatifWarnings.gradeSwapLines`).
 - **야간 배치**(2026-10-18 · 10-19 재정비, claude-b `api/nightly.py`): 매일 `TEAMWEAVER_NIGHTLY_WINDOW`(기본 00:00-05:00) 시작에 **지금 데이터 한 묶음**만, **AI를 쓰지 않는다**.
   긴급 대기 명단(진행 사업마다 위반 없는 상위 5명, 설정 지문에 묶임 → `GET /api/emergency/standby`), 연간 계획(백지 데이터일 때만)·운영 중 비교(신규 사업 있을 때만)·낮 요청 기록을
   **시간 한도만 늘려** 풀고(키·서명은 낮 설정) 캐시에 넣는다 -- 이미 캐시에 있는 요청(편성 기록에서 연 결과 등)은 다시 풀지 않고, 끝까지 풀지 못한 묶음은 저장하지 않는다.
@@ -252,7 +260,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **조직 기술 지도 막대·관계 그림**(같은 날, claude-b): 막대 눈금은 **수요 쪽**(필요·신규 제안·비어 있음 ×1.5) -- 실무 가능 최대치에 맞추면 1명 부족이 몇 px로 눌렸다. 관계 그림은 사람별 칸(free·on·expert·months·credited_from)과 계보(broader·narrower)가 오면 켜진다 --
   그 칸은 claude-a `core/kg/views.skill_map`에 요청(`docs/requests/2026-10-21-skill-map-graph-fields.md`, 사용자 "a에 맡겨줘"). `api/routes/skill_map`이 어느 모양(ID·사전·`practical_detail`)이든 정규화하고, "인정" 표시는 route의 `credited` 판정만 따른다.
   **인사팀 소명 요약**(`core/kg/justify.verify_summary`·`rule_summary_raw`, `api/rag/justification.generate_summary`): 본문과 같은 자리표시 문법·검사 + 맺음말 빼고 3문장·자리표시 2~4개·불리한 사실 하나 이상(Y1~Y4),
-  걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 93.0% · 규칙 7.0% · 무결성 실패 0 · $0.12, `rehearsal/results/justify-summary.json`) --
+  걸리면 규칙 요약. 화면·PDF는 요약을 먼저, 본문은 "전체 보기". 측정 `python -m rehearsal.justify_summary`(229건 AI 92.6% · 규칙 7.4% · 무결성 실패 0 · $0.12, 10-22 대안 비교 불리 판정을 고친 뒤 다시 잼, `rehearsal/results/justify-summary.json`) --
   요약 지시문·검사를 바꾸면 다시 잰다. 본문 측정(E7c)은 그대로(`generate_justification(summary=False)` 기본).
   단순 규칙 비교는 탭이 보일 때 저절로 계산(`BaselineCard active`), PDF 소명 포함은 내려받을 때 창으로 묻는다(하위 탭 옆 체크박스 없앰).
   교체 설명 이름은 **"XAI 브리핑" 그대로**(사용자 2026-10-20 "표현이 멋있어서" -- 한때 "AI 교체 설명"으로 바꿨다가 되돌림), 뜻은 화면 제목의 ⓘ. 버튼은 "교체 효과 보기".
@@ -278,7 +286,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-22 main 병합(b 편성안 카드 점수 표시 + claude-a 상황을 말로·기술 이름 정리) **2129 passed, 1 skipped, 20 deselected**, `--group benchmark` 포함 · slow 20 passed(10-21 분리 때), 웹 357 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 변경 보고서·화면 검토 P2·P3(claude-a `feat/claude-a-change-report`) **2140 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 365 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
