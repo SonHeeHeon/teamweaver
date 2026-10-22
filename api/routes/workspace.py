@@ -307,6 +307,15 @@ class SeatWaiverIn(BaseModel):
     reason: str = Field(max_length=200)
 
 
+class BudgetRaiseIn(BaseModel):
+    """예산 증액 한 건(2026-10-22 사용자 "전부 하자" -- 화면 검토 P3-2): 이 확정으로 새로 넘친 월 예산을 사유와 함께 늘린다.
+    금액은 서버 계산(`core.evaluate.grade_swap.budget_raises`)과 같아야 한다. 긴급 투입은 증원과 함께 늘 증액하므로(apply_hint) 쓰지 않는다."""
+    model_config = ConfigDict(extra="forbid")
+    project_id: str = Field(min_length=1, max_length=32)
+    amount: int = Field(ge=1, le=10_000_000)
+    reason: str = Field(max_length=200)
+
+
 class ApplyIn(_Versioned):
     entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     note: str = Field(default="", max_length=300)
@@ -323,6 +332,35 @@ class ApplyIn(_Versioned):
     release_locks: bool = False
     # 이 확정으로 새로 생긴 빈자리 중 메우지 않을 것(사유 필수, 2026-10-21) -- 새 빈자리는 메우거나 여기 적어야 확정된다
     seat_waivers: list[SeatWaiverIn] = Field(default=[], max_length=40)
+    # 이 확정으로 새로 넘친 월 예산의 증액과 사유(2026-10-22) -- 없으면 예전처럼 새 예산 위반으로 거절된다
+    budget_raises: list[BudgetRaiseIn] = Field(default=[], max_length=40)
+
+
+def expected_budget_raises(dataset, entries: list[dict]) -> dict[str, int]:
+    """지금 배치 → entries 확정에서 등급 대체 증액을 적용한 뒤에도 새로 넘치는 월 예산(사업별) -- 미리 계산과 확정이 같은 함수."""
+    from core.evaluate.grade_swap import budget_raises, substitution
+    cur = _entries_of(dataset)
+    g2, _, _ = substitution(dataset.graph, cur, entries)
+    return budget_raises(dataset.graph, g2, cur, entries)
+
+
+def _check_budget_raises(dataset, body: "ApplyIn") -> list[dict]:
+    """요청의 예산 증액이 서버 계산과 같고 사유가 다 있는가. 요청에 없으면 빈 목록(새 예산 위반으로 거절되는 예전 길)."""
+    if not body.budget_raises:
+        return []
+    if body.source == "emergency":
+        raise HTTPException(status_code=422, detail="긴급 투입은 증원과 함께 예산을 늘린다(budget_add) -- 예산 증액 사유 칸을 쓰지 않는다")
+    for r in body.budget_raises:
+        if not r.reason.strip():
+            raise HTTPException(status_code=422, detail=f"예산 증액 사유를 적어야 한다: {r.project_id}")
+    asked: dict[str, int] = {}
+    for r in body.budget_raises:
+        asked[r.project_id] = asked.get(r.project_id, 0) + r.amount
+    expected = expected_budget_raises(dataset, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries])
+    if asked != expected:
+        raise HTTPException(status_code=422, detail={
+            "message": "예산 증액이 미리 계산과 다르다 -- 화면을 다시 계산하고 사유를 적어 확정한다.", "expected": expected})
+    return [r.model_dump() | {"reason": r.reason.strip()} for r in body.budget_raises]
 
 
 def expected_grade_swaps(dataset, entries: list[dict]) -> dict[str, list[dict]]:
@@ -422,7 +460,7 @@ async def post_preview(body: PreviewIn, request: Request) -> dict:
     def work() -> dict:
         from api.routes.justification import display_names, with_names
         from api.violation_diff import new_or_worse
-        from core.evaluate.grade_swap import substitution
+        from core.evaluate.grade_swap import budget_raises, graph_with_budgets, substitution
         from core.evaluate.plan_eval import evaluate_plan
         from core.optimize.types import AssignEntry
         from core.scoring.engine import ScoringEngine
@@ -431,6 +469,9 @@ async def post_preview(body: PreviewIn, request: Request) -> dict:
         new = [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries]
         cur = _entries_of(dataset)
         g2, swaps, budget = substitution(graph, cur, new)     # 확정 뒤 정원(대체)·예산(증액)으로 판정 -- 확정의 판정과 같다
+        # 그래도 새로 넘친 예산은 사유를 받아 증액한다(2026-10-22 P3-2) -- 증액을 적용해 판정하고 화면이 사유 칸을 보인다
+        raises = budget_raises(graph, g2, cur, new)
+        g2 = graph_with_budgets(g2, raises)
         params = dataset_params(request.app, dataset)
         eng = ScoringEngine(graph)
         S, C = eng.skill_matrix({}), eng.synergy_matrix()
@@ -459,7 +500,7 @@ async def post_preview(body: PreviewIn, request: Request) -> dict:
                                locked={(c.person_id, c.project_id) for c in dataset.current if c.locked}, names=names)
         fills = [{**f, "name": names.get(f["person_id"], f["person_id"])} for f in fills_of(graph, cur, new)]
         return {"dataset_version": dataset.info.version, "moved": moved, "joined": joined, "left": left,
-                "changed": bool(moved or joined or left), "grade_swaps": swaps, "budget_add": budget,
+                "changed": bool(moved or joined or left), "grade_swaps": swaps, "budget_add": budget, "budget_raises": raises,
                 "new_violations": worse, "locked_dropped": locked, "holes": holes, "fill_options": options, "fills": fills}
     return await anyio.to_thread.run_sync(work)
 
@@ -474,6 +515,7 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
     bad = sorted({e.person_id for e in body.entries if e.person_id not in ids_p}
                  | {e.project_id for e in body.entries if e.project_id not in ids_j}
                  | {p for p in list(body.headcount_add) + list(body.budget_add) + list(body.skills_add) if p not in ids_j}
+                 | {r.project_id for r in body.budget_raises if r.project_id not in ids_j}
                  | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
@@ -481,10 +523,14 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
         raise HTTPException(status_code=422, detail="고정 풀기는 연간 계획 안 확정에서만 한다(고정은 신규 사업 편성의 진행 사업 줄에서 푼다)")
     swaps = _check_grade_swaps(dataset, body)
     waivers = _check_seat_holes(request.app, dataset, body)
+    raises = _check_budget_raises(dataset, body)
+    budget_add = dict(body.budget_add)
+    for r in raises:                                   # 사유와 함께 받은 증액은 같은 판의 예산 칸에(확정 취소·되돌리기가 함께 돌린다)
+        budget_add[r["project_id"]] = budget_add.get(r["project_id"], 0) + r["amount"]
     before = _files(request)
     files, changes = _edit(apply_entries, before, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
-                           budget_add=dict(body.budget_add),
+                           budget_add=budget_add,
                            skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()},
                            release_locks=body.release_locks)
     if swaps:
@@ -525,6 +571,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                                 "grade_swaps": swaps,
                                 # 메우지 않기로 한 빼 온 자리와 사유(2026-10-21) -- 검토 자료 MOVE_FILL 사실의 원천
                                 "seat_waivers": waivers,
+                                # 새로 넘친 예산의 증액과 사유(2026-10-22) -- 검토 자료 MOVE_BUDGET 사실의 원천(budget_add와 따로)
+                                "budget_raises": raises,
                                 # 긴급 투입만 -- 다른 확정의 검토 자료에는 상황 메모 칸이 없어 보이지 않는 값으로 남는다(폴백 리뷰 S1)
                                 "situation": body.situation.strip() if body.source == "emergency" else ""},
                        check=check)

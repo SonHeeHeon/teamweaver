@@ -41,8 +41,15 @@ def _queue(request: Request) -> tuple[list[dict], dict]:
 
 @router.get("/api/skills/unknown")
 def get_unknown(request: Request, dataset_version: str | None = None) -> dict:
+    from api.workspace import WorkspaceUnavailable, current_files
     from core.ingest.skill_mapping import string_candidates
     check_dataset_version(dataset_version, request.app.state.dataset)
+    try:
+        current_files(request.app, request.app.state.dataset)
+    except WorkspaceUnavailable as exc:
+        # 원천 묶음을 고칠 수 없는 데이터(고정 데모·mapping.json 묶음)는 읽기 화면이라 빈 목록과 까닭으로 -- 409는 브라우저 콘솔 오류로 남았다(느린 E2E)
+        return {"dataset_version": request.app.state.dataset.info.version, "dictionary_version": None, "items": [], "decided": [],
+                "unavailable": str(exc)}
     items, ctx = _queue(request)
     return {"dataset_version": request.app.state.dataset.info.version, "dictionary_version": ctx["sd"].version,
             "items": [{**it, "candidates": string_candidates(ctx["sd"], it["name"], 3)} for it in items],

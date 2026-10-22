@@ -93,6 +93,41 @@ def overrun(graph, project_id: str, entries: Iterable) -> int:
     return max(0, math.ceil(cost - j.monthly_budget - 1e-9))
 
 
+def excess(graph, project_id: str, entries: Iterable) -> float:
+    """그 사업의 월 비용 − 월 예산(음수면 여유). `overrun`과 같은 비용 계산(alloc × 단가)."""
+    j = graph.projects[graph.project_index[project_id]]
+    rate = {p.id: p.monthly_rate for p in graph.people}
+    cost = sum(rate[e.person_id if hasattr(e, "person_id") else e["person_id"]] * float(e.alloc if hasattr(e, "alloc") else e["alloc"])
+               for e in entries if (e.project_id if hasattr(e, "project_id") else e["project_id"]) == project_id)
+    return cost - j.monthly_budget
+
+
+def budget_raises(graph_before, graph_after, current: Iterable, entries: Iterable) -> dict[str, int]:
+    """이 확정으로 **새로 생기거나 커진** 월 예산 초과만큼의 증액(사업별, 올림) -- 2026-10-22 사용자 "전부 하자"(화면 검토 P3-2: 신규 사업도
+    "증액하고 확정(사유)"). graph_after는 등급 대체 증액을 적용한 그래프(`substitution`)라 대체로 넘는 몫은 이미 빠져 있다.
+    확정 전부터 넘쳐 있던 몫은 이 확정 탓이 아니라 빼고 센다 -- 증액 뒤 초과는 확정 전 초과 이하가 된다(평가기 `new_or_worse` 통과).
+    팀이 바뀐 사업만 본다. 확정 검사(`routes/workspace.post_apply`)와 미리 계산(`/api/workspace/preview`·신규 사업 draft)이 이 함수를 쓴다."""
+    import math
+    current, entries = list(current), list(entries)
+    tb, ta = _teams(current), _teams(entries)
+    out: dict[str, int] = {}
+    for jid in sorted(j for j in set(tb) | set(ta) if tb.get(j) != ta.get(j) and j in graph_after.project_index):
+        before = max(0.0, excess(graph_before, jid, current)) if jid in graph_before.project_index else 0.0
+        after = excess(graph_after, jid, entries)
+        if after > before + 1e-9:
+            out[jid] = math.ceil(after - before - 1e-9)
+    return out
+
+
+def graph_with_budgets(graph, adds: Mapping[str, int]):
+    """사업 월 예산에 adds를 더한 그래프(정원·사람은 그대로)."""
+    if not adds:
+        return graph
+    projects = [p.model_copy(update={"monthly_budget": p.monthly_budget + int(adds[p.id])}) if adds.get(p.id) else p
+                for p in graph.projects]
+    return replace(graph, projects=projects, _within_cache=graph._within_cache)
+
+
 def _teams(entries: Iterable) -> dict[str, set]:
     out: dict[str, set] = {}
     for e in entries:

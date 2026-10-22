@@ -22,6 +22,7 @@ from pathlib import Path
 import anyio
 from fastapi import HTTPException, Request
 
+from api.change_log import ChangeLog, build_record, undo_record
 from api.storage import atomic_write, data_dir, ensure_private_dir
 from api.workspace_edits import Files
 
@@ -156,6 +157,19 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _by() -> str | None:
+    from api.admin import admin_id
+    return admin_id()
+
+
+def _log_change(make) -> None:
+    """변경 기록 한 건(api.change_log). 기록은 보고용이라 실패해도 판 변경을 막지 않고 남기기만 한다."""
+    try:
+        ChangeLog().append(make())
+    except Exception:                                   # noqa: BLE001
+        log.warning("변경 기록을 남기지 못했다", exc_info=True)
+
+
 # --- 켜기 -----------------------------------------------------------------------------------------------------------
 
 async def _activate_blob(request: Request, data: bytes, check=None, prepare=None):
@@ -235,9 +249,14 @@ async def commit(request: Request, before_files: Files, files: Files, *, kind: s
         data = zip_files(files)
 
         def prepare(active) -> None:
+            at = _now()
             hist.save_zip(active.info.content_version, data)
-            hist.append({"version": active.info.version, "content_version": active.info.content_version, "at": _now(),
+            hist.append({"version": active.info.version, "content_version": active.info.content_version, "at": at,
                          "kind": kind, "note": note[:300], "summary": summary or {}})
+            # 지우지 않는 변경 기록(2026-10-22 변경 보고서) -- 이력과 같은 시각·판으로. 기록 실패는 판 변경을 막지 않는다
+            _log_change(lambda: build_record(kind=kind, note=note[:300], summary=summary or {}, at=at, version=active.info.version,
+                                             before_version=prev.info.version, dataset=active, prev_dataset=prev,
+                                             before_files=before_files, files=files, by=_by()))
         active, report, persist_error = await _activate_blob(request, data, check, prepare)
         state.workspace_files = (active.info.version, dict(files))
         return {"dataset": active.info.to_dict(), "report": report, "persisted": persist_error is None,
@@ -260,7 +279,11 @@ async def undo(request: Request) -> dict:
     _begin(request)
     try:
         def prepare(_a) -> None:
+            popped_files = hist.load_zip(str(entries[-1].get("content_version")))   # pop이 그 판 zip을 지우기 전에
             hist.pop()
+            _log_change(lambda: undo_record(popped=entries[-1], at=_now(), version=_a.info.version, dataset_id=_a.info.dataset_id,
+                                            by=_by(), before_files=_read_zip(popped_files) if popped_files else None,
+                                            files=_read_zip(data), dataset=_a, prev_dataset=state.dataset))
             # 되돌린 판을 남긴다 -- 인사팀 검토 자료가 "되돌려짐"을 이력 추정이 아니라 이 기록으로 판정한다(claude-a 2026-10-19, 폴백 리뷰)
             from api.review_docs import CONFIRM_KINDS, record_cancelled, record_undone
             popped = entries[-1]

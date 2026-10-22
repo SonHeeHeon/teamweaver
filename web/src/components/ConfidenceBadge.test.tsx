@@ -11,9 +11,9 @@ describe("ConfidenceBadge — 계산 신뢰도", () => {
     expect(gapPct(10, null)).toBeNull();
   });
 
-  it("최적 종료면 허용 차이 안에서 최선 증명, 독립 검증 통과를 함께 보인다", () => {
+  it("최적 종료면 허용 차이 안에서 최선 증명, 검증기 확인을 함께 보인다", () => {
     render(<ConfidenceBadge termination="Optimal" objective={100} bestBound={101} gapAllowed={0.05} />);
-    expect(screen.getByText("독립 검증 통과")).toBeInTheDocument();
+    expect(screen.getByText("규칙 위반 없음 확인(검증기)")).toBeInTheDocument();
     expect(screen.getByText("허용 차이 5.0% 안에서 최선 증명")).toBeInTheDocument();
   });
 

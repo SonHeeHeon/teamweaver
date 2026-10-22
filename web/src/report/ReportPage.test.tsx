@@ -222,7 +222,7 @@ describe("ReportPage — 원 플랜 서명", () => {
                         time_limited: true, within: "다양성 조건", changed: 2 } };
     render(<ReportPage />);
     const box = await screen.findByTestId("solve-evidence");
-    expect(box.textContent).toContain("독립 검증 통과");
+    expect(box.textContent).toContain("규칙 위반 없음 확인(검증기)");
     expect(box.textContent).toContain("시간 한도 도달 · 다양성 조건의 최적값이 이 해보다 최대 3.0% 높을 수 있음");
     expect(box.textContent).toContain("솔버가 푼 원안 기준 — 이후 변경 2건");
   });

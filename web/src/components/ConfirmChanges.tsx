@@ -1,10 +1,11 @@
 /** 확정 창(2026-10-21 -- 연간 계획 "이 안으로 확정"과 What-if 확정이 함께 쓴다). 서버 미리 계산(`/api/workspace/preview`)으로
- *  지금 배치 대비 옮김·새로·빠짐, 등급 대체(사유), 예산 증액, 새 위반, 고정 충돌, 빼 온 자리(메움·메우지 않음)를 보이고,
+ *  지금 배치 대비 옮김·새로·빠짐, 등급 대체(사유), 예산 증액(대체로 넘는 몫 + 새로 넘친 몫의 사유, 2026-10-22), 새 위반, 고정 충돌, 빼 온 자리(메움·메우지 않음)를 보이고,
  *  막을 것이 없을 때만 확정한다. 확정 요청은 미리 계산의 대체·증액을 그대로 보낸다 -- 서버 확정이 같은 함수로 다시 맞춰 본다. */
 import { useEffect, useMemo, useState } from "react";
 import type { AssignEntry, Project } from "../api/types";
 import { Dialog, Spinner } from "../ui";
-import { GradeSwapBox, swapBody, swapList, swapsReady, type SwapReasons } from "../scenarios/GradeSwapBox";
+import { BudgetRaiseBox, GradeSwapBox, raiseBody, raisesReady, swapBody, swapList, swapsReady, type RaiseReasons,
+         type SwapReasons } from "../scenarios/GradeSwapBox";
 import { SeatHoleBox, holesReady, waiverBody, type WaiverReasons } from "../scenarios/SeatHoleBox";
 import { isDatasetChanged, postApply, postPreview, withPersistNote, type ConfirmPreview, type PreviewMove } from "../scenarios/workspaceApi";
 
@@ -37,6 +38,8 @@ export function ConfirmChanges({ datasetVersion, entries, source, title, lead, n
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reasons, setReasons] = useState<SwapReasons>({});
+  /** 예산 증액 사유(2026-10-22 P3-2) -- 열쇠 = 사업 */
+  const [raiseReasons, setRaiseReasons] = useState<RaiseReasons>({});
   /** 빼 온 자리를 메울 사람(화면에서 고름) · 메우지 않음 사유 */
   const [fills, setFills] = useState<AssignEntry[]>([]);
   const [waivers, setWaivers] = useState<WaiverReasons>({});
@@ -61,7 +64,7 @@ export function ConfirmChanges({ datasetVersion, entries, source, title, lead, n
   /** 연간 계획 안의 고정 충돌은 "고정을 풀고 확정"으로 넘길 수 있다(다른 확정은 예전처럼 막는다) */
   const lockOk = !!pv && (pv.locked_dropped.length === 0 || (source === "plan" && release));
   const blocked = !!pv && (pv.new_violations.length > 0 || !lockOk || !pv.changed);
-  const ready = !!pv && !blocked && swapsReady(swaps, reasons) && holesReady(pv.holes, waivers);
+  const ready = !!pv && !blocked && swapsReady(swaps, reasons) && raisesReady(pv.budget_raises, raiseReasons) && holesReady(pv.holes, waivers);
 
   async function confirm() {
     if (!pv || !ready) return;
@@ -74,6 +77,7 @@ export function ConfirmChanges({ datasetVersion, entries, source, title, lead, n
         ...(swaps.length ? { grade_swaps: swapBody(swaps, reasons) } : {}),
         ...(budget > 0 ? { budget_add: pv.budget_add } : {}),
         ...(seatWaivers.length ? { seat_waivers: seatWaivers } : {}),
+        ...(Object.keys(pv.budget_raises ?? {}).length ? { budget_raises: raiseBody(pv.budget_raises, raiseReasons) } : {}),
         ...(source === "plan" && pv.locked_dropped.length && release ? { release_locks: true } : {}),
       });
       const n = pv.moved.length + pv.joined.length + pv.left.length;
@@ -91,7 +95,7 @@ export function ConfirmChanges({ datasetVersion, entries, source, title, lead, n
       <button className="btn-ghost" onClick={onClose} disabled={busy}>취소</button>
       <button className="btn-primary" disabled={busy || !ready} onClick={() => void confirm()}
               title={!pv ? "미리 계산 중입니다" : blocked ? "확정할 수 없는 이유가 위에 있습니다"
-                : !ready ? "등급 대체 사유·빼 온 자리 결정을 마쳐야 확정할 수 있습니다" : undefined}>
+                : !ready ? "등급 대체·예산 증액 사유와 빼 온 자리 결정을 마쳐야 확정할 수 있습니다" : undefined}>
         {busy ? <Spinner status={false} label="확정하는 중…" /> : "확정"}
       </button>
     </>}>
@@ -134,6 +138,8 @@ export function ConfirmChanges({ datasetVersion, entries, source, title, lead, n
           )}
           <GradeSwapBox items={swaps} budgetAdd={budget} reasons={reasons} named={named} disabled={busy}
                         onReason={(k, v) => setReasons((r) => ({ ...r, [k]: v }))} />
+          <BudgetRaiseBox raises={pv.budget_raises} reasons={raiseReasons} named={named} disabled={busy}
+                          onReason={(j, v) => setRaiseReasons((r) => ({ ...r, [j]: v }))} />
           <SeatHoleBox holes={pv.holes} fillOptions={pv.fill_options} named={named} disabled={busy}
                        // 전부 다시 짠 안은 거의 모든 사업에서 사람이 바뀐다 -- 메운 사람 줄은 화면에서 고른 것만
                        fills={source === "plan" ? (pv.fills ?? []).filter((f) => fills.some((x) => x.person_id === f.person_id)) : pv.fills}

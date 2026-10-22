@@ -7,17 +7,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DatasetChangedError, postJustification, streamOperatingCompare } from "../api/client";
 import type { AssignEntry, OperatingRow, Person, PlacementSettings, Project } from "../api/types";
 import { PersonName, ProjectCodes } from "../components/PersonName";
-import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, ProjectCode, Spinner, Tabs } from "../ui";
+import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, ProjectCode, Spinner, Steps, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
 import { CandidateGuide, PickDraft } from "./PickDraft";
-import { GradeSwapBox, swapBody, swapList, swapsReady, type SwapReasons } from "./GradeSwapBox";
+import { BudgetRaiseBox, GradeSwapBox, raiseBody, raisesReady, swapBody, swapList, swapsReady, type RaiseReasons,
+         type SwapReasons } from "./GradeSwapBox";
 import { SeatHoleBox, holeList, holesReady, waiverBody, type WaiverReasons } from "./SeatHoleBox";
 import { ConfirmChanges } from "../components/ConfirmChanges";
-import { partnersText, seatLines, skillCollab, violationReasons } from "./pickView";
+import { budgetOnly, partnersText, seatLines, skillCollab, violationReasons } from "./pickView";
 import { chainText, changesFromPrev, mixText, moveChains, projectMix, type ProjectMix } from "./autoView";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCancelPreview, fetchCandidates, fetchWorkspace, patchStage, postApply, postCancel,
@@ -27,7 +28,8 @@ import {
 } from "./workspaceApi";
 
 type Group = "bench" | "ending" | "pull";
-const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", ending: "끝나 가는 인력", pull: "진행 사업에서 빼 오기" };
+/** 후보 세 갈래 -- "쉬는 인력"은 이 사업 기간에 넣을 수 있는 대기 인력(왼쪽 "대기 인력 n명"은 명단 전체, 2026-10-22 P3-3) */
+const GROUP_LABEL: Record<Group, string> = { bench: "넣을 수 있는 쉬는 인력", ending: "끝나 가는 인력", pull: "진행 사업에서 빼 오기" };
 /** 100명 연말형 실측(2026-10-20, 시드 4): K 0부터 그 K까지 차례로 풀 때 누적 초(화면 안내용 어림값) */
 const K_SECONDS_100 = [7, 13, 21, 28, 35, 45];
 type SignedRow = OperatingRow & { plan_label?: string; plan_token?: string };
@@ -118,12 +120,14 @@ interface Props {
   onDatasetChanged: () => void;
   /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19): 확정한 판과 사업(자동 편성은 여러 사업이라 null = 목록)으로 검토 자료 화면을 연다 */
   onReviewDoc?: (version: string, projectId: string | null) => void;
+  /** 단계 표시의 마지막 "변경 보고서"(2026-10-22) -- 검토 자료 화면의 변경 보고서 탭 */
+  onChangeReport?: () => void;
   /** 이름을 누르면 기술 창, 사업 코드에 마우스를 올리면 이름(2026-10-20 화면 친절하게) -- 없으면 이름·코드만 */
   people?: Person[];
   projects?: Project[];
 }
 
-export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged, onReviewDoc, people, projects }: Props) {
+export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged, onReviewDoc, onChangeReport, people, projects }: Props) {
   const pById = useMemo(() => new Map((people ?? []).map((p) => [p.id, p])), [people]);
   const [ws, setWs] = useState<Workspace | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -132,6 +136,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [draft, setDraft] = useState<Record<string, CandidateRow>>({});
   /** 등급 대체 사유(2026-10-21) -- 열쇠 = 사업:자리>등급 */
   const [swapReasons, setSwapReasons] = useState<SwapReasons>({});
+  /** 예산 증액 사유(2026-10-22) -- 열쇠 = 사업 */
+  const [raiseReasons, setRaiseReasons] = useState<RaiseReasons>({});
   /** 빼 온 자리(2026-10-21): 메울 사람(사람별) · 메우지 않음 사유(열쇠 = 사업:등급) */
   const [fills, setFills] = useState<Record<string, FillPick>>({});
   const [waivers, setWaivers] = useState<WaiverReasons>({});
@@ -246,6 +252,9 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const draftSwaps = fresh && project ? [...(cands?.draft?.grade_swaps ?? []).map((swap) => ({ projectId: project.project_id, swap })),
                                         ...swapList(cands?.draft?.side_grade_swaps)] : [];
   const swapMissing = !swapsReady(draftSwaps, swapReasons);
+  /** 대체 없이 새로 넘친 예산(2026-10-22 P3-2) -- 사유를 받아 증액하고 확정 */
+  const draftRaises = fresh ? cands?.draft?.budget_raises : undefined;
+  const raiseMissing = !raisesReady(draftRaises, raiseReasons);
   const holeMissing = fresh && !holesReady(cands?.draft?.holes, waivers);
 
   /** 판을 바꾸는 요청 하나 -- 성공하면 새 작업 데이터로 바꾸고 App에도 알린다. */
@@ -288,11 +297,13 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     const swaps = swapBody(draftSwaps, swapReasons);
     const budget = cands?.draft?.budget_add ?? 0;
     const sideBudget = cands?.draft?.side_budget_add ?? {};
+    const raises = raiseBody(draftRaises, raiseReasons);
     setConfirm({
       title: `${project.name}에 ${draftList.length}명 확정`,
       body: `${names}을(를) 넣는다.${pulled.size ? ` 빼 오는 배치 ${pulled.size}건은 원래 사업에서 빠진다.` : ""}`
         + (swaps.length ? ` 등급 대체(${swaps.map((x) => `${x.seat} 자리 ${x.count}개를 ${x.grade}으로`).join(", ")})로 이 사업 정원이 바뀐다.` : "")
         + (budget > 0 ? ` 월 예산 +${budget.toLocaleString()}.` : "")
+        + (raises.length ? ` 예산 증액 ${raises.map((r) => `${r.project_id} +${r.amount.toLocaleString()}`).join(", ")}(사유와 함께).` : "")
         + (fillBody.length ? ` 빼 온 자리를 ${fillBody.length}명이 메운다.` : "")
         + (seatWaivers.length ? ` 메우지 않는 자리 ${seatWaivers.map((w) => `${w.project_id} ${w.grade} ${w.count}개`).join(", ")}는 그 사업 정원에서 뺀다.` : "")
         + " 지금 배치가 바뀐 새 판이 된다(되돌릴 수 있다).",
@@ -301,7 +312,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                                                                ...(swaps.length ? { grade_swaps: swaps } : {}),
                                                                ...(budget > 0 || Object.keys(sideBudget).length
                                                                  ? { budget_add: { ...sideBudget, ...(budget > 0 ? { [project.project_id]: budget } : {}) } } : {}),
-                                                               ...(seatWaivers.length ? { seat_waivers: seatWaivers } : {}) }),
+                                                               ...(seatWaivers.length ? { seat_waivers: seatWaivers } : {}),
+                                                               ...(raises.length ? { budget_raises: raises } : {}) }),
                         `${project.name}에 ${draftList.length}명을 넣었다.`, { projectId: project.project_id }),
     });
   }
@@ -430,8 +442,17 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const named = (id: string) => { const n = [...ws.ongoing, ...ws.pipeline].find((x) => x.project_id === id)?.name; return n ? `${id} ${n}` : id; };
   const projectName = (id: string) => [...ws.pipeline, ...ws.ongoing].find((x) => x.project_id === id)?.name;
   const nameOf = (pid: string) => wsNames.get(pid) ?? pById.get(pid)?.name ?? pid;
+  // 지금 어디쯤(2026-10-22 화면 검토 P2-3): 등록 → 후보·자동 편성 → 확정(사유) → 검토 자료 → 변경 보고서
+  const stepNow = confirmed ? 3 : ws.pipeline.length === 0 || formOpen ? 0 : draftList.length > 0 || autoConfirm || confirm ? 2 : 1;
   return (
     <div className="max-w-[1180px] space-y-4">
+      <Steps label="신규 사업 편성 단계" current={stepNow}
+             steps={["신규 사업 등록", "후보 고르기·자동 편성", "확정(등급 대체·빼 온 자리·예산 사유)", "인사팀 검토 자료", "변경 보고서"]}
+             next={confirmed ? <>
+               {onReviewDoc && <button type="button" className="btn-primary px-2.5 py-1 text-xs"
+                                       onClick={() => onReviewDoc(confirmed.version, confirmed.projectId)}>검토 자료 만들기</button>}
+               {onChangeReport && <button type="button" className="btn px-2.5 py-1 text-xs" onClick={onChangeReport}>변경 보고서</button>}
+             </> : undefined} />
       {notice && <Notice>{notice}</Notice>}
       {confirmed && onReviewDoc && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-pine-200 bg-pine-50 px-3 py-2 text-[13px] text-pine-800">
@@ -469,7 +490,9 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
               </ul>
             )}
           <div className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-            쉬는 인력 {ws.bench.length}명 · 계획 기간 안에 끝나는 진행 사업 {ws.ongoing.filter((o) => o.ends_in_horizon).length}개
+            {/* "쉬는 인력 10명"(왼쪽)과 후보 탭 "쉬는 인력 11"이 같은 이름에 다른 뜻이었다(2026-10-22 화면 검토 P3-3) -- 이쪽은 대기 명단 전체 */}
+            대기 인력 {ws.bench.length}명{ws.bench.some((p) => p.unavailable) ? `(계획 기간에 휴직 등으로 못 넣는 ${ws.bench.filter((p) => p.unavailable).length}명 포함)` : ""}
+            {" "}· 계획 기간 안에 끝나는 진행 사업 {ws.ongoing.filter((o) => o.ends_in_horizon).length}개
           </div>
         </Panel>
 
@@ -526,6 +549,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                          onRemove={(id) => setDraft((d) => { const n = { ...d }; delete n[id]; return n; })} />
               <GradeSwapBox items={draftSwaps} budgetAdd={cands?.draft?.budget_add} reasons={swapReasons} named={named} disabled={busy}
                             onReason={(k, v) => setSwapReasons((r) => ({ ...r, [k]: v }))} />
+              <BudgetRaiseBox raises={draftRaises} reasons={raiseReasons} named={named} disabled={busy}
+                              onReason={(j, v) => setRaiseReasons((r) => ({ ...r, [j]: v }))} />
               {fresh && cands?.draft && (
                 <SeatHoleBox holes={cands.draft.holes} fillOptions={cands.draft.fill_options} fills={cands.draft.fills} named={named}
                              waivers={waivers} disabled={busy} removable={new Set(fillBody.map((f) => f.person_id))}
@@ -571,7 +596,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                           <td className="text-xs text-slate-500">
                             {r.pulled_from.length ? <><ProjectCodes ids={r.pulled_from} projects={projects} />에서 빼 옴</> : r.source === "partly_free" ? "남는 시간으로"
                               : r.source === "concurrent" ? "원래 사업 유지(프로젝트 동시 수행)" : ""}
-                            {r.new_violations.length > 0 && <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>}
+                            {/* 예산 초과만이면 막는 위반이 아니다 -- 넣으면 확정 때 사유와 함께 증액한다(2026-10-22 P3-2) */}
+                            {r.new_violations.length > 0 && (budgetOnly(r.new_violations)
+                              ? <span className="ml-1 text-amber-700">넣으면 예산 초과(확정 때 증액 사유)</span>
+                              : <span className="ml-1 text-amber-700">넣으면 위반({violationReasons(r.new_violations)})</span>)}
                             {(r.grade_swap?.length ?? 0) > 0 && (
                               <span className="ml-1 text-amber-700" title="다른 등급 빈자리를 메웁니다 -- 확정할 때 사유를 적고 그 사업 정원을 바꿉니다">
                                 등급 대체({r.grade_swap!.map((x) => `${x.seat} 자리`).join(", ")})</span>
@@ -602,10 +630,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
       {draftList.length > 0 && project && (
         <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠집니다.">
-          <button className="btn-primary" disabled={busy || !fresh || draftBlocked || swapMissing || holeMissing} onClick={applyDraft}
+          <button className="btn-primary" disabled={busy || !fresh || draftBlocked || swapMissing || raiseMissing || holeMissing} onClick={applyDraft}
                   title={!fresh ? "고른 사람의 미리 계산이 끝나야 확정할 수 있습니다"
                     : draftBlocked ? "확정하면 규칙 위반이 생깁니다(위 '넣기로 고른 사람' 참고)"
                     : swapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다(위 '등급 대체')"
+                    : raiseMissing ? "예산 증액 사유를 적어야 확정할 수 있습니다(위 '예산 초과')"
                     : holeMissing ? "빼 온 자리를 메우거나 '메우지 않음'과 사유를 적어야 확정할 수 있습니다(위 '빼 온 자리')" : undefined}>{draftList.length}명 확정</button>
           <button className="btn-ghost" onClick={() => setDraft({})}>고른 것 지우기</button>
         </ActionBar>

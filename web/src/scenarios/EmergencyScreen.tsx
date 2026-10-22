@@ -3,7 +3,7 @@
  *  상황(필요 기술·인원·등급·빼 오기 허용)을 적으면 최선 조합과 후보 순위가 나온다. 확정하면 그 사업의 정원·예산·요구 기술이
  *  늘어난 새 판이 된다(서버가 계산한 apply_hint 그대로). */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Spinner, Tabs } from "../ui";
+import { ActionBar, Chip, Dialog, EmptyState, GRADE_TONE, Notice, Panel, Spinner, Steps, Tabs } from "../ui";
 import { UnavailableList } from "./UnavailableList";
 import { ScoreSplitNote } from "../components/ScoreSplitNote";
 import { seatsText, signedPts, splitText } from "../components/scoreSplit";
@@ -29,14 +29,16 @@ const GRANT_MEMO_MAX = 200;
 const PICK_MAX = 10;
 /** 글자(코드 포인트) 단위로 자른다 -- UTF-16 단위로 자르면 이모지가 경계에서 반쪽이 되어 서버가 422로 거절한다(2라운드 리뷰 NIT) */
 const clip = (s: string, n: number) => Array.from(s).slice(0, n).join("");
-const GROUP_LABEL: Record<Group, string> = { bench: "쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
+const GROUP_LABEL: Record<Group, string> = { bench: "넣을 수 있는 쉬는 인력", spare: "여유 있는 인력", pull: "다른 사업에서 빼 오기" };
 
-export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc, people, projects }: {
+export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc, onChangeReport, people, projects }: {
   datasetVersion?: string | null; onDatasetChanged: () => void;
   /** 이름을 누르면 기술 창, 사업 코드에 마우스를 올리면 이름(2026-10-20 화면 친절하게) -- 없으면 이름·코드만 */
   people?: Person[]; projects?: Project[];
   /** 확정 뒤 "인사팀 검토 자료 만들기"(claude-a 2026-10-19 -- 사용자 결정: 긴급 투입도 자료) */
   onReviewDoc?: (version: string, projectId: string | null) => void;
+  /** 단계 표시의 마지막 "변경 보고서"(2026-10-22) -- 검토 자료 화면의 변경 보고서 탭 */
+  onChangeReport?: () => void;
 }) {
   const [confirmed, setConfirmed] = useState<{ version: string; projectId: string | null; seen: string | null } | null>(null);
   useEffect(() => {                                  // 판이 바뀌면 옛 확정의 버튼은 지운다(리뷰 P3)
@@ -273,8 +275,17 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
   const pById = new Map((people ?? []).map((p) => [p.id, p]));
   // 전일 투입이면 모두 100% -- 투입률 칸은 100%가 아닌 후보가 있을 때만(사용자 2026-10-20 "100프로는 빼도")
   const splitAlloc = (shown ? Object.values(shown).flat() : []).some((r) => Math.abs(r.alloc - 1) > 1e-9);
+  // 지금 어디쯤(2026-10-22 화면 검토 P2-3): 사업·상황 → 요구 읽기·추천 → 고르기·미리 보기 → 확정 → 검토 자료·보고
+  const stepNow = confirmed ? 4 : !projectId ? 0 : !plan ? 1 : Object.keys(picks).length || pickConfirm || confirming ? 3 : 2;
   return (
     <div className="max-w-[1180px] space-y-4">
+      <Steps label="긴급 투입 단계" current={stepNow}
+             steps={["사업·상황 적기", "요구 읽기·추천", "후보 고르기·미리 보기", "확정(빼 온 자리·사유)", "인사팀 검토 자료·보고서"]}
+             next={confirmed ? <>
+               {onReviewDoc && <button type="button" className="btn-primary px-2.5 py-1 text-xs"
+                                       onClick={() => onReviewDoc(confirmed.version, confirmed.projectId)}>검토 자료 만들기</button>}
+               {onChangeReport && <button type="button" className="btn px-2.5 py-1 text-xs" onClick={onChangeReport}>변경 보고서</button>}
+             </> : undefined} />
       {notice && <Notice>{notice}</Notice>}
       {confirmed && onReviewDoc && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-pine-200 bg-pine-50 px-3 py-2 text-[13px] text-pine-800">

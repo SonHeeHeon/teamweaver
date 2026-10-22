@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminLoginRequiredError } from "../api/client";
-import { ReviewDoc } from "./ReviewDoc";
+import { ReviewDoc, confirmLabel } from "./ReviewDoc";
+import { ChangeReportPanel } from "./ChangeReportPanel";
 import { Spinner } from "../ui";
 import {
   ReviewConflictError, createReviewDoc, downloadReviewPdf, draftReviewDoc, fetchConfirms, fetchReviewDoc, saveReviewDoc,
@@ -9,14 +10,18 @@ import {
 
 /** "검토 자료" 메뉴(2026-10-19, claude-a): 확정(신규 사업 편성·긴급 투입)마다 사업별 인사팀 검토 자료를 만들고 고쳐 PDF로 낸다.
  *  신규 사업 편성·긴급 투입 화면(claude-b)은 확정 뒤 `open`으로 이 화면의 한 자료를 바로 연다. */
-export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = null, onOpened }: {
+export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = null, onOpened, initialView = "docs" }: {
   adminToken?: string | null;
   onLoginRequired?: (reason: string) => void;
   /** 바로 열 자료(확정 직후 화면이 넘긴다) */
   open?: { version: string; projectId: string } | null;
   /** open을 한 번 쓴 뒤 부른다 -- App이 비워야 메뉴로 다시 들어올 때 옛 자료가 또 열리지 않는다(리뷰 P2) */
   onOpened?: () => void;
+  /** 처음 보일 탭: 사업별 검토 자료(docs) · 변경 보고서(changes, 2026-10-22) */
+  initialView?: "docs" | "changes";
 }) {
+  const [view, setView] = useState<"docs" | "changes">(initialView);
+  useEffect(() => { setView(initialView); }, [initialView]);
   const [rows, setRows] = useState<ConfirmRow[] | null>(null);
   const [doc, setDoc] = useState<ReviewDocView | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,12 +91,32 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
     );
   }
 
+  const tabs = (
+    <div className="mt-3 flex gap-1 border-b border-line text-[13.5px]" role="tablist" aria-label="검토 자료 보기">
+      {([["docs", "사업별 검토 자료"], ["changes", "변경 보고서"]] as const).map(([k, label]) => (
+        <button key={k} type="button" role="tab" aria-selected={view === k}
+                className={`-mb-px border-b-2 px-3 py-1.5 ${view === k ? "border-pine-700 font-semibold text-ink" : "border-transparent text-slate-500"}`}
+                onClick={() => setView(k)}>{label}</button>
+      ))}
+    </div>
+  );
+  if (view === "changes") {
+    return (
+      <section className="panel max-w-[880px] p-5" aria-labelledby="review-docs-title">
+        <h2 id="review-docs-title" className="text-base font-semibold text-slate-900">인사팀 검토 자료</h2>
+        {tabs}
+        <div className="mt-3"><ChangeReportPanel adminToken={adminToken} onLoginRequired={onLoginRequired} /></div>
+      </section>
+    );
+  }
+
   return (
     <section className="panel max-w-[880px] p-5" aria-labelledby="review-docs-title">
       <h2 id="review-docs-title" className="text-base font-semibold text-slate-900">인사팀 검토 자료</h2>
-      <p className="mt-1 text-[13px] text-slate-500">
-        신규 사업 편성·긴급 투입을 확정하면 사람이 새로 들어간 사업마다 자료 한 편을 만듭니다. 시스템 사실은 잠겨 있고,
-        부서장은 본문을 고치고 사실마다 해명·이의, 옮겨 온 사람마다 판단과 원래 사업 합의를 적습니다.
+      {tabs}
+      <p className="mt-3 text-[13px] text-slate-500">
+        신규 사업 편성·긴급 투입·What-if를 확정하면 사람이 새로 들어간 사업마다 자료 한 편을 만듭니다. 시스템 사실은 잠겨 있고,
+        부서장은 본문을 고치고 사실마다 해명·이의, 옮겨 온 사람마다 판단과 원래 사업 합의를 적습니다. 기간 보고는 "변경 보고서" 탭에서 묶습니다.
       </p>
       {error && <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-600">{error}</p>}
       {rows === null ? <p className="mt-4 text-sm text-slate-500">불러오는 중…</p> : rows.length === 0 ? (
@@ -103,7 +128,7 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
           {rows.map((r) => (
             <li key={r.version} className="rounded-lg border border-line px-4 py-3">
               <div className="flex flex-wrap items-center gap-2 text-[13px]">
-                <b>{r.kind === "emergency" ? "긴급 투입" : "신규 사업 편성"}</b>
+                <b>{confirmLabel(r)}</b>
                 <span className="text-slate-500">{r.at ? new Date(r.at).toLocaleString("ko-KR") : ""} · {r.note}</span>
                 {r.active && <span className="rounded-full bg-pine-100 px-2 text-[11px] text-pine-800">지금 판</span>}
                 {r.reverted && <span className="rounded-full bg-red-100 px-2 text-[11px] text-red-700">{r.cancelled ? "확정 취소됨" : "되돌려짐"}</span>}
@@ -114,7 +139,7 @@ export function ReviewDocsPanel({ adminToken = null, onLoginRequired, open = nul
                     <span>
                       {p.name} <span className="text-slate-400">({p.project_id})</span>
                       {p.exists && <span className="ml-2 text-[12px] text-slate-500">
-                        {p.status === "exported" ? "내보냄" : "작성 중"} · 옮겨 온 사람 {p.movers}명{p.objections ? ` · 이의 ${p.objections}건` : ""}
+                        {p.status === "exported" ? "내보냄" : "작성 중"} · 새로 들어온 사람 {p.joined ?? p.movers}명(옮겨 옴 {p.movers}명){p.objections ? ` · 이의 ${p.objections}건` : ""}
                       </span>}
                     </span>
                     <button type="button" className={p.exists ? "btn" : "btn-primary"} disabled={busy || (!p.exists && !r.active)}

@@ -80,10 +80,15 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   const [tab, setTab] = useState<Tab>(initialTab);
   // 확정 화면에서 "인사팀 검토 자료 만들기"로 넘어온 자료(claude-a 2026-10-19) -- 사업이 없으면(자동 편성) 목록만 연다
   const [reviewOpen, setReviewOpen] = useState<{ version: string; projectId: string } | null>(null);
+  const [reviewView, setReviewView] = useState<"docs" | "changes">("docs");
   const openReviewDoc = useCallback((version: string, projectId: string | null) => {
     setReviewOpen(projectId ? { version, projectId } : null);
+    setReviewView("docs");
     setTab("reviews");
   }, []);
+  // 단계 표시의 마지막 단계 "변경 보고서"(2026-10-22 P2-2·P2-3) -- 검토 자료 화면의 변경 보고서 탭으로 연다
+  const openChangeReport = useCallback(() => { setReviewOpen(null); setReviewView("changes"); setTab("reviews"); }, []);
+  useEffect(() => { if (tab !== "reviews") setReviewView("docs"); }, [tab]);
   const [weights, setWeights] = useState<Record<string, number>>({});
   const [plans, setPlans] = useState<PlanEvent[]>([]);
   /** 상황 화면이 데이터를 바꿔 편성안을 닫았을 때 그 화면 이름(What-if 빈 화면이 이유를 보인다, 2026-10-21 사용자 질문) */
@@ -744,11 +749,11 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         <div className={tab === "pipeline" ? "" : "hidden"}>
           <NewProjectsScreen milpParams={recordOperating ?? (settings ? effectiveSettings(settings) : null)}
                              datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("신규 사업 편성"); }}
-                             onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
+                             onReviewDoc={openReviewDoc} onChangeReport={openChangeReport} people={meta?.people} projects={meta?.projects} />
         </div>
         <div className={tab === "emergency" ? "" : "hidden"}>
           <EmergencyScreen datasetVersion={dataset?.version ?? null} onDatasetChanged={() => { void ownSwitch("긴급 투입"); }}
-                           onReviewDoc={openReviewDoc} people={meta?.people} projects={meta?.projects} />
+                           onReviewDoc={openReviewDoc} onChangeReport={openChangeReport} people={meta?.people} projects={meta?.projects} />
         </div>
         {/* What-if(지금 배치, 2026-10-21): 담은 변경이 메뉴를 오가도 남게 숨김 방식 */}
         <div className={tab === "whatif" ? "" : "hidden"}>
@@ -779,7 +784,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
           <div className="space-y-4">
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <ReviewDocsPanel adminToken={adminToken || null} onLoginRequired={adminExpired} open={reviewOpen}
-                             onOpened={() => setReviewOpen(null)} />
+                             onOpened={() => setReviewOpen(null)} initialView={reviewView} />
           </div>
         ) : tab === "records" ? (
           <div className="max-w-[1080px] space-y-4">
@@ -839,6 +844,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
           <>
           <AnnualSteps tab={tab} onTab={setTab} hasPlans={false} />
           <WhatifEmpty dataset={dataset} onCompute={() => setTab("annual")} onRecords={() => setTab("records")} closedBy={closedBy}
+                       onPipeline={() => setTab("pipeline")}
                        confirmed={planConfirmed} />
           </>
         ) : (

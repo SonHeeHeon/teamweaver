@@ -7,7 +7,8 @@ import { hasMarkers, numberMarkers } from "../components/evidenceMarkers";
 import { formatAlloc, formatMonthly, horizonRange } from "../components/allocFormat";
 import { lifecycleTags, projectPeriod } from "../components/lifecycle";
 import { fallbackText, segmentsOf } from "../components/justification";
-import { ReviewDoc } from "../review/ReviewDoc";
+import { ReviewDoc, sentences } from "../review/ReviewDoc";
+import { ChangeReport, type ChangeReportData } from "../review/ChangeReport";
 import type { ReviewDocView } from "../review/reviewApi";
 import { creditedLine } from "../components/skillLabel";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
@@ -37,9 +38,21 @@ declare global {
 /** 인쇄 전용 페이지. Playwright가 add_init_script로 window.__REPORT_DATA__를
  *  먼저 심고 이 라우트로 이동한다. 레이아웃이 끝나면 __REPORT_READY__를 세워
  *  "이제 인쇄해도 된다"를 알린다. */
-/** PDF 한 장의 종류: 편성안 보고서(기본) 또는 인사팀 검토 자료(kind="review", 2026-10-19 claude-a -- api/routes/review_docs). */
+/** PDF 한 장의 종류: 편성안 보고서(기본) · 인사팀 검토 자료(kind="review", 2026-10-19 claude-a -- api/routes/review_docs)
+ *  · 변경 보고서(kind="changes", 2026-10-22 -- api/routes/changes, 건별·기간 묶음). */
 export function ReportPage() {
-  return window.__REPORT_DATA__?.kind === "review" ? <ReviewReport doc={window.__REPORT_DATA__.doc} /> : <PlanReport />;
+  const kind = window.__REPORT_DATA__?.kind;
+  return kind === "review" ? <ReviewReport doc={window.__REPORT_DATA__.doc} />
+    : kind === "changes" ? <ChangesReport data={window.__REPORT_DATA__ as ChangeReportData} /> : <PlanReport />;
+}
+
+function ChangesReport({ data }: { data: ChangeReportData }) {
+  useEffect(() => { window.__REPORT_READY__ = true; }, []);
+  return (
+    <main className="report-root mx-auto max-w-[780px] p-8">
+      <ChangeReport data={data} />
+    </main>
+  );
 }
 
 function ReviewReport({ doc }: { doc: ReviewDocView }) {
@@ -113,7 +126,7 @@ function PlanReport() {
             : ""}:{" "}
           {data.solve_evidence.carried_from_k != null
             // 화면 K 표와 같은 규칙: 이전 K의 해를 유지한 결과에 그 K의 증명을 붙이지 않는다
-            ? <span>독립 검증 통과 · {data.plan_label}에서 더 나은 해가 없어 K={data.solve_evidence.carried_from_k}의 해를 유지했다
+            ? <span>규칙 위반 없음 확인(검증기) · {data.plan_label}에서 더 나은 해가 없어 K={data.solve_evidence.carried_from_k}의 해를 유지했다
                 (이 K의 최선 증명이 아니다)</span>
             : <ConfidenceBadge termination={data.solve_evidence.termination} timeLimited={data.solve_evidence.time_limited}
                                objective={data.solve_evidence.objective} bestBound={data.solve_evidence.best_bound}
@@ -227,7 +240,9 @@ function PlanReport() {
               발표 시점에 LLM을 사용할 수 없었다.
             </p>
           )}
-          <p className="mt-2 text-sm">{numberMarkers(data.briefing.rationale ?? "", data.briefing.evidence ?? [])}</p>
+          <div className="mt-2 space-y-0.5 text-sm">
+            {sentences(numberMarkers(data.briefing.rationale ?? "", data.briefing.evidence ?? [])).map((s, i) => <p key={i}>{s}</p>)}
+          </div>
           <h3 className="mt-3 text-xs font-medium text-slate-500">주의할 점</h3>
           <ul className="list-inside list-disc text-sm">
             {(data.briefing.risks ?? []).map((r: string) => <li key={r}>{numberMarkers(r, data.briefing.evidence ?? [])}</li>)}
