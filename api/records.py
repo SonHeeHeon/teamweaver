@@ -235,6 +235,7 @@ def _build_and_verify(rec: dict):
 def _verify_plans(rec: dict, active, manifest: dict):
     from api.cache import ResultCache
     from api.demo_precomputed import Precomputed, _close, operating_key
+    from api.routes.optimize import locked_pairs, missing_locks
     from core.evaluate.plan_eval import evaluate_plan
     from core.scoring.engine import ScoringEngine
 
@@ -279,7 +280,12 @@ def _verify_plans(rec: dict, active, manifest: dict):
     pre.plans = plans
     stop = rec["optimize"].get("stop_reason")
     pre.stop_reason = stop if stop in ("time_limit", "user_stopped") else None
-    pre.optimize_key = ResultCache.key(weights, params, n_alt, version)
+    keep = req.get("keep_locked") is True and bool(locked := locked_pairs(active))
+    if keep:
+        for p in plans:
+            if miss := missing_locks(locked, p.entries):
+                raise RecordError(f"안 {p.label}: 고정을 지켜 짠 기록인데 고정 배치가 빠져 있다({', '.join(miss[:3])}).")
+    pre.optimize_key = ResultCache.key(weights, params, n_alt, version, keep_locked=keep)
     op = rec.get("operating")
     if op:
         try:
@@ -379,8 +385,9 @@ def export_record(app, active, **kw) -> dict:
 
 
 def _export_record(app, active, *, title: str, weights: dict, milp_params: dict, n_alternatives: int,
-                   plans: list[dict], stop_reason: str | None = None) -> dict:
+                   plans: list[dict], stop_reason: str | None = None, keep_locked: bool = False) -> dict:
     from api.plan_token import verify_evidence, verify_plan
+    from api.routes.optimize import locked_pairs, missing_locks
     from core.evaluate.plan_eval import evaluate_plan
     from core.scoring.engine import ScoringEngine
     title = title.strip()
@@ -391,10 +398,14 @@ def _export_record(app, active, *, title: str, weights: dict, milp_params: dict,
     eng = ScoringEngine(active.graph)
     S, C = eng.skill_matrix(weights), eng.synergy_matrix()
     out_plans = []
+    # 고정을 지키며 짠 결과(2026-10-21)는 요청에 그 선택을 남긴다 -- 고정이 없으면 같은 계산이라 남기지 않는다(예전 기록 모양 그대로)
+    keep = keep_locked and bool(locked := locked_pairs(active))
     for p in plans:
         entries = [AssignEntry(**e).model_dump() for e in p.get("entries", [])]
         if not verify_plan(p.get("plan_token", ""), version, str(p.get("label")), entries, weights, params):
             raise RecordError(f"안 {p.get('label')}: 이 서버가 지금 데이터로 계산한 결과가 아니다(서명 불일치).")
+        if keep and (miss := missing_locks(locked, entries)):
+            raise RecordError(f"안 {p.get('label')}: 고정을 지켜 짠 안이 아니다(빠진 고정 {', '.join(miss[:3])}).")
         evidence = p.get("evidence") or {}
         if not verify_evidence(p.get("evidence_token", ""), p["plan_token"], evidence):
             raise RecordError(f"안 {p.get('label')}: 계산 신뢰도 서명이 맞지 않다.")
@@ -427,7 +438,8 @@ def _export_record(app, active, *, title: str, weights: dict, milp_params: dict,
                     "horizon_start": manifest.get("horizon_start"), "horizon_months": manifest.get("horizon_months"),
                     "files": files},
         "review_judgments": judgments,
-        "request": {"weights": weights, "milp_params": milp_params, "n_alternatives": n_alternatives},
+        "request": {"weights": weights, "milp_params": milp_params, "n_alternatives": n_alternatives,
+                    **({"keep_locked": True} if keep else {})},
         "optimize": {"plans": out_plans, "stop_reason": stop_reason if stop_reason in ("time_limit", "user_stopped") else None,
                      "computed_at": _now()},
         "operating": operating,

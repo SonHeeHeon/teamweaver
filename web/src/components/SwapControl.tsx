@@ -21,6 +21,8 @@ interface Props {
   horizonStart?: string | null;
   /** 고른 사람이 바뀌면(관계 목록용) */
   onPick?: (pick: SwapPick) => void;
+  /** 검토한 교체가 명단에 들어가는 길(설명 문장). 편성안 다듬기는 '적용', What-if(지금 배치)는 담기 → 확정 */
+  applyNote?: string;
 }
 
 function PersonChip({ id, label, blocked, title }: { id: string; label: string; blocked?: string | null; title?: string }) {
@@ -65,7 +67,8 @@ export function parseIn(v: string): { personId: string; from: string | null } {
 
 export interface SwapPick { outPersonId: string | null; projectId: string | null; inPersonId: string | null; from: string | null }
 
-export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, projects, horizonStart, onPick }: Props) {
+export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, projects, horizonStart, onPick,
+                              applyNote = "실제 명단은 '적용'해야 바뀝니다." }: Props) {
   // 교체 대상은 (사람, 프로젝트) 쌍으로 식별한다 -- swapRules.entryKey 주석 참고.
   const [outKey, setOutKeyState] = useState("");
   const [inId, setInIdState] = useState("");
@@ -167,7 +170,7 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, 
     <div ref={sectionRef} className="rounded-lg border border-slate-200 bg-white p-4">
       <h3 className="text-sm font-semibold text-slate-900">인력 교체 (What-if)</h3>
       <p className="mb-3 mt-0.5 text-[12.5px] text-slate-500">
-        빠질 사람(교체 대상)과 들어올 사람(교체 투입)을 고르면, 교체 전후 점수·규칙 위반·AI 설명을 보여 줍니다. 실제 명단은 '적용'해야 바뀝니다.
+        빠질 사람(교체 대상)과 들어올 사람(교체 투입)을 고르면, 교체 전후 점수·규칙 위반·AI 설명을 보여 줍니다. {applyNote}
         아래에서 고르거나 이름표를 칸으로 끌어다 놓아도 됩니다.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">

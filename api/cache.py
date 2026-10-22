@@ -25,19 +25,22 @@ class ResultCache:
 
     @staticmethod
     def key(weights: dict, milp_params: MilpParams | dict, n_alternatives: int,
-            dataset_version: str) -> str:
+            dataset_version: str, keep_locked: bool = False) -> str:
         """milp_params는 요청 원문이 아니라 *적용된* 전체 값으로 키를 만든다 --
         `{}`과 기본값을 명시한 요청은 같은 계산이므로 같은 키여야 하고, 부팅
         사전계산(저장된 설정)과 웹 요청(같은 설정을 명시)이 맞물려야 한다(K8).
         dataset_version은 활성 데이터셋 내용 해시다 -- 업로드로 데이터가 바뀌면
-        같은 요청이라도 이전 데이터의 결과를 돌려주지 않는다(K9)."""
+        같은 요청이라도 이전 데이터의 결과를 돌려주지 않는다(K9).
+        keep_locked(2026-10-21, 고정 배치를 지키며 짜기)는 참일 때만 키 재료에 넣는다 -- 고정을 풀고 짜는 계산은 예전과 같아
+        기존 키·미리 계산·편성 기록이 그대로 맞물린다."""
         params = milp_params if isinstance(milp_params, MilpParams) else MilpParams(**milp_params)
-        payload = json.dumps(
-            {"weights": dict(sorted(weights.items())),
-             "milp_params": params.model_dump(),
-             "n_alternatives": n_alternatives,
-             "dataset": dataset_version},
-            sort_keys=True)
+        material = {"weights": dict(sorted(weights.items())),
+                    "milp_params": params.model_dump(),
+                    "n_alternatives": n_alternatives,
+                    "dataset": dataset_version}
+        if keep_locked:
+            material["keep_locked"] = True
+        payload = json.dumps(material, sort_keys=True)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> list | None:

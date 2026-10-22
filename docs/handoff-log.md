@@ -22,6 +22,25 @@
 
 ---
 
+## 2026-10-22 · claude-a · AI 효과 보강 — 상황을 말로 · 낯선 기술 이름 정리 · AI 없이와의 비교(보고서·슬라이드·대본) + b 요청 사람별 칸
+- 브랜치/커밋: `feat/claude-a-ai-value`(`feat/claude-a-locks-seat-holes` 위) — `41fc39b`(서버·시험) · `1907dc7`(사전 등록 측정 기준) · `b1a3a00`(화면) · `912537b`(측정 결과·시연 zip) · 문서 커밋. main 미병합(승인 대기, 아래 두 브랜치와 함께).
+- 사용자: "ai를 도입함으로써 … 기존에는 어려웠던게 … 가능해졌다 혹은 … 훨씬 더 효율적이거나 성능이 훨씬 좋아졌다 … 그 포인트를 시연에서도 레포트에서도 꼭 넣어야" → "1,2,3,4,5번 다 좋다. 4,5번은 개발해보자. 4번은 말로 하게되면 추천안(인력)을 받아 선택하도록" · 진행 중 "추가로 b가 요청한 사람별 정보를 넣어줘".
+- 한 일:
+  - 긴급 투입 **상황을 말로**: `POST /api/emergency/parse`(`api/rag/request_parse`) — 사전 별칭 → AI 한 번(사전 id 안) → 서버 검사(근거 말 위치·범위·사람 특성 경고) → AI 없으면 규칙. 화면 `RequestReader`가 확인한 요구로 기존 `/api/emergency/plan`을 부른다(AI는 사람을 보지 않음).
+  - **낯선 기술 이름 정리**: `/api/skills/unknown`·`/unknown/suggest`·`/names`(관리자) — 승인 = manifest `skill_names` 새 판, 사전은 어디서나 `core/ingest/skill_mapping.dictionary_for(manifest)`. 데이터 탭 `SkillNamesPanel`. 시연 묶음 `demo/org-n100-messy-skills(.zip)`.
+  - 측정(사전 등록): 요구 읽기 재현율 0.836 → 1.00(정밀도 1.00 → 0.93) · 기술 이름 실제 별칭 522개 1위 27.2% → 95.2%, 상위 3 53.6% → 100%, 시연 묶음 틀린 기술 점수 34.7% → 0.
+  - 보고서 3.3 "AI가 바꾼 것"(전후 표 + 평가 글·소명 글 나란히) · 8.3 사람 시간 추정(근거 등급), 슬라이드 7 새로(8장), 대본 9분 45초(D1·D7·T2b). D7 말로 받은 추천 = 예전과 같은 배치(`scenarios-1019.json` `emergency_spoken`, +1.25 → +1.30).
+  - 사용자가 낸 "동료 6명 채택" 가짜 평가는 넣지 않았다(사용자에게 알림, 실제 블라인드 비교는 결정 대기).
+- 상대 영향(claude-b):
+  - **b 요청 처리**(`docs/requests/2026-10-21-skill-map-graph-fields.md`): `skill_map` 행 `practical_detail`·`broader`·`narrower`, 지식 그래프 기술 노드 `broader`. `practical_people`는 그대로 — b의 `feat/claude-b-kg-views` 라우트가 `practical_detail`을 쓰면 "자세히" 그림이 켜진다.
+  - 사전을 읽는 새 코드는 `load_dictionary()` 대신 `dictionary_for(manifest)`(데이터) 또는 `dictionary_of_active()`(라우트)를 써야 승인한 이름이 반영된다. `/api/skills/dictionary`도 데이터 사전을 준다.
+  - 새 이력 kind `skill_names`(되돌리기 대상). 긴급 투입 화면 상황 칸 아래에 버튼·결과 상자가 생겼다(`EmergencyScreen` -- b 영역, 사용자 지시로 a가 고침).
+  - 시험 기준선: 파이썬 2116 passed · 1 skipped · 20 deselected · 웹 318.
+- 검증: `uv run --group benchmark pytest -q` → 2116 passed, 1 skipped, 20 deselected(8분 34초) · `cd web && npm test`(318) · `npx tsc -b` · build · 실제 AI 브라우저 확인(임시 데이터 폴더: 기술 이름 AI 제안 14개 5초·$0.0007 → 확실한 10개 반영, 긴급 투입 말로 4.4초 → 이지유 +1.30) · 보고서 PDF 10쪽 · 슬라이드 넘침 0. Codex 한도 소진(10-25 16:31) → 자체 리뷰.
+- 근거: `.omc/plan/2026-10-22-ai-value.md` · `.omc/reports/2026-10-22-ai-value.md` · 조사 `.omc/research/reports/자연어 인력 요청과 기술명 정규화.md` · `rehearsal/results/request-parse.json`·`skill-mapping.json`.
+
+---
+
 ## 2026-10-22 · claude-b · 편성안 카드 점수 표시 **main 병합(사용자 승인 "Main에 합쳐줘")**
 - 커밋: `8d5376c`(merge --no-ff, main `1f4ca6a` 위 -- 브랜치가 main을 이미 담고 있어 합친 트리 = 브랜치 트리, `git diff` 0줄) + 이 커밋(일지). push는 하지 않음.
 - 들어간 것: `7b18e0c`(배치 품질·빈자리 따로, 가장 높은 안, A안 뜻, 신뢰도 배지 점수 단위) · `5be8870`(문서).
@@ -66,6 +85,44 @@
 - 검증: `uv run --group benchmark pytest -q` 2104 passed, 1 skipped, 20 deselected · `-m slow` 20 passed · 웹 336 · tsc·build · 새 파일 oxlint 0 · 브라우저(연말형, 따로 둔 데이터 폴더): 요약 "상대적 강점: 메타데이터 관리 · ETL · SQL · Python · Text Analysis 외 8개", 데이터 거버넌스·IDP 점선, 경력 띠, 콘솔 오류 0.
 - 리뷰: Codex 한도(10-25 16:31) → Claude Opus 폴백 1차 needs-attention(MUST: 인정분만인 기술이 강점으로 보임, SHOULD: 상대 비교 문구·규모 대응) → 2차 approve(SHOULD: 띠 막대 칸 폭이 줄마다 다름 → 한 격자), NIT 반영. 리뷰어에게 임시 데이터 폴더만 쓰게 지시함.
 - 근거: 루트 `.omc/reports/2026-10-22-skill-distribution.md`(+ `.eli5.html`).
+
+---
+
+## 2026-10-21 · claude-a · 연간 계획 고정 선택(유지/풀기) + 빼 온 자리 결정(메움/메우지 않음)
+- 브랜치/커밋: `feat/claude-a-locks-seat-holes`(`docs/claude-a-demo-report-1021` 위) — `ed6a9b7`(고정 선택 서버) · `158432b`(빼 온 자리 서버) · `a7f57a4`(화면) · 문서 커밋. main 미병합(승인 대기).
+- 사용자: ① "안을 짜는걸 요청할 때 고정된 사람이 있으면 팝업을 띄워서 먼저 고정된 사람은 계속 고정할지 아니면 고정 풀고 그 사람들도 다시 배치를 할지 물어보고 그 결정을 따라서" ② "빼간 자리를 매꿔야한다는게 있어야할거같네. 못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로" → "너 추천대로"(모든 확정 경로·예산 그대로).
+- 한 일:
+  - 고정 선택: 연간 계획 계산 전에 고정 배치가 있으면 창으로 묻는다(`LockChoiceDialog`, `/api/meta locked_assignments`). 유지 = `/api/optimize keep_locked` → 모든 안에서 고정 z=1(`core/optimize/alternatives` `fixed=` -- Codex 영역, 요청에 알림), 지킬 수 없는 고정은 계산 전 422. 키는 참일 때만 달라진다(풀기·예전 기록·미리 계산 그대로). 풀고 짠 안은 확정 창 "고정을 풀고 확정"(`release_locks`, 이력 `locks_released`). 기록·밤 배치도 선택을 담는다.
+  - 빼 온 자리: 모든 확정은 진행 사업에 새로 생긴 빈자리(`core/evaluate/seat_holes.new_holes`)를 메우거나 `seat_waivers`(사유)로 받아야 한다 — 메우지 않음 = 그 등급 정원 −n(예산 그대로). 편성 중인 신규 사업(pipeline·proposals)은 뺀다. 미리 계산 4곳이 `holes`·`fill_options`·`fills`를 주고 손 편성은 `fills`로 메운다. 화면 `SeatHoleBox`(긴급 투입 최선 조합·손 편성, 신규 사업 넣기, 확정 창). 최선 조합 화면에 "빼 온 자리를 메운 사람" 줄(예: J014 ← 전다은).
+  - 덤으로 고침: `_apply_hint`·신규 사업 draft가 빼 온 사업의 등급 대체·예산도 담는다(다른 등급으로 메우면 확정이 "대체가 미리 계산과 다르다"로 거절될 수 있었다). 확정 취소가 정해지지 않은 빈자리를 만들면 그 부분은 하지 않는다.
+  - 시연 대본(D7 메운 사람 줄, 막혔을 때 2행), 결과 보고서 6.2·9장 문장(PDF 10쪽 유지), CLAUDE.md 함정 2항.
+- 상대 영향(claude-b·codex): **확정 계약 변경** — 다른 사업에서 사람을 빼고 메우지 않는 확정은 `seat_waivers` 없이는 422다(시험 25개를 `tests/scenarios/holes.waivers`로 고침). `ApplyIn`에 `seat_waivers`·`release_locks`, 신규 사업 후보 POST·긴급 투입 preview에 `fills`, 응답에 `holes`·`fill_options`·`fills`·`side_grade_swaps`·`side_budget_add`, `ConfirmChanges` source `auto`·prop `keepLocked`. `generate_plans_streaming(fixed=)`(없으면 예전과 같음). 시험 기준선 2106·웹 315.
+- 검증: `uv run --group benchmark pytest -q` → 2106 passed, 1 skipped, 20 deselected(8분 34초). 웹 315 passed·`tsc -b`·build. 연초 100명 실측: 고정 유지 시 안 4개 모두 고정 4건 유지, 안 A 59.47 → 56.81(약 65초). 임시 데이터 폴더 브라우저 점검(고정 창·풀고 확정, 최선 조합 메운 사람 줄, 손 편성 빈자리 상자 → 메움 → 확정). 시연 숫자 스크립트 두 개 다시 돌려 숫자 같음. Codex 한도 소진(10-25까지) — 자체 리뷰.
+- 근거: `.omc/reports/2026-10-21-locks-seat-holes.md`, 계획 `.omc/plan/2026-10-21-locks-seat-holes.md`.
+
+---
+
+## 2026-10-21 · claude-a · 시연 대본·슬라이드·결과 보고서 갱신(새 장면 "안 A로 확정"·What-if) + 화면 문구 2곳
+- 브랜치/커밋: `docs/claude-a-demo-report-1021`(main `4d55462`에서) — `3b9daf6`(화면 문구) · 리허설 스크립트 커밋 · 문서 커밋(아래). main 미병합(승인 대기).
+- 사용자: "병합 승인 하고 7,2번 시연 대본에 넣어주고, 시연 전체 와 보고서 업데이트 해줘"(7 = What-if 담기 → 확정, 2 = 연간 계획 "안 A로 확정").
+- 한 일:
+  - `docs/demo-script.md` 다시 짬(9분 40초): 새 D4 안 A로 확정 · D5 What-if(예전 D4 교체 검토를 지금 배치로 옮기고 담기·사유 확정), 뒤 번호 하나씩 밀림. 화면 전체를 Playwright로 다시 눌러 버튼 이름·숫자 확인(교체 효과 보기 · 옮길 인원별로 계산 · K 0~5 · 소명 요약). 내레이션 음절 수 다시 셈(약 2,200음절 ≈ 7분 20초).
+  - **기존 대본 순서 결함 수정**: 검토 자료는 그 확정이 지금 판일 때만 새로 만든다 — J004 긴급 투입 자료를 J015 동시 수행 지원 확정 **전에** 만든다(D7).
+  - 연간 계획 장면(D2~D5)은 백지 연간 기록으로 — 연초 6개월 기록은 고정 4건 때문에 안 확정이 막힌다(CLAUDE.md 함정에 한 줄).
+  - `rehearsal/whatif_scene_numbers.py`(새) → `rehearsal/results/whatif-scenes-1021.json`: D2~D5 숫자(같은 API·같은 순서, AI 없이). `scenario_numbers`·`plan_scene_numbers`는 지금 main에서 다시 돌려 숫자 같음 확인(이름 머리말 "[제안]"·"[실행]"과 날짜만 달라 결과 파일은 그대로 둠).
+  - 슬라이드 4장(시연 흐름 9칸)·5·6장(K=5 +2.8%, 시험 2,093). 결과 보고서: 현업 요구 2행(What-if·확정 취소, 등급 대체), 기능 표·수행 경과(10-20~21), K 0~5(100·200·300명 +2.8·+3.6·+2.5%), 소명 요약 측정, 시험 2,093·웹 312, 설계 판단 2행, 한계 1행. **PDF 10쪽**(긴 문장을 줄이고 긴 표는 행 단위로 쪽을 넘기게, 인쇄 줄 간격 1.5 → 1.46).
+  - 화면 문구(`3b9daf6`): 확정 창 "안 A을(를)" → "안 A를", What-if의 교체 안내 "'적용'해야 바뀝니다" → "'이 변경 담기'로 모아 두고, 확정해야 지금 배치가 바뀝니다"(`SwapControl applyNote`, 편성안 다듬기는 예전 문장).
+- 상대 영향(claude-b): `SwapControl`에 선택 prop `applyNote`(기본값은 예전 문장). README 기능 표 3행·제출물 쪽수/시간, `docs/project-context.md` 2곳. 발견(결정 대기, 요청에 적음): 긴급 투입 최선 조합 화면에 빼 온 자리를 메우는 사람이 안 보인다(검토 자료에만), 전부 다시 짜는 안이 고정을 안 본다.
+- 검증: 웹 312 passed(44 files)·tsc -b·build. 리허설 스크립트 두 번 돌려 같은 결과, 대본 숫자 13항목 JSON 대조 일치. 슬라이드 7장 넘침 없음. PDF 10쪽(쪽마다 그림 확인). 금지어 0. Codex는 10-25까지 한도 소진 — 문서·문구 변경이라 자체 점검.
+- 근거: `.omc/reports/2026-10-21-demo-report-update.md`, 계획 `.omc/plan/2026-10-21-demo-report-update.md`.
+
+---
+
+## 2026-10-21 · claude-a · main 병합: 등급 대체 · What-if 고침 · AI 교체 이전 · 연간 계획/What-if 분리
+- 브랜치/커밋: `feat/claude-a-ai-override-migrate` → `whatif-ui-fixes` → `grade-swap` → `annual-whatif`(b `newproj-explain-cancel` 4f54867까지 포함)를 사용자 승인("병합 승인")으로 main에 `--no-ff` 병합 `4d55462`, push.
+- 한 일: 병합만. 병합 트리는 검증한 `f0df597`과 같다(diff 0줄).
+- 상대 영향(claude-b): main 기준선 2093 passed · slow 20 · 웹 312. b의 새 브랜치 `feat/claude-b-kg-views`(9c34092 위)는 승인 밖이라 넣지 않았다 — main을 합칠 때 메뉴 탭 `plans`/`whatif`와 `/api/workspace/preview`를 확인.
+- 검증: `git diff f0df597 main` 0줄(그 트리에서 pytest 2093 passed · slow 20 · 웹 312).
 
 ---
 

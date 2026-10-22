@@ -209,6 +209,11 @@ def scenario_of(manifest: dict | None) -> dict:
     lifecycle = lifecycle_of(m)
     if lifecycle:
         out["lifecycle"] = lifecycle
+    # 관리자가 승인한 기술 이름 결정(2026-10-22) -- 화면·요청 읽기·기술 사전 목록이 이 데이터의 사전(core.ingest.skill_mapping.dictionary_for)을 쓰게
+    from core.ingest.skill_mapping import decisions_of
+    names = decisions_of(m)
+    if names:
+        out["skill_names"] = names
     return out
 
 

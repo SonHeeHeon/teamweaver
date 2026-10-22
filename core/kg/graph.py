@@ -100,8 +100,10 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
     if reveal_text is None:
         reveal_text = bundle.manifest.get("synthetic") is True
     from core.ingest.convert import LOOKBACK_MONTHS, level_from_months, lookback_start
-    from core.ingest.skills import load_dictionary, person_skill_months
-    sd = load_dictionary() if skill_dictionary is True else (skill_dictionary or None)
+    from core.ingest.skill_mapping import dictionary_for
+    from core.ingest.skills import person_skill_months
+    # 그 데이터의 사전(기본 + 관리자가 승인한 기술 이름 결정, 2026-10-22) -- to_dataset과 같은 사전이어야 같은 경력이 나온다
+    sd = dictionary_for(bundle.manifest) if skill_dictionary is True else (skill_dictionary or None)
     credit = (sd.narrower_credit if partial_credit is None else partial_credit) if sd else 0.0
     canon = sd.canonical if sd else (lambda s: s)
 
@@ -253,6 +255,12 @@ def build_kg(bundle, dataset, parsed=None, *, skill_dictionary=True, partial_cre
     for c in dataset.current:
         if f"person:{c.person_id}" in kg.nodes and f"project:{c.project_id}" in kg.nodes:
             kg.add_edge("CURRENT_ON", f"person:{c.person_id}", f"project:{c.project_id}", alloc=c.alloc, locked=c.locked)
+    # 기술 계보(2026-10-22 claude-b 요청 docs/requests/2026-10-21-skill-map-graph-fields.md): 사전의 상위 기술 이름을 기술 노드에 단다 --
+    # 조직 기술 지도가 "이 데이터에 있는 상위·하위"를 그림으로 보인다. 계산(S)에는 쓰지 않는다(경력 인정은 위 person_skill_months가 이미 했다)
+    if sd:
+        for node in kg.nodes_of("skill"):
+            c = sd.lookup(node["label"])
+            node["broader"] = [sd.concepts[b]["label"] for b in (c.get("broader") or []) if b in sd.concepts] if c else []
     return kg
 
 

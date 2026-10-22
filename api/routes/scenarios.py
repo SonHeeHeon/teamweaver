@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from api.datasets import ActiveDataset
-from api.deps import check_dataset_version, get_dataset
+from api.deps import check_dataset_version, get_dataset, get_openai_client_or_none
 from api.settings import horizon_months_of
 from core.domain.models import Grade
 
@@ -264,10 +264,19 @@ class PickIn(BaseModel):
     pulled_from: list[Annotated[str, Field(min_length=1, max_length=32)]] = Field(default=[], max_length=6)
 
 
+class FillIn(BaseModel):
+    """빼 온 자리를 메울 사람(2026-10-21) -- 빼 온 사업(고른 사람의 pulled_from)에 넣는다. 미리 계산의 fill_options에서 고른다."""
+    model_config = ConfigDict(extra="forbid")
+    person_id: str = Field(min_length=1, max_length=32)
+    project_id: str = Field(min_length=1, max_length=32)
+    alloc: float = Field(default=1.0, gt=0.0, le=1.0)
+
+
 class CandidatesIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     dataset_version: str | None = None
     picks: list[PickIn] = Field(default=[], max_length=30)
+    fills: list[FillIn] = Field(default=[], max_length=20)
     top: int = Field(default=30, ge=1, le=60)
 
 
@@ -294,18 +303,59 @@ def _check_picks(dataset, project_id: str, picks: list[PickIn]) -> None:
                 raise HTTPException(status_code=422, detail=f"{pk.person_id}의 {src} 배치는 고정돼 빼 올 수 없다")
 
 
-def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn], names: dict[str, str]) -> dict:
+def _check_fills(dataset, project_id: str, picks: list[PickIn], fills: list[FillIn]) -> None:
+    """메울 사람이 데이터에 있고, 고른 사람과 겹치지 않고, 빼 온 사업에 넣으며, 그 사업에 아직 없는지(화면이 오래된 경우 422)."""
+    g = dataset.graph
+    sources = {src for pk in picks for src in pk.pulled_from}
+    picked = {pk.person_id for pk in picks}
+    on = {(c.person_id, c.project_id) for c in dataset.current}
+    seen: set[str] = set()
+    for f in fills:
+        if f.person_id not in g.pid_index or f.project_id not in g.project_index:
+            raise HTTPException(status_code=422, detail=f"없는 ID: {f.person_id}@{f.project_id}")
+        if f.person_id in picked or f.person_id in seen:
+            raise HTTPException(status_code=422, detail=f"{f.person_id}은(는) 이미 고른 사람이다")
+        seen.add(f.person_id)
+        if f.project_id == project_id or f.project_id not in sources:
+            raise HTTPException(status_code=422, detail=f"{f.project_id}은(는) 사람을 빼 온 사업이 아니다 -- 메울 자리가 없다")
+        if (f.person_id, f.project_id) in on:
+            raise HTTPException(status_code=422, detail=f"{f.person_id}은(는) 이미 {f.project_id}에 있다")
+
+
+def _after(base, project_id: str, picks: list[PickIn], fills: list[FillIn] = ()):
+    """지금 배치 − 빼 오는 배치 + 고른 사람(대상 사업) + 메울 사람(빼 온 사업)."""
+    from core.optimize.types import AssignEntry
+    pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
+    return [e for e in base if (e.person_id, e.project_id) not in pulled] + [
+        AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks] + [
+        AssignEntry(person_id=f.person_id, project_id=f.project_id, alloc=f.alloc) for f in fills]
+
+
+def hole_view(graph_before, graph_after, S, C, params, base, after, *, skip: str, locked, names: dict[str, str],
+              staffing: set[str] = frozenset()) -> dict:
+    """빼 온 자리 결정 재료(2026-10-21): 새 빈자리(확정 검사와 같은 함수 -- 편성 중인 신규 사업 staffing은 빼고)·메울 후보·같은 확정에서 메운 사람."""
+    from api.seat_fill import fill_options
+    from core.evaluate.seat_holes import fills_of, new_holes
+    holes = new_holes(graph_before, graph_after, base, after, staffing)
+    return {"holes": holes,
+            "fill_options": fill_options(graph_after, S, C, params, after, holes, locked=locked, names=names),
+            "fills": [{**f, "name": names.get(f["person_id"], f["person_id"])}
+                      for f in fills_of(graph_before, base, after, skip=skip)]}
+
+
+def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn], names: dict[str, str],
+                  fills: list[FillIn] = (), locked=frozenset(), staffing: set[str] = frozenset()) -> dict:
     """고른 사람 전체를 넣었을 때(2026-10-20 사용자 "확정 전에도 '넣기'한 인력에 대해서 자리가 얼마나 충당됐는지 계산"): 이 사업의 등급별 자리,
     사업별 정원 변화, 점수 변화 나눔(기술·협업·빈자리), 새 위반 문장, 이 사업 팀 안에서 계산에 들어가는 쌍(고른 사람이 낀 것만)."""
     from api.routes.justification import with_names
     from api.violation_diff import new_or_worse
+    from core.evaluate.grade_swap import substitution
     from core.evaluate.plan_eval import evaluate_plan
-    from core.optimize.types import AssignEntry
-    pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
-    entries_after = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
-        AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
-    # 등급 대체(2026-10-21): 고른 사람이 다른 등급 빈자리를 메우면 확정 뒤 정원(대체 적용)·예산(넘친 만큼 증액)으로 판정한다
-    g2, swaps, budget_add = swap_graph(graph, project_id, base, entries_after)
+    entries_after = _after(base, project_id, picks, fills)
+    # 등급 대체(2026-10-21): 고른 사람이 다른 등급 빈자리를 메우면 확정 뒤 정원(대체 적용)·예산(넘친 만큼 증액)으로 판정한다.
+    # 빼 온 사업을 다른 등급으로 메운 대체도 함께(side_*) -- 확정 검사(substitution)가 모든 사업을 본다
+    g2, swaps_by, budget_by = substitution(graph, base, entries_after)
+    swaps, budget_add = swaps_by.get(project_id, []), budget_by.get(project_id, 0)
     before = evaluate_plan(graph, S, C, params, base)
     after = evaluate_plan(g2, S, C, params, entries_after)
     sim = {"entries": entries_after, "delta": {k: v - _parts(before)[k] for k, v in _parts(after).items()}}
@@ -332,16 +382,21 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
             "unfilled_seats_delta": int(round(unfilled / params.slack_penalty)) if params.slack_penalty else 0,
             # 새로 생기거나 커진 위반(확정과 같은 판정) -- 확정하면 거절될 이유를 미리 보인다
             "new_violations": [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)],
-            "pairs": pairs, "grade_swaps": swaps, "budget_add": budget_add}
+            "pairs": pairs, "grade_swaps": swaps, "budget_add": budget_add,
+            "side_grade_swaps": {j: v for j, v in swaps_by.items() if j != project_id},
+            "side_budget_add": {j: v for j, v in budget_by.items() if j != project_id},
+            **hole_view(graph, g2, S, C, params, base, entries_after, skip=project_id, locked=locked, names=names,
+                        staffing=staffing)}
 
 
-async def _candidates(request: Request, dataset: ActiveDataset, project_id: str, picks: list[PickIn], top: int) -> dict:
+async def _candidates(request: Request, dataset: ActiveDataset, project_id: str, picks: list[PickIn], top: int,
+                      fills: list[FillIn] = ()) -> dict:
     if project_id not in dataset.graph.project_index:
         raise HTTPException(status_code=404, detail=f"없는 사업 ID: {project_id}")
     top = max(1, min(int(top), 60))
     _check_picks(dataset, project_id, picks)
+    _check_fills(dataset, project_id, picks, fills)
     from core.evaluate.staffing_sim import rank_candidates
-    from core.optimize.types import AssignEntry
     from core.scoring.engine import ScoringEngine
     params = _params(request.app, dataset)
     predecessor = parent = None
@@ -353,15 +408,15 @@ async def _candidates(request: Request, dataset: ActiveDataset, project_id: str,
     except Exception:                                   # noqa: BLE001 -- 원천 묶음이 없는 데이터(fixture)면 이전·상위 사업 표시만 없다
         predecessor = parent = None
     names = _names(dataset)
+    from api.seat_fill import staffing_ids
+    staffing = staffing_ids(request.app, dataset)
 
     def go():
         eng = ScoringEngine(dataset.graph)
         S, C = eng.skill_matrix({}), eng.synergy_matrix()
         base = _entries(dataset)
         # 고른 사람을 이 사업 팀원으로 넣고(빼 오는 사람은 원래 사업에서 뺀 채) 나머지 후보를 채점한다 -- 협업 쌍·남은 자리가 고른 사람을 따른다
-        pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
-        entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
-            AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
+        entries = _after(base, project_id, picks, fills)
         # 고른 사람의 등급 대체를 먼저 적용한 정원·예산에서 나머지 후보를 채점한다(2026-10-21 -- 대체한 자리를 또 빈자리로 세지 않게)
         gp = swap_graph(dataset.graph, project_id, base, entries)[0] if picks else dataset.graph
         rows = rank_candidates(gp, S, C, params, entries, project_id, include_pull=True, top=top,
@@ -369,7 +424,8 @@ async def _candidates(request: Request, dataset: ActiveDataset, project_id: str,
         rows = [split_unfilled(r, params.slack_penalty)
                 for r in rescore_unchanged(gp, S, C, params, entries, project_id, rows, names=names)]
         groups = classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
-        draft = draft_summary(dataset.graph, S, C, params, base, project_id, picks, names) if picks else None
+        draft = (draft_summary(dataset.graph, S, C, params, base, project_id, picks, names, fills, _locked(dataset),
+                               staffing) if picks else None)
         return groups, draft
     async with _light(request.app):
         groups, draft = await anyio.to_thread.run_sync(go)
@@ -391,7 +447,7 @@ async def pipeline_candidates_with_picks(project_id: str, body: CandidatesIn, re
                                          dataset: ActiveDataset = Depends(get_dataset)) -> dict:
     """"넣기"로 고른 사람을 팀원으로 친 후보 + 고른 사람 전체의 미리 계산(`draft`) -- 확정 전, 데이터를 바꾸지 않는다(2026-10-20)."""
     check_dataset_version(body.dataset_version, dataset)
-    return await _candidates(request, dataset, project_id, body.picks, body.top)
+    return await _candidates(request, dataset, project_id, body.picks, body.top, body.fills)
 
 
 # --- 긴급 투입 ----------------------------------------------------------------------------------------------------------
@@ -409,8 +465,8 @@ class EmergencyIn(BaseModel):
 
 def _extra_skills(dataset, project_id: str, skills: list[str]) -> tuple[list[str], list[dict]]:
     """(가중치에 쓸 대표 이름, 사업 요구에 새로 더할 기술). 사전에 있으면 대표 이름으로 바꾼다."""
-    from core.ingest.skills import load_dictionary
-    d = load_dictionary()
+    from core.ingest.skill_mapping import dictionary_of_active
+    d = dictionary_of_active(dataset)                 # 이 데이터에서 승인한 기술 이름까지(2026-10-22)
     names = []
     for s in skills:
         c = d.lookup(s)
@@ -455,10 +511,17 @@ def _apply_hint(graph, project_id: str, entries_before, entries_after, extra: li
     headcount_add = {g: c - need.get(g, 0) for g, c in team.items() if c > need.get(g, 0)}
     cost = sum(rate[e.person_id] * e.alloc for e in entries_after if e.project_id == project_id)
     budget_add = max(0, math.ceil(cost - j.monthly_budget - 1e-9))
+    # 빼 온 사업을 다른 등급으로 메운 등급 대체·그로 넘는 예산(2026-10-21) -- 확정 검사(substitution)는 모든 사업을 본다.
+    # 예전엔 대상 사업만 적어, 최선 조합이 다른 등급으로 메우면 확정이 "대체가 미리 계산과 다르다"로 거절됐다
+    from core.evaluate.grade_swap import substitution
+    _, side_swaps, side_budget = substitution(graph, entries_before, entries_after)
+    side_swaps = {jid: v for jid, v in side_swaps.items() if jid != project_id}
+    side_budget = {jid: v for jid, v in side_budget.items() if jid != project_id}
+    all_swaps = {**({project_id: swaps} if swaps else {}), **side_swaps}
     return {"headcount_add": {project_id: headcount_add} if headcount_add else {},
-            "budget_add": {project_id: budget_add} if budget_add else {},
+            "budget_add": {**({project_id: budget_add} if budget_add else {}), **side_budget},
             "skills_add": {project_id: [{**s, "headcount": n} for s in extra]} if extra else {},
-            **({"grade_swaps": {project_id: swaps}} if swaps else {})}
+            **({"grade_swaps": all_swaps} if all_swaps else {})}
 
 
 @router.post("/api/emergency/plan")
@@ -473,6 +536,8 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
     params = _params(request.app, dataset)
     names, extra = _extra_skills(dataset, body.project_id, body.skills)
     nm = _names(dataset)
+    from api.seat_fill import staffing_ids
+    staffing = staffing_ids(request.app, dataset)
 
     def go():
         cand = _augmented(request, dataset, body.project_id, extra, body.n)
@@ -517,6 +582,13 @@ async def emergency_plan(body: EmergencyIn, request: Request, dataset: ActiveDat
             standby = [split_unfilled(r, params.slack_penalty) for r in standby]
             if best.get("accepted"):
                 best = split_unfilled(best, params.slack_penalty)
+                # 빼 온 자리: 같은 조합에서 누가 메웠나·못 메운 자리(2026-10-21 -- 예전엔 검토 자료에만 나왔다). 못 메운 자리는 확정 때
+                # "메우지 않음"과 사유를 받는다(메울 사람을 고르려면 손 편성 -- 최선 조합은 다시 풀지 않는다)
+                from core.evaluate.seat_holes import fills_of, graph_for_hint, new_holes
+                g_after = graph_for_hint(graph, hint)
+                best = {**best, "holes": new_holes(graph, g_after, entries, best["entries"], staffing),
+                        "fills": [{**f, "name": nm.get(f["person_id"], f["person_id"])}
+                                  for f in fills_of(graph, entries, best["entries"], skip=body.project_id)]}
             return best, rows, standby, hint
         finally:
             if cand is not None:
@@ -558,6 +630,42 @@ class EmergencyPreviewIn(BaseModel):
     picks: list[EmergencyPickIn] = Field(min_length=1, max_length=10)
     # "후보 찾기"의 빼 오기 허용 -- 고른 사람을 팀원으로 친 후보 다시 매기기에 쓴다(빼 오기 후보를 낼지)
     pull_budget: int = Field(default=0, ge=0, le=5)
+    # 빼 온 자리를 메울 사람(2026-10-21) -- 미리 계산의 fill_options에서 고른다
+    fills: list[FillIn] = Field(default=[], max_length=20)
+
+
+class ParseIn(BaseModel):
+    """긴급 투입 "상황을 말로"(2026-10-22) -- 상황 글을 요구(기술·인원·등급)로 읽는다. 사람은 AI에 보내지 않는다."""
+    model_config = ConfigDict(extra="forbid")
+    dataset_version: str | None = None
+    text: str = Field(min_length=1, max_length=300)
+
+
+@router.post("/api/emergency/parse")
+async def emergency_parse(body: ParseIn, request: Request, dataset: ActiveDataset = Depends(get_dataset),
+                          client=Depends(get_openai_client_or_none)) -> dict:
+    """상황 글 → 요구 초안(`api.rag.request_parse`). AI가 없거나(키 없음·실데이터 외부 차단) 실패하면 사전 별칭 찾기 + 숫자·등급 규칙으로.
+    부서장이 확인한 뒤 화면이 그 값으로 후보 찾기(`/api/emergency/plan`)를 부른다 -- 추천은 기존 계산이 한다."""
+    check_dataset_version(body.dataset_version, dataset)
+    from api.deps import llm_client_for
+    from api.rag.justification import justification_settings
+    from api.rag.request_parse import parse_request
+    from api.routes.justification import ai_model, ai_timeout_s
+    from core.config import load_pricing
+    from core.ingest.skill_mapping import dictionary_of_active
+    use, why = llm_client_for(dataset, client)
+    model = ai_model()
+    sd = dictionary_of_active(dataset)
+
+    def go():
+        c = use.with_options(timeout=ai_timeout_s(model), max_retries=0) if use is not None else None
+        return parse_request(body.text, sd, client=c, model=model,
+                             reasoning_effort=justification_settings(model)["reasoning_effort"],
+                             price=load_pricing().get("models", {}).get(model, {}))
+    out = await anyio.to_thread.run_sync(go)
+    if use is None:
+        out["fallback_reason"] = why
+    return {**out, "dataset_version": dataset.info.version, "ai_available": use is not None}
 
 
 _AUG_LOCK = threading.Lock()
@@ -590,7 +698,8 @@ def _augmented_graph(request: Request, dataset, project_id: str, extra: list[dic
 
 
 def emergency_draft(graph, S, C, params, base, project_id: str, picks: list[EmergencyPickIn], extra: list[dict],
-                    names: dict[str, str]) -> dict:
+                    names: dict[str, str], fills: list[FillIn] = (), locked=frozenset(),
+                    staffing: set[str] = frozenset()) -> dict:
     """고른 사람을 넣고 확정 때 적을 증원(`_apply_hint`)을 적용한 상태를 지금과 비교한다(2026-10-20 사용자 "긴급 투입에도 미리 보기").
     확정(`/api/workspace/apply`)과 같은 판정: 증원을 적은 데이터로 평가하고, 새로 생기거나 커진 위반(`new_or_worse`). 동시 수행 지원(grant)은
     그 사람만 같은 달 2곳까지 친다(확정이 허용을 함께 적는 것과 같은 조건)."""
@@ -598,20 +707,12 @@ def emergency_draft(graph, S, C, params, base, project_id: str, picks: list[Emer
 
     from api.routes.justification import with_names
     from api.violation_diff import new_or_worse
-    from core.evaluate.grade_swap import graph_with_seats, swapped_need
     from core.evaluate.plan_eval import evaluate_plan
-    from core.optimize.types import AssignEntry
-    pulled = {(pk.person_id, src) for pk in picks for src in pk.pulled_from}
-    after_entries = [e for e in base if (e.person_id, e.project_id) not in pulled] + [
-        AssignEntry(person_id=pk.person_id, project_id=project_id, alloc=pk.alloc) for pk in picks]
+    from core.evaluate.seat_holes import graph_for_hint
+    after_entries = _after(base, project_id, picks, fills)
     hint = _apply_hint(graph, project_id, base, after_entries, extra, len(picks))
-    # 확정 뒤 정원 = 등급 대체를 적용한 정원 + 증원(정원 표에 있는 등급만 -- 예전 graph_with_extra_seats와 같은 규칙)
-    j0 = graph.projects[graph.project_index[project_id]]
-    need = swapped_need({g.value: c for g, c in j0.grade_headcount.items()}, (hint.get("grade_swaps") or {}).get(project_id, []))
-    for g, c in (hint["headcount_add"].get(project_id) or {}).items():
-        if g in need:
-            need[g] += c
-    g2 = graph_with_seats(graph, project_id, need, hint["budget_add"].get(project_id, 0))
+    # 확정 뒤 정원·예산 = 등급 대체(빼 온 사업 포함) + 증원(정원 표에 있는 등급만 -- 예전 graph_with_extra_seats와 같은 규칙)
+    g2 = graph_for_hint(graph, hint)
     grants = {pk.person_id for pk in picks if pk.grant}
     if grants:
         g2 = dc_replace(g2, people=[p.model_copy(update={"max_concurrent": max(2, p.max_concurrent)}) if p.id in grants else p
@@ -640,7 +741,10 @@ def emergency_draft(graph, S, C, params, base, project_id: str, picks: list[Emer
             "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
             "unfilled_seats_delta": int(round(unfilled / params.slack_penalty)) if params.slack_penalty else 0,
             "new_violations": [with_names(v.message, names) for v in new_or_worse(before.violations, after.violations)],
-            "pairs": pairs, "apply_hint": hint, "entries": [e.model_dump() for e in after_entries], "_graph": g2}
+            "pairs": pairs, "apply_hint": hint, "entries": [e.model_dump() for e in after_entries],
+            **hole_view(graph, g2, S, C, params, base, after_entries, skip=project_id, locked=locked, names=names,
+                        staffing=staffing),
+            "_graph": g2}
 
 
 @router.post("/api/emergency/preview")
@@ -652,6 +756,7 @@ async def emergency_preview(body: EmergencyPreviewIn, request: Request, dataset:
     if not any(c.project_id == body.project_id for c in dataset.current):
         raise HTTPException(status_code=422, detail="진행 중인 사업(현재 배치가 있는 사업)만 긴급 투입할 수 있다")
     _check_picks(dataset, body.project_id, body.picks)
+    _check_fills(dataset, body.project_id, body.picks, body.fills)
     for pk in body.picks:
         if pk.grant and pk.pulled_from:
             raise HTTPException(status_code=422, detail=f"{pk.person_id}: 동시 수행 지원은 원래 사업에서 빼 오지 않는다")
@@ -659,13 +764,16 @@ async def emergency_preview(body: EmergencyPreviewIn, request: Request, dataset:
     params = _params(request.app, dataset)
     skill_names, extra = _extra_skills(dataset, body.project_id, body.skills)
     nm = _names(dataset)
+    from api.seat_fill import staffing_ids
+    staffing = staffing_ids(request.app, dataset)
 
     def go():
         from core.evaluate.staffing_sim import rank_candidates
         graph = _augmented_graph(request, dataset, body.project_id, extra, len(body.picks))
         eng = ScoringEngine(graph)
         S, C = eng.skill_matrix({n: 5 for n in skill_names}), eng.synergy_matrix()
-        draft = emergency_draft(graph, S, C, params, _entries(dataset), body.project_id, body.picks, extra, nm)
+        draft = emergency_draft(graph, S, C, params, _entries(dataset), body.project_id, body.picks, extra, nm,
+                                body.fills, _locked(dataset), staffing)
         g2 = draft.pop("_graph")                 # 증원을 적은 그래프 -- 다시 매기기도 확정 뒤 상태를 기준으로(2라운드 리뷰 NIT)
         # 고른 사람을 팀원으로 친 후보 다시 매기기(신규 사업 후보와 같은 방식, 대체 리뷰 SHOULD) -- 최선 조합은 다시 풀지 않는다
         from core.optimize.types import AssignEntry

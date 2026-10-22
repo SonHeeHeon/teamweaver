@@ -4,6 +4,8 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
+from tests.scenarios.holes import waivers
+
 PULLED, BENCH, SRC, TGT = "DP0043", "DP0053", "J004", "J018"
 SITUATION = "고객 요청으로 범위 확대 — 쿠버네티스 경험자 급히 필요"
 
@@ -20,7 +22,8 @@ def _confirm(c, *, source: str, situation: str) -> str:
     entries = [e for e in entries if not (e["person_id"] == PULLED and e["project_id"] == SRC)]
     entries += [{"person_id": PULLED, "project_id": TGT, "alloc": 1.0}, {"person_id": BENCH, "project_id": TGT, "alloc": 1.0}]
     r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": entries, "source": source,
-                                             "note": f"{TGT} 확정", "situation": situation})
+                                             "note": f"{TGT} 확정", "situation": situation,
+                                             "seat_waivers": waivers(c, ws["dataset_version"], entries)})
     assert r.status_code == 200, r.text
     return r.json()["workspace"]["dataset_version"]
 

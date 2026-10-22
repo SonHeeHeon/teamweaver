@@ -223,6 +223,8 @@ export interface OptimizeRequest {
   dataset_version?: string;
   /** 캐시·미리 계산 결과를 쓰지 않고 다시 푼다(화면의 "다시 계산"). */
   fresh?: boolean;
+  /** 고정 배치를 모든 안에서 그대로 둔다(2026-10-21 -- 계산 전에 묻는 창의 "고정 유지하고 짜기") */
+  keep_locked?: boolean;
 }
 
 /** 브라우저 EventSource는 GET 전용인데 /api/optimize는 POST다 -- 그래서
@@ -519,6 +521,8 @@ export function recordFileUrl(id: string): string {
 export async function exportRecord(body: {
   title: string; weights: Record<string, number>; milp_params: Record<string, unknown> | null;
   n_alternatives: number; dataset_version: string; plans: PlanEvent[]; stop_reason?: string | null;
+  /** 고정을 지켜 짠 결과(2026-10-21) -- 기록 요청에 남아 다시 열 때 같은 계산으로 나온다 */
+  keep_locked?: boolean;
 }): Promise<void> {
   const res = await fetch(`${API_BASE}/api/records/export`, {
     method: "POST", credentials: WITH_COOKIE, headers: { "Content-Type": "application/json" },

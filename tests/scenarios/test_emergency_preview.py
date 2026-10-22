@@ -31,8 +31,13 @@ def test_preview_matches_what_confirm_accepts(yearend):
         assert abs(d["skill_delta"] + d["collab_delta"] + d["unfilled_seats_delta"] * 100 - d["delta_total"]) < 1e-3
         # 그대로 확정하면 통과하고(데이터는 미리 보기 때 바뀌지 않았다), 미리 계산한 배치가 지금 배치가 된다
         assert c.get("/api/workspace").json()["dataset_version"] == v
+        # 빼 온 사업의 빈자리는 미리 계산이 알려 주고, 확정은 그 결정(여기서는 메우지 않음)을 받아야 통과한다(2026-10-21)
+        src = pl["pulled_from"][0]
+        assert d["holes"] == {src: [{"grade": pl["grade"], "count": 1}]}
         res = c.post("/api/workspace/apply", json={"dataset_version": v, "entries": d["entries"], "source": "emergency",
-                                                   "note": "J007 긴급 투입(손 편성)", **hint})
+                                                   "note": "J007 긴급 투입(손 편성)", **hint,
+                                                   "seat_waivers": [{"project_id": src, "grade": pl["grade"], "count": 1,
+                                                                     "reason": "남은 인원으로 진행"}]})
         assert res.status_code == 200, res.text
         team = {m["person_id"] for o in res.json()["workspace"]["ongoing"] if o["project_id"] == "J007" for m in o["team"]}
         assert {b["person_id"], pl["person_id"]} <= team

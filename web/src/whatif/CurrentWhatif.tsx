@@ -137,7 +137,8 @@ export function CurrentWhatif({ active, datasetVersion, meta, settings, onDatase
           <SwapControl key={`${ws.dataset_version}-${stack.length}`} people={meta.people} entries={working}
                        onSwap={(s) => void review(s)} busy={busy}
                        onSelectionChange={() => { setResult(null); setLastSwap(null); }}
-                       projects={meta.projects} horizonStart={meta.horizon_start} onPick={setPick} />
+                       projects={meta.projects} horizonStart={meta.horizon_start} onPick={setPick}
+                       applyNote="마음에 들면 '이 변경 담기'로 모아 두고, 확정해야 지금 배치가 바뀝니다." />
           <BriefingPanel result={result} loading={busy && !!lastSwap && !result} nameOf={nameOf} />
           {result && lastSwap && swapLines(result.grade_swaps).length > 0 && (
             <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] text-amber-900">

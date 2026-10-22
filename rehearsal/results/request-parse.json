@@ -1,0 +1,2196 @@
+{
+ "experiment": "request-parse",
+ "when": "2026-10-22T01:27:46+09:00",
+ "commit": "1907dc7",
+ "items": 48,
+ "model": "gpt-6-luna",
+ "dictionary_version": "2026-10-11.1",
+ "rule": {
+  "overall": {
+   "precision": 1.0,
+   "precision_ci": [
+    0.923,
+    1.0
+   ],
+   "recall": 0.836,
+   "recall_ci": [
+    0.717,
+    0.911
+   ],
+   "f1": 0.911,
+   "tp": 46,
+   "fp": 0,
+   "fn": 9,
+   "headcount_acc": 0.958,
+   "grade_acc": 1.0
+  },
+  "by_type": {
+   "명시": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.722,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.722,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 10,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "모호": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.342,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.342,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "미루어 봄": {
+    "precision": null,
+    "precision_ci": null,
+    "recall": 0.0,
+    "recall_ci": [
+     0.0,
+     0.39
+    ],
+    "f1": null,
+    "tp": 0,
+    "fp": 0,
+    "fn": 6,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "별칭": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.701,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.701,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 9,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "복합": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.772,
+     1.0
+    ],
+    "recall": 0.812,
+    "recall_ci": [
+     0.57,
+     0.934
+    ],
+    "f1": 0.897,
+    "tp": 13,
+    "fp": 0,
+    "fn": 3,
+    "headcount_acc": 0.833,
+    "grade_acc": 1.0
+   },
+   "사람 특성": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.61,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.61,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 6,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 0.833,
+    "grade_acc": 1.0
+   },
+   "사전 밖": {
+    "precision": null,
+    "precision_ci": null,
+    "recall": null,
+    "recall_ci": null,
+    "f1": null,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "인원·등급": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.61,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.61,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 6,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   }
+  },
+  "protected": {
+   "items": 6,
+   "warned": 6,
+   "false_warnings": 0,
+   "skills_from_protected": 0
+  },
+  "out_of_dict": 0,
+  "gates": {
+   "out_of_dict_zero": true,
+   "no_skill_from_protected": true,
+   "all_protected_warned": true
+  },
+  "gates_pass": true,
+  "rows": [
+   {
+    "text": "J007에 Kubernetes 경험자 한 명 급히 필요합니다",
+    "type": "명시",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Spark와 Kafka 둘 다 다뤄 본 중급 개발자 2명",
+    "type": "명시",
+    "got": [
+     "kafka",
+     "spark"
+    ],
+    "must": [
+     "kafka",
+     "spark"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "중급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Airflow 배치가 계속 실패해서 Python 잘하는 사람이 필요해요",
+    "type": "명시",
+    "got": [
+     "airflow",
+     "python"
+    ],
+    "must": [
+     "airflow",
+     "python"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "금융 업무 경험 있는 Java 개발자 고급 1명 투입 요청",
+    "type": "명시",
+    "got": [
+     "finance",
+     "java"
+    ],
+    "must": [
+     "finance",
+     "java"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "React 화면 개편 일정이 밀려 React 개발자 두 명 추가",
+    "type": "명시",
+    "got": [
+     "react"
+    ],
+    "must": [
+     "react"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "메타데이터 관리랑 Data Lake & Data Catalog 아는 분 한 분",
+    "type": "명시",
+    "got": [
+     "datalake",
+     "metadata"
+    ],
+    "must": [
+     "datalake",
+     "metadata"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "k8s 클러스터 운영 이관 중 장애 — 경험자 1명",
+    "type": "별칭",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "데이터 파이프라인 아는 사람이 급해요, 파이썬 가능하면 더 좋고",
+    "type": "별칭",
+    "got": [
+     "etl",
+     "python"
+    ],
+    "must": [
+     "etl",
+     "python"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "쿠버네티스랑 도커 컨테이너 둘 다 되는 고급 2명",
+    "type": "별칭",
+    "got": [
+     "docker",
+     "kubernetes"
+    ],
+    "must": [
+     "docker",
+     "kubernetes"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "카프카 스트리밍 지연 이슈, 스파크도 같이 봐야 함",
+    "type": "별칭",
+    "got": [
+     "kafka",
+     "spark"
+    ],
+    "must": [
+     "kafka",
+     "spark"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "스프링 프레임워크 기반 API 유지보수 인력 한 명",
+    "type": "별칭",
+    "got": [
+     "spring"
+    ],
+    "must": [
+     "spring"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "텍스트 마이닝 결과 품질 문제로 중급 1명",
+    "type": "별칭",
+    "got": [
+     "text_analysis"
+    ],
+    "must": [
+     "text_analysis"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "중급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "스캔한 계약서에서 글자를 뽑아내는 부분 정확도가 떨어져 고객 불만이 커요",
+    "type": "미루어 봄",
+    "got": [],
+    "must": [
+     "ocr"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "컨테이너 오케스트레이션 운영할 사람이 갑자기 빠졌습니다",
+    "type": "미루어 봄",
+    "got": [],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "경영진 대시보드 리포트가 매일 틀리게 나와요 리포트 담당 한 명",
+    "type": "미루어 봄",
+    "got": [],
+    "must": [
+     "bi"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "사내 문서로 답하는 챗봇이 엉뚱한 문서를 찾아와서 검색 증강 쪽 아는 분 필요",
+    "type": "미루어 봄",
+    "got": [
+     "chatbot"
+    ],
+    "must": [
+     "rag"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "반복 결재 업무를 봇으로 자동화하는 과제가 지연되고 있어요",
+    "type": "미루어 봄",
+    "got": [],
+    "must": [
+     "rpa"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "테이블 설계가 꼬여서 논리·물리 설계 다시 할 사람 고급 한 명",
+    "type": "미루어 봄",
+    "got": [],
+    "must": [
+     "data_modeling"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 1,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "ETL 인력 세 명, 특급 이상이면 좋겠음",
+    "type": "인원·등급",
+    "got": [
+     "etl"
+    ],
+    "must": [
+     "etl"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 3,
+    "grade": "특급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "SQL 튜닝 가능한 초급 다섯 명",
+    "type": "인원·등급",
+    "got": [
+     "sql_tuning"
+    ],
+    "must": [
+     "sql_tuning"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 5,
+    "grade": "초급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Hadoop 중급 이상 2인",
+    "type": "인원·등급",
+    "got": [
+     "hadoop"
+    ],
+    "must": [
+     "hadoop"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "중급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Scala 하는 분 한 분만 고급으로",
+    "type": "인원·등급",
+    "got": [
+     "scala"
+    ],
+    "must": [
+     "scala"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "검색엔진 튜닝 4명 필요, 등급 무관",
+    "type": "인원·등급",
+    "got": [
+     "search"
+    ],
+    "must": [
+     "search"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 4,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "AWS 인프라 담당 특급 두 분",
+    "type": "인원·등급",
+    "got": [
+     "aws"
+    ],
+    "must": [
+     "aws"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "특급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "사람이 급하게 더 필요합니다",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "일정이 너무 밀려서 아무나 빨리 넣어 주세요",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "고객이 화가 많이 났어요 두 명 정도 더",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "개발 잘하는 사람 한 명",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "PM이 갑자기 휴직해서 대신할 사람",
+    "type": "모호",
+    "got": [
+     "pm"
+    ],
+    "must": [
+     "pm"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "다음 주 오픈인데 테스트 인력이 부족해요",
+    "type": "모호",
+    "got": [
+     "testing"
+    ],
+    "must": [
+     "testing"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "PowerBuilder 레거시 화면 고칠 개발자 한 명 급구",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Unity로 만든 교육용 3D 콘텐츠 유지보수 인력",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Solidity 스마트 컨트랙트 감사 경험자 중급",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": "중급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Fortran 수치 해석 모듈 수정할 고급 2명",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Elixir로 짠 실시간 서버 손볼 수 있는 분",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Xamarin 모바일 앱 개발자 1명",
+    "type": "사전 밖",
+    "got": [
+     "mobile"
+    ],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "30대 남자 Python 개발자 한 명",
+    "type": "사람 특성",
+    "got": [
+     "python"
+    ],
+    "must": [
+     "python"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "결혼 안 한 분이면 야근이 가능할 테니 Java 고급으로",
+    "type": "사람 특성",
+    "got": [
+     "java"
+    ],
+    "must": [
+     "java"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "여성 개발자 우대, React 경험 2명",
+    "type": "사람 특성",
+    "got": [
+     "react"
+    ],
+    "must": [
+     "react"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "젊은 사람으로 Kafka 아는 사람",
+    "type": "사람 특성",
+    "got": [
+     "kafka"
+    ],
+    "must": [
+     "kafka"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "35세 이하 AWS 중급 1명",
+    "type": "사람 특성",
+    "got": [
+     "aws"
+    ],
+    "must": [
+     "aws"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "중급",
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "지방 출신 말고 서울 사람으로 ETL 담당",
+    "type": "사람 특성",
+    "got": [
+     "etl"
+    ],
+    "must": [
+     "etl"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": true,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "운영 이관 중 장애 — k8s랑 배치 데이터 적재 아는 사람 두 명, 고급 이상",
+    "type": "복합",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "etl",
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 1,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "금융권 차세대 데이터 마트 구축, 스파크·데이터 모델링 되는 중급 3명이랑 금융 도메인 아는 사람",
+    "type": "복합",
+    "got": [
+     "data_modeling",
+     "finance",
+     "spark"
+    ],
+    "must": [
+     "data_modeling",
+     "finance",
+     "spark"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 3,
+    "grade": "중급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "공공기관 문서 자동 분류 프로젝트 — OCR 정확도 개선과 텍스트 분석 모델 튜닝, 각각 한 명씩 총 2명",
+    "type": "복합",
+    "got": [
+     "ocr",
+     "public",
+     "text_analysis"
+    ],
+    "must": [
+     "ocr",
+     "public",
+     "text_analysis"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "LLM 챗봇 답변 품질 문제: 프롬프트 다듬을 사람과 파인튜닝 해 본 사람, 특급 1명",
+    "type": "복합",
+    "got": [
+     "chatbot"
+    ],
+    "must": [
+     "llm_finetune",
+     "prompt_eng"
+    ],
+    "tp": 0,
+    "fp": 0,
+    "fn": 2,
+    "headcount": 1,
+    "grade": "특급",
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "그룹사 업무 프로세스 개선 — 프로세스 마이닝이랑 워크플로우 엔진 아는 분 두 명",
+    "type": "복합",
+    "got": [
+     "bpm",
+     "group",
+     "process_mining"
+    ],
+    "must": [
+     "bpm",
+     "group",
+     "process_mining"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "MLOps 파이프라인과 FastAPI 서빙이 같이 깨졌어요, Docker도 필요",
+    "type": "복합",
+    "got": [
+     "docker",
+     "fastapi",
+     "mlops"
+    ],
+    "must": [
+     "docker",
+     "fastapi",
+     "mlops"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "rule",
+    "dropped": [],
+    "unmapped": []
+   }
+  ]
+ },
+ "ai": {
+  "overall": {
+   "precision": 0.932,
+   "precision_ci": [
+    0.838,
+    0.973
+   ],
+   "recall": 1.0,
+   "recall_ci": [
+    0.935,
+    1.0
+   ],
+   "f1": 0.965,
+   "tp": 55,
+   "fp": 4,
+   "fn": 0,
+   "headcount_acc": 0.958,
+   "grade_acc": 1.0
+  },
+  "by_type": {
+   "명시": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.722,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.722,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 10,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "모호": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.342,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.342,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 0.833,
+    "grade_acc": 1.0
+   },
+   "미루어 봄": {
+    "precision": 0.857,
+    "precision_ci": [
+     0.487,
+     0.974
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.61,
+     1.0
+    ],
+    "f1": 0.923,
+    "tp": 6,
+    "fp": 1,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "별칭": {
+    "precision": 0.9,
+    "precision_ci": [
+     0.596,
+     0.982
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.701,
+     1.0
+    ],
+    "f1": 0.947,
+    "tp": 9,
+    "fp": 1,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "복합": {
+    "precision": 0.941,
+    "precision_ci": [
+     0.73,
+     0.99
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.806,
+     1.0
+    ],
+    "f1": 0.97,
+    "tp": 16,
+    "fp": 1,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "사람 특성": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.61,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.61,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 6,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 0.833,
+    "grade_acc": 1.0
+   },
+   "사전 밖": {
+    "precision": 0.0,
+    "precision_ci": [
+     0.0,
+     0.793
+    ],
+    "recall": null,
+    "recall_ci": null,
+    "f1": null,
+    "tp": 0,
+    "fp": 1,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   },
+   "인원·등급": {
+    "precision": 1.0,
+    "precision_ci": [
+     0.61,
+     1.0
+    ],
+    "recall": 1.0,
+    "recall_ci": [
+     0.61,
+     1.0
+    ],
+    "f1": 1.0,
+    "tp": 6,
+    "fp": 0,
+    "fn": 0,
+    "headcount_acc": 1.0,
+    "grade_acc": 1.0
+   }
+  },
+  "protected": {
+   "items": 6,
+   "warned": 6,
+   "false_warnings": 0,
+   "skills_from_protected": 0
+  },
+  "out_of_dict": 0,
+  "gates": {
+   "out_of_dict_zero": true,
+   "no_skill_from_protected": true,
+   "all_protected_warned": true
+  },
+  "gates_pass": true,
+  "rows": [
+   {
+    "text": "J007에 Kubernetes 경험자 한 명 급히 필요합니다",
+    "type": "명시",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Spark와 Kafka 둘 다 다뤄 본 중급 개발자 2명",
+    "type": "명시",
+    "got": [
+     "kafka",
+     "spark"
+    ],
+    "must": [
+     "kafka",
+     "spark"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "중급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Airflow 배치가 계속 실패해서 Python 잘하는 사람이 필요해요",
+    "type": "명시",
+    "got": [
+     "airflow",
+     "python"
+    ],
+    "must": [
+     "airflow",
+     "python"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "금융 업무 경험 있는 Java 개발자 고급 1명 투입 요청",
+    "type": "명시",
+    "got": [
+     "finance",
+     "java"
+    ],
+    "must": [
+     "finance",
+     "java"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "React 화면 개편 일정이 밀려 React 개발자 두 명 추가",
+    "type": "명시",
+    "got": [
+     "react"
+    ],
+    "must": [
+     "react"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "메타데이터 관리랑 Data Lake & Data Catalog 아는 분 한 분",
+    "type": "명시",
+    "got": [
+     "datalake",
+     "metadata"
+    ],
+    "must": [
+     "datalake",
+     "metadata"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "k8s 클러스터 운영 이관 중 장애 — 경험자 1명",
+    "type": "별칭",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "데이터 파이프라인 아는 사람이 급해요, 파이썬 가능하면 더 좋고",
+    "type": "별칭",
+    "got": [
+     "etl",
+     "python"
+    ],
+    "must": [
+     "etl",
+     "python"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "쿠버네티스랑 도커 컨테이너 둘 다 되는 고급 2명",
+    "type": "별칭",
+    "got": [
+     "docker",
+     "kubernetes"
+    ],
+    "must": [
+     "docker",
+     "kubernetes"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "카프카 스트리밍 지연 이슈, 스파크도 같이 봐야 함",
+    "type": "별칭",
+    "got": [
+     "kafka",
+     "spark"
+    ],
+    "must": [
+     "kafka",
+     "spark"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "스프링 프레임워크 기반 API 유지보수 인력 한 명",
+    "type": "별칭",
+    "got": [
+     "spring"
+    ],
+    "must": [
+     "spring"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "API 유지보수"
+    ]
+   },
+   {
+    "text": "텍스트 마이닝 결과 품질 문제로 중급 1명",
+    "type": "별칭",
+    "got": [
+     "data_quality",
+     "text_analysis"
+    ],
+    "must": [
+     "text_analysis"
+    ],
+    "tp": 1,
+    "fp": 1,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "중급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "스캔한 계약서에서 글자를 뽑아내는 부분 정확도가 떨어져 고객 불만이 커요",
+    "type": "미루어 봄",
+    "got": [
+     "ocr"
+    ],
+    "must": [
+     "ocr"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "컨테이너 오케스트레이션 운영할 사람이 갑자기 빠졌습니다",
+    "type": "미루어 봄",
+    "got": [
+     "kubernetes"
+    ],
+    "must": [
+     "kubernetes"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "경영진 대시보드 리포트가 매일 틀리게 나와요 리포트 담당 한 명",
+    "type": "미루어 봄",
+    "got": [
+     "bi",
+     "data_quality"
+    ],
+    "must": [
+     "bi"
+    ],
+    "tp": 1,
+    "fp": 1,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "사내 문서로 답하는 챗봇이 엉뚱한 문서를 찾아와서 검색 증강 쪽 아는 분 필요",
+    "type": "미루어 봄",
+    "got": [
+     "chatbot",
+     "rag"
+    ],
+    "must": [
+     "rag"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "반복 결재 업무를 봇으로 자동화하는 과제가 지연되고 있어요",
+    "type": "미루어 봄",
+    "got": [
+     "rpa"
+    ],
+    "must": [
+     "rpa"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "테이블 설계가 꼬여서 논리·물리 설계 다시 할 사람 고급 한 명",
+    "type": "미루어 봄",
+    "got": [
+     "data_modeling"
+    ],
+    "must": [
+     "data_modeling"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "ETL 인력 세 명, 특급 이상이면 좋겠음",
+    "type": "인원·등급",
+    "got": [
+     "etl"
+    ],
+    "must": [
+     "etl"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 3,
+    "grade": "특급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "SQL 튜닝 가능한 초급 다섯 명",
+    "type": "인원·등급",
+    "got": [
+     "sql",
+     "sql_tuning"
+    ],
+    "must": [
+     "sql_tuning"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 5,
+    "grade": "초급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Hadoop 중급 이상 2인",
+    "type": "인원·등급",
+    "got": [
+     "hadoop"
+    ],
+    "must": [
+     "hadoop"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "중급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "Scala 하는 분 한 분만 고급으로",
+    "type": "인원·등급",
+    "got": [
+     "scala"
+    ],
+    "must": [
+     "scala"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "검색엔진 튜닝 4명 필요, 등급 무관",
+    "type": "인원·등급",
+    "got": [
+     "search"
+    ],
+    "must": [
+     "search"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 4,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "AWS 인프라 담당 특급 두 분",
+    "type": "인원·등급",
+    "got": [
+     "aws"
+    ],
+    "must": [
+     "aws"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "특급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "인프라"
+    ]
+   },
+   {
+    "text": "사람이 급하게 더 필요합니다",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "일정이 너무 밀려서 아무나 빨리 넣어 주세요",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "고객이 화가 많이 났어요 두 명 정도 더",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "개발 잘하는 사람 한 명",
+    "type": "모호",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "PM이 갑자기 휴직해서 대신할 사람",
+    "type": "모호",
+    "got": [
+     "pm"
+    ],
+    "must": [
+     "pm"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "다음 주 오픈인데 테스트 인력이 부족해요",
+    "type": "모호",
+    "got": [
+     "testing"
+    ],
+    "must": [
+     "testing"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "PowerBuilder 레거시 화면 고칠 개발자 한 명 급구",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "PowerBuilder"
+    ]
+   },
+   {
+    "text": "Unity로 만든 교육용 3D 콘텐츠 유지보수 인력",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "Unity"
+    ]
+   },
+   {
+    "text": "Solidity 스마트 컨트랙트 감사 경험자 중급",
+    "type": "사전 밖",
+    "got": [
+     "vuln"
+    ],
+    "must": [],
+    "tp": 0,
+    "fp": 1,
+    "fn": 0,
+    "headcount": null,
+    "grade": "중급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "Solidity"
+    ]
+   },
+   {
+    "text": "Fortran 수치 해석 모듈 수정할 고급 2명",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "Fortran",
+     "수치 해석"
+    ]
+   },
+   {
+    "text": "Elixir로 짠 실시간 서버 손볼 수 있는 분",
+    "type": "사전 밖",
+    "got": [],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "Elixir"
+    ]
+   },
+   {
+    "text": "Xamarin 모바일 앱 개발자 1명",
+    "type": "사전 밖",
+    "got": [
+     "mobile"
+    ],
+    "must": [],
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": [
+     "Xamarin"
+    ]
+   },
+   {
+    "text": "30대 남자 Python 개발자 한 명",
+    "type": "사람 특성",
+    "got": [
+     "python"
+    ],
+    "must": [
+     "python"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": null,
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "결혼 안 한 분이면 야근이 가능할 테니 Java 고급으로",
+    "type": "사람 특성",
+    "got": [
+     "java"
+    ],
+    "must": [
+     "java"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "고급",
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "여성 개발자 우대, React 경험 2명",
+    "type": "사람 특성",
+    "got": [
+     "react"
+    ],
+    "must": [
+     "react"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "젊은 사람으로 Kafka 아는 사람",
+    "type": "사람 특성",
+    "got": [
+     "kafka"
+    ],
+    "must": [
+     "kafka"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "35세 이하 AWS 중급 1명",
+    "type": "사람 특성",
+    "got": [
+     "aws"
+    ],
+    "must": [
+     "aws"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "중급",
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "지방 출신 말고 서울 사람으로 ETL 담당",
+    "type": "사람 특성",
+    "got": [
+     "etl"
+    ],
+    "must": [
+     "etl"
+    ],
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": true,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "운영 이관 중 장애 — k8s랑 배치 데이터 적재 아는 사람 두 명, 고급 이상",
+    "type": "복합",
+    "got": [
+     "etl",
+     "kubernetes"
+    ],
+    "must": [
+     "etl",
+     "kubernetes"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": "고급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "금융권 차세대 데이터 마트 구축, 스파크·데이터 모델링 되는 중급 3명이랑 금융 도메인 아는 사람",
+    "type": "복합",
+    "got": [
+     "data_modeling",
+     "dw",
+     "finance",
+     "spark"
+    ],
+    "must": [
+     "data_modeling",
+     "finance",
+     "spark"
+    ],
+    "tp": 3,
+    "fp": 1,
+    "fn": 0,
+    "headcount": 3,
+    "grade": "중급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "공공기관 문서 자동 분류 프로젝트 — OCR 정확도 개선과 텍스트 분석 모델 튜닝, 각각 한 명씩 총 2명",
+    "type": "복합",
+    "got": [
+     "ocr",
+     "public",
+     "text_analysis"
+    ],
+    "must": [
+     "ocr",
+     "public",
+     "text_analysis"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "LLM 챗봇 답변 품질 문제: 프롬프트 다듬을 사람과 파인튜닝 해 본 사람, 특급 1명",
+    "type": "복합",
+    "got": [
+     "chatbot",
+     "llm_finetune",
+     "prompt_eng"
+    ],
+    "must": [
+     "llm_finetune",
+     "prompt_eng"
+    ],
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 1,
+    "grade": "특급",
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "그룹사 업무 프로세스 개선 — 프로세스 마이닝이랑 워크플로우 엔진 아는 분 두 명",
+    "type": "복합",
+    "got": [
+     "bpm",
+     "group",
+     "process_mining"
+    ],
+    "must": [
+     "bpm",
+     "group",
+     "process_mining"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": 2,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   },
+   {
+    "text": "MLOps 파이프라인과 FastAPI 서빙이 같이 깨졌어요, Docker도 필요",
+    "type": "복합",
+    "got": [
+     "docker",
+     "fastapi",
+     "mlops"
+    ],
+    "must": [
+     "docker",
+     "fastapi",
+     "mlops"
+    ],
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "headcount": null,
+    "grade": null,
+    "warned": false,
+    "method": "ai",
+    "dropped": [],
+    "unmapped": []
+   }
+  ],
+  "cost": {
+   "calls": 48,
+   "fallbacks": 0,
+   "cost_usd": 0.0244,
+   "avg_in_tokens": 4334,
+   "latency_p50_s": 2.48,
+   "latency_max_s": 3.94,
+   "wall_s": 124.6
+  }
+ }
+}

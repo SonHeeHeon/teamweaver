@@ -14,7 +14,7 @@ from core.domain.models import (CoworkRecord, CurrentAssignment, Dataset, Grade,
                                 Project, ProjectPhase, ReviewSection, Sector, SkillCredit, SkillRequirement)
 from core.ingest.loader import Bundle
 from core.ingest.report import IngestReport
-from core.ingest.skills import SkillDictionary, load_dictionary, person_skill_months
+from core.ingest.skills import SkillDictionary, person_skill_months
 
 # Upper bounds (exclusive) in months for proxy levels 1..4; 96+ months is level 5.
 MONTH_BANDS = (12, 36, 60, 96)
@@ -101,7 +101,9 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
     사전이 있으면 보유·요구 기술 이름을 대표 이름으로 바꾸고, 하위 기술 경력을 상위 기술에 일부 인정한다(사용자 결정 2026-10-09,
     계수 = partial_credit 또는 사전의 narrower_to_broader, 0~1). 같은 사람의 같은 기술이 다른 이름으로 여러 행이면(별칭) 가장 긴 경력을 쓴다
     (같은 이름 중복은 loader가 이미 오류로 막는다)."""
-    sd = load_dictionary() if skill_dictionary is True else (skill_dictionary or None)
+    # 기본 사전 + 이 데이터의 관리자가 승인한 기술 이름 결정(manifest skill_names, 2026-10-22 core/ingest/skill_mapping)
+    from core.ingest.skill_mapping import dictionary_for
+    sd = dictionary_for(bundle.manifest) if skill_dictionary is True else (skill_dictionary or None)
     if not report.ok:
         raise ValueError("bundle has validation errors:\n" + report.summary())
     t = bundle.tables
@@ -234,7 +236,7 @@ def to_dataset(bundle: Bundle, report: IngestReport, *, skill_dictionary: SkillD
         for file, names in (("person_skills.csv", unknown), ("project_skill_requirements.csv", unknown_req)):
             if names:
                 report.warn(file, f"사전에 없는 기술 이름 {len(names)}개는 이름 그대로 썼다(예: {', '.join(sorted(names)[:5])}) — "
-                            f"같은 기술의 다른 이름이면 core/ingest/skill_dictionary.json에 별칭을 추가해 달라")
+                            f"같은 기술의 다른 이름이면 데이터 탭 '기술 이름 정리'에서 AI 제안을 보고 합친다(관리자 승인, 새 판)")
     report.notes.append(f"숙련도: 원천에 레벨이 없어 경력 개월을 대리 레벨로 바꿨다"
                         f"(경계 {MONTH_BANDS}개월 → 1~5). 요구 경력도 같은 구간을 쓴다.")
     cutoff = first - dt.timedelta(days=1)

@@ -72,6 +72,33 @@ def test_skill_map_counts_by_hand(operating):
     assert row["proposal_gap"] == max(0, prop - len(practical - on))
 
 
+def test_skill_map_person_detail_and_lineage_for_the_relation_picture(operating):
+    """claude-b 요청(2026-10-21 docs/requests/2026-10-21-skill-map-graph-fields.md): 실무 가능 보유자마다 경력·레벨·숙련·비어 있음·지금 사업·인정 출처,
+    그리고 이 데이터에 있는 상위·하위 기술(하위는 실무 가능 인원과 함께). id 목록(practical_people)은 그대로."""
+    from core.ingest.convert import level_from_months
+    bundle, ds, parsed, kg = operating
+    rows = {r["skill"]: r for r in skill_map(kg)}
+    cur: dict[str, set] = {}
+    for c in ds.current:
+        cur.setdefault(c.person_id, set()).add(c.project_id)
+    for r in rows.values():
+        assert [d["id"] for d in r["practical_detail"]] == r["practical_people"]
+        assert sum(d["free"] for d in r["practical_detail"]) == r["practical_free"]
+        assert sum(d["expert"] for d in r["practical_detail"]) == r["expert"]
+        for d in r["practical_detail"]:
+            assert d["months"] >= PRACTICAL_MONTHS and d["level"] == level_from_months(d["months"])
+            assert set(d["on"]) == cur.get(d["id"], set()) and d["free"] == (not d["on"])
+            for c in d["credited_from"]:
+                assert c["skill"] and c["months"] > 0 and 0 < c["credit"] <= 1
+        for b in r["broader"]:
+            assert b in rows and any(n["skill"] == r["skill"] for n in rows[b]["narrower"])
+        for n in r["narrower"]:
+            assert n["practical"] == rows[n["skill"]]["practical"]
+    assert any(r["narrower"] for r in rows.values())                     # 시연 사전 계보가 실제로 이어진다
+    credited = [d for r in rows.values() for d in r["practical_detail"] if d["credited_from"]]
+    assert all(d["months"] >= PRACTICAL_MONTHS for d in credited)
+
+
 def test_project_evidence_and_why_not_others(operating):
     from api.settings import PlacementSettings
     from core.evaluate.plan_eval import evaluate_plan

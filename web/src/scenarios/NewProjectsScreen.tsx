@@ -14,13 +14,15 @@ import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
 import { CandidateGuide, PickDraft } from "./PickDraft";
-import { GradeSwapBox, swapBody, swapsReady, type SwapReasons } from "./GradeSwapBox";
+import { GradeSwapBox, swapBody, swapList, swapsReady, type SwapReasons } from "./GradeSwapBox";
+import { SeatHoleBox, holeList, holesReady, waiverBody, type WaiverReasons } from "./SeatHoleBox";
+import { ConfirmChanges } from "../components/ConfirmChanges";
 import { partnersText, seatLines, skillCollab, violationReasons } from "./pickView";
 import { chainText, changesFromPrev, mixText, moveChains, projectMix, type ProjectMix } from "./autoView";
 import {
   currentEntries, dropProject, isDatasetChanged, fetchCancelPreview, fetchCandidates, fetchWorkspace, patchStage, postApply, postCancel,
-  postConcurrency, postLock, postProject, postUndo,
-  STAGE_LABEL, withPersistNote, type CancelPreview, type CandidateRow, type Candidates, type HistoryEntry, type OngoingItem,
+  postConcurrency, postLock, postPreview, postProject, postUndo,
+  STAGE_LABEL, withPersistNote, type CancelPreview, type CandidateRow, type Candidates, type FillPick, type HistoryEntry, type OngoingItem,
   type PipelineItem, type Stage, type Workspace,
 } from "./workspaceApi";
 
@@ -130,6 +132,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [draft, setDraft] = useState<Record<string, CandidateRow>>({});
   /** 등급 대체 사유(2026-10-21) -- 열쇠 = 사업:자리>등급 */
   const [swapReasons, setSwapReasons] = useState<SwapReasons>({});
+  /** 빼 온 자리(2026-10-21): 메울 사람(사람별) · 메우지 않음 사유(열쇠 = 사업:등급) */
+  const [fills, setFills] = useState<Record<string, FillPick>>({});
+  const [waivers, setWaivers] = useState<WaiverReasons>({});
+  /** 자동 편성 K 행 확정에 새 빈자리가 있으면 확정 창(빼 온 자리 결정)으로 연다 */
+  const [autoConfirm, setAutoConfirm] = useState<{ row: SignedRow; version: string } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   /** 진행 사업 행의 "추가 과제 붙이기"로 연 양식의 상위 사업(2026-10-19) */
   const [formParent, setFormParent] = useState<string | null>(null);
@@ -206,19 +213,24 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     }
     setConfirm(null);
   }, [ws?.dataset_version]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setDraft({}); setCands(null); setCandsFor(null); setCandError(null); }, [ws, selected]);
+  useEffect(() => { setDraft({}); setFills({}); setWaivers({}); setCands(null); setCandsFor(null); setCandError(null); }, [ws, selected]);
   // "넣기"로 고른 사람을 팀원으로 쳐서 후보를 다시 채점하고 고른 사람 전체를 미리 계산한다(2026-10-20 사용자 요청 2·5번).
   // 고를 때마다 서버를 부르되(1~2초) 짧게 몰아 누르면 마지막 것만, 이전 표는 흐리게 남긴다.
   const picks = useMemo(() => Object.values(draft).map((r) => ({ person_id: r.person_id, alloc: r.alloc, pulled_from: r.pulled_from })),
                         [draft]);
-  const pickKey = JSON.stringify(picks);
+  /** 메울 사람은 지금 고른 사람이 빼 온 사업에만 */
+  const fillBody = useMemo(() => {
+    const sources = new Set(picks.flatMap((p) => p.pulled_from));
+    return Object.values(fills).filter((f) => sources.has(f.project_id) && !draft[f.person_id]);
+  }, [picks, fills, draft]);
+  const pickKey = JSON.stringify([picks, fillBody]);
   const forKey = `${ws?.dataset_version}|${selected}|${pickKey}`;
   useEffect(() => {
     if (!ws || !selected) return;
     let live = true;
     const key = forKey;
     setRecalc(true);
-    const go = () => fetchCandidates(selected, ws.dataset_version, picks)
+    const go = () => fetchCandidates(selected, ws.dataset_version, picks, fillBody)
       .then((c) => { if (live) { setCands(c); setCandsFor(key); setCandError(null); } })
       .catch((e) => { if (live) setCandError({ key, msg: `후보·미리 계산을 하지 못했습니다: ${(e as Error).message}` }); })
       .finally(() => { if (live) setRecalc(false); });
@@ -230,9 +242,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   /** 지금 선택의 계산이 실패했다(고른 직후 요청 전 한 프레임은 실패가 아니다 -- 리뷰 N1) */
   const failedNow = !recalc && candError?.key === forKey;
   const draftBlocked = fresh && (cands?.draft?.new_violations.length ?? 0) > 0;
-  /** 고른 사람으로 생기는 등급 대체(사유를 받아야 확정) */
-  const draftSwaps = fresh && project ? (cands?.draft?.grade_swaps ?? []).map((swap) => ({ projectId: project.project_id, swap })) : [];
+  /** 고른 사람으로 생기는 등급 대체(사유를 받아야 확정) -- 빼 온 사업을 다른 등급으로 메운 대체도 함께(2026-10-21) */
+  const draftSwaps = fresh && project ? [...(cands?.draft?.grade_swaps ?? []).map((swap) => ({ projectId: project.project_id, swap })),
+                                        ...swapList(cands?.draft?.side_grade_swaps)] : [];
   const swapMissing = !swapsReady(draftSwaps, swapReasons);
+  const holeMissing = fresh && !holesReady(cands?.draft?.holes, waivers);
 
   /** 판을 바꾸는 요청 하나 -- 성공하면 새 작업 데이터로 바꾸고 App에도 알린다. */
   async function mutate(run: () => Promise<{ workspace: Workspace }>, done: string, review?: { projectId: string | null },
@@ -267,20 +281,27 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     const pulled = new Set(draftList.flatMap((r) => r.pulled_from.map((src) => `${r.person_id}@${src}`)));
     const entries: AssignEntry[] = currentEntries(ws).filter((e) => !pulled.has(`${e.person_id}@${e.project_id}`));
     for (const r of draftList) entries.push({ person_id: r.person_id, project_id: project.project_id, alloc: r.alloc });
+    for (const f of fillBody) entries.push({ person_id: f.person_id, project_id: f.project_id, alloc: f.alloc });   // 빼 온 자리를 메울 사람
+    const seatWaivers = waiverBody(cands?.draft?.holes, waivers);
     const names = draftList.map((r) => r.name).join(", ");
     // 등급 대체(사유)·대체로 넘는 예산은 미리 계산 값 그대로 보낸다 -- 서버가 같은 규칙으로 다시 계산해 맞춰 본다
     const swaps = swapBody(draftSwaps, swapReasons);
     const budget = cands?.draft?.budget_add ?? 0;
+    const sideBudget = cands?.draft?.side_budget_add ?? {};
     setConfirm({
       title: `${project.name}에 ${draftList.length}명 확정`,
       body: `${names}을(를) 넣는다.${pulled.size ? ` 빼 오는 배치 ${pulled.size}건은 원래 사업에서 빠진다.` : ""}`
         + (swaps.length ? ` 등급 대체(${swaps.map((x) => `${x.seat} 자리 ${x.count}개를 ${x.grade}으로`).join(", ")})로 이 사업 정원이 바뀐다.` : "")
         + (budget > 0 ? ` 월 예산 +${budget.toLocaleString()}.` : "")
+        + (fillBody.length ? ` 빼 온 자리를 ${fillBody.length}명이 메운다.` : "")
+        + (seatWaivers.length ? ` 메우지 않는 자리 ${seatWaivers.map((w) => `${w.project_id} ${w.grade} ${w.count}개`).join(", ")}는 그 사업 정원에서 뺀다.` : "")
         + " 지금 배치가 바뀐 새 판이 된다(되돌릴 수 있다).",
       run: () => mutate(() => postApply(ws.dataset_version, { entries, source: "manual",
                                                                note: `${project.project_id} 손 편성: ${names}`,
                                                                ...(swaps.length ? { grade_swaps: swaps } : {}),
-                                                               ...(budget > 0 ? { budget_add: { [project.project_id]: budget } } : {}) }),
+                                                               ...(budget > 0 || Object.keys(sideBudget).length
+                                                                 ? { budget_add: { ...sideBudget, ...(budget > 0 ? { [project.project_id]: budget } : {}) } } : {}),
+                                                               ...(seatWaivers.length ? { seat_waivers: seatWaivers } : {}) }),
                         `${project.name}에 ${draftList.length}명을 넣었다.`, { projectId: project.project_id }),
     });
   }
@@ -310,9 +331,18 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
     }
   }
 
-  function applyRow(row: SignedRow) {
+  async function applyRow(row: SignedRow) {
     const of = autoOf.current;
     if (!ws || !row.entries || !of || of.version !== ws.dataset_version) return;
+    // 이 안이 진행 사업에 빈자리를 남기면(빼 온 자리를 다 못 메움) 확정 창에서 메우거나 "메우지 않음"을 정한다(2026-10-21) -- 보통은 다 메운다
+    try {
+      const pv = await postPreview(of.version, row.entries);
+      if (holeList(pv.holes).length) { setAutoConfirm({ row, version: of.version }); return; }
+    } catch (e) {
+      if (isDatasetChanged(e)) { void load(); onDatasetChanged(); return; }
+      setError((e as Error).message);
+      return;
+    }
     const moved = row.diff?.moved?.length ?? 0;
     const joined = row.diff?.joined?.length ?? 0;
     setConfirm({
@@ -496,6 +526,13 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                          onRemove={(id) => setDraft((d) => { const n = { ...d }; delete n[id]; return n; })} />
               <GradeSwapBox items={draftSwaps} budgetAdd={cands?.draft?.budget_add} reasons={swapReasons} named={named} disabled={busy}
                             onReason={(k, v) => setSwapReasons((r) => ({ ...r, [k]: v }))} />
+              {fresh && cands?.draft && (
+                <SeatHoleBox holes={cands.draft.holes} fillOptions={cands.draft.fill_options} fills={cands.draft.fills} named={named}
+                             waivers={waivers} disabled={busy} removable={new Set(fillBody.map((f) => f.person_id))}
+                             onWaive={(k, v) => setWaivers((w) => { const n = { ...w }; if (v === null) delete n[k]; else n[k] = v; return n; })}
+                             onFill={(f) => setFills((d) => ({ ...d, [f.person_id]: f }))}
+                             onUnfill={(pid) => setFills((d) => { const n = { ...d }; delete n[pid]; return n; })} />
+              )}
               {failedNow && candError && <Notice tone="bad">{candError.msg}</Notice>}
               <Tabs label="후보 갈래" value={group} onChange={setGroup}
                     items={(Object.keys(GROUP_LABEL) as Group[]).map((g) => [g, `${GROUP_LABEL[g]} ${cands ? cands[g].length : ""}`])} />
@@ -565,10 +602,11 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
 
       {draftList.length > 0 && project && (
         <ActionBar note="넣기로 고른 사람을 이 사업에 확정합니다. 빼 오는 사람은 원래 사업에서 빠집니다.">
-          <button className="btn-primary" disabled={busy || !fresh || draftBlocked || swapMissing} onClick={applyDraft}
+          <button className="btn-primary" disabled={busy || !fresh || draftBlocked || swapMissing || holeMissing} onClick={applyDraft}
                   title={!fresh ? "고른 사람의 미리 계산이 끝나야 확정할 수 있습니다"
                     : draftBlocked ? "확정하면 규칙 위반이 생깁니다(위 '넣기로 고른 사람' 참고)"
-                    : swapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다(위 '등급 대체')" : undefined}>{draftList.length}명 확정</button>
+                    : swapMissing ? "등급 대체 사유를 적어야 확정할 수 있습니다(위 '등급 대체')"
+                    : holeMissing ? "빼 온 자리를 메우거나 '메우지 않음'과 사유를 적어야 확정할 수 있습니다(위 '빼 온 자리')" : undefined}>{draftList.length}명 확정</button>
           <button className="btn-ghost" onClick={() => setDraft({})}>고른 것 지우기</button>
         </ActionBar>
       )}
@@ -615,7 +653,7 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       {r.carried_from_k !== undefined && ` (K=${r.carried_from_k} 해 유지)`}
                     </td>
                     <td className="pr-5 pt-2 text-right">
-                      {r.accepted && r.entries && <button className="btn px-2.5 py-1 text-xs" disabled={busy} onClick={() => applyRow(r)}>이 안 확정</button>}
+                      {r.accepted && r.entries && <button className="btn px-2.5 py-1 text-xs" disabled={busy} onClick={() => void applyRow(r)}>이 안 확정</button>}
                     </td>
                   </tr>
                   <tr>
@@ -777,6 +815,23 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                        setNotice(withPersistNote(`${form.name}(${res.project_id})을(를) 등록했다.`, res));
                        onDatasetChanged();
                      }} />
+      )}
+      {autoConfirm && autoConfirm.row.entries && (
+        <ConfirmChanges datasetVersion={autoConfirm.version} entries={autoConfirm.row.entries} source="auto" projects={projects}
+                        title={`자동 편성 K=${autoConfirm.row.k} 확정`}
+                        lead="이 안은 진행 사업에서 빼 온 자리를 다 메우지 못했습니다. 메울 사람을 넣거나 '메우지 않음'과 사유를 정해 확정하세요."
+                        note={`자동 편성 확정(K=${autoConfirm.row.k}, 최대 ${autoConfirm.row.k}명 이동)`}
+                        onClose={() => setAutoConfirm(null)}
+                        onStale={() => { setAutoConfirm(null); void load(); onDatasetChanged(); }}
+                        onDone={(msg, version) => {
+                          setAutoConfirm(null);
+                          setRows([]);
+                          setAutoState("idle");
+                          setNotice(msg);
+                          setConfirmed({ version, projectId: null, seen: datasetVersion ?? null });
+                          void load();
+                          onDatasetChanged();
+                        }} />
       )}
       {confirm && (
         <Dialog title={confirm.title} actions={<>

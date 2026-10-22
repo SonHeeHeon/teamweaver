@@ -361,11 +361,13 @@ def load_bundle(root: Path) -> tuple[Bundle, IngestReport]:
     concurrency.check(manifest, {r["person_id"] for r in tables.get("people.csv", [])}, report)
     from core.ingest import lifecycle            # 사업 수명 주기(manifest, 2026-10-19 v4) -- 계산에 안 쓰는 기록이라 경고만
     lifecycle.check(manifest, tables.get("projects.csv", []), report)
+    from core.ingest import skill_mapping        # 관리자가 승인한 기술 이름 결정(manifest, 2026-10-22) -- 틀린 항목은 경고하고 쓰지 않는다
+    skill_mapping.check(manifest, report)
     if report.ok and horizon:
         # 진행 중 사업 기술 경력 늘리기(2026-10-19, core/ingest/aging) -- 검증을 통과한 행만 고친다. 별칭은 기술 사전의 대표 이름으로 맞춘다
         from core.ingest.aging import age_ongoing_skills
-        from core.ingest.skills import load_dictionary
-        d = load_dictionary()
+        from core.ingest.skill_mapping import dictionary_for
+        d = dictionary_for(manifest)
         aging = age_ongoing_skills(manifest, tables, horizon, report, canonical=d.canonical)
     else:
         aging = None

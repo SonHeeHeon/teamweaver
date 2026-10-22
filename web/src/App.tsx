@@ -39,6 +39,8 @@ import { NewProjectsScreen } from "./scenarios/NewProjectsScreen";
 import { effectiveSettings, stepBody } from "./api/types";
 import { AnnualSteps, datasetLabel, PageHeader, Sidebar, SubTabs, WhatifEmpty, type SubTab, type Tab } from "./components/Shell";
 import { ConfirmChanges } from "./components/ConfirmChanges";
+import { LockChoiceDialog } from "./components/LockChoiceDialog";
+import { SkillNamesPanel } from "./components/SkillNamesPanel";
 import { CurrentWhatif } from "./whatif/CurrentWhatif";
 import { currentEntries, fetchWorkspace } from "./scenarios/workspaceApi";
 import { withPeople } from "./components/headcount";
@@ -127,7 +129,11 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
   // 기본값으로 계산했다.
   const [planBasis, setPlanBasis] =
     useState<{ params: PlacementSettings | null; weights: Record<string, number>;
-               datasetVersion: string; nAlternatives?: number } | null>(null);
+               datasetVersion: string; nAlternatives?: number;
+               /** 고정 선택(2026-10-21): true 유지·false 풀고 다시 배치·없음 = 고정이 없었거나 묻지 않음(편성 기록) */
+               keepLocked?: boolean } | null>(null);
+  /** 계산 전 고정 선택 창(지금 데이터에 고정 배치가 있을 때) -- fresh는 "다시 계산"이었는지 */
+  const [lockAsk, setLockAsk] = useState<{ fresh: boolean } | null>(null);
   // What-if 대시보드 아래쪽 하위 탭(2026-10-18 개편)과 "편성 기록 내보내기" 창
   const [subTab, setSubTab] = useState<SubTab>("roster");
   const [exportOpen, setExportOpen] = useState(false);
@@ -290,8 +296,15 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
 
   /** fresh: 캐시·저장 결과를 쓰지 않고 다시 푼다("다시 계산"). 버튼 onClick이 이벤트를 넘겨도 켜지지 않게 true만 본다.
    *  record: 편성 기록을 열었을 때 -- 기록의 요청(가중치·설정·대안 수) 그대로 보내면 서버가 기록의 편성안을 캐시에서 바로 낸다. */
-  async function run(fresh?: unknown, record?: { request: RecordRequest; datasetVersion: string }) {
+  /** 계산 요청: 고정 배치가 있으면 먼저 고정을 유지할지 묻는다(2026-10-21 사용자 "팝업을 띄워서 먼저 … 물어보고 그 결정을 따라서"). */
+  function requestRun(fresh?: unknown) {
+    if (meta?.locked_assignments?.length) setLockAsk({ fresh: fresh === true });
+    else void run(fresh);
+  }
+
+  async function run(fresh?: unknown, record?: { request: RecordRequest; datasetVersion: string }, keepLocked?: boolean) {
     const recompute = fresh === true;
+    const keep = record ? (record.request.keep_locked ? true : undefined) : keepLocked;
     const gen = ++runGen.current;
     runAbort.current?.abort();                  // 이전 실행이 아직 돌고 있으면 끊는다(서버가 중단)
     const abort = new AbortController();
@@ -330,12 +343,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
     const datasetVersion = record ? record.datasetVersion : meta!.dataset_version;
     const useWeights = record ? record.request.weights : weights;
     setPlanBasis({ params, weights: useWeights, datasetVersion,
-                   nAlternatives: record ? record.request.n_alternatives : 3 });
+                   nAlternatives: record ? record.request.n_alternatives : 3, keepLocked: keep });
     try {
       // Plan A가 먼저 도착하면 즉시 렌더된다 -- 대안 B/C/D를 기다리지 않는다.
       // 이것이 Plan 4의 SSE 점진 반환(A안)이 사용자 눈에 보이는 지점이다.
       for await (const ev of streamOptimize(
           { weights: useWeights, dataset_version: datasetVersion, ...(recompute ? { fresh: true } : {}),
+            ...(keep ? { keep_locked: true } : {}),
             ...(record ? { n_alternatives: record.request.n_alternatives } : {}),
             ...(params ? { milp_params: { ...params } } : {}) }, abort.signal)) {
         if (gen !== runGen.current) break;   // 그사이 데이터셋이 바뀌었다 -- 남은 결과 폐기
@@ -779,6 +793,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
             {adminRequired && <AdminTokenField value={adminToken} onChange={setAdminToken} />}
             <DatasetTab active={dataset} onSwitched={datasetSwitched} showRecords={false}
                         adminToken={adminToken || null} onLoginRequired={adminExpired} />
+            {/* 낯선 기술 이름 정리(2026-10-22) -- AI 제안 → 관리자가 고른 것만 새 판 */}
+            <SkillNamesPanel datasetVersion={dataset?.version ?? null} onChanged={() => { void ownSwitch("기술 이름 정리"); }} />
           </div>
         ) : tab === "settings" ? (
           settings ? (
@@ -815,7 +831,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
           <>
           <AnnualSteps tab={tab} onTab={setTab} hasPlans={plans.length > 0} />
           <RequirementsTab meta={meta}
-                           onRun={run} running={running} operating={dataset?.scenario === "operating"}
+                           onRun={requestRun} running={running} operating={dataset?.scenario === "operating"}
                            onStop={runId ? () => void stopRunning() : null} stopping={stopping}
                            onOpenOperating={() => setTab("pipeline")} />
           </>
@@ -828,6 +844,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
         ) : (
           <div className="space-y-5">
             <AnnualSteps tab={tab} onTab={setTab} hasPlans />
+            {plans.length > 0 && planBasis?.keepLocked !== undefined && (meta.locked_assignments?.length ?? 0) > 0 && (
+              <p role="status" className="text-sm text-slate-600">
+                {planBasis.keepLocked
+                  ? `고정한 배치 ${meta.locked_assignments!.length}건을 모든 안에서 그대로 두고 짠 결과입니다.`
+                  : `고정한 배치 ${meta.locked_assignments!.length}건을 풀고 다시 배치한 결과입니다 — 안을 확정하면 옮겨지는 고정은 함께 풀립니다.`}
+              </p>
+            )}
             {plans.length > 0 && planBasis && settings && (
               planBasis.params === null
               || describeChanges(planBasis.params, effectiveSettings(settings)).length > 0) && (
@@ -845,7 +868,7 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
               <PrecomputedNotice at={plans.find((p) => p.precomputed_at != null)?.precomputed_at ?? null}
                                  label={plans.find((p) => p.precomputed_label)?.precomputed_label ?? null}
                                  source={plans.find((p) => p.precomputed_at != null)?.precomputed_source ?? null}
-                                 onRecompute={() => void run(true)} />
+                                 onRecompute={() => requestRun(true)} />
             )}
             {stoppedNote && (
               <p role="status" className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
@@ -969,7 +992,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
       )}
       {planConfirmOpen && current && dataset && (
         <ConfirmChanges datasetVersion={dataset.version} entries={current.entries} source="plan" projects={meta?.projects}
-                        title={`안 ${current.label}을(를) 지금 배치로 확정`}
+                        keepLocked={planBasis?.keepLocked}
+                        title={`안 ${current.label}를 지금 배치로 확정`}
                         lead={currentBase && currentBase.length > 0
                           ? "이 안은 모두를 처음부터 다시 짠 결과라 지금 배치에서 많은 사람이 옮겨질 수 있습니다. 아래 수를 확인하고 확정하세요. 몇 명만 바꾸려면 What-if나 신규 사업 편성의 자동 편성(K)이 맞습니다."
                           : "이 안이 지금 배치가 됩니다. 그 뒤 신규 사업 편성·긴급 투입·What-if로 이어서 씁니다."}
@@ -980,8 +1004,13 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
                           const label = current.label;
                           setPlanConfirmOpen(false);
                           void ownSwitch().then(() => setPlanConfirmed(
-                            `안 ${label}을(를) 지금 배치로 ${msg} 이제 신규 사업 편성·긴급 투입·What-if에서 이어서 씁니다.`));
+                            `안 ${label}를 지금 배치로 ${msg} 이제 신규 사업 편성·긴급 투입·What-if에서 이어서 씁니다.`));
                         }} />
+      )}
+      {lockAsk && meta && (
+        <LockChoiceDialog meta={meta} onClose={() => setLockAsk(null)}
+                          onKeep={() => { const f = lockAsk.fresh; setLockAsk(null); void run(f, undefined, true); }}
+                          onRelease={() => { const f = lockAsk.fresh; setLockAsk(null); void run(f, undefined, false); }} />
       )}
       {exportOpen && current && planBasis && (
         <ExportRecordDialog
@@ -993,7 +1022,8 @@ export default function App({ onLoggedOut, initialTab = "pipeline" }: {
               await exportRecord({ title, weights: planBasis.weights,
                                    milp_params: planBasis.params as unknown as Record<string, unknown> | null,
                                    n_alternatives: planBasis.nAlternatives ?? 3,
-                                   dataset_version: planBasis.datasetVersion, plans });
+                                   dataset_version: planBasis.datasetVersion, plans,
+                                   ...(planBasis.keepLocked ? { keep_locked: true } : {}) });
             } catch (e) {
               if (e instanceof DatasetChangedError) { setExportOpen(false); await externalSwitch(); return; }
               throw e;

@@ -115,7 +115,7 @@ describe("NewProjectsScreen", () => {
     const draft = await screen.findByRole("region", { name: "넣기로 고른 사람" });
     expect(within(draft).getByText("박지훈")).toBeInTheDocument();
     expect(await screen.findByTitle("지금 0/2 → 고른 사람 포함 1/2")).toBeInTheDocument();
-    expect(vi.mocked(api.fetchCandidates)).toHaveBeenLastCalledWith("J014", "v1", [{ person_id: "P9", alloc: 1, pulled_from: [] }]);
+    expect(vi.mocked(api.fetchCandidates)).toHaveBeenLastCalledWith("J014", "v1", [{ person_id: "P9", alloc: 1, pulled_from: [] }], []);
     fireEvent.click(screen.getByRole("tab", { name: /진행 사업에서 빼 오기/ }));
     expect(screen.getByText("이전 팀원")).toBeInTheDocument();
     const pullRow = screen.getByText("김민준").closest("tr")!;

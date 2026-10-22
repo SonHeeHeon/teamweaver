@@ -527,9 +527,15 @@ def _install_entry(app, dataset, entry: dict) -> dict:
         return {"kind": kind, "target": label, "status": "skipped", "reason": "데이터가 바뀌었다"}
     if kind == "optimize":
         weights = dict(entry.get("weights") or {})
-        key = ResultCache.key(weights, params, int(entry["n_alternatives"]), version)
+        keep = bool(entry.get("keep_locked"))                   # 고정을 지키며 짠 낮 요청(2026-10-21)
+        key = ResultCache.key(weights, params, int(entry["n_alternatives"]), version, keep_locked=keep)
         if key != entry.get("key"):
             return {"kind": kind, "target": label, "status": "skipped", "reason": "키가 맞지 않는다"}
+        if keep:
+            from api.routes.optimize import locked_pairs, missing_locks
+            pairs = locked_pairs(dataset)
+            if any(missing_locks(pairs, p.get("entries", [])) for p in entry.get("plans", [])):
+                return {"kind": kind, "target": label, "status": "skipped", "reason": "고정 배치를 빠뜨린 안이 있다"}
         if (entry.get("stop_reason") in INCOMPLETE_STOPS
                 or any(p.get("termination") == "user_interrupt" for p in entry.get("plans", []))):
             return {"kind": kind, "target": label, "status": "skipped", "reason": "끝까지 풀지 못한 묶음이다"}
@@ -791,16 +797,19 @@ class _Run:
         self.check("ai", "AI 연결", "ok", f"AI 서버·모델({ai_model()}) 확인")
 
     # 1. 밤 풀이 ---------------------------------------------------------------------------------------------------
-    def _solve_entry(self, *, target: str, weights: dict, n_alt: int, params) -> dict:
+    def _solve_entry(self, *, target: str, weights: dict, n_alt: int, params, keep_locked: bool = False) -> dict:
         from api.cache import ResultCache
-        from api.routes.optimize import solve_slots
+        from api.routes.optimize import locked_pairs, solve_slots, unkeepable
         from core.evaluate.plan_eval import evaluate_plan
         from core.optimize.alternatives import generate_plans_streaming
         from core.optimize.interrupt import SolveCancelled, watching
         version = self.dataset.info.version
-        key = ResultCache.key(weights, params, n_alt, version)
+        fixed = locked_pairs(self.dataset) if keep_locked else []    # 고정을 지키며 짠 낮 요청은 밤에도 같은 조건(2026-10-21)
+        key = ResultCache.key(weights, params, n_alt, version, keep_locked=bool(fixed))
         row = {"kind": "optimize", "target": target, "weights": weights, "n_alternatives": n_alt,
-               "day_time_limit": params.time_limit, "key": key[:12]}
+               "day_time_limit": params.time_limit, "key": key[:12], **({"keep_locked": True} if fixed else {})}
+        if fixed and unkeepable(self.dataset, params, fixed):
+            return {**row, "status": "skipped", "reason": "지킬 수 없는 고정 배치가 있다"}
         if self.app.state.cache.get(key) is not None:
             return {**row, "status": "skipped", "reason": "이미 아침에 바로 나온다(시연 미리 계산·이전 결과)"}
         lim = night_limit(params.time_limit, 1 + n_alt, self.solve_until - time.time())
@@ -822,7 +831,7 @@ class _Run:
             timer.daemon = True
             timer.start()
             with watching(stop):
-                for plan in generate_plans_streaming(graph, S, C, night, n_alt, outcome):
+                for plan in generate_plans_streaming(graph, S, C, night, n_alt, outcome, **({"fixed": fixed} if fixed else {})):
                     plans.append(plan)
         except SolveCancelled:
             outcome.setdefault("stop_reason", "time_limit")         # 밤 마감 -- 대안이 모자란 이유는 시간
@@ -854,7 +863,8 @@ class _Run:
             return {**row, "status": "failed", "reason": bad}
         entry = {"kind": "optimize", "target": target, "key": key, "weights": weights, "n_alternatives": n_alt,
                  "milp_params": params.model_dump(), "night_time_limit": lim, "computed_at": _now_iso(),
-                 "stop_reason": outcome.get("stop_reason"), "elapsed_s": elapsed, "plans": recorded}
+                 "stop_reason": outcome.get("stop_reason"), "elapsed_s": elapsed, "plans": recorded,
+                 **({"keep_locked": True} if fixed else {})}
         a = plans[0]
         bound = a.best_bound
         row.update({"status": "prepared", "plans": len(plans), "labels": [p.label for p in plans],
@@ -883,7 +893,7 @@ class _Run:
     def solve_recorded(self) -> None:
         from pydantic import ValidationError
         from api.cache import ResultCache
-        from api.routes.optimize import OptimizeRequest
+        from api.routes.optimize import OptimizeRequest, locked_pairs
         version = self.dataset.info.version
         seen: set[str] = set()
         done = 0
@@ -901,7 +911,8 @@ class _Run:
             if req.dataset_version not in (None, version):
                 skipped_other += 1
                 continue
-            key = ResultCache.key(req.weights, params, req.n_alternatives, version)
+            keep = req.keep_locked and bool(locked_pairs(self.dataset))
+            key = ResultCache.key(req.weights, params, req.n_alternatives, version, keep_locked=keep)
             if key in seen:
                 continue
             seen.add(key)
@@ -909,7 +920,7 @@ class _Run:
                 continue
             self.report["solves"].append(self._solve_entry(target=f"낮 요청({rec.get('at', '')[:16]})",
                                                            weights=dict(req.weights), n_alt=req.n_alternatives,
-                                                           params=params))
+                                                           params=params, keep_locked=keep))
             done += 1
         if done == 0:
             self.report["solves"].append({"kind": "optimize", "target": "낮 요청", "status": "skipped",

@@ -1,6 +1,6 @@
 # TeamWeaver 프로젝트 맥락 요약 (2026-10-12 최종, main `5d48573` + 최종 점검 기준)
 
-개발 착수 전 읽는 압축본. 원본은 `outputs/eli5-project-history-roadmap.html`(20장, 비전문가용, 10-12 최종판). 제출물(2026-10-14 제출 가이드 반영): `outputs/final-report.pdf`·`.html`(과제 결과 보고서, A4 8쪽 — 가이드 최대 10쪽), `docs/demo-script.md`(시연 영상 대본 9분 30초 — 가이드 최대 10분) + `outputs/demo-video-slides.html`(영상 슬라이드).
+개발 착수 전 읽는 압축본. 원본은 `outputs/eli5-project-history-roadmap.html`(20장, 비전문가용, 10-12 최종판). 제출물(2026-10-14 제출 가이드 반영): `outputs/final-report.pdf`·`.html`(과제 결과 보고서, A4 10쪽 — 가이드 최대 10쪽, 10-22 갱신: 3.3 AI 없이 할 때와의 비교·8.3 사람 시간 추정), `docs/demo-script.md`(시연 영상 대본 9분 45초 — 가이드 최대 10분, 10-22 갱신: 상황을 말로·기술 이름 정리 장면, 슬라이드 7 "AI가 바꾼 것") + `outputs/demo-video-slides.html`(영상 슬라이드).
 여기의 수치는 기록 시점 값이며 다시 측정한 값이 아니다. "현재 구현"·"과거 관측"·"제안"을 구분해 적었다.
 누가 무엇을 맡는지는 `docs/work-split.md`, 날짜별로 한 일은 `docs/handoff-log.md`.
 
@@ -27,7 +27,7 @@ SQLite 근거 색인 + MemoryGraph(S/C) + 지식 그래프(`core/kg`, 소명 글
   모두 맞을 때만 쓰고, 아니면 조용히 실시간 계산. 평가 글 판정값은 `demo/review_judgments.json`에 동봉.
 - API: `/api/meta`, `/api/optimize`(SSE, 안마다 서명 `plan_token`), `/api/whatif`(교체 전후를 MILP 전체 목적·제약으로 재평가한 **참고값** + AI 설명, 새 위반이면 결론 "보류"),
   `/api/plans/apply-swap|apply-alloc`(적용·저장), `/api/report`(서명 확인 뒤 서버가 다시 계산한 PDF), `/api/datasets*`(업로드·되돌리기·시연 고르기·다시 판정),
-  `/api/settings`·`/api/admin/*`, `/api/operating/*`(K=0~3 비교 SSE)·`/api/staffing/*`(보강 후보·최선 n명)·`/api/baseline`(단순 규칙 대비), `/api/justification`(소명 글, 서명 필수).
+  `/api/settings`·`/api/admin/*`, `/api/operating/*`(K=0~5 비교 SSE)·`/api/staffing/*`(보강 후보·최선 n명)·`/api/baseline`(단순 규칙 대비), `/api/justification`(소명 글, 서명 필수).
 - 실데이터는 외부 LLM으로 보내지 않는다(`api/deps.llm_client_for`: 사내 주소·명시 허용일 때만). 실데이터 평가 원문은 화면·AI 어디에도 내보내지 않고 항목 라벨만 쓴다.
 
 ## 3. 모델 (현재 구현)

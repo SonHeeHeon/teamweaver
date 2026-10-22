@@ -470,10 +470,12 @@ def _overlaps(files: Files, person_id: str) -> int:
 
 def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str, dict[str, int]] | None = None,
                   budget_add: dict[str, int] | None = None,
-                  skills_add: dict[str, list[dict]] | None = None) -> tuple[Files, dict]:
+                  skills_add: dict[str, list[dict]] | None = None, release_locks: bool = False) -> tuple[Files, dict]:
     """현재 배치를 entries로 바꾼다. 잠긴 배치는 그대로 있어야 한다(빠지면 EditError). 남는 배치는 잠김을 유지하고 새 배치는 N.
+    release_locks(연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정, 2026-10-21): 빠지는 잠긴 배치를 거절하지 않고 함께 푼다 --
+    바뀐 내용 locks_released에 남는다(확정 이력).
     긴급 투입이면 그 사업의 정원(+headcount_add)·월 예산(+budget_add)·요구 기술(skills_add)을 함께 올린다.
-    반환: (새 판, 바뀐 내용 {added, removed, changed})."""
+    반환: (새 판, 바뀐 내용 {added, removed, changed[, locks_released]})."""
     files = _copy(files)
     h, cur = current_table(files)
     seen: set[tuple[str, str]] = set()
@@ -491,7 +493,7 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
         new_rows.append({**(prev or {}), "person_id": key[0], "project_id": key[1], "alloc": f"{alloc:g}",
                          "locked": "Y" if prev is not None and is_locked(prev) else "N"})
     dropped_locked = sorted(f"{p}@{j}" for (p, j), r in old.items() if is_locked(r) and (p, j) not in seen)
-    if dropped_locked:
+    if dropped_locked and not release_locks:
         raise EditError("고정한 배치는 뺄 수 없다: " + ", ".join(dropped_locked[:5]))
     write_table(files, CURRENT, h, new_rows)
     new_alloc = {(r["person_id"], r["project_id"]): float(r["alloc"]) for r in new_rows}
@@ -499,6 +501,8 @@ def apply_entries(files: Files, entries: list[dict], *, headcount_add: dict[str,
                "removed": sorted(f"{p}@{j}" for (p, j) in set(old) - seen),
                "changed": sorted(f"{p}@{j}" for (p, j) in seen & set(old)
                                  if abs(float(old[(p, j)]["alloc"]) - new_alloc[(p, j)]) > 1e-9)}
+    if dropped_locked:
+        changes["locks_released"] = dropped_locked
     if headcount_add:
         gh, grows = read_table(files, GRADE_REQS)
         for pid, adds in headcount_add.items():
@@ -556,6 +560,51 @@ def swap_grade_seats(files: Files, swaps: list[dict]) -> Files:
             rows.append({"project_id": pid, "career_grade": grade, "headcount": str(n)})
         else:
             got["headcount"] = str(int(got["headcount"]) + n)
+    write_table(files, GRADE_REQS, h, rows)
+    rehash(files)
+    return files
+
+
+def record_skill_names(files: Files, decisions: list[dict], *, at: str) -> Files:
+    """낯선 기술 이름 정리(2026-10-22, core/ingest/skill_mapping): 관리자가 승인한 결정을 manifest `skill_names`에 남긴다(같은 이름은 새 결정으로 바꾼다).
+    로더가 이 결정으로 사전을 넓혀 쓰니 켜면 기술 점수가 다시 계산된다. 사전에 이미 있는 이름·없는 개념은 거절."""
+    from core.ingest.skill_mapping import DECISIONS, MAP_DECISIONS
+    from core.ingest.skills import load_dictionary, norm_key
+    files = _copy(files)
+    base = load_dictionary()
+    m = read_manifest(files)
+    keep = {norm_key(e.get("name", "")): e for e in (m.get("skill_names") or []) if isinstance(e, dict)}
+    for d in decisions:
+        name = str(d.get("name") or "").strip()
+        if not name or d.get("decision") not in DECISIONS:
+            raise EditError(f"기술 이름 결정이 아니다: {name or '(빈 이름)'}")
+        if base.known(name):
+            raise EditError(f"'{name}'은(는) 이미 사전에 있는 이름이다")
+        if d["decision"] in MAP_DECISIONS and d.get("concept") not in base.concepts:
+            raise EditError(f"'{name}': 사전에 없는 개념 {d.get('concept')}")
+        reason = str(d.get("reason") or "").strip()[:200]
+        keep[norm_key(name)] = {"name": name, "decision": d["decision"], "concept": d.get("concept") if d["decision"] in MAP_DECISIONS else None,
+                                "reason": reason, "method": d.get("method") or "manual", "at": at}
+    m["skill_names"] = sorted(keep.values(), key=lambda e: norm_key(e["name"]))
+    write_manifest(files, m)
+    rehash(files)
+    return files
+
+
+def waive_seats(files: Files, waivers: list[dict]) -> Files:
+    """빼 온 자리 "메우지 않음"(2026-10-21 사용자 "못메꾼다면 메꾸지 않는다라는 표기를 통해 더이상 그건 컨트롤 안해도 되는걸로"):
+    사업 정원 표의 그 등급을 −n(0이면 행은 0으로 남는다 -- 등급 대체와 같다). 예산은 그대로. 사유는 확정 이력 summary에 남는다
+    (정원은 확정 취소·되돌리기가 함께 돌린다)."""
+    files = _copy(files)
+    h, rows = read_table(files, GRADE_REQS)
+    for w in waivers:
+        pid, grade, n = w["project_id"], w["grade"], int(w["count"])
+        if grade not in GRADES or n <= 0:
+            raise EditError(f"메우지 않을 자리가 아니다: {pid} {grade} ×{n}")
+        row = next((r for r in rows if r.get("project_id") == pid and r.get("career_grade") == grade), None)
+        if row is None or int(row["headcount"]) < n:
+            raise EditError(f"{pid}의 {grade} 정원이 {n}보다 적어 줄일 수 없다")
+        row["headcount"] = str(int(row["headcount"]) - n)
     write_table(files, GRADE_REQS, h, rows)
     rehash(files)
     return files

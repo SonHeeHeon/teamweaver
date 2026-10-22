@@ -32,7 +32,7 @@ from api.schemas import MAX_PLAN_ENTRIES, EntryIn
 from api.workspace import History, WorkspaceUnavailable, cancelled_keys, commit, current_files, undo
 from api.workspace_edits import (CURRENT, PROJECTS, EditError, NewProject, add_project, apply_entries, apply_revert,
                                  concurrency_of, pipeline_of, project_form, read_manifest, read_table, remove_project,
-                                 revert_ops, set_concurrency, set_lock, swap_grade_seats, update_project)
+                                 revert_ops, set_concurrency, set_lock, swap_grade_seats, update_project, waive_seats)
 
 router = APIRouter()
 GRADE_ORDER = ("특급", "고급", "중급", "초급")
@@ -298,6 +298,15 @@ class GradeSwapIn(BaseModel):
     reason: str = Field(max_length=200)
 
 
+class SeatWaiverIn(BaseModel):
+    """빼 온 자리 "메우지 않음" 한 건(2026-10-21): project_id의 grade 자리 count개를 메우지 않고 정원에서 뺀다. 사유 필수."""
+    model_config = ConfigDict(extra="forbid")
+    project_id: str = Field(min_length=1, max_length=32)
+    grade: Literal["특급", "고급", "중급", "초급"]
+    count: int = Field(ge=1, le=20)
+    reason: str = Field(max_length=200)
+
+
 class ApplyIn(_Versioned):
     entries: list[EntryIn] = Field(max_length=MAX_PLAN_ENTRIES)
     note: str = Field(default="", max_length=300)
@@ -310,6 +319,10 @@ class ApplyIn(_Versioned):
     skills_add: dict[str, list[SkillAdd]] = Field(default={}, max_length=10)
     concurrency_add: list[GrantIn] = Field(default=[], max_length=20)
     grade_swaps: list[GradeSwapIn] = Field(default=[], max_length=20)
+    # 연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정(2026-10-21) -- 빠지는 고정 배치를 함께 푼다(source plan만)
+    release_locks: bool = False
+    # 이 확정으로 새로 생긴 빈자리 중 메우지 않을 것(사유 필수, 2026-10-21) -- 새 빈자리는 메우거나 여기 적어야 확정된다
+    seat_waivers: list[SeatWaiverIn] = Field(default=[], max_length=40)
 
 
 def expected_grade_swaps(dataset, entries: list[dict]) -> dict[str, list[dict]]:
@@ -340,6 +353,31 @@ def _check_grade_swaps(dataset, body: "ApplyIn") -> list[dict]:
                 "message": "등급 대체가 미리 계산과 다르다 -- 화면을 다시 계산하고 대체마다 사유를 적어 확정한다.",
                 "project_id": jid, "expected": want})
     return [s.model_dump() | {"reason": s.reason.strip()} for s in body.grade_swaps]
+
+
+def _check_seat_holes(app, dataset, body: "ApplyIn") -> list[dict]:
+    """이 확정으로 새로 생긴 빈자리(`core.evaluate.seat_holes.holes_after` -- 등급 대체·증원을 적용한 정원 기준)가 요청의 "메우지 않음"과
+    같고 사유가 다 있는가(2026-10-21 사용자 "빼간 자리를 매꿔야한다는게 있어야"). 메운 자리는 빈자리가 아니라 목록에 없다.
+    화면 미리 계산(preview·긴급 투입·신규 사업 draft)과 같은 함수라 맞아야 한다."""
+    from api.seat_fill import staffing_ids
+    from core.evaluate.seat_holes import holes_after, same_holes
+    asked: dict[str, list[dict]] = {}
+    for w in body.seat_waivers:
+        if not w.reason.strip():
+            raise HTTPException(status_code=422, detail=f"메우지 않는 사유를 적어야 한다: {w.project_id} {w.grade} 자리")
+        asked.setdefault(w.project_id, []).append(w.model_dump())
+    unknown = sorted(j for j in asked if j not in dataset.graph.project_index)
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"이 데이터에 없는 사업: {unknown[0]}")
+    expected = holes_after(dataset.graph, _entries_of(dataset), [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
+                           {p: dict(v) for p, v in body.headcount_add.items()}, staffing_ids(app, dataset))
+    for jid in sorted(set(expected) | set(asked)):
+        want = expected.get(jid, [])
+        if not same_holes(want, asked.get(jid, [])):
+            raise HTTPException(status_code=422, detail={
+                "message": "새로 생긴 빈자리는 메우거나 '메우지 않음'과 사유를 적어야 확정한다 -- 화면을 다시 계산한다.",
+                "project_id": jid, "expected": want})
+    return [w.model_dump() | {"reason": w.reason.strip()} for w in body.seat_waivers]
 
 
 def _violations(app, dataset, entries) -> dict[tuple[str, str], object]:
@@ -413,9 +451,16 @@ async def post_preview(body: PreviewIn, request: Request) -> dict:
         kept = {(e["person_id"], e["project_id"]) for e in new}
         locked = sorted(f"{names.get(c.person_id, c.person_id)}@{c.project_id}" for c in dataset.current
                         if c.locked and (c.person_id, c.project_id) not in kept)
+        # 이 확정으로 새로 생긴 빈자리(메우거나 "메우지 않음"과 사유 -- 확정 검사와 같은 함수)와 메울 후보(2026-10-21)
+        from api.seat_fill import fill_options, staffing_ids
+        from core.evaluate.seat_holes import fills_of, new_holes
+        holes = new_holes(graph, g2, cur, new, staffing_ids(request.app, dataset))
+        options = fill_options(g2, S, C, params, [AssignEntry(**e) for e in new], holes,
+                               locked={(c.person_id, c.project_id) for c in dataset.current if c.locked}, names=names)
+        fills = [{**f, "name": names.get(f["person_id"], f["person_id"])} for f in fills_of(graph, cur, new)]
         return {"dataset_version": dataset.info.version, "moved": moved, "joined": joined, "left": left,
                 "changed": bool(moved or joined or left), "grade_swaps": swaps, "budget_add": budget,
-                "new_violations": worse, "locked_dropped": locked}
+                "new_violations": worse, "locked_dropped": locked, "holes": holes, "fill_options": options, "fills": fills}
     return await anyio.to_thread.run_sync(work)
 
 
@@ -432,15 +477,22 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                  | {g.person_id for g in body.concurrency_add if g.person_id not in ids_p})
     if bad:
         raise HTTPException(status_code=422, detail=f"이 데이터에 없는 ID: {', '.join(bad[:5])}")
+    if body.release_locks and body.source != "plan":
+        raise HTTPException(status_code=422, detail="고정 풀기는 연간 계획 안 확정에서만 한다(고정은 신규 사업 편성의 진행 사업 줄에서 푼다)")
     swaps = _check_grade_swaps(dataset, body)
+    waivers = _check_seat_holes(request.app, dataset, body)
     before = _files(request)
     files, changes = _edit(apply_entries, before, [e.model_dump(exclude={"monthly_alloc"}) for e in body.entries],
                            headcount_add={p: dict(v) for p, v in body.headcount_add.items()},
                            budget_add=dict(body.budget_add),
-                           skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()})
+                           skills_add={p: [s.model_dump() for s in v] for p, v in body.skills_add.items()},
+                           release_locks=body.release_locks)
     if swaps:
         # 등급 대체: 정원 표를 자리 등급 −n, 들어간 등급 +n으로(같은 판 -- 확정 취소·되돌리기가 함께 돌린다)
         files = _edit(swap_grade_seats, files, swaps)
+    if waivers:
+        # 메우지 않는 빈자리: 그 사업 그 등급 정원 −n(예산 그대로, 같은 판 -- 확정 취소·되돌리기가 함께 돌린다)
+        files = _edit(waive_seats, files, waivers)
     if body.concurrency_add:
         # 동시 수행으로 지원하는 사람의 허용(사유)을 같은 판에 함께 적는다 -- 되돌리면 둘 다 사라진다(설계 3.5).
         # 이미 그만큼 허용된 사람은 기존 기록(사유·메모·시각)을 그대로 둔다(폴백 리뷰 P2: 기본값으로 덮어썼다)
@@ -471,6 +523,8 @@ async def post_apply(body: ApplyIn, request: Request) -> dict:
                                 "concurrency_add": [g.model_dump() for g in body.concurrency_add],
                                 # 등급 대체와 사유(2026-10-21) -- 인사팀 검토 자료 사실(MOVE_GRADE)의 원천
                                 "grade_swaps": swaps,
+                                # 메우지 않기로 한 빼 온 자리와 사유(2026-10-21) -- 검토 자료 MOVE_FILL 사실의 원천
+                                "seat_waivers": waivers,
                                 # 긴급 투입만 -- 다른 확정의 검토 자료에는 상황 메모 칸이 없어 보이지 않는 값으로 남는다(폴백 리뷰 S1)
                                 "situation": body.situation.strip() if body.source == "emergency" else ""},
                        check=check)
@@ -489,9 +543,9 @@ async def post_undo(body: UndoIn, request: Request) -> dict:
 
 
 @router.get("/api/skills/dictionary")
-def skills_dictionary() -> list[dict]:
-    from core.ingest.skills import load_dictionary
-    d = load_dictionary()
+def skills_dictionary(request: Request) -> list[dict]:
+    from core.ingest.skill_mapping import dictionary_of_active
+    d = dictionary_of_active(request.app.state.dataset)      # 이 데이터에서 승인한 기술 이름까지(2026-10-22)
     return [{"name": c.get("label"), "aliases": list(c.get("aliases") or []), "category": c.get("category")}
             for c in d.concepts.values()]
 
@@ -623,6 +677,13 @@ def cancel_plan(request: Request, version: str, at: str) -> dict:
         dropped += [{**o, "why": "violation", "violations": [v.message for v in new if _implicates(v, o, grade_of)][:2]}
                     for o in drop]
         ops = [o for o in ops if o not in drop]
+    if ops:
+        # 취소가 진행 사업에 정해지지 않은 빈자리를 만들면(빼 온 사람이 돌아오지 못하는데 "메우지 않음" 정원을 되살림·메운 사람을 뺌)
+        # 그 작업은 하지 않는다(2026-10-21 빼 온 자리 결정 -- 확정과 같은 규칙)
+        ops, files, holed = _keep_seats_decided(app, dataset, before, now, ops, files, grade_of)
+        if holed:
+            dropped += holed
+            new = new_or_worse(old, _violations_of(app, _graph_of(files), files)) if ops else []
     if not ops:                                         # 모두 빠졌으면 바뀌는 것도, 생기는 위반도 없다(2차 리뷰 NIT)
         files, new = now, []
     from api.workspace_edits import current_table
@@ -634,6 +695,48 @@ def cancel_plan(request: Request, version: str, at: str) -> dict:
             "dropped": dropped, "files": files, "new_violations": [asdict(v) for v in new or []],
             # 위반·고정으로 되돌릴 작업이 모두 빠지면 바뀌는 것이 없다 -- 그래도 커밋하면 확정이 "취소됨"으로 잠겼다(폴백 리뷰 M1)
             "nothing": not ops, "version": dataset.info.version}
+
+
+def _keep_seats_decided(app, dataset, before, now, ops: list[dict], files, grade_of: dict[str, str]):
+    """취소 결과가 지금보다 새 빈자리를 만들면(`core.evaluate.seat_holes.new_holes` -- 편성 중인 신규 사업은 빼고) 그 빈자리를 만드는 작업을
+    덜어 낸다: 그 등급 정원 되살리기를 먼저 줄이고, 그래도 남으면 그 사업에서 그 등급 사람을 빼는 작업을 하지 않는다.
+    반환: (남은 작업, 새 판, 하지 않는 작업[why=hole])."""
+    from api.seat_fill import staffing_ids
+    from api.workspace_edits import current_table
+    from core.evaluate.seat_holes import new_holes
+
+    def entries(fs):
+        _, rows = current_table(fs)
+        return [{"person_id": r["person_id"], "project_id": r["project_id"], "alloc": float(r["alloc"])} for r in rows]
+    staffing = staffing_ids(app, dataset)
+    holed: list[dict] = []
+    for _ in range(MAX_DROP_ROUNDS):
+        holes = new_holes(dataset.graph, _graph_of(files), entries(now), entries(files), staffing)
+        if not holes:
+            break
+        changed = False
+        for jid, hs in holes.items():
+            for h in hs:
+                k = h["count"]
+                for o in ops:
+                    up = (o["to"] or 0) - (o["from"] or 0)
+                    if k and o["op"] == "grade" and o["key"] == f"{jid}@{h['grade']}" and up > 0:
+                        cut = min(k, up)
+                        holed.append({**o, "why": "hole", "count": cut})
+                        o["to"] = (o["to"] or 0) - cut
+                        k, changed = k - cut, True
+                for o in ops:
+                    if k and o["op"] == "assign" and o["to"] is None and o["from"] is not None and not o.get("_hole"):
+                        pid, j = o["key"].split("@", 1)
+                        if j == jid and grade_of.get(pid) == h["grade"]:
+                            o["_hole"] = True
+                            holed.append({**o, "why": "hole"})
+                            k, changed = k - 1, True
+        ops = [o for o in ops if not o.get("_hole") and not (o["op"] == "grade" and (o["to"] or 0) == (o["from"] or 0))]
+        if not changed or not ops:
+            break
+        files = _edit(apply_revert, before, now, ops)
+    return ops, files, holed
 
 
 _DIGIT_RO = {"0": "으로", "1": "로", "2": "로", "3": "으로", "4": "로", "5": "로", "6": "으로", "7": "로", "8": "로", "9": "로"}
@@ -698,6 +801,10 @@ def _plan_view(plan: dict, names: dict[str, str]) -> dict:
     t = plan["entries"][plan["index"]]
     dropped = []
     for o in plan["dropped"]:
+        if o.get("why") == "hole":
+            jid = o["key"].split("@", 1)[1 if o["op"] == "assign" else 0]
+            dropped.append(f"{_op_text(o, names)} -- 하지 않는다(돌아올 사람이 없어 {jid} 자리가 정해지지 않은 빈자리가 된다)")
+            continue
         msg = "; ".join(o.get("violations") or [])
         dropped.append(f"{_op_text(o, names)} -- 하지 않는다(규칙 위반{': ' + msg if msg else ''})"
                        + (" · 대기 인력으로 남는다" if o.get("bench_after") else ""))
