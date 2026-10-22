@@ -77,7 +77,7 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {}, baseline
               {!edited && (
                 <span className="seal" title={fromRecord ? "편성 기록의 명단을 지금 평가기로 다시 채점해 위반이 없음을 확인했다"
                                                          : "솔버의 해를 별도 검증기로 다시 확인했다(제약·목적 재계산)"}>
-                  {fromRecord ? "재채점" : "검증"}<small className="block text-[9.5px] font-semibold">통과</small>
+                  위반 없음<small className="block text-[9.5px] font-semibold">{fromRecord ? "다시 채점" : "검증기 확인"}</small>
                 </span>
               )}
             </div>
@@ -92,7 +92,7 @@ export function PlanCards({ plans, selected, onSelect, editCounts = {}, baseline
                 <dd className="text-slate-500">{p.objective.toFixed(2)}</dd>
               </>}
               <dt className="cursor-help text-slate-500" title="기술만 놓고 이론상 가장 잘 맞출 수 있는 값(상한) 대비 이 편성안이 얻은 비율. 100%에 가까울수록 기술이 잘 맞습니다.">기술 적합(최적화율) ⓘ</dt><dd className="font-semibold">{pct(p.optimization_ratio)}</dd>
-              <dt className="cursor-help text-slate-500" title="사업이 요구한 기술·레벨을 배치된 사람이 실제로 채운 비율(보조 지표). 요구가 까다로울수록 낮게 나옵니다.">충족률 ⓘ</dt><dd>{pct(p.fulfillment)}</dd>
+              <dt className="cursor-help text-slate-500" title="사업이 요구한 기술·레벨을 배치된 사람이 실제로 채운 비율(보조 지표). 요구가 까다로울수록 낮게 나옵니다.">요구 기술 충족률 ⓘ</dt><dd>{pct(p.fulfillment)}</dd>
               <dt className="text-slate-500">배치</dt><dd>{p.entries.length}건</dd>
             </dl>
             {violations > 0 && (

@@ -107,6 +107,8 @@ def confirms(history_entries: list[dict]) -> list[dict]:
                         "before_version": history_entries[i - 1].get("version"),
                         "before_content_version": history_entries[i - 1]["content_version"],
                         "kind": kind, "at": e.get("at"), "note": e.get("note", ""),
+                        # 이력 종류(apply_auto·apply_manual·apply_emergency) -- 화면 머리 "자동 편성"·"손 편성"·"긴급 투입"(2026-10-22, What-if 확정도 손 편성)
+                        "source": e.get("kind"),
                         "situation": (e.get("summary") or {}).get("situation", ""),
                         # 등급 대체와 사유(2026-10-21) -- 그 사업 자료의 MOVE_GRADE 사실
                         "grade_swaps": (e.get("summary") or {}).get("grade_swaps") or [],

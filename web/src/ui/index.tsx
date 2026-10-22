@@ -11,6 +11,7 @@
  *  - Notice: 화면 위 안내 띠. tone: info(기록·알림) · warn(주의) · bad(오류)
  *  - ProjectCode: 사업 코드 그대로 + 마우스를 올리면 사업 이름(사용자 2026-10-20 "사업 이름이 길잖아")
  *  - Term: 전문용어 옆 ⓘ -- 마우스를 올리거나 누르면 쉬운 설명(화면 친절하게, 2026-10-20)
+ *  - Steps: 화면 맨 위 "지금 어디쯤" 단계 줄(2026-10-22 화면 검토 P2-3) -- 지난 단계 ✓, 지금 단계 진하게, 다음 할 일 버튼(next)
  */
 import type { ReactNode } from "react";
 
@@ -147,3 +148,29 @@ export function Term({ children, help }: { children: ReactNode; help: ReactNode 
 }
 
 export { PageHeader, WhatifEmpty, datasetLabel } from "../components/Shell";
+
+
+const CIRCLED = "①②③④⑤⑥⑦⑧";
+
+export function Steps({ steps, current, label, next }: {
+  steps: string[]; current: number; label: string;
+  /** 다음 할 일 버튼(예: 확정 뒤 "검토 자료 만들기") -- 없으면 줄만 */
+  next?: ReactNode;
+}) {
+  return (
+    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-white px-3 py-2">
+      <ol className="flex flex-wrap items-center gap-1 text-[12.5px]">
+        {steps.map((s, i) => (
+          <li key={s} className="flex items-center gap-1" aria-current={i === current ? "step" : undefined}>
+            <span className={`rounded-full px-2 py-0.5 ${i === current ? "bg-ink font-semibold text-white"
+              : i < current ? "bg-pine-50 text-pine-800" : "bg-slate-100 text-slate-500"}`}>
+              {i < current ? "✓" : CIRCLED[i]} {s}
+            </span>
+            {i < steps.length - 1 && <span aria-hidden className="text-slate-300">→</span>}
+          </li>
+        ))}
+      </ol>
+      {next && <div className="flex flex-wrap gap-2">{next}</div>}
+    </nav>
+  );
+}

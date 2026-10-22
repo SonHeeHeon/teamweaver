@@ -1,7 +1,8 @@
 import type { ObjectiveBreakdown, WhatifResponse } from "../api/types";
-import { swapWarnings } from "../api/whatifWarnings";
+import { blockingViolations, swapWarnings } from "../api/whatifWarnings";
 import { EvidenceList } from "./EvidenceList";
 import { hasMarkers, numberMarkers } from "./evidenceMarkers";
+import { sentences } from "../review/ReviewDoc";
 import { Term } from "../ui";
 
 interface Props {
@@ -37,7 +38,7 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
   }
   const up = result.objective_delta >= 0;
   const warnings = swapWarnings(result);
-  const hasNewViolation = result.new_violations.length > 0;
+  const hasNewViolation = blockingViolations(result).length > 0;     // 등급 대체로 묶은 것은 빼고(P3-1)
   const ev = result.briefing.evidence ?? [];
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -84,7 +85,10 @@ export function BriefingPanel({ result, loading, nameOf }: Props) {
           </ul>
         </div>
       )}
-      <p className="mt-3 text-sm text-slate-700">{numberMarkers(result.briefing.rationale, ev)}</p>
+      {/* 이유는 문장마다 한 줄(2026-10-22 부서장 점검 f13 -- 근거 표시가 붙은 긴 한 문단이었다) */}
+      <div className="mt-3 space-y-0.5 text-sm text-slate-700">
+        {sentences(numberMarkers(result.briefing.rationale, ev)).map((s, i) => <p key={i}>{s}</p>)}
+      </div>
       <div className="mt-3">
         <h4 className="text-xs font-medium text-slate-500">주의할 점</h4>
         <ul className="mt-1 list-inside list-disc text-sm text-slate-700">

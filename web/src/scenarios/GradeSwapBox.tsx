@@ -79,3 +79,50 @@ export function GradeSwapBox({ items, budgetAdd, reasons, onReason, named = (id)
     </section>
   );
 }
+
+/** 예산 증액 사유(2026-10-22 사용자 "전부 하자" -- 화면 검토 P3-2): 손 편성이 월 예산을 새로 넘기면 막지 않고, 넘친 만큼 증액을 사유와 함께 받는다.
+ *  금액은 서버 미리 계산(`budget_raises` -- core.evaluate.grade_swap.budget_raises) 그대로 보내고 확정이 같은 함수로 맞춰 본다. */
+export type RaiseReasons = Record<string, string>;
+
+export function raisesReady(raises: Record<string, number> | undefined, reasons: RaiseReasons): boolean {
+  return Object.keys(raises ?? {}).every((j) => (reasons[j] ?? "").trim().length > 0);
+}
+
+export function raiseBody(raises: Record<string, number> | undefined, reasons: RaiseReasons) {
+  return Object.entries(raises ?? {}).map(([project_id, amount]) => ({ project_id, amount, reason: (reasons[project_id] ?? "").trim() }));
+}
+
+export function BudgetRaiseBox({ raises, reasons, onReason, named = (id) => id, disabled }: {
+  raises: Record<string, number> | undefined;
+  reasons: RaiseReasons;
+  onReason: (projectId: string, value: string) => void;
+  named?: (projectId: string) => string;
+  disabled?: boolean;
+}) {
+  const items = Object.entries(raises ?? {});
+  if (!items.length) return null;
+  const missing = items.filter(([j]) => !(reasons[j] ?? "").trim()).length;
+  return (
+    <section aria-label="예산 증액" className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
+      <p className="font-medium">
+        예산 초과 {items.length}건{missing > 0 ? ` — 증액 사유 ${missing}건을 적어야 확정할 수 있습니다` : " — 사유를 모두 적었습니다"}
+      </p>
+      <ul className="mt-1.5 space-y-2">
+        {items.map(([j, amount]) => (
+          <li key={j}>
+            <p className="text-[13px]">{named(j)}: 이 확정으로 월 비용이 예산을 <b>{amount.toLocaleString()}</b> 넘습니다. 확정하면 월 예산을 그만큼 늘립니다.</p>
+            <label className="mt-1 flex items-center gap-2 text-xs">
+              <span className="shrink-0 text-slate-600">증액 사유(필수)</span>
+              <input className="field w-full py-1" maxLength={200} disabled={disabled} aria-label={`${j} 예산 증액 사유`}
+                     placeholder="예: 발주처 요청으로 범위가 늘어 인원 추가, 영업과 협의함"
+                     value={reasons[j] ?? ""} onChange={(e) => onReason(j, e.target.value)} />
+            </label>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-xs text-slate-600">
+        사유는 확정 기록·인사팀 검토 자료('확인할 사실')·변경 보고서에 남습니다. 확정 취소·되돌리기를 하면 예산도 함께 돌아갑니다.
+      </p>
+    </section>
+  );
+}

@@ -9,6 +9,13 @@ import { Spinner } from "../ui";
  *  세 층을 눈으로 구분한다: 시스템 사실(잠김·회색) · 본문(AI 초안 → 부서장 수정, 노란 밑줄) · 부서장 의견·해명(초록 줄)·이의(빨간 줄).
  *  인쇄(editable=false)에서도 글자 머리("시스템 사실 · 수정 불가" 등)를 남겨 흑백으로도 구분된다. */
 
+/** 확정 종류 이름 -- 이력 종류(source)가 있으면 그것으로(What-if 확정도 "손 편성"), 예전 자료는 kind로. */
+export function confirmLabel(c: { kind: string; source?: string | null }): string {
+  if (c.source === "apply_auto") return "신규 사업 자동 편성";
+  if (c.source === "apply_manual") return "손 편성(신규 사업·What-if)";
+  return c.kind === "emergency" ? "긴급 투입" : "신규 사업 편성";
+}
+
 export const AGREEMENT_LABEL: Record<AgreementStatus, string> = {
   agreed: "합의함", requested: "요청 중", hr_assigned: "인사팀 사전 배정",
 };
@@ -18,6 +25,28 @@ const ORIGIN_LABEL = { moved: "진행 사업에서 옮겨 옴", partly_free: "�
 /** 문장 단위로 나눈다(마침표·물음표·느낌표 뒤 공백·줄바꿈). */
 export function sentences(text: string | null | undefined): string[] {
   return (text ?? "").split(/(?<=[.!?。])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
+}
+
+/** 본문 속 근거 표식 [F12]의 번호(2026-10-22 부서장 점검 f13 -- 내부 번호를 그대로 보이지 않고 아래 "인용한 사실" 번호로).
+ *  검사 기록의 인용 순서가 있으면 그 순서, 없으면(예전 자료) 본문에 나온 순서. */
+export function citeNumbers(text: string | null | undefined, cited: { id: string }[] | undefined): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const c of cited ?? []) if (!out.has(c.id)) out.set(c.id, out.size + 1);
+  for (const m of (text ?? "").matchAll(/\[(F\d+)\]/g)) if (!out.has(m[1])) out.set(m[1], out.size + 1);
+  return out;
+}
+
+/** 한 문장: 근거 표식은 위첨자 번호로 */
+function Prose({ text, cites }: { text: string; cites: Map<string, number> }) {
+  return (
+    <>
+      {text.split(/(\[F\d+\])/g).map((part, i) => {
+        const m = /^\[(F\d+)\]$/.exec(part);
+        return m ? <sup key={i} className="ml-px text-[9.5px] text-slate-500" title="아래 '인용한 사실' 번호">{cites.get(m[1]) ?? "*"}</sup>
+          : <span key={i}>{part}</span>;
+      })}
+    </>
+  );
 }
 
 interface Draft {
@@ -100,7 +129,7 @@ function FactBlock({ fact, notes, editable, onAdd, onRemove }: {
 }
 
 /** AI 초안 요약의 사실 검사 한 줄 + 인용 사실 목록(펼치기 -- 인쇄·PDF에서는 펼친 채). 검사는 AI 초안에 대한 것이다(부서장이 고친 문장은 대상 아님). */
-function BodyCheckLine({ check, edited, print }: { check: BodyCheck; edited: boolean; print: boolean }) {
+function BodyCheckLine({ check, edited, print, cites }: { check: BodyCheck; edited: boolean; print: boolean; cites: Map<string, number> }) {
   return (
     <details className="mt-2 text-[12px] text-slate-600" open={print}>
       <summary className="cursor-pointer select-none">
@@ -113,26 +142,27 @@ function BodyCheckLine({ check, edited, print }: { check: BodyCheck; edited: boo
       <p className="mt-1 text-slate-500">AI는 사실 번호만 고르고, 숫자·충족 여부 같은 문구는 시스템이 채웁니다. 만들 때 문장마다 검사해 걸리면 규칙 요약으로 바꾸고,
         저장 전에 저장할 글이 검사한 원문 그대로인지 한 번 더 확인합니다: {check.rules}.</p>
       <ul className="mt-1 list-disc pl-5">
-        {check.cited.map((c) => <li key={c.id}><span className="num text-slate-400">[{c.id}]</span> {c.text}{c.adverse && <span className="ml-1 text-amber-700">(불리한 사실)</span>}</li>)}
+        {check.cited.map((c) => <li key={c.id}><span className="num text-slate-400">[{cites.get(c.id) ?? "*"}]</span> {c.text}{c.adverse && <span className="ml-1 text-amber-700">(불리한 사실)</span>}</li>)}
       </ul>
     </details>
   );
 }
 
-/** 본문: AI 원본에 없는 문장(부서장이 쓰거나 고친 문장)에 "부서장 수정" 표시. */
-function Body({ doc, body }: { doc: ReviewDocView; body: string | null }) {
+/** 본문: 문장마다 한 줄(2026-10-22 부서장 점검 f12 -- 한 문단으로 이어져 읽기 어려웠다), 근거 표식은 위첨자 번호.
+ *  AI 원본에 없는 문장(부서장이 쓰거나 고친 문장)에 "부서장 수정" 표시. */
+function Body({ doc, body, cites }: { doc: ReviewDocView; body: string | null; cites: Map<string, number> }) {
   const ai = useMemo(() => new Set(sentences(doc.body_ai)), [doc.body_ai]);
   const text = body ?? doc.body_ai;
   if (!text) return <p className="text-[13.5px] text-slate-500">아직 본문이 없습니다. "AI 초안 만들기"를 누르거나 직접 씁니다.</p>;
   return (
-    <p className="text-[14px] leading-7 text-slate-800">
-      {sentences(text).map((s, i) => ai.has(s) ? <span key={i}>{s} </span> : (
-        <span key={i}>
-          <span className="border-b-2 border-amber-400 bg-amber-50">{s}</span>
-          <span className="mx-1 rounded bg-amber-200 px-1 align-[1px] text-[10.5px] text-amber-900">부서장 수정</span>{" "}
-        </span>
+    <div className="space-y-1 text-[14px] leading-7 text-slate-800">
+      {sentences(text).map((s, i) => ai.has(s) ? <p key={i}><Prose text={s} cites={cites} /></p> : (
+        <p key={i}>
+          <span className="border-b-2 border-amber-400 bg-amber-50"><Prose text={s} cites={cites} /></span>
+          <span className="mx-1 rounded bg-amber-200 px-1 align-[1px] text-[10.5px] text-amber-900">부서장 수정</span>
+        </p>
       ))}
-    </p>
+    </div>
   );
 }
 
@@ -167,6 +197,10 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
     <FactBlock key={f.key} fact={f} notes={notesFor(f.key)} editable={can} onAdd={add(f.key)} onRemove={remove} />
   );
   const target = doc.facts.find((f) => f.kind === "MOVE_TARGET");
+  // 주인 없는 "사업 전체" 결정(등급 대체·예산 증액) -- 예전에는 저장만 되고 화면·PDF 어디에도 보이지 않았다(2026-10-22 고침)
+  const decisions = doc.facts.filter((f) => f.section === "move" && !f.owner && f.kind !== "MOVE_TARGET");
+  const cites = citeNumbers(d.body ?? doc.body_ai, doc.body_ai_check?.cited);
+  const movers = doc.moves.joined.filter((j) => j.origin === "moved").length;
   const adverse = doc.facts.filter((f) => f.section === "adverse");
   const appendix = doc.facts.filter((f) => f.section === "appendix");
   const keys = new Set(doc.facts.map((f) => f.key));
@@ -194,7 +228,7 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
         <div>
           <h2 className="text-lg font-bold">{doc.project_name} <span className="text-sm font-normal text-slate-500">({doc.project_id})</span></h2>
           <p className="text-[12.5px] text-slate-500">
-            {emergency ? "긴급 투입" : "신규 사업 편성"} · 새로 들어온 사람 {doc.moves.joined.length}명 · 팀 {doc.team.length}명
+            {confirmLabel(doc.confirm)} · 새로 들어온 사람 {doc.moves.joined.length}명(옮겨 옴 {movers}명) · 팀 {doc.team.length}명
             · 확정 {doc.confirm.at ? new Date(doc.confirm.at).toLocaleString("ko-KR") : "-"}
           </p>
         </div>
@@ -253,14 +287,21 @@ export function ReviewDoc({ doc, editable, onSave, onDraft, onPdf, busy = false 
               {d.body !== null && <button type="button" className="btn-ghost" onClick={() => { setD((x) => ({ ...x, body: null })); setEditingBody(false); }}>AI 초안으로 되돌리기</button>}
             </div>
           </div>
-        ) : <div className="mt-2"><Body doc={doc} body={d.body} /></div>}
-        {doc.body_ai_check && <BodyCheckLine check={doc.body_ai_check} print={!editable}
+        ) : <div className="mt-2"><Body doc={doc} body={d.body} cites={cites} /></div>}
+        {doc.body_ai_check && <BodyCheckLine check={doc.body_ai_check} print={!editable} cites={cites}
                                              edited={d.body !== null && d.body !== doc.body_ai} />}
       </section>
 
       <section className="mt-6">
-        <h3 className="text-[15px] font-semibold text-ink">2. 옮겨 온 인력</h3>
+        <h3 className="text-[15px] font-semibold text-ink">2. 새로 들어온 인력
+          <span className="ml-1 text-[12px] font-normal text-slate-500">— 진행 사업에서 옮겨 온 사람 {movers}명 · 대기·여유 인력 {doc.moves.joined.length - movers}명</span></h3>
         {target && factBlock(target)}
+        {decisions.length > 0 && (
+          <div className="mt-3">
+            <div className="text-[12.5px] font-semibold text-slate-700">이 확정의 정원·예산 결정</div>
+            {decisions.map(factBlock)}
+          </div>
+        )}
         {doc.moves.joined.map((j) => {
           const facts = doc.facts.filter((f) => f.section === "move" && f.owner === j.person_id);
           const jd = d.judgments[j.person_id];

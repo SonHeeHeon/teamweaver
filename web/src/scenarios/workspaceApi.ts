@@ -106,6 +106,8 @@ export interface DraftSummary extends HoleView {
   grade_swaps?: GradeSwap[]; budget_add?: number;
   /** 빼 온 사업을 다른 등급으로 메운 등급 대체·그로 넘는 예산(사업별, 2026-10-21) -- 확정에 함께 보낸다 */
   side_grade_swaps?: Record<string, GradeSwap[]>; side_budget_add?: Record<string, number>;
+  /** 대체 없이도 새로 넘친 월 예산(사업별, 2026-10-22) -- 사유와 함께 확정의 budget_raises로 보낸다 */
+  budget_raises?: Record<string, number>;
 }
 export interface Pick { person_id: string; alloc: number; pulled_from: string[] }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
@@ -201,6 +203,8 @@ export const postApply = (v: string, body: { entries: AssignEntry[]; note?: stri
   grade_swaps?: (GradeSwap & { project_id: string; reason: string })[];
   /** 새로 생긴 빈자리 중 메우지 않을 것(사유 필수, 2026-10-21) */
   seat_waivers?: SeatWaiver[];
+  /** 새로 넘친 월 예산의 증액(사유 필수, 2026-10-22) -- 금액은 미리 계산 budget_raises 그대로 */
+  budget_raises?: { project_id: string; amount: number; reason: string }[];
   /** 연간 계획 "고정 풀고 다시 배치"로 짠 안의 확정 -- 빠지는 고정을 함께 푼다(source plan만) */
   release_locks?: boolean } & Partial<Omit<ApplyHint, "grade_swaps">>) =>
   call<WithWs & { changes: { added: string[]; removed: string[]; changed: string[] } }>(
@@ -210,6 +214,8 @@ export interface PreviewMove { person_id: string; name: string; from: string[]; 
 export interface ConfirmPreview extends HoleView {
   dataset_version: string; moved: PreviewMove[]; joined: PreviewMove[]; left: PreviewMove[]; changed: boolean;
   grade_swaps: Record<string, GradeSwap[]>; budget_add: Record<string, number>; new_violations: string[]; locked_dropped: string[];
+  /** 대체 없이도 새로 넘친 월 예산(사업별, 2026-10-22) -- 사유와 함께 확정의 budget_raises로 보낸다 */
+  budget_raises?: Record<string, number>;
 }
 export const postPreview = (v: string, entries: AssignEntry[], signal?: AbortSignal) =>
   call<ConfirmPreview>("/api/workspace/preview", { ...json("POST", { dataset_version: v, entries }), signal });

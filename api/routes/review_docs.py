@@ -88,10 +88,11 @@ def list_review_docs(request: Request) -> dict:
             name = ((d or {}).get("project_name") or then.get((c["version"], pid))
                     or (graph.projects[graph.project_index[pid]].name if c["version"] == active_version and pid in graph.project_index else pid))
             projects.append({"project_id": pid, "name": name, "exists": d is not None, "status": (d or {}).get("status"),
+                             "joined": len((d or {}).get("moves", {}).get("joined", [])),
                              "movers": sum(1 for j in (d or {}).get("moves", {}).get("joined", []) if j["origin"] == "moved"),
                              "objections": sum(1 for n in (d or {}).get("notes", []) if n.get("type") == "objection")})
         gone = confirm_cancelled(entries, c["version"])       # 확정 취소(2026-10-21) -- 이력에 남지만 잠근다
-        out.append({**{k: c[k] for k in ("version", "kind", "at", "note")}, "active": c["version"] == active_version,
+        out.append({**{k: c[k] for k in ("version", "kind", "at", "note", "source")}, "active": c["version"] == active_version,
                     "reverted": gone, "cancelled": gone, "projects": projects})
     # 되돌려진 확정의 자료도 목록에 남긴다(열 수는 있고 내보내기는 잠김)
     for (v, pid), d in sorted(stored.items(), key=lambda kv: kv[1]["confirm"].get("at") or "", reverse=True):
@@ -100,10 +101,11 @@ def list_review_docs(request: Request) -> dict:
         c = d["confirm"]
         row = next((r for r in out if r["version"] == v), None)
         if row is None:
-            row = {**{k: c.get(k) for k in ("version", "kind", "at", "note")}, "active": False,
+            row = {**{k: c.get(k) for k in ("version", "kind", "at", "note", "source")}, "active": False,
                    "reverted": history_state(entries, c) == "reverted", "projects": []}
             out.append(row)
         row["projects"].append({"project_id": pid, "name": d.get("project_name", pid), "exists": True, "status": d.get("status"),
+                                "joined": len(d.get("moves", {}).get("joined", [])),
                                 "movers": sum(1 for j in d.get("moves", {}).get("joined", []) if j["origin"] == "moved"),
                                 "objections": sum(1 for n in d.get("notes", []) if n.get("type") == "objection")})
     return {"confirms": out}
