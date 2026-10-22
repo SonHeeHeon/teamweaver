@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-change-report` · 화면 검토 P2·P3 전부(사용자 "전부 하자") — `api/review_docs.py`·`api/routes/review_docs.py`·새 `api/change_log.py`·`api/routes/changes.py`·`api/workspace.py`(기록 한 줄)·`api/routes/workspace.py`(예산 증액 사유)·`api/routes/scenarios.py`(draft)·`core/kg/justify.py`(대안 비교 불리 판정)·`web/src/review/`·`web/src/report/ReportPage.tsx`·`web/src/scenarios/{NewProjectsScreen,EmergencyScreen}.tsx`·`web/src/components/{PlanCards,ConfidenceBadge,ConfirmChanges,Shell,BriefingPanel}.tsx`·`web/src/ui` · 2026-10-22 23:30 · 시험 서버 포트 8776~8779
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
