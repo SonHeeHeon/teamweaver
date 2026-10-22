@@ -55,6 +55,9 @@ def _settings() -> PdfSettings:
 JSON_LIMIT_ENV = "TEAMWEAVER_MAX_JSON_BODY_BYTES"
 DEFAULT_MAX_JSON_BODY_BYTES = 2 * 1024 * 1024
 OWN_LIMIT_PATHS = frozenset({"/api/datasets", "/api/records"})   # 편성 기록 불러오기는 20MB(api/records)
+# 발주 자료 올리기(POST /api/project-docs/{사업})는 한 파일 20MiB(api/routes/project_docs가 센다) -- 사업 번호가 경로에 들어가 모양으로 본다.
+# POST와 이 모양만 -- 같은 머리로 JSON 쓰기 라우트를 더해도 2MiB 상한이 꺼지지 않게(폴백 리뷰)
+OWN_LIMIT_POST = re.compile(r"^/api/project-docs/[A-Za-z0-9_.-]{1,32}$")
 _BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
 
 
@@ -110,7 +113,8 @@ class ReportBodyLimit:
                 # 설정 오류는 라우트가 503으로 알린다. 여기서는 더 엄격한 기본값으로 막는다.
                 limit = DEFAULT_MAX_BODY_BYTES
             describe = _too_large
-        elif path.startswith("/api/") and path not in OWN_LIMIT_PATHS and scope.get("method") in _BODY_METHODS:
+        elif (path.startswith("/api/") and path not in OWN_LIMIT_PATHS and scope.get("method") in _BODY_METHODS
+              and not (scope.get("method") == "POST" and OWN_LIMIT_POST.match(path))):
             limit, describe = _json_limit(), _too_large_json
         else:
             await self.app(scope, receive, send)

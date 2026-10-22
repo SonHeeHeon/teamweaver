@@ -237,6 +237,9 @@ app.include_router(_hr_source_routes.router)
 
 from api.routes import skill_names as _skill_name_routes  # noqa: E402  -- 낯선 기술 이름 정리(2026-10-22)
 app.include_router(_skill_name_routes.router)
+# 사업 요구 기술 · 발주 자료 첨부·받기(2026-10-23, claude-b)
+from api.routes import project_docs as _project_doc_routes  # noqa: E402
+app.include_router(_project_doc_routes.router)
 
 # 빌드 산출물이 있으면 SPA를 같은 오리진에서 서빙한다. API 라우터를 모두
 # 등록한 *뒤에* 마운트해야 "/"가 API 경로를 가리지 않는다.

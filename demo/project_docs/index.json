@@ -1,0 +1,101 @@
+{
+ "note": "가상 자료 -- TeamWeaver 시연용. 실제 발주처·사업·공고와 관계없다.",
+ "generator": "scripts/make_demo_project_docs.py",
+ "sources": [
+  "org-n100-operating",
+  "org-n100-yearend"
+ ],
+ "docs": [
+  {
+   "id": "j001-sow",
+   "registered_at": {
+    "org-n100-s2026-operating": null,
+    "org-n100-s2026-yearend": null
+   },
+   "project_id": "J001",
+   "kind": "과업지시서",
+   "filename": "J001 과업지시서 (가상).pdf",
+   "file": "j001-sow.pdf",
+   "size": 140980,
+   "sha256": "5da1ada7c21e55de714ed1dee5d26b8cc83a6d270db2c85336fab6ecee8ba999"
+  },
+  {
+   "id": "j003-sow",
+   "registered_at": {
+    "org-n100-s2026-operating": null,
+    "org-n100-s2026-yearend": null
+   },
+   "project_id": "J003",
+   "kind": "과업지시서",
+   "filename": "J003 과업지시서 (가상).pdf",
+   "file": "j003-sow.pdf",
+   "size": 131841,
+   "sha256": "6040db2797281842d0a23ae599606049477281770efa07466662f10a2398f09e"
+  },
+  {
+   "id": "j011-rfp",
+   "registered_at": {
+    "org-n100-s2026-operating": null,
+    "org-n100-s2026-yearend": null
+   },
+   "project_id": "J011",
+   "kind": "제안요청서(RFP)",
+   "filename": "J011 제안요청서(RFP) (가상).pdf",
+   "file": "j011-rfp.pdf",
+   "size": 140866,
+   "sha256": "577af403fb8bbea335bf1f0844b9e00a6923d3f5952130309bf2a7b8cbc209f5"
+  },
+  {
+   "id": "j018-rfp",
+   "registered_at": {
+    "org-n100-s2026-operating": null,
+    "org-n100-s2026-yearend": "2026-10-01"
+   },
+   "project_id": "J018",
+   "kind": "제안요청서(RFP)",
+   "filename": "J018 제안요청서(RFP) (가상).pdf",
+   "file": "j018-rfp.pdf",
+   "size": 138638,
+   "sha256": "76b04183fd957f510f6d60e2434231108433be9416b9171228113551b3e755c3"
+  },
+  {
+   "id": "j019-brief",
+   "registered_at": {
+    "org-n100-s2026-operating": null,
+    "org-n100-s2026-yearend": "2026-10-10"
+   },
+   "project_id": "J019",
+   "kind": "사업 개요",
+   "filename": "J019 사업 개요 (가상).pdf",
+   "file": "j019-brief.pdf",
+   "size": 144619,
+   "sha256": "743c3ac52211fb17c94999a32298acaa57d84dedd59d38f26e22bcd59b3d8ee8"
+  },
+  {
+   "id": "j020-prespec",
+   "registered_at": {
+    "org-n100-s2026-operating": "2026-10-01",
+    "org-n100-s2026-yearend": "2026-10-01"
+   },
+   "project_id": "J020",
+   "kind": "사전규격",
+   "filename": "J020 사전규격 (가상).pdf",
+   "file": "j020-prespec.pdf",
+   "size": 141680,
+   "sha256": "c39c249a07d575ca52cd49c10e967df807dfd2e525bbcb9e094a8e0d9a949e29"
+  },
+  {
+   "id": "j020-rfp",
+   "registered_at": {
+    "org-n100-s2026-operating": "2026-10-01",
+    "org-n100-s2026-yearend": "2026-10-01"
+   },
+   "project_id": "J020",
+   "kind": "제안요청서(RFP)",
+   "filename": "J020 제안요청서(RFP) (가상).pdf",
+   "file": "j020-rfp.pdf",
+   "size": 142427,
+   "sha256": "c718054178930f9b38a7171666c7259aa76cd08ac41b06a35eaae574a572ea6c"
+  }
+ ]
+}
