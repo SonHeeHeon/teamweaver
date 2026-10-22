@@ -67,6 +67,32 @@ describe("ReviewDoc — 인사팀 검토 자료(A 문서형)", () => {
     expect(screen.getByText(/규칙 요약\(AI 요약이 검사에 걸려\)/)).toBeInTheDocument();
   });
 
+  it("본문은 문장마다 한 줄, 근거 표식 [F#]은 숨기고 인용 목록 번호로(부서장 점검 f12·f13, 2026-10-22)", () => {
+    const check = { ok: true, method: "graphrag", fallback_reason: null, facts_total: 12, rules: "…",
+                    cited: [{ id: "F7", text: "한지우 Kafka 경력 부족", adverse: true }, { id: "F1", text: "J014 요구 기술 Spring 충족", adverse: false }] };
+    const body = "J014는 Spring 요구 충족[F1]입니다. 다만 Kafka 경력 부족[F7]입니다.";
+    const { container } = render(<ReviewDoc doc={{ ...DOC, body: null, body_ai: body, body_ai_check: check }} editable={false} />);
+    expect(container.textContent).not.toMatch(/\[F\d+\]/);
+    const sups = [...container.querySelectorAll("sup")].map((x) => x.textContent);
+    expect(sups).toEqual(["1", "2"]);                                    // 본문에 나온 순서(F1=1, F7=2)
+    expect(screen.getByText(/J014는 Spring 요구 충족/).closest("p")).not.toHaveTextContent("Kafka");   // 문장마다 줄
+    expect(screen.getByText(/\[2\]/).closest("li")).toHaveTextContent("한지우 Kafka 경력 부족");
+    const items = [...container.querySelectorAll("details li")].map((li) => li.textContent);
+    expect(items[0]).toMatch(/^\[1\] J014 요구 기술 Spring 충족/);         // 아래 목록도 번호 순서
+  });
+
+  it("주인 없는 '사업 전체' 결정(등급 대체·예산 증액)을 보이고, 2절은 새로 들어온 인력과 옮겨 온 사람 수를 나눠 말한다(f10)", () => {
+    const facts = [...DOC.facts,
+      { key: "k-g", kind: "MOVE_GRADE", text: "J014: 등급 대체 — 중급 자리 1개를 초급으로 채움(아래 등급), 사유 범위 축소", adverse: true, owner: null, section: "move" as const },
+      { key: "k-b", kind: "MOVE_BUDGET", text: "J014: 예산 증액 — 월 +950, 사유 고객 요청", adverse: true, owner: null, section: "move" as const }];
+    render(<ReviewDoc doc={{ ...DOC, facts, confirm: { ...DOC.confirm, source: "apply_manual" } }} editable={false} />);
+    expect(screen.getByText("이 확정의 정원·예산 결정")).toBeInTheDocument();
+    expect(screen.getByText(/중급 자리 1개를 초급으로/)).toBeInTheDocument();
+    expect(screen.getByText(/월 \+950, 사유 고객 요청/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /2\. 새로 들어온 인력/ })).toHaveTextContent("옮겨 온 사람 1명 · 대기·여유 인력 1명");
+    expect(screen.getByText(/손 편성\(신규 사업·What-if\) · 새로 들어온 사람 2명\(옮겨 옴 1명\)/)).toBeInTheDocument();
+  });
+
   it("해명을 달고 판단·합의를 적어 저장하면 편집만 보낸다(사실은 보내지 않는다)", async () => {
     const onSave = vi.fn(async () => {});
     render(<ReviewDoc doc={DOC} editable onSave={onSave} />);

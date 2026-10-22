@@ -66,6 +66,11 @@ export function violationReasons(v: unknown[]): string {
   return [...new Set(codes.map((c) => VIOLATION_LABEL[c] ?? c))].join(", ");
 }
 
+/** 후보의 새 위반이 예산 초과뿐인가(2026-10-22 P3-2 -- 손 편성 확정은 사유와 함께 증액한다) */
+export function budgetOnly(v: unknown[]): boolean {
+  return v.length > 0 && v.every((x) => (Array.isArray(x) ? String(x[0]) : String(x)) === "budget");
+}
+
 /** 후보 행의 기술·협업 몫(예전 서버 응답이면 합친 값 하나만 기술 칸에). */
 export function skillCollab(r: CandidateRow): { skill: number | undefined; collab: number | undefined } {
   if (typeof r.skill_delta === "number" && typeof r.collab_delta === "number") return { skill: r.skill_delta, collab: r.collab_delta };

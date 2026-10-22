@@ -21,14 +21,18 @@ export function SkillNamesPanel({ datasetVersion, onChanged }: { datasetVersion:
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"load" | "suggest" | "save" | null>(null);
+  /** 원천 묶음을 고칠 수 없는 데이터(고정 데모·mapping.json 묶음)면 그 까닭 */
+  const [unavailable, setUnavailable] = useState<string | null>(null);
 
   async function load() {
     if (!datasetVersion) return;
     setBusy("load");
     setError(null);
     try {
-      const r = await fetchUnknownSkills(datasetVersion);
+      const r = await fetchUnknownSkills();
+      if (r.dataset_version !== datasetVersion) return;      // 데이터를 바꾸는 중 -- 화면이 새 판을 알면 다시 부른다
       setItems(r.items);
+      setUnavailable(r.unavailable ?? null);
       setDecided(r.decided);
       setSugg({});
       setChoice({});
@@ -98,7 +102,7 @@ export function SkillNamesPanel({ datasetVersion, onChanged }: { datasetVersion:
       </header>
       <div className="space-y-3 px-5 py-4 text-sm">
         {busy === "load" && <Spinner label="사전에 없는 이름을 찾는 중…" />}
-        {items && items.length === 0 && <p className="text-slate-600">사전에 없는 기술 이름이 없습니다.</p>}
+        {items && items.length === 0 && <p className="text-slate-600">{unavailable ? `이 데이터는 기술 이름을 정리할 수 없습니다: ${unavailable}` : "사전에 없는 기술 이름이 없습니다."}</p>}
         {note && <p role="status" className="text-xs text-slate-600">{note}</p>}
         {error && <p role="alert" className="text-red-700">{error}</p>}
         {items && items.length > 0 && (

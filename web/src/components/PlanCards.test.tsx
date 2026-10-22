@@ -158,15 +158,15 @@ describe("PlanCards — 시간 한도 도달 표시(claude-a 요청)", () => {
 
 
 describe("PlanCards — 검증 도장(2026-10-18)", () => {
-  it("화면에서 바꾼 명단에는 '검증 통과' 도장을 달지 않는다", async () => {
+  it("화면에서 바꾼 명단에는 '위반 없음' 도장을 달지 않는다(문구 2026-10-22 P3-5 -- 예전 '검증 통과')", async () => {
     const { render, screen } = await import("@testing-library/react");
     const { PlanCards } = await import("./PlanCards");
     const plan = { label: "A", entries: [], objective: 1, unfilled: [], fulfillment: 0.5, optimization_ratio: 0.5,
                    index: 1, cached: false, termination: "Optimal" } as never;
     const { rerender } = render(<PlanCards plans={[plan]} selected="A" onSelect={() => {}} />);
-    expect(screen.getByText("검증")).toBeInTheDocument();
+    expect(screen.getByText("검증기 확인")).toBeInTheDocument();
     rerender(<PlanCards plans={[plan]} selected="A" onSelect={() => {}} editCounts={{ A: 1 }} />);
-    expect(screen.queryByText("검증")).not.toBeInTheDocument();
+    expect(screen.queryByText("검증기 확인")).not.toBeInTheDocument();
   });
   it("지금 배치가 있으면 안마다 지금 대비 옮김·새로·빠짐을 보인다(2026-10-21 -- 운영 중 안은 모두를 다시 짠 결과)", () => {
     const p = { ...plan("A", 0.9), entries: [{ person_id: "a", project_id: "J2", alloc: 1 }, { person_id: "c", project_id: "J1", alloc: 1 }] };

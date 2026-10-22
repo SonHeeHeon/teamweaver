@@ -107,11 +107,15 @@ def confirms(history_entries: list[dict]) -> list[dict]:
                         "before_version": history_entries[i - 1].get("version"),
                         "before_content_version": history_entries[i - 1]["content_version"],
                         "kind": kind, "at": e.get("at"), "note": e.get("note", ""),
+                        # 이력 종류(apply_auto·apply_manual·apply_emergency) -- 화면 머리 "자동 편성"·"손 편성"·"긴급 투입"(2026-10-22, What-if 확정도 손 편성)
+                        "source": e.get("kind"),
                         "situation": (e.get("summary") or {}).get("situation", ""),
                         # 등급 대체와 사유(2026-10-21) -- 그 사업 자료의 MOVE_GRADE 사실
                         "grade_swaps": (e.get("summary") or {}).get("grade_swaps") or [],
                         # 메우지 않기로 한 빼 온 자리와 사유(2026-10-21) -- 그 사람을 데려온 사업 자료의 MOVE_FILL 사실
-                        "seat_waivers": (e.get("summary") or {}).get("seat_waivers") or []})
+                        "seat_waivers": (e.get("summary") or {}).get("seat_waivers") or [],
+                        # 새로 넘친 예산의 증액과 사유(2026-10-22) -- 그 사업 자료의 MOVE_BUDGET 사실
+                        "budget_raises": (e.get("summary") or {}).get("budget_raises") or []})
     return out
 
 
@@ -321,6 +325,13 @@ def grade_swap_facts(confirm: dict, project_id: str) -> list[dict]:
     return out
 
 
+def budget_facts(confirm: dict, project_id: str) -> list[dict]:
+    """이 확정의 예산 증액(2026-10-22 사용자 "전부 하자" -- 화면 검토 P3-2 "증액하고 확정(사유)"). 비용이 늘어난 결정이라 "확인할 사실"(불리)."""
+    return [_fact("MOVE_BUDGET", f"{project_id}: 예산 증액 — 월 +{int(r['amount']):,}(이 확정으로 새로 넘친 만큼), 사유 {r['reason']}",
+                  adverse=True, section="move")
+            for r in confirm.get("budget_raises") or [] if r.get("project_id") == project_id]
+
+
 def base_facts(inp, *, focus_people: set[str] | None) -> list[dict]:
     """지금 소명 사실(core.kg.justify). 불리한 사실은 "확인할 사실", 나머지는 부록. 긴급 투입은 새로 들어온 사람 사실만 자세히,
     기존 팀원은 부록에 등급·투입률(MEM)만."""
@@ -353,6 +364,7 @@ def build_doc(*, dataset, kg, params, confirm: dict, project_id: str, before: li
         if j["origin"] == "partly_free" and j["person_id"] in grants:
             j["concurrency"] = grants[j["person_id"]]
     facts = (move_facts(moves, inp.evidence, grants, confirm.get("seat_waivers")) + grade_swap_facts(confirm, project_id)
+             + budget_facts(confirm, project_id)
              + base_facts(inp, focus_people=joined if confirm["kind"] == "emergency" else None))
     names = display_names(dataset)             # 사실·본문에 나오는 모든 사람(대안 후보 포함)을 같은 이름으로(폴백 리뷰 P3)
     project = dataset.graph.projects[dataset.graph.project_index[project_id]]

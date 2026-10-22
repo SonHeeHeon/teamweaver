@@ -48,7 +48,9 @@ export interface Joined {
 }
 
 export interface ReviewDocView {
-  confirm: { version: string; kind: ConfirmKind; at: string | null; note: string; before_version: string | null };
+  confirm: { version: string; kind: ConfirmKind; at: string | null; note: string; before_version: string | null;
+             /** 이력 종류(apply_auto·apply_manual·apply_emergency, 2026-10-22부터) */
+             source?: string | null };
   project_id: string;
   project_name: string;
   revision: number;
@@ -80,7 +82,8 @@ export interface ReviewDocView {
 
 export interface ConfirmRow {
   version: string; kind: ConfirmKind; at: string | null; note: string; active: boolean; reverted: boolean; cancelled?: boolean;
-  projects: { project_id: string; name: string; exists: boolean; status: string | null; movers: number; objections: number }[];
+  source?: string | null;
+  projects: { project_id: string; name: string; exists: boolean; status: string | null; joined?: number; movers: number; objections: number }[];
 }
 
 export interface EditPatch {
@@ -165,4 +168,43 @@ export function fallbackLabel(method: string | null, reason: string | null): str
     : reason.startsWith("verify") || reason === "render_check" || reason === "recheck_failed" ? "AI 요약이 검사에 걸려"
     : reason.startsWith("llm_") ? "AI 호출이 실패해" : reason;
   return method === "rule" ? `규칙 요약(${why})` : `요약 없음(${why}) -- 규칙 본문`;
+}
+
+/** 변경 보고서(2026-10-22, api/routes/changes): 판이 바뀐 한 건 -- 사람 변화·사유 줄·상태·인사팀 검토 자료 상태. */
+export interface ChangePerson { person_id: string; name: string | null; grade: string | null; from: string[]; to: string[] }
+export interface ChangeItem {
+  id: string; at: string | null; kind: string; label: string; note: string; by: string | null; dataset_id: string | null;
+  version: string;
+  /** undone = 되돌림 · cancelled = 확정 취소 · null = 그대로 */
+  status: "undone" | "cancelled" | null;
+  /** 이 기능 전 이력에서 메운 기록(이름 없음) */
+  backfilled: boolean;
+  people: { moved: ChangePerson[]; joined: ChangePerson[]; left: ChangePerson[] };
+  counts: { moved: number; joined: number; left: number };
+  projects: Record<string, string>;
+  reasons: string[];
+  review: { project_id: string; name: string; exists: boolean; status: string | null; objections: number }[];
+  review_kind: boolean;
+}
+
+export async function fetchChanges(start: string | null, end: string | null): Promise<ChangeItem[]> {
+  const q = new URLSearchParams();
+  if (start) q.set("start", start);
+  if (end) q.set("end", end);
+  const res = await check(await fetch(`${API_BASE}/api/changes?${q}`, { credentials: "include" }), "변경 기록을 불러오지 못했다");
+  return ((await res.json()) as { items: ChangeItem[] }).items;
+}
+
+/** 고른 변경(한 건이면 건별 보고서)을 한 PDF로 내려받는다. 검토 자료의 "내보냄" 상태는 바꾸지 않는다. */
+export async function downloadChangeReport(ids: string[], start: string | null, end: string | null,
+                                           token: string | null = null): Promise<void> {
+  const res = await check(await fetch(`${API_BASE}/api/changes/report`, {
+    method: "POST", credentials: "include", headers: headers(token), body: JSON.stringify({ ids, start, end }),
+  }), "변경 보고서 PDF를 만들지 못했다");
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `change-report-${new Date().toISOString().slice(0, 10)}-${ids.length}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

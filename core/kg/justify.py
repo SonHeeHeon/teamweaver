@@ -173,7 +173,8 @@ def facts_from_evidence(ev: dict, violations: int, shortfall: int = 0) -> list[F
             q = a["person_id"]
             body = (f"{p} 대신 {q}(기술 적합 {a['skill_fit']}){josa(q, '으로/로')} 바꾸면 전체 점수 {a['delta_total']:+.2f}"
                     f"(기술 {a['delta_skill']:+.2f}, 협업 {a['delta_synergy']:+.2f}){v}")
-            add("ALT", body, body, owners=(p, q), adverse=a["delta_total"] > 0)
+            # 바꾸면 점수가 오르는 대안만 불리 -- 새 위반이 생기는 대안은 고를 수 없는 대안이다(부서장 점검 f11, 2026-10-22)
+            add("ALT", body, body, owners=(p, q), adverse=a["delta_total"] > 0 and not a["new_violations"])
     con = f"규칙 위반(예산·가용률·정원·동시 사업·투입률) {violations}건, 등급 정원 빈자리 {shortfall}석(현행 평가기로 다시 계산)"
     add("CON", f"이 배치 전체의 {con}", f"배치 전체 {con}", adverse=violations > 0 or shortfall > 0)
     return out

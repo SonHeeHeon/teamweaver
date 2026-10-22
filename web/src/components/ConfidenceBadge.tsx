@@ -19,7 +19,8 @@ interface Props {
   gapAllowed?: number | null;
   /** 증명이 붙은 조건(예: 대안 플랜의 "다양성 조건 안에서"). */
   within?: string;
-  /** 카드의 "검증" 도장이 이미 보이면 첫 칩(독립 검증 통과·서버 재채점 통과)을 뺀다. */
+  /** 카드의 "위반 없음" 도장이 이미 보이면 첫 칩(규칙 위반 없음 확인)을 뺀다. 문구는 부서장 말로(2026-10-22 화면 검토 P3-5 --
+   *  예전 "독립 검증 통과"·"서버 재채점 통과"·"기록에서 불러옴 · 증명은 다시 계산 시"). */
   hideVerified?: boolean;
   /** 차이를 %가 아니라 점수로(2026-10-22 폴백 리뷰 S3) -- 빈자리 감점이 섞인 종합 점수는 0 근처라 %가 크게 부풀려진다. */
   inPoints?: boolean;
@@ -36,9 +37,10 @@ export function ConfidenceBadge({ termination, timeLimited, objective, bestBound
     return (
       <span className="inline-flex flex-wrap gap-1 text-[11px]">
         {!hideVerified && <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-sky-800"
-              title="편성 기록의 명단을 지금 평가기로 다시 채점해 제약 위반이 없음을 확인했다">서버 재채점 통과</span>}
-        <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-600">
-          기록에서 불러옴 · 증명은 다시 계산 시
+              title="편성 기록의 명단을 지금 평가기로 다시 채점해 제약 위반이 없음을 확인했다">규칙 위반 없음 확인(다시 채점)</span>}
+        <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-600"
+              title="기록이 주장하는 솔버 증명은 이 서버가 확인할 수 없어 버렸다 -- 다시 계산하면 최적값과의 거리가 붙는다">
+          기록에서 연 결과 · 최적인지는 다시 계산해야 확인
         </span>
       </span>
     );
@@ -66,7 +68,7 @@ export function ConfidenceBadge({ termination, timeLimited, objective, bestBound
   return (
     <span className="inline-flex flex-wrap gap-1 text-[11px]">
       {!hideVerified && <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-sky-800"
-            title="솔버의 해를 별도 검증기로 다시 확인했다(제약·목적 재계산)">독립 검증 통과</span>}
+            title="솔버의 해를 별도 검증기로 다시 확인했다(제약·목적 재계산)">규칙 위반 없음 확인(검증기)</span>}
       <span className={`rounded border px-1.5 py-0.5 ${tone}`}>{text}</span>
     </span>
   );
