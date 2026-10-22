@@ -22,6 +22,14 @@
 
 ---
 
+## 2026-10-23 · claude-a · main 병합: 변경 보고서·화면 검토 P2·P3(a) + What-if 관계 초기화(b) (사용자 승인 "main 병합 승인할게 b 작업도 같이 병합해줘")
+- 커밋: `5254ccc`(a `feat/claude-a-change-report` --no-ff) → b `feat/claude-b-kg-views`(`5013fa1`까지) --no-ff 병합 커밋 + 이 커밋(기준선·일지). origin main push.
+- 충돌: 이 파일 머리만(양쪽 항목 유지, 최신 먼저). 코드 충돌 없음 -- b는 웹 3파일(`SwapControl`·시험 2)만.
+- 상대 영향(claude-b): main 기준선 **2140 passed · slow 21 · 웹 367**. 네 미결 NIT(편성안 비교 저장 충돌 뒤 `SwapControl` key에 `mutGen`)는 a의 `App.tsx` 작업이 이제 main에 있으니 처리해도 된다.
+- 검증: 병합 트리 `npx tsc -b` · `npm test` 367 passed · build · `pytest -m slow` 21 passed. 파이썬 코드는 a 브랜치(2140 passed 확인)와 같다(b는 파이썬 변경 없음).
+
+---
+
 ## 2026-10-23 · claude-a · 변경 보고서(건별·기간 묶음 PDF) + 화면 검토 P2·P3 전부
 - 브랜치/커밋: `feat/claude-a-change-report`(main `db79300` 위) — `91d8ed1`(변경 기록·보고서 API) · `8986064`(예산 증액 사유·검토 자료 목록 이름·대안 비교 불리 판정) · `21b4576`(화면) · `01585ba`(느린 시험 복구·PDF 느린 시험·요약 재측정) · `40ed5cb`(각주 순서) · 문서 커밋. main 미병합(승인 대기).
 - 사용자: "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 어떤 변경들을 했는지 각각에 대한 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도 해줘." (대상: 10-21 화면 검토 P2·P3)
