@@ -22,6 +22,12 @@
 
 ---
 
+## 2026-10-22 · claude-b · 편성안 카드 점수 표시 **main 병합(사용자 승인 "Main에 합쳐줘")**
+- 커밋: `8d5376c`(merge --no-ff, main `1f4ca6a` 위 -- 브랜치가 main을 이미 담고 있어 합친 트리 = 브랜치 트리, `git diff` 0줄) + 이 커밋(일지). push는 하지 않음.
+- 들어간 것: `7b18e0c`(배치 품질·빈자리 따로, 가장 높은 안, A안 뜻, 신뢰도 배지 점수 단위) · `5be8870`(문서).
+- 상대 영향(claude-a): main 기준선 2106 passed·slow 20·웹 351. 네 `feat/claude-a-ai-value`와 `App.tsx`·`api/types.ts`·`api/routes/optimize.py`가 겹친다(서로 다른 줄) -- main을 합칠 때 확인.
+- 검증: 브랜치 최종 검증 그대로(2106 passed, 1 skipped, 20 deselected · slow 20 · 웹 351 · tsc -b · build).
+
 ## 2026-10-22 · claude-b · 편성안 카드 점수 표시 -- 배치 품질·빈자리 따로, 가장 높은 안 표시, A안 뜻
 - 브랜치/커밋: `feat/claude-b-kg-views` `7b18e0c` + 이 커밋(문서). main 미병합(승인 대기).
 - 한 일: 사용자 "a안이 b안보다 점수가 더 낮은데 a안인 이유" · "빈자리 -100점이 너무 크리티컬" → 계산·감점·안 순서는 그대로 두고 표시만 바꿨다.
