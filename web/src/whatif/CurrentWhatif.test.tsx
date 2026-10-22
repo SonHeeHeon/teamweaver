@@ -53,8 +53,16 @@ describe("What-if — 지금 배치에서 바꿔 보기(2026-10-21 사용자 \"�
     expect(swap).toEqual({ out_person_id: "P1", in_person_id: "P9", project_id: "J003" });
     expect(weights).toEqual({});                                                 // 기본 가중치(확정·검토 자료와 같은 기준)
     expect(vi.mocked(client.postWhatif).mock.calls[0][5]).toEqual({ gradeSwap: true });   // 확정과 같은 등급 대체로 평가
+    // 고른 두 사람의 관계가 오른쪽 그림에 보인다
+    const relations = screen.getByRole("region", { name: "팀원과의 관계" });
+    expect(relations).toHaveTextContent("빠질 사람 김민준");
+    expect(relations).toHaveTextContent("들어올 사람 박지훈");
     fireEvent.click(await screen.findByRole("button", { name: /이 변경 담기/ }));
     expect(await screen.findByText("담은 변경 1건")).toBeInTheDocument();
+    // 담으면 관계 구역은 처음 들어왔을 때와 같다(사용자 2026-10-23) -- 옛 두 사람이 바뀐 명단 위에 남지 않게
+    expect(relations).toHaveTextContent("왼쪽에서 교체 대상을 고르면 보입니다.");
+    expect(relations).not.toHaveTextContent("김민준");
+    expect(relations).not.toHaveTextContent("박지훈");
     expect(screen.getByRole("list", { name: "담은 변경" })).toHaveTextContent("J003: 김민준 → 박지훈");
     expect(screen.getByText("새로")).toBeInTheDocument();                         // 바꾼 뒤 명단: 박지훈 "새로"
     expect(screen.getByText(/빠짐\(지금 배치 대비\): 김민준/)).toBeInTheDocument();

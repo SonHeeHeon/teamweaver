@@ -43,6 +43,17 @@
 
 ---
 
+## 2026-10-23 · claude-b · What-if 담기 뒤 "팀원과의 관계" 초기화
+- 브랜치/커밋: `feat/claude-b-kg-views` `d9bfb2f..a5ff4a6` + 이 커밋(일지). main(`db79300`) 위, main 미병합.
+- 사용자: "what if에서 xai로 교체 효과 보고 인력 담으면 팀원과의 관계는 두 인력의 관계 내용이 리셋돼서 처음 해당 탭에 들어갔을때럼 해당 섹션과 동일한 상태로 돌아갔으면 좋겠어."
+- 한 일: `SwapControl`이 처음 그려질 때(`useLayoutEffect`) `onPick`에 빈 선택을 알린다. 부모가 key를 바꿔 새로 그리면(What-if 담기·변경 빼기·모두 지우기·판 바뀜, 편성안 비교 적용·안 바꾸기) 관계 그림도 첫 안내로 돌아간다. 예전엔 옛 두 사람이 바뀐 명단 위에 남았다(들어온 사람이 팀원 줄과 "들어올 사람" 칸에 동시에). `useEffect`면 옛 그림이 잠깐 보여 시험이 절반쯤 실패했다.
+- 상대 영향(claude-a): `App.tsx`는 고치지 않았다(네 `feat/claude-a-change-report`가 고치는 중) -- 부품 쪽 수정으로 편성안 비교도 함께 고쳐진다. 웹 기준선 357 → **359**(새 시험 2). 파이썬 변경 없음.
+- 미결(작음, 폴백 리뷰 NIT): 편성안 비교에서 저장 충돌 뒤 `restoreEdits(force)`가 같은 개수의 다른 단계로 명단을 바꾸면 `SwapControl` key(안 이름·적용 수)가 그대로라 칸·관계 그림이 옛 명단을 본다(이번 변경 전부터). 고치려면 key에 `mutGen.current[label]`을 넣는다 -- a의 `App.tsx` 작업이 병합된 뒤 b가 처리.
+- 검증: `npx vitest run` 두 파일 12회 연속 17 passed · `npm test` 359 passed · `npx tsc -b` · lint exit 0 · build · 헤드리스 화면(임시 데이터 폴더, 기록 org-n100-operating): 담기·빼기·안 바꾸기 → 첫 안내, 콘솔 오류 0. Codex 한도 소진(10-25 16:31) → Claude Opus 폴백 리뷰 approve(MUST·SHOULD 0, NIT 3: 주석 2건 반영 · 위 미결 1건 · 렌더 1회 더는 WON'T).
+- 근거: `.omc/plan/2026-10-23-whatif-relations-reset.md` · `.omc/reports/2026-10-23-whatif-relations-reset.md`
+
+---
+
 ## 2026-10-22 · claude-a · main 병합: 데모 문서 10-21 · 고정 선택·빼 온 자리 · AI 효과 보강(사용자 승인 "1 번 main 병합 승인할게 b 작업도 함께 병합해줘")
 - 브랜치/커밋: `docs/claude-a-demo-report-1021` → `feat/claude-a-locks-seat-holes` → `feat/claude-a-ai-value`를 main에 `--no-ff` 병합 `19827f4` + 이 커밋(대본 D2·일지). origin main push(b의 두 병합 `adc2488`·`8d5376c`도 함께 올라감).
 - b 작업: `feat/claude-b-kg-views`는 이미 main(`d4b5e5b`)과 같았다 — 새로 합친 것 없음.

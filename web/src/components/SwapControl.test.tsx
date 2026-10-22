@@ -130,3 +130,27 @@ describe("다른 사업에서 데려오기·안내(사용자 2026-10-20)", () =>
     expect(resolveDrop("in::b@J2", "in")).toEqual({ slot: "in", value: "b@J2" });
   });
 });
+
+describe("새로 그려지면 빈 선택을 알린다(사용자 2026-10-23 \"담으면 팀원과의 관계는 … 처음 해당 탭에 들어갔을때처럼\")", () => {
+  const EMPTY = { outPersonId: null, projectId: null, inPersonId: null, from: null };
+
+  it("고른 뒤 key가 바뀌어 새로 그려지면(담기·적용·안 바꾸기) 관계 그림용 선택을 비운다", () => {
+    const onPick = vi.fn();
+    const { rerender } = render(<SwapControl key="0" people={people} entries={entries} onSwap={() => {}} busy={false} onPick={onPick} />);
+    expect(onPick).toHaveBeenLastCalledWith(EMPTY);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p000::j00" } });
+    fireEvent.change(screen.getByLabelText("교체 투입"), { target: { value: "p001" } });
+    expect(onPick).toHaveBeenLastCalledWith({ outPersonId: "p000", projectId: "j00", inPersonId: "p001", from: null });
+    rerender(<SwapControl key="1" people={people} entries={entries} onSwap={() => {}} busy={false} onPick={onPick} />);
+    expect(onPick).toHaveBeenLastCalledWith(EMPTY);
+    expect((screen.getByLabelText("교체 대상") as HTMLSelectElement).value).toBe("");
+  });
+
+  it("같은 key로 다시 그리면(명단만 바뀜) 선택을 지우지 않는다", () => {
+    const onPick = vi.fn();
+    const { rerender } = render(<SwapControl key="0" people={people} entries={entries} onSwap={() => {}} busy={false} onPick={onPick} />);
+    fireEvent.change(screen.getByLabelText("교체 대상"), { target: { value: "p000::j00" } });
+    rerender(<SwapControl key="0" people={[...people]} entries={entries} onSwap={() => {}} busy={false} onPick={onPick} />);
+    expect(onPick).toHaveBeenLastCalledWith({ outPersonId: "p000", projectId: "j00", inPersonId: null, from: null });
+  });
+});

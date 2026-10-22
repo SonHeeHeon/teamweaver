@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable,
   useSensor, useSensors, type DragEndEvent, type DragOverEvent, type Modifier,
@@ -19,7 +19,7 @@ interface Props {
   /** 사업 기간(투입 불가 판정용)과 계획 시작 달(사유의 달 표시). 없으면 판정하지 않는다(예전 동작). */
   projects?: Project[];
   horizonStart?: string | null;
-  /** 고른 사람이 바뀌면(관계 목록용) */
+  /** 고른 사람이 바뀌면(관계 목록용). 처음 그려질 때도 빈 선택을 알린다(새로 그린 칸과 관계 그림이 같게) */
   onPick?: (pick: SwapPick) => void;
   /** 검토한 교체가 명단에 들어가는 길(설명 문장). 편성안 다듬기는 '적용', What-if(지금 배치)는 담기 → 확정 */
   applyNote?: string;
@@ -87,6 +87,10 @@ export function SwapControl({ people, entries, onSwap, busy, onSelectionChange, 
     const ip = i ? parseIn(i) : null;
     onPick?.({ outPersonId: op?.personId ?? null, projectId: op?.projectId ?? null, inPersonId: ip?.personId ?? null, from: ip?.from ?? null });
   };
+  // 새로 그려지면(부모가 key를 바꿈 -- What-if 담기·변경 빼기, 편성안 적용·안 바꾸기) 선택이 비어 있다. 부모의 관계 그림도
+  // 처음 상태로 돌린다 -- 알리지 않으면 옛 두 사람이 바뀐 명단 위에 남았다(사용자 2026-10-23 "처음 해당 탭에 들어갔을때처럼").
+  // 그리기 전에 돌린다(useLayoutEffect) -- useEffect면 옛 그림이 잠깐 보일 수 있다(시험에서 절반쯤 잡혔다).
+  useLayoutEffect(() => { onPick?.({ outPersonId: null, projectId: null, inPersonId: null, from: null }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const setOutKey = (v: string) => { setOutKeyState(v); onSelectionChange?.(); pick(v, inId); };
   const setInId = (v: string) => { setInIdState(v); setExchange(false); onSelectionChange?.(); pick(outKey, v); };
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
