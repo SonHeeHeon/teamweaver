@@ -24,9 +24,9 @@ AI 글·답은 기계 검사를 통과해야 나가고, 실패하면 정해진 �
 
 | 문서 | 내용 |
 |---|---|
-| [`outputs/final-report.pdf`](outputs/final-report.pdf) · [`.html`](outputs/final-report.html) | **과제 결과 보고서**(A4 10쪽) — 정량·정성 성과, 시스템 구성, 적용 기술(모델 정식·검증·검사받는 AI), 설계 판단 근거, 한계. 영상과 겹치지 않게 영상으로 확인하기 어려운 내용 중심 |
+| [`outputs/final-report.pdf`](outputs/final-report.pdf) · [`.html`](outputs/final-report.html) | **과제 결과 보고서**(A4 10쪽) — 정량·정성 성과, 시스템 구성, 적용 기술(모델 정식·검증·검사받는 AI), 설계 판단 근거, 한계. 영상과 겹치는 것은 AI가 바꾼 것과 핵심 결과 셋뿐이고, 나머지는 영상으로 확인하기 어려운 내용 중심 |
 | [`docs/demo-script.md`](docs/demo-script.md) | **시연 영상 대본**(9분 45초) — 개요·구현·기술/성과 큐시트, 내레이션, 편집 지점, 녹화 준비, 장면별 숫자 |
-| [`outputs/demo-video-slides.html`](outputs/demo-video-slides.html) | 영상 개요·기술/성과 구간에 띄우는 슬라이드 8장(←/→, F 전체 화면) |
+| [`outputs/demo-video-slides.html`](outputs/demo-video-slides.html) | 영상 개요·기술/성과 구간에 띄우는 슬라이드 9장(←/→, F 전체 화면) — 7·8장이 "AI가 바꾼 것" |
 | [`docs/architecture.html`](docs/architecture.html) | 한 장 구조도 |
 | [`outputs/eli5-project-history-roadmap.html`](outputs/eli5-project-history-roadmap.html) | **프로젝트 전체 해설(최종판)** — 비전문가용, 배경·개발 이력·실험·신뢰 범위 |
 | [`docs/demo-notes.md`](docs/demo-notes.md) | 설계 판단 설명 노트(협업 쌍 상한 200, 익숙한 쌍 기준, 문헌 근거, "그냥 GPT에게 시키면?") |
