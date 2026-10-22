@@ -263,6 +263,20 @@ def test_adverse_facts_are_flagged_and_counted(inp):
     assert all(f.adverse == (f.status == "short") for f in inp.facts if f.kind in ("REQ", "SKL"))
 
 
+def test_alternative_with_new_violations_is_not_adverse():
+    """대안 비교(ALT)는 바꾸면 점수가 오르고 **새 위반이 없을 때만** 불리하다 -- 위반이 생기는 대안은 고를 수 없다(부서장 점검 f11, 2026-10-22)."""
+    from core.kg.justify import facts_from_evidence
+    alt = lambda q, d, v: {"person_id": q, "skill_fit": 0.5, "delta_total": d, "delta_skill": d, "delta_synergy": 0.0,   # noqa: E731
+                           "new_violations": v}
+    ev = {"project_id": "J1", "project": "데이터 마트", "client": None, "industry": None, "requirements": [],
+          "members": [{"person_id": p, "grade": "중급", "alloc": 1.0, "skill_fit": 0.6, "requirements": [], "same_industry_projects": 0,
+                       "same_industry_months": 0, "same_client_projects": [], "cowork_in_team": [], "reviews_from_team": []}
+                      for p in ("P1", "P2", "P3")],
+          "alternatives": {"P1": [alt("P8", 0.4, [])], "P2": [alt("P9", 0.4, ["J1 월 비용 초과"])], "P3": [alt("P7", -0.2, [])]}}
+    adverse = {f.owners[1]: f.adverse for f in facts_from_evidence(ev, 0) if f.kind == "ALT"}
+    assert adverse == {"P8": True, "P9": False, "P7": False}
+
+
 def _fuzz_texts(inp, n, seed):
     """문법 안에서 무작위로 엮은 글(머리 종류·자리표시·연결어를 섞는다)."""
     import random

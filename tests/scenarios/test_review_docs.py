@@ -261,7 +261,9 @@ def test_draft_without_ai_is_a_checked_rule_summary(yearend):
         body = c.post(f"/api/review-docs/{v}/{TGT}/draft").json()
         assert body["body_ai_method"] == "rule" and body["body_ai_check"]["ok"]
         assert body["body_ai_check"]["fallback_reason"] == "no_client"
-        assert body["body_ai"].count(".") <= 4 and body["body_ai_check"]["cited"]       # 3문장 안팎의 짧은 글
+        # 3문장 안팎의 짧은 글 -- 문장 끝("다.")으로 센다(사실 문구의 소수점 "+0.44"를 문장으로 세지 않게)
+        import re
+        assert len(re.findall(r"다\.(?:\s|$)", body["body_ai"])) <= 4 and body["body_ai_check"]["cited"]
 
 
 def _draft_with(c, monkeypatch, fake, *, busy=False):

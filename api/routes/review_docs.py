@@ -66,6 +66,10 @@ def list_review_docs(request: Request) -> dict:
     active_version = request.app.state.dataset.info.version
     graph = request.app.state.dataset.graph
     stored = {(d["confirm"]["version"], d["project_id"]): d for d in ReviewDocStore().all()}
+    # 사업 이름: 저장된 자료 → 변경 기록의 그때 이름 → (지금 판의 확정일 때만) 지금 데이터. 지금 데이터의 이름을 먼저 쓰면 다른 데이터를 연 뒤
+    # 옛 확정의 사업 이름이 틀렸다(부서장 점검 f1, 2026-10-22 고침)
+    from api.change_log import all_records
+    then = {(str(r.get("version")), j): n for r in all_records() for j, n in ((r.get("people") or {}).get("projects") or {}).items()}
     out = []
     seen_versions = set()
     for c in reversed(confirms(entries)):
@@ -81,7 +85,8 @@ def list_review_docs(request: Request) -> dict:
         projects = []
         for pid in sorted(set(targets) | {p for (v, p) in stored if v == c["version"]}):
             d = stored.get((c["version"], pid))
-            name = graph.projects[graph.project_index[pid]].name if pid in graph.project_index else (d or {}).get("project_name", pid)
+            name = ((d or {}).get("project_name") or then.get((c["version"], pid))
+                    or (graph.projects[graph.project_index[pid]].name if c["version"] == active_version and pid in graph.project_index else pid))
             projects.append({"project_id": pid, "name": name, "exists": d is not None, "status": (d or {}).get("status"),
                              "movers": sum(1 for j in (d or {}).get("moves", {}).get("joined", []) if j["origin"] == "moved"),
                              "objections": sum(1 for n in (d or {}).get("notes", []) if n.get("type") == "objection")})

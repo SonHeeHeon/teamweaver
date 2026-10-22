@@ -127,3 +127,18 @@ def test_other_changes_have_reason_lines(yearend, kind):
         assert it["kind"] == kind and it["label"] == "프로젝트 동시 수행 허용"
         assert "사유 긴급 지원" in it["reasons"][0] and "J004 장애" in it["reasons"][0]
         assert not it["reasons"][0].startswith(BENCH)          # 사번이 아니라 그때 이름(가상 데이터)
+
+
+def test_review_doc_list_keeps_the_project_name_of_that_confirm(yearend):
+    """부서장 점검 f1: 목록의 사업 이름이 지금 데이터 기준이라 나중에 이름이 바뀌면(다른 데이터를 열거나 양식을 고치면) 옛 확정이 틀린 이름을 보였다."""
+    from api.main import app
+    with TestClient(app) as c:
+        _confirm(c)
+        ws = _ws(c)
+        old = c.get("/api/review-docs").json()["confirms"][0]["projects"][0]["name"]
+        form = c.get(f"/api/workspace/projects/{TGT}/form").json()
+        r = c.patch(f"/api/workspace/projects/{TGT}", json={"dataset_version": ws["dataset_version"],
+                                                            "project": {**form, "name": form["name"] + " 개명"}})
+        assert r.status_code == 200, r.text
+        row = next(x for x in c.get("/api/review-docs").json()["confirms"] if x["projects"])
+        assert row["active"] is False and row["projects"][0]["name"] == old

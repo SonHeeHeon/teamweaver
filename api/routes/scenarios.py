@@ -349,12 +349,15 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
     사업별 정원 변화, 점수 변화 나눔(기술·협업·빈자리), 새 위반 문장, 이 사업 팀 안에서 계산에 들어가는 쌍(고른 사람이 낀 것만)."""
     from api.routes.justification import with_names
     from api.violation_diff import new_or_worse
-    from core.evaluate.grade_swap import substitution
+    from core.evaluate.grade_swap import budget_raises, graph_with_budgets, substitution
     from core.evaluate.plan_eval import evaluate_plan
     entries_after = _after(base, project_id, picks, fills)
     # 등급 대체(2026-10-21): 고른 사람이 다른 등급 빈자리를 메우면 확정 뒤 정원(대체 적용)·예산(넘친 만큼 증액)으로 판정한다.
     # 빼 온 사업을 다른 등급으로 메운 대체도 함께(side_*) -- 확정 검사(substitution)가 모든 사업을 본다
     g2, swaps_by, budget_by = substitution(graph, base, entries_after)
+    # 대체 없이도 새로 넘친 예산은 사유와 함께 증액(2026-10-22 P3-2) -- 확정 검사(routes/workspace._check_budget_raises)와 같은 함수
+    raises = budget_raises(graph, g2, base, entries_after)
+    g2 = graph_with_budgets(g2, raises)
     swaps, budget_add = swaps_by.get(project_id, []), budget_by.get(project_id, 0)
     before = evaluate_plan(graph, S, C, params, base)
     after = evaluate_plan(g2, S, C, params, entries_after)
@@ -385,6 +388,7 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
             "pairs": pairs, "grade_swaps": swaps, "budget_add": budget_add,
             "side_grade_swaps": {j: v for j, v in swaps_by.items() if j != project_id},
             "side_budget_add": {j: v for j, v in budget_by.items() if j != project_id},
+            "budget_raises": raises,
             **hole_view(graph, g2, S, C, params, base, entries_after, skip=project_id, locked=locked, names=names,
                         staffing=staffing)}
 
