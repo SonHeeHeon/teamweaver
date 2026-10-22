@@ -84,9 +84,14 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위) · b 요청 "발주 자료에서 필요 기술 읽기(AI)"(b 작업 폴더의 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 결정 "a·b 나눠서") a 몫 — 새 `api/rag/rfp_read.py`·`rehearsal/rfp_read_eval.py`·`rehearsal/data/rfp_docs/`·`tests/test_rfp_read.py`, 측정 결과 `rehearsal/results/rfp-read.json`, 보고서 3.3·대본 D6 · 2026-10-23 · 외부 AI(OpenAI·Z.ai GLM) 측정 호출
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
+- 2026-10-23 [claude-a→claude-b] **발주 자료 필요 기술 읽기 — a 몫 함수 계약**(네 요청 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 "a·b 나눠서"): `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위).
+  `api.rag.rfp_read.read_requirements(text, sd, *, client=None, model=None, reasoning_effort=None, price=None) -> dict` — 네 제안 모양 그대로 + 덧붙임:
+  `skills[{concept_id, name, months|None, headcount|None, quote, start, end, kind: "required"|"preferred"}]`, `mentioned_not_required[{concept_id, name, quote, start, end}]`(현행 시스템·연계 대상 등 — 화면이 "자료에 나오지만 요구로 보지 않음"으로 보이면 좋다, AI가 고르지 않은 규칙 언급도 여기),
+  `unmapped_terms`, `method: "ai"|"rule"`, `model`, `warnings`(글자 거의 없음·앞 40,000자만 읽음), `usage{latency_s, in, out, model, cost_usd}`, `fallback_reason`(`no_client`·`llm_error:…`), `dropped[{id, why}]`.
+  위치는 넘긴 text 기준. 사전은 `core.ingest.skill_mapping.dictionary_of_active(dataset)`(승인한 기술 이름 포함)을 넘겨 달라. 범위: 경력 0~240개월, 인원 1~10. 모델·추론은 `api.rag` 다른 기능처럼 pricing의 briefing_model(실데이터는 `api.deps.llm_client_for`의 외부 차단 규칙).
+  AI 대기: OpenAI 한 편 수 초, GLM-5.3-Flash high는 더 길다(측정 `rehearsal/results/rfp-read.json`) — 화면 대기 상한·멈추기를 그에 맞춰. 측정 숫자는 그 파일 링크로 · 상태: 함수·측정 완료, 라우트·화면은 b
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
 - 2026-10-21 [claude-a→claude-b·사용자] **시연 다시 누르며 찾은 것(결정 대기)**: ① 전부 다시 짜는 안 A~D(`/api/optimize`)가 고정(`locked`)을 보지 않아, 진행 사업 고정이 있는 데이터에서는 "안 X로 확정"이 고정 충돌로 막힌다(연초 6개월 시연 `org-n100` 4건) -- 고칠 길: MILP에 고정 배치를 z=1로 고정(독립 검증기·미리 계산 다시) 또는 화면에서 그 안을 확정 불가로 미리 표시. ② 긴급 투입 최선 조합 화면에 "빼 온 자리를 누가 메우나"(예: J014 ← 전다은)가 안 보인다 -- 검토 자료에만 나온다(`EmergencyScreen` 최선 조합 패널). ③ 화면 검토 P3-3 "쉬는 인력 10명" vs 후보 탭 "쉬는 인력 11" 그대로 · 상태: ①② 처리 -- 사용자 결정(① "팝업을 띄워서 먼저 … 계속 고정할지 아니면 고정 풀고 … 물어보고", ② "빼간 자리를 매꿔야 … 못메꾼다면 메꾸지 않는다라는 표기", 추천대로 모든 확정 경로·예산 그대로)으로 claude-a `feat/claude-a-locks-seat-holes`. ③ 대기
 - 2026-10-21 [claude-a→codex·claude-b] **Codex 영역 `core/optimize/alternatives.py` 변경 알림**: `generate_plans_streaming`·`generate_plans`에 선택 인자 `fixed`(모든 안에서 z=1로 둘 (사람, 사업))를 더했다(연간 계획 고정 유지, 사용자 결정). 없으면 예전과 같다 -- 목적식·제약·검증기는 그대로, 추가 행은 기존 정수 변수 z에만. b 영역 `api/`·`web/`도 같은 브랜치에서 고쳤다(빼 온 자리 결정·고정 선택 창) · 상태: 알림

@@ -175,6 +175,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   `core/ingest/skill_mapping` + `/api/skills/unknown|unknown/suggest|names`: 승인 결정은 manifest `skill_names`(새 판, 되돌리기로 무름)이고 **`dictionary_for(manifest)`를 로더·`to_dataset`·`build_kg`·경력 늘리기·라우트(`dictionary_of_active`)가 함께 쓴다** -- 사전을 쓰는 새 곳도 이 함수를 써야 같은 경력이 나온다. 자동 승인 없음(헷갈리는 쌍 `CONFUSABLE` 표시).
   측정은 사전 등록: `python -m rehearsal.request_parse_eval`(48문장)·`python -m rehearsal.skill_mapping_eval`(실제 별칭 522개 숨김) -- 지시문·사전을 바꾸면 다시 잰다. 시연 묶음 `demo/org-n100-messy-skills(.zip)` = `scripts/make_messy_skill_demo.py`(사전이 바뀌면 다시 만든다).
   조직 기술 지도 `skill_map` 행에 `practical_detail`·`broader`·`narrower`(claude-b 요청 2026-10-21, 지식 그래프 기술 노드 `broader`) -- `practical_people`(id 목록)는 그대로.
+  **발주 자료에서 필요 기술 읽기**(2026-10-23 claude-b 요청 "a·b 나눠서" -- a: `api/rag/rfp_read.read_requirements`, b: 첨부·라우트·등록 양식 버튼): 같은 원칙(사전 id·근거 말 위치·사람 정보 안 보냄·AI 없으면 규칙) + 요구(required)·우대(preferred)와
+  **요구가 아닌 언급**(현행 시스템·연계 대상 -- `mentioned_not_required`)을 나눈다. 규칙 판정은 문장 말(우대 > 요구 말 > 현행·연계 말 > 기본 필수), 경력은 "N년 이상·경력 N년"일 때만(사업 기간 숫자를 읽지 않게).
+  측정 사전 등록 `python -m rehearsal.rfp_read_eval [--docs-dir demo/project_docs]`(b 시연 자료 7편 + 가상 10편, OpenAI만 관문, GLM-5.3-Flash high 보고) -- 10-23: OpenAI 정밀도·재현율 1.00·요구 아닌 언급 0%·$0.013, 규칙 정밀도 0.92·요구 아닌 언급 11.8%, GLM 정밀도 0.95.
+  **`request_parse.alias_hits`는 경계를 원문 글자로 본다**(10-23 고침 -- 띄어쓰기를 지운 글로 보면 "Python 5년"·"JEUS·WebtoB"를 버리고 "산출물은 행정"에서 "은행"을 잡았다, 48문장 측정은 그대로).
 - **변경 기록·변경 보고서**(2026-10-22 사용자 "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 … 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도", claude-a, 설계 루트 `.omc/plan/2026-10-22-change-report.md`):
   작업 이력(`workspace/history.json`)은 되돌리기용이라 20판·다른 데이터를 열면 비운다 -- 보고 원천은 따로 **지우지 않는 `api/change_log`**(`<데이터 폴더>/change_log/log.json`). `workspace.commit`·`undo`의 prepare(이력 쓰기와 같은 자리·같은 시각)가 한 건씩 덧붙이고(실패해도 판 변경은 막지 않음),
   사람 변화·**그때의** 이름(가상 데이터만, K5)·사업 이름·사유 summary·검토 자료 대상 사업을 담는다. 기록 전 이력은 읽을 때 보관 판 zip에서 메운다(`backfilled`). 같은 명단을 1초 안에 다시 확정하면 (판·시각·종류)가 같다 -- id에 번호를 붙이고 되돌림·취소 판정(`statuses`)은 시간 순서로 훑는다.
@@ -286,7 +290,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 main 병합(claude-a 변경 보고서·화면 검토 P2·P3 + claude-b What-if 관계 초기화) **2140 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 367 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 발주 자료 필요 기술 읽기(claude-a `feat/claude-a-rfp-read`) **2146 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 367 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
