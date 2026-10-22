@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-b] `feat/claude-b-kg-views` · 신규 사업 요구 기술 표시 · 발주 자료 첨부·받기(사용자 2026-10-23) — 새 `api/project_docs.py`·`api/routes/project_docs.py`·`web/src/components/ProjectDocs.tsx`·`web/src/scenarios/projectDocsApi.ts`·`scripts/make_demo_project_docs.py`·`demo/project_docs/` + 겹침(최소): `web/src/scenarios/{NewProjectsScreen,ProjectForm}.tsx`·`workspaceApi.ts`·`api/main.py`(라우터 한 줄)·`api/routes/report.py`(본문 상한 경로) · 2026-10-23 · 시험 서버 포트 8018 — **claude-a `feat/claude-a-change-report`와 `NewProjectsScreen.tsx` 겹침(사용자 승인, 병합 때 확인)**
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 형식: `- YYYY-MM-DD [요청자→대상] <내용과 이유> · 상태: 대기|처리됨`
