@@ -4,7 +4,8 @@
 import { API_BASE } from "../api/client";
 import { call, isDatasetChanged, type Stage } from "./workspaceApi";
 
-export const DOC_KINDS = ["사전규격", "제안요청서(RFP)", "과업지시서", "사업 개요", "기타"] as const;
+/** 입찰공고문(2026-10-23): 사전규격 → 입찰공고 순서로 받은 실제 자료 -- 공고문에는 사업명·기간·예산·마감이 있다(서버 api/project_docs.KINDS와 같은 순서) */
+export const DOC_KINDS = ["사전규격", "입찰공고문", "제안요청서(RFP)", "과업지시서", "사업 개요", "기타"] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 /** 공공 RFP는 한글(HWP) 파일·묶음이 많다 -- 서버 api/project_docs.FORMATS와 같다 */
 export const DOC_EXTS = ["pdf", "hwp", "hwpx", "docx", "xlsx", "pptx", "zip"] as const;
@@ -109,4 +110,65 @@ export function fallbackText(reason: string | null): string {
   if (reason === "external_blocked") return "실데이터는 회사 밖 AI로 보내지 않아";
   if (reason.startsWith("llm_error")) return "AI 응답을 받지 못해";
   return reason;
+}
+
+/** 자료에서 사업 정보 채우기(2026-10-23 사용자 "자료에서 메타 정보 따와서 … 프로젝트 이름, 기간, 예산 등을 대신 작성해줄수있나? 물론 사용자가 보고 고칠수 있도록").
+ *  서버 `api/rag/doc_brief.read_project_meta` -- 칸마다 근거 말(원문 확인), AI 없으면 규칙. 결과는 제안이고 고른 칸만 양식에 들어간다. */
+export interface MetaField<T = string> {
+  value: T; quote: string; start: number; end: number; source: "ai" | "rule"; vat_included?: boolean | null;
+  /** 기간: 근거 말에 N개월이 하나뿐이고 기간 말이 함께 있지 않으면 AI가 센 값 -- 서버가 확인하지 못했다(폴백 리뷰 S1·2차 S-3) */
+  computed?: boolean;
+  /** 사업명: 근거 말에 사업명 표지(입찰건명·용역명 …)가 없다 -- 잘린 이름일 수 있다(2차 NIT 1) */
+  unlabeled?: boolean;
+}
+export interface MetaFields {
+  name: MetaField | null; client: MetaField | null; sector: MetaField | null; duration_months: MetaField<number> | null;
+  period: MetaField | null; budget: MetaField<number> | null; notice_no: MetaField | null; deadline: MetaField | null;
+}
+export interface MetaResult {
+  fields: MetaFields; method: "ai" | "rule"; model: string | null; warnings: string[]; fallback_reason: string | null;
+  ai_available: boolean; usage?: { latency_s?: number } | null; chars: number; ai_destination?: AiDestination;
+}
+export const readProjectMeta = (file: File, signal?: AbortSignal) =>
+  call<MetaResult>(`/api/project-meta/read?${new URLSearchParams({ filename: file.name })}`,
+                   { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: file, signal });
+
+/** 부서장용 자료 요약(2026-10-23 사용자 "각각의 자료를 llm으로 잘 압축 요약한(이 서비스를 쓰는 부서장입장에서 필요로 하는 정보를 잘 요약해서 보여주기)").
+ *  서버 `api/rag/doc_brief.summarize_document` -- 항목마다 근거 말(원문 확인)·숫자 검사, 처음 한 번 사람이 눌러 만들고 저장한다. */
+export interface BriefItem { text: string; quote: string }
+export interface DocSummary {
+  doc_type: string; relevance: "high" | "low"; one_line: string; sections: { key: string; title: string; items: BriefItem[] }[];
+  method: "ai" | "rule"; model: string | null; warnings: string[]; fallback_reason: string | null; usage?: { latency_s?: number } | null;
+  dropped: { section: string; why: string }[]; chars: number;
+}
+export interface SummaryResponse {
+  doc: ProjectDoc; readable: boolean; summary: DocSummary | null; created_at: string | null; ai_destination?: AiDestination;
+}
+const summaryUrl = (projectId: string, id: string) => `/api/project-docs/${enc(projectId)}/${enc(id)}/summary`;
+export const fetchDocSummary = (projectId: string, id: string, signal?: AbortSignal) =>
+  call<SummaryResponse>(summaryUrl(projectId, id), { signal });
+export const makeDocSummary = (projectId: string, id: string, signal?: AbortSignal) =>
+  call<SummaryResponse>(summaryUrl(projectId, id), { method: "POST", signal });
+
+/** 총 사업비(원) ÷ 개월 → 월 예산(가상 비용점). 가상 데이터 단가표(특급 1,600·고급 1,300·중급 1,000·초급 750점/월)가 대략 만 원 단위라
+ *  1점 = 1만 원으로 본다(2026-10-23 사용자 "1억에 6개월 프로젝트면 1억÷6개월 하면 월 비용 나오지않나?" -- NOT_CALIBRATED, 화면에 가정을 적는다). */
+export const WON_PER_POINT = 10_000;
+export function monthlyPoints(totalWon: number, months: number): number {
+  return Math.max(1, Math.round(totalWon / months / WON_PER_POINT));
+}
+/** 원 → 읽기 쉬운 말(1억 2,000만 원) */
+export function wonText(won: number): string {
+  let eok = Math.floor(won / 100_000_000);
+  let man = Math.round((won % 100_000_000) / 10_000);
+  if (man === 10_000) { eok += 1; man = 0; }            // 1억 9,999.5만 → 2억(폴백 리뷰 NIT 6: "1억 10,000만 원")
+  if (eok && man) return `${eok}억 ${man.toLocaleString()}만 원`;
+  if (eok) return `${eok}억 원`;
+  if (man) return `${man.toLocaleString()}만 원`;
+  return `${won.toLocaleString()}원`;
+}
+/** "2026-12" + n개월(시작 달 포함) → 끝 달 */
+export function endMonth(start: string, months: number): string {
+  const [y, m] = start.split("-").map(Number);
+  const t = y * 12 + (m - 1) + months - 1;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}`;
 }

@@ -13,6 +13,7 @@ import { ConcurrencyPanel } from "./ConcurrencyPanel";
 import { LifecycleChips } from "../components/LifecycleChips";
 import { seatsText, signedPts } from "../components/scoreSplit";
 import { ProjectForm } from "./ProjectForm";
+import { DocBriefDialog } from "./DocBrief";
 import { DocLinks, DocsDialog, RequirementLine } from "./ProjectDocs";
 import { fetchProjectDocs, fetchRequirements, uploadAll, type AiDestination, type ProjectDoc, type Requirement } from "./projectDocsApi";
 import { CandidateGuide, PickDraft } from "./PickDraft";
@@ -217,6 +218,8 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
   const [reqs, setReqs] = useState<Record<string, Requirement[]> | null>(null);
   const [aiDestination, setAiDestination] = useState<AiDestination | null>(null);
   const [docsFor, setDocsFor] = useState<string | null>(null);
+  /** 부서장용 자료 요약 창(사업명·"자료 요약" 버튼) */
+  const [briefFor, setBriefFor] = useState<{ id: string; name: string } | null>(null);
   // 늦게 온 응답이 새 목록을 덮지 않게 마지막 요청만 반영하고, 읽기에 실패하면 지금 버튼을 그대로 둔다(폴백 리뷰)
   const docsSeq = useRef(0);
   const loadDocs = useCallback(() => {
@@ -522,8 +525,16 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
         {project ? (
           <Panel title={
                    <span className="inline-flex flex-wrap items-center gap-2">
-                     <span>{project.name}</span>
+                     {/* 자료가 있으면 사업명을 누르면 부서장용 자료 요약 창(2026-10-23 사용자 "등록한 프로젝트명을 누르거나 … 각각의 자료를 llm으로 잘 압축 요약한") */}
+                     {docList[project.project_id]?.length ? (
+                       <button type="button" className="text-left underline decoration-dotted underline-offset-4 hover:text-pine-800"
+                               title="자료 요약 보기" onClick={() => setBriefFor({ id: project.project_id, name: project.name })}>{project.name}</button>
+                     ) : <span>{project.name}</span>}
                      <DocLinks docs={docList[project.project_id] ?? []} />
+                     {!!docList[project.project_id]?.length && (
+                       <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs font-normal"
+                               onClick={() => setBriefFor({ id: project.project_id, name: project.name })}>자료 요약</button>
+                     )}
                      <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs font-normal" onClick={() => setDocsFor(project.project_id)}>
                        {docList[project.project_id]?.length ? "자료 관리" : "+ 발주 자료"}</button>
                    </span>} sub={`${project.project_id} · ${project.start} ~ ${project.end} · 월 예산 ${project.monthly_budget.toLocaleString()}`}
@@ -799,6 +810,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   {(o.addons ?? []).map((a) => <span key={a} className="ml-1.5"><Chip tone="stage">추가 과제 {a}</Chip></span>)}
                 </button>
                 <DocLinks docs={docList[o.project_id] ?? []} />
+                {!!docList[o.project_id]?.length && (
+                  <button type="button" className="btn-ghost px-1.5 py-0.5 text-xs" aria-label={`${o.name} 자료 요약`}
+                          onClick={() => setBriefFor({ id: o.project_id, name: o.name })}>자료 요약</button>
+                )}
                 <button className="btn ml-auto px-2.5 py-1 text-xs" disabled={busy} aria-label={`${o.name}에 추가 과제 붙이기`}
                         onClick={() => { setFormParent(o.project_id); setFormOpen(true); }}>
                   + 추가 과제
@@ -900,6 +915,9 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                       onStale={() => { setDocsFor(null); void load(); onDatasetChanged(); }} />
         ) : null;
       })()}
+      {briefFor && (
+        <DocBriefDialog projectName={briefFor.name} docs={docList[briefFor.id] ?? []} onClose={() => setBriefFor(null)} />
+      )}
       {autoConfirm && autoConfirm.row.entries && (
         <ConfirmChanges datasetVersion={autoConfirm.version} entries={autoConfirm.row.entries} source="auto" projects={projects}
                         title={`자동 편성 K=${autoConfirm.row.k} 확정`}

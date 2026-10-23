@@ -3,11 +3,13 @@
  *  → 필요 기술(사전에서 고르기) → 확인. 추가 과제(사용자 예: 운영 중 사업의 클라우드 마이그레이션, 내부 2명·6개월, 외주 여러 명)는
  *  상위 사업 기간 안이어야 하고 외주 인원은 참고로만 남는다.
  *  서버(POST /api/workspace/projects)가 같은 규칙으로 다시 검사한다 -- 여기서는 빈칸·순서만 미리 막는다.
- *  ① 기본의 "발주 자료(선택)"(2026-10-23 사용자 "신규 사업 등록 할 때 첨부 할 수 있어야")는 사업 번호가 생긴 뒤 올린다 -- onSubmit이 받는다. */
+ *  ① 기본의 "발주 자료(선택)"(2026-10-23 사용자 "신규 사업 등록 할 때 첨부 할 수 있어야")는 사업 번호가 생긴 뒤 올린다 -- onSubmit이 받는다.
+ *  고른 자료로 ① 칸(사업명·고객 구분·기간·월 예산)을 채울 수 있다(MetaReader, 2026-10-23 "프로젝트 이름, 기간, 예산 등을 대신 작성") -- 넣은 뒤엔 칸에서 고친다. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emptyForm, formProblems, normalizeGrades } from "./formRules";
 import { DocPicker } from "./ProjectDocs";
 import { experience, type AiDestination, type PendingDoc } from "./projectDocsApi";
+import { MetaReader } from "./MetaReader";
 import { SkillReader } from "./SkillReader";
 import {
   fetchProjectForm, fetchSkillDictionary, GRADES, SECTORS, STAGE_LABEL,
@@ -186,6 +188,9 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
                 </div>
               </fieldset>
               <DocPicker value={docs} onChange={setDocs} stage={form.stage} />
+              {datasetVersion && (
+                <MetaReader docs={docs} destination={aiDestination} form={form} defaults={emptyForm(start)} onApply={(patch) => set(patch)} />
+              )}
             </>
           )}
           {step === 1 && (

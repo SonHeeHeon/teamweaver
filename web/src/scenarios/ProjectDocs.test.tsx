@@ -13,7 +13,8 @@ vi.mock("./projectDocsApi", async (importOriginal) => {
     for (const d of docs) await uploadProjectDoc(v, pid, d.kind, d.file);
     return { ok: docs.length, failed: [] };
   });
-  return { ...real, fetchProjectDocs: vi.fn(), fetchRequirements: vi.fn(), uploadProjectDoc, uploadAll, deleteProjectDoc: vi.fn() };
+  return { ...real, fetchProjectDocs: vi.fn(), fetchRequirements: vi.fn(), uploadProjectDoc, uploadAll, deleteProjectDoc: vi.fn(),
+           fetchDocSummary: vi.fn(), makeDocSummary: vi.fn() };
 });
 vi.mock("../api/client", () => ({
   DatasetChangedError: class extends Error {}, streamOperatingCompare: vi.fn(), postJustification: vi.fn(), API_BASE: "",
@@ -128,6 +129,23 @@ describe("신규 사업 편성 화면 — 제목 옆 받기 · 요구 기술 · 
     fireEvent.click(within(dialog).getByRole("button", { name: "RFP.pdf 지우기" }));
     await waitFor(() => expect(docsApi.deleteProjectDoc).toHaveBeenCalledWith("v1", "J014", "d1"));
     await waitFor(() => expect(docsApi.fetchProjectDocs).toHaveBeenCalledTimes(2));
+  });
+
+  it("자료가 있으면 사업명·\"자료 요약\"을 누르면 자료 요약 창이 열린다(2026-10-23 사용자 \"등록한 프로젝트명을 누르거나 뭐 어디서든\")", async () => {
+    vi.mocked(api.fetchWorkspace).mockResolvedValue(WS);
+    vi.mocked(api.fetchCandidates).mockResolvedValue({ project_id: "J014", predecessor: null, note: "", bench: [], ending: [], pull: [] } as never);
+    vi.mocked(docsApi.fetchProjectDocs).mockResolvedValue({ dataset_version: "v1", max_per_project: 10, docs: {
+      J014: [doc({})], J003: [doc({ id: "s1", project_id: "J003", kind: "과업지시서", filename: "SOW.pdf", demo: true })] } });
+    vi.mocked(docsApi.fetchRequirements).mockResolvedValue({ dataset_version: "v1", requirements: { J014: [], J003: [] } });
+    vi.mocked(docsApi.fetchDocSummary).mockResolvedValue({ doc: doc({}), readable: true, summary: null, created_at: null, ai_destination: "external" });
+    render(<NewProjectsScreen milpParams={null} datasetVersion="v1" onDatasetChanged={vi.fn()} />);
+    const heading = await screen.findByRole("heading", { name: /보험사 B 고도화/ });
+    fireEvent.click(await within(heading).findByRole("button", { name: "보험사 B 고도화" }));
+    expect(screen.getByRole("dialog", { name: "자료 요약 — 보험사 B 고도화" })).toBeInTheDocument();
+    await waitFor(() => expect(docsApi.fetchDocSummary).toHaveBeenCalledWith("J014", "d1"));
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+    fireEvent.click(screen.getByRole("button", { name: "은행 A 데이터 자료 요약" }));
+    expect(screen.getByRole("dialog", { name: "자료 요약 — 은행 A 데이터" })).toBeInTheDocument();
   });
 
   it("등록할 때 고른 자료는 새 사업 번호로 올리고 결과를 알린다", async () => {
