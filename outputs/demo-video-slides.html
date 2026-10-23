@@ -68,15 +68,15 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="title-wrap">
     <div class="kicker">과제 시연</div>
     <h1>TeamWeaver</h1>
-    <p class="sub">SI 조직 인력 → 프로젝트 배치 최적화와<br>근거를 검사받는 AI 설명</p>
-    <p class="meta">인사 데이터는 모두 실제 인사 자료 모양으로 만든 가상 데이터입니다 · 사람 이름도 지어낸 이름 · 발주 자료(한 공공 사업의 공고문·제안요청서)만 나라장터 공개 자료</p>
+    <p class="sub">SI 사업 조직의 프로젝트 인력 배치 최적화와<br>근거를 검사받는 AI 설명</p>
+    <p class="meta">인사 데이터는 모두 실제 조직 현황과 업무 이력을 참고해 만든 가상 데이터입니다 · 사람 이름도 지어낸 이름 · 발주 자료(한 공공 사업의 공고문·제안요청서)만 나라장터 공개 자료</p>
   </div>
 </section>
 
 <section class="slide">
   <div class="kicker">개요 · 과제 수행 배경</div>
   <h2>누구를 어느 사업에 넣을까 — 다섯 가지를 한꺼번에</h2>
-  <p class="lead">SI 사업을 직접 수행하며 겪은 현업 규칙 그대로 — 한 사람은 한 사업에 100%, 동시 수행은 부서장이 허용한 사람만, 사업은 운영·고도화·추가 과제가 섞여 있다</p>
+  <p class="lead">SI 현업 관행 그대로 — 한 사람은 한 사업에 100%, 동시 수행은 부서장이 허용한 사람만</p>
   <div class="grid g3">
     <div class="card"><h3>한꺼번에 맞출 조건</h3>
       <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">휴직·쉬는 달</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
@@ -84,13 +84,13 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3>세 상황</h3><ul>
       <li><b>신규 사업 편성</b>(가장 잦음) — 쉬는·끝나 가는 사람, 몇 명만 옮겨 새 사업 팀을 짬</li>
       <li><b>긴급 투입</b> — 진행 사업에 이슈, 사람을 더 넣고 빼 온 자리까지 메움</li>
-      <li><b>연간 계획</b>(드묾) — 백지에서 6개월·1년 배치</li></ul></div>
+      <li><b>연간 계획</b>(드묾) — 백지에서 6개월·1년 치를 한 번에</li></ul></div>
     <div class="card"><h3>지금 방식의 어려움</h3><ul>
       <li>조건을 어겼는지 알기 어렵다</li>
       <li>더 나은 배치가 있었는지 모른다</li>
       <li>"왜 이 팀인가" 설명에 시간이 든다</li></ul></div>
   </div>
-  <div class="banner">목표: 배치 결정을 계산으로 돕고, 그 근거까지 함께 낸다</div>
+  <div class="banner">목표: 프로젝트 인력 배치 결정을 계산으로 돕고, 그 근거까지 함께 낸다</div>
 </section>
 
 <section class="slide">
@@ -106,7 +106,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="step"><b>⑥ 화면·PDF</b>계산 신뢰도 · 서명된 결과</div>
   </div>
   <div class="grid g2 auto" style="margin-top:20px">
-    <div class="card"><h3>결정은 수학 최적화</h3>모든 조건을 지키는 배치 가운데 점수가 가장 높은 것을 찾고, 증명된 상한과의 거리까지 보여 준다.</div>
+    <div class="card"><h3>결정은 수학 최적화</h3>모든 조건을 지키는 배치 가운데 점수가 가장 높은 것을 찾고, 이론상 최대치와의 거리까지 보여 준다.</div>
     <div class="card"><h3>글은 검사받는 AI</h3>AI는 배치를 정하지 않는다. 쓴 글은 원문·사실 목록과 대조하고, 어긋나면 버리고 규칙 기반 글을 낸다.</div>
   </div>
   <div class="banner" style="margin-top:auto">세 상황 — 신규 사업 편성(최대 K명만 이동) · 긴급 투입(빼 온 자리까지) · 연간 계획(백지에서 안 A~D)</div>
@@ -134,7 +134,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <h2>네 가지 핵심 기술 — 무엇을, 왜</h2>
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><h3><span class="n">1</span>수학 최적화 (혼합정수계획 · HiGHS)</h3>
-      다섯 조건을 <b>모두 지키는</b> 배치 가운데 점수가 가장 높은 것을 찾는다. 사람 손으로는 어겼는지도 모르는 일을 계산이 맡고, 최선과의 거리까지 증명한다.</div>
+      다섯 조건을 <b>모두 지키는</b> 배치 가운데 점수가 가장 높은 것을 찾는다. 사람 손으로는 어겼는지도 모르는 일을 계산이 맡고, "이보다 좋은 배치는 없다"는 이론상 최대치와의 거리까지 낸다.</div>
     <div class="card"><h3><span class="n">2</span>독립 검증기</h3>
       솔버의 답도 그대로 믿지 않는다. 원자료로 다시 계산해 통과한 배치만 화면·PDF로 낸다. 교체·확정·불러온 기록도 같은 잣대로 채점한다.</div>
     <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3>
@@ -149,12 +149,12 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
   <div class="kicker">성과 · 구현 결과</div>
   <h2>숫자로 본 결과</h2>
   <div class="grid g3" style="margin-top:18px">
-    <div class="card"><div class="num" style="font-size:72px">+5~13<small>%</small></div><div class="cap" style="font-size:24px">예산·휴직을 지키는 휴리스틱을 같은 시간 돌린 것보다 높은 배치 품질<br>(100~300명)</div></div>
-    <div class="card"><div class="num" style="font-size:72px">1<small>% 안</small></div><div class="cap" style="font-size:24px">300명 배치가 증명된 최선과의 거리<br>빈자리 0 · 규칙 위반 0 · 92초</div></div>
-    <div class="card"><div class="num" style="font-size:72px">55<small>%</small></div><div class="cap" style="font-size:24px">GPT에게 100명 배치를 통째로 맡기면 솔버 품질의 55%, 원자료만 주면 규칙 위반</div></div>
+    <div class="card"><div class="num" style="font-size:72px">+5~13<small>%</small></div><div class="cap" style="font-size:24px">같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 높은 배치 점수<br>(100·200·300명)</div></div>
+    <div class="card"><div class="num" style="font-size:72px">0.9<small>%</small></div><div class="cap" style="font-size:24px">300명 최선안과 이론상 최대치의 거리 — "이보다 0.9% 넘게 좋은 배치는 없다"<br>빈자리 0 · 규칙 위반 0 · 92초</div></div>
+    <div class="card"><div class="cap" style="font-size:22px;margin:0">배치를 맡을 기술을 비교해 골랐다</div><div class="num" style="font-size:56px">HiGHS</div><div class="cap" style="font-size:22px">솔버 3종(CBC·SCIP·HiGHS) 357번 풀이 비교 · GPT에게 100명 배치를 맡기면 규칙 위반 또는 최적화 결과의 55%</div></div>
   </div>
   <div class="banner">그래서 배치 결정은 수학 최적화가 맡고, AI는 사람이 하기 어려운 읽기·쓰기에 썼다 — 다음 두 장</div>
-  <div class="foot">규모별 표·계산 시간·신규 사업 K 비교·정확성 검증은 결과 보고서 3장. 모든 수치는 가상 데이터, 사업 효과는 검증 전(NOT_CALIBRATED).</div>
+  <div class="foot">배치 점수 = 기술 적합 + 협업 · 규모별 표·K 비교·검증은 결과 보고서 3장 · 실제 조직을 본뜬 가상 데이터(6개월 계획), 사업 효과는 검증 전(NOT_CALIBRATED)</div>
 </section>
 
 <section class="slide">
