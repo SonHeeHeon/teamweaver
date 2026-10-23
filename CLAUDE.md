@@ -182,7 +182,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   조각 실패는 그 범위만 규칙 + 경고, 출력 `chunks`. AI 결과 옆의 규칙만 찾은 업무 도메인 낱말(공공·카드·금융 …)은 "요구 아님" 목록에 넣지 않는다.
   측정 사전 등록 `python -m rehearsal.rfp_read_eval [--docs-dir demo/project_docs]`(b 시연 자료 7편 + 가상 10편 + 긴 가상 1편 `make_long_rfp`(따로 채점, 관문 L1), OpenAI만 관문, GLM-5.3-Flash high 보고) -- 10-23 밤(`ab2289c`): OpenAI 정밀도 1.00·재현율 0.99·요구 아닌 언급 0%·$0.013, 규칙 정밀도 0.93·요구 아닌 언급 5.9%, GLM 정밀도 0.93, 긴 자료 3조각 모두 찾음.
   영상 D6은 실제 공공 입찰 자료(산안공고 제2026-68호 공고문 + 제안요청서, 저장소 밖 -- 필요 기술은 `rehearsal/data/d6_bid_doc_skills.json`에 한 번 읽은 결과)로 "10월 공고·12월 시작"(사용자 가정)·7개월·월 1,429점·정원 중급 1로 등록하고(12월 전에 끝나는 사업이 없어 대기 인력에서 넣는다),
-  D7은 J001 상황 글(사용자 문장 + "중급 한 명" -- 등급이 없으면 AI 에이전트 경력 없는 특급이 1위) -- 뒤 장면 숫자 `python -m rehearsal.scenario_numbers`(기본 `--d6 doc` → `scenarios-1023.json`, 말로 받은 추천을 확정).
+  D7은 J004 데이터 마트 상황 글(기술 이름 없이 일로만 -- 규칙 0개, AI가 ETL·데이터 모델링·SQL을 미루어 보고 시연자가 켠다. 이 100명은 모두 데이터플랫폼 실행그룹이라 AI 에이전트 요청은 맞지 않는다, 사용자 10-23) -- 뒤 장면 숫자 `python -m rehearsal.scenario_numbers`(기본 `--d6 doc` → `scenarios-1023.json`, 말로 받은 추천을 확정).
   실제 공공 자료 측정은 `python -m rehearsal.rfp_real_eval --docs-dir <저장소 밖>`(정답 `rehearsal/data/rfp_gold_real.json` -- 작성 과정을 "authoring"에 사실대로, AI 전에 커밋, 사람 시간은 추정 식).
   **`request_parse.alias_hits`는 경계를 원문 글자로 본다**(10-23 고침 -- 띄어쓰기를 지운 글로 보면 "Python 5년"·"JEUS·WebtoB"를 버리고 "산출물은 행정"에서 "은행"을 잡았다, 48문장 측정은 그대로).
 - **변경 기록·변경 보고서**(2026-10-22 사용자 "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 … 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도", claude-a, 설계 루트 `.omc/plan/2026-10-22-change-report.md`):
