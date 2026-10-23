@@ -565,7 +565,10 @@ export function NewProjectsScreen({ milpParams, datasetVersion, onDatasetChanged
                   </span>
                 )}
               </div>
-              <RequirementLine reqs={reqs?.[project.project_id]} />
+              {/* 요구 기술 칸 색 = 충족 비율 -- "넣기"로 고른 사람이 있으면 그들까지 친 팀, 바뀐 수는 0→1로(2026-10-23 사용자 요청) */}
+              <RequirementLine reqs={reqs?.[project.project_id]}
+                               coverage={(draftList.length && fresh ? cands?.draft?.coverage : null) ?? (cands?.project_id === project.project_id ? cands.coverage : null)}
+                               before={draftList.length && fresh && cands?.project_id === project.project_id ? cands.coverage : null} />
               <div className="flex flex-wrap items-start gap-2 text-sm">
                 <div className="min-w-0 flex-1">
                   <span className="text-slate-500">지금 팀</span>{" "}

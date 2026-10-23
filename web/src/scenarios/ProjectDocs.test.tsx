@@ -61,6 +61,25 @@ describe("발주 자료 · 요구 기술 부품(2026-10-23 사용자 \"신규사
     expect(items).toEqual(["ETL · 경력 5년 이상 · 레벨 4 · 2명", "자바(Java) · 경력 1년 6개월 이상 · 레벨 2 · 1명", "SQL · 레벨 3 이상 · 1명"]);
   });
 
+  it("충족 인원을 칸 색(비율)과 숫자로, 넣기로 바뀐 수는 0→1로 보인다(2026-10-23)", () => {
+    const reqs = [{ skill: "ETL", canonical: null, months: 60, level: 4, headcount: 2 },
+                  { skill: "자바", canonical: "Java", months: 18, level: 2, headcount: 1 },
+                  { skill: "SQL", canonical: null, months: null, level: 3, headcount: 1 }];
+    const cov = (skill: string, met: string[], headcount: number, below: string[] = []) =>
+      ({ skill, min_level: 2, headcount, met: met.length, met_by: met, below_by: below });
+    render(<RequirementLine reqs={reqs} before={[cov("ETL", [], 2), cov("Java", [], 1), cov("SQL", [], 1)]}
+                            coverage={[cov("ETL", ["김민준"], 2, ["이서연"]), cov("Java", ["김민준"], 1), cov("SQL", [], 1)]} />);
+    const [etl, java, sql] = within(screen.getByRole("list", { name: "요구 기술" })).getAllByRole("listitem");
+    expect(etl).toHaveAttribute("data-cover", "1/2");
+    expect(etl.style.background).toContain("50%");                                    // 2명 중 1명 -- 반만 칠한다
+    expect(etl).toHaveTextContent("충족 0→1/2명");
+    expect(etl.getAttribute("title")).toContain("기술은 있으나 레벨이 모자람: 이서연");
+    expect(java.style.background).toContain("100%");                                  // 별칭(자바)도 대표 이름(Java)으로 맞춘다
+    expect(java).toHaveTextContent("충족 0→1/1명 ✓");
+    expect(sql.style.background).toBe("rgb(255, 255, 255)");                          // 아무도 없으면 칠하지 않는다
+    expect(sql).toHaveTextContent("충족 0/1명");
+  });
+
   it("양식 칸은 받는 형식만 담고, 기본 종류는 단계에 맞춘다(발주 예정 = 사전규격)", () => {
     const onChange = vi.fn();
     render(<DocPicker value={[]} onChange={onChange} stage="예정" />);
