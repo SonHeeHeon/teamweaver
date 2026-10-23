@@ -73,6 +73,11 @@ def _years(months: int) -> str:
     return f"{y}년" + (f" {m}개월" if m else "") if y else f"{m}개월"
 
 
+# 사업 예산은 원으로 적는다(2026-10-23 사용자 "1억에 6개월 프로젝트면 1억÷6개월 하면 월 비용 나오지않나?") -- 가상 데이터 단가표(특급 1,600·고급 1,300·…점/월)는
+# 대략 만 원 단위라 1점 = 1만 원으로 본다. 자료에서 사업 정보 채우기(api/rag/doc_brief)가 총액 ÷ 개월로 원래 월 예산을 되찾는지 잴 수 있다.
+WON_PER_POINT = 10_000
+
+
 def _theme(name: str):
     return next((t for t in THEMES if t[0] in name),
                 ("", "업무 데이터를 모으고 정리해 필요한 사람이 쓸 수 있게 한다.", ["데이터 수집·정제", "운영 지원"]))
@@ -96,7 +101,7 @@ def _html(pid: str, kind: str, p: dict) -> str:
 <tr><th>사업명</th><td>{e(r['project_name'])}</td></tr>
 <tr><th>발주처</th><td>{e(client)}(가상) · {e(channel)}</td></tr>
 <tr><th>사업 기간</th><td>{e(r['start_month'])} ~ {e(r['end_month'])} ({months}개월)</td></tr>
-<tr><th>사업 규모</th><td>월 {budget:,} · 총 {budget * months:,} (가상비용점)</td></tr>
+<tr><th>사업 예산</th><td>총 {budget * months * WON_PER_POINT:,}원(부가세 포함) · 월 {budget:,}만 원</td></tr>
 </table>"""),
         ("추진 배경과 목적", f"<p>{e(background)}</p>"),
         ("과업 범위", "<ul>" + "".join(f"<li>{e(x)}</li>" for x in scope) + "</ul>"),

@@ -16,8 +16,8 @@
    "kind": "과업지시서",
    "filename": "J001 과업지시서 (가상).pdf",
    "file": "j001-sow.pdf",
-   "size": 140980,
-   "sha256": "5da1ada7c21e55de714ed1dee5d26b8cc83a6d270db2c85336fab6ecee8ba999"
+   "size": 141438,
+   "sha256": "7237d3f668836a598a9e07e6035bf6d57f039fc7109f20d486e75273d06ddbea"
   },
   {
    "id": "j003-sow",
@@ -29,8 +29,8 @@
    "kind": "과업지시서",
    "filename": "J003 과업지시서 (가상).pdf",
    "file": "j003-sow.pdf",
-   "size": 131841,
-   "sha256": "6040db2797281842d0a23ae599606049477281770efa07466662f10a2398f09e"
+   "size": 133261,
+   "sha256": "043f04b9e7deb30e50b7093329368e8f4a5f023e2e14ce99f5b31e1ce9645a72"
   },
   {
    "id": "j011-rfp",
@@ -42,8 +42,8 @@
    "kind": "제안요청서(RFP)",
    "filename": "J011 제안요청서(RFP) (가상).pdf",
    "file": "j011-rfp.pdf",
-   "size": 140866,
-   "sha256": "577af403fb8bbea335bf1f0844b9e00a6923d3f5952130309bf2a7b8cbc209f5"
+   "size": 142277,
+   "sha256": "3a5af6da1701f85f5f9713c78087560f1006bb8ca41bc1e25f893c04ca62184f"
   },
   {
    "id": "j018-rfp",
@@ -55,8 +55,8 @@
    "kind": "제안요청서(RFP)",
    "filename": "J018 제안요청서(RFP) (가상).pdf",
    "file": "j018-rfp.pdf",
-   "size": 138638,
-   "sha256": "76b04183fd957f510f6d60e2434231108433be9416b9171228113551b3e755c3"
+   "size": 140392,
+   "sha256": "f7f116fe80af8bf3184003373360a9898b83139e3725d968e73d32b31cecc53e"
   },
   {
    "id": "j019-brief",
@@ -68,8 +68,8 @@
    "kind": "사업 개요",
    "filename": "J019 사업 개요 (가상).pdf",
    "file": "j019-brief.pdf",
-   "size": 144619,
-   "sha256": "743c3ac52211fb17c94999a32298acaa57d84dedd59d38f26e22bcd59b3d8ee8"
+   "size": 146043,
+   "sha256": "0010dd14d19c07198a22d6f09ab3c0e1c03020e0297a5491fc9aeb4f031bbf57"
   },
   {
    "id": "j020-prespec",
@@ -81,8 +81,8 @@
    "kind": "사전규격",
    "filename": "J020 사전규격 (가상).pdf",
    "file": "j020-prespec.pdf",
-   "size": 141680,
-   "sha256": "c39c249a07d575ca52cd49c10e967df807dfd2e525bbcb9e094a8e0d9a949e29"
+   "size": 142800,
+   "sha256": "cd44fd08b30ee96dc887cf54b8b56e1f1a70a706868ce64b197d223949353fdb"
   },
   {
    "id": "j020-rfp",
@@ -94,8 +94,8 @@
    "kind": "제안요청서(RFP)",
    "filename": "J020 제안요청서(RFP) (가상).pdf",
    "file": "j020-rfp.pdf",
-   "size": 142427,
-   "sha256": "c718054178930f9b38a7171666c7259aa76cd08ac41b06a35eaae574a572ea6c"
+   "size": 143546,
+   "sha256": "34c31d311a8799a23bc85ce3d2786d779e037ecc7f7c6a2557b621bbfbea3973"
   }
  ]
 }
