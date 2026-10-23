@@ -108,12 +108,18 @@ export interface DraftSummary extends HoleView {
   side_grade_swaps?: Record<string, GradeSwap[]>; side_budget_add?: Record<string, number>;
   /** 대체 없이도 새로 넘친 월 예산(사업별, 2026-10-22) -- 사유와 함께 확정의 budget_raises로 보낸다 */
   budget_raises?: Record<string, number>;
+  /** 고른 사람까지 친 팀의 요구 기술별 충족 인원(2026-10-23) */
+  coverage?: SkillCover[];
 }
 export interface Pick { person_id: string; alloc: number; pulled_from: string[] }
+/** 요구 기술별 충족 인원(2026-10-23 -- 점수와 같은 레벨 기준, 서버 `core.evaluate.skill_coverage`). 이름은 서버가 바꿔 준다 */
+export interface SkillCover { skill: string; min_level: number; headcount: number; met: number; met_by: string[]; below_by: string[] }
 /** 그 사업 기간에 휴직 등으로 넣을 수 없는 사람(2026-10-19) -- 후보에서 빠지지만 화면은 사유와 함께 비활성으로 보인다. */
 export interface UnavailableRow { person_id: string; name: string; grade: Grade; months: number[]; reason: string }
 export interface Candidates { project_id: string; predecessor: string | null; parent?: string | null; bench: CandidateRow[]; ending: CandidateRow[];
-                              pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string; draft?: DraftSummary | null }
+                              pull: CandidateRow[]; unavailable?: UnavailableRow[]; note: string; draft?: DraftSummary | null;
+                              /** 지금 팀(확정된 배치)의 요구 기술별 충족 인원(2026-10-23) */
+                              coverage?: SkillCover[] }
 
 export interface StandbyRow { person_id: string; name: string; grade: Grade; alloc: number; source: string; delta_total: number;
                              unfilled_seats_delta?: number; delta_excl_unfilled?: number }

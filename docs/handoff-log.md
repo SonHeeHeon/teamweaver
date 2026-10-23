@@ -22,6 +22,28 @@
 
 ---
 
+## 2026-10-24 · claude-b · claude-a 10-24 브랜치를 b 브랜치에 병합(보고서 두 갈래 막기)
+- 사용자: "목차는 빼고 범위 밖 낡은 값도 고쳐줘 … 수정 안한 페이지들에서 수정해줘야하는게 있는지 탐색해줘" — 보고서 2차 수정 전에, a의 `0b78c9e`가 1차 수정 **이전** 판에서 보고서 3.3·8.3·한계를 고친 것을 발견해 먼저 합쳤다.
+- 브랜치/커밋: `feat/claude-a-real-rfp-1024`(`0b78c9e`)를 `feat/claude-b-kg-views`에 병합. main 안 옮김(main = `273cc13`), push 안 함.
+- 충돌(문서 4개, 코드 없음 — `git merge-tree`로 먼저 확인): `CLAUDE.md` 기준선 줄(병합 뒤 수), `docs/handoff-log.md`(a 10-24 항목 위, b 항목 아래 그대로), `outputs/final-report.html` 한계 절 두 줄(첫 줄 b, 둘째 줄 a의 "실제 공공 10편" + b의 나눠 읽기 사실), `.pdf`(합친 HTML로 다시 찍음). a의 b 영역 화면·라우트 수정은 저절로 합쳐졌다.
+- 상대 영향(claude-a): 보고서는 이제 1차 수정(목차·1.5·2.2 없음, 9쪽) + 네 3.3·8.3 위에 있다 — 고치기 전에 이 브랜치(또는 main 병합 뒤 main)를 합친다. 기준선 2233 / 웹 403.
+- 검증: `uv run --group benchmark pytest -q` → 2233 passed, 1 skipped, 21 deselected(563초) · 웹 `npx vitest run` 403 passed · `npx tsc -b` · `npm run build` 통과.
+
+## 2026-10-24 · claude-a · 실제 공공 발주 자료 10편 측정 · D7 데이터 마트 · 신규 사업 요구 기술 충족 표시 · 등록 양식 ④ 자동 추천
+- 브랜치/커밋: `feat/claude-a-real-rfp-1024`(main `2748f18`에서) — `88d98eb`(D7) · `fa4f00b`(정답·도구, AI 전) · `86429fd`(결과) · `5242181`(충족 표시) · `554b7ab`(등록 양식) · 문서 커밋. main 미병합.
+- 사용자: "9편 넣어두었고 1편은 … 산안공고 제2026-68호 이걸로 하자" · "d7 예시를 좀 바꿀까? 데이터 플랫폼실행그룹 인력인데 …" · "병합 승인할게" ·
+  "넣기 하면 … 요구 기술의 항목의 배경 색깔이 칠해진다던지 … 퍼센티지를 적어도 좋아" · "'1.기본' 에서 발주 자료(선택)이 사업명보다 위인 최상단에 … '4.필요 기술'에도 … 추천 필요 기술 항목들이 뜨도록".
+- 한 일:
+  - 실제 공공 자료 10편(사용자가 둔 `docs/real_proposal/` -- git 제외 `.git/info/exclude`, 산안공단 제안요청서 복사 포함): 정답 `rehearsal/data/rfp_gold_real.json`(Claude 초안, AI 전 커밋, 사용자 검토 전 -- "authoring"),
+    `python -m rehearsal.rfp_real_eval --docs-dir docs/real_proposal` → 정밀도 규칙 0.32 · OpenAI 0.78(3회) · GLM 0.65, 요구 아닌 언급을 요구로 99% · 11% · 22%, 편당 13초 · 74초. 슬라이드 8·보고서 3.3·8.3을 이 숫자로.
+  - D7: J004 데이터 마트 "원천 시스템 테이블 구조가 바뀌어서 …"(규칙 0개, AI ETL·데이터 모델링·SQL 미루어 봄 → 시연자가 켬), 추천 이지유 J014→J004 + 전다은 메움.
+  - 신규 사업 요구 기술 칩 충족 표시: `core/evaluate/skill_coverage.py`(점수와 같은 레벨 기준) → `/api/pipeline/{id}/candidates` 응답 `coverage`(지금 팀)·`draft.coverage`(넣기 포함), 화면 칸 배경 = 충족 비율, "충족 0→1/2명".
+  - 등록 양식: ① 맨 위 발주 자료 + "④에서 저절로 읽는다(보내는 곳)" 안내, ④ `SkillReader auto`(제안요청서 → 과업지시서 → 사전규격, 양식이 결과 기억), 읽은 뒤 손으로 적은 같은 기술은 체크를 푼다.
+- 상대 영향(claude-b): **b 영역 화면(`NewProjectsScreen`·`ProjectDocs`·`ProjectForm`·`SkillReader`·`projectDocsApi`·`workspaceApi`)과 라우트(`api/routes/scenarios.py` 후보 응답에 `coverage` 칸)**를 고쳤다 —
+  병합 때 확인. `DESTINATION`·`docKey`는 `projectDocsApi`로 옮겼다. 웹 시험 402(+2).
+- 검증: `uv run --group benchmark pytest -q` → 2225 passed, 1 skipped, 21 deselected · 웹 402 · tsc · oxlint · build · 실제 화면(임시 데이터, 포트 8779) 충족 칩·등록 양식 ①·④ 자동 읽기 1번 · 보고서 PDF 10쪽 · 슬라이드 겹침 0. Codex 한도 소진 → 자체 검토.
+- 근거: `.omc/plan/2026-10-23-real-rfp-d7.md` · `.omc/reports/2026-10-24-real-rfp-d7-coverage.md`
+
 ## 2026-10-23 · claude-b · 정정: 보고서 1차 수정도 main에 올림
 - 바로 아래 항목의 "main에는 아직 안 올림"을 정정 — 사용자 "main에 다 병합해줘"에 따라 main을 `c4f7094`(보고서 1차 수정) 뒤 이 정정 커밋까지 fast-forward했다. push 안 함.
 - 상대 영향: claude-a는 보고서를 고치기 전에 main을 합친다(`outputs/final-report.*` 구조가 바뀜).

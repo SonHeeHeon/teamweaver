@@ -121,18 +121,19 @@ describe("자료에서 필요 기술 읽기(2026-10-23 사용자 \"자료를 넣
     expect(await screen.findByRole("alert")).toHaveTextContent("이 형식은 글자를 읽지 못한다");
   });
 
-  it("등록 양식 ④에서 읽은 기술을 넣으면 목록에 합쳐지고, 1·2·3·5년 밖의 경력(8년)도 보인다", async () => {
+  it("등록 양식 ④에 들어오면 ①의 자료를 저절로 읽고, 읽은 뒤 손으로 적은 기술은 체크를 풀며, 넣으면 목록에 합쳐진다(8년도 보인다)", async () => {
     vi.mocked(api.fetchSkillDictionary).mockResolvedValue([{ name: "Java", aliases: ["자바"] }, { name: "ETL", aliases: [] }]);
     vi.mocked(docsApi.readRequirements).mockResolvedValue(RESULT);
     render(<ProjectForm start="2026-10" predecessors={[]} onSubmit={vi.fn()} onCancel={vi.fn()} datasetVersion="v1" />);
     fireEvent.change(screen.getByLabelText("사업명"), { target: { value: "보험사 D" } });
     fireEvent.change(screen.getByLabelText("발주 자료 파일"), { target: { files: [pdf()] } });
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    const list = await screen.findByRole("list", { name: "읽은 필요 기술" });          // 읽기 버튼을 누르지 않아도 읽는다
+    expect(docsApi.readRequirements).toHaveBeenCalledTimes(1);
+    expect(within(list).getByRole("checkbox", { name: "Java 넣기" })).toBeChecked();   // 경력·인원이 적힌 필수는 기본 체크
     fireEvent.change(screen.getByLabelText("기술 검색"), { target: { value: "자바" } });
     fireEvent.click(await screen.findByRole("button", { name: "+ Java" }));     // 별칭으로 찾아 사전 대표 이름(Java)으로 들어간다
-    fireEvent.click(screen.getByRole("button", { name: "RFP.pdf 읽기" }));
-    const list = await screen.findByRole("list", { name: "읽은 필요 기술" });
-    expect(within(list).getByRole("checkbox", { name: "Java 넣기" })).not.toBeChecked();
+    expect(within(list).getByRole("checkbox", { name: "Java 넣기" })).not.toBeChecked();   // 손으로 적은 값을 덮지 않게 체크를 푼다
     fireEvent.click(within(list).getByRole("checkbox", { name: "Java 넣기" }));
     fireEvent.click(screen.getByRole("button", { name: "고른 2개 필요 기술에 넣기" }));
     const skills = screen.getByRole("list", { name: "필요 기술" });
@@ -140,6 +141,27 @@ describe("자료에서 필요 기술 읽기(2026-10-23 사용자 \"자료를 넣
     const java = within(skills).getAllByRole("listitem")[0];
     expect(within(java).getByRole("button", { name: "8년" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("ETL 빼기")).toBeInTheDocument();                  // 넣은 뒤엔 기존 칸에서 빼고 고친다
+  });
+
+  it("① 맨 위에 발주 자료가 있고, 여러 자료면 ④가 제안요청서를 먼저 읽으며 단계를 오가도 다시 보내지 않는다", async () => {
+    vi.mocked(api.fetchSkillDictionary).mockResolvedValue([]);
+    vi.mocked(docsApi.readRequirements).mockResolvedValue(RESULT);
+    render(<ProjectForm start="2026-10" predecessors={[]} onSubmit={vi.fn()} onCancel={vi.fn()} datasetVersion="v1" aiDestination="external" />);
+    const picker = screen.getByLabelText("발주 자료 파일");
+    expect(picker.compareDocumentPosition(screen.getByLabelText("사업명")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();   // 사업명보다 위
+    fireEvent.change(picker, { target: { files: [pdf("공고문.pdf"), pdf("RFP.pdf")] } });
+    fireEvent.change(screen.getByLabelText("공고문.pdf 종류"), { target: { value: "입찰공고문" } });
+    fireEvent.change(screen.getByLabelText("RFP.pdf 종류"), { target: { value: "제안요청서(RFP)" } });
+    expect(screen.getByRole("note")).toHaveTextContent("④ 필요 기술에서 저절로 읽어");             // 회사 밖 AI로 간다는 것도 함께
+    expect(screen.getByRole("note")).toHaveTextContent("회사 밖 AI");
+    fireEvent.change(screen.getByLabelText("사업명"), { target: { value: "보험사 D" } });
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    await screen.findByRole("list", { name: "읽은 필요 기술" });
+    expect(vi.mocked(docsApi.readRequirements).mock.calls.map(([f]) => f.name)).toEqual(["RFP.pdf"]);
+    fireEvent.click(screen.getByRole("button", { name: "이전" }));
+    fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    await screen.findByRole("list", { name: "읽은 필요 기술" });
+    expect(docsApi.readRequirements).toHaveBeenCalledTimes(1);                         // 기억한 결과를 다시 보인다
   });
 });
 

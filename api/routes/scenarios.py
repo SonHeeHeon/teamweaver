@@ -379,6 +379,8 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
     unfilled = float(d.get("unfilled", 0.0))
     return {"seats": {g: {"need": need.get(g, 0), "filled": filled.get(g, 0)} for g in [x.value for x in Grade]
                       if need.get(g, 0) or filled.get(g, 0)},
+            # 요구 기술별 충족 인원(고른 사람까지 친 팀, 2026-10-23 사용자 "요구 기술 항목의 배경 색깔이 칠해진다던지")
+            "coverage": coverage_view(graph, project_id, sim["entries"], names),
             "seat_effects": seat_effects(graph, _seat_gaps(graph, before), _seat_gaps(g2, after)),
             "delta_total": round(d["total"], 4), "skill_delta": round(d.get("skill", 0.0), 4),
             "collab_delta": round(d.get("synergy", 0.0) + d.get("overfamiliarity", 0.0), 4),
@@ -391,6 +393,13 @@ def draft_summary(graph, S, C, params, base, project_id: str, picks: list[PickIn
             "budget_raises": raises,
             **hole_view(graph, g2, S, C, params, base, entries_after, skip=project_id, locked=locked, names=names,
                         staffing=staffing)}
+
+
+def coverage_view(graph, project_id: str, entries, names: dict[str, str]) -> list[dict]:
+    """요구 기술별 충족 인원(`core.evaluate.skill_coverage` -- 점수와 같은 레벨 기준) + 충족·레벨 부족 사람 이름."""
+    from core.evaluate.skill_coverage import skill_coverage
+    return [{**r, "met_by": [names.get(x, x) for x in r["met_by"]], "below_by": [names.get(x, x) for x in r["below_by"]]}
+            for r in skill_coverage(graph, project_id, entries)]
 
 
 async def _candidates(request: Request, dataset: ActiveDataset, project_id: str, picks: list[PickIn], top: int,
@@ -430,13 +439,13 @@ async def _candidates(request: Request, dataset: ActiveDataset, project_id: str,
         groups = classify(dataset, project_id, rows, predecessor=predecessor, parent=parent)
         draft = (draft_summary(dataset.graph, S, C, params, base, project_id, picks, names, fills, _locked(dataset),
                                staffing) if picks else None)
-        return groups, draft
+        return groups, draft, coverage_view(dataset.graph, project_id, base, names)
     async with _light(request.app):
-        groups, draft = await anyio.to_thread.run_sync(go)
+        groups, draft, coverage = await anyio.to_thread.run_sync(go)
     from api.unavailable import unavailable_for
     # 그 사업 기간에 휴직 등으로 넣을 수 없는 사람 -- 후보 계산은 이미 빼므로 화면이 사유와 함께 비활성으로 보인다(2026-10-19)
     return {"dataset_version": dataset.info.version, "project_id": project_id, "predecessor": predecessor, "parent": parent,
-            **groups, "draft": draft, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
+            **groups, "draft": draft, "coverage": coverage, "unavailable": unavailable_for(dataset, project_id), "note": NOT_CALIBRATED}
 
 
 @router.get("/api/pipeline/{project_id}/candidates")

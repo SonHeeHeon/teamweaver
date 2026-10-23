@@ -4,11 +4,12 @@
  *  상위 사업 기간 안이어야 하고 외주 인원은 참고로만 남는다.
  *  서버(POST /api/workspace/projects)가 같은 규칙으로 다시 검사한다 -- 여기서는 빈칸·순서만 미리 막는다.
  *  ① 기본의 "발주 자료(선택)"(2026-10-23 사용자 "신규 사업 등록 할 때 첨부 할 수 있어야")는 사업 번호가 생긴 뒤 올린다 -- onSubmit이 받는다.
- *  고른 자료로 ① 칸(사업명·고객 구분·기간·월 예산)을 채울 수 있다(MetaReader, 2026-10-23 "프로젝트 이름, 기간, 예산 등을 대신 작성") -- 넣은 뒤엔 칸에서 고친다. */
+ *  고른 자료로 ① 칸(사업명·고객 구분·기간·월 예산)을 채울 수 있다(MetaReader, 2026-10-23 "프로젝트 이름, 기간, 예산 등을 대신 작성") -- 넣은 뒤엔 칸에서 고친다.
+ *  발주 자료 칸은 ① 맨 위, ④ 필요 기술은 ①의 자료를 저절로 읽어 추천한다(2026-10-23 사용자 -- ④에서 다시 자료를 고를 필요 없게). */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { emptyForm, formProblems, normalizeGrades } from "./formRules";
 import { DocPicker } from "./ProjectDocs";
-import { experience, type AiDestination, type PendingDoc } from "./projectDocsApi";
+import { DESTINATION, experience, readable, type AiDestination, type PendingDoc, type ReadResult } from "./projectDocsApi";
 import { MetaReader } from "./MetaReader";
 import { SkillReader } from "./SkillReader";
 import {
@@ -39,6 +40,8 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(() => emptyForm(start));
   const [docs, setDocs] = useState<PendingDoc[]>([]);
+  /** ④에서 읽은 필요 기술(파일 열쇠 → 결과) -- 단계를 오가도 같은 자료를 다시 보내지 않는다 */
+  const skillReads = useRef(new Map<string, ReadResult>()).current;
   const [dict, setDict] = useState<SkillDictEntry[]>([]);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -154,6 +157,15 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
         <fieldset disabled={copying} aria-busy={copying} className="flex-1 space-y-4 overflow-y-auto px-6 py-5 text-sm">
           {step === 0 && (
             <>
+              {/* 발주 자료를 맨 위에(2026-10-23 사용자 "발주 자료(선택)이 사업명보다 위인 최상단에") -- 올리면 아래 칸 채우기(MetaReader)와 ④ 필요 기술 추천에 쓴다 */}
+              <DocPicker value={docs} onChange={setDocs} stage={form.stage} />
+              {datasetVersion && docs.some((d) => readable(d.file)) && (
+                <p className={`text-[12px] ${(aiDestination ?? "external") === "external" ? "text-amber-800" : "text-slate-500"}`} role="note">
+                  올린 자료는 ④ 필요 기술에서 저절로 읽어 필요 기술을 추천합니다 — {DESTINATION[aiDestination ?? "external"]}</p>
+              )}
+              {datasetVersion && (
+                <MetaReader docs={docs} destination={aiDestination} form={form} defaults={emptyForm(start)} onApply={(patch) => set(patch)} />
+              )}
               <label className="block">사업명
                 <input className="field mt-1" autoFocus value={form.name} onChange={(e) => set({ name: e.target.value })}
                        placeholder="예: 보험사 B 데이터 플랫폼 고도화" />
@@ -187,10 +199,6 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
                   ))}
                 </div>
               </fieldset>
-              <DocPicker value={docs} onChange={setDocs} stage={form.stage} />
-              {datasetVersion && (
-                <MetaReader docs={docs} destination={aiDestination} form={form} defaults={emptyForm(start)} onApply={(patch) => set(patch)} />
-              )}
             </>
           )}
           {step === 1 && (
@@ -240,7 +248,8 @@ export function ProjectForm({ start, predecessors, parents = [], initialParent =
           {step === 3 && (
             <>
               {datasetVersion && (
-                <SkillReader docs={docs} destination={aiDestination} current={form.skills} canonicalOf={canonicalOf} onApply={mergeSkills} />
+                <SkillReader docs={docs} destination={aiDestination} current={form.skills} canonicalOf={canonicalOf} onApply={mergeSkills}
+                             auto cache={skillReads} />
               )}
               <label className="block">기술 검색
                 <input className="field mt-1" value={query} placeholder="예: 파이썬, Kubernetes, 데이터 모델링"
