@@ -28,7 +28,7 @@
  "register": {
   "project_id": "J021",
   "copied_from": null,
-  "name": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구",
+  "name": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구 용역",
   "skills": [
    "정보보안",
    "개인정보보호",
@@ -41,15 +41,7 @@
    "LLM Application"
   ],
   "seats": {
-   "고급": {
-    "need": 1,
-    "filled": 0
-   },
    "중급": {
-    "need": 2,
-    "filled": 0
-   },
-   "초급": {
     "need": 1,
     "filled": 0
    }
@@ -57,13 +49,6 @@
  },
  "candidates": {
   "bench": [
-   {
-    "name": "강예은",
-    "grade": "초급",
-    "delta": 100.39,
-    "predecessor_team": false,
-    "from": []
-   },
    {
     "name": "임민우",
     "grade": "중급",
@@ -77,68 +62,80 @@
     "delta": 100.33,
     "predecessor_team": false,
     "from": []
-   }
-  ],
-  "ending": [
-   {
-    "name": "배선영",
-    "grade": "중급",
-    "delta": 100.44,
-    "predecessor_team": false,
-    "from": []
    },
    {
-    "name": "이승현",
-    "grade": "초급",
-    "delta": 100.44,
-    "predecessor_team": false,
-    "from": []
-   },
-   {
-    "name": "박하늘",
+    "name": "윤시현",
     "grade": "중급",
-    "delta": 100.39,
+    "delta": 100.28,
     "predecessor_team": false,
     "from": []
    }
   ],
-  "pull": []
+  "ending": [],
+  "pull": [
+   {
+    "name": "박시우",
+    "grade": "중급",
+    "delta": -0.3,
+    "predecessor_team": false,
+    "from": [
+     "J015"
+    ]
+   },
+   {
+    "name": "최서윤",
+    "grade": "중급",
+    "delta": -0.31,
+    "predecessor_team": false,
+    "from": [
+     "J011"
+    ]
+   },
+   {
+    "name": "이지유",
+    "grade": "중급",
+    "delta": -0.37,
+    "predecessor_team": false,
+    "from": [
+     "J014"
+    ]
+   }
+  ]
  },
  "manual_confirm": {
   "people": [
-   "배선영"
+   "임민우"
   ],
   "changes": {
    "added": [
-    "DP0086@J021"
+    "DP0023@J021"
    ],
    "removed": [],
    "changed": []
   }
  },
  "review_new": {
-  "project": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구(J021)",
+  "project": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구 용역(J021)",
   "kind": "new",
   "joined": [
    {
-    "name": "배선영",
+    "name": "임민우",
     "grade": "중급",
-    "origin": "follow_on",
+    "origin": "bench",
     "sources": []
    }
   ],
   "move_facts": [
-   "이 확정으로 J021 사업 점수 0.00 → 0.44, 요구 기술 ETL 충족 0→1명(필요 1명), Text Analysis 충족 0→1명(필요 1명), 검색엔진 충족 0→1명(필요 1명), 등급 정원 빈자리 4 → 3석(확정 뒤 정원·요구 기준)",
-   "배선영(중급): 지금 사업이 끝난 뒤 이어서 투입, J021 투입률 1, 이 사업 요구 기술 중 충족: Text Analysis, ETL, 검색엔진"
+   "이 확정으로 J021 사업 점수 0.00 → 0.33, 요구 기술 ETL 충족 0→1명(필요 1명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "임민우(중급): 대기 인력, J021 투입률 1, 이 사업 요구 기술 중 충족: ETL"
   ],
-  "adverse_facts": 9,
+  "adverse_facts": 13,
   "facts": 21
  },
  "emergency_spoken": {
-  "text": "데이터 마트 적재가 계속 실패해요 — 스파크랑 금융 업무 아는 중급 한 명 급히",
+  "text": "프로젝트 실행 도중 AI 에이전트 과업 범위 추가로 인해 에이전트 개발 인력이 더 필요. AI 에이전트 개발 및 T2SQL 쪽 경험이 있는 중급 한 명",
   "skills": [
-   "Spark",
-   "금융 업무"
+   "AI 에이전트 프레임워크"
   ],
   "headcount": 1,
   "grade": "중급",
@@ -149,8 +146,8 @@
    }
   ],
   "delta": {
-   "total": 1.296049707602151,
-   "skill": 1.2865497076023402,
+   "total": 1.0421797385620266,
+   "skill": 1.0326797385620878,
    "synergy": 0.009499999999999176,
    "overfamiliarity": 0.0,
    "unfilled": 0.0
@@ -167,18 +164,62 @@
   "holes": {},
   "apply_hint": {
    "headcount_add": {
-    "J004": {
+    "J001": {
      "중급": 1
     }
    },
    "budget_add": {},
+   "skills_add": {
+    "J001": [
+     {
+      "name": "AI 에이전트 프레임워크",
+      "min_months": 12,
+      "headcount": 1
+     }
+    ]
+   }
+  },
+  "same_entries_as_plain": false,
+  "standby": [
+   "김우진",
+   "강예은",
+   "황유찬"
+  ]
+ },
+ "emergency_plain": {
+  "added": [
+   {
+    "person_id": "DP0076",
+    "name": "김소율"
+   }
+  ],
+  "delta": {
+   "total": 1.64650000000006,
+   "skill": 0.9750000000000014,
+   "synergy": 0.6714999999999982,
+   "overfamiliarity": 0.0,
+   "unfilled": 0.0
+  },
+  "apply_hint": {
+   "headcount_add": {
+    "J001": {
+     "특급": 1
+    }
+   },
+   "budget_add": {
+    "J001": 562
+   },
    "skills_add": {}
   },
-  "same_entries_as_plain": true,
-  "standby": [
-   "황유찬",
-   "박나연",
-   "주경민"
+  "moved": [
+   {
+    "person_id": "DP0076",
+    "from": "J008",
+    "to": [
+     "J001"
+    ],
+    "name": "김소율"
+   }
   ]
  },
  "emergency": {
@@ -189,39 +230,47 @@
    }
   ],
   "delta": {
-   "total": 1.296049707602151,
-   "skill": 1.2865497076023402,
+   "total": 1.0421797385620266,
+   "skill": 1.0326797385620878,
    "synergy": 0.009499999999999176,
    "overfamiliarity": 0.0,
    "unfilled": 0.0
   },
   "apply_hint": {
    "headcount_add": {
-    "J004": {
+    "J001": {
      "중급": 1
     }
    },
    "budget_add": {},
-   "skills_add": {}
+   "skills_add": {
+    "J001": [
+     {
+      "name": "AI 에이전트 프레임워크",
+      "min_months": 12,
+      "headcount": 1
+     }
+    ]
+   }
   },
   "standby": [
-   "황유찬",
-   "박나연",
-   "윤시현"
+   "강예은",
+   "김우진",
+   "전다은"
   ],
   "moved": [
    {
     "person_id": "DP0030",
     "from": "J014",
     "to": [
-     "J004"
+     "J001"
     ],
     "name": "이지유"
    }
   ]
  },
  "review_emergency": {
-  "project": "금융사 마2 비정형 데이터 마트 구축(J004)",
+  "project": "대형 시중은행 A AI 에이전트 개발(데이터플랫폼·AI 공동)(J001)",
   "kind": "emergency",
   "joined": [
    {
@@ -234,14 +283,14 @@
    }
   ],
   "move_facts": [
-   "이 확정으로 J004 사업 점수 7.09 → 7.89, 요구 기술 ETL 충족 3→4명(필요 2명), Spark 충족 4→5명(필요 1명), 금융 업무 충족 3→4명(필요 2명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
-   "이지유(중급): 진행 사업에서 옮겨 옴, J004 투입률 1, 이 사업 요구 기술 중 충족: ETL, 금융 업무, Spark",
+   "이 확정으로 J001 사업 점수 6.64 → 7.24, 요구 기술 ETL 충족 8→9명(필요 2명), 금융 업무 충족 5→6명(필요 3명), 등급 정원 빈자리 1 → 0석(확정 뒤 정원·요구 기준)",
+   "이지유(중급): 진행 사업에서 옮겨 옴, J001 투입률 1, 이 사업 요구 기술 중 충족: ETL, 금융 업무",
    "이지유: 금융사 라2 비정형 문서 메타데이터 전환(J014)에서 옮겨 옴 — 그 사업에서 빠짐",
    "J014 사업(이 확정 전체로 인한 변화): 점수 3.75 → 4.21, 요구 기술 Text Analysis 충족 3→4명(필요 2명), 비정형 문서 처리(OCR) 충족 2→3명(필요 2명), 등급 정원 빈자리 0 → 0석",
    "J014의 자리를 같은 확정에서 전다은(중급, 대기 인력)이(가) 채움"
   ],
   "adverse_facts": 4,
-  "facts": 34
+  "facts": 29
  },
  "concurrent_support": {
   "candidates": [
