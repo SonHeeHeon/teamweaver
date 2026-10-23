@@ -9,7 +9,7 @@
 (`rehearsal/data/d6_bid_doc_skills.json`, `rehearsal.d6_bid_doc` -- 제안요청서는 사전규격과 글자가 같다)을 등록 양식 "추정 모두 선택"처럼 경력 2년·1명으로
 · copy(예전): 고도화 과제(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업)
 → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
-손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J004 긴급 투입(상황 글, 빼 오기 1명 허용) → 확정 → 검토 자료 →
+손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J009 긴급 투입(상황 글 두 명, 빼 오기 1명 허용) → 확정 → 검토 자료 →
 J015 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
 """
 from __future__ import annotations
@@ -32,12 +32,15 @@ BID_PROJECT = {"name": "생성형 AI 기반 산업안전보건 비정형 데이�
 
 PREDECESSOR = "J007"       # 연말형(생성기 v4)에서 올해 말 끝나는 개발 사업 -- 고도화 과제의 이전 사업
 SUPPORT = "J015"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀, v4 고도화 9명)
-EMERGENCY = "J004"         # 긴급 투입 장면의 진행 사업(데이터 마트 -- 이 100명은 모두 데이터플랫폼 실행그룹이다. 사용자 2026-10-23 밤 "데이터플랫폼은 데이터 마트나 비정형쪽")
-# D7 상황을 말로(2026-10-23 밤): 기술 이름 없이 일로만 쓴 현업 문장 -- 규칙은 기술을 하나도 못 찾고(인원·등급만), AI는 ETL·데이터 모델링·SQL을 미루어 본다
-# (OpenAI 3/3·GLM 2/2, 데이터 웨어하우스는 3/5). 미루어 본 기술은 화면에서 꺼져 있어 시연자가 켠다 -- SPOKEN_SKILLS가 켜는 기술이다.
-# 예전: J001 "… AI 에이전트 개발 및 T2SQL …"(사용자 "데이터 플랫폼 인력인데 ai 쪽 사업이면 … ai 실행그룹"으로 바꿈), 그 전 J004 "… 스파크랑 금융 업무 …"(기술 이름이 있어 규칙과 AI가 같았다)
-SPOKEN = "원천 시스템 테이블 구조가 바뀌어서 마트 일 배치 적재가 매일 새벽에 깨져요. 매핑 정의서 다시 잡고 적재 쿼리 고칠 수 있는 중급 한 명 급히 필요합니다"
-SPOKEN_SKILLS = ["ETL", "데이터 모델링", "SQL"]
+EMERGENCY = "J009"         # 긴급 투입 장면의 진행 사업([고도화] 비정형 문서 메타데이터 전환 -- 이 100명은 모두 데이터플랫폼 실행그룹, 사용자 2026-10-23 밤 "데이터플랫폼은 데이터 마트나 비정형쪽")
+# D7 상황을 말로(2026-10-24 사용자 "두명 문장으로 가자" -- 적재 장애 + 손글씨 신청서 인식을 합친 글): 기술 이름 없이 일로만 쓴 현업 문장.
+# 규칙은 기술 0개·인원 1명으로 읽고, AI는 OCR·ETL·SQL(미루어 봄)과 인원 2명을 읽는다(OpenAI 3/3·GLM 2/2). 미루어 본 기술은 화면에서 꺼져 있어 시연자가 켠다 -- SPOKEN_SKILLS.
+# 한 명에게 셋을 다 바라면 OCR 1개월인 데이터 엔지니어가 1위였다(세 기술을 다 가진 사람이 없다) -- 두 명으로 나눠 쓴 글이다.
+# 예전: J004 "원천 시스템 테이블 구조가 바뀌어서 …"(사용자 "애매하네"), J001 "… AI 에이전트 개발 및 T2SQL …", 그 전 J004 "… 스파크랑 금융 업무 …"(기술 이름이 있어 규칙과 AI가 같았다)
+SPOKEN = ("고도화 범위에 손글씨 신청서 인식이 추가됐는데, 인식한 결과를 싣는 새벽 적재 배치도 계속 실패해요. "
+          "스캔 문서에서 글자 뽑아 본 사람 한 명, 적재 프로그램이랑 쿼리 고칠 사람 한 명, 둘 다 중급으로 급히 필요합니다")
+SPOKEN_SKILLS = ["비정형 문서 처리(OCR)", "ETL", "SQL"]
+SPOKEN_HEADCOUNT = 2       # AI가 읽은 인원(규칙은 "한 명"만 보고 1) -- 화면은 AI 값으로 칸을 채운다
 
 
 def _entries(ws):
@@ -111,15 +114,16 @@ def main() -> None:
         out["review_new"] = _brief_doc(doc)
         ws = applied["workspace"]                    # 확정 응답(바로 위 r은 검토 자료 응답이다, Codex 리뷰)
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": 1,
-                                                "pull_budget": 1, "note": "적재 장애"})
+                                                "pull_budget": 1, "note": "과업 추가·적재 장애"})
         r.raise_for_status()
         plan = r.json()
         # 상황을 말로(D7): 같은 판에서 상황 글의 요구(인원·등급은 규칙, 기술은 AI가 미루어 보고 시연자가 켠 SPOKEN_SKILLS)로 추천을 받으면 무엇이 나오나.
         # 이 스크립트는 AI를 부르지 않는다 -- 켤 기술은 위 측정(OpenAI 3회·GLM 2회)에서 매번 나온 것으로 고정했다
         from api.rag.request_parse import parse_request
         from core.ingest.skills import load_dictionary
-        said = parse_request(SPOKEN, load_dictionary())    # 인원·등급(규칙도 같다) -- 기술은 AI가 미루어 본 것을 시연자가 켠다
+        said = parse_request(SPOKEN, load_dictionary())    # 등급(규칙도 같다) -- 기술은 AI가 미루어 본 것을 시연자가 켜고, 인원은 AI가 읽은 2명
         skills = list(dict.fromkeys([x["name"] for x in said["skills"] if x["kind"] == "explicit"] + SPOKEN_SKILLS))
+        said["headcount"] = SPOKEN_HEADCOUNT
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": said["headcount"] or 1,
                                                 "grade": said["grade"], "skills": skills, "pull_budget": 1, "note": SPOKEN})
         r.raise_for_status()
@@ -141,7 +145,7 @@ def main() -> None:
                             "standby": plain_standby,
                             "moved": plan["best"].get("diff", {}).get("moved")}
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": plan["best"]["entries"],
-                                                 "source": "emergency", "note": f"{EMERGENCY} 적재 장애", **plan["apply_hint"]})
+                                                 "source": "emergency", "note": f"{EMERGENCY} 과업 추가·적재 장애", **plan["apply_hint"]})
         r.raise_for_status()
         v2 = r.json()["workspace"]["dataset_version"]
         r = c.post(f"/api/review-docs/{v2}/{EMERGENCY}")
