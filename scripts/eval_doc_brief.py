@@ -7,6 +7,8 @@
   · G4 검사기 일관성 100%(살아남은 항목을 같은 검사기로 다시 잼 -- **구조상 0이 나오는 자기 검증이라 환각이 없다는 증거가 아니다**, 폴백 리뷰 S10)
   · G5 요약 "인력·역량 요구" 칸이 빈 자료 ≤ 1/7.
 - 주의: 가상 자료는 표가 정돈되고 "(N개월)"·"월 M만 원"이 그대로 적혀 규칙만으로도 G1~G3를 넘는다 -- AI의 몫은 실제 공공 자료(--real-dir)에서 사람이 본다.
+- G6(2026-10-23 "나눠 읽기 적용"): 긴 가상 자료 `rehearsal/data/rfp_docs/long1.txt`(claude-a, 8.3만 자) 요약이 2조각 이상으로 **모두 AI로** 읽히고, 근거 말이 4만 자 뒤에 있는
+  **AI 항목**이 1개 이상 -- 구조 확인일 뿐 요약 품질은 재지 않는다(항목은 결과 파일에 남겨 사람이 본다, 리뷰 S3).
 - 보고만: 고객 구분 맞음, 규칙(AI 없음) 같은 표, GLM-5.3-Flash high(사내 LLM 대리, 가상 자료만), 시간·비용·버린 칸 이유.
 - `--real-dir`: 실제 공공 자료(저장소 밖) -- OpenAI만, 결과는 `--real-out`(기본 저장소 밖)으로. 정답 없음 -- 사람이 리포트에서 본다.
 
@@ -33,7 +35,22 @@ OUT = ROOT / "rehearsal" / "results" / "doc-brief.json"
 GLM_MODEL, GLM_EFFORT, GLM_URL = "glm-5.3-flash", "high", "https://api.z.ai/api/paas/v4"
 WON_PER_POINT = 10_000
 GATES = {"G1_name": "사업명 맞음 >= 6/7", "G2_months": "기간 개월 맞음 >= 6/7", "G3_monthly": "월 예산(점) 맞음 >= 6/7",
-         "G4_checker_consistency": "검사기 일관성 100%(자기 검증 -- 환각 없음의 증거 아님)", "G5_staffing": "인력·역량 요구 칸이 빈 자료 <= 1/7"}
+         "G4_checker_consistency": "검사기 일관성 100%(자기 검증 -- 환각 없음의 증거 아님)", "G5_staffing": "인력·역량 요구 칸이 빈 자료 <= 1/7",
+         "G6_long_doc": "긴 자료(8.3만 자) 요약이 2조각 이상·모두 AI · 4만 자 뒤 AI 근거 항목 >= 1(구조 확인, 품질 아님)"}
+LONG_DOC = ROOT / "rehearsal" / "data" / "rfp_docs" / "long1.txt"
+
+
+def long_doc(*, client=None, model=None, effort=None, price=None) -> dict:
+    """긴 자료 요약 -- 조각 수, 4만 자 뒤 근거 항목 수, 시간·비용."""
+    from api.rag.doc_brief import summarize_document
+    text = LONG_DOC.read_text(encoding="utf-8")
+    s = summarize_document(text, "제안요청서", client=client, model=model, reasoning_effort=effort, price=price)
+    items = [i for sec in s["sections"] for i in sec["items"]]
+    return {"chars": len(text), "method": s["method"], "chunks": [c["method"] for c in s["chunks"]], "items": len(items),
+            "items_after_40k": sum(1 for i in items if i["start"] >= 40_000 and i.get("source") == "ai"), "usage": s["usage"],
+            "dropped": [d["why"] for d in s["dropped"]], "warnings": s["warnings"], "one_line": s["one_line"],
+            "item_list": [{"section": sec["key"], "text": i["text"], "quote": i["quote"][:80], "start": i["start"], "source": i.get("source")}
+                          for sec in s["sections"] for i in sec["items"]]}
 
 
 def _norm(s: str) -> str:
@@ -116,10 +133,13 @@ def score(items, rows) -> dict:
             "dropped_meta": dropped_meta, "dropped_summary": dropped_sum, "rows": per}
 
 
-def gates(s: dict) -> dict:
+def gates(s: dict, long: dict | None = None) -> dict:
     n = s["n"]
-    return {"G1_name": s["name"] >= n - 1, "G2_months": s["months"] >= n - 1, "G3_monthly": s["monthly"] >= n - 1,
-            "G4_checker_consistency": s["summary_bad_items"] == 0, "G5_staffing": s["empty_staffing"] <= 1}
+    out = {"G1_name": s["name"] >= n - 1, "G2_months": s["months"] >= n - 1, "G3_monthly": s["monthly"] >= n - 1,
+           "G4_checker_consistency": s["summary_bad_items"] == 0, "G5_staffing": s["empty_staffing"] <= 1}
+    if long is not None:
+        out["G6_long_doc"] = len(long["chunks"]) >= 2 and all(c == "ai" for c in long["chunks"]) and long["items_after_40k"] >= 1
+    return out
 
 
 def real_docs(path: Path, out_path: Path, *, client, model, effort, price) -> None:
@@ -167,21 +187,23 @@ def main() -> None:
         print(f"OpenAI {model} ({effort})", flush=True)
         oa = OpenAI(timeout=180, max_retries=1)
         ai = score(items, run(items, client=oa, model=model, effort=effort, price=pricing["models"].get(model)))
-        res["methods"]["openai"] = {**ai, "model": model, "reasoning_effort": effort}
-        res["gates"] = gates(ai)
+        long_ai = long_doc(client=oa, model=model, effort=effort, price=pricing["models"].get(model))
+        res["methods"]["openai"] = {**ai, "model": model, "reasoning_effort": effort, "long_doc": long_ai}
+        res["gates"] = gates(ai, long_ai)
         if os.environ.get("ZAI_API_KEY"):
             print(f"GLM {GLM_MODEL} ({GLM_EFFORT})", flush=True)
             glm_client = OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=600, max_retries=1)
             glm = score(items, run(items, client=glm_client, model=GLM_MODEL, effort=GLM_EFFORT, price=pricing["models"].get(GLM_MODEL)))
-            res["methods"]["glm"] = {**glm, "model": GLM_MODEL, "reasoning_effort": GLM_EFFORT}
-            res["gates_glm_report_only"] = gates(glm)
+            long_glm = long_doc(client=glm_client, model=GLM_MODEL, effort=GLM_EFFORT, price=pricing["models"].get(GLM_MODEL))
+            res["methods"]["glm"] = {**glm, "model": GLM_MODEL, "reasoning_effort": GLM_EFFORT, "long_doc": long_glm}
+            res["gates_glm_report_only"] = gates(glm, long_glm)
         else:
             res["methods"]["glm"] = {"skipped": "ZAI_API_KEY 없음"}
         if a.real_dir:
             real_docs(Path(a.real_dir), Path(a.real_out), client=oa, model=model, effort=effort,
                       price=pricing["models"].get(model))
     OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), "utf-8")
-    brief = {k: {m: v.get(m) for m in ("name", "months", "total", "monthly", "sector", "ai_fields", "summary_items", "summary_bad_items", "empty_staffing",
+    brief = {k: {m: v.get(m) for m in ("name", "months", "total", "monthly", "sector", "ai_fields", "long_doc", "summary_items", "summary_bad_items", "empty_staffing",
                                          "latency_p50", "cost_usd")} for k, v in res["methods"].items() if "rows" in v}
     print(json.dumps({"brief": brief, "gates": res.get("gates"), "gates_glm_report_only": res.get("gates_glm_report_only")},
                      ensure_ascii=False, indent=1))

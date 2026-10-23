@@ -1,7 +1,7 @@
 {
  "experiment": "doc-brief",
- "when": "2026-10-23T20:15:55+09:00",
- "commit": "341a584",
+ "when": "2026-10-23T23:07:44+09:00",
+ "commit": "92103af",
  "dirty": true,
  "docs": 7,
  "gates_def": {
@@ -9,7 +9,8 @@
   "G2_months": "기간 개월 맞음 >= 6/7",
   "G3_monthly": "월 예산(점) 맞음 >= 6/7",
   "G4_checker_consistency": "검사기 일관성 100%(자기 검증 -- 환각 없음의 증거 아님)",
-  "G5_staffing": "인력·역량 요구 칸이 빈 자료 <= 1/7"
+  "G5_staffing": "인력·역량 요구 칸이 빈 자료 <= 1/7",
+  "G6_long_doc": "긴 자료(8.3만 자) 요약이 2조각 이상·모두 AI · 4만 자 뒤 AI 근거 항목 >= 1(구조 확인, 품질 아님)"
  },
  "methods": {
   "rule": {
@@ -224,14 +225,16 @@
     "budget": 7,
     "sector": 7
    },
-   "summary_items": 96,
+   "summary_items": 105,
    "summary_bad_items": 0,
    "empty_staffing": 0,
-   "latency_p50": 9.165,
-   "latency_max": 15.48,
-   "cost_usd": 0.00528,
+   "latency_p50": 5.109999999999999,
+   "latency_max": 8.27,
+   "cost_usd": 0.00533,
    "dropped_meta": [],
-   "dropped_summary": [],
+   "dropped_summary": [
+    "근거 말이 자료에 없다"
+   ],
    "rows": [
     {
      "id": "j001-sow",
@@ -248,14 +251,14 @@
       "sector": "대외금융"
      },
      "summary_items": {
-      "overview": 1,
-      "scope": 2,
+      "overview": 2,
+      "scope": 4,
       "schedule": 1,
       "budget": 1,
-      "staffing": 3,
+      "staffing": 5,
       "evaluation": 0,
-      "constraints": 2,
-      "deliverables": 2
+      "constraints": 1,
+      "deliverables": 3
      }
     },
     {
@@ -273,14 +276,14 @@
       "sector": "대외공공"
      },
      "summary_items": {
-      "overview": 2,
-      "scope": 4,
-      "schedule": 1,
-      "budget": 2,
+      "overview": 1,
+      "scope": 3,
+      "schedule": 2,
+      "budget": 0,
       "staffing": 3,
       "evaluation": 0,
       "constraints": 0,
-      "deliverables": 3
+      "deliverables": 1
      }
     },
     {
@@ -298,7 +301,7 @@
       "sector": "대외공공"
      },
      "summary_items": {
-      "overview": 1,
+      "overview": 2,
       "scope": 4,
       "schedule": 2,
       "budget": 2,
@@ -323,14 +326,14 @@
       "sector": "대외금융"
      },
      "summary_items": {
-      "overview": 1,
+      "overview": 2,
       "scope": 2,
       "schedule": 2,
       "budget": 1,
       "staffing": 5,
       "evaluation": 1,
       "constraints": 1,
-      "deliverables": 0
+      "deliverables": 1
      }
     },
     {
@@ -349,12 +352,12 @@
      },
      "summary_items": {
       "overview": 2,
-      "scope": 2,
+      "scope": 5,
       "schedule": 2,
       "budget": 1,
       "staffing": 5,
       "evaluation": 0,
-      "constraints": 0,
+      "constraints": 1,
       "deliverables": 0
      }
     },
@@ -376,10 +379,10 @@
       "overview": 1,
       "scope": 4,
       "schedule": 2,
-      "budget": 2,
+      "budget": 1,
       "staffing": 4,
       "evaluation": 0,
-      "constraints": 0,
+      "constraints": 2,
       "deliverables": 0
      }
     },
@@ -398,10 +401,10 @@
       "sector": "대외공공"
      },
      "summary_items": {
-      "overview": 1,
-      "scope": 3,
+      "overview": 2,
+      "scope": 4,
       "schedule": 2,
-      "budget": 2,
+      "budget": 1,
       "staffing": 4,
       "evaluation": 1,
       "constraints": 0,
@@ -410,7 +413,216 @@
     }
    ],
    "model": "gpt-6-luna",
-   "reasoning_effort": "low"
+   "reasoning_effort": "low",
+   "long_doc": {
+    "chars": 83197,
+    "method": "ai",
+    "chunks": [
+     "ai",
+     "ai",
+     "ai"
+    ],
+    "items": 26,
+    "items_after_40k": 13,
+    "usage": {
+     "latency_s": 9.94,
+     "in": 49218,
+     "out": 2825,
+     "model": "gpt-6-luna",
+     "cost_usd": 0.006335
+    },
+    "dropped": [
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자"
+    ],
+    "warnings": [],
+    "one_line": "민원 응용 시스템을 전자정부 표준프레임워크로 재개발하고 PostgreSQL 구축·자료 이행을 수행한다.",
+    "item_list": [
+     {
+      "section": "overview",
+      "text": "시민 민원을 한 곳에서 처리하도록 민원 응용 시스템을 다시 만든다.",
+      "quote": "시민이 여러 창구에서 따로 신청하던 민원을 한 곳에서 처리하도록 민원 응용 시스템을 다시 만든다.",
+      "start": 99,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "민원 응용 시스템을 전자정부 표준프레임워크로 재개발한다.",
+      "quote": "민원 응용 시스템 재개발(전자정부 표준프레임워크 적용)",
+      "start": 235,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "위험 관리 대장에 위험 요소를 기록하고 대응 계획을 점검합니다.",
+      "quote": "위험 요소를 식별하여 위험 관리 대장에 기록하고 대응 계획을 주기적으로 점검한다.",
+      "start": 40282,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "신규 PostgreSQL 데이터베이스를 구축한다.",
+      "quote": "신규 데이터베이스 구축(PostgreSQL)",
+      "start": 268,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "사업 관리 도구에 일정·이슈·결정 사항을 기록하고 발주기관이 열람하도록 합니다.",
+      "quote": "사업 관리 도구에 일정·이슈·결정 사항을 기록하고 발주기관이 열람할 수 있게 한다.",
+      "start": 40454,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "기존 민원 자료를 이행한다.",
+      "quote": "기존 민원 자료의 데이터 이행",
+      "start": 295,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "사업수행계획서는 착수일부터 5일 이내 제출하도록 기재되어 있다.",
+      "quote": "계약상대자는 착수일로부터 5일 이내에 사업수행계획서를 제출하여 발주기관의 승인을 받아야 한다.",
+      "start": 367,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "주간·월간 보고 일정은 요구사항별로 요일과 날짜가 다르게 기재되어 있습니다.",
+      "quote": "주간 보고는 매주 화요일에, 월간 보고는 매월 21일까지 실시하고 회의록을 작성한다.",
+      "start": 40094,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "주간 보고는 매주 월요일, 월간 보고는 매월 5일까지 실시하도록 기재되어 있다.",
+      "quote": "주간 보고는 매주 월요일에, 월간 보고는 매월 5일까지 실시하고 회의록을 작성한다.",
+      "start": 27936,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "일정 지연이 예상되면 12일 전에 알리도록 기재되어 있다.",
+      "quote": "사업 일정은 단계별 완료 기준과 함께 관리하고, 지연이 예상되면 12일 전에 알린다.",
+      "start": 28027,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "제안 설명회는 발주기관이 정한 일시에 진행하며, 발표 시간은 요구사항별로 다르게 기재돼 있다.",
+      "quote": "제안 설명회는 발주기관이 정한 일시에 진행하며 발표 시간은 19분 이내로 한다.",
+      "start": 79956,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "인력 교체 시 동등 이상 경력 인력으로 교체하고 사전 승인을 받는다.",
+      "quote": "인력 교체가 필요한 경우 동등 이상의 경력을 가진 인력으로 교체하고 사전 승인을 받는다.",
+      "start": 28466,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "응용 개발은 Java 경력 5년 이상 3명입니다.",
+      "quote": "응용 개발: Java 경력 5년 이상 3명",
+      "start": 54865,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "전자정부 표준프레임워크 경력 3년 이상 2명입니다.",
+      "quote": "프레임워크: 전자정부 표준프레임워크 경력 3년 이상 2명",
+      "start": 54891,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "PostgreSQL 경력 3년 이상 1명입니다.",
+      "quote": "데이터베이스: PostgreSQL 경력 3년 이상 1명",
+      "start": 54925,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "데이터 이행 경력 4년 이상 1명입니다.",
+      "quote": "데이터 이행: 데이터 이행 경력 4년 이상 1명",
+      "start": 54958,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "수행 장소는 발주기관과 협의하며 필요한 사무 집기는 계약상대자가 준비한다.",
+      "quote": "사업 수행 장소는 발주기관과 협의하여 정하며, 필요한 사무 집기는 계약상대자가 준비한다.",
+      "start": 910,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "Kubernetes 기반 운영 환경 구축 경험자를 우대합니다.",
+      "quote": "Kubernetes 기반 운영 환경 구축 경험자 우대",
+      "start": 79700,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "업무 내용을 외부에 알리지 않아야 한다.",
+      "quote": "계약상대자는 사업 수행 중 알게 된 발주기관의 업무 내용을 외부에 알리지 않는다.",
+      "start": 820,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "하도급 계획서는 사전에 제출하고 승인을 받아야 한다.",
+      "quote": "하도급이 필요한 경우 하도급 계획서를 제출하여 사전에 승인을 받는다.",
+      "start": 1004,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "정해진 목차와 분량을 준수해야 하며, 분량 초과 부분은 평가하지 않는다.",
+      "quote": "제안서는 정해진 목차와 분량을 지켜 작성하며, 분량을 넘는 부분은 평가하지 않는다.",
+      "start": 79780,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "사업 종료 후 26일 이내 관련 자료를 인계하고 인수인계서를 작성하도록 기재되어 있다.",
+      "quote": "사업 종료 후 26일 이내에 관련 자료 일체를 발주기관에 인계하고 인수인계서를 작성한다.",
+      "start": 648,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "감리 지적 사항의 조치 결과를 기한 내 제출해야 하며 기한은 요구사항별로 다릅니다.",
+      "quote": "발주기관의 감리 지적 사항은 14일 이내에 조치 결과를 제출한다.",
+      "start": 40011,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "사업수행계획서를 발주기관 양식과 목차에 맞춰 작성하고 양식 변경은 미리 협의한다.",
+      "quote": "산출물은 발주기관이 정한 양식과 목차에 따라 작성하고, 양식을 바꿀 때에는 미리 협의한다.",
+      "start": 464,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "단계 종료 시 점검 회의를 열고 결과에 따른 조치 계획을 제출합니다.",
+      "quote": "단계 종료 시 단계 점검 회의를 열고 점검 결과에 따른 조치 계획을 제출한다.",
+      "start": 40547,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "품질 관리 계획서를 제출하고 단계별 산출물 검토 기록을 남깁니다.",
+      "quote": "단계별 산출물은 내부 검토를 거쳐 제출하며 검토 기록을 함께 남긴다.",
+      "start": 55118,
+      "source": "ai"
+     }
+    ]
+   }
   },
   "glm": {
    "n": 7,
@@ -420,20 +632,18 @@
    "monthly": 7,
    "sector": 7,
    "ai_fields": {
-    "name": 5,
+    "name": 6,
     "duration_months": 6,
     "budget": 7,
     "sector": 6
    },
-   "summary_items": 108,
+   "summary_items": 111,
    "summary_bad_items": 0,
    "empty_staffing": 0,
-   "latency_p50": 8.17,
-   "latency_max": 14.42,
-   "cost_usd": 0.00723,
+   "latency_p50": 8.44,
+   "latency_max": 16.57,
+   "cost_usd": 0.00758,
    "dropped_meta": [
-    "모양이 다르다",
-    "모양이 다르다",
     "모양이 다르다",
     "모양이 다르다",
     "모양이 다르다",
@@ -443,8 +653,6 @@
     "모양이 다르다"
    ],
    "dropped_summary": [
-    "근거 말에 없는 숫자",
-    "길거나 항목 근거에 없는 숫자·이름·연락처",
     "길거나 항목 근거에 없는 숫자·이름·연락처",
     "길거나 항목 근거에 없는 숫자·이름·연락처"
    ],
@@ -464,13 +672,13 @@
       "sector": "대외금융"
      },
      "summary_items": {
-      "overview": 1,
-      "scope": 5,
+      "overview": 2,
+      "scope": 4,
       "schedule": 1,
       "budget": 1,
       "staffing": 4,
       "evaluation": 0,
-      "constraints": 1,
+      "constraints": 2,
       "deliverables": 3
      }
     },
@@ -491,12 +699,12 @@
      "summary_items": {
       "overview": 1,
       "scope": 5,
-      "schedule": 2,
-      "budget": 2,
+      "schedule": 1,
+      "budget": 3,
       "staffing": 3,
       "evaluation": 0,
       "constraints": 0,
-      "deliverables": 2
+      "deliverables": 3
      }
     },
     {
@@ -514,12 +722,12 @@
       "sector": "대외공공"
      },
      "summary_items": {
-      "overview": 2,
-      "scope": 5,
+      "overview": 1,
+      "scope": 3,
       "schedule": 2,
-      "budget": 1,
-      "staffing": 5,
-      "evaluation": 0,
+      "budget": 2,
+      "staffing": 3,
+      "evaluation": 2,
       "constraints": 0,
       "deliverables": 1
      }
@@ -541,12 +749,12 @@
      "summary_items": {
       "overview": 2,
       "scope": 4,
-      "schedule": 3,
+      "schedule": 2,
       "budget": 1,
       "staffing": 5,
       "evaluation": 1,
-      "constraints": 1,
-      "deliverables": 1
+      "constraints": 2,
+      "deliverables": 0
      }
     },
     {
@@ -565,12 +773,12 @@
      },
      "summary_items": {
       "overview": 2,
-      "scope": 2,
+      "scope": 5,
       "schedule": 2,
       "budget": 1,
       "staffing": 4,
       "evaluation": 0,
-      "constraints": 1,
+      "constraints": 2,
       "deliverables": 0
      }
     },
@@ -589,10 +797,10 @@
       "sector": "대외공공"
      },
      "summary_items": {
-      "overview": 2,
+      "overview": 1,
       "scope": 4,
       "schedule": 2,
-      "budget": 1,
+      "budget": 2,
       "staffing": 4,
       "evaluation": 0,
       "constraints": 2,
@@ -616,17 +824,240 @@
      "summary_items": {
       "overview": 1,
       "scope": 4,
-      "schedule": 3,
+      "schedule": 2,
       "budget": 2,
-      "staffing": 4,
+      "staffing": 5,
       "evaluation": 1,
-      "constraints": 0,
-      "deliverables": 1
+      "constraints": 1,
+      "deliverables": 0
      }
     }
    ],
    "model": "glm-5.3-flash",
-   "reasoning_effort": "high"
+   "reasoning_effort": "high",
+   "long_doc": {
+    "chars": 83197,
+    "method": "ai",
+    "chunks": [
+     "ai",
+     "ai",
+     "ai"
+    ],
+    "items": 27,
+    "items_after_40k": 17,
+    "usage": {
+     "latency_s": 25.74,
+     "in": 64405,
+     "out": 4089,
+     "model": "glm-5.3-flash",
+     "cost_usd": 0.011706
+    },
+    "dropped": [
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자",
+     "근거 말에 없는 숫자"
+    ],
+    "warnings": [],
+    "one_line": "민원 시스템 재개발·DB 구축·데이터 이행을 과업으로 하는 제안요청서이며, 일반·관리 요구사항이 반복 나열된 조각이다.",
+    "item_list": [
+     {
+      "section": "overview",
+      "text": "우대 사항으로 Kubernetes 기반 운영 환경 구축 경험자를 우대한다.",
+      "quote": "3. 우대 사항\n- Kubernetes 기반 운영 환경 구축 경험자 우대",
+      "start": 79689,
+      "source": "ai"
+     },
+     {
+      "section": "overview",
+      "text": "□□시가 민원 응용 시스템을 재구축해 여러 창구의 민원을 한 곳에서 처리하게 하는 사업이다.",
+      "quote": "시민이 여러 창구에서 따로 신청하던 민원을 한 곳에서 처리하도록 민원 응용 시스템을 다시 만든다.",
+      "start": 99,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "민원 응용 시스템을 전자정부 표준프레임워크로 재개발한다.",
+      "quote": "민원 응용 시스템 재개발(전자정부 표준프레임워크 적용)",
+      "start": 235,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "신규 데이터베이스로 PostgreSQL을 구축한다.",
+      "quote": "신규 데이터베이스 구축(PostgreSQL)",
+      "start": 268,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "기존 민원 자료의 데이터 이행을 수행한다.",
+      "quote": "기존 민원 자료의 데이터 이행",
+      "start": 295,
+      "source": "ai"
+     },
+     {
+      "section": "scope",
+      "text": "현행 통계 시스템(Tibero, JEUS)은 본 사업 범위가 아니다.",
+      "quote": "현행 통계 시스템은 Tibero 데이터베이스와 JEUS 위에서 운영 중이며 본 사업 범위가 아니다.",
+      "start": 167,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "주간·월간 보고와 회의록 작성이 요구되며, 요구 건마다 보고 요일과 월간 마감일이 다르게 명시되어 있다.",
+      "quote": "주간 보고는 매주 화요일에, 월간 보고는 매월 21일까지 실시하고 회의록을 작성한다.",
+      "start": 40094,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "단계 종료 시 단계 점검 회의를 열고 조치 계획을 제출해야 한다.",
+      "quote": "단계 종료 시 단계 점검 회의를 열고 점검 결과에 따른 조치 계획을 제출한다.",
+      "start": 40547,
+      "source": "ai"
+     },
+     {
+      "section": "schedule",
+      "text": "관리 요구사항에서 주간·월간 보고를 실시하고 회의록을 작성한다.",
+      "quote": "주간 보고는 매주 월요일에, 월간 보고는 매월 5일까지 실시하고 회의록을 작성한다.",
+      "start": 27936,
+      "source": "ai"
+     },
+     {
+      "section": "budget",
+      "text": "하도급이 필요한 경우 하도급 계획서를 제출해 사전 승인을 받는다.",
+      "quote": "하도급이 필요한 경우 하도급 계획서를 제출하여 사전에 승인을 받는다.",
+      "start": 1004,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "응용 개발은 Java 경력 5년 이상 3명을 투입한다.",
+      "quote": "응용 개발: Java 경력 5년 이상 3명",
+      "start": 54865,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "프레임워크는 전자정부 표준프레임워크 경력 3년 이상 2명을 투입한다.",
+      "quote": "프레임워크: 전자정부 표준프레임워크 경력 3년 이상 2명",
+      "start": 54891,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "데이터베이스는 PostgreSQL 경력 3년 이상 1명, 데이터 이행은 경력 4년 이상 1명을 투입한다.",
+      "quote": "데이터베이스: PostgreSQL 경력 3년 이상 1명\n- 데이터 이행: 데이터 이행 경력 4년 이상 1명",
+      "start": 54925,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "인력 교체 시 동등 이상 경력을 가진 인력으로 교체하고 사전 승인을 받아야 한다.",
+      "quote": "인력 교체가 필요한 경우 동등 이상의 경력을 가진 인력으로 교체하고 사전 승인을 받는다.",
+      "start": 40637,
+      "source": "ai"
+     },
+     {
+      "section": "staffing",
+      "text": "제안서와 함께 투입 인력 경력 증명서를 제출해야 함",
+      "quote": "제안서와 함께 회사 소개서, 사업 실적 증명서, 투입 인력 경력 증명서를 제출한다.",
+      "start": 79868,
+      "source": "ai"
+     },
+     {
+      "section": "evaluation",
+      "text": "제안서는 정해진 목차와 분량을 지켜야 하고 분량 초과 부분은 평가하지 않음",
+      "quote": "제안서는 정해진 목차와 분량을 지켜 작성하며, 분량을 넘는 부분은 평가하지 않는다.",
+      "start": 79780,
+      "source": "ai"
+     },
+     {
+      "section": "evaluation",
+      "text": "서류를 허위로 작성하면 평가에서 제외됨",
+      "quote": "제출한 서류는 돌려주지 않으며, 허위로 작성한 경우 평가에서 제외한다.",
+      "start": 80042,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "사업 관리 도구에 일정·이슈·결정 사항을 기록하고 발주기관이 열람할 수 있게 해야 한다.",
+      "quote": "사업 관리 도구에 일정·이슈·결정 사항을 기록하고 발주기관이 열람할 수 있게 한다.",
+      "start": 40454,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "위험 요소를 위험 관리 대장에 기록하고 대응 계획을 주기적으로 점검한다.",
+      "quote": "위험 요소를 식별하여 위험 관리 대장에 기록하고 대응 계획을 주기적으로 점검한다.",
+      "start": 40282,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "의사소통 계획을 수립해 보고 체계와 연락 담당자를 정해야 한다.",
+      "quote": "의사소통 계획을 수립하여 보고 체계와 연락 담당자를 정한다.",
+      "start": 40374,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "운영 전환 전에 전환 계획과 복귀 계획을 함께 수립해야 한다.",
+      "quote": "운영 전환 전에 전환 계획과 복귀 계획을 함께 수립한다.",
+      "start": 55446,
+      "source": "ai"
+     },
+     {
+      "section": "constraints",
+      "text": "발주기관 업무 내용을 외부에 알리지 않는 비밀유지 의무가 있다.",
+      "quote": "계약상대자는 사업 수행 중 알게 된 발주기관의 업무 내용을 외부에 알리지 않는다.",
+      "start": 820,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "단계별 산출물은 내부 검토 후 제출하고 검토 기록을 남긴다.",
+      "quote": "단계별 산출물은 내부 검토를 거쳐 제출하며 검토 기록을 함께 남긴다.",
+      "start": 55118,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "사용자 요구 사항과 산출물의 연결 관계를 추적표로 관리한다.",
+      "quote": "사용자 요구 사항과 산출물의 연결 관계를 추적표로 관리한다.",
+      "start": 55201,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "결함은 발견 즉시 결함 관리 대장에 기록하고 조치 결과를 확인한다.",
+      "quote": "결함은 발견 즉시 결함 관리 대장에 기록하고 조치 결과를 확인한다.",
+      "start": 55279,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "산출물은 발주기관이 정한 양식과 목차에 따라 작성한다.",
+      "quote": "산출물은 발주기관이 정한 양식과 목차에 따라 작성하고, 양식을 바꿀 때에는 미리 협의한다.",
+      "start": 464,
+      "source": "ai"
+     },
+     {
+      "section": "deliverables",
+      "text": "사업 종료 후 관련 자료를 인계하고 인수인계서를 작성한다.",
+      "quote": "사업 종료 후 26일 이내에 관련 자료 일체를 발주기관에 인계하고 인수인계서를 작성한다.",
+      "start": 648,
+      "source": "ai"
+     }
+    ]
+   }
   }
  },
  "gates": {
@@ -634,13 +1065,15 @@
   "G2_months": true,
   "G3_monthly": true,
   "G4_checker_consistency": true,
-  "G5_staffing": true
+  "G5_staffing": true,
+  "G6_long_doc": true
  },
  "gates_glm_report_only": {
   "G1_name": true,
   "G2_months": true,
   "G3_monthly": true,
   "G4_checker_consistency": true,
-  "G5_staffing": true
+  "G5_staffing": true,
+  "G6_long_doc": true
  }
 }
