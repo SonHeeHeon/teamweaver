@@ -368,7 +368,7 @@ def _xml_lines(raw: bytes, tag: str, para: str) -> list[str]:
     return lines
 
 
-def _xml_text(data: bytes, pattern: str, tag: str, para: str) -> str:
+def _xml_text(data: bytes, pattern: str, tag: str, para: str, info: dict | None = None) -> str:
     import io
     import zipfile
     import zlib
@@ -380,10 +380,14 @@ def _xml_text(data: bytes, pattern: str, tag: str, para: str) -> str:
         for n in names:
             used += zf.getinfo(n).file_size
             if used > _MAX_XML_BYTES:
+                if info is not None:
+                    info["truncated"] = True
                 break
             with zf.open(n) as f:
                 raw = f.read(_MAX_XML_BYTES + 1)
             if len(raw) > _MAX_XML_BYTES:
+                if info is not None:
+                    info["truncated"] = True
                 break
             out += _xml_lines(raw, tag, para)       # 외부 엔티티를 풀지 않는다(표준 라이브러리), 엔티티 폭증은 expat 2.4.1+가 막는다
     except (zipfile.BadZipFile, zipfile.LargeZipFile, RuntimeError, NotImplementedError, EOFError, zlib.error, ValueError,
@@ -393,9 +397,11 @@ def _xml_text(data: bytes, pattern: str, tag: str, para: str) -> str:
     return "\n".join(out)
 
 
-def extract_text(ext: str, data: bytes) -> str | None:
+def extract_text(ext: str, data: bytes, info: dict | None = None) -> str | None:
     """자료의 글자(앞 MAX_TEXT_CHARS자). 읽지 못하는 형식(ZIP 묶음)은 None. 깨진 파일·배포용 한글은 DocError(그 밖의 예외는 내지 않는다).
-    서버 요청 경로에서는 extract_text_limited를 쓴다."""
+    info(dict)를 주면 상한(글자 20만 자·PDF 200쪽·압축 해제·XML 크기)에서 끊었을 때 info["truncated"] = True -- 정리한 뒤 길이로는
+    알 수 없다(빈칸을 지우면 20만 자 아래로 줄어 "끝까지 읽음"처럼 보였다, 나눠 읽기 리뷰 2차 S-a). 서버 요청 경로에서는 extract_text_limited를 쓴다."""
+    info = info if info is not None else {}
     ext = ext.lower()
     if ext not in FORMATS:
         return None
@@ -406,24 +412,32 @@ def extract_text(ext: str, data: bytes) -> str | None:
         try:
             reader = PdfReader(io.BytesIO(data))
             parts = []
-            for page in reader.pages[:MAX_PDF_PAGES]:
+            pages = reader.pages
+            if len(pages) > MAX_PDF_PAGES:
+                info["truncated"] = True
+            for i, page in enumerate(pages[:MAX_PDF_PAGES]):
                 parts.append(page.extract_text() or "")
                 if sum(map(len, parts)) > MAX_TEXT_CHARS:
+                    if i + 1 < len(pages):
+                        info["truncated"] = True
                     break
         except Exception as exc:       # 남이 만든 파일이라 pypdf가 어떤 예외든 낼 수 있다 -- 읽기 실패로만 알린다
             raise DocError(f"PDF를 읽지 못했다: {type(exc).__name__}") from exc
         text = "\n".join(parts)
     elif ext in _XML_PARTS:
-        text = _xml_text(data, *_XML_PARTS[ext])
+        text = _xml_text(data, *_XML_PARTS[ext], info=info)
     elif ext == "hwp":
         from api.hwp5 import HwpError, hwp_text
         try:
-            text = hwp_text(data, MAX_TEXT_CHARS)
+            text = hwp_text(data, MAX_TEXT_CHARS, info=info)
         except HwpError as exc:
             raise DocError(str(exc)) from exc
     else:
         return None
-    return clean_text(text)
+    full = _clean(text)
+    if len(full) > MAX_TEXT_CHARS:
+        info["truncated"] = True
+    return full[:MAX_TEXT_CHARS]
 
 
 _SURROGATE = re.compile(r"[\ud800-\udfff]")
@@ -433,14 +447,18 @@ _CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 def clean_text(text: str) -> str:
     """뽑은 글자 정리: 짝 없는 대리 문자 → U+FFFD(pypdf는 잘못된 ToUnicode를 surrogatepass로 풀어 남긴다 -- UTF-8로 못 바꿔 한 편이 통째로 실패했다),
     줄바꿈·탭 밖의 제어 문자 제거(ToUnicode 없는 CID 글꼴 PDF의 NUL 등), 공백 정리, 앞 MAX_TEXT_CHARS자(2차 폴백 리뷰 SHOULD)."""
+    return _clean(text)[:MAX_TEXT_CHARS]
+
+
+def _clean(text: str) -> str:
     text = _CONTROL.sub("", _SURROGATE.sub("\ufffd", unicodedata.normalize("NFC", text)))
     text = re.sub(r"[ \t]+", " ", text)
-    return re.sub(r" *\n *", "\n", text).strip()[:MAX_TEXT_CHARS]         # 줄 앞뒤 공백은 뗀다
+    return re.sub(r" *\n *", "\n", text).strip()         # 줄 앞뒤 공백은 뗀다
 
 
-def _reply(conn, status: str, value) -> None:
+def _reply(conn, status: str, value, truncated: bool = False) -> None:
     # 남이 만든 파일을 해석한 프로세스의 답은 pickle이 아니라 JSON 바이트로 받는다(폴백 리뷰 NIT -- 심층 방어)
-    conn.send_bytes(json.dumps({"status": status, "value": value}, ensure_ascii=False).encode("utf-8"))
+    conn.send_bytes(json.dumps({"status": status, "value": value, "truncated": truncated}, ensure_ascii=False).encode("utf-8"))
 
 
 def _extract_child(conn) -> None:
@@ -452,7 +470,9 @@ def _extract_child(conn) -> None:
             resource.setrlimit(resource.RLIMIT_AS, (_CHILD_MEMORY, _CHILD_MEMORY))
         ext = conn.recv_bytes(16).decode("ascii")
         data = conn.recv_bytes(MAX_BYTES + 16)
-        _reply(conn, "ok", extract_text(ext, data))
+        info: dict = {}
+        text = extract_text(ext, data, info)
+        _reply(conn, "ok", text, bool(info.get("truncated")))
     except DocError as exc:
         _reply(conn, "error", str(exc))
     except BaseException as exc:     # noqa: BLE001 -- 자식 프로세스: 무엇이든 부모에게 실패로 돌려준다
@@ -464,7 +484,7 @@ def _extract_child(conn) -> None:
         conn.close()
 
 
-def extract_text_limited(ext: str, data: bytes, *, seconds: float = EXTRACT_SECONDS) -> str | None:
+def extract_text_limited(ext: str, data: bytes, *, seconds: float = EXTRACT_SECONDS, info: dict | None = None) -> str | None:
     """extract_text를 별도 프로세스(spawn)에서 시간 제한과 함께 돈다. 시작·보내기·읽기 어디서 막혀도 `seconds` 뒤 프로세스를 끝내고 DocError.
     동시에 EXTRACT_PARALLEL개까지(남은 자리가 없으면 그 시간만큼 기다린 뒤 DocError). 부르는 쪽은 스레드에서 부른다(anyio.to_thread)."""
     import multiprocessing as mp
@@ -502,6 +522,8 @@ def extract_text_limited(ext: str, data: bytes, *, seconds: float = EXTRACT_SECO
                 raise DocError(f"문서 글자 읽기가 {seconds:g}초를 넘겨 멈췄다(쪽이 아주 많거나 복잡한 파일)")
             reply = json.loads(parent.recv_bytes(REPLY_MAX_BYTES).decode("utf-8"))
             status, value = reply["status"], reply["value"]
+            if info is not None:
+                info["truncated"] = bool(reply.get("truncated"))
         except (OSError, EOFError, ValueError, KeyError, TypeError) as exc:
             if time.monotonic() >= deadline:
                 raise DocError(f"문서 글자 읽기가 {seconds:g}초를 넘겨 멈췄다(쪽이 아주 많거나 복잡한 파일)") from exc

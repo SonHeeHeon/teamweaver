@@ -667,3 +667,83 @@ def test_summary_is_not_saved_for_a_deleted_document_or_without_ai(yearend, ai_c
         assert c.delete(f"/api/project-docs/J018/{doc['id']}", params={"dataset_version": _v(c)}).status_code == 200
         assert store.save_summary(key, doc["id"], "x" * 64, "v", {"one_line": "인용"}, uploaded=True) is None
         assert not store._summary_file(key, doc["id"]).exists()
+
+
+def test_summary_with_a_failed_chunk_is_not_saved_and_cut_documents_say_so(yearend, ai_client):
+    """나눠 읽기 리뷰 M1·S2: 조각 하나라도 AI가 못 읽은 요약은 저장하지 않는다 · 20만 자에서 잘린 자료는 경고."""
+    from api.main import app
+    from tests import hwp_builder as hb
+    from tests.scenarios.test_doc_brief import ChunkAI, _long_doc
+
+    class RouteChunkAI(ChunkAI):
+        def with_options(self, **kw):
+            return self
+    text, markers = _long_doc()
+    data = hb.hwp([hb.section(*[hb.para(line) for line in text.split("\n")])])
+    with TestClient(app) as c:
+        doc = _up(c, "J018", data, kind="제안요청서(RFP)", filename="긴 제안요청서.hwp", v=_v(c)).json()["doc"]
+        url = f"/api/project-docs/J018/{doc['id']}/summary"
+        with ai_client(RouteChunkAI(markers, fail_on={markers[1]})):
+            made = c.post(url).json()
+        assert made["summary"]["method"] == "ai" and any(ch["method"] == "rule" for ch in made["summary"]["chunks"])
+        assert made["created_at"] is None and c.get(url).json()["summary"] is None              # 저장 안 함
+        with ai_client(RouteChunkAI(markers)):
+            made = c.post(url).json()
+        assert made["created_at"] and c.get(url).json()["summary"]["method"] == "ai"            # 모두 읽으면 저장
+        huge = hb.hwp([hb.section(*[hb.para("과업 설명 문단입니다. " * 60) for _ in range(300)])])  # 약 23만 자
+        big = _up(c, "J018", huge, kind="기타", filename="아주 긴 자료.hwp", v=_v(c)).json()["doc"]
+        with ai_client(None):
+            body = c.post(f"/api/project-docs/J018/{big['id']}/summary").json()
+        assert any("앞부분만 읽었다" in w for w in body["summary"]["warnings"])
+        assert any("앞부분만 읽었다" in w for w in _read(c, huge, filename="아주 긴 자료.hwp").json()["warnings"])
+        short = _read(c, _notice_hwp(), filename="공고.hwp").json()
+        assert not any("앞부분만 읽었다" in w for w in short["warnings"])
+
+
+def test_extraction_reports_truncation_at_every_cap(monkeypatch):
+    """나눠 읽기 리뷰 2차 S-a: 정리한 뒤 길이(빈칸 지움)로는 잘림을 알 수 없다 -- 뽑기가 상한에서 끊었는지 직접 알린다."""
+    import io
+    import pypdf
+    import api.project_docs as store
+    from tests import hwp_builder as hb
+    # PDF 쪽수 상한(글자는 없어도 잘림)
+    w = pypdf.PdfWriter()
+    for _ in range(store.MAX_PDF_PAGES + 1):
+        w.add_blank_page(width=200, height=200)
+    b = io.BytesIO()
+    w.write(b)
+    info = {}
+    store.extract_text("pdf", b.getvalue(), info)
+    assert info["truncated"] is True
+    # PDF 글자 상한 -- 빈칸이 많아 정리하면 20만 자 아래(리뷰어 probe5: 33만 자 → 186,221자, 예전 판정은 "안 잘림")
+
+    class Page:
+        def extract_text(self):
+            return ("요구    사항    " * 160 + "\n") * 1
+
+    class Reader:
+        def __init__(self, _):
+            self.pages = [Page() for _ in range(150)]
+    monkeypatch.setattr(pypdf, "PdfReader", Reader)
+    info = {}
+    text = store.extract_text("pdf", b"%PDF-1.4 fake", info)
+    assert len(text) < store.MAX_TEXT_CHARS and info["truncated"] is True
+    monkeypatch.undo()
+    # HWPX·DOCX XML 크기 상한
+    monkeypatch.setattr(store, "_MAX_XML_BYTES", 200)
+    info = {}
+    store.extract_text("docx", _zipped("word/document.xml", "<w:document xmlns:w='w'><w:body><w:p><w:r><w:t>" + "x" * 500 +
+                                       "</w:t></w:r></w:p></w:body></w:document>"), info)
+    assert info["truncated"] is True
+    monkeypatch.undo()
+    # 옛 한글 글자 상한 · 짧은 자료는 잘리지 않음 · 별도 프로세스도 같은 표시
+    long = hb.hwp([hb.section(*[hb.para("가" * 999) for _ in range(250)])])
+    info = {}
+    store.extract_text("hwp", long, info)
+    assert info["truncated"] is True
+    info = {}
+    store.extract_text("hwp", _notice_hwp(), info)
+    assert not info.get("truncated")
+    info = {}
+    store.extract_text_limited("hwp", long, info=info)
+    assert info["truncated"] is True

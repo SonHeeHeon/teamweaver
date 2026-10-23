@@ -198,18 +198,22 @@ async def project_requirements(request: Request, dataset: ActiveDataset = Depend
 
 
 _UNREADABLE = "ZIP 묶음은 글자를 읽지 못한다 -- 묶음을 풀어 PDF·HWP·HWPX·DOCX 파일을 올린다"
+# 글자 뽑기 상한(20만 자)에서 잘렸을 때 -- 뽑기가 말없이 자르므로 라우트가 알린다(나눠 읽기 리뷰 S2: 35만 자 자료가 "끝까지 읽음"처럼 보였다)
+_CUT_NOTE = (f"자료가 길어 앞부분만 읽었다(글자 {docs_store.MAX_TEXT_CHARS:,}자 · PDF {docs_store.MAX_PDF_PAGES}쪽 · 압축 해제 상한) "
+             "-- 그 뒤 내용은 없다.")
 
 
-async def _text_of(filename: str, data: bytes, ext: str | None = None) -> str:
-    """자료 글자(별도 프로세스 + 시간 제한). 못 읽으면 422."""
+async def _text_of(filename: str, data: bytes, ext: str | None = None) -> tuple[str, bool]:
+    """(자료 글자, 상한에서 끊었나)(별도 프로세스 + 시간 제한). 못 읽으면 422."""
+    info: dict = {}
     try:
         ext = ext or docs_store.ext_of(docs_store.clean_filename(filename))
-        text = await anyio.to_thread.run_sync(lambda: docs_store.extract_text_limited(ext, data))
+        text = await anyio.to_thread.run_sync(lambda: docs_store.extract_text_limited(ext, data, info=info))
     except docs_store.DocError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if text is None:
         raise HTTPException(status_code=422, detail=_UNREADABLE)
-    return text
+    return text, bool(info.get("truncated"))
 
 
 def _ai_args(dataset: ActiveDataset, client) -> tuple[object, str | None, dict]:
@@ -235,7 +239,7 @@ async def read_requirements_route(request: Request, filename: str = Query(..., m
     데이터를 바꾸지 않는다 -- 화면이 고른 제안만 등록 양식에 넣는다."""
     _octet_stream(request)
     check_dataset_version(dataset_version, dataset)
-    text = await _text_of(filename, await _read_capped(request))
+    text, cut = await _text_of(filename, await _read_capped(request))
     from api.deps import llm_client_for
     from api.rag.justification import justification_settings
     from api.rag.rfp_read import read_requirements
@@ -254,6 +258,8 @@ async def read_requirements_route(request: Request, filename: str = Query(..., m
     out = await anyio.to_thread.run_sync(go)
     if use is None:
         out["fallback_reason"] = why
+    if cut:
+        out["warnings"] = [*out.get("warnings", []), _CUT_NOTE]
     from api.deps import ai_destination
     # 보낸 곳도 싣는다 -- 설정에서 AI 주소만 바꾸면 미리 읽어 둔 안내가 낡는다(2차 폴백 리뷰 NIT)
     return {**out, "dataset_version": dataset.info.version, "ai_available": use is not None, "chars": len(text),
@@ -270,7 +276,7 @@ async def read_meta_route(request: Request, filename: str = Query(..., min_lengt
     from api.rag.doc_brief import read_project_meta
     _octet_stream(request)
     check_dataset_version(dataset_version, dataset)
-    text = await _text_of(filename, await _read_capped(request))
+    text, _ = await _text_of(filename, await _read_capped(request))     # 정보 채우기는 앞부분만 쓰므로 잘림 안내가 필요 없다
     use, why, kw = _ai_args(dataset, client)
     out = await anyio.to_thread.run_sync(lambda: read_project_meta(text, **kw))
     if use is None:
@@ -291,13 +297,13 @@ async def get_summary(request: Request, project_id: str = _PID, doc_id: str = _D
                       dataset: ActiveDataset = Depends(get_dataset), client=Depends(get_openai_client_or_none)) -> dict:
     """저장된 부서장용 요약(자료 해시·지시문 판이 맞을 때만, 없으면 null). 요약을 만들지는 않는다(돈·외부 전송은 사람이 눌러서)."""
     from api.deps import ai_destination
-    from api.rag.doc_brief import PROMPT_VERSION
+    from api.rag.doc_brief import cache_version
     doc = _find(request, dataset, project_id, doc_id)
     sha = doc.get("sha256")                     # 목록에 적힌 해시(열 때마다 최대 20MiB를 다시 읽지 않게, 폴백 리뷰 NIT 3)
     if not sha:
         data = await anyio.to_thread.run_sync(lambda: _doc_bytes(dataset, doc))
         sha = hashlib.sha256(data).hexdigest()
-    rec = docs_store.load_summary(_key(dataset), doc_id, sha, PROMPT_VERSION)
+    rec = docs_store.load_summary(_key(dataset), doc_id, sha, cache_version())
     return {"doc": docs_store.public(doc), "readable": doc["ext"] in docs_store.TEXT_EXTS,
             "summary": rec["summary"] if rec else None, "created_at": rec["created_at"] if rec else None,
             "ai_destination": ai_destination(dataset, client)}
@@ -309,18 +315,21 @@ async def make_summary(request: Request, project_id: str = _PID, doc_id: str = _
     """부서장용 요약 만들기(2026-10-23 사용자 "각각의 자료를 llm으로 잘 압축 요약한(이 서비스를 쓰는 부서장입장에서 필요로 하는 정보를 잘 요약해서 보여주기)").
     항목마다 근거 말(원문 확인)·숫자 검사(`api/rag/doc_brief`). 만든 요약은 저장해 다시 열면 돈이 들지 않는다. 데이터 판은 바꾸지 않는다."""
     from api.deps import ai_destination
-    from api.rag.doc_brief import PROMPT_VERSION, summarize_document
+    from api.rag.doc_brief import cache_version, summarize_document
     doc = _find(request, dataset, project_id, doc_id)
     data = await anyio.to_thread.run_sync(lambda: _doc_bytes(dataset, doc))
-    text = await _text_of(doc["filename"], data, doc["ext"])
+    text, cut = await _text_of(doc["filename"], data, doc["ext"])
     use, why, kw = _ai_args(dataset, client)
     out = await anyio.to_thread.run_sync(lambda: summarize_document(text, doc["kind"], **kw))
     if use is None:
         out["fallback_reason"] = why
     out["chars"] = len(text)
+    if cut:
+        out["warnings"] = [*out.get("warnings", []), _CUT_NOTE]
     rec = None
-    if out["method"] == "ai":                   # AI 요약만 저장한다 -- 일시 오류로 생긴 규칙 요약이 다시 열 때마다 나오지 않게(폴백 리뷰 NIT 1)
+    # 모든 조각을 AI가 읽은 요약만 저장한다 -- 일시 오류로 생긴 규칙 요약·규칙 줄이 섞인 요약이 다시 열 때마다 나오지 않게(폴백 리뷰 NIT 1 · 나눠 읽기 리뷰 M1)
+    if out["method"] == "ai" and all(c.get("method") == "ai" for c in out.get("chunks") or []):
         rec = await anyio.to_thread.run_sync(lambda: docs_store.save_summary(
-            _key(dataset), doc_id, hashlib.sha256(data).hexdigest(), PROMPT_VERSION, out, uploaded=not doc.get("demo")))
+            _key(dataset), doc_id, hashlib.sha256(data).hexdigest(), cache_version(), out, uploaded=not doc.get("demo")))
     return {"doc": docs_store.public(doc), "readable": True, "summary": out, "created_at": rec["created_at"] if rec else None,
             "ai_destination": ai_destination(dataset, client)}
