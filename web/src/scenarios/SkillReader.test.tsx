@@ -36,10 +36,13 @@ describe("자료에서 필요 기술 읽기(2026-10-23 사용자 \"자료를 넣
   it("자료가 없거나 글자를 못 읽는 형식이면 안내만 한다", () => {
     const { rerender } = render(<SkillReader docs={[]} current={[]} canonicalOf={(n) => n} onApply={vi.fn()} />);
     expect(screen.getByText(/① 기본에서 발주 자료/)).toBeInTheDocument();
-    rerender(<SkillReader docs={[{ file: new File(["x"], "과업.hwp"), kind: "과업지시서" }]} current={[]}
+    rerender(<SkillReader docs={[{ file: new File(["x"], "묶음.zip"), kind: "기타" }]} current={[]}
                           canonicalOf={(n) => n} onApply={vi.fn()} />);
-    expect(screen.getByText(/PDF·HWPX로 저장해 올리면/)).toBeInTheDocument();
+    expect(screen.getByText(/ZIP 묶음\). 묶음을 풀어/)).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
+    rerender(<SkillReader docs={[{ file: new File(["x"], "사전규격.HWP"), kind: "사전규격" }]} current={[]}
+                          canonicalOf={(n) => n} onApply={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "사전규격.HWP 읽기" })).toBeInTheDocument();   // 옛 한글도 읽는다(2026-10-23)
   });
 
   it("필수만 기본 체크하고, 이미 적은 기술(별칭)은 비교해 보이며, 고른 것만 넣는다", async () => {
@@ -64,6 +67,44 @@ describe("자료에서 필요 기술 읽기(2026-10-23 사용자 \"자료를 넣
     fireEvent.click(within(list).getByRole("checkbox", { name: "Java 넣기" }));
     fireEvent.click(screen.getByRole("button", { name: "고른 2개 필요 기술에 넣기" }));
     expect(onApply).toHaveBeenCalledWith([{ name: "ETL", min_months: 60, headcount: 2 }, { name: "자바", min_months: 96, headcount: 1 }]);
+  });
+
+  it("필수에 경력·인원이 하나도 없으면(실제 공공 사전규격) 추정이라고 알리고, 추정을 한 번에 고르고 풀 수 있다", async () => {
+    const guessedOnly: ReadResult = {
+      ...RESULT, method: "ai", model: "gpt-6-luna", fallback_reason: null, ai_available: true,
+      skills: [
+        { concept_id: "nlp", name: "자연어 처리(NLP)", months: null, headcount: null, quote: "자연어 처리 기반 탐지 모델 설계", start: 0, end: 10, kind: "required" },
+        { concept_id: "rag", name: "RAG·벡터DB", months: null, headcount: null, quote: "RAG 구조 적용 고려", start: 20, end: 30, kind: "required" },
+        { concept_id: "java", name: "Java", months: null, headcount: null, quote: "Java", start: 40, end: 44, kind: "required" },
+        { concept_id: "kafka", name: "Kafka", months: null, headcount: null, quote: "Kafka 우대", start: 50, end: 56, kind: "preferred" },
+      ],
+    };
+    vi.mocked(docsApi.readRequirements).mockResolvedValue(guessedOnly);
+    const onApply = vi.fn();
+    render(<SkillReader docs={[{ file: new File(["x"], "사전규격.hwp"), kind: "사전규격" }]} current={[{ name: "Java", min_months: 36, headcount: 1 }]}
+                        canonicalOf={(n) => n} onApply={onApply} />);
+    fireEvent.click(screen.getByRole("button", { name: "사전규격.hwp 읽기" }));
+    const list = await screen.findByRole("list", { name: "읽은 필요 기술" });
+    expect(screen.getByRole("note")).toHaveTextContent("읽은 부분에서 기술별 경력·인원을 찾지 못해");   // 관찰한 사실로(폴백 리뷰 S2)
+    expect(within(list).getAllByRole("checkbox").filter((c) => (c as HTMLInputElement).checked)).toHaveLength(0);   // 기본 체크 규칙은 그대로
+    fireEvent.click(screen.getByRole("button", { name: "추정 2개 모두 선택" }));            // 이미 적은 Java·우대 Kafka는 빼고
+    expect(within(list).getByRole("checkbox", { name: "자연어 처리(NLP) 넣기" })).toBeChecked();
+    expect(within(list).getByRole("checkbox", { name: "Java 넣기" })).not.toBeChecked();
+    expect(within(list).getByRole("checkbox", { name: "Kafka 넣기" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "추정 2개 선택 풀기" }));
+    expect(within(list).getByRole("checkbox", { name: "RAG·벡터DB 넣기" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "추정 2개 모두 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "고른 2개 필요 기술에 넣기" }));
+    expect(onApply).toHaveBeenCalledWith([{ name: "자연어 처리(NLP)", min_months: 24, headcount: 1 }, { name: "RAG·벡터DB", min_months: 24, headcount: 1 }]);
+  });
+
+  it("경력·인원이 적힌 필수가 하나라도 있으면 '인력 요건 없음' 안내는 없고, 추정만 버튼으로 고른다", async () => {
+    vi.mocked(docsApi.readRequirements).mockResolvedValue(RESULT);
+    render(<SkillReader docs={[{ file: pdf(), kind: "제안요청서(RFP)" }]} current={[]} canonicalOf={(n) => n} onApply={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "RFP.pdf 읽기" }));
+    await screen.findByRole("list", { name: "읽은 필요 기술" });
+    expect(screen.queryByRole("note")).toBeNull();
+    expect(screen.getByRole("button", { name: "추정 1개 모두 선택" })).toBeInTheDocument();
   });
 
   it("읽는 동안 멈출 수 있고, 오류는 보인다", async () => {

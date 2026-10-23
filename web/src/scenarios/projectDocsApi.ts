@@ -90,8 +90,9 @@ export interface ReadResult {
   /** 이번에 자료 글자를 보낸 곳(설정이 바뀌었으면 미리 읽은 안내와 다를 수 있다) */
   ai_destination?: AiDestination;
 }
-/** 글자를 꺼낼 수 있는 형식 -- 옛 한글(HWP 5.x)·ZIP 묶음은 못 읽는다(PDF·HWPX로 저장해 올린다) */
-export const TEXT_EXTS = ["pdf", "hwpx", "docx", "pptx", "xlsx"] as const;
+/** 글자를 꺼낼 수 있는 형식(서버 api/project_docs.TEXT_EXTS와 같다) -- 옛 한글(HWP 5.x)도 2026-10-23부터 읽는다(배포용·암호 문서는 서버가 이유와 함께 거절).
+ *  ZIP 묶음은 못 읽는다(풀어서 올린다) */
+export const TEXT_EXTS = ["pdf", "hwp", "hwpx", "docx", "pptx", "xlsx"] as const;
 export function readable(file: File): boolean {
   const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "";
   return (TEXT_EXTS as readonly string[]).includes(ext);

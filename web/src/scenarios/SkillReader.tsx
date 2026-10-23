@@ -3,6 +3,8 @@
  *  AI 결과는 **제안**이다: 경력이나 인원이 적힌 필수만 기본 체크하고, 우대·이미 적은 기술·**경력도 인원도 없는 필수**(과업 범위 문장에서 추정한 것 --
  *  화면 확인 2026-10-23: J020 RFP의 "이전 뒤 성능·보안 점검"에서 성능 테스트·정보보안이 필수로 나왔다)는 체크하지 않는다. 이미 적은 값은 덮어쓰기 전에
  *  비교해 보인다. 넣은 뒤에는 기존 칸에서 고치고 뺀다.
+ *  실제 공공 사전규격(2026-10-23 사용자가 나라장터에서 받은 3편)은 인력 요건이 없어 제안이 모두 추정이다 -- 그때는 그 사실을 알리고,
+ *  "추정 모두 선택"으로 한 번에 고를 수 있게 한다(사용자 결정 "안내 + 모두 선택 버튼", 기본 체크 규칙은 그대로).
  *  근거 말(quote)은 서버가 원문에 있는지 확인한 글이다. */
 import { useEffect, useRef, useState } from "react";
 import { Spinner } from "../ui";
@@ -46,12 +48,18 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
   const have = new Map(current.map((s) => [canonicalOf(s.name).toLowerCase(), s]));
   const existing = (s: ReadSkill) => have.get(s.name.toLowerCase()) ?? null;
   const guessed = (s: ReadSkill) => s.kind === "required" && s.months === null && s.headcount === null;
+  const required = result ? result.skills.filter((s) => s.kind === "required") : [];
+  /** 읽은 결과에 경력·인원이 하나도 없다 -- 필수 제안이 모두 과업 내용에서 추정한 것. "자료에 요건이 없다"는 증거는 아니다
+   *  (앞부분만 읽었거나 규칙 읽기가 표 형식 요건을 놓쳤을 수 있다 -- 폴백 리뷰 S2), 그래서 안내는 관찰한 사실로 쓴다 */
+  const noStaffing = required.length > 0 && required.every(guessed);
+  const guessIds = required.filter((s) => guessed(s) && !existing(s)).map((s) => s.concept_id);
+  const guessPicked = guessIds.length > 0 && guessIds.every((id) => checked.has(id));
 
   if (docs.length === 0) {
-    return <p className="text-xs text-slate-500">① 기본에서 발주 자료(PDF·HWPX·DOCX 등)를 고르면 그 자료에서 필요 기술을 읽어 채울 수 있습니다.</p>;
+    return <p className="text-xs text-slate-500">① 기본에서 발주 자료(PDF·HWP·HWPX·DOCX 등)를 고르면 그 자료에서 필요 기술을 읽어 채울 수 있습니다.</p>;
   }
   if (files.length === 0) {
-    return <p className="text-xs text-amber-800">고른 자료는 글자를 읽을 수 없는 형식입니다(옛 한글 HWP·ZIP). PDF·HWPX로 저장해 올리면 필요 기술을 읽을 수 있습니다.</p>;
+    return <p className="text-xs text-amber-800">고른 자료는 글자를 읽을 수 없는 형식입니다(ZIP 묶음). 묶음을 풀어 PDF·HWP·HWPX·DOCX 파일을 올리면 필요 기술을 읽을 수 있습니다.</p>;
   }
 
   async function run() {
@@ -82,6 +90,12 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
     setChecked(new Set());
   }
   const toggle = (id: string) => setChecked((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  /** 추정 제안(이미 적은 기술 빼고)을 한 번에 고르거나 푼다 */
+  const pickGuessed = () => setChecked((prev) => {
+    const n = new Set(prev);
+    for (const id of guessIds) { if (guessPicked) n.delete(id); else n.add(id); }
+    return n;
+  });
 
   return (
     <section className="rounded-md border border-pine-200 bg-[#F6FAF8] px-3 py-2.5" aria-label="자료에서 필요 기술 읽기">
@@ -118,6 +132,11 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
               : `${fallbackText(result.fallback_reason)} AI 없이 사전의 기술 이름으로 찾았습니다(문장 말로 필수·우대를 가름).`}
           </p>
           {result.warnings.map((w) => <p key={w} className="text-amber-800">{w}</p>)}
+          {noStaffing && (
+            <p className="rounded bg-amber-50 px-2 py-1 text-amber-900" role="note">
+              읽은 부분에서 기술별 경력·인원을 찾지 못해, 아래 필수는 모두 과업 내용에서 추정한 기술입니다. 정말 필요한지 확인하고 고릅니다 —
+              넣으면 경력 {experience(DEFAULT_MONTHS)}·{DEFAULT_HEADCOUNT}명으로 들어가니 아래 필요 기술에서 고칩니다.</p>
+          )}
           {result.skills.length === 0 ? <p className="text-slate-500">자료에서 사전에 있는 기술을 찾지 못했습니다. 아래에서 직접 넣습니다.</p> : (
             <ul className="space-y-1" aria-label="읽은 필요 기술">
               {result.skills.map((s) => {
@@ -150,8 +169,14 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
             <p className="text-slate-500">사전에 없는 말: {result.unmapped_terms.join(", ")} — 필요하면 아래 "기술 검색"으로 그대로 넣습니다.</p>
           )}
           {result.skills.length > 0 && (
-            <button type="button" className="btn-primary px-2.5 py-1 text-xs" disabled={checked.size === 0} onClick={apply}>
-              고른 {checked.size}개 필요 기술에 넣기</button>
+            <div className="flex flex-wrap items-center gap-2">
+              {guessIds.length > 0 && (
+                <button type="button" className="btn px-2.5 py-1 text-xs" onClick={pickGuessed}>
+                  {guessPicked ? `추정 ${guessIds.length}개 선택 풀기` : `추정 ${guessIds.length}개 모두 선택`}</button>
+              )}
+              <button type="button" className="btn-primary px-2.5 py-1 text-xs" disabled={checked.size === 0} onClick={apply}>
+                고른 {checked.size}개 필요 기술에 넣기</button>
+            </div>
           )}
         </div>
       )}
