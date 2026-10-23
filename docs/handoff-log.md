@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-23 · claude-a · D6 공고문 흐름 · D7 J001 상황 글 · 슬라이드 8의 100% 표기 · 실제 공공 자료 측정 도구(claude-b 요청 `docs/requests/2026-10-23-doc-meta-brief.md`)
+- 브랜치/커밋: `feat/claude-a-d6d7-1023`(main `92103af`에서) `ca0c36c..` — `069bf57`(화면) · `74ca518`(장면 숫자) · `f5ae930`(실제 자료 측정 도구) · 문서 커밋. main 미병합. a가 main을 origin에 push(`6ce76f5..92103af`, b의 병합).
+- 사용자: "긴급투입에선 예시로 이렇게 하자 … j001 … '프로젝트 실행 도중 ai 에이전트 과업 범위 추가로 인해 에이전트 개발 인력이 더 필요. ai 에이전트 개발 및 t2sql 쪽 경험이 있는 사람'" · "슬라이드에 보면 100%는 근데 말이 안되지않나?" ·
+  "실제 공공 자료 10개를 줄게. 이걸로 하자" · "glm에 공개자료 보내도 돼" · "b가 요청한거 더 있으면 … 함께 해줘".
+- 한 일:
+  - D6(b 요청 3절): 공고문으로 사업 정보 채우기(7개월·월 1,429점, AI 계산 값은 사람이 체크) → 제안요청서로 필요 기술 → 사업명 눌러 자료 요약 → 대기 인력 임민우. 정원 중급 1(월 1,429점에 한 명). 12월 시작이라 끝나 가는 인력 갈래는 비어 있다.
+  - D7: J001 + 사용자 문장에 "중급 한 명"을 붙임 — 원문 그대로면 AI 에이전트 경력 없는 김소율(특급)이 1위(조직 경력자 23명·최장 16개월). AI 몫은 "T2SQL"을 사전에 없는 말로 알리고 SQL을 미루어 본 기술로 내는 것. 추천 이지유(J014 → J001) +1.04, J014 ← 전다은.
+  - `rehearsal/scenario_numbers.py`가 **말로 받은 추천을 확정**한다(예전엔 기술 없는 추천과 같을 때만 — J001에서는 달라 다른 사람을 확정하고 있었다).
+  - 화면(b 영역 포함): `RequestReader` 같은 기술 두 번 → 칩 하나(React 키 중복), `EmergencyScreen` "확정하면 사업 요구 기술에 X(12개월 이상 1명)을(를) 더합니다".
+  - 슬라이드 1·4·8(발주 자료 카드에 사업 정보·요약, 100%를 머리 숫자로 안 씀 — "찾은 정답 46 → 55 / 55개"·"1순위 27 → 95%"), 대본 큐시트(D6 70초, D5·D7·D9 −5초)·길이·숫자 절·T2c, 보고서 2.2·3.3 새 줄·8.3 발주 자료 시간 추정·9 한계(10쪽).
+  - `rehearsal/rfp_real_eval.py`: 실제 공공 자료 측정(자료는 저장소 밖, 정답 `rehearsal/data/rfp_gold_real.json`은 아직 없음 — 자료를 받은 뒤 AI 전에 커밋, 작성 과정 "authoring", 사람 시간은 추정 식).
+- 상대 영향(claude-b): 네 요청 `doc-meta-brief`는 처리됨(work-split). `api/rag/doc_brief.py`는 손대지 않았다(네 작업 트리의 고침과 겹치지 않음). `web/src/scenarios/EmergencyScreen.tsx`·`RequestReader.tsx`에 한 줄씩 — 병합 때 확인. 웹 시험 400(+1).
+- 검증: `uv run --group benchmark pytest -q` → 2222 passed, 1 skipped, 21 deselected · 웹 400 · `npx tsc -b` · `npm run build` · `python -m rehearsal.scenario_numbers` · 슬라이드 넘침 0·8번 카드 아래 565px < 띠 576px · 보고서 PDF 10쪽. Codex 한도 소진 → 자체 검토.
+- 근거: `.omc/plan/2026-10-23-d6d7-real.md` · `.omc/reports/2026-10-23-d6d7-real.md`
+
 ## 2026-10-23 · claude-b · main 병합 — claude-a 발주 자료 나눠 읽기·D6 + claude-b 옛 한글 읽기·정보 채우기·자료 요약
 - 사용자: "Main 병합해줘" · 충돌은 "양쪽 다 살리기".
 - 브랜치/커밋: `feat/claude-a-rfp-read`(`ca69023`, `docs/claude-a-dedupe-1023` 포함)을 `feat/claude-b-kg-views`에 합친 병합 커밋 → **main을 그 커밋으로 앞으로 옮김(fast-forward, push 안 함)**.
