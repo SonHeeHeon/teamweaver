@@ -172,3 +172,13 @@ export function endMonth(start: string, months: number): string {
   const t = y * 12 + (m - 1) + months - 1;
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, "0")}`;
 }
+
+/** 같은 파일인가(양식이 읽은 결과를 기억하는 열쇠) */
+export const docKey = (f: File) => `${f.name}|${f.size}|${f.lastModified}`;
+
+/** 읽기 전에 알리는 보내는 곳(폴백 리뷰 S2 -- 가상 데이터에서도 실제 비밀유지 RFP를 고르면 회사 밖 AI로 간다) */
+export const DESTINATION: Record<AiDestination, string> = {
+  external: "자료 글자가 회사 밖 AI(OpenAI 등)로 갑니다 — 비밀유지 자료(민간 RFP 등)는 읽지 마세요. 사람 정보는 보내지 않습니다.",
+  onprem: "자료 글자가 사내 AI로 갑니다. 사람 정보는 보내지 않습니다.",
+  none: "AI를 쓰지 않고(키 없음·실데이터 외부 차단) 사전의 기술 이름으로 읽습니다.",
+};

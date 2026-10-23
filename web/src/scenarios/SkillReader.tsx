@@ -5,11 +5,14 @@
  *  비교해 보인다. 넣은 뒤에는 기존 칸에서 고치고 뺀다.
  *  실제 공공 사전규격(2026-10-23 사용자가 나라장터에서 받은 3편)은 인력 요건이 없어 제안이 모두 추정이다 -- 그때는 그 사실을 알리고,
  *  "추정 모두 선택"으로 한 번에 고를 수 있게 한다(사용자 결정 "안내 + 모두 선택 버튼", 기본 체크 규칙은 그대로).
- *  근거 말(quote)은 서버가 원문에 있는지 확인한 글이다. */
+ *  근거 말(quote)은 서버가 원문에 있는지 확인한 글이다.
+ *  등록 양식에서는 ①에서 올린 자료를 ④에 들어오면 저절로 읽는다(2026-10-23 사용자 "'1.기본'에서 넣으면 알아서 '4.필요 기술'에도 … 추천 필요 기술 항목들이 뜨도록")
+ *  -- 제안요청서 → 과업지시서 → 사전규격 순으로 한 편을 고르고, 읽은 결과는 양식이 기억해 단계를 오가도 다시 보내지 않는다(auto · cache). */
 import { useEffect, useRef, useState } from "react";
 import { Spinner } from "../ui";
 import {
-  experience, fallbackText, readRequirements, readable, type AiDestination, type PendingDoc, type ReadResult, type ReadSkill,
+  DESTINATION, docKey, experience, fallbackText, readRequirements, readable, type DocKind, type PendingDoc, type ReadResult, type ReadSkill,
+  type AiDestination,
 } from "./projectDocsApi";
 import type { SkillNeed } from "./workspaceApi";
 
@@ -17,14 +20,9 @@ import type { SkillNeed } from "./workspaceApi";
 const DEFAULT_MONTHS = 24;
 const DEFAULT_HEADCOUNT = 1;
 
-/** 읽기 전에 알리는 보내는 곳(폴백 리뷰 S2 -- 가상 데이터에서도 실제 비밀유지 RFP를 고르면 회사 밖 AI로 간다) */
-const DESTINATION: Record<AiDestination, string> = {
-  external: "자료 글자가 회사 밖 AI(OpenAI 등)로 갑니다 — 비밀유지 자료(민간 RFP 등)는 읽지 마세요. 사람 정보는 보내지 않습니다.",
-  onprem: "자료 글자가 사내 AI로 갑니다. 사람 정보는 보내지 않습니다.",
-  none: "AI를 쓰지 않고(키 없음·실데이터 외부 차단) 사전의 기술 이름으로 읽습니다.",
-};
-
-export function SkillReader({ docs, destination, current, canonicalOf, onApply }: {
+/** 저절로 읽을 자료 순서 -- 기술 요건이 있을 가능성이 큰 것부터(입찰공고문은 입찰 정보뿐이라 맨 뒤, claude-b 확인 2026-10-23) */
+const READ_ORDER: DocKind[] = ["제안요청서(RFP)", "과업지시서", "사전규격", "사업 개요", "기타", "입찰공고문"];
+export function SkillReader({ docs, destination, current, canonicalOf, onApply, auto = false, cache }: {
   docs: PendingDoc[];
   /** 자료 글자를 보낼 곳(서버 `ai_destination`) -- 모르면 일반 안내 */
   destination?: AiDestination | null;
@@ -34,11 +32,16 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
   canonicalOf: (name: string) => string;
   /** 고른 제안을 양식에 합친다(같은 기술이면 값을 바꾼다) */
   onApply: (picked: SkillNeed[]) => void;
+  /** 보이면 저절로 읽는다(등록 양식 ④) */
+  auto?: boolean;
+  /** 읽은 결과(파일 열쇠 → 결과) -- 양식이 쥐고 있어 단계를 오가도 다시 보내지 않는다 */
+  cache?: Map<string, ReadResult>;
 }) {
   const files = docs.filter((d) => readable(d.file));
+  const ranked = [...files].sort((a, b) => READ_ORDER.indexOf(a.kind) - READ_ORDER.indexOf(b.kind));
   // 번호가 아니라 이름으로 고른다 -- ①에서 자료를 바꿔도 다른 파일을 읽지 않게(폴백 리뷰 NIT)
   const [whichName, setWhichName] = useState<string | null>(null);
-  const target = files.find((d) => d.file.name === whichName) ?? files[0];
+  const target = files.find((d) => d.file.name === whichName) ?? ranked[0];
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ReadResult | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -54,6 +57,25 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
   const noStaffing = required.length > 0 && required.every(guessed);
   const guessIds = required.filter((s) => guessed(s) && !existing(s)).map((s) => s.concept_id);
   const guessPicked = guessIds.length > 0 && guessIds.every((id) => checked.has(id));
+  const defaultChecked = (r: ReadResult) =>
+    new Set(r.skills.filter((s) => s.kind === "required" && !existing(s) && !guessed(s)).map((s) => s.concept_id));
+  const targetKey = target ? docKey(target.file) : null;
+  // ④에 들어오면(또는 읽을 자료를 바꾸면) 기억한 결과를 보이거나 저절로 읽는다
+  useEffect(() => {
+    if (!auto || !target || !targetKey) return;
+    const hit = cache?.get(targetKey);
+    if (hit) { setResult(hit); setChecked(defaultChecked(hit)); setError(null); return; }
+    void run();
+  }, [auto, targetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 읽은 뒤 손으로 같은 기술을 적으면 그 제안 체크를 푼다 -- 넣기가 손으로 적은 값을 덮지 않게(다시 체크하면 바꾼다)
+  const currentKey = current.map((x) => canonicalOf(x.name).toLowerCase()).join("|");
+  useEffect(() => {
+    if (!result) return;
+    setChecked((prev) => {
+      const n = new Set([...prev].filter((id) => { const s = result.skills.find((x) => x.concept_id === id); return !s || !existing(s); }));
+      return n.size === prev.size ? prev : n;
+    });
+  }, [currentKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (docs.length === 0) {
     return <p className="text-xs text-slate-500">① 기본에서 발주 자료(PDF·HWP·HWPX·DOCX 등)를 고르면 그 자료에서 필요 기술을 읽어 채울 수 있습니다.</p>;
@@ -63,6 +85,7 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
   }
 
   async function run() {
+    if (!target) return;
     const file = target.file;
     ctl.current?.abort();
     const c = new AbortController();
@@ -73,8 +96,9 @@ export function SkillReader({ docs, destination, current, canonicalOf, onApply }
     try {
       const r = await readRequirements(file, c.signal);
       if (c.signal.aborted) return;
+      cache?.set(docKey(file), r);
       setResult(r);
-      setChecked(new Set(r.skills.filter((s) => s.kind === "required" && !existing(s) && !guessed(s)).map((s) => s.concept_id)));
+      setChecked(defaultChecked(r));
     } catch (e) {
       if (c.signal.aborted) return;
       setError((e as Error).message);
