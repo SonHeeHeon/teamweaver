@@ -38,7 +38,6 @@
   .arch .row { display:flex; gap:6px; flex-wrap:wrap; }
   .arch .blk { flex:1 1 0; min-width: 9em; background:#fff; border:1px solid var(--line); border-radius:7px; padding:5px 8px; line-height:1.4; }
   .arch .blk b { color:var(--accent); }
-  .arch .blk code { color:var(--muted); font-size:.8em; display:block; }
   .arch .ai { background:#f3f8f5; border-color:#b9dcc9; }
   .arch .chk { background:#f3f6fb; border-color:#bfd0e6; }
   .kpi { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin:8px 0; break-inside: avoid; }
@@ -49,6 +48,8 @@
   .kpi div { background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px 9px; font-size:.82rem; line-height:1.4; }
   .kpi b { display:block; font-size:1.2rem; color:var(--accent); }
   .lead { font-size: 1.02rem; margin: .2rem 0 .6rem; }
+  table.stack td.area, table.stack th.area { background: var(--chip); font-weight: 700; color: var(--accent); white-space: nowrap; width: 6.5em; }
+  table.stack .half { border-left: 3px solid var(--accent); }
   @media (max-width: 640px) { .kpi { grid-template-columns: 1fr 1fr; } .arch { grid-template-columns: 1fr; } }
   @page { size: A4; margin: 14mm 14mm 15mm; }
   @media print {
@@ -114,7 +115,7 @@
 <div><b>최적 기술 탐색</b>솔버 3종(CBC·SCIP·HiGHS)을 같은 문제로 비교해 가장 많이 푼 HiGHS를 채택. LLM에게 100명 배치를 직접 맡기면 규칙을 어기거나 최적화 결과의 55% 품질에 그쳐, <strong>배치는 최적화 엔진이, AI는 글 읽기·쓰기를</strong> 맡도록 나눴다(3.4·3.7)</div>
 </div>
 <h3>2.1 구현 기능 — 영상에 나오지 않는 것 중심</h3>
-<p>화면 흐름은 시연 영상이 순서대로 보여 준다 — 입력 검증·낯선 기술 이름 정리(D1), 연간 계획과 안 확정(D2·D4), 소명 글(D3), What-if(D5), 신규 사업 편성(D6), 긴급 투입·상황을 말로(D7), 인사팀 검토 자료·변경 보고서(D8), 300명·조직 기술 지도(D9). 여기에는 영상에 나오지 않거나 지나가는 기능과 확정 규칙만 적는다.</p>
+<p>화면 흐름은 시연 영상이 순서대로 보여 준다 — 입력 검증·낯선 기술 이름 정리, 연간 계획과 안 확정, 소명 글, What-if, 신규 사업 편성, 긴급 투입·상황을 말로, 인사팀 검토 자료·변경 보고서, 300명 조직·조직 기술 지도. 여기에는 영상에 나오지 않거나 지나가는 기능과 확정 규칙만 적는다.</p>
 <div class="wrap"><table>
 <tr><th style="white-space:nowrap">영역</th><th>영상 밖 기능 · 규칙</th></tr>
 <tr><td style="white-space:nowrap">데이터</td><td>인사 시스템에서 매일 자동으로 받기(받기에 실패하면 지금 데이터 유지). 인력이 진행 중인 사업에서 쓰는 기술의 경력 개월은 달이 지나면 서비스가 자동으로 더한다. 한 번의 편성(데이터·설정·결과)을 파일 하나로 저장하고 다시 불러오기(불러올 때 지금 규칙으로 다시 검사)</td></tr>
@@ -220,7 +221,7 @@
 <li><b>부서장의 판단을 지우지 않고 남긴다.</b> 계산이 정하지 않는 것 — 등급 대체, 프로젝트 동시 수행 허용, 확정 취소 — 은 부서장이 사유와 함께 고르고, 데이터의 새 판(되돌리기 가능)과 인사팀 검토 자료의 잠긴 사실로 남는다. 계산 모델은 그대로 두어 부족 신호를 묻지 않는다.</li>
 <li><b>측정한 대로 보고한다.</b> 사업 효과는 <code>NOT_CALIBRATED</code>로 표시하고, 가상 성과로 효과를 "입증"하는 것은 순환 검증이라 하지 않았다. 100명 최선안이 시간 한도에서 멈춰 2.5% 여지가 남은 것, LLM이 20명에서는 솔버의 89~94%까지 낸 것처럼 불리하거나 애매한 결과도 그대로 적는다.</li>
 <li><b>실제 도입을 염두에 둔 설계.</b> 실제 인사 자료와 같은 입력 계약·검증 리포트, 평가 원문을 화면·AI에 보내지 않고 항목 라벨만 쓰는 비공개 모드, 외부 AI 차단 규칙, 사내 LLM 전환 시 차이 측정(3.6).</li>
-<li><b>AI로 개발 과정 자체를 운영했다.</b> Claude 두 계정과 Codex가 파일 소유 영역을 나눠 병행 개발하고(작업 분담표·인수인계 기록), 변경은 반영 전에 독립 리뷰를 받았다. 리뷰 지적은 실패하는 시험으로 먼저 고정하고, 측정은 판정 기준을 먼저 고정했다 — 약 12주 동안 코드 변경 기록(커밋) 약 660건, 자동 시험 2,233개.</li>
+<li><b>AI로 개발했다.</b> Claude 두 계정과 Codex가 맡은 영역을 나눠 함께 개발했다.</li>
 </ul>
 
 <h2>5. 시스템 구성</h2>
@@ -228,43 +229,43 @@
 <div class="arch">
   <div class="lay">입력</div>
   <div class="row">
-    <div class="blk"><b>인사 시스템 API(기본) · CSV 묶음</b> 사람·단가표·기술 경력·업무 이력·월별 가용·사업·등급/기술 요구·동료 평가·현재 배치 등 14종 <code>core/ingest</code></div>
-    <div class="blk chk"><b>엄격 검증·변환</b> 오류 파일·줄·칸, 경력 개월 → 대리 레벨, 기술 이름 사전 정규화·하위 기술 인정 <code>core/ingest/loader·skills</code></div>
+    <div class="blk"><b>인사 시스템 API(기본) · CSV 묶음</b> 사람·단가표·기술 경력·업무 이력·월별 가용·사업·등급/기술 요구·동료 평가·현재 배치 등 14종</div>
+    <div class="blk chk"><b>엄격 검증·변환</b> 오류 파일·줄·칸, 경력 개월 → 대리 레벨, 기술 이름 사전 정규화·하위 기술 인정</div>
   </div>
   <div class="lay">지식</div>
   <div class="row">
-    <div class="blk"><b>관계 그래프</b> 누가 누구와 몇 달 일했나, 익숙한 쌍 <code>core/graph/memory_graph</code></div>
-    <div class="blk"><b>근거 색인</b> 동료 평가 원문·인정 경력(SQLite) <code>core/graph/sqlite_store</code></div>
-    <div class="blk"><b>지식 그래프</b> 사업·기술·사람 사실, 기술 지도 <code>core/kg</code></div>
+    <div class="blk"><b>관계 그래프</b> 누가 누구와 몇 달 일했나, 익숙한 쌍</div>
+    <div class="blk"><b>근거 색인</b> 동료 평가 원문·인정 경력(SQLite)</div>
+    <div class="blk"><b>지식 그래프</b> 사업·기술·사람 사실, 기술 지도</div>
   </div>
   <div class="lay">계산</div>
   <div class="row">
-    <div class="blk"><b>점수</b> 기술 적합 S · 협업 C <code>core/scoring</code></div>
-    <div class="blk"><b>MILP</b> HiGHS 시드 포트폴리오 · 대안 · 운영 중 K <code>core/optimize</code></div>
-    <div class="blk chk"><b>독립 검증 · 평가기</b> 원자료로 재계산, 모든 배치를 같은 기준으로 채점 <code>validation · core/evaluate</code></div>
+    <div class="blk"><b>점수</b> 기술 적합 S · 협업 C</div>
+    <div class="blk"><b>MILP</b> HiGHS 시드 포트폴리오 · 대안 · 운영 중 K</div>
+    <div class="blk chk"><b>독립 검증 · 평가기</b> 원자료로 재계산, 모든 배치를 같은 기준으로 채점</div>
   </div>
   <div class="lay">AI</div>
   <div class="row">
-    <div class="blk ai"><b>평가 글 판정</b> 극성 → C <code>api/review_judge</code></div>
-    <div class="blk ai"><b>교체 설명(RAG)</b> + 인용 원문 대조 <code>api/rag/briefing</code></div>
-    <div class="blk ai"><b>소명 글(GraphRAG)</b> + 사실·문법 검사 <code>core/kg/justify</code></div>
+    <div class="blk ai"><b>평가 글 판정</b> 극성 → C</div>
+    <div class="blk ai"><b>교체 설명(RAG)</b> + 인용 원문 대조</div>
+    <div class="blk ai"><b>소명 글(GraphRAG)</b> + 사실·문법 검사</div>
   </div>
   <div class="lay">서비스·화면</div>
   <div class="row">
-    <div class="blk"><b>FastAPI</b> 최적화(SSE)·교체·운영 중·소명·작업 데이터 판(등록·확정 미리 계산·확정·취소)·검토 자료·설정, 결과 서명 <code>api/</code></div>
-    <div class="blk"><b>웹</b> React · TypeScript <code>web/</code></div>
-    <div class="blk"><b>PDF</b> 서명 확인 → 서버 재계산 → Chromium 출력 <code>api/pdf</code></div>
+    <div class="blk"><b>FastAPI</b> 최적화(SSE)·교체·운영 중·소명·작업 데이터 판(등록·확정 미리 계산·확정·취소)·검토 자료·설정, 결과 서명</div>
+    <div class="blk"><b>웹</b> React · TypeScript</div>
+    <div class="blk"><b>PDF</b> 서명 확인 → 서버 재계산 → Chromium 출력</div>
   </div>
 </div>
 <p class="muted">흐름: 입력이 검증을 통과하면 활성 데이터가 바뀌고, 점수·그래프를 만든 뒤 MILP를 푼다. 솔버의 해는 독립 검증을 통과해야 API가 내보내고, AI 글은 각 검사기를 통과해야 내보낸다(실패 시 규칙 기반 글).</p>
 
 <h3>5.2 기술 스택</h3>
-<div class="wrap"><table>
-<tr><th>영역</th><th>사용 기술</th><th>영역</th><th>사용 기술</th></tr>
-<tr><td>언어</td><td>Python 3.12 · TypeScript 6</td><td>API</td><td>FastAPI, 서버 전송 이벤트(SSE)</td></tr>
-<tr><td>최적화</td><td>PuLP + HiGHS(highspy), 비교용 CBC·SCIP</td><td>AI</td><td>OpenAI 호환 API — 외부 gpt-6-luna, 사내 가정 GLM-5.3-Flash</td></tr>
-<tr><td>데이터 계약</td><td>Pydantic 2, CSV 묶음(zip) + manifest</td><td>웹</td><td>React 19 · Vite 8 · Tailwind 3</td></tr>
-<tr><td>저장</td><td>인메모리 그래프, SQLite 근거 색인, 서버 데이터 폴더(업로드·교체 이력·서명 키)</td><td>보고서·시험</td><td>Playwright(Chromium) PDF · pytest · Vitest</td></tr>
+<div class="wrap"><table class="stack">
+<tr><th class="area">영역</th><th>사용 기술</th><th class="area half">영역</th><th>사용 기술</th></tr>
+<tr><td class="area">언어</td><td>Python 3.12 · TypeScript 6</td><td class="area half">API</td><td>FastAPI, 서버 전송 이벤트(SSE)</td></tr>
+<tr><td class="area">최적화</td><td>PuLP + HiGHS(highspy), 비교용 CBC·SCIP</td><td class="area half">AI</td><td>OpenAI 호환 API — 외부 gpt-6-luna, 사내 가정 GLM-5.3-Flash</td></tr>
+<tr><td class="area">데이터 계약</td><td>Pydantic 2, CSV 묶음(zip) + manifest</td><td class="area half">웹</td><td>React 19 · Vite 8 · Tailwind 3</td></tr>
+<tr><td class="area">저장</td><td>인메모리 그래프, SQLite 근거 색인, 서버 데이터 폴더(업로드·교체 이력·서명 키)</td><td class="area half">보고서·시험</td><td>Playwright(Chromium) PDF · pytest · Vitest</td></tr>
 </table></div>
 
 <h3>5.3 신뢰 경계</h3>
@@ -298,6 +299,7 @@
 <li><b>운영 중 K</b>: 기존 배치를 그대로 두고 사람마다 0/1 이동 변수를 두어 Σ ≤ K. 옮긴 사람은 "원래 없던 사업"에 들어가야 한다(빼서 놀리는 해 차단), 잠근 사람은 옮기지 않는다.
 빈자리 감점(자리당 100)이 섞인 목적에서 5% 허용 차이는 1~2명 이동의 개선(1~2점)을 통째로 가리므로 <b>허용 오차 0</b>으로 풀어 최적임을 확인한다.</li>
 <li><b>확정과 등급 대체</b>: 모든 확정은 원천 CSV 묶음을 고쳐 업로드와 같은 검증으로 켜는 새 판이고, 새로 생기거나 커진 위반·고정 배치 빼기를 거절한다. 손 편성이 <b>새로 넘친 등급 × 모자란 자리</b>를 만들면 가까운 등급부터 짝지어 정원을 바꾸고(사유 필수, 넘친 예산 증액), 미리 계산·What-if 채점·확정 검증이 같은 함수를 쓴다. 다른 사업에서 빼 와 생긴 빈자리는 같은 확정에서 <b>메우거나 "메우지 않음"</b>(사유, 그 정원을 줄임)을 정해야 확정된다. 연간 계획은 고정이 있으면 계산 전에 유지·풀기를 묻는다.</li>
+<li><b>무르기와 기록</b>: 마지막 판부터 되돌리기와 별도로, 특정 확정 한 건만 지금 판 위에서 거꾸로 적용해 취소한다(그 뒤 바뀐 칸·고정한 배치는 건너뛰고, 원래 사업으로 돌려보내면 위반이 생기는 사람은 대기로 둔다). 모든 판 변경은 지우지 않는 변경 기록에 남아 기간을 골라 보고서 PDF로 묶이고, 사람이 새로 들어간 사업마다 인사팀 검토 자료가 생긴다 — 시스템 사실(원래 사업이 잃는 것·메움·등급 대체와 예산 증액 사유)은 만들 때 계산해 잠그고, 결론은 부서장이 쓴다.</li>
 </ul>
 <h3>6.3 솔버 운영</h3>
 <ul>
@@ -319,13 +321,31 @@
 <tr><td>교체 설명(RAG)</td><td>근거 색인의 동료 평가·점수 변화로 설명, 평가를 출처 번호와 함께 인용</td><td>인용이 원문과 한 글자도 다르지 않은지, 출처가 있는지, 위반 교체면 첫 문장이 보류인지, 인정 경력 출처 표기</td><td>규칙 기반 설명</td></tr>
 <tr><td>소명 글(GraphRAG)</td><td>지식 그래프 사실 목록 <code>{F#}</code> 중 쓸 것을 고르고 정해진 문법(주어·라벨·연결 말·맺음말)으로만 엮음. 숫자·충족 여부는 서버가 채움</td><td>없는 자리표시, 허용 목록 밖 연결 말, 팀원 아닌 ID, 사실과 라벨의 짝, 사람별 사실 누락. 빠뜨린 불리한 사실은 서버가 덧붙임</td><td>정해진 틀의 글</td></tr>
 <tr><td>상황을 말로·기술 이름 정리</td><td>말·이름을 사전 개념 id로 옮김(사전 목록 안에서만). 사람 정보는 보내지 않음</td><td>id가 사전에 있는지, 근거 말이 원문에 있는지, 사람 특성 말이 근거인지, 헷갈리는 짝(Java↔JavaScript 등) 표시. 반영은 사람이 고른 것만</td><td>사전 별칭 찾기·문자열 후보</td></tr>
+<tr><td>발주 자료 읽기</td><td>필요 기술(필수·우대·요구가 아닌 언급), 사업 정보, 자료 요약을 근거 말과 함께 제안(6.8)</td><td>사전에 있는 개념인지, 근거 말이 원문 그 자리에 있는지, 금액·날짜·숫자가 근거 말과 맞는지</td><td>사전 별칭 + 문장 말 규칙</td></tr>
 </table></div>
 <p class="muted">소명 글은 "AI가 자유롭게 쓰고 금지어로 거르는" 방식과 비교해 골랐다 — 금지어 방식은 검토 때마다 빠져나가는 문장이 나와, AI는 사실 번호와 정해진 연결 말만 고르고 문장의 사실 부분은 서버가 채우게 했다(검사 통과 94.7% → 99.0%).</p>
 <h3>6.6 지식 그래프와 기술 이름 사전</h3>
 <ul>
 <li><b>기술 이름 사전</b>(개념 228개): "postgres"·"포스트그레스"·"PostgreSQL 14"처럼 갈린 이름과 버전 표기·괄호 병기를 한 이름으로 묶는다. 사전에 없는 이름은 합치지 않고 경고만 한다.</li>
 <li><b>하위 기술 부분 인정</b>: 하위 기술 경력의 0.7<sup>깊이</sup>를 상위 기술에 인정(Spring → Java)하고, 인정분은 출처·개월을 따로 남겨 본인 경력과 구분한다. 사전 버전·인정 비율은 계산 버전에 들어간다.</li>
-<li><b>지식 그래프</b>(<code>core/kg</code>): 사업·요구 기술·팀원·협업·후보 비교·규칙 준수를 사실로 만들어 소명 글에 쓰고, 기술마다 공급·수요를 모아 조직 기술 지도를 만든다. 저장 기술은 측정으로 골랐다(Neo4j 우위 0/20 → 제거, RDF 추론은 가중 부분 인정을 표현하지 못해 인메모리 그래프 유지).</li>
+<li><b>지식 그래프</b>: 사업·요구 기술·팀원·협업·후보 비교·규칙 준수를 사실로 만들어 소명 글에 쓰고, 기술마다 공급·수요를 모아 조직 기술 지도를 만든다. 저장 기술은 측정으로 골랐다(인메모리 그래프 + SQLite, 7장).</li>
+</ul>
+
+<h3>6.7 후보 추천 — 신규 사업 편성·긴급 투입</h3>
+<ul>
+<li><b>후보와 채점</b>: 후보는 대기 인력, 지금 사업이 신규 사업 시작 전에 모두 끝나는 인력, 다른 사업에서 빼 올 인력이다. 후보마다 그 사람을 넣은 전체 배치를 평가기로 다시 채점해 기술 적합·협업 변화, 메운 자리, 원래 사업이 잃는 자리를 나눠 보인다. 협업 점수는 두 사람 사이 값이라 "이 사업 팀원 누구와 +0.17"처럼 쌍으로 보인다. 진행 사업에 붙는 추가 과제는 그 사업 팀원을 맨 위에 보인다.</li>
+<li><b>고른 사람을 팀원으로</b>: 부서장이 한 명을 넣으면 그 사람을 팀원으로 쳐서 나머지 후보를 다시 매기고, 등급별 자리·요구 기술 충족·새 위반을 미리 보인다. 데이터는 확정 때만 바뀌고, 확정은 미리 보기와 같은 판정을 다시 거친다.</li>
+<li><b>자동 편성</b>: 옮길 수 있는 인원 K = 0~5마다 허용 오차 0으로 풀어(3.2) 몇 명을 옮기면 무엇이 좋아지는지 나란히 보인다.</li>
+<li><b>긴급 투입</b>: 상황 글을 요구 기술로 옮긴 뒤(6.5) 후보 순위와 최선 조합(허용 오차 0, 최대 600초)을 함께 낸다. 프로젝트 동시 수행 허용이 필요한 후보는 따로 보이고, 빼 온 자리는 같은 확정에서 메우거나 "메우지 않음"을 정한다. 밤사이 AI 없이 진행 사업마다 바로 넣을 수 있는 상위 5명을 계산해 둔다.</li>
+<li>육아휴직 등으로 사업 기간에 투입할 수 없는 사람은 사유와 함께 보이되 고를 수 없다.</li>
+</ul>
+<h3>6.8 발주 자료 읽기</h3>
+<ul>
+<li><b>글자 뽑기</b>: PDF·HWP(옛 한글)·HWPX·DOCX·PPTX·XLSX. 옛 한글은 추가 라이브러리 없이 문서 구조와 압축 본문을 직접 읽는다. 남이 만든 파일이라 별도 프로세스에서 20초 제한·동시 2개로 열고, 파일 크기(20MiB)·압축 해제량·읽기량에 상한을 두며, 배포용·암호 문서는 이유와 함께 거절한다.</li>
+<li><b>긴 자료</b>: 20만 자(PDF 200쪽)까지 읽는다. 목차 경계에서 4만 자 이하 조각(최대 8개)으로 나눠 동시에 AI에 보내고 조각마다 제목 경로를 붙인다. 상한에서 잘리면 화면에 "앞부분만 읽었다"를 띄운다.</li>
+<li><b>필요 기술</b>: 사전 개념으로 옮기며 필수·우대와 "자료에 나오지만 요구가 아닌 언급"(현행 시스템·연계 대상)을 나누고, 경력·인원은 자료에 적혔을 때만 읽는다. 항목마다 근거 말이 원문 그 자리에 있는지 확인한다.</li>
+<li><b>사업 정보·요약</b>: 공고문 앞부분에서 사업명·기간·총 사업비·공고번호·마감을 읽는다(금액은 "1억 2천 5백만원"처럼 덩어리째 읽고 애매하면 버림, 계산으로 낸 기간은 "AI 계산" 표시). 요약은 과업·기간·예산·인력·평가·유의 사항 칸마다 근거 말과 숫자를 원문과 맞춰 거른다.</li>
+<li>결과는 모두 제안이다. 읽기 전에 자료를 보내는 곳(회사 밖이면 경고)을 알리고, 경력·인원이 적힌 필수만 미리 체크하며 나머지는 사람이 고른다.</li>
 </ul>
 
 <h2>7. 주요 설계 판단과 근거</h2>
@@ -337,10 +357,17 @@
 <tr><td>오래 붙어 다닌 사이</td><td>쌍 감점 · 새 동료 수 하한(문헌의 파트너 다양성)</td><td>하한은 SI 팀 크기에서 거의 걸리지 않고 200명 풀이를 망침. 감점은 익숙한 쌍을 200명 29 → 6, 300명 46 → 5로 흩고 품질 손실 −3.2% · −0.05%</td><td>쌍 감점 0.2 유지</td></tr>
 <tr><td>투입 방식</td><td>투입률 나누기 · 동시 수행 인원 상한 · 감점 · 전일 투입</td><td>나누기는 잘 풀수록 쪼개기가 늘고, 상한·감점은 쪼개기를 못 막았다. 전일 투입은 쪼개기가 없고 300명도 92초에 이론상 최대치 0.9% 안(3.1)</td><td>전일 투입 + 사람 단위 허용(1.3)</td></tr>
 <tr><td>AI의 역할</td><td>LLM 직접 배치</td><td>100명에서 규칙 위반 또는 솔버의 55%, 6~11분(3.4)</td><td>결정은 솔버, AI는 읽기·쓰기</td></tr>
+<tr><td>신규 사업 편성의 허용 오차</td><td>5% · 0</td><td>빈자리 감점(자리당 100점)이 섞인 목적에서 5%는 1~2명 이동의 개선(1~2점)을 통째로 가려, "다른 사업에서 빼 오기를 허용한 쪽이 더 나쁜" 모순이 나왔다</td><td>허용 오차 0(K마다 최적 확인)</td></tr>
+<tr><td>그래프 저장소</td><td>Neo4j(처음 설계) · RDF 추론 · 인메모리 그래프</td><td>설명용 질의 5종 비교 20번 중 Neo4j가 나은 경우 0, 속도는 메모리 &lt; SQLite &lt; Neo4j. RDF 추론은 "하위 기술 경력 70% 인정" 같은 가중 계산을 표현하지 못한다</td><td>인메모리 그래프 + SQLite 근거 색인</td></tr>
 <tr><td>평가 글 판정</td><td>규칙(항목만) · Jev · GLM-5.3-Flash · OpenAI</td><td>규칙은 글에 쓴 부정을, 감성 점수 API는 돌려 말한 지적을, 사내 후보는 그 절반을 놓친다. 규칙이면 나쁘게 쓴 사이가 협업 보상에 든다(3.5)</td><td>LLM(OpenAI) 판정</td></tr>
+<tr><td>상황 글 → 요구 기술</td><td>사전 이름 찾기 · AI</td><td>사전 찾기는 재현율 83.6%, 일로만 설명한 요구는 0% — AI는 100%(3.3)</td><td>AI가 사전 개념으로 옮기고 서버가 검사, 사람 정보는 보내지 않음</td></tr>
+<tr><td>발주 자료 → 필요 기술</td><td>규칙(사전 + 문장 말) · AI 자동 반영 · AI 제안 + 사람 확인</td><td>실제 공공 자료 10편 정밀도 규칙 0.32 · AI 0.78(3.3) — AI도 틀린 기술을 고르므로 자동 반영은 위험하다</td><td>근거 말과 함께 제안, 사람이 체크</td></tr>
+<tr><td>긴 발주 자료</td><td>앞 4만 자만 · 나눠 동시에 읽기</td><td>8.3만 자 가상 자료에서 요약 항목 26개 중 13개가 4만 자 뒤에 있었다. 사업명·기간·예산은 공고문 앞머리에 있다</td><td>필요 기술·요약은 나눠 읽기, 정보 채우기는 앞부분만</td></tr>
+<tr><td>낯선 기술 이름 정리</td><td>문자열 유사도 · AI 자동 합치기 · AI 후보 + 관리자 승인</td><td>1위 정답 문자열 27% · AI 95%(3.3) — 남은 5%와 Java↔JavaScript 같은 헷갈리는 짝 때문에 자동 승인은 두지 않음</td><td>후보 3개 중 관리자 승인</td></tr>
 <tr><td>소명 글 방식</td><td>정해진 틀(템플릿) · GraphRAG</td><td>근거 오류는 둘 다 0, 읽기 쉬운 쪽으로 — 템플릿은 실패 시 대체 글로 유지</td><td>GraphRAG</td></tr>
 <tr><td>숙련도 표현</td><td>경력 개월 비율 직접 사용</td><td>가상 데이터로는 우열을 가릴 수 없고 바꾸는 비용이 큼</td><td>대리 레벨 유지</td></tr>
 <tr><td>자리와 다른 등급을 넣을 때</td><td>확정 막기 · 정원을 말없이 늘리기 · 대체 + 사유</td><td>막으면 현장 관행(중급 대신 초급, 중급이 없어 고급)을 못 담고, 말없이 늘리면 부족 신호와 판단 근거가 사라진다</td><td>사용자 결정: 위·아래 허용, 사유 필수, 넘친 예산 증액</td></tr>
+<tr><td>확정 무르기</td><td>마지막 판부터 되돌리기만 · 그 확정 한 건만 취소</td><td>되돌리기만 있으면 그 뒤에 한 다른 확정까지 함께 사라진다</td><td>둘 다(취소는 지금 판 위에서 거꾸로 적용)</td></tr>
 <tr><td>What-if의 기준</td><td>계산한 안 A~D · 지금 실제 배치</td><td>부서장의 질문은 "지금 배치에서 이렇게 바꾸면"이다</td><td>연간 계획 ②와 분리</td></tr>
 </table></div>
 <p class="muted">각 결정은 사용자 확인을 거쳤다. 하위 기술 인정 70%는 근거 데이터가 없는 가정값이다.</p>
