@@ -183,7 +183,9 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   측정 사전 등록 `python -m rehearsal.rfp_read_eval [--docs-dir demo/project_docs]`(b 시연 자료 7편 + 가상 10편 + 긴 가상 1편 `make_long_rfp`(따로 채점, 관문 L1), OpenAI만 관문, GLM-5.3-Flash high 보고) -- 10-23 밤(`ab2289c`): OpenAI 정밀도 1.00·재현율 0.99·요구 아닌 언급 0%·$0.013, 규칙 정밀도 0.93·요구 아닌 언급 5.9%, GLM 정밀도 0.93, 긴 자료 3조각 모두 찾음.
   영상 D6은 실제 공공 입찰 자료(산안공고 제2026-68호 공고문 + 제안요청서, 저장소 밖 -- 필요 기술은 `rehearsal/data/d6_bid_doc_skills.json`에 한 번 읽은 결과)로 "10월 공고·12월 시작"(사용자 가정)·7개월·월 1,429점·정원 중급 1로 등록하고(12월 전에 끝나는 사업이 없어 대기 인력에서 넣는다),
   D7은 J004 데이터 마트 상황 글(기술 이름 없이 일로만 -- 규칙 0개, AI가 ETL·데이터 모델링·SQL을 미루어 보고 시연자가 켠다. 이 100명은 모두 데이터플랫폼 실행그룹이라 AI 에이전트 요청은 맞지 않는다, 사용자 10-23) -- 뒤 장면 숫자 `python -m rehearsal.scenario_numbers`(기본 `--d6 doc` → `scenarios-1023.json`, 말로 받은 추천을 확정).
-  실제 공공 자료 측정은 `python -m rehearsal.rfp_real_eval --docs-dir <저장소 밖>`(정답 `rehearsal/data/rfp_gold_real.json` -- 작성 과정을 "authoring"에 사실대로, AI 전에 커밋, 사람 시간은 추정 식).
+  실제 공공 자료 측정은 `python -m rehearsal.rfp_real_eval --docs-dir docs/real_proposal`(자료는 git 제외 -- `.git/info/exclude`, 정답 `rehearsal/data/rfp_gold_real.json` -- 작성 과정을 "authoring"에 사실대로, AI 전에 커밋 `fa4f00b`, 사람 시간은 추정 식) --
+  10-24 10편: 정밀도 규칙 0.32 · OpenAI 0.78(3회) · GLM 0.65, 요구 아닌 언급을 요구로 99% · 11% · 22%(규칙은 기술 적용 계획표 같은 양식 목록을 그대로 뽑는다), 편당 13초 · 74초.
+  **신규 사업 요구 기술 칸의 충족 표시**(10-23 사용자): 후보 응답 `coverage`(지금 팀)·`draft.coverage`(넣기로 고른 사람까지) = `core.evaluate.skill_coverage`(점수와 같은 레벨 기준, 검토 자료 충족 수와 같음). 등록 양식은 ① 맨 위 발주 자료, ④가 그 자료를 저절로 읽는다(제안요청서 먼저, 결과 기억).
   **`request_parse.alias_hits`는 경계를 원문 글자로 본다**(10-23 고침 -- 띄어쓰기를 지운 글로 보면 "Python 5년"·"JEUS·WebtoB"를 버리고 "산출물은 행정"에서 "은행"을 잡았다, 48문장 측정은 그대로).
 - **변경 기록·변경 보고서**(2026-10-22 사용자 "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 … 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도", claude-a, 설계 루트 `.omc/plan/2026-10-22-change-report.md`):
   작업 이력(`workspace/history.json`)은 되돌리기용이라 20판·다른 데이터를 열면 비운다 -- 보고 원천은 따로 **지우지 않는 `api/change_log`**(`<데이터 폴더>/change_log/log.json`). `workspace.commit`·`undo`의 prepare(이력 쓰기와 같은 자리·같은 시각)가 한 건씩 덧붙이고(실패해도 판 변경은 막지 않음),
@@ -313,7 +315,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 밤 D6 공고문 흐름·D7 J001(claude-a `feat/claude-a-d6d7-1023`, main 병합 2222와 같음) **2222 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 400 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-24 실제 공공 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천(claude-a `feat/claude-a-real-rfp-1024`) **2225 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 402 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

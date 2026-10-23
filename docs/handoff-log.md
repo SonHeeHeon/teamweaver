@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-24 · claude-a · 실제 공공 발주 자료 10편 측정 · D7 데이터 마트 · 신규 사업 요구 기술 충족 표시 · 등록 양식 ④ 자동 추천
+- 브랜치/커밋: `feat/claude-a-real-rfp-1024`(main `2748f18`에서) — `88d98eb`(D7) · `fa4f00b`(정답·도구, AI 전) · `86429fd`(결과) · `5242181`(충족 표시) · `554b7ab`(등록 양식) · 문서 커밋. main 미병합.
+- 사용자: "9편 넣어두었고 1편은 … 산안공고 제2026-68호 이걸로 하자" · "d7 예시를 좀 바꿀까? 데이터 플랫폼실행그룹 인력인데 …" · "병합 승인할게" ·
+  "넣기 하면 … 요구 기술의 항목의 배경 색깔이 칠해진다던지 … 퍼센티지를 적어도 좋아" · "'1.기본' 에서 발주 자료(선택)이 사업명보다 위인 최상단에 … '4.필요 기술'에도 … 추천 필요 기술 항목들이 뜨도록".
+- 한 일:
+  - 실제 공공 자료 10편(사용자가 둔 `docs/real_proposal/` -- git 제외 `.git/info/exclude`, 산안공단 제안요청서 복사 포함): 정답 `rehearsal/data/rfp_gold_real.json`(Claude 초안, AI 전 커밋, 사용자 검토 전 -- "authoring"),
+    `python -m rehearsal.rfp_real_eval --docs-dir docs/real_proposal` → 정밀도 규칙 0.32 · OpenAI 0.78(3회) · GLM 0.65, 요구 아닌 언급을 요구로 99% · 11% · 22%, 편당 13초 · 74초. 슬라이드 8·보고서 3.3·8.3을 이 숫자로.
+  - D7: J004 데이터 마트 "원천 시스템 테이블 구조가 바뀌어서 …"(규칙 0개, AI ETL·데이터 모델링·SQL 미루어 봄 → 시연자가 켬), 추천 이지유 J014→J004 + 전다은 메움.
+  - 신규 사업 요구 기술 칩 충족 표시: `core/evaluate/skill_coverage.py`(점수와 같은 레벨 기준) → `/api/pipeline/{id}/candidates` 응답 `coverage`(지금 팀)·`draft.coverage`(넣기 포함), 화면 칸 배경 = 충족 비율, "충족 0→1/2명".
+  - 등록 양식: ① 맨 위 발주 자료 + "④에서 저절로 읽는다(보내는 곳)" 안내, ④ `SkillReader auto`(제안요청서 → 과업지시서 → 사전규격, 양식이 결과 기억), 읽은 뒤 손으로 적은 같은 기술은 체크를 푼다.
+- 상대 영향(claude-b): **b 영역 화면(`NewProjectsScreen`·`ProjectDocs`·`ProjectForm`·`SkillReader`·`projectDocsApi`·`workspaceApi`)과 라우트(`api/routes/scenarios.py` 후보 응답에 `coverage` 칸)**를 고쳤다 —
+  병합 때 확인. `DESTINATION`·`docKey`는 `projectDocsApi`로 옮겼다. 웹 시험 402(+2).
+- 검증: `uv run --group benchmark pytest -q` → 2225 passed, 1 skipped, 21 deselected · 웹 402 · tsc · oxlint · build · 실제 화면(임시 데이터, 포트 8779) 충족 칩·등록 양식 ①·④ 자동 읽기 1번 · 보고서 PDF 10쪽 · 슬라이드 겹침 0. Codex 한도 소진 → 자체 검토.
+- 근거: `.omc/plan/2026-10-23-real-rfp-d7.md` · `.omc/reports/2026-10-24-real-rfp-d7-coverage.md`
+
 ## 2026-10-23 · claude-a · main 병합 — D6 공고문 흐름 · D7 J001 · 슬라이드 8 · 실제 자료 측정 도구
 - 사용자: "병합 승인할게".
 - 브랜치/커밋: `feat/claude-a-d6d7-1023`(`a08881b`)을 main에 fast-forward(main `92103af` 위라 충돌 없음) → 이 항목 커밋 → origin push.
