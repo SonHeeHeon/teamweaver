@@ -525,3 +525,146 @@ def test_clean_text_keeps_a_pdf_with_lone_surrogates_or_control_characters_reada
     bad = _zipped("word/document.xml", '<?xml version="1.0" encoding="x-nope"?><w:document xmlns:w="w"/>')
     with pytest.raises(store.DocError):                                          # 낯선 encoding도 DocError만
         store.extract_text("docx", bad)
+
+
+# --- 자료에서 사업 정보 채우기 · 부서장용 자료 요약(2026-10-23 사용자 "프로젝트 이름, 기간, 예산 등을 대신 작성" · "각각의 자료를 llm으로 잘 압축 요약한") ---
+
+def _notice_hwp():
+    from tests import hwp_builder as hb
+    from tests.scenarios.test_doc_brief import NOTICE
+    return hb.hwp([hb.section(*[hb.para(line) for line in NOTICE.split("\n")])])
+
+
+class _BriefAI:
+    """시스템 지시문으로 정보 채우기·요약을 가려 가짜 답을 준다."""
+
+    def __init__(self):
+        from types import SimpleNamespace
+        self.calls = []
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, **kw):
+        from types import SimpleNamespace
+        from tests.scenarios.test_doc_brief import _sum_payload
+        self.calls.append(kw)
+        system = kw["messages"][0]["content"]
+        payload = ({"name": {"value": "가상 공공기관 문서 데이터 구조화 사업", "quote": "입찰건명 : 가상 공공기관 문서 데이터 구조화 사업"},
+                    "duration_months": {"value": 7, "quote": "계약체결일로부터 ~ 2027년 5월 31일까지"},
+                    "budget": {"value": 120_000_000, "quote": "사업예산(부가가치세 포함) : 120,000,000원"}}
+                   if "등록 양식" in system else _sum_payload())
+        msg = SimpleNamespace(content=json.dumps(payload, ensure_ascii=False))
+        return SimpleNamespace(choices=[SimpleNamespace(message=msg)], usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5))
+
+    def with_options(self, **kw):
+        return self
+
+
+def _meta(c, data, *, filename="입찰공고문.hwp", v=None):
+    params = {"filename": filename, **({"dataset_version": v} if v else {})}
+    return c.post("/api/project-meta/read", params=params, content=data, headers={"Content-Type": "application/octet-stream"})
+
+
+def test_meta_read_route_proposes_form_fields_without_changing_data(yearend, ai_client):
+    from api.main import app
+    data = _notice_hwp()
+    with TestClient(app) as c:
+        v = _v(c)
+        with ai_client(None):
+            body = _meta(c, data, v=v).json()
+        f = body["fields"]
+        assert body["method"] == "rule" and body["fallback_reason"] == "no_client" and body["ai_available"] is False
+        assert f["name"]["value"] == "가상 공공기관 문서 데이터 구조화 사업" and f["budget"]["value"] == 120_000_000
+        assert f["budget"]["vat_included"] is True and f["duration_months"] is None
+        fake = _BriefAI()
+        with ai_client(fake) as used:
+            people = [p["name"] for p in c.get("/api/meta").json()["people"]]
+            body = _meta(c, data, v=v).json()
+        assert used and body["method"] == "ai" and body["fields"]["duration_months"]["value"] == 7
+        sent = "\n".join(m["content"] for m in fake.calls[0]["messages"])
+        assert people and not [n for n in people if n in sent]                     # 자료 글자만 간다
+        assert _v(c) == v                                                          # 제안만 -- 데이터는 그대로
+        assert _meta(c, ZIP, filename="묶음.zip").status_code == 422
+        assert _meta(c, data, v="old").status_code == 409
+        assert c.post("/api/project-meta/read", params={"filename": "a.hwp"}, content=data,
+                      headers={"Content-Type": "text/plain"}).status_code == 415
+
+
+def test_summary_is_made_once_saved_and_reused(yearend, ai_client):
+    """GET은 만들지 않는다(돈·외부 전송은 사람이 눌러서) → POST가 만들고 저장 → 다시 GET하면 저장본. 자료를 지우면 요약도 지운다."""
+    import api.project_docs as store
+    from api.main import app
+    with TestClient(app) as c:
+        up = _up(c, "J018", _notice_hwp(), kind="입찰공고문", filename="입찰공고문.hwp", v=_v(c))
+        assert up.status_code == 200, up.text
+        doc = up.json()["doc"]
+        url = f"/api/project-docs/J018/{doc['id']}/summary"
+        first = c.get(url).json()
+        assert first["summary"] is None and first["readable"] is True and first["doc"]["kind"] == "입찰공고문"
+        fake = _BriefAI()
+        with ai_client(fake):
+            made = c.post(url).json()
+        s = made["summary"]
+        assert s["method"] == "ai" and s["doc_type"] == "입찰공고문" and made["created_at"]
+        assert [i["text"] for i in next(x for x in s["sections"] if x["key"] == "budget")["items"]] == [
+            "사업예산은 부가세 포함 1억 2천만 원이다.", "공동계약은 불가하다."]
+        assert "052-000-0000" not in json.dumps(s, ensure_ascii=False)
+        calls = len(fake.calls)
+        again = c.get(url).json()
+        assert again["summary"] == s and len(fake.calls) == calls                 # 저장본 -- AI를 다시 부르지 않는다
+        key = store.store_key(*_dataset_key(c))
+        assert store._summary_file(key, doc["id"]).is_file()
+        assert c.delete(f"/api/project-docs/J018/{doc['id']}", params={"dataset_version": _v(c)}).status_code == 200
+        assert not store._summary_file(key, doc["id"]).exists()
+        assert c.get(url).status_code == 404
+
+
+def _dataset_key(c):
+    from api.main import app
+    info = app.state.dataset.info
+    return info.dataset_id, info.synthetic
+
+
+def test_saved_summary_is_ignored_when_the_prompt_version_changes(yearend, ai_client, monkeypatch):
+    from api.main import app
+    from api.rag import doc_brief
+    with TestClient(app) as c:
+        doc = _up(c, "J018", _notice_hwp(), kind="입찰공고문", filename="공고.hwp", v=_v(c)).json()["doc"]
+        url = f"/api/project-docs/J018/{doc['id']}/summary"
+        with ai_client(_BriefAI()):
+            c.post(url)
+        assert c.get(url).json()["summary"] is not None
+        monkeypatch.setattr(doc_brief, "PROMPT_VERSION", "doc-brief-test-next")
+        assert c.get(url).json()["summary"] is None
+
+
+def test_summary_of_unreadable_or_demo_documents(yearend, _no_demo_docs, ai_client, monkeypatch):
+    import api.project_docs as store
+    from api.main import app
+    monkeypatch.setattr(store, "DEMO_ROOT", _no_demo_docs)
+    store._demo_index.cache_clear()
+    with TestClient(app) as c:
+        z = _up(c, "J018", ZIP, kind="기타", filename="묶음.zip", v=_v(c)).json()["doc"]
+        zurl = f"/api/project-docs/J018/{z['id']}/summary"
+        assert c.get(zurl).json()["readable"] is False
+        assert c.post(zurl).status_code == 422
+        demo = next(d for d in _docs(c)["J018"] if d["demo"])
+        with ai_client(None):
+            made = c.post(f"/api/project-docs/J018/{demo['id']}/summary").json()["summary"]
+        assert made["method"] == "rule" and made["fallback_reason"] == "no_client" and made["chars"] > 200
+
+
+def test_summary_is_not_saved_for_a_deleted_document_or_without_ai(yearend, ai_client):
+    """폴백 리뷰 S9: AI를 기다리는 사이 자료를 지웠으면 요약을 쓰지 않는다 · NIT 1: 규칙 요약(AI 없음·일시 오류)은 저장하지 않는다."""
+    import api.project_docs as store
+    from api.main import app
+    with TestClient(app) as c:
+        doc = _up(c, "J018", _notice_hwp(), kind="입찰공고문", filename="공고.hwp", v=_v(c)).json()["doc"]
+        url = f"/api/project-docs/J018/{doc['id']}/summary"
+        with ai_client(None):
+            made = c.post(url).json()
+        assert made["summary"]["method"] == "rule" and made["created_at"] is None
+        assert c.get(url).json()["summary"] is None                                # 저장 안 함 -- 다음에 다시 AI로 만들 수 있다
+        key = store.store_key(*_dataset_key(c))
+        assert c.delete(f"/api/project-docs/J018/{doc['id']}", params={"dataset_version": _v(c)}).status_code == 200
+        assert store.save_summary(key, doc["id"], "x" * 64, "v", {"one_line": "인용"}, uploaded=True) is None
+        assert not store._summary_file(key, doc["id"]).exists()

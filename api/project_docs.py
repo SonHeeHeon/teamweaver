@@ -33,7 +33,8 @@ from api.storage import atomic_write, data_dir, ensure_private_dir
 
 log = logging.getLogger(__name__)
 
-KINDS = ("사전규격", "제안요청서(RFP)", "과업지시서", "사업 개요", "기타")
+# 입찰공고문(2026-10-23): 사용자가 사전규격 → 입찰공고 순서로 실제 자료를 받아 왔다 -- 공고문에는 사업명·기간·예산·마감이 있다(정보 채우기에 쓴다)
+KINDS = ("사전규격", "입찰공고문", "제안요청서(RFP)", "과업지시서", "사업 개요", "기타")
 MAX_BYTES = 20 * 1024 * 1024
 MAX_PER_PROJECT = 10
 _OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"      # HWP 5.x(복합 문서)
@@ -176,6 +177,7 @@ def remove(key: str, project_id: str, doc_id: str) -> dict | None:
             return None
         _write_index(folder, key, [d for d in docs if d is not doc])   # 목록 먼저 -- 파일 지우기가 실패해도 안 보인다
         (folder / f"{doc['id']}.{doc['ext']}").unlink(missing_ok=True)
+        _summary_file(key, doc["id"]).unlink(missing_ok=True)
     return doc
 
 
@@ -209,7 +211,7 @@ def _demo_index() -> tuple[dict, ...]:
                 raise ValueError(f"받지 않는 항목: {f}")
             out.append({"id": f"demo-{d['id']}", "project_id": str(d["project_id"]), "kind": d["kind"], "filename": str(d["filename"]),
                         "ext": f.rpartition(".")[2], "size": int(d["size"]), "uploaded_at": None, "registered": dict(reg),
-                        "file": f, "demo": True})
+                        "file": f, "demo": True, "sha256": str(d.get("sha256") or "")})
         except (KeyError, TypeError, ValueError) as exc:     # 항목 하나가 깨져도 나머지는 보인다
             log.warning("시연 발주 자료 항목을 건너뛴다: %s", exc)
     return tuple(out)
@@ -224,6 +226,46 @@ def demo_docs(dataset_id: str, synthetic: bool | None) -> list[dict]:
 
 def demo_path(doc: dict) -> Path:
     return DEMO_ROOT / doc["file"]
+
+
+def doc_file(key: str, doc: dict) -> Path:
+    return demo_path(doc) if doc.get("demo") else stored_path(key, doc)
+
+
+# --- 부서장용 요약 저장(2026-10-23 사용자 "각각의 자료를 llm으로 잘 압축 요약한 … 각각 보여줄수있는 화면? 팝업?") ---------------------------
+# 요약은 처음 한 번 사람이 눌러 만들고(AI, api/rag/doc_brief), 자료 보관 폴더 summaries/에 자료마다 한 파일로 둔다 -- 다시 열면 돈 들지 않는다.
+# 자료 해시와 지시문 판(doc_brief.PROMPT_VERSION)이 같을 때만 다시 쓴다. 시연 자료(저장소, 읽기 전용)의 요약도 데이터 폴더에 둔다.
+def _summary_file(key: str, doc_id: str) -> Path:
+    return _folder(key) / "summaries" / f"{hashlib.sha256(doc_id.encode('utf-8')).hexdigest()[:24]}.json"
+
+
+def load_summary(key: str, doc_id: str, sha256: str, version: str) -> dict | None:
+    path = _summary_file(key, doc_id)
+    if not path.is_file():
+        return None
+    try:
+        rec = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        log.warning("자료 요약 파일을 읽지 못했다(%s): %s", path, exc)
+        return None
+    if not isinstance(rec, dict) or rec.get("sha256") != sha256 or rec.get("version") != version or not isinstance(rec.get("summary"), dict):
+        return None
+    return rec
+
+
+def save_summary(key: str, doc_id: str, sha256: str, version: str, summary: dict, *, uploaded: bool) -> dict | None:
+    """요약 저장. 올린 자료는 목록에 아직 있을 때만 쓴다 -- AI를 기다리는 사이 자료를 지웠으면 그 인용문을 남기지 않는다(None, 폴백 리뷰 S9)."""
+    rec = {"doc_id": doc_id, "sha256": sha256, "version": version,
+           "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "summary": summary}
+    folder = _folder(key)
+    path = _summary_file(key, doc_id)
+    with _lock:
+        if uploaded and not any(d["id"] == doc_id for d in _read_index(folder, strict=False)):
+            return None
+        ensure_private_dir(folder)                     # 보관 폴더를 처음 만드는 곳이 여기일 수 있다 -- 0700(폴백 리뷰 NIT 4)
+        ensure_private_dir(path.parent)
+        atomic_write(path, (json.dumps(rec, ensure_ascii=False) + "\n").encode("utf-8"))
+    return rec
 
 
 # --- 글자 뽑기(AI 필요 기술 읽기용, 2026-10-23 사용자 "그 자료를 넣으면 llm … 을 통해서 분석해서 알아서 필요 기술에 대해 정의") -----------
