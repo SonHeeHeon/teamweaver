@@ -22,6 +22,10 @@
 
 ---
 
+## 2026-10-23 · claude-b · 정정: 보고서 1차 수정도 main에 올림
+- 바로 아래 항목의 "main에는 아직 안 올림"을 정정 — 사용자 "main에 다 병합해줘"에 따라 main을 `c4f7094`(보고서 1차 수정) 뒤 이 정정 커밋까지 fast-forward했다. push 안 함.
+- 상대 영향: claude-a는 보고서를 고치기 전에 main을 합친다(`outputs/final-report.*` 구조가 바뀜).
+
 ## 2026-10-23 · claude-b · 최종 보고서 1차 수정(사용자 점검 1~4쪽) + Word 파일
 - 사용자: "Final-report 레포트 1차 수정 요청"(1~4쪽 항목별 지시 + "수정 후 워드 파일로도 내보내기").
 - 브랜치/커밋: `feat/claude-b-kg-views`(main `f24eff4` 위). main에는 아직 안 올림.
