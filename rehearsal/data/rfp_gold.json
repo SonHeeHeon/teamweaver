@@ -492,5 +492,43 @@
     "ERP"
    ]
   }
+ ],
+ "note_long": "긴 자료(2026-10-23 추가, claude-a -- 나눠 읽기 확인, AI 측정 전에 커밋). rehearsal/make_long_rfp.py가 만든 8만 자 가상 공공 RFP: 투입 인력 기준이 5만 자 뒤, 우대가 8만 자 근처. 본 지표(쉬움·어려움)와 섞지 않고 따로 채점한다.",
+ "long": [
+  {
+   "id": "long1",
+   "file": "long1.txt",
+   "style": "장문 공공 RFP(8만 자) · 투입 인력 기준 5만 자 뒤 · 우대 8만 자 근처 · 현행 시스템 앞부분",
+   "required": [
+    {
+     "skill": "Java",
+     "months": 60,
+     "headcount": 3
+    },
+    {
+     "skill": "전자정부 표준프레임워크",
+     "months": 36,
+     "headcount": 2
+    },
+    {
+     "skill": "PostgreSQL",
+     "months": 36,
+     "headcount": 1
+    },
+    {
+     "skill": "데이터 이행",
+     "months": 48,
+     "headcount": 1
+    }
+   ],
+   "preferred": [
+    "Kubernetes"
+   ],
+   "not_required": [
+    "Tibero",
+    "JEUS"
+   ],
+   "ok": []
+  }
  ]
 }

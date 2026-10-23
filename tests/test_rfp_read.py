@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from api.rag.request_parse import alias_hits
-from api.rag.rfp_read import MAX_AI_TEXT, read_requirements, rule_read
+from api.rag.rfp_read import MAX_AI_TEXT, MAX_TEXT, read_requirements, rule_read
 from core.ingest.skills import load_dictionary
 
 DOC = """제안요청서
@@ -97,15 +97,120 @@ def test_ai_answer_is_checked_and_keeps_rule_mentions(sd):
     assert "Java 기반 개발 경력" in sent and calls[0]["response_format"] == {"type": "json_object"}
 
 
-def test_ai_failure_and_long_text(sd):
+def test_ai_failure_and_too_long_text(sd):
     def boom(**kw):
         raise TimeoutError("slow")
     bad = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=boom)))
     out = read_requirements(DOC, sd, client=bad, model="m")
     assert out["method"] == "rule" and out["fallback_reason"] == "llm_error:TimeoutError" and out["skills"]
-    calls: list = []
-    long_doc = DOC + "\n" + ("가" * MAX_AI_TEXT)
-    out = read_requirements(long_doc, sd, client=_client({"skills": []}, calls), model="m")
-    assert any("앞 40,000자" in w for w in out["warnings"])
-    assert len(calls[0]["messages"][1]["content"]) < MAX_AI_TEXT + 20_000
+    out = read_requirements(DOC + "가" * MAX_TEXT, sd)
+    assert any(f"앞 {MAX_TEXT:,}자만" in w for w in out["warnings"])
     assert read_requirements("   ", sd)["warnings"]
+
+
+def _cid(sd, label):
+    return next(c for c, v in sd.concepts.items() if v["label"] == label)
+
+
+def _filler(n: int) -> str:
+    line = "본 사업은 발주기관의 업무 효율을 높이기 위한 것으로 세부 내용은 협의하여 정한다\n"
+    return line * (n // len(line) + 1)
+
+
+def _router(rules: dict, calls: list):
+    """조각 글에 들어 있는 표지 말로 답을 모으는 가짜 AI(동시에 불린다). rules: 표지 말 → 답(skills) 또는 예외."""
+    def create(**kw):
+        msg = kw["messages"][1]["content"]
+        calls.append(msg)
+        payload: dict = {"skills": []}
+        for mark, ans in rules.items():
+            if mark in msg:
+                if isinstance(ans, Exception):
+                    raise ans
+                payload["skills"] = payload["skills"] + ans.get("skills", [])
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload, ensure_ascii=False)))],
+                               usage=SimpleNamespace(prompt_tokens=100, completion_tokens=10))
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+def test_long_document_is_read_in_chunks_with_heading_paths(sd):
+    """4만 자 뒤의 요구도 AI가 읽는다 -- 조각마다 속한 제목을 붙여 동시에 묻고, 근거 위치는 전체 글 기준(2026-10-23 b 요청 1)."""
+    spark, java = _cid(sd, "Spark"), _cid(sd, "Java")
+    head = "Ⅰ. 사업 개요\n" + _filler(30_000) + "Ⅱ. 제안 요청 사항\n1. 투입 인력\n"
+    text = head + "가. 개발 인력\n- Java 개발 경력 5년 이상 2명\n" + _filler(35_000) + "나. 분석 인력\n- Spark 경력 3년 이상 1명\n"
+    assert text.index("Spark 경력") > MAX_AI_TEXT
+    calls: list = []
+    client = _router({"Java 개발 경력": {"skills": [{"id": java, "quote": "Java 개발 경력 5년 이상 2명", "kind": "required", "months": 60, "headcount": 2}]},
+                      "Spark 경력": {"skills": [{"id": spark, "quote": "Spark 경력 3년 이상 1명", "kind": "required", "months": 36, "headcount": 1}]}},
+                     calls)
+    out = read_requirements(text, sd, client=client, model="m", price={"input_per_1m": 1.0, "output_per_1m": 1.0})
+    got = _by(out)
+    assert out["method"] == "ai" and set(got) == {"Java", "Spark"}
+    for s in out["skills"]:
+        assert text[s["start"]:s["end"]] == s["quote"]
+    assert len(out["chunks"]) == len(calls) >= 2 and all(c["method"] == "ai" for c in out["chunks"])
+    assert out["chunks"][0]["start"] == 0 and out["chunks"][-1]["end"] == len(text)
+    assert all(len(m) < MAX_AI_TEXT + 20_000 for m in calls)
+    later = next(m for m in calls if "Spark 경력" in m)
+    assert "이 조각이 속한 제목: Ⅱ. 제안 요청 사항 > 1. 투입 인력" in later
+    assert out["usage"]["in"] == 100 * len(calls) and not any("앞" in w for w in out["warnings"])
+
+
+def test_single_chunk_prompt_is_unchanged(sd):
+    calls: list = []
+    read_requirements(DOC, sd, client=_router({}, calls), model="m")
+    assert len(calls) == 1 and calls[0].startswith("발주 자료:")
+    assert read_requirements("", sd, client=_router({}, calls), model="m")["method"] == "ai"     # 빈 글도 조각 하나(조각 0개로 멈추지 않게)
+
+
+def test_chunks_merge_and_a_failed_chunk_falls_back_to_rule(sd):
+    """같은 기술은 필수 > 우대, 경력·인원은 숫자가 있는 근거에서. 한 조각이 실패하면 그 범위만 규칙 결과 + 경고."""
+    etl, kafka = _cid(sd, "ETL"), _cid(sd, "Kafka")
+    text = ("1. 과업 범위\n- 일 배치 ETL 파이프라인 구축\n- Kafka 연계 검토\n" + _filler(36_000)
+            + "2. 투입 인력\n- ETL 경력 4년 이상 2명\n- Kafka 운영 경력 2년 이상 1명\n" + _filler(42_000)
+            + "3. 기타\n- Airflow 경력 2년 이상 1명\n")
+    rules = {"일 배치 ETL": {"skills": [{"id": etl, "quote": "일 배치 ETL 파이프라인 구축", "kind": "required"},
+                                       {"id": kafka, "quote": "Kafka 연계 검토", "kind": "preferred"}]},
+             "ETL 경력 4년": {"skills": [{"id": etl, "quote": "ETL 경력 4년 이상 2명", "kind": "required", "months": 48, "headcount": 2},
+                                        {"id": kafka, "quote": "Kafka 운영 경력 2년 이상 1명", "kind": "required", "months": 24, "headcount": 1}]},
+             "Airflow 경력": TimeoutError("slow")}
+    out = read_requirements(text, sd, client=_router(rules, []), model="m")
+    got = _by(out)
+    assert got["ETL"]["months"] == 48 and got["ETL"]["headcount"] == 2 and got["ETL"]["quote"] == "ETL 경력 4년 이상 2명"
+    assert got["Kafka"]["kind"] == "required" and got["Kafka"]["months"] == 24
+    assert got["Airflow"]["months"] == 24                                                  # 실패한 조각은 규칙으로
+    assert out["method"] == "ai" and [c["method"] for c in out["chunks"]].count("rule") == 1
+    assert any("AI 읽기에 실패" in w for w in out["warnings"])
+    every = read_requirements(text, sd, client=_router({"": TimeoutError("down")}, []), model="m")
+    assert every["method"] == "rule" and every["fallback_reason"] == "llm_error:TimeoutError"
+
+
+def test_rule_sentence_ends_at_bullet_and_label_lines(sd):
+    """한글·워드 문단은 줄바꿈 하나로 이어진다 -- 다음 줄의 "우대"가 앞 줄 기술을 우대로 바꾸지 않게(b 관찰 3)."""
+    got = _by(rule_read("수행 인력: ETL 경력 5년 이상 2명\n우대: Python 개발 경험", sd))
+    assert got["ETL"]["kind"] == "required" and got["Python"]["kind"] == "preferred"
+    got = _by(rule_read("□ 과업 범위\n ◦ Airflow 기반 스케줄링 구축\n ◦ Kafka 실시간 적재 경험자 우대", sd))
+    assert got["Airflow"]["kind"] == "required" and got["Kafka"]["kind"] == "preferred"
+    got = _by(rule_read("데이터 플랫폼은 Spark로\n처리하며 경험자를 우대한다.", sd))                   # PDF 줄 넘김은 문장 끝이 아니다
+    assert got["Spark"]["kind"] == "preferred"
+
+
+def test_domain_words_found_only_by_rule_are_not_listed_with_ai(sd):
+    """AI가 고르지 않은 규칙 언급 중 업무 도메인 낱말("공공기관"→공공 업무)은 "요구 아님" 목록을 어지럽혀 뺀다(b 관찰 2). 규칙만이면 그대로."""
+    text = "공공기관 정책 현안 카드를 만든다. 분석에는 Python을 쓰고, 현행 시스템은 Oracle로 운영 중이다."
+    py = _cid(sd, "Python")
+    out = read_requirements(text, sd, client=_client({"skills": [{"id": py, "quote": "Python", "kind": "required"}]}), model="m")
+    names = {m["name"] for m in out["mentioned_not_required"]}
+    assert "Oracle Database" in names and not names & {"공공 업무", "카드 업무"}
+    rule_names = {s["name"] for s in read_requirements(text, sd)["skills"]}
+    assert {"공공 업무", "카드 업무"} <= rule_names
+
+
+def test_bullets_without_their_own_words_follow_the_heading(sd):
+    """줄마다 문장을 끊으면 "1. 현행 시스템 구성" 아래 장비 목록이 필수로 바뀌었다(2026-10-23 측정에서 발견) -- 제 말이 없는 줄은 바로 위 머리 줄을 따른다."""
+    text = ("1. 현행 시스템 구성\n - DBMS: Tibero 6(보조)\n - WAS: JEUS 8\n2. 과업 범위\n - 통계 화면을 Vue로 신규 구축\n"
+            "□ 현행 연계 현황\n ◦ 대외 연계는 IBM MQ로 처리하고 있다\n□ 우대 사항\n ◦ Kafka 구축 경험\n")
+    out = rule_read(text, sd)
+    assert {m["name"] for m in out["mentioned_not_required"]} >= {"Tibero", "JEUS", "IBM MQ"}
+    got = _by(out)
+    assert got["Vue"]["kind"] == "required" and got["Kafka"]["kind"] == "preferred"

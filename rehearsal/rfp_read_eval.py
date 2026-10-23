@@ -16,10 +16,13 @@
   G3 요구 아닌 언급을 필수로 뽑은 비율(어려움) ≤ 0.15, 그리고 규칙보다 낮다
   G4 사전 밖 id로 나간 기술 0건(서버 검사 뒤)
   G5 경력 ±12개월 일치 ≥ 0.80, 인원 일치 ≥ 0.80(정답에 값이 있는 필수 기술 중 맞게 뽑은 것만)
+  L1(2026-10-23 추가 -- 나눠 읽기, AI 측정 전에 커밋) 긴 자료(`rfp_gold.json` "long", 투입 인력 기준이 4만 자 뒤)의 필수 재현율 = 1.0이고 경력·인원도 모두 맞다.
+     긴 자료는 본 지표(G1~G5)에 섞지 않고 `methods.<방법>.long`에 따로 채점한다.
 GLM-5.3-Flash와 규칙은 같은 표에 보고만 한다(판정 없음). 그 밖 보고: 우대를 우대로(재현율), 필수+우대 합친 재현율, 한 편 시간 p50·최대, 비용, 버린 칸.
 가설(판정 아님): 규칙은 현행 시스템 언급까지 필수로 뽑고(G3에서 높음), GLM은 문맥 판정이 OpenAI보다 약하다.
 
   uv run python -m rehearsal.rfp_read_eval [--rule-only] [--docs-dir demo/project_docs]   → rehearsal/results/rfp-read.json
+  (긴 자료 다시 만들기: uv run python -m rehearsal.make_long_rfp)
 """
 from __future__ import annotations
 
@@ -40,7 +43,7 @@ EASY_DIR = ROOT / "demo" / "project_docs"
 EASY_BUNDLE = ROOT / "demo" / "org-n100-yearend"
 OUT = ROOT / "rehearsal" / "results" / "rfp-read.json"
 GLM_MODEL, GLM_EFFORT, GLM_URL = "glm-5.3-flash", "high", "https://api.z.ai/api/paas/v4"
-GATES = {"recall_min": 0.90, "precision_min": 0.85, "nonreq_fp_max": 0.15, "months_min": 0.80, "headcount_min": 0.80}
+GATES = {"recall_min": 0.90, "precision_min": 0.85, "nonreq_fp_max": 0.15, "months_min": 0.80, "headcount_min": 0.80, "long_recall_min": 1.0}
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
@@ -90,7 +93,25 @@ def load_sets(docs_dir: Path) -> list[dict]:
         items.append({"set": "hard", "id": d["id"], "style": d["style"], "text": (HARD_DIR / d["file"]).read_text("utf-8"),
                       "required": d["required"], "preferred": d["preferred"], "not_required": d["not_required"], "ok": d["ok"],
                       "complete": True})
+    for d in gold.get("long") or []:
+        items.append({"set": "long", "id": d["id"], "style": d["style"], "text": (HARD_DIR / d["file"]).read_text("utf-8"),
+                      "required": d["required"], "preferred": d["preferred"], "not_required": d["not_required"], "ok": d["ok"],
+                      "complete": True})
     return items
+
+
+def score_split(items: list[dict], outs: list[dict], sd) -> dict:
+    """본 지표(쉬움·어려움)와 긴 자료를 따로 채점한다."""
+    main = [(i, o) for i, o in zip(items, outs) if i["set"] != "long"]
+    long_ = [(i, o) for i, o in zip(items, outs) if i["set"] == "long"]
+    res = score([i for i, _ in main], [o for _, o in main], sd)
+    if long_:
+        lg = score([i for i, _ in long_], [o for _, o in long_], sd)
+        res["long"] = {**{k: lg[k] for k in ("totals", "recall", "precision_hard", "nonreq_fp_rate", "pref_recall", "months_match",
+                                            "headcount_match", "latency_p50", "cost_usd")},
+                       "chunks": [len(o.get("chunks") or []) for _, o in long_], "warnings": [o.get("warnings") for _, o in long_],
+                       "rows": lg["rows"]}
+    return res
 
 
 def score(items: list[dict], outs: list[dict], sd) -> dict:
@@ -159,6 +180,9 @@ def gates(ai: dict, rule: dict) -> dict:
                         and (rule["nonreq_fp_rate"] is None or ai["nonreq_fp_rate"] < rule["nonreq_fp_rate"]),
            "G4_dict": ai["totals"]["out_of_dict"] == 0,
            "G5_numbers": (ai["months_match"] or 0) >= g["months_min"] and (ai["headcount_match"] or 0) >= g["headcount_min"]}
+    lg = ai.get("long")
+    if lg:
+        out["L1_long"] = (lg["recall"] or 0) >= g["long_recall_min"] and lg["months_match"] == 1.0 and lg["headcount_match"] == 1.0
     out["all"] = all(out.values())
     return out
 
@@ -192,30 +216,34 @@ def main() -> None:
            "dirty": bool(subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "api/rag", "rehearsal/rfp_read_eval.py",
                                          "rehearsal/data"], capture_output=True, text=True).stdout.strip()),
            "docs": {"easy": sum(1 for i in items if i["set"] == "easy"), "hard": sum(1 for i in items if i["set"] == "hard"),
+                    "long": sum(1 for i in items if i["set"] == "long"),
                     "easy_dir": str(Path(a.docs_dir))}, "gates_def": GATES, "methods": {}}
     print("규칙", flush=True)
-    rule = score(items, run(items, sd), sd)
+    rule = score_split(items, run(items, sd), sd)
     res["methods"]["rule"] = rule
     if not a.rule_only:
         from openai import OpenAI
         model = pricing["briefing_model"]
         effort = pricing["models"].get(model, {}).get("reasoning_effort")
         print(f"OpenAI {model} ({effort})", flush=True)
-        ai = score(items, run(items, sd, client=OpenAI(timeout=180, max_retries=1), model=model, effort=effort,
+        ai = score_split(items, run(items, sd, client=OpenAI(timeout=180, max_retries=1), model=model, effort=effort,
                               price=pricing["models"].get(model)), sd)
         res["methods"]["openai"] = {**ai, "model": model, "reasoning_effort": effort}
         res["gates"] = gates(ai, rule)
         if os.environ.get("ZAI_API_KEY"):
             print(f"GLM {GLM_MODEL} ({GLM_EFFORT})", flush=True)
-            glm = score(items, run(items, sd, client=OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=600, max_retries=1),
+            glm = score_split(items, run(items, sd, client=OpenAI(base_url=GLM_URL, api_key=os.environ["ZAI_API_KEY"], timeout=600, max_retries=1),
                                    model=GLM_MODEL, effort=GLM_EFFORT, price=pricing["models"].get(GLM_MODEL)), sd)
             res["methods"]["glm"] = {**glm, "model": GLM_MODEL, "reasoning_effort": GLM_EFFORT}
             res["gates_glm_report_only"] = gates(glm, rule)
         else:
             res["methods"]["glm"] = {"skipped": "ZAI_API_KEY 없음"}
     OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), "utf-8")
-    brief = {k: {m: v.get(m) for m in ("recall", "precision_hard", "nonreq_fp_rate", "pref_recall", "any_kind_recall", "months_match",
-                                         "headcount_match", "latency_p50", "cost_usd")} for k, v in res["methods"].items() if "rows" in v}
+    brief = {k: {**{m: v.get(m) for m in ("recall", "precision_hard", "nonreq_fp_rate", "pref_recall", "any_kind_recall", "months_match",
+                                            "headcount_match", "latency_p50", "cost_usd")},
+                 "long": {m: (v.get("long") or {}).get(m) for m in ("recall", "months_match", "headcount_match", "pref_recall", "nonreq_fp_rate",
+                                                                    "chunks")}}
+             for k, v in res["methods"].items() if "rows" in v}
     print(json.dumps({"brief": brief, "gates": res.get("gates")}, ensure_ascii=False, indent=1))
 
 
