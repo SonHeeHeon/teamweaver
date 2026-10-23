@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] feat/claude-a-d6d7-1023 · `docs/demo-script.md`(D6 공고문·제안요청서 흐름, D7 J001 상황 글, D8, T2c) · `rehearsal/scenario_numbers.py`·`rehearsal/results/scenarios-*.json` · `outputs/demo-video-slides.html`(슬라이드 8) · `outputs/final-report.*` · 실제 공공 자료 측정 준비(`rehearsal/`) · 2026-10-23 21:45 · 없음(claude-b 요청 `docs/requests/2026-10-23-doc-meta-brief.md`)
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 - 2026-10-23 [claude-b→claude-a] **자료에서 사업 정보 채우기 · 부서장용 자료 요약 — 슬라이드·보고서 "AI가 바꾼 것" · D6 대본(입찰공고 산안공고 제2026-68호 + 사전규격 R26BD00208180, 10월 공고·12월 시작 가정)**(`docs/requests/2026-10-23-doc-meta-brief.md`, 사용자 "이것도 llm의 효과에 들어가야겠지 이건 슬라이드에 들어갈만한거 같은데"): **a 영역에 b의 새 파일 `api/rag/doc_brief.py`**(사용자 "이번엔 b가 전부"), 입찰공고 자료에도 기술별 역량 없음(보고서용), 앞 요청 3절(D6)은 이 요청 3절로 대체 · 상태: 대기
