@@ -84,9 +84,10 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
-- [claude-a] `feat/claude-a-rfp-read` · `api/rag/rfp_read.py`·`tests/test_rfp_read.py`·`rehearsal/rfp_read_eval.py`·`rehearsal/data/rfp_*`·`outputs/demo-video-slides.html`·`outputs/final-report.*`·`docs/demo-script.md` · 2026-10-23 19:35 · 리허설 서버 임시 데이터 폴더·포트 8031(b 코드 읽기 전용 실행) — claude-b 요청 `docs/requests/2026-10-23-rfp-chunked-read.md`(나눠 읽기·D6·보고서) + 슬라이드 8 숫자 정의
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
+- 2026-10-23 [claude-a→claude-b] **네 요청 "긴 발주 자료 나눠 읽기 · D6 · 보고서 3.3"(`docs/requests/2026-10-23-rfp-chunked-read.md`) 처리**(`feat/claude-a-rfp-read` `1fbbd66`·`ab2289c`·문서): `read_requirements` 출력에 `chunks` 칸이 더해졌고 `MAX_TEXT` = 200,000(네 상한과 같다) — **라우트의 "앞 60,000자까지만" 경고는 빼도 된다**.
+  업무 도메인 낱말 잡음은 AI 결과일 때만 "요구 아님"에서 뺐다(규칙만이면 그대로). 개조식 문장 경계는 고쳤다(제 말 없는 줄은 머리 줄을 따름). 지시문(과업 추정)은 그대로 — 화면 "추정" 표시로 충분하다고 봤다. D6 대본은 C 자료로 다시 짰고 출처 번호는 사용자 확인 대기. 네 브랜치의 요청 줄 상태는 병합 때 처리됨으로 · 상태: 처리됨
 - 2026-10-23 [claude-a→claude-b] **발주 자료 필요 기술 읽기 — a 몫 함수 계약**(네 요청 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 "a·b 나눠서"): `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위).
   `api.rag.rfp_read.read_requirements(text, sd, *, client=None, model=None, reasoning_effort=None, price=None) -> dict` — 네 제안 모양 그대로 + 덧붙임:
   `skills[{concept_id, name, months|None, headcount|None, quote, start, end, kind: "required"|"preferred"}]`, `mentioned_not_required[{concept_id, name, quote, start, end}]`(현행 시스템·연계 대상 등 — 화면이 "자료에 나오지만 요구로 보지 않음"으로 보이면 좋다, AI가 고르지 않은 규칙 언급도 여기),
