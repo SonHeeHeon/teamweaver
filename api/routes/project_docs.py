@@ -209,7 +209,7 @@ async def read_requirements_route(request: Request, filename: str = Query(..., m
     except docs_store.DocError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     if text is None:
-        raise HTTPException(status_code=422, detail="이 형식(옛 한글 HWP·ZIP 묶음)은 글자를 읽지 못한다 -- PDF·HWPX·DOCX로 저장해 올린다")
+        raise HTTPException(status_code=422, detail="ZIP 묶음은 글자를 읽지 못한다 -- 묶음을 풀어 PDF·HWP·HWPX·DOCX 파일을 올린다")
     from api.deps import llm_client_for
     from api.rag.justification import justification_settings
     from api.rag.rfp_read import read_requirements
@@ -228,6 +228,12 @@ async def read_requirements_route(request: Request, filename: str = Query(..., m
     out = await anyio.to_thread.run_sync(go)
     if use is None:
         out["fallback_reason"] = why
+    from api.rag.rfp_read import MAX_TEXT
+    if len(text) > MAX_TEXT:
+        # 글자 뽑기는 20만 자까지 주지만 읽기 함수(claude-a)는 앞 MAX_TEXT자에서 말없이 자른다 -- 나눠 읽기가 들어오기 전까지 알린다(폴백 리뷰 N1)
+        size = f"{len(text):,}자" + (" 이상" if len(text) >= docs_store.MAX_TEXT_CHARS else "")     # 글자 뽑기 상한에서 잘렸으면 실제는 더 길다(2차 폴백 리뷰 NIT)
+        out["warnings"] = [*out.get("warnings", []),
+                           f"자료가 길어({size}) 앞 {MAX_TEXT:,}자까지만 읽었다 -- 그 뒤의 요구는 찾지 않았다(직접 확인해 넣는다)."]
     from api.deps import ai_destination
     # 보낸 곳도 싣는다 -- 설정에서 AI 주소만 바꾸면 미리 읽어 둔 안내가 낡는다(2차 폴백 리뷰 NIT)
     return {**out, "dataset_version": dataset.info.version, "ai_available": use is not None, "chars": len(text),

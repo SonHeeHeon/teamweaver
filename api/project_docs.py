@@ -228,17 +228,20 @@ def demo_path(doc: dict) -> Path:
 
 # --- 글자 뽑기(AI 필요 기술 읽기용, 2026-10-23 사용자 "그 자료를 넣으면 llm … 을 통해서 분석해서 알아서 필요 기술에 대해 정의") -----------
 # 읽기 함수는 claude-a `api/rag/rfp_read`(사용자 결정 "a·b 나눠서") -- 여기는 파일 형식만 다룬다. 계약: 깨진 파일은 DocError만 낸다.
-# 옛 한글(HWP 5.x, 복합 문서·압축 본문)·ZIP 묶음은 None -- 화면이 "PDF·HWPX로 저장해 올린다"고 안내한다.
+# 옛 한글(HWP 5.x)은 `api/hwp5`가 읽는다(2026-10-23 사용자 결정 "HWP 읽기 추가" -- 나라장터 사전규격 첨부 대부분이 HWP, 배포용·암호 문서는 DocError).
+# ZIP 묶음은 None -- 화면이 "묶음을 풀어 올린다"고 안내한다.
 # 남이 만든 파일이다: 서버는 extract_text_limited(별도 프로세스 + 시간 제한 + 동시 2개)로 부른다. 첫 판의 폴백 리뷰 지적(2026-10-23)을 고쳤다 --
 # 문단마다 하위 트리를 다시 돌던 O(n²)(4,000셀 표 5.7초) → 한 번만 도는 iterparse, 큰 데이터를 spawn 시작 인자로 넘겨 시간 제한 밖에서 멈춤 →
 # 시작 뒤 파이프로 보내고 타이머로 끝낸다(시드 포트폴리오와 같은 함정), 글자 없는 PDF 한 편이 9초·736MB → 동시 개수 상한.
-MAX_TEXT_CHARS = 60_000
-MAX_PDF_PAGES = 80
+# 상한(2026-10-23 사용자 결정 "나눠 동시에 읽기" -- 긴 RFP는 claude-a가 조각으로 나눠 읽는다): 6만 자·80쪽 → 20만 자·200쪽.
+# 실측: 글자가 빽빽한 220쪽 한글 PDF에서 20만 자 2.2초·36.5만 자 3.9초(시간 제한 20초 안). AI가 읽는 양은 rfp_read가 정한다.
+MAX_TEXT_CHARS = 200_000
+MAX_PDF_PAGES = 200
 EXTRACT_SECONDS = 20.0
 EXTRACT_PARALLEL = 2
 SLOT_WAIT_SECONDS = 5.0
-REPLY_MAX_BYTES = 6 * 60_000 + 4096          # 자식 답(JSON) 상한 -- 글자 하나가 \uXXXX(6바이트)로 바뀌어도 들어가게
-_MAX_XML_BYTES = 8 * 1024 * 1024          # 압축 안 한 XML 합계 상한(압축 폭탄 막기)
+REPLY_MAX_BYTES = 6 * MAX_TEXT_CHARS + 4096   # 자식 답(JSON) 상한 -- 글자 하나가 \uXXXX(6바이트)로 바뀌어도 들어가게
+_MAX_XML_BYTES = 16 * 1024 * 1024         # 압축 안 한 XML 합계 상한(압축 폭탄 막기) -- 실제 HWPX는 글자당 약 24바이트(6천 자 15만 바이트), 20만 자 ≈ 5MB
 _CHILD_MEMORY = 1536 * 1024 * 1024         # Linux에서만 자식 메모리 한도(macOS는 RLIMIT_AS가 강제되지 않는다)
 # 확장자 → (본문 XML 이름, 글자 태그, 문단 태그). hp:t·w:t·a:t 안에는 탭·줄바꿈 같은 자식이 섞인다(혼합 내용)
 _XML_PARTS = {
@@ -251,6 +254,7 @@ _BREAKS = {"tab": " ", "lineBreak": "\n", "br": "\n", "cr": "\n"}
 # 글자로 치지 않는 하위 요소: XLSX 후리가나(rPh) -- 'ETLイーティーエル'처럼 붙어 나왔다(폴백 리뷰 NIT)
 _SKIP = {"rPh"}
 _extract_slots = threading.BoundedSemaphore(EXTRACT_PARALLEL)
+TEXT_EXTS = ("pdf", "hwp", *_XML_PARTS)        # 글자를 꺼내는 형식(화면 projectDocsApi.TEXT_EXTS와 같다)
 
 
 def _local(tag) -> str:
@@ -348,7 +352,7 @@ def _xml_text(data: bytes, pattern: str, tag: str, para: str) -> str:
 
 
 def extract_text(ext: str, data: bytes) -> str | None:
-    """자료의 글자(앞 MAX_TEXT_CHARS자). 읽지 못하는 형식(HWP 5.x·ZIP 묶음)은 None. 깨진 파일은 DocError(그 밖의 예외는 내지 않는다).
+    """자료의 글자(앞 MAX_TEXT_CHARS자). 읽지 못하는 형식(ZIP 묶음)은 None. 깨진 파일·배포용 한글은 DocError(그 밖의 예외는 내지 않는다).
     서버 요청 경로에서는 extract_text_limited를 쓴다."""
     ext = ext.lower()
     if ext not in FORMATS:
@@ -369,6 +373,12 @@ def extract_text(ext: str, data: bytes) -> str | None:
         text = "\n".join(parts)
     elif ext in _XML_PARTS:
         text = _xml_text(data, *_XML_PARTS[ext])
+    elif ext == "hwp":
+        from api.hwp5 import HwpError, hwp_text
+        try:
+            text = hwp_text(data, MAX_TEXT_CHARS)
+        except HwpError as exc:
+            raise DocError(str(exc)) from exc
     else:
         return None
     return clean_text(text)
@@ -421,8 +431,8 @@ def extract_text_limited(ext: str, data: bytes, *, seconds: float = EXTRACT_SECO
     if ext not in FORMATS:
         return None
     check_bytes(ext, data)
-    if ext not in _XML_PARTS and ext != "pdf":
-        return None                           # 옛 HWP·ZIP -- 프로세스를 띄울 것 없다
+    if ext not in TEXT_EXTS:
+        return None                           # ZIP 묶음 -- 프로세스를 띄울 것 없다
     # 자리 기다림은 따로 잰다 -- 늦게 얻은 자리가 시간 제한을 다 써 버려 "넘겨 멈췄다"로 잘못 알리지 않게(폴백 리뷰 NIT)
     if not _extract_slots.acquire(timeout=min(seconds, SLOT_WAIT_SECONDS)):
         raise DocError("다른 자료를 읽는 중이다 -- 잠시 뒤 다시 한다")

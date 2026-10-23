@@ -310,8 +310,9 @@ def _zipped(name, xml):
     return b.getvalue()
 
 
-def test_extract_text_reads_office_xml_in_reading_order_and_not_old_hwp():
-    """HWPX hp:t 안의 탭·줄바꿈 뒤 글자를 잃지 않고, 표 앞 글 → 표 칸 → 표 뒤 글 순서. 옛 HWP·ZIP은 None."""
+def test_extract_text_reads_office_xml_in_reading_order_and_not_zip():
+    """HWPX hp:t 안의 탭·줄바꿈 뒤 글자를 잃지 않고, 표 앞 글 → 표 칸 → 표 뒤 글 순서. ZIP 묶음은 None.
+    옛 한글(HWP 5.x)은 2026-10-23부터 읽는다(tests/scenarios/test_hwp5.py) -- 머리만 있는 깨진 HWP는 DocError."""
     import api.project_docs as store
     hwpx = _zipped("Contents/section0.xml", '<hs:sec xmlns:hs="s" xmlns:hp="p"><hp:p><hp:run><hp:t>필요 기술:<hp:tab/>Java 5년 이상'
                                             '<hp:lineBreak/>Oracle 3년</hp:t></hp:run></hp:p><hp:p><hp:run><hp:t>표 앞</hp:t><hp:tbl><hp:tr>'
@@ -321,7 +322,8 @@ def test_extract_text_reads_office_xml_in_reading_order_and_not_old_hwp():
     docx = _zipped("word/document.xml", '<w:document xmlns:w="w"><w:body><w:p><w:r><w:t>요구 기술: </w:t></w:r><w:r><w:t>Java 3년</w:t>'
                                         '</w:r></w:p><w:p><w:r><w:t>ETL 2명</w:t></w:r></w:p></w:body></w:document>')
     assert store.extract_text("docx", docx) == "요구 기술: Java 3년\nETL 2명"
-    assert store.extract_text("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10) is None
+    with pytest.raises(store.DocError, match="한글"):
+        store.extract_text("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10)
     assert store.extract_text("zip", _zipped("a.txt", "x")) is None
     assert store._part_key("sec²1tion12.xml")                               # "²"는 숫자가 아니다(예전엔 int()에서 터졌다)
 
@@ -356,7 +358,9 @@ def test_extract_text_limited_runs_apart_with_time_and_slot_limits(_no_demo_docs
     import api.project_docs as store
     data = (_no_demo_docs / "j018-rfp.pdf").read_bytes()
     assert "가상 자료" in store.extract_text_limited("pdf", data)
-    assert store.extract_text_limited("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10) is None
+    assert store.extract_text_limited("zip", _zipped("a.txt", "x")) is None              # 프로세스를 띄우지 않는다
+    with pytest.raises(store.DocError, match="한글"):
+        store.extract_text_limited("hwp", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 10)
     with pytest.raises(store.DocError, match="넘겨 멈췄다"):
         store.extract_text_limited("pdf", data, seconds=0.001)
     with pytest.raises(store.DocError, match="PDF를 읽지 못했다"):
@@ -427,10 +431,41 @@ def test_read_route_with_ai_passes_only_document_text(yearend, _no_demo_docs, ai
     assert people and not [n for n in people if n in sent]                       # 사람 이름은 가지 않는다(자료 글자 + 사전만)
 
 
+def test_read_route_reads_old_hwp(yearend, _no_demo_docs, ai_client):
+    """옛 한글(HWP 5.x) 사전규격도 읽는다(2026-10-23 사용자 결정 "HWP 읽기 추가" -- 나라장터 첨부 대부분이 HWP). 배포용은 이유와 함께 422."""
+    from api.main import app
+    from tests import hwp_builder as hb
+    # 문장 끝 마침표: 규칙 읽기(claude-a)는 줄바꿈 하나를 문장 끝으로 보지 않는다(PDF 줄 넘김) -- 개조식 문단은 요청서에 관찰로 넘김
+    data = hb.hwp([hb.section(hb.para("수행 인력: ETL 경력 5년 이상 2명."), hb.para("Python 가능자는 우대한다."))])
+    with TestClient(app) as c, ai_client(None):
+        r = _read(c, data, filename="사전규격.hwp", v=_v(c))
+        assert r.status_code == 200, r.text
+        assert [(s["name"], s["months"], s["headcount"]) for s in r.json()["skills"] if s["kind"] == "required"] == [("ETL", 60, 2)]
+        r = _read(c, hb.hwp([hb.section(hb.para("x"))], props=4), filename="배포용.hwp")
+        assert r.status_code == 422 and "배포용" in r.json()["detail"]
+        # 읽기 함수가 앞 6만 자에서 자르는 것을 알린다(폴백 리뷰 N1 -- 글자 뽑기 상한은 20만 자)
+        long = hb.hwp([hb.section(*[hb.para("과업 설명 문단입니다. " * 50) for _ in range(120)])])
+        body = _read(c, long, filename="긴 사전규격.hwp").json()
+        assert body["chars"] > 60_000 and any("앞 60,000자까지만 읽었다" in w for w in body["warnings"])
+        short = _read(c, data, filename="사전규격.hwp").json()
+        assert not any("까지만 읽었다" in w for w in short["warnings"])
+
+
+def test_long_text_comes_back_through_the_pipe():
+    """상한 20만 자(2026-10-23 "나눠 동시에 읽기" -- 6만 자에서 올림)가 자식 프로세스 답 상한(REPLY_MAX_BYTES) 안에 들어온다."""
+    import api.project_docs as store
+    from tests import hwp_builder as hb
+    data = hb.hwp([hb.section(*[hb.para("가" * 999) for _ in range(250)])])
+    text = store.extract_text_limited("hwp", data)
+    assert store.MAX_TEXT_CHARS == 200_000 and store.MAX_TEXT_CHARS - 1 <= len(text) <= store.MAX_TEXT_CHARS   # 잘린 끝 줄바꿈은 뗀다
+
+
 def test_read_route_rejects_unreadable_wrong_type_and_stale(yearend, _no_demo_docs):
     from api.main import app
     with TestClient(app) as c:
-        assert _read(c, b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 64, filename="과업.hwp").status_code == 422   # 글자 못 읽는 형식
+        assert _read(c, b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"0" * 64, filename="과업.hwp").status_code == 422   # 깨진 한글
+        r = _read(c, _zipped("a.txt", "x"), filename="묶음.zip")
+        assert r.status_code == 422 and "ZIP" in r.json()["detail"]                 # 글자 못 읽는 형식
         assert _read(c, b"%PDF-broken").status_code == 422
         assert _read(c, PDF, filename="run.exe").status_code == 422
         assert _read(c, PDF, ctype="text/plain").status_code == 415
