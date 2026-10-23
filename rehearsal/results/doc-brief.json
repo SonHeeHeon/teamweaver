@@ -1,0 +1,646 @@
+{
+ "experiment": "doc-brief",
+ "when": "2026-10-23T20:15:55+09:00",
+ "commit": "341a584",
+ "dirty": true,
+ "docs": 7,
+ "gates_def": {
+  "G1_name": "사업명 맞음 >= 6/7",
+  "G2_months": "기간 개월 맞음 >= 6/7",
+  "G3_monthly": "월 예산(점) 맞음 >= 6/7",
+  "G4_checker_consistency": "검사기 일관성 100%(자기 검증 -- 환각 없음의 증거 아님)",
+  "G5_staffing": "인력·역량 요구 칸이 빈 자료 <= 1/7"
+ },
+ "methods": {
+  "rule": {
+   "n": 7,
+   "name": 7,
+   "months": 7,
+   "total": 7,
+   "monthly": 7,
+   "sector": 7,
+   "ai_fields": {
+    "name": 0,
+    "duration_months": 0,
+    "budget": 0,
+    "sector": 0
+   },
+   "summary_items": 75,
+   "summary_bad_items": 0,
+   "empty_staffing": 0,
+   "latency_p50": null,
+   "latency_max": null,
+   "cost_usd": 0.0,
+   "dropped_meta": [],
+   "dropped_summary": [],
+   "rows": [
+    {
+     "id": "j001-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "대형 시중은행 A AI 에이전트 개발(데이터플랫폼·AI 공동)",
+      "months": 6,
+      "total": 617280000,
+      "monthly": 10288,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 3,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 2,
+      "deliverables": 1
+     }
+    },
+    {
+     "id": "j003-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 갑 데이터 개방 플랫폼",
+      "months": 47,
+      "total": 1534550000,
+      "monthly": 3265,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 0,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 1
+     }
+    },
+    {
+     "id": "j011-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 경 데이터 개방 플랫폼",
+      "months": 43,
+      "total": 1241410000,
+      "monthly": 2887,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 0,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 2,
+      "constraints": 0,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j018-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "금융사 다2 비정형 문서 메타데이터 전환",
+      "months": 5,
+      "total": 256750000,
+      "monthly": 5135,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 0,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 2,
+      "constraints": 1,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j019-brief",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "계열사 T 데이터 플랫폼 고도화",
+      "months": 5,
+      "total": 197500000,
+      "monthly": 3950,
+      "sector": "대내"
+     },
+     "summary_items": {
+      "overview": 3,
+      "scope": 0,
+      "schedule": 1,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-prespec",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 2,
+      "schedule": 1,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 1,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 2,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 2,
+      "constraints": 1,
+      "deliverables": 0
+     }
+    }
+   ]
+  },
+  "openai": {
+   "n": 7,
+   "name": 7,
+   "months": 7,
+   "total": 7,
+   "monthly": 7,
+   "sector": 7,
+   "ai_fields": {
+    "name": 7,
+    "duration_months": 7,
+    "budget": 7,
+    "sector": 7
+   },
+   "summary_items": 96,
+   "summary_bad_items": 0,
+   "empty_staffing": 0,
+   "latency_p50": 9.165,
+   "latency_max": 15.48,
+   "cost_usd": 0.00528,
+   "dropped_meta": [],
+   "dropped_summary": [],
+   "rows": [
+    {
+     "id": "j001-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "대형 시중은행 A AI 에이전트 개발(데이터플랫폼·AI 공동)",
+      "months": 6,
+      "total": 617280000,
+      "monthly": 10288,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 2,
+      "schedule": 1,
+      "budget": 1,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 2,
+      "deliverables": 2
+     }
+    },
+    {
+     "id": "j003-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 갑 데이터 개방 플랫폼",
+      "months": 47,
+      "total": 1534550000,
+      "monthly": 3265,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 4,
+      "schedule": 1,
+      "budget": 2,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 3
+     }
+    },
+    {
+     "id": "j011-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 경 데이터 개방 플랫폼",
+      "months": 43,
+      "total": 1241410000,
+      "monthly": 2887,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 4,
+      "schedule": 2,
+      "budget": 2,
+      "staffing": 5,
+      "evaluation": 1,
+      "constraints": 0,
+      "deliverables": 2
+     }
+    },
+    {
+     "id": "j018-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "금융사 다2 비정형 문서 메타데이터 전환",
+      "months": 5,
+      "total": 256750000,
+      "monthly": 5135,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 2,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 5,
+      "evaluation": 1,
+      "constraints": 1,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j019-brief",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "계열사 T 데이터 플랫폼 고도화",
+      "months": 5,
+      "total": 197500000,
+      "monthly": 3950,
+      "sector": "대내"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 2,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 5,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-prespec",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 4,
+      "schedule": 2,
+      "budget": 2,
+      "staffing": 4,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 3,
+      "schedule": 2,
+      "budget": 2,
+      "staffing": 4,
+      "evaluation": 1,
+      "constraints": 0,
+      "deliverables": 1
+     }
+    }
+   ],
+   "model": "gpt-6-luna",
+   "reasoning_effort": "low"
+  },
+  "glm": {
+   "n": 7,
+   "name": 7,
+   "months": 7,
+   "total": 7,
+   "monthly": 7,
+   "sector": 7,
+   "ai_fields": {
+    "name": 5,
+    "duration_months": 6,
+    "budget": 7,
+    "sector": 6
+   },
+   "summary_items": 108,
+   "summary_bad_items": 0,
+   "empty_staffing": 0,
+   "latency_p50": 8.17,
+   "latency_max": 14.42,
+   "cost_usd": 0.00723,
+   "dropped_meta": [
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다",
+    "모양이 다르다"
+   ],
+   "dropped_summary": [
+    "근거 말에 없는 숫자",
+    "길거나 항목 근거에 없는 숫자·이름·연락처",
+    "길거나 항목 근거에 없는 숫자·이름·연락처",
+    "길거나 항목 근거에 없는 숫자·이름·연락처"
+   ],
+   "rows": [
+    {
+     "id": "j001-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "대형 시중은행 A AI 에이전트 개발(데이터플랫폼·AI 공동)",
+      "months": 6,
+      "total": 617280000,
+      "monthly": 10288,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 5,
+      "schedule": 1,
+      "budget": 1,
+      "staffing": 4,
+      "evaluation": 0,
+      "constraints": 1,
+      "deliverables": 3
+     }
+    },
+    {
+     "id": "j003-sow",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 갑 데이터 개방 플랫폼",
+      "months": 47,
+      "total": 1534550000,
+      "monthly": 3265,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 5,
+      "schedule": 2,
+      "budget": 2,
+      "staffing": 3,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 2
+     }
+    },
+    {
+     "id": "j011-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[운영] 공공기관 경 데이터 개방 플랫폼",
+      "months": 43,
+      "total": 1241410000,
+      "monthly": 2887,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 5,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 5,
+      "evaluation": 0,
+      "constraints": 0,
+      "deliverables": 1
+     }
+    },
+    {
+     "id": "j018-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "금융사 다2 비정형 문서 메타데이터 전환",
+      "months": 5,
+      "total": 256750000,
+      "monthly": 5135,
+      "sector": "대외금융"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 4,
+      "schedule": 3,
+      "budget": 1,
+      "staffing": 5,
+      "evaluation": 1,
+      "constraints": 1,
+      "deliverables": 1
+     }
+    },
+    {
+     "id": "j019-brief",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "계열사 T 데이터 플랫폼 고도화",
+      "months": 5,
+      "total": 197500000,
+      "monthly": 3950,
+      "sector": "대내"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 2,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 4,
+      "evaluation": 0,
+      "constraints": 1,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-prespec",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 2,
+      "scope": 4,
+      "schedule": 2,
+      "budget": 1,
+      "staffing": 4,
+      "evaluation": 0,
+      "constraints": 2,
+      "deliverables": 0
+     }
+    },
+    {
+     "id": "j020-rfp",
+     "name": true,
+     "months": true,
+     "total": true,
+     "monthly": true,
+     "sector": true,
+     "got": {
+      "name": "[추가 과제] 공공기관 경 데이터 개방 플랫폼 클라우드 마이그레이션·수정 개발",
+      "months": 6,
+      "total": 151020000,
+      "monthly": 2517,
+      "sector": "대외공공"
+     },
+     "summary_items": {
+      "overview": 1,
+      "scope": 4,
+      "schedule": 3,
+      "budget": 2,
+      "staffing": 4,
+      "evaluation": 1,
+      "constraints": 0,
+      "deliverables": 1
+     }
+    }
+   ],
+   "model": "glm-5.3-flash",
+   "reasoning_effort": "high"
+  }
+ },
+ "gates": {
+  "G1_name": true,
+  "G2_months": true,
+  "G3_monthly": true,
+  "G4_checker_consistency": true,
+  "G5_staffing": true
+ },
+ "gates_glm_report_only": {
+  "G1_name": true,
+  "G2_months": true,
+  "G3_monthly": true,
+  "G4_checker_consistency": true,
+  "G5_staffing": true
+ }
+}
