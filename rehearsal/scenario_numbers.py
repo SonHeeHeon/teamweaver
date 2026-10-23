@@ -4,10 +4,12 @@
     uv run python -m rehearsal.scenario_numbers [--d6 doc|copy]   # → rehearsal/results/scenarios-1023.json(doc) · scenarios-1019.json(copy)
                                                                   #   (데이터 폴더를 안 주면 임시 폴더)
 
-흐름: 신규 사업 등록 -- doc(2026-10-23 기본, 영상 D6): 실제 공공 사전규격(`rehearsal/data/d6_bid_doc_skills.json`, `rehearsal.d6_bid_doc`이 읽은 필요 기술
-을 등록 양식 "추정 모두 선택"처럼 경력 2년·1명으로) · copy(예전): 고도화 과제(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업)
+흐름: 신규 사업 등록 -- doc(2026-10-23 기본, 영상 D6): 실제 공공 입찰공고(산안공고 제2026-68호, 사전규격 R26BD00208180)의 사업을
+"10월 공고·12월 시작"으로 가정(사용자)하고 공고문에서 채운 기간 길이 7개월·월 예산(1억 원 ÷ 7, 1점 = 1만 원)으로, 필요 기술은 제안요청서를 읽은 것
+(`rehearsal/data/d6_bid_doc_skills.json`, `rehearsal.d6_bid_doc` -- 제안요청서는 사전규격과 글자가 같다)을 등록 양식 "추정 모두 선택"처럼 경력 2년·1명으로
+· copy(예전): 고도화 과제(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업)
 → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
-손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J004 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료 →
+손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J004 긴급 투입(상황 글, 빼 오기 1명 허용) → 확정 → 검토 자료 →
 J015 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
 """
 from __future__ import annotations
@@ -20,16 +22,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTS = {"doc": ROOT / "rehearsal" / "results" / "scenarios-1023.json", "copy": ROOT / "rehearsal" / "results" / "scenarios-1019.json"}
 BID_DOC = ROOT / "rehearsal" / "data" / "d6_bid_doc_skills.json"
-# 영상 D6 사업(2026-10-23): 한국산업안전보건공단 사전규격 제안요청서(안)의 사업 -- 이전 사업 없음. 정원·예산은 시연자가 양식에 적는 값
-BID_PROJECT = {"name": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구", "sector": "대외공공",
-               "start_month": "2027-01", "end_month": "2027-08", "monthly_budget": 4500, "stage": "예정", "predecessor": None, "parent": None,
-               "external_headcount": 0, "grades": {"특급": 0, "고급": 1, "중급": 2, "초급": 1}}
+# 영상 D6 사업(2026-10-23 밤 -- claude-b 요청 `docs/requests/2026-10-23-doc-meta-brief.md` 3): 한국산업안전보건공단 입찰공고의 사업, 이전 사업 없음.
+# 사업명·고객 구분·기간 길이·월 예산은 "자료에서 사업 정보 채우기"가 공고문에서 채우는 값(7개월 = AI가 계약기간 날짜로 센 값, 1,429 = 1억 원 ÷ 7 ÷ 1만 원),
+# 시작 달 2026-12는 시연 가정. 정원은 시연자가 적는 값 -- 월 1,429점에 들어가는 중급 1명(중급 개발 1,000 · 중급 둘이면 2,000으로 넘친다)
+BID_PROJECT = {"name": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구 용역", "sector": "대외공공",
+               "start_month": "2026-12", "end_month": "2027-06", "monthly_budget": 1429, "stage": "예정", "predecessor": None, "parent": None,
+               "external_headcount": 0, "grades": {"특급": 0, "고급": 0, "중급": 1, "초급": 0}}
 
 
 PREDECESSOR = "J007"       # 연말형(생성기 v4)에서 올해 말 끝나는 개발 사업 -- 고도화 과제의 이전 사업
 SUPPORT = "J015"           # 동시 수행 지원 장면의 진행 사업(끝나지 않는 큰 팀, v4 고도화 9명)
-EMERGENCY = "J004"         # 긴급 투입 장면의 진행 사업(끝나지 않는 9명 개발 사업 -- v4에서 J007은 올해 말에 끝난다)
-SPOKEN = "데이터 마트 적재가 계속 실패해요 — 스파크랑 금융 업무 아는 중급 한 명 급히"   # D7 상황을 말로(2026-10-22)
+EMERGENCY = "J004"         # 긴급 투입 장면의 진행 사업(데이터 마트 -- 이 100명은 모두 데이터플랫폼 실행그룹이다. 사용자 2026-10-23 밤 "데이터플랫폼은 데이터 마트나 비정형쪽")
+# D7 상황을 말로(2026-10-23 밤): 기술 이름 없이 일로만 쓴 현업 문장 -- 규칙은 기술을 하나도 못 찾고(인원·등급만), AI는 ETL·데이터 모델링·SQL을 미루어 본다
+# (OpenAI 3/3·GLM 2/2, 데이터 웨어하우스는 3/5). 미루어 본 기술은 화면에서 꺼져 있어 시연자가 켠다 -- SPOKEN_SKILLS가 켜는 기술이다.
+# 예전: J001 "… AI 에이전트 개발 및 T2SQL …"(사용자 "데이터 플랫폼 인력인데 ai 쪽 사업이면 … ai 실행그룹"으로 바꿈), 그 전 J004 "… 스파크랑 금융 업무 …"(기술 이름이 있어 규칙과 AI가 같았다)
+SPOKEN = "원천 시스템 테이블 구조가 바뀌어서 마트 일 배치 적재가 매일 새벽에 깨져요. 매핑 정의서 다시 잡고 적재 쿼리 고칠 수 있는 중급 한 명 급히 필요합니다"
+SPOKEN_SKILLS = ["ETL", "데이터 모델링", "SQL"]
 
 
 def _entries(ws):
@@ -103,15 +111,15 @@ def main() -> None:
         out["review_new"] = _brief_doc(doc)
         ws = applied["workspace"]                    # 확정 응답(바로 위 r은 검토 자료 응답이다, Codex 리뷰)
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": 1,
-                                                "pull_budget": 1, "note": "장애 대응"})
+                                                "pull_budget": 1, "note": "적재 장애"})
         r.raise_for_status()
         plan = r.json()
-        # 상황을 말로(2026-10-22 D7): 같은 판에서 상황 글을 요구로 읽고(AI 없이 -- 이 글의 기술·인원·등급은 사전 별칭·규칙만으로 같다)
-        # 그 요구로 추천을 받으면 무엇이 나오나. 화면은 AI로 읽어도 글에 쓴 기술은 같다(미루어 본 기술은 기본 꺼짐)
+        # 상황을 말로(D7): 같은 판에서 상황 글의 요구(인원·등급은 규칙, 기술은 AI가 미루어 보고 시연자가 켠 SPOKEN_SKILLS)로 추천을 받으면 무엇이 나오나.
+        # 이 스크립트는 AI를 부르지 않는다 -- 켤 기술은 위 측정(OpenAI 3회·GLM 2회)에서 매번 나온 것으로 고정했다
         from api.rag.request_parse import parse_request
         from core.ingest.skills import load_dictionary
-        said = parse_request(SPOKEN, load_dictionary())
-        skills = [x["name"] for x in said["skills"] if x["kind"] == "explicit"]
+        said = parse_request(SPOKEN, load_dictionary())    # 인원·등급(규칙도 같다) -- 기술은 AI가 미루어 본 것을 시연자가 켠다
+        skills = list(dict.fromkeys([x["name"] for x in said["skills"] if x["kind"] == "explicit"] + SPOKEN_SKILLS))
         r = c.post("/api/emergency/plan", json={"dataset_version": ws["dataset_version"], "project_id": EMERGENCY, "n": said["headcount"] or 1,
                                                 "grade": said["grade"], "skills": skills, "pull_budget": 1, "note": SPOKEN})
         r.raise_for_status()
@@ -125,13 +133,15 @@ def main() -> None:
                                    "standby": [x.get("name") for x in spoken.get("standby", [])[:3]]}   # 요구 기술로 다시 매긴 대기 순위
         # 화면 "지금 바로 넣을 수 있는 사람"은 사업을 고를 때 기술 없이 뽑은 순위다 -- 말로 받기 전 계산의 것을 남긴다
         plain_standby = [x.get("name") for x in plan.get("standby", [])[:3]]
-        if same:                                        # 같은 배치면 아래 확정·검토 자료 숫자는 그대로다 -- 화면 흐름대로 말로 받은 추천을 확정한다
-            plan = spoken
+        # 화면 흐름대로 말로 받은 추천을 확정한다(2026-10-23 밤 -- J001 글의 추천은 기술 없이 찾은 추천과 다르다. 기술 없는 추천은 참고로만 남긴다)
+        out["emergency_plain"] = {"added": plan["best"]["added"], "delta": plan["best"].get("delta"), "apply_hint": plan["apply_hint"],
+                                  "moved": plan["best"].get("diff", {}).get("moved")}
+        plan = spoken
         out["emergency"] = {"added": plan["best"]["added"], "delta": plan["best"].get("delta"), "apply_hint": plan["apply_hint"],
                             "standby": plain_standby,
                             "moved": plan["best"].get("diff", {}).get("moved")}
         r = c.post("/api/workspace/apply", json={"dataset_version": ws["dataset_version"], "entries": plan["best"]["entries"],
-                                                 "source": "emergency", "note": f"{EMERGENCY} 장애 대응", **plan["apply_hint"]})
+                                                 "source": "emergency", "note": f"{EMERGENCY} 적재 장애", **plan["apply_hint"]})
         r.raise_for_status()
         v2 = r.json()["workspace"]["dataset_version"]
         r = c.post(f"/api/review-docs/{v2}/{EMERGENCY}")

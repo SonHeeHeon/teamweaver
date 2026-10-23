@@ -1,0 +1,966 @@
+{
+ "note": "실제 공공 발주 자료(나라장터 사전규격·입찰공고 첨부) 10편의 필요 기술 정답. 자료 원문은 저장소 밖(docs/real_proposal/, git 제외).",
+ "authoring": {
+  "drafted_by": "Claude(claude-a) -- 자료를 읽고 AI 측정 전에 작성(2026-10-23 밤). 기술 이름 위치는 사전 별칭 검색으로 찾고, 요구 여부는 문맥을 읽고 판단했다. 이 10편의 규칙·OpenAI·GLM 결과는 보지 않았다(R10만 예외 -- seen_before).",
+  "reviewed_by": null,
+  "review_note": "작성자(사용자) 검토 전. 검토로 바뀌는 칸은 날짜·사유와 함께 이 칸에 적는다."
+ },
+ "criteria": {
+  "required": "이 사업을 하려면 사업자 인력에게 필요한 기술. 명시 = 과업·요구사항·투입 인력 문장에 그 기술(사전 이름·별칭 또는 같은 뜻의 말)이 사업자가 할 일로 적힘. 추정 = 이름은 없지만 적힌 과업을 하려면 그 기술이 꼭 필요함. 유지관리 사업은 운영 대상 시스템의 기술(적힌 것)이 요구다.",
+  "preferred": "우대·권고·가점으로 적힌 것.",
+  "ok": "어느 쪽이어도 틀리지 않은 것(채점에서 뺀다): 공통 조건(common_ok -- 모든 공공 사업에 붙는 사업관리·시험·보안·개인정보 준수 문구와 공공 도메인, 그 자료에서 과업 자체가 아니면) + 자료마다 적은 것('또는'으로 적힌 선택지, 운영 대상인데 구성이 비공개인 것, 바로 이웃한 기술) + 필수 기술의 사전 상위·하위 개념(자동, 한 단계).",
+  "not_required": "사전 검색으로 원문에 나오지만 위 어디에도 없는 기술 전부(현행 시스템·이관 원천·연계 대상, 기술 적용 계획표 같은 양식 목록, 법령·계약 문구 속 낱말 등) -- 자동으로 채운다."
+ },
+ "common_ok": [
+  "프로젝트 관리(PM)",
+  "PMO",
+  "요구사항 분석",
+  "아키텍처 설계",
+  "UI/UX 설계",
+  "테스트·QA",
+  "성능 테스트",
+  "정보보안",
+  "개인정보보호",
+  "시큐어 코딩",
+  "취약점 진단",
+  "암호화",
+  "접근통제·인증(IAM)",
+  "ISMS-P",
+  "공공 업무",
+  "전자정부"
+ ],
+ "ok_rule": "필수 기술의 사전 상위·하위 개념(한 단계)은 채점 때 어느 쪽도 맞음에 더한다.",
+ "docs": [
+  {
+   "id": "R01",
+   "file": "(제안요청서) 2026년 정보보안， 개인정보보호 및 재난예방 대응체계 컨설팅_최종.hwpx",
+   "title": "기획예산처 AI·데이터 기반 정보보호 고도화 전략계획 수립 컨설팅",
+   "kind": "제안요청서",
+   "type": "컨설팅",
+   "seen_before": false,
+   "chars": 57631,
+   "required": [
+    {
+     "skill": "정보보안",
+     "basis": "명시",
+     "quote": "정보보안전문가 (PM)"
+    },
+    {
+     "skill": "개인정보보호",
+     "basis": "명시",
+     "quote": "개인정보보호 전문가"
+    },
+    {
+     "skill": "취약점 진단",
+     "basis": "명시",
+     "quote": "보안취약점 진단"
+    },
+    {
+     "skill": "접근통제·인증(IAM)",
+     "basis": "명시",
+     "quote": "인증‧접근통제 체계 고도화"
+    }
+   ],
+   "preferred": [
+    "시큐어 코딩"
+   ],
+   "preferred_quotes": [
+    {
+     "skill": "시큐어 코딩",
+     "basis": "추정",
+     "quote": "SW보안약점 진단원 투입을 권고함"
+    }
+   ],
+   "ok": [
+    "ISMS-P",
+    "LLM Application",
+    "RAG·벡터DB",
+    "네트워크 구축·운영",
+    "데이터 거버넌스",
+    "암호화"
+   ],
+   "not_required": [
+    ".NET",
+    "ASP.NET",
+    "Android",
+    "Azure",
+    "C#",
+    "C++",
+    "Go",
+    "HTML/CSS",
+    "JSP/Servlet",
+    "Java",
+    "JavaScript",
+    "Linux",
+    "PHP",
+    "RDBMS",
+    "Unix",
+    "Windows Server",
+    "iOS",
+    "금융 업무",
+    "데이터 품질 관리",
+    "워크플로우·BPM",
+    "은행 업무",
+    "전자정부 표준프레임워크",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "보안 컨설팅 -- 보안 항목이 공통 조건이 아니라 과업 자체라 필수. 뒤쪽 기술 적용 계획표(Java·Linux 등)는 양식 목록."
+  },
+  {
+   "id": "R02",
+   "file": "1.제안요청서.hwpx",
+   "title": "국립생물자원관 AI기반 조사 데이터 구조화 및 분석 기술 개발",
+   "kind": "제안요청서",
+   "type": "구축",
+   "seen_before": false,
+   "chars": 83813,
+   "required": [
+    {
+     "skill": "비정형 문서 처리(OCR)",
+     "basis": "명시",
+     "quote": "OCR, NLP 등 AI 기술을 활용한 문서"
+    },
+    {
+     "skill": "자연어 처리(NLP)",
+     "basis": "명시",
+     "quote": "OCR, NLP 등 AI 기술을 활용한 문서"
+    },
+    {
+     "skill": "메타데이터 관리",
+     "basis": "명시",
+     "quote": "메타데이터 추출 및 태깅 시스템 개발"
+    },
+    {
+     "skill": "머신러닝",
+     "basis": "명시",
+     "quote": "기계학습/딥러닝(RNN, LSTM, Transformer 등)"
+    },
+    {
+     "skill": "딥러닝",
+     "basis": "명시",
+     "quote": "기계학습/딥러닝(RNN, LSTM, Transformer 등)"
+    },
+    {
+     "skill": "LLM Application",
+     "basis": "명시",
+     "quote": "LLM 기반 대화형 데이터 탐색 및 질의응답 기능"
+    },
+    {
+     "skill": "RAG·벡터DB",
+     "basis": "명시",
+     "quote": "RAG(Retrieval-Augmented Generation) 아키텍처 구현"
+    },
+    {
+     "skill": "ML Ops",
+     "basis": "명시",
+     "quote": "MLOps 체계 구축"
+    },
+    {
+     "skill": "데이터 모델링",
+     "basis": "명시",
+     "quote": "데이터베이스 모델링"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "데이터 품질 관리(DQC)"
+    },
+    {
+     "skill": "데이터 분석",
+     "basis": "명시",
+     "quote": "데이터 마이닝 기법을 활용한"
+    },
+    {
+     "skill": "Java",
+     "basis": "명시",
+     "quote": "백엔드는 Java기반 REST API로 개발"
+    },
+    {
+     "skill": "Vue",
+     "basis": "명시",
+     "quote": "Vue.js 기반 SPA"
+    },
+    {
+     "skill": "Python",
+     "basis": "명시",
+     "quote": "Python 등 최적화된 개발 언어"
+    },
+    {
+     "skill": "전자정부 표준프레임워크",
+     "basis": "명시",
+     "quote": "전자정부 프레임워크 4.3 기반으로 개발"
+    },
+    {
+     "skill": "RDBMS",
+     "basis": "명시",
+     "quote": "정형 데이터 저장을 위한 RDBMS"
+    },
+    {
+     "skill": "ETL",
+     "basis": "추정",
+     "quote": "정제된 데이터를 표준화된 스키마에 맞게 변환 및 적재하는 파이프라인 구축"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "BI Reporting",
+    "Computer Vision",
+    "Data Lake & Data Catalog",
+    "Elasticsearch",
+    "Git",
+    "HTML/CSS",
+    "JavaScript",
+    "MSA(마이크로서비스)",
+    "NoSQL",
+    "SQL",
+    "SVN",
+    "Text Analysis",
+    "WAS(웹 애플리케이션 서버)",
+    "검색엔진",
+    "데이터 거버넌스",
+    "데이터 이행",
+    "웹 서버",
+    "지능형 문서 처리(IDP)",
+    "챗봇",
+    "프롬프트 엔지니어링"
+   ],
+   "not_required": [
+    "ASP.NET",
+    "Android",
+    "Azure",
+    "C#",
+    "C++",
+    "Go",
+    "JSP/Servlet",
+    "Linux",
+    "PHP",
+    "Unix",
+    "Windows Server",
+    "iOS",
+    "금융 업무",
+    "네트워크 구축·운영",
+    "보험 업무",
+    "워크플로우·BPM",
+    "유통 업무",
+    "은행 업무",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "음성 인식(STT)·GIS는 사전에 없다. 검색엔진·NoSQL은 '또는'으로 적혀 어느 쪽도 맞음."
+  },
+  {
+   "id": "R03",
+   "file": "2. 2027년 충청북도 빅데이터 허브 플랫폼 통합유지관리 제안요청서(안)-최종.hwpx",
+   "title": "충청북도 빅데이터 허브플랫폼 통합 유지관리",
+   "kind": "제안요청서",
+   "type": "유지관리",
+   "seen_before": false,
+   "chars": 55061,
+   "required": [
+    {
+     "skill": "Linux",
+     "basis": "명시",
+     "quote": "Linux 기반 운영체제(OS) 전환"
+    },
+    {
+     "skill": "데이터 이행",
+     "basis": "명시",
+     "quote": "신규 NAS 스토리지로 이관"
+    },
+    {
+     "skill": "메타데이터 관리",
+     "basis": "명시",
+     "quote": "DB 메타데이터 등록 지원"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "데이터 품질관리 계획을 수립하고"
+    },
+    {
+     "skill": "Data Lake & Data Catalog",
+     "basis": "명시",
+     "quote": "데이터 연계를 통해 Data Lake자료 확충"
+    },
+    {
+     "skill": "ETL",
+     "basis": "추정",
+     "quote": "데이터를 수집·정제·가공하여 데이터마트 추가"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "BI Reporting",
+    "DB 관리(DBA)",
+    "HDFS",
+    "Hadoop",
+    "Spark",
+    "네트워크 구축·운영",
+    "데이터 분석",
+    "데이터 웨어하우스(DW)"
+   ],
+   "not_required": [
+    "ASP.NET",
+    "Android",
+    "Azure",
+    "C#",
+    "C++",
+    "HTML/CSS",
+    "JSP/Servlet",
+    "Java",
+    "JavaScript",
+    "PHP",
+    "RDBMS",
+    "Unix",
+    "Windows Server",
+    "iOS",
+    "워크플로우·BPM",
+    "전자정부 표준프레임워크",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "유지관리 -- 운영 대상 기술이 요구. 플랫폼 소프트웨어 구성은 비공개라 Hadoop 등은 어느 쪽도 맞음."
+  },
+  {
+   "id": "R04",
+   "file": "2. 제안요청서(수정).hwp",
+   "title": "부산대학교 AI 기반 지역혁신 데이터 플랫폼 구축",
+   "kind": "제안요청서",
+   "type": "구축",
+   "seen_before": false,
+   "chars": 71193,
+   "required": [
+    {
+     "skill": "메타데이터 관리",
+     "basis": "명시",
+     "quote": "성과물 메타데이터·파일·버전·공개범위·관계·계보 관리"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "데이터 표준·코드·품질·초기이관"
+    },
+    {
+     "skill": "데이터 이행",
+     "basis": "명시",
+     "quote": "DB 및 데이터 이관, 반입 체계 설계"
+    },
+    {
+     "skill": "검색엔진",
+     "basis": "명시",
+     "quote": "DBMS, 웹·응용서버, 검색엔진, 리포팅"
+    },
+    {
+     "skill": "BI Reporting",
+     "basis": "추정",
+     "quote": "기본 대시보드와 표준 보고서"
+    },
+    {
+     "skill": "데이터 모델링",
+     "basis": "추정",
+     "quote": "관계모델 설계"
+    },
+    {
+     "skill": "LLM Application",
+     "basis": "추정",
+     "quote": "문서 요약·분류·키워드 추출"
+    },
+    {
+     "skill": "RAG·벡터DB",
+     "basis": "추정",
+     "quote": "승인자료 대상 근거 검색형 질의응답"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "HTML/CSS",
+    "JavaScript",
+    "Linux",
+    "RDBMS",
+    "Text Analysis",
+    "WAS(웹 애플리케이션 서버)",
+    "네트워크 구축·운영",
+    "데이터 거버넌스",
+    "데이터 분석",
+    "웹 서버",
+    "자연어 처리(NLP)",
+    "전자정부 표준프레임워크"
+   ],
+   "not_required": [
+    "ASP.NET",
+    "Android",
+    "Azure",
+    "C#",
+    "C++",
+    "JSP/Servlet",
+    "Java",
+    "Microsoft SQL Server",
+    "PHP",
+    "SQL",
+    "Unix",
+    "Windows Server",
+    "iOS",
+    "금융 업무",
+    "워크플로우·BPM",
+    "은행 업무",
+    "의료 업무",
+    "제조 업무",
+    "카드 업무",
+    "통신 업무"
+   ],
+   "note": "제품명은 사업자가 제안(지정 없음). GIS는 사전에 없다."
+  },
+  {
+   "id": "R05",
+   "file": "2. 제안요청서(유지관리 및 운영).hwpx",
+   "title": "개인정보보호위원회 2027년 마이데이터 지원 플랫폼 유지관리 및 운영",
+   "kind": "제안요청서",
+   "type": "유지관리",
+   "seen_before": false,
+   "chars": 72546,
+   "required": [
+    {
+     "skill": "Naver Cloud Platform",
+     "basis": "명시",
+     "quote": "멀티클라우드 환경(네이버클라우드"
+    },
+    {
+     "skill": "Docker",
+     "basis": "명시",
+     "quote": "컨테이너 환경 개발기술"
+    },
+    {
+     "skill": "암호화",
+     "basis": "명시",
+     "quote": "TLS 기반 상호인증 및 전송구간 암호화"
+    },
+    {
+     "skill": "접근통제·인증(IAM)",
+     "basis": "명시",
+     "quote": "OAuth2.0 인증 규격"
+    },
+    {
+     "skill": "개인정보보호",
+     "basis": "명시",
+     "quote": "보안 취약점 점검 및 개인정보보호"
+    },
+    {
+     "skill": "취약점 진단",
+     "basis": "명시",
+     "quote": "보안취약점 점검·조치, 모의해킹 실시"
+    },
+    {
+     "skill": "정보보안",
+     "basis": "명시",
+     "quote": "보안취약점 점검·조치, 모의해킹 실시"
+    },
+    {
+     "skill": "WAS(웹 애플리케이션 서버)",
+     "basis": "추정",
+     "quote": "WAS 22"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "API Gateway",
+    "EAI/ESB",
+    "Kubernetes",
+    "Linux",
+    "Private Cloud",
+    "RDBMS",
+    "Recommendation",
+    "금융 업무",
+    "네트워크 구축·운영",
+    "데이터 분석",
+    "데이터 품질 관리",
+    "메타데이터 관리",
+    "모바일 앱 개발",
+    "웹 서버"
+   ],
+   "not_required": [
+    ".NET",
+    "ASP.NET",
+    "Android",
+    "Azure",
+    "C#",
+    "C++",
+    "Go",
+    "HTML/CSS",
+    "JSP/Servlet",
+    "Java",
+    "JavaScript",
+    "PHP",
+    "Unix",
+    "Windows Server",
+    "iOS",
+    "워크플로우·BPM",
+    "의료 업무",
+    "전자정부 표준프레임워크",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "유지관리 -- 운영 중인 플랫폼의 적용 기술(TLS·OAuth2.0·클라우드)이 요구. 금융·의료·통신은 연계 대상 분야."
+  },
+  {
+   "id": "R06",
+   "file": "download/1. 과업지시서(최종)_261020.hwp",
+   "title": "광주테크노파크 클라우드기반 의료데이터 활용 통합플랫폼 고도화(2차)",
+   "kind": "과업지시서",
+   "type": "구축+유지관리",
+   "seen_before": false,
+   "chars": 75819,
+   "required": [
+    {
+     "skill": "의료 업무",
+     "basis": "명시",
+     "quote": "의료·헬스케어 AI모델 파인튜닝"
+    },
+    {
+     "skill": "ML Ops",
+     "basis": "명시",
+     "quote": "파인튜닝 및 MLOps 환경 구축"
+    },
+    {
+     "skill": "LLM 파인튜닝",
+     "basis": "명시",
+     "quote": "의료·헬스케어 AI모델 파인튜닝"
+    },
+    {
+     "skill": "Kubernetes",
+     "basis": "명시",
+     "quote": "VM 및 Kubernetes Node 운영 관리"
+    },
+    {
+     "skill": "ETL",
+     "basis": "명시",
+     "quote": "ETL 프로세스 운영"
+    },
+    {
+     "skill": "데이터 웨어하우스(DW)",
+     "basis": "명시",
+     "quote": "ODS-DW-CDW 기반 데이터 파이프라인 운영"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "데이터 품질 관리 - 정합성 검증"
+    },
+    {
+     "skill": "데이터 거버넌스",
+     "basis": "명시",
+     "quote": "데이터 거버넌스 및 보안 운영 유지관리"
+    },
+    {
+     "skill": "모바일 앱 개발",
+     "basis": "명시",
+     "quote": "마이헬스지갑 모바일 서비스 고도화"
+    },
+    {
+     "skill": "Android",
+     "basis": "명시",
+     "quote": "Android 및 iOS 환경에서 서비스 이용이 가능하도록 구현"
+    },
+    {
+     "skill": "iOS",
+     "basis": "명시",
+     "quote": "Android 및 iOS 환경에서 서비스 이용이 가능하도록 구현"
+    },
+    {
+     "skill": "API Gateway",
+     "basis": "명시",
+     "quote": "API Gateway를 통해 안전하게 연계·운영"
+    },
+    {
+     "skill": "메타데이터 관리",
+     "basis": "명시",
+     "quote": "표준화된 메타데이터 관리 체계 구축"
+    },
+    {
+     "skill": "Tmax",
+     "basis": "명시",
+     "quote": "DBMS Tmax OpenSQL v2.0"
+    },
+    {
+     "skill": "개인정보보호",
+     "basis": "명시",
+     "quote": "개인정보 이노베이션 존"
+    },
+    {
+     "skill": "LLM Application",
+     "basis": "추정",
+     "quote": "AI 기반 건강비서 서비스 기능"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "BI Reporting",
+    "CI/CD",
+    "Computer Vision",
+    "DB 관리(DBA)",
+    "Data Lake & Data Catalog",
+    "Docker",
+    "Flutter",
+    "PostgreSQL",
+    "Private Cloud",
+    "PyTorch",
+    "Python",
+    "R",
+    "RDBMS",
+    "React Native",
+    "Recommendation",
+    "TensorFlow",
+    "WAS(웹 애플리케이션 서버)",
+    "pandas",
+    "scikit-learn",
+    "검색엔진",
+    "네트워크 구축·운영",
+    "데이터 분석",
+    "딥러닝",
+    "머신러닝",
+    "웹 서버",
+    "자연어 처리(NLP)",
+    "챗봇"
+   ],
+   "not_required": [
+    "Azure",
+    "HTML/CSS",
+    "Java",
+    "Maven/Gradle",
+    "Node.js",
+    "SQL",
+    "Unix",
+    "보험 업무",
+    "워크플로우·BPM",
+    "유통 업무",
+    "전자정부 표준프레임워크",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "구축 + 기 구축 플랫폼 유지관리. 연구자 샌드박스에 넣는 라이브러리 목록(PyTorch 등)은 어느 쪽도 맞음. 클라우드 사업자(공공존 CSAP)는 사전에 없다. 같은 사업의 제안요청서(평가·작성 안내 위주)는 재지 않음."
+  },
+  {
+   "id": "R07",
+   "file": "download-2/(제안요청서) 1. 교육 데이터 통합관리 플랫폼(Data Lake) 구축.hwp",
+   "title": "울산과학대학교 교육 데이터 통합관리 플랫폼(Data Lake) 구축",
+   "kind": "제안요청서",
+   "type": "구축",
+   "seen_before": false,
+   "chars": 25697,
+   "required": [
+    {
+     "skill": "AWS",
+     "basis": "명시",
+     "quote": "학교 소유 AWS 계정 체계에서 구성"
+    },
+    {
+     "skill": "Data Lake & Data Catalog",
+     "basis": "명시",
+     "quote": "교육 데이터 통합관리 플랫폼(Data Lake) 구축"
+    },
+    {
+     "skill": "ETL",
+     "basis": "명시",
+     "quote": "수집·ETL/ELT·품질·재처리"
+    },
+    {
+     "skill": "CDC",
+     "basis": "명시",
+     "quote": "자동 배치 또는 CDC"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "핵심 품질규칙 12개 이내"
+    },
+    {
+     "skill": "메타데이터 관리",
+     "basis": "명시",
+     "quote": "학생데이터 표준·메타·품질관리"
+    },
+    {
+     "skill": "데이터 거버넌스",
+     "basis": "명시",
+     "quote": "보안·거버넌스"
+    },
+    {
+     "skill": "개인정보보호",
+     "basis": "명시",
+     "quote": "학생 개인정보를 분류·가명처리"
+    },
+    {
+     "skill": "접근통제·인증(IAM)",
+     "basis": "명시",
+     "quote": "역할별 권한을 적용"
+    },
+    {
+     "skill": "암호화",
+     "basis": "명시",
+     "quote": "저장·전송 암호화"
+    },
+    {
+     "skill": "BI Reporting",
+     "basis": "명시",
+     "quote": "관리 대시보드 2개"
+    },
+    {
+     "skill": "데이터 모델링",
+     "basis": "명시",
+     "quote": "계층모델, 변환코드"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "AWS Lambda",
+    "IaC",
+    "Python",
+    "Recommendation",
+    "SQL",
+    "Spark",
+    "Terraform",
+    "데이터 분석",
+    "데이터 웨어하우스(DW)",
+    "데이터 이행"
+   ],
+   "not_required": [
+    "RDBMS",
+    "그룹웨어",
+    "네트워크 구축·운영"
+   ],
+   "note": "같은 학교의 두 번째 사업(산업체·산학협력 Data Lake)은 글자가 96% 같아 빼고 한 편만 잰다. Glue·Athena는 '또는 동등'."
+  },
+  {
+   "id": "R08",
+   "file": "download-3/별첨_제안요청서.hwp",
+   "title": "한국석유공사 석유정보 통합 데이터 플랫폼 구축 용역",
+   "kind": "제안요청서",
+   "type": "구축",
+   "seen_before": false,
+   "chars": 75166,
+   "required": [
+    {
+     "skill": "ETL",
+     "basis": "명시",
+     "quote": "데이터 파이프라인 구축"
+    },
+    {
+     "skill": "Data Lake & Data Catalog",
+     "basis": "명시",
+     "quote": "데이터레이크 구성"
+    },
+    {
+     "skill": "데이터 이행",
+     "basis": "명시",
+     "quote": "데이터 마이그레이션"
+    },
+    {
+     "skill": "BI Reporting",
+     "basis": "명시",
+     "quote": "셀프 BI 분석환경 구축"
+    },
+    {
+     "skill": "데이터 모델링",
+     "basis": "명시",
+     "quote": "논리·물리 데이터모델"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "품질요건을 반영한 저장구조"
+    },
+    {
+     "skill": "데이터 거버넌스",
+     "basis": "명시",
+     "quote": "데이터 거버넌스 및 보안 체계 수립"
+    },
+    {
+     "skill": "접근통제·인증(IAM)",
+     "basis": "명시",
+     "quote": "역할 중심 권한 제어 체계 수립"
+    },
+    {
+     "skill": "데이터 분석",
+     "basis": "명시",
+     "quote": "다차원 시각화 및 통계 분석 템플릿 제공"
+    },
+    {
+     "skill": "SQL 튜닝",
+     "basis": "명시",
+     "quote": "SQL 튜닝 방안 제시"
+    },
+    {
+     "skill": "전자정부 표준프레임워크",
+     "basis": "명시",
+     "quote": "표준 프레임워크 및 공통 컴포넌트 적용"
+    },
+    {
+     "skill": "PostgreSQL",
+     "basis": "추정",
+     "quote": "pg_dump/pg_restore"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "CDC",
+    "DB 관리(DBA)",
+    "Hadoop",
+    "Linux",
+    "RDBMS",
+    "SQL",
+    "Spark",
+    "데이터 웨어하우스(DW)",
+    "로우코드 플랫폼",
+    "메타데이터 관리",
+    "애자일"
+   ],
+   "not_required": [
+    "Azure",
+    "Go",
+    "HTML/CSS",
+    "Unix",
+    "금융 업무",
+    "네트워크 구축·운영",
+    "제조 업무",
+    "통신 업무"
+   ],
+   "note": "원천 Sybase ASE·IQ는 사전에 없다(이관 원천). 구매규격 사전공개 한 장은 재지 않음."
+  },
+  {
+   "id": "R09",
+   "file": "download-4/(예비공고) 제안요청서_조선해양기자재 비정형 기술암묵지 데이터셋 수집·정제 및 디지털화 용역.pdf",
+   "title": "경남조선해양기자재협동조합 비정형 기술암묵지 데이터셋 수집·정제 및 디지털화 용역",
+   "kind": "제안요청서",
+   "type": "데이터 구축",
+   "seen_before": false,
+   "chars": 42259,
+   "required": [
+    {
+     "skill": "비정형 문서 처리(OCR)",
+     "basis": "명시",
+     "quote": "OCR, STT, 문서 구조 분석, 표 추출"
+    },
+    {
+     "skill": "RAG·벡터DB",
+     "basis": "명시",
+     "quote": "GraphRAG 관계 데이터"
+    },
+    {
+     "skill": "데이터 품질 관리",
+     "basis": "명시",
+     "quote": "데이터셋 품질검증"
+    },
+    {
+     "skill": "제조 업무",
+     "basis": "명시",
+     "quote": "전주기 제조, 설계, 엔지니어링"
+    },
+    {
+     "skill": "지능형 문서 처리(IDP)",
+     "basis": "추정",
+     "quote": "표제란 분리, 표, 문단, 주석 영역 추출, 표 구조 복원"
+    },
+    {
+     "skill": "자연어 처리(NLP)",
+     "basis": "추정",
+     "quote": "엔티티 추출 및 수치·단위 정규화"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "Computer Vision",
+    "ETL",
+    "LLM Application",
+    "Python",
+    "Recommendation",
+    "Text Analysis",
+    "데이터 모델링",
+    "데이터 분석",
+    "딥러닝",
+    "머신러닝",
+    "메타데이터 관리"
+   ],
+   "not_required": [
+    "ASP.NET",
+    "Android",
+    "C#",
+    "C++",
+    "Go",
+    "HTML/CSS",
+    "JSP/Servlet",
+    "Java",
+    "JavaScript",
+    "Linux",
+    "PHP",
+    "Unix",
+    "iOS",
+    "네트워크 구축·운영",
+    "데이터 이행",
+    "보험 업무",
+    "워크플로우·BPM",
+    "전자정부 표준프레임워크",
+    "통신 업무"
+   ],
+   "note": "음성 전사(STT)는 사전에 없다. 비식별화 대상은 고객사·선주 등 업체 정보라 개인정보보호는 공통 조건으로 둔다. 같은 사업의 공고문은 재지 않음."
+  },
+  {
+   "id": "R10",
+   "file": "산안공단/제안요청서_생성형AI_산업안전보건_비정형데이터.hwp",
+   "title": "한국산업안전보건공단 생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구",
+   "kind": "제안요청서",
+   "type": "연구용역",
+   "seen_before": true,
+   "chars": 16590,
+   "required": [
+    {
+     "skill": "자연어 처리(NLP)",
+     "basis": "명시",
+     "quote": "자연어 처리 기반 탐지 모델 설계"
+    },
+    {
+     "skill": "개인정보보호",
+     "basis": "명시",
+     "quote": "개인·민감정보 자동 가명처리 체계 구축"
+    },
+    {
+     "skill": "LLM Application",
+     "basis": "명시",
+     "quote": "생성형 AI 기반 수준평가 보고서 자동 생성 기능 개발"
+    },
+    {
+     "skill": "데이터 모델링",
+     "basis": "추정",
+     "quote": "데이터 유형별 스키마*(Schema) 설계"
+    }
+   ],
+   "preferred": [],
+   "preferred_quotes": [],
+   "ok": [
+    "BI Reporting",
+    "ETL",
+    "LLM 파인튜닝",
+    "Python",
+    "RAG·벡터DB",
+    "Text Analysis",
+    "검색엔진",
+    "데이터 분석",
+    "데이터 품질 관리",
+    "딥러닝",
+    "머신러닝",
+    "비정형 문서 처리(OCR)",
+    "지능형 문서 처리(IDP)"
+   ],
+   "not_required": [
+    "금융 업무"
+   ],
+   "note": "영상 D6에 쓴 자료(사전규격 R26BD00208180 · 산안공고 제2026-68호의 제안요청서). 정답을 쓰기 전에 이 자료의 OpenAI 결과를 본 적이 있어 seen_before -- 따로 보고한다. RAG는 '적용 고려(다른 대안 가능)'라 어느 쪽도 맞음."
+  }
+ ]
+}

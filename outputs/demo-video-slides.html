@@ -69,7 +69,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="kicker">과제 시연</div>
     <h1>TeamWeaver</h1>
     <p class="sub">SI 조직 인력 → 프로젝트 배치 최적화와<br>근거를 검사받는 AI 설명</p>
-    <p class="meta">인사 데이터는 모두 실제 인사 자료 모양으로 만든 가상 데이터입니다 · 사람 이름도 지어낸 이름 · 발주 자료 한 편만 나라장터 공개 자료</p>
+    <p class="meta">인사 데이터는 모두 실제 인사 자료 모양으로 만든 가상 데이터입니다 · 사람 이름도 지어낸 이름 · 발주 자료(한 공공 사업의 공고문·제안요청서)만 나라장터 공개 자료</p>
   </div>
 </section>
 
@@ -122,7 +122,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 세 문장 요약 · 근거 사실 연결</div>
     <div class="card"><h3><span class="n">4</span>안 확정</h3>고른 안이 실제 배치로 — 지금 대비 옮김·새로·빠짐</div>
     <div class="card"><h3><span class="n">5</span>What-if</h3>지금 배치에서 교체 · AI 설명 · 담기 → 사유 적고 확정</div>
-    <div class="card"><h3><span class="n">6</span>신규 사업 편성</h3>K별 자동 편성 · 고도화 과제 등록 · 이전 팀원</div>
+    <div class="card"><h3><span class="n">6</span>신규 사업 편성</h3>K별 자동 편성 · 공고문으로 사업 정보·필요 기술 채우기 · 자료 요약</div>
     <div class="card"><h3><span class="n">7</span>긴급 투입</h3>상황을 말로 → 추천안 · 빼 온 자리 메움 · 동시 수행</div>
     <div class="card"><h3><span class="n">8</span>인사팀 검토 자료</h3>잠긴 사실 + 부서장 판단 → PDF</div>
     <div class="card"><h3><span class="n">9</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
@@ -177,26 +177,26 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 <section class="slide">
   <div class="kicker">성과 · AI가 바꾼 것 ②</div>
   <h2>AI로 훨씬 빨라진 것 — 쓰고, 읽고, 옮긴다</h2>
-  <div class="grid g2" style="margin-top:12px;gap:14px">
-    <div class="card" style="padding:16px 22px"><h3 style="margin-bottom:4px">"왜 이 팀인가" 글</h3>
+  <div class="grid g2" style="margin-top:8px;gap:12px">
+    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">"왜 이 팀인가" 글</h3>
       <div class="cap" style="margin-top:0;font-size:18px">AI 없이: 근거 77줄 나열, 사람이 쓰면 30~90분</div>
-      <div class="num" style="font-size:40px;margin-top:6px">77줄 → 3문장</div>
+      <div class="num" style="font-size:36px;margin-top:4px">77줄 → 3문장</div>
       <div style="font-size:19px;margin-top:4px">사실 검사 통과 <b>99%</b> · 8초 · 쓰는 시간 37~40% 단축(추정)</div></div>
-    <div class="card" style="padding:16px 22px"><h3 style="margin-bottom:4px">발주 자료 → 필요 기술</h3>
-      <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 사전 이름 찾기 + 문장 속 "우대·현행·이상" 같은 말로 분류</div>
-      <div class="num" style="font-size:40px;margin-top:6px">정밀도 0.93 → 1.00</div>
-      <div style="font-size:19px;margin-top:4px">현행·연계 언급을 요구로 1/17 → 0 · 경력 98%·인원 100% · 편당 6초</div></div>
-    <div class="card" style="padding:16px 22px"><h3 style="margin-bottom:4px">긴급 요청을 말로</h3>
+    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">발주 자료 → 사업 정보·필요 기술·요약</h3>
+      <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 표지·사전 이름 + "우대·현행" 같은 말</div>
+      <div class="num" style="font-size:36px;margin-top:4px">정밀도 0.93 → 1.00<small> 가상 10편</small></div>
+      <div style="font-size:19px;margin-top:4px">현행 시스템 언급을 요구로 1/17 → 0 · 계약기간 날짜로 7개월 계산(규칙 못 함) · 근거 없는 요약은 거름</div></div>
+    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">긴급 요청을 말로</h3>
       <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 사전 기술 이름이 글에 그대로 적혀야만</div>
-      <div class="num" style="font-size:40px;margin-top:6px">재현율 84 → 100<small>%</small></div>
-      <div style="font-size:19px;margin-top:4px">일로만 설명한 요구 0/6 → 6/6 · 대신 정밀도 1.00 → 0.93 · 2.5초 · 사람 특성 말은 조건으로 안 씀</div></div>
-    <div class="card" style="padding:16px 22px"><h3 style="margin-bottom:4px">낯선 기술 이름</h3>
+      <div class="num" style="font-size:36px;margin-top:4px">찾은 정답 46 → 55<small> / 55개</small></div>
+      <div style="font-size:19px;margin-top:4px">일로만 설명한 요구 0/6 → 6/6 · 대신 정답에 없는 기술 4개를 더 붙임 · 사람 특성 말은 안 씀</div></div>
+    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">낯선 기술 이름</h3>
       <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 글자가 비슷한 이름만 후보로</div>
-      <div class="num" style="font-size:40px;margin-top:6px">54 → 100<small>% 후보 3개 안</small></div>
-      <div style="font-size:19px;margin-top:4px">1순위만 27 → 95% · 사전의 실제 별칭 522개를 숨겨 시험 · 정답대로 승인하면 틀린 기술 점수 35%&nbsp;→&nbsp;0</div></div>
+      <div class="num" style="font-size:36px;margin-top:4px">1순위 27 → 95<small>%</small></div>
+      <div style="font-size:19px;margin-top:4px">숨긴 실제 별칭 522개 · 후보 3개 안 54 → 100% · 정답대로 승인하면 틀린 기술 점수 35%&nbsp;→&nbsp;0</div></div>
   </div>
   <div class="banner" style="margin-top:12px">AI는 사실 번호를 고르고 사전 말로 옮기기만 — 사람 정보는 보내지 않고, 고르는 것은 사람</div>
-  <div class="foot" style="padding-top:8px;font-size:15px">정답·기준은 AI 실행 전에 기록. 긴급 요청 48문장·가상 발주 자료와 그 정답은 개발 측이 쓴 가상 자료(재현율 = 정답 중 찾은 비율, 정밀도 = 뽑은 것 중 맞은 비율).</div>
+  <div class="foot" style="padding-top:8px;font-size:15px">정답·기준은 AI 실행 전에 기록. 긴급 요청 48문장·가상 발주 자료 10편과 정답은 개발 측이 쓴 가상 자료 — 다 맞힌 것은 이 표본에서 놓친 것이 없다는 뜻이다(정밀도 = 뽑은 것 중 맞은 비율).</div>
 </section>
 
 <section class="slide">
