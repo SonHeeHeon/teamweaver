@@ -3,8 +3,10 @@
 가상 자료 측정(`rehearsal.rfp_read_eval`)과 같은 함수·같은 채점(`score`)을 실제 공공 자료(나라장터 사전규격·입찰공고 첨부)에 쓴다.
 자료 원문은 저장소에 넣지 않는다(기관 문서) -- `--docs-dir`(저장소 밖 폴더)에서 읽고, 결과에는 짧은 근거 말·기술 이름·글자 수만 남긴다.
 
-정답표 `rehearsal/data/rfp_gold_real.json`(AI 측정 전에 커밋한다):
+정답표 `rehearsal/data/rfp_gold_real.json`(AI 측정 전에 커밋한다 -- 2026-10-23 밤, 10편):
   - 작성 과정은 파일의 "authoring"에 사실대로 적는다(초안 작성자, 검토·확정한 사람, 초안을 쓸 때 AI 결과를 보지 않았는지).
+    이번 초안은 Claude가 자료를 읽고 썼고 사용자 검토 전이다 -- 검토로 바뀌는 칸은 그 칸에 날짜·사유와 함께 남기고, 결과를 본 뒤의 수정이면 그렇다고 적는다.
+  - 채점의 "어느 쪽도 맞음" = 자료마다 적은 것 + common_ok(공통 준수 조건·공공 도메인) + 필수 기술의 사전 상위·하위 개념(ok_rule).
   - 자료마다 required[{skill, basis: 명시|추정, quote}] · preferred · not_required(현행 시스템·연계 대상 등 요구가 아닌 언급) · ok(어느 쪽이어도 맞음) · seen_before
     (정답 작성 전에 이 자료의 AI 결과를 본 적이 있으면 참 -- 따로 보고).
   - 기준: required = 사업에 필요하다고 자료가 말하는 기술. "명시" = 인력 요건·과업 문장에 그 기술(사전 이름·별칭)이 적힘, "추정" = 과업을 하려면 그 기술이 없으면 안 되는 것.
@@ -13,8 +15,8 @@
 방법: 규칙(AI 없음) · OpenAI 서비스 모델 · GLM-5.3-Flash high(사내 LLM 대리). AI는 실행마다 달라 `--repeat`번(기본 3) 돌려 평균·범위를 남긴다.
 관문은 두지 않는다(보고만). 가설(판정 아님): AI 정밀도 > 규칙 정밀도, 규칙은 현행 시스템 언급을 필수로 뽑는다, 명시 재현율 > 추정 재현율.
 
-사람 시간은 **측정이 아니라 추정**이다(보고서 8.3과 같은 방식): 자료 한글 음절 수 ÷ 묵독 속도(분당 550음절 = 쉬운 단문 상한【관찰】 ~ 300음절 = 기술 문서 정독【가정】)
-+ 기술 고르기·양식 10~20분【가정】. AI 시간은 실측(읽기 지연, 자료당).
+사람 시간은 **측정이 아니라 추정**이다(보고서 8.3과 같은 방식): 하한 = 과업·요구사항 부분(글의 40%【가정】)만 분당 550음절(쉬운 단문 상한【관찰】)로,
+상한 = 전부를 분당 300음절(기술 문서 정독【가정】)로 읽는다 + 기술 고르기·양식 10~20분【가정】. AI 시간은 실측(읽기 지연, 자료당).
 
   uv run python -m rehearsal.rfp_real_eval --docs-dir <저장소 밖 폴더> [--repeat 3] [--rule-only] [--gold …] [--out …]   → rehearsal/results/rfp-real.json
 """
@@ -35,18 +37,36 @@ ROOT = Path(__file__).resolve().parents[1]
 GOLD = ROOT / "rehearsal" / "data" / "rfp_gold_real.json"
 OUT = ROOT / "rehearsal" / "results" / "rfp-real.json"
 READ_SPEED = (300, 550)            # 분당 음절(정독 가정 ~ 쉬운 단문 상한)
+READ_SHARE = 0.4                   # 하한: 과업·요구사항 부분만 읽는다(가정 -- 10편을 읽어 보니 과업·요구사항이 글의 약 35~40%, 나머지는 평가·계약·서식)
 PICK_MINUTES = (10, 20)            # 기술 고르기·양식 입력(가정)
 WATCHED = ("api/rag", "rehearsal/rfp_real_eval.py", "rehearsal/rfp_read_eval.py", "rehearsal/data/rfp_gold_real.json")
 
 
-def load_items(docs_dir: Path, gold_path: Path = GOLD) -> tuple[list[dict], dict]:
+def neighbors(sd, labels: set[str]) -> set[str]:
+    """필수 기술의 사전 상위·하위 개념(한 단계) -- 정답 파일 ok_rule."""
+    by_label = {c["label"]: cid for cid, c in sd.concepts.items()}
+    ids = {by_label[x] for x in labels if x in by_label}
+    out = set()
+    for cid, c in sd.concepts.items():
+        if cid in ids:
+            out |= {sd.concepts[b]["label"] for b in c.get("broader") or [] if b in sd.concepts}
+        if ids & set(c.get("broader") or []):
+            out.add(c["label"])
+    return out
+
+
+def load_items(docs_dir: Path, gold_path: Path = GOLD, sd=None) -> tuple[list[dict], dict]:
     gold = json.loads(gold_path.read_text("utf-8"))
+    common = set(gold.get("common_ok") or [])
     items = []
     for d in gold["docs"]:
         text = _text_of(docs_dir / d["file"])
+        req = {g["skill"] for g in d["required"]}
+        pref = set(d["preferred"])
+        ok = (set(d.get("ok", [])) | common | (neighbors(sd, req) if sd is not None and gold.get("ok_rule") else set())) - req - pref
         items.append({"set": "real", "id": d["id"], "style": d.get("kind", ""), "text": text, "required": d["required"],
-                      "preferred": d["preferred"], "not_required": d["not_required"], "ok": d.get("ok", []), "complete": True,
-                      "seen_before": bool(d.get("seen_before")), "title": d.get("title", "")})
+                      "preferred": d["preferred"], "not_required": [x for x in d["not_required"] if x not in ok], "ok": sorted(ok),
+                      "complete": True, "seen_before": bool(d.get("seen_before")), "title": d.get("title", "")})
     return items, gold
 
 
@@ -65,7 +85,7 @@ def by_basis(items: list[dict], outs: list[dict], sd) -> dict:
 
 def human_minutes(text: str) -> dict:
     syl = len(re.findall("[가-힣]", text))
-    lo = syl / READ_SPEED[1] + PICK_MINUTES[0]
+    lo = syl * READ_SHARE / READ_SPEED[1] + PICK_MINUTES[0]
     hi = syl / READ_SPEED[0] + PICK_MINUTES[1]
     return {"chars": len(text), "hangul_syllables": syl, "estimate_min": [round(lo, 1), round(hi, 1)]}
 
@@ -78,6 +98,8 @@ def summarize(runs: list[dict]) -> dict:
         v = [r[k] for r in runs if r.get(k) is not None]
         out[k] = {"mean": round(statistics.mean(v), 3), "min": min(v), "max": max(v)} if v else None
     out["basis"] = [r["basis"] for r in runs]
+    u = [r["unseen_only"]["precision_hard"] for r in runs if r.get("unseen_only") and r["unseen_only"].get("precision_hard") is not None]
+    out["precision_hard_unseen"] = {"mean": round(statistics.mean(u), 3), "min": min(u), "max": max(u)} if u else None
     return out
 
 
@@ -94,16 +116,20 @@ def main() -> None:
     load_env()
     sd = load_dictionary()
     pricing = load_pricing()
-    items, gold = load_items(Path(a.docs_dir).expanduser(), Path(a.gold))
+    items, gold = load_items(Path(a.docs_dir).expanduser(), Path(a.gold), sd)
     git = lambda *c: subprocess.run(["git", "-C", str(ROOT), *c], capture_output=True, text=True).stdout.strip()   # noqa: E731
     res = {"experiment": "rfp-real", "when": dt.datetime.now().astimezone().isoformat(timespec="seconds"), "commit": git("rev-parse", "--short", "HEAD"),
            "dirty": bool(git("status", "--porcelain", "--", *WATCHED)), "authoring": gold.get("authoring"),
            "docs": [{"id": it["id"], "title": it["title"], "seen_before": it["seen_before"], **human_minutes(it["text"])} for it in items],
-           "human_time_note": f"추정(측정 아님): 한글 음절 ÷ 분당 {READ_SPEED[0]}~{READ_SPEED[1]}음절 + 기술 고르기 {PICK_MINUTES[0]}~{PICK_MINUTES[1]}분",
+           "human_time_note": f"추정(측정 아님): 하한 = 한글 음절의 {READ_SHARE:.0%} ÷ 분당 {READ_SPEED[1]}음절 + {PICK_MINUTES[0]}분, 상한 = 전부 ÷ 분당 {READ_SPEED[0]}음절 + {PICK_MINUTES[1]}분",
            "methods": {}}
     print("규칙", flush=True)
     rule_outs = run(items, sd)
     res["methods"]["rule"] = {**score(items, rule_outs, sd), "basis": by_basis(items, rule_outs, sd)}
+    seen = [i for i, it in enumerate(items) if it["seen_before"]]
+    if seen:                                   # 정답 전에 AI 결과를 본 자료를 뺀 채점도 함께(seen_before)
+        keep = [i for i in range(len(items)) if i not in seen]
+        res["methods"]["rule"]["unseen_only"] = {k: v for k, v in score([items[i] for i in keep], [rule_outs[i] for i in keep], sd).items() if k != "rows"}
     if not a.rule_only:
         from openai import OpenAI
         model = pricing["briefing_model"]
@@ -117,7 +143,10 @@ def main() -> None:
             for i in range(a.repeat):
                 print(f"{name} {m} ({e}) {i + 1}/{a.repeat}", flush=True)
                 outs = run(items, sd, client=client, model=m, effort=e, price=pricing["models"].get(m))
-                runs.append({**score(items, outs, sd), "basis": by_basis(items, outs, sd)})
+                r = {**score(items, outs, sd), "basis": by_basis(items, outs, sd)}
+                if seen:
+                    r["unseen_only"] = {k: v for k, v in score([items[i] for i in keep], [outs[i] for i in keep], sd).items() if k != "rows"}
+                runs.append(r)
             res["methods"][name] = {"model": m, "reasoning_effort": e, "runs": runs, "summary": summarize(runs)}
     Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", "utf-8")
     for k, v in res["methods"].items():
