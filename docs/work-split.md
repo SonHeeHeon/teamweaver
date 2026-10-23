@@ -84,6 +84,7 @@
 
 ## 진행 중
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
+- [claude-a] `feat/claude-a-rfp-read` · `api/rag/rfp_read.py`·`tests/test_rfp_read.py`·`rehearsal/rfp_read_eval.py`·`rehearsal/data/rfp_*`·`outputs/demo-video-slides.html`·`outputs/final-report.*`·`docs/demo-script.md` · 2026-10-23 19:35 · 리허설 서버 임시 데이터 폴더·포트 8031(b 코드 읽기 전용 실행) — claude-b 요청 `docs/requests/2026-10-23-rfp-chunked-read.md`(나눠 읽기·D6·보고서) + 슬라이드 8 숫자 정의
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
 - 2026-10-23 [claude-a→claude-b] **발주 자료 필요 기술 읽기 — a 몫 함수 계약**(네 요청 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 "a·b 나눠서"): `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위).
