@@ -135,11 +135,14 @@ export const readProjectMeta = (file: File, signal?: AbortSignal) =>
 
 /** 부서장용 자료 요약(2026-10-23 사용자 "각각의 자료를 llm으로 잘 압축 요약한(이 서비스를 쓰는 부서장입장에서 필요로 하는 정보를 잘 요약해서 보여주기)").
  *  서버 `api/rag/doc_brief.summarize_document` -- 항목마다 근거 말(원문 확인)·숫자 검사, 처음 한 번 사람이 눌러 만들고 저장한다. */
-export interface BriefItem { text: string; quote: string }
+/** source: AI 요약 항목 | 열쇠말 줄(AI가 그 조각을 못 읽어 규칙으로 뽑은 원문 줄 -- 나눠 읽기 리뷰 S4) */
+export interface BriefItem { text: string; quote: string; source?: "ai" | "rule" }
 export interface DocSummary {
   doc_type: string; relevance: "high" | "low"; one_line: string; sections: { key: string; title: string; items: BriefItem[] }[];
   method: "ai" | "rule"; model: string | null; warnings: string[]; fallback_reason: string | null; usage?: { latency_s?: number } | null;
   dropped: { section: string; why: string }[]; chars: number;
+  /** 긴 자료는 목차 경계 조각으로 나눠 동시에 읽는다(2026-10-23 "나눠 읽기 적용") -- 조각마다 AI 또는 규칙(그 조각 AI 실패) */
+  chunks?: { start: number; end: number; method: "ai" | "rule"; latency_s: number | null }[];
 }
 export interface SummaryResponse {
   doc: ProjectDoc; readable: boolean; summary: DocSummary | null; created_at: string | null; ai_destination?: AiDestination;
