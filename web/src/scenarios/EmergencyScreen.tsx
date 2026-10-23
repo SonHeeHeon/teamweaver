@@ -398,6 +398,11 @@ export function EmergencyScreen({ datasetVersion, onDatasetChanged, onReviewDoc,
                         {Object.values(plan.apply_hint.headcount_add).flatMap((h) => Object.entries(h)).map(([g, c]) => ` ${g} +${c}`)}
                         {Object.values(plan.apply_hint.budget_add).map((b) => ` · 월 예산 +${b}`)}이(가) 늘어납니다(증원).</p>
                     )}
+                    {/* 요구에 없던 기술은 확정 때 사업 요구 기술이 된다 -- 화면에서도 알린다(2026-10-23 D7 "과업 범위 추가") */}
+                    {Object.values(plan.apply_hint?.skills_add ?? {}).flat().length > 0 && (
+                      <p className="text-xs text-slate-500">확정하면 사업 요구 기술에 {Object.values(plan.apply_hint?.skills_add ?? {}).flat()
+                        .map((s) => `${s.name}(${s.min_months}개월 이상 ${s.headcount}명)`).join(", ")}을(를) 더합니다.</p>
+                    )}
                     {pickList.length === 0 && (
                       <GradeSwapBox items={swapList(plan.apply_hint?.grade_swaps)} reasons={swapReasons} onReason={onSwapReason} disabled={busy} />
                     )}

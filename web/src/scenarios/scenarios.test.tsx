@@ -273,7 +273,8 @@ describe("EmergencyScreen", () => {
     vi.mocked(api.fetchSkillDictionary).mockResolvedValue([]);
     vi.mocked(api.fetchStandby).mockResolvedValue({ source: "nightly", computed_at: "t",
       projects: { J003: [{ person_id: "P9", name: "박지훈", grade: "고급", alloc: 1, source: "bench", delta_total: 3.1 }] } });
-    const hint = { headcount_add: { J003: { 고급: 1 } }, budget_add: { J003: 900 }, skills_add: {} };
+    const hint = { headcount_add: { J003: { 고급: 1 } }, budget_add: { J003: 900 },
+                   skills_add: { J003: [{ name: "AI 에이전트 프레임워크", min_months: 12, headcount: 1 }] } };
     vi.mocked(api.postEmergency).mockResolvedValue({ dataset_version: "v1", project_id: "J003", skills: [], added_requirements: [],
       best: { accepted: true, entries: [{ person_id: "P9", project_id: "J003", alloc: 1 }], added: [{ person_id: "P9", name: "박지훈" }],
               delta: { total: 3.1, unfilled: 0 }, unfilled_seats_delta: 0, delta_excl_unfilled: 3.1, new_violations: [],
@@ -290,6 +291,7 @@ describe("EmergencyScreen", () => {
     fireEvent.change(screen.getByLabelText(/무슨 일인지/), { target: { value: "  운영 이관 중 장애  " } });
     fireEvent.click(screen.getByRole("button", { name: "후보 찾기" }));
     expect(await screen.findByText(/고급 \+1/)).toBeInTheDocument();
+    expect(screen.getByText("확정하면 사업 요구 기술에 AI 에이전트 프레임워크(12개월 이상 1명)을(를) 더합니다.")).toBeInTheDocument();
     expect(screen.getByText(/기술·협업 \+3\.10 · 월 비용 \+/)).toBeInTheDocument();
     expect(screen.getByText(/빼 오는 사람:/).textContent).toBe("빼 오는 사람: 김소율(J008→J003)");   // 사번이 아니라 이름(부서장 점검 f7), 코드는 칩
     expect(within(screen.getByText(/빼 오는 사람:/)).getByTitle("금융사 하2 데이터 마트")).toHaveTextContent("J008");   // 마우스를 올리면 사업 이름
@@ -298,7 +300,7 @@ describe("EmergencyScreen", () => {
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "확정" }));
     await waitFor(() => expect(api.postApply).toHaveBeenCalled());
     const [, body] = vi.mocked(api.postApply).mock.calls[0];
-    expect(body).toMatchObject({ source: "emergency", headcount_add: hint.headcount_add, budget_add: hint.budget_add,
+    expect(body).toMatchObject({ source: "emergency", headcount_add: hint.headcount_add, budget_add: hint.budget_add, skills_add: hint.skills_add,
                                  situation: "운영 이관 중 장애" });                      // 검토 자료 상황 메모의 처음 값(부서장 점검 f6)
     fireEvent.click(await screen.findByRole("button", { name: "인사팀 검토 자료 만들기" }));
     expect(review).toHaveBeenCalledWith(WS.dataset_version, "J003");

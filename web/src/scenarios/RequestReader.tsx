@@ -56,7 +56,9 @@ export function RequestReader({ datasetVersion, text, disabled, onApply }: {
     }
   }
 
-  const chosen = res ? res.skills.filter((s) => on[s.id]) : [];
+  // 같은 기술이 글에 두 번 나오면(예: "AI 에이전트 … AI 에이전트 개발") 밑줄은 둘 다, 칩은 하나(2026-10-23)
+  const chips = res ? res.skills.filter((s, i, all) => all.findIndex((t) => t.id === s.id) === i) : [];
+  const chosen = chips.filter((s) => on[s.id]);
   return (
     <div className="space-y-2">
       <button type="button" className="btn px-2.5 py-1 text-xs" disabled={disabled || busy || !text.trim()} onClick={() => void read()}
@@ -71,9 +73,9 @@ export function RequestReader({ datasetVersion, text, disabled, onApply }: {
             {res.usage && <span className="ml-1 font-normal text-slate-500">({res.usage.latency_s.toFixed(1)}초)</span>}
           </p>
           <Marked r={res} />
-          {res.skills.length > 0 ? (
+          {chips.length > 0 ? (
             <div className="flex flex-wrap gap-1.5" aria-label="읽은 기술">
-              {res.skills.map((s) => (
+              {chips.map((s) => (
                 <label key={s.id} className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 ${on[s.id] ? "border-pine-300 bg-white" : "border-slate-200 bg-slate-50 text-slate-500"}`}
                        title={`근거: "${s.quote}"`}>
                   <input type="checkbox" checked={!!on[s.id]} disabled={disabled} onChange={(e) => setOn((o) => ({ ...o, [s.id]: e.target.checked }))} />
