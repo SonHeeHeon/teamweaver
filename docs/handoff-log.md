@@ -22,6 +22,21 @@
 
 ---
 
+## 2026-10-23 · claude-b · 자료 요약도 나눠 읽기 · 글자 뽑기 잘림 표시
+- 사용자: "ai는 왜 4만자가 한계지?" → 결정 "나눠 읽기 적용"(자료 요약, 병합 뒤 별도 작업).
+- 브랜치/커밋: `feat/claude-b-kg-views`(main `92103af` 위) — main에는 아직 안 올림(사용자 결정 대기).
+- 한 일:
+  - `api/rag/doc_brief.summarize_document`: **claude-a `rfp_read._headings/_chunks/_path`를 import해** 같은 조각(≤ 4만 자, 최대 8)으로 동시에 요약, 항목 근거는 조각 원문에서 확인 후 전체 위치,
+    칸마다 사업 내용 조각 → 실패 조각(규칙 줄) → 서식뿐 조각 순으로 번갈아 합침, 머리말은 첫 조각이 AI로 읽혔을 때만, 실패 조각이 있으면 "볼 것 없음"(low) 안 함, 항목 `source`(ai|rule).
+    정보 채우기는 앞 4만 자 그대로. `cache_version()` = PROMPT_VERSION(doc-brief-3) + a 조각 상수 — 저장 요약은 다시 만들어야 한다(시연 전).
+  - 라우트: 조각이 하나라도 실패한 요약은 저장 안 함. 글자 뽑기가 상한(20만 자·PDF 200쪽·압축 해제·XML 크기)에서 끊었으면 `extract_text(..., info)`/`extract_text_limited(info=)`가
+    `truncated`를 알리고 요약·필요 기술 읽기에 "앞부분만 읽었다" 경고(정리 뒤 길이로는 못 안다 — 빈칸을 지우면 20만 자 아래).
+  - 화면: 요약 끝줄 "긴 자료라 n조각으로 나눠 읽었습니다", AI 실패 조각 항목에 "열쇠말 줄" 꼬리표. 측정 G6(긴 자료 2조각 이상·모두 AI·4만 자 뒤 AI 항목 — 구조 확인).
+- 상대 영향: **a의 비공개 함수 `rfp_read._headings/_chunks/_path`와 상수 `MAX_AI_TEXT/MAX_CHUNKS/_CUT_FROM/_OVERLAP`을 b가 import한다** — 이름·뜻을 바꾸면 `doc_brief`가 깨지거나
+  저장 요약 판이 달라진다(목차 정규식 `_HEADINGS`를 바꾸면 `doc_brief.PROMPT_VERSION`을 올려 달라). `extract_text`에 선택 인자 `info`가 생겼다(반환은 그대로).
+- 검증: 아래 리포트(전체 pytest·웹 400·측정 G1~G6). 리뷰: Codex 쿼터 소진 → Claude Opus 적대적 2라운드(1차 MUST 1: 첫 조각 실패 시 "서약서"로 잘못 표시·저장 → 고침, 2차 approve + SHOULD 2 → 고침).
+- 근거: 루트 `.omc/reports/2026-10-23-main-merge-summary-chunks.md`(+ `.eli5.html`).
+
 ## 2026-10-23 · claude-b · main 병합 — claude-a 발주 자료 나눠 읽기·D6 + claude-b 옛 한글 읽기·정보 채우기·자료 요약
 - 사용자: "Main 병합해줘" · 충돌은 "양쪽 다 살리기".
 - 브랜치/커밋: `feat/claude-a-rfp-read`(`ca69023`, `docs/claude-a-dedupe-1023` 포함)을 `feat/claude-b-kg-views`에 합친 병합 커밋 → **main을 그 커밋으로 앞으로 옮김(fast-forward, push 안 함)**.
