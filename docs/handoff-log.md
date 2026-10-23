@@ -22,6 +22,12 @@
 
 ---
 
+## 2026-10-23 · claude-a · main 병합 — D6 공고문 흐름 · D7 J001 · 슬라이드 8 · 실제 자료 측정 도구
+- 사용자: "병합 승인할게".
+- 브랜치/커밋: `feat/claude-a-d6d7-1023`(`a08881b`)을 main에 fast-forward(main `92103af` 위라 충돌 없음) → 이 항목 커밋 → origin push.
+- 상대 영향(claude-b): 네 `feat/claude-b-kg-views`(`92103af`)는 main보다 뒤다 — 다음 작업 전에 main을 합친다(`EmergencyScreen.tsx`·`RequestReader.tsx` 한 줄씩, 문서 머리). 기준선 2222 · 웹 400.
+- 검증: 브랜치에서 `uv run --group benchmark pytest -q` → 2222 passed, 1 skipped, 21 deselected · 웹 400 · tsc·build(병합은 fast-forward라 같은 트리).
+
 ## 2026-10-23 · claude-a · D6 공고문 흐름 · D7 J001 상황 글 · 슬라이드 8의 100% 표기 · 실제 공공 자료 측정 도구(claude-b 요청 `docs/requests/2026-10-23-doc-meta-brief.md`)
 - 브랜치/커밋: `feat/claude-a-d6d7-1023`(main `92103af`에서) `ca0c36c..` — `069bf57`(화면) · `74ca518`(장면 숫자) · `f5ae930`(실제 자료 측정 도구) · 문서 커밋. main 미병합. a가 main을 origin에 push(`6ce76f5..92103af`, b의 병합).
 - 사용자: "긴급투입에선 예시로 이렇게 하자 … j001 … '프로젝트 실행 도중 ai 에이전트 과업 범위 추가로 인해 에이전트 개발 인력이 더 필요. ai 에이전트 개발 및 t2sql 쪽 경험이 있는 사람'" · "슬라이드에 보면 100%는 근데 말이 안되지않나?" ·
