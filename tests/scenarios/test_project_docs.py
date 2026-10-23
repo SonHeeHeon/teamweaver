@@ -443,12 +443,11 @@ def test_read_route_reads_old_hwp(yearend, _no_demo_docs, ai_client):
         assert [(s["name"], s["months"], s["headcount"]) for s in r.json()["skills"] if s["kind"] == "required"] == [("ETL", 60, 2)]
         r = _read(c, hb.hwp([hb.section(hb.para("x"))], props=4), filename="배포용.hwp")
         assert r.status_code == 422 and "배포용" in r.json()["detail"]
-        # 읽기 함수가 앞 6만 자에서 자르는 것을 알린다(폴백 리뷰 N1 -- 글자 뽑기 상한은 20만 자)
-        long = hb.hwp([hb.section(*[hb.para("과업 설명 문단입니다. " * 50) for _ in range(120)])])
+        # 긴 자료도 끝까지 읽는다(claude-a 나눠 읽기 `1fbbd66`, MAX_TEXT 20만 자 -- 예전 라우트의 "앞 6만 자까지만" 경고는 2026-10-23 main 병합 때 뺐다)
+        long = hb.hwp([hb.section(*[hb.para("과업 설명 문단입니다. " * 50) for _ in range(120)] + [hb.para("수행 인력: Kafka 경력 3년 이상 1명.")])])
         body = _read(c, long, filename="긴 사전규격.hwp").json()
-        assert body["chars"] > 60_000 and any("앞 60,000자까지만 읽었다" in w for w in body["warnings"])
-        short = _read(c, data, filename="사전규격.hwp").json()
-        assert not any("까지만 읽었다" in w for w in short["warnings"])
+        assert body["chars"] > 60_000 and not any("까지만 읽었다" in w for w in body["warnings"])
+        assert "Kafka" in [s["name"] for s in body["skills"]]                          # 6만 자 뒤의 요구도 찾는다
 
 
 def test_long_text_comes_back_through_the_pipe():

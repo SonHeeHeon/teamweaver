@@ -176,8 +176,12 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   측정은 사전 등록: `python -m rehearsal.request_parse_eval`(48문장)·`python -m rehearsal.skill_mapping_eval`(실제 별칭 522개 숨김) -- 지시문·사전을 바꾸면 다시 잰다. 시연 묶음 `demo/org-n100-messy-skills(.zip)` = `scripts/make_messy_skill_demo.py`(사전이 바뀌면 다시 만든다).
   조직 기술 지도 `skill_map` 행에 `practical_detail`·`broader`·`narrower`(claude-b 요청 2026-10-21, 지식 그래프 기술 노드 `broader`) -- `practical_people`(id 목록)는 그대로.
   **발주 자료에서 필요 기술 읽기**(2026-10-23 claude-b 요청 "a·b 나눠서" -- a: `api/rag/rfp_read.read_requirements`, b: 첨부·라우트·등록 양식 버튼): 같은 원칙(사전 id·근거 말 위치·사람 정보 안 보냄·AI 없으면 규칙) + 요구(required)·우대(preferred)와
-  **요구가 아닌 언급**(현행 시스템·연계 대상 -- `mentioned_not_required`)을 나눈다. 규칙 판정은 문장 말(우대 > 요구 말 > 현행·연계 말 > 기본 필수), 경력은 "N년 이상·경력 N년"일 때만(사업 기간 숫자를 읽지 않게).
-  측정 사전 등록 `python -m rehearsal.rfp_read_eval [--docs-dir demo/project_docs]`(b 시연 자료 7편 + 가상 10편, OpenAI만 관문, GLM-5.3-Flash high 보고) -- 10-23: OpenAI 정밀도·재현율 1.00·요구 아닌 언급 0%·$0.013, 규칙 정밀도 0.92·요구 아닌 언급 11.8%, GLM 정밀도 0.95.
+  **요구가 아닌 언급**(현행 시스템·연계 대상 -- `mentioned_not_required`)을 나눈다. 규칙 판정은 문장 말(우대 > 요구 말 > 현행·연계 말 > 바로 위 목차·□ 머리 줄 > 기본 필수), 경력은 "N년 이상·경력 N년"일 때만(사업 기간 숫자를 읽지 않게).
+  규칙 문장은 개조식 줄 머리(□ ◦ - · 1. 가.)·"우대:" 머리말 줄에서 끊긴다(10-23 b 관찰 -- 한글·워드 문단은 줄바꿈 하나로 이어진다). 끊으면 "1. 현행 시스템 구성" 아래 장비 목록이 필수로 바뀌어(측정 정밀도 0.84) 제 말이 없는 줄은 머리 줄을 따르게 했다 -- 문장 경계를 바꾸면 규칙 측정을 다시 본다.
+  **긴 자료는 나눠 동시에 읽는다**(10-23 b 요청, 사용자 결정 "나눠 동시에 읽기"): `MAX_TEXT` 20만(b `extract_text` 상한과 같게), 조각 ≤ `MAX_AI_TEXT` 4만(목차 줄 → 빈 줄 → 줄바꿈 경계, 조각마다 제목 경로), 한 조각 자료는 지시문이 예전과 같다(짧은 자료 측정이 그대로 유효).
+  조각 실패는 그 범위만 규칙 + 경고, 출력 `chunks`. AI 결과 옆의 규칙만 찾은 업무 도메인 낱말(공공·카드·금융 …)은 "요구 아님" 목록에 넣지 않는다.
+  측정 사전 등록 `python -m rehearsal.rfp_read_eval [--docs-dir demo/project_docs]`(b 시연 자료 7편 + 가상 10편 + 긴 가상 1편 `make_long_rfp`(따로 채점, 관문 L1), OpenAI만 관문, GLM-5.3-Flash high 보고) -- 10-23 밤(`ab2289c`): OpenAI 정밀도 1.00·재현율 0.99·요구 아닌 언급 0%·$0.013, 규칙 정밀도 0.93·요구 아닌 언급 5.9%, GLM 정밀도 0.93, 긴 자료 3조각 모두 찾음.
+  영상 D6은 실제 공공 사전규격(저장소 밖, `rehearsal/data/d6_bid_doc_skills.json`에 한 번 읽은 결과)으로 등록한다 -- 뒤 장면 숫자 `python -m rehearsal.scenario_numbers`(기본 `--d6 doc` → `scenarios-1023.json`).
   **`request_parse.alias_hits`는 경계를 원문 글자로 본다**(10-23 고침 -- 띄어쓰기를 지운 글로 보면 "Python 5년"·"JEUS·WebtoB"를 버리고 "산출물은 행정"에서 "은행"을 잡았다, 48문장 측정은 그대로).
 - **변경 기록·변경 보고서**(2026-10-22 사용자 "전부 하자. 2-2 는 액션 하나하나에 대한 것도 보고서로 남길 수 있게하고 기간으로 잡고 … 인사팀 보고 사항들을 정리해서 함께 pdf에 묶는것도", claude-a, 설계 루트 `.omc/plan/2026-10-22-change-report.md`):
   작업 이력(`workspace/history.json`)은 되돌리기용이라 20판·다른 데이터를 열면 비운다 -- 보고 원천은 따로 **지우지 않는 `api/change_log`**(`<데이터 폴더>/change_log/log.json`). `workspace.commit`·`undo`의 prepare(이력 쓰기와 같은 자리·같은 시각)가 한 건씩 덧붙이고(실패해도 판 변경은 막지 않음),
@@ -293,7 +297,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   글자 뽑기 `extract_text`는 서버 경로에서 **`extract_text_limited`(spawn 별도 프로세스 + 시간 제한 20초 + 동시 2개)**로 돈다 -- 글자 없는 PDF가 CPU·메모리만 쓴다(실측 21KB 9초·736MB),
   데이터는 시작 인자가 아니라 시작 뒤 파이프로(시드 포트폴리오와 같은 함정), 자식 답은 JSON 바이트. XML은 iterparse 한 번(문단마다 다시 돌면 4,000칸 표 5.7초), DOCX·PPTX 탭·줄바꿈은 글자 요소의 **형제**다.
   **옛 한글(HWP 5.x)도 읽는다**(2026-10-23 사용자가 나라장터 사전규격에서 받은 실제 자료 2/3이 HWP, 결정 "HWP 읽기 추가", `api/hwp5.py` -- 새 의존성 없이 복합 문서·raw deflate·문단 글자 레코드): 섹터 사슬·디렉터리 순환은 방문 집합, 디렉터리는 뿌리 바로 아래 저장소까지만(깊게 이은 저장소 1MB가 경로 문자열로 1.2GB를 썼다 -- 폴백 리뷰), DRM·인증서 암호화 비트도 거절, 압축 해제 합계 8MiB(0만 든 본문은 4바이트 빈 레코드라 반복이 상한/4번), 스트림 읽기 합계 파일 4배, 배포용·암호 문서는 이유 문장 DocError. 시험 파일은 `tests/hwp_builder`가 만든다(실제 기관 문서는 저장소에 넣지 않는다).
-  글자 상한은 **20만 자·PDF 200쪽**(예전 6만·80, 사용자 결정 "나눠 동시에 읽기" -- AI가 읽는 양은 claude-a `rfp_read`가 정한다, 요청 `docs/requests/2026-10-23-rfp-chunked-read.md` -- 그 전까지 라우트가 `rfp_read.MAX_TEXT`를 넘는 자료에 "앞 6만 자까지만 읽었다" 경고를 붙인다). 규칙 읽기는 줄바꿈 하나를 문장 끝으로 보지 않아(PDF 줄 넘김) 개조식 문단의 다음 줄 "우대"가 앞 기술을 우대로 바꾼다 -- 같은 요청서에 관찰로 넘김.
+  글자 상한은 **20만 자·PDF 200쪽**(예전 6만·80, 사용자 결정 "나눠 동시에 읽기" -- 필요 기술 읽기는 claude-a 나눠 읽기(`rfp_read`, 목차 조각 동시 읽기)로 20만 자까지 -- 라우트의 "앞 6만 자까지만" 경고는 2026-10-23 main 병합 때 뺐다). 개조식 문장 경계는 claude-a가 고쳤다(`1fbbd66`).
   화면은 읽기 전에 보내는 곳(`GET /api/project-requirements`의 `ai_destination`, `api.deps.client_is_onprem` = llm_client_for와 같은 판정)을 알리고, 결과는 제안이다 --
   경력이나 인원이 적힌 필수만 기본 체크(경력·인원 없는 필수는 과업 범위에서 추정한 것이 섞인다, 화면 확인), 우대·이미 적은 기술은 체크 안 함. 실제 공공 사전규격은 인력 요건이 없어 필수가 모두 추정이다 -- 그때 안내 + "추정 n개 모두 선택"(2026-10-23 사용자 결정, 기본 체크 규칙은 그대로).
   **자료에서 사업 정보 채우기 · 부서장용 자료 요약**(2026-10-23 사용자 "프로젝트 이름, 기간, 예산 등을 대신 작성" · "각각의 자료를 llm으로 잘 압축 요약한", 결정 "이번엔 b가 전부" -- **a 영역에 b의 `api/rag/doc_brief.py`**): `read_project_meta`(사업명·고객 구분·기간 개월·총 사업비·공고번호·마감)·`summarize_document`(8칸 + 한 줄), 칸·항목마다 근거 말(원문 확인·150자 안).
@@ -307,7 +311,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 자료에서 사업 정보 채우기·부서장용 자료 요약(claude-b `feat/claude-b-kg-views`, a의 rfp-read 합침) **2216 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 399 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 main 병합(claude-a 발주 자료 나눠 읽기·D6 + claude-b 옛 한글 읽기·정보 채우기·자료 요약) **2222 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 399 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

@@ -1,11 +1,12 @@
 {
  "experiment": "rfp-read",
- "when": "2026-10-23T01:13:57+09:00",
- "commit": "ab23e75",
+ "when": "2026-10-23T19:53:18+09:00",
+ "commit": "ab2289c",
  "dirty": false,
  "docs": {
   "easy": 7,
   "hard": 10,
+  "long": 1,
   "easy_dir": ".worktrees/claude-b-nightly-batch/demo/project_docs"
  },
  "gates_def": {
@@ -13,17 +14,18 @@
   "precision_min": 0.85,
   "nonreq_fp_max": 0.15,
   "months_min": 0.8,
-  "headcount_min": 0.8
+  "headcount_min": 0.8,
+  "long_recall_min": 1.0
  },
  "methods": {
   "rule": {
    "totals": {
     "req_gold": 83,
     "req_tp": 82,
-    "req_fp": 5,
-    "pred_req_complete": 62,
+    "req_fp": 4,
+    "pred_req_complete": 61,
     "nonreq_gold": 17,
-    "nonreq_as_req": 2,
+    "nonreq_as_req": 1,
     "pref_gold": 7,
     "pref_as_pref": 6,
     "any_tp": 82,
@@ -40,12 +42,12 @@
     0.935,
     0.998
    ],
-   "precision_hard": 0.919,
+   "precision_hard": 0.934,
    "precision_ci": [
-    0.825,
-    0.965
+    0.843,
+    0.974
    ],
-   "nonreq_fp_rate": 0.118,
+   "nonreq_fp_rate": 0.059,
    "pref_recall": 0.857,
    "any_kind_recall": 0.988,
    "months_match": 0.833,
@@ -525,12 +527,8 @@
      "method": "rule",
      "fallback": "no_client",
      "missed": [],
-     "false_required": [
-      "IBM MQ"
-     ],
-     "nonreq_as_req": [
-      "IBM MQ"
-     ],
+     "false_required": [],
+     "nonreq_as_req": [],
      "pref_ok": [
       "Kafka",
       "Spark"
@@ -558,20 +556,6 @@
        "months": null,
        "headcount": null,
        "quote": "정보계"
-      },
-      {
-       "name": "대외계",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "대외계"
-      },
-      {
-       "name": "IBM MQ",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "IBM MQ"
       },
       {
        "name": "데이터 웨어하우스(DW)",
@@ -625,7 +609,9 @@
      ],
      "mentioned_not_required": [
       "계정계",
-      "COBOL"
+      "COBOL",
+      "대외계",
+      "IBM MQ"
      ],
      "unmapped": [],
      "dropped": [],
@@ -1300,44 +1286,139 @@
      "dropped": [],
      "usage": null
     }
-   ]
+   ],
+   "long": {
+    "totals": {
+     "req_gold": 4,
+     "req_tp": 4,
+     "req_fp": 0,
+     "pred_req_complete": 4,
+     "nonreq_gold": 2,
+     "nonreq_as_req": 0,
+     "pref_gold": 1,
+     "pref_as_pref": 1,
+     "any_tp": 4,
+     "months_n": 4,
+     "months_ok": 4,
+     "head_n": 4,
+     "head_ok": 4,
+     "out_of_dict": 0,
+     "dropped": 0,
+     "extras_easy": 0
+    },
+    "recall": 1.0,
+    "precision_hard": 1.0,
+    "nonreq_fp_rate": 0.0,
+    "pref_recall": 1.0,
+    "months_match": 1.0,
+    "headcount_match": 1.0,
+    "latency_p50": null,
+    "cost_usd": 0,
+    "chunks": [
+     1
+    ],
+    "warnings": [
+     []
+    ],
+    "rows": [
+     {
+      "set": "long",
+      "id": "long1",
+      "style": "장문 공공 RFP(8만 자) · 투입 인력 기준 5만 자 뒤 · 우대 8만 자 근처 · 현행 시스템 앞부분",
+      "method": "rule",
+      "fallback": "no_client",
+      "missed": [],
+      "false_required": [],
+      "nonreq_as_req": [],
+      "pref_ok": [
+       "Kubernetes"
+      ],
+      "pref_missed": [],
+      "extras": [],
+      "skills": [
+       {
+        "name": "Java",
+        "kind": "required",
+        "months": 60,
+        "headcount": 3,
+        "quote": "Java"
+       },
+       {
+        "name": "전자정부 표준프레임워크",
+        "kind": "required",
+        "months": 36,
+        "headcount": 2,
+        "quote": "전자정부 표준프레임워크"
+       },
+       {
+        "name": "PostgreSQL",
+        "kind": "required",
+        "months": 36,
+        "headcount": 1,
+        "quote": "PostgreSQL"
+       },
+       {
+        "name": "데이터 이행",
+        "kind": "required",
+        "months": 48,
+        "headcount": 1,
+        "quote": "데이터 이행"
+       },
+       {
+        "name": "Kubernetes",
+        "kind": "preferred",
+        "months": null,
+        "headcount": null,
+        "quote": "Kubernetes"
+       }
+      ],
+      "mentioned_not_required": [
+       "Tibero",
+       "JEUS"
+      ],
+      "unmapped": [],
+      "dropped": [],
+      "usage": null
+     }
+    ]
+   }
   },
   "openai": {
    "totals": {
     "req_gold": 83,
-    "req_tp": 83,
+    "req_tp": 82,
     "req_fp": 0,
-    "pred_req_complete": 58,
+    "pred_req_complete": 57,
     "nonreq_gold": 17,
     "nonreq_as_req": 0,
     "pref_gold": 7,
     "pref_as_pref": 7,
-    "any_tp": 83,
+    "any_tp": 82,
     "months_n": 61,
-    "months_ok": 61,
+    "months_ok": 60,
     "head_n": 63,
     "head_ok": 63,
     "out_of_dict": 0,
-    "dropped": 2,
-    "extras_easy": 9
+    "dropped": 0,
+    "extras_easy": 12
    },
-   "recall": 1.0,
+   "recall": 0.988,
    "recall_ci": [
-    0.956,
-    1.0
+    0.935,
+    0.998
    ],
    "precision_hard": 1.0,
    "precision_ci": [
-    0.938,
+    0.937,
     1.0
    ],
    "nonreq_fp_rate": 0.0,
    "pref_recall": 1.0,
-   "any_kind_recall": 1.0,
-   "months_match": 1.0,
+   "any_kind_recall": 0.988,
+   "months_match": 0.984,
    "headcount_match": 1.0,
-   "latency_p50": 10.23,
-   "latency_max": 16.09,
+   "latency_p50": 6.33,
+   "latency_max": 12.49,
    "cost_usd": 0.013,
    "rows": [
     {
@@ -1353,7 +1434,9 @@
      "pref_missed": [],
      "extras": [
       "AI 에이전트 프레임워크",
-      "Data Lake & Data Catalog"
+      "Data Lake & Data Catalog",
+      "개인정보보호",
+      "테스트·QA"
      ],
      "skills": [
       {
@@ -1369,6 +1452,20 @@
        "months": null,
        "headcount": null,
        "quote": "메타데이터 표준·카탈로그 수립"
+      },
+      {
+       "name": "테스트·QA",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "에이전트 답변 품질 검증 체계"
+      },
+      {
+       "name": "개인정보보호",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "개인정보"
       },
       {
        "name": "메타데이터 관리",
@@ -1403,11 +1500,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 11.69,
-      "in": 4858,
-      "out": 546,
+      "latency_s": 7.34,
+      "in": 4864,
+      "out": 627,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000759
+      "cost_usd": 0.0008
      }
     },
     {
@@ -1456,16 +1553,14 @@
       }
      ],
      "mentioned_not_required": [],
-     "unmapped": [
-      "개방 API 운영"
-     ],
+     "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 10.23,
-      "in": 4721,
-      "out": 478,
+      "latency_s": 5.56,
+      "in": 4729,
+      "out": 421,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000711
+      "cost_usd": 0.000683
      }
     },
     {
@@ -1479,17 +1574,8 @@
      "nonreq_as_req": [],
      "pref_ok": [],
      "pref_missed": [],
-     "extras": [
-      "데이터 품질 관리"
-     ],
+     "extras": [],
      "skills": [
-      {
-       "name": "데이터 품질 관리",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "데이터 품질 진단"
-      },
       {
        "name": "ETL",
        "kind": "required",
@@ -1519,15 +1605,17 @@
        "quote": "공공 업무 경력 5년 이상 2명"
       }
      ],
-     "mentioned_not_required": [],
+     "mentioned_not_required": [
+      "데이터 품질 관리"
+     ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 7.63,
-      "in": 4801,
-      "out": 348,
+      "latency_s": 3.31,
+      "in": 4809,
+      "out": 183,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000654
+      "cost_usd": 0.000572
      }
     },
     {
@@ -1541,8 +1629,17 @@
      "nonreq_as_req": [],
      "pref_ok": [],
      "pref_missed": [],
-     "extras": [],
+     "extras": [
+      "데이터 이행"
+     ],
      "skills": [
+      {
+       "name": "데이터 이행",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "기존 문서 관리 시스템 이관(ETL)"
+      },
       {
        "name": "금융 업무",
        "kind": "required",
@@ -1576,11 +1673,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 5.95,
-      "in": 4837,
-      "out": 290,
+      "latency_s": 5.35,
+      "in": 4843,
+      "out": 409,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000629
+      "cost_usd": 0.000689
      }
     },
     {
@@ -1636,11 +1733,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 6.85,
-      "in": 4821,
-      "out": 320,
+      "latency_s": 3.87,
+      "in": 4827,
+      "out": 343,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000642
+      "cost_usd": 0.000654
      }
     },
     {
@@ -1664,71 +1761,6 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "이전 뒤 성능·보안 점검"
-      },
-      {
-       "name": "정보보안",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "이전 뒤 성능·보안 점검"
-      },
-      {
-       "name": "Private Cloud",
-       "kind": "required",
-       "months": 24,
-       "headcount": 1,
-       "quote": "Private Cloud 2년 이상 1명"
-      },
-      {
-       "name": "Kubernetes",
-       "kind": "required",
-       "months": 24,
-       "headcount": 1,
-       "quote": "Kubernetes 2년 이상 1명"
-      },
-      {
-       "name": "BI Reporting",
-       "kind": "required",
-       "months": 12,
-       "headcount": 1,
-       "quote": "BI Reporting 1년 이상 1명"
-      }
-     ],
-     "mentioned_not_required": [
-      "공공 업무"
-     ],
-     "unmapped": [],
-     "dropped": [],
-     "usage": {
-      "latency_s": 9.66,
-      "in": 4820,
-      "out": 515,
-      "model": "gpt-6-luna",
-      "cost_usd": 0.00074
-     }
-    },
-    {
-     "set": "easy",
-     "id": "j020-rfp",
-     "style": "제안요청서(RFP)",
-     "method": "ai",
-     "fallback": null,
-     "missed": [],
-     "false_required": [],
-     "nonreq_as_req": [],
-     "pref_ok": [],
-     "pref_missed": [],
-     "extras": [
-      "성능 테스트",
-      "정보보안"
-     ],
-     "skills": [
-      {
-       "name": "성능 테스트",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
        "quote": "성능·보안 점검"
       },
       {
@@ -1743,7 +1775,7 @@
        "kind": "required",
        "months": 24,
        "headcount": 1,
-       "quote": "Private Cloud 경력"
+       "quote": "Private Cloud 경력\n2년 이상 1명"
       },
       {
        "name": "Kubernetes",
@@ -1760,17 +1792,86 @@
        "quote": "BI Reporting 경력 1년 이상 1명"
       }
      ],
-     "mentioned_not_required": [
-      "공공 업무"
-     ],
+     "mentioned_not_required": [],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 10.21,
-      "in": 4818,
-      "out": 508,
+      "latency_s": 6.03,
+      "in": 4826,
+      "out": 480,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000736
+      "cost_usd": 0.000723
+     }
+    },
+    {
+     "set": "easy",
+     "id": "j020-rfp",
+     "style": "제안요청서(RFP)",
+     "method": "ai",
+     "fallback": null,
+     "missed": [],
+     "false_required": [],
+     "nonreq_as_req": [],
+     "pref_ok": [],
+     "pref_missed": [],
+     "extras": [
+      "데이터 이행",
+      "성능 테스트",
+      "정보보안"
+     ],
+     "skills": [
+      {
+       "name": "Private Cloud",
+       "kind": "required",
+       "months": 24,
+       "headcount": 1,
+       "quote": "서버·데이터베이스의 사설 클라우드(Private Cloud) 이전"
+      },
+      {
+       "name": "데이터 이행",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "서버·데이터베이스의 사설 클라우드(Private Cloud) 이전"
+      },
+      {
+       "name": "Kubernetes",
+       "kind": "required",
+       "months": 24,
+       "headcount": 1,
+       "quote": "컨테이너(Kubernetes) 운영 환경 전환"
+      },
+      {
+       "name": "BI Reporting",
+       "kind": "required",
+       "months": 12,
+       "headcount": 1,
+       "quote": "개방 통계 보고서(BI) 화면 수정"
+      },
+      {
+       "name": "성능 테스트",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "이전 뒤 성능·보안 점검"
+      },
+      {
+       "name": "정보보안",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "이전 뒤 성능·보안 점검"
+      }
+     ],
+     "mentioned_not_required": [],
+     "unmapped": [],
+     "dropped": [],
+     "usage": {
+      "latency_s": 5.96,
+      "in": 4824,
+      "out": 522,
+      "model": "gpt-6-luna",
+      "cost_usd": 0.000743
      }
     },
     {
@@ -1789,65 +1890,65 @@
       {
        "name": "전자정부 표준프레임워크",
        "kind": "required",
-       "months": 60,
+       "months": null,
        "headcount": 2,
-       "quote": "전자정부 표준프레임워크 4.x를 적용하여 재개발"
+       "quote": "전자정부 표준프레임워크 4.x를 적용하여 재개발한다"
       },
       {
        "name": "Vue",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "Vue로 구현한다"
+       "quote": "사용자 화면은 웹 표준을 준수하여 Vue로 구현한다"
       },
       {
        "name": "시큐어 코딩",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "행정안전부 시큐어 코딩 가이드를 준수"
+       "quote": "행정안전부 시큐어 코딩 가이드를 준수하여야 하며"
       },
       {
        "name": "취약점 진단",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "소스코드 보안 약점 진단 결과"
+       "quote": "소스코드 보안 약점 진단 결과를 제출한다"
       },
       {
        "name": "Java",
        "kind": "required",
        "months": 60,
        "headcount": 2,
-       "quote": "Java 기반 전자정부 표준프레임워크 개발"
+       "quote": "Java 기반 전자정부 표준프레임워크 개발 경력 5년 이상"
       },
       {
        "name": "데이터 이행",
        "kind": "required",
        "months": 36,
        "headcount": 1,
-       "quote": "데이터 이행 경력 3년 이상"
+       "quote": "데이터 이행 경력 3년 이상 1명"
       },
       {
        "name": "PostgreSQL",
        "kind": "required",
        "months": null,
        "headcount": 1,
-       "quote": "PostgreSQL 운영 경험"
+       "quote": "PostgreSQL 운영 경험을 갖추어야 한다"
       },
       {
        "name": "공공 업무",
        "kind": "required",
        "months": null,
        "headcount": 1,
-       "quote": "공공 분야 정보화 사업 수행 경험"
+       "quote": "공공 분야 정보화 사업 수행 경험이 있는"
       },
       {
        "name": "프로젝트 관리(PM)",
        "kind": "required",
        "months": null,
        "headcount": 1,
-       "quote": "사업관리자(PM)를 지정"
+       "quote": "사업관리자(PM)를 지정한다"
       }
      ],
      "mentioned_not_required": [
@@ -1858,11 +1959,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 12.52,
+      "latency_s": 8.29,
       "in": 4757,
-      "out": 661,
+      "out": 719,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000806
+      "cost_usd": 0.000835
      }
     },
     {
@@ -1939,21 +2040,19 @@
       }
      ],
      "mentioned_not_required": [
-      "금융 업무",
-      "정보계",
       "계정계",
       "COBOL",
-      "대외계",
-      "IBM MQ"
+      "IBM MQ",
+      "대외계"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 12.33,
+      "latency_s": 7.59,
       "in": 4689,
-      "out": 626,
+      "out": 666,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000782
+      "cost_usd": 0.000802
      }
     },
     {
@@ -1971,6 +2070,13 @@
      "pref_missed": [],
      "extras": [],
      "skills": [
+      {
+       "name": "Private Cloud",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "사내 프라이빗 클라우드의 쿠버네티스(K8s) 위로 데이터 플랫폼을 옮긴다."
+      },
       {
        "name": "Airflow",
        "kind": "required",
@@ -2029,23 +2135,17 @@
       }
      ],
      "mentioned_not_required": [
-      "Hive",
-      "Private Cloud",
-      "Hadoop"
+      "Hadoop",
+      "Hive"
      ],
      "unmapped": [],
-     "dropped": [
-      {
-       "id": "private_cloud",
-       "why": "근거 말이 자료에 없다"
-      }
-     ],
+     "dropped": [],
      "usage": {
-      "latency_s": 16.09,
+      "latency_s": 7.48,
       "in": 4636,
-      "out": 905,
+      "out": 689,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000916
+      "cost_usd": 0.000808
      }
     },
     {
@@ -2066,14 +2166,14 @@
        "kind": "required",
        "months": 60,
        "headcount": 2,
-       "quote": "Spring Batch 기반 대용량 배치 처리 경험이 5년 이상"
+       "quote": "Spring Batch 기반 대용량 배치 처리 경험이 5년 이상인 개발자 2명"
       },
       {
        "name": "Oracle Database",
        "kind": "required",
-       "months": 84,
+       "months": null,
        "headcount": 1,
-       "quote": "정산 배치에서 사용하는 Oracle 프로시저를 분석하고 튜닝"
+       "quote": "Oracle 프로시저를 분석하고 튜닝할 수 있는 DB 전문가 1명"
       },
       {
        "name": "PL/SQL",
@@ -2087,7 +2187,7 @@
        "kind": "required",
        "months": 36,
        "headcount": 1,
-       "quote": "카드 승인·매입·정산 업무를 3년 이상 수행"
+       "quote": "카드 승인·매입·정산 업무를 3년 이상"
       },
       {
        "name": "SQL 튜닝",
@@ -2104,11 +2204,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 9.51,
+      "latency_s": 6.0,
       "in": 4588,
-      "out": 507,
+      "out": 531,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000712
+      "cost_usd": 0.000724
      }
     },
     {
@@ -2125,25 +2225,25 @@
      "extras": [],
      "skills": [
       {
-       "name": "MES",
-       "kind": "required",
-       "months": 36,
-       "headcount": 1,
-       "quote": "MES 구축 경험 3년 이상 PL 1명"
-      },
-      {
        "name": "React",
        "kind": "required",
        "months": 24,
        "headcount": 2,
-       "quote": "React 프론트엔드 개발 2년 이상 2명"
+       "quote": "공정 모니터링 화면 재구축(React)"
       },
       {
        "name": "Node.js",
        "kind": "required",
        "months": null,
        "headcount": 1,
-       "quote": "Node.js 서버 개발 1명"
+       "quote": "설비 데이터 수집 서버 개발(Node.js)"
+      },
+      {
+       "name": "MES",
+       "kind": "required",
+       "months": 36,
+       "headcount": 1,
+       "quote": "MES 구축 경험 3년 이상 PL 1명"
       },
       {
        "name": "제조 업무",
@@ -2155,17 +2255,16 @@
      ],
      "mentioned_not_required": [
       "SAP ERP",
-      "ERP",
       "Microsoft SQL Server"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 9.71,
+      "latency_s": 6.33,
       "in": 4557,
-      "out": 489,
+      "out": 553,
       "model": "gpt-6-luna",
-      "cost_usd": 0.0007
+      "cost_usd": 0.000732
      }
     },
     {
@@ -2174,7 +2273,9 @@
      "style": "AI 사업 RFP · 유지되는 기존 챗봇 · 우대 여럿",
      "method": "ai",
      "fallback": null,
-     "missed": [],
+     "missed": [
+      "AI 에이전트 프레임워크"
+     ],
      "false_required": [],
      "nonreq_as_req": [],
      "pref_ok": [
@@ -2186,18 +2287,11 @@
      "extras": [],
      "skills": [
       {
-       "name": "AI 에이전트 프레임워크",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "상담 지원 AI 에이전트를 구축한다"
-      },
-      {
        "name": "RAG·벡터DB",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "검색 증강 생성(RAG) 구조와 벡터 데이터베이스 구축"
+       "quote": "약관 문서 검색 증강 생성(RAG) 구조와 벡터 데이터베이스 구축"
       },
       {
        "name": "개인정보보호",
@@ -2264,17 +2358,18 @@
       }
      ],
      "mentioned_not_required": [
+      "AI 에이전트 프레임워크",
       "챗봇",
       "Elasticsearch"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 13.34,
+      "latency_s": 7.28,
       "in": 4653,
-      "out": 875,
+      "out": 756,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000903
+      "cost_usd": 0.000843
      }
     },
     {
@@ -2294,7 +2389,7 @@
        "name": "JSP/Servlet",
        "kind": "required",
        "months": null,
-       "headcount": null,
+       "headcount": 2,
        "quote": "업무 포털(JSP/Servlet, Spring)"
       },
       {
@@ -2319,14 +2414,14 @@
        "quote": "Spring 기반 개발 경력 4년 이상"
       },
       {
-       "name": "DB 관리(DBA)",
+       "name": "Tibero",
        "kind": "required",
        "months": 60,
        "headcount": 1,
-       "quote": "DBA: Tibero 운영·튜닝 경력 5년 이상 1명"
+       "quote": "Tibero 운영·튜닝 경력 5년 이상"
       },
       {
-       "name": "Tibero",
+       "name": "DB 관리(DBA)",
        "kind": "required",
        "months": 60,
        "headcount": 1,
@@ -2362,11 +2457,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 13.22,
+      "latency_s": 7.97,
       "in": 4606,
-      "out": 727,
+      "out": 715,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000824
+      "cost_usd": 0.000818
      }
     },
     {
@@ -2389,14 +2484,14 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "인프라 구성은 Terraform으로 코드화"
+       "quote": "인프라 구성은 Terraform으로 코드화하고"
       },
       {
        "name": "취약점 진단",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "웹 취약점 진단을 실시한다"
+       "quote": "이전 후 웹 취약점 진단을 실시한다."
       },
       {
        "name": "Naver Cloud Platform",
@@ -2430,17 +2525,16 @@
      "mentioned_not_required": [
       "AWS",
       "VMware",
-      "공공 업무",
       "정보보안"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 8.94,
+      "latency_s": 6.31,
       "in": 4580,
-      "out": 530,
+      "out": 508,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000723
+      "cost_usd": 0.000712
      }
     },
     {
@@ -2457,39 +2551,46 @@
      "extras": [],
      "skills": [
       {
-       "name": "SQL",
+       "name": "SQL 튜닝",
        "kind": "required",
-       "months": null,
-       "headcount": null,
+       "months": 84,
+       "headcount": 1,
        "quote": "대용량 통계 조회 SQL을 분석·튜닝"
       },
       {
-       "name": "데이터 모델링",
+       "name": "SQL",
        "kind": "required",
        "months": null,
-       "headcount": null,
-       "quote": "집계 테이블을 재설계한다"
+       "headcount": 1,
+       "quote": "대용량 통계 조회 SQL을 분석·튜닝"
       },
       {
        "name": "개인정보보호",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "개인정보보호법"
+       "quote": "개인정보보호법 및 기관 보안 지침을 준수"
+      },
+      {
+       "name": "정보보안",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "개인정보보호법 및 기관 보안 지침을 준수"
       },
       {
        "name": "취약점 진단",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "보안 약점 진단 도구로 점검한다"
+       "quote": "소스코드는 보안 약점 진단 도구로 점검"
       },
       {
        "name": "프로젝트 관리(PM)",
        "kind": "required",
        "months": 120,
        "headcount": 1,
-       "quote": "사업관리자"
+       "quote": "공공 정보화 사업관리 경력 10년 이상"
       },
       {
        "name": "공공 업무",
@@ -2497,13 +2598,6 @@
        "months": 120,
        "headcount": 1,
        "quote": "공공 정보화 사업관리 경력 10년 이상"
-      },
-      {
-       "name": "SQL 튜닝",
-       "kind": "required",
-       "months": 84,
-       "headcount": 1,
-       "quote": "SQL 튜닝 경력 7년 이상 1명(Oracle 환경)"
       },
       {
        "name": "Oracle Database",
@@ -2530,29 +2624,22 @@
      "mentioned_not_required": [
       "Unix",
       "Linux",
-      "RDBMS",
       "Tibero",
       "WAS(웹 애플리케이션 서버)",
       "JEUS",
       "WebtoB",
-      "API Gateway",
-      "정보보안"
+      "EAI/ESB"
      ],
      "unmapped": [
       "웹 화면 개발"
      ],
-     "dropped": [
-      {
-       "id": "sas",
-       "why": "사전에 없는 id"
-      }
-     ],
+     "dropped": [],
      "usage": {
-      "latency_s": 15.69,
+      "latency_s": 11.41,
       "in": 4871,
-      "out": 994,
+      "out": 999,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000984
+      "cost_usd": 0.000987
      }
     },
     {
@@ -2636,14 +2723,115 @@
      ],
      "dropped": [],
      "usage": {
-      "latency_s": 11.15,
+      "latency_s": 12.49,
       "in": 4687,
-      "out": 687,
+      "out": 843,
       "model": "gpt-6-luna",
-      "cost_usd": 0.000812
+      "cost_usd": 0.00089
      }
     }
    ],
+   "long": {
+    "totals": {
+     "req_gold": 4,
+     "req_tp": 4,
+     "req_fp": 0,
+     "pred_req_complete": 4,
+     "nonreq_gold": 2,
+     "nonreq_as_req": 0,
+     "pref_gold": 1,
+     "pref_as_pref": 1,
+     "any_tp": 4,
+     "months_n": 4,
+     "months_ok": 4,
+     "head_n": 4,
+     "head_ok": 4,
+     "out_of_dict": 0,
+     "dropped": 0,
+     "extras_easy": 0
+    },
+    "recall": 1.0,
+    "precision_hard": 1.0,
+    "nonreq_fp_rate": 0.0,
+    "pref_recall": 1.0,
+    "months_match": 1.0,
+    "headcount_match": 1.0,
+    "latency_p50": 8.43,
+    "cost_usd": 0.0066,
+    "chunks": [
+     3
+    ],
+    "warnings": [
+     []
+    ],
+    "rows": [
+     {
+      "set": "long",
+      "id": "long1",
+      "style": "장문 공공 RFP(8만 자) · 투입 인력 기준 5만 자 뒤 · 우대 8만 자 근처 · 현행 시스템 앞부분",
+      "method": "ai",
+      "fallback": null,
+      "missed": [],
+      "false_required": [],
+      "nonreq_as_req": [],
+      "pref_ok": [
+       "Kubernetes"
+      ],
+      "pref_missed": [],
+      "extras": [],
+      "skills": [
+       {
+        "name": "Java",
+        "kind": "required",
+        "months": 60,
+        "headcount": 3,
+        "quote": "Java 경력 5년 이상 3명"
+       },
+       {
+        "name": "전자정부 표준프레임워크",
+        "kind": "required",
+        "months": 36,
+        "headcount": 2,
+        "quote": "전자정부 표준프레임워크 경력 3년 이상 2명"
+       },
+       {
+        "name": "PostgreSQL",
+        "kind": "required",
+        "months": 36,
+        "headcount": 1,
+        "quote": "PostgreSQL 경력 3년 이상 1명"
+       },
+       {
+        "name": "데이터 이행",
+        "kind": "required",
+        "months": 48,
+        "headcount": 1,
+        "quote": "데이터 이행 경력 4년 이상 1명"
+       },
+       {
+        "name": "Kubernetes",
+        "kind": "preferred",
+        "months": null,
+        "headcount": null,
+        "quote": "Kubernetes 기반 운영 환경 구축 경험자 우대"
+       }
+      ],
+      "mentioned_not_required": [
+       "Tibero",
+       "JEUS"
+      ],
+      "unmapped": [],
+      "dropped": [],
+      "usage": {
+       "latency_s": 8.43,
+       "in": 60573,
+       "out": 992,
+       "model": "gpt-6-luna",
+       "cost_usd": 0.006553
+      }
+     }
+    ]
+   },
    "model": "gpt-6-luna",
    "reasoning_effort": "low"
   },
@@ -2651,8 +2839,8 @@
    "totals": {
     "req_gold": 83,
     "req_tp": 82,
-    "req_fp": 3,
-    "pred_req_complete": 60,
+    "req_fp": 4,
+    "pred_req_complete": 61,
     "nonreq_gold": 17,
     "nonreq_as_req": 0,
     "pref_gold": 7,
@@ -2664,26 +2852,26 @@
     "head_ok": 62,
     "out_of_dict": 0,
     "dropped": 1,
-    "extras_easy": 12
+    "extras_easy": 14
    },
    "recall": 0.988,
    "recall_ci": [
     0.935,
     0.998
    ],
-   "precision_hard": 0.95,
+   "precision_hard": 0.934,
    "precision_ci": [
-    0.863,
-    0.983
+    0.843,
+    0.974
    ],
    "nonreq_fp_rate": 0.0,
    "pref_recall": 1.0,
    "any_kind_recall": 0.988,
    "months_match": 1.0,
    "headcount_match": 1.0,
-   "latency_p50": 13.15,
-   "latency_max": 47.72,
-   "cost_usd": 0.0217,
+   "latency_p50": 11.24,
+   "latency_max": 51.84,
+   "cost_usd": 0.0229,
    "rows": [
     {
      "set": "easy",
@@ -2698,6 +2886,8 @@
      "pref_missed": [],
      "extras": [
       "AI 에이전트 프레임워크",
+      "Data Lake & Data Catalog",
+      "RAG·벡터DB",
       "개인정보보호"
      ],
      "skills": [
@@ -2707,6 +2897,20 @@
        "months": null,
        "headcount": null,
        "quote": "고객 상담·내부 업무 문서를 찾아 답하는 AI 에이전트"
+      },
+      {
+       "name": "RAG·벡터DB",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "문서를 찾아 답하는 AI 에이전트"
+      },
+      {
+       "name": "Data Lake & Data Catalog",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "문서 메타데이터 표준·카탈로그 수립"
       },
       {
        "name": "개인정보보호",
@@ -2744,15 +2948,17 @@
        "quote": "금융 업무 3년 이상 3명"
       }
      ],
-     "mentioned_not_required": [],
+     "mentioned_not_required": [
+      "은행 업무"
+     ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 10.29,
-      "in": 5750,
-      "out": 578,
+      "latency_s": 36.75,
+      "in": 5755,
+      "out": 1826,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001151
+      "cost_usd": 0.001776
      }
     },
     {
@@ -2804,11 +3010,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 5.39,
-      "in": 5585,
-      "out": 313,
+      "latency_s": 4.89,
+      "in": 5592,
+      "out": 334,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.000994
+      "cost_usd": 0.001006
      }
     },
     {
@@ -2838,39 +3044,39 @@
        "kind": "required",
        "months": 36,
        "headcount": 2,
-       "quote": "ETL 경력 3년 이상 2\n명"
+       "quote": "ETL 3년 이상 2명"
       },
       {
        "name": "BI Reporting",
        "kind": "required",
        "months": 36,
        "headcount": 2,
-       "quote": "BI Reporting 경력 3년 이상 2명"
+       "quote": "BI Reporting 3년 이상 2명"
       },
       {
        "name": "SQL",
        "kind": "required",
        "months": 36,
        "headcount": 1,
-       "quote": "SQL 경력 3년 이상 1명"
+       "quote": "SQL 3년 이상 1명"
       },
       {
        "name": "공공 업무",
        "kind": "required",
        "months": 60,
        "headcount": 2,
-       "quote": "공공 업무 경력 5년 이상 2명"
+       "quote": "공공 업무 5년 이상 2명"
       }
      ],
      "mentioned_not_required": [],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 6.89,
-      "in": 5665,
-      "out": 361,
+      "latency_s": 5.12,
+      "in": 5674,
+      "out": 410,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.00103
+      "cost_usd": 0.001056
      }
     },
     {
@@ -2919,11 +3125,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 4.79,
-      "in": 5704,
-      "out": 284,
+      "latency_s": 4.37,
+      "in": 5708,
+      "out": 345,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.000998
+      "cost_usd": 0.001029
      }
     },
     {
@@ -2946,7 +3152,7 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "계열사 T 데이터 플랫폼 고도화"
+       "quote": "그룹 계열사(가상) · 그룹 내부 발주"
       },
       {
        "name": "Kubernetes",
@@ -2988,11 +3194,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 12.7,
-      "in": 5696,
-      "out": 509,
+      "latency_s": 8.24,
+      "in": 5702,
+      "out": 545,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001109
+      "cost_usd": 0.001128
      }
     },
     {
@@ -3007,17 +3213,30 @@
      "pref_ok": [],
      "pref_missed": [],
      "extras": [
-      "데이터 이행",
       "성능 테스트",
       "정보보안"
      ],
      "skills": [
       {
-       "name": "데이터 이행",
+       "name": "Private Cloud",
        "kind": "required",
-       "months": null,
-       "headcount": null,
+       "months": 24,
+       "headcount": 1,
        "quote": "서버·데이터베이스의 사설 클라우드(Private Cloud) 이전"
+      },
+      {
+       "name": "Kubernetes",
+       "kind": "required",
+       "months": 24,
+       "headcount": 1,
+       "quote": "컨테이너(Kubernetes) 운영 환경 전환"
+      },
+      {
+       "name": "BI Reporting",
+       "kind": "required",
+       "months": 12,
+       "headcount": 1,
+       "quote": "개방 통계 보고서(BI) 화면 수정"
       },
       {
        "name": "성능 테스트",
@@ -3032,40 +3251,17 @@
        "months": null,
        "headcount": null,
        "quote": "이전 뒤 성능·보안 점검"
-      },
-      {
-       "name": "Private Cloud",
-       "kind": "required",
-       "months": 24,
-       "headcount": 1,
-       "quote": "Private Cloud 경력\n2년 이상 1명"
-      },
-      {
-       "name": "Kubernetes",
-       "kind": "required",
-       "months": 24,
-       "headcount": 1,
-       "quote": "Kubernetes 경력 2년 이상 1명"
-      },
-      {
-       "name": "BI Reporting",
-       "kind": "required",
-       "months": 12,
-       "headcount": 1,
-       "quote": "BI Reporting 경력 1년 이상 1명"
       }
      ],
-     "mentioned_not_required": [
-      "공공 업무"
-     ],
+     "mentioned_not_required": [],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 14.87,
-      "in": 5709,
-      "out": 877,
+      "latency_s": 10.33,
+      "in": 5715,
+      "out": 444,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001295
+      "cost_usd": 0.001079
      }
     },
     {
@@ -3080,11 +3276,19 @@
      "pref_ok": [],
      "pref_missed": [],
      "extras": [
+      "공공 업무",
       "데이터 이행",
       "성능 테스트",
       "정보보안"
      ],
      "skills": [
+      {
+       "name": "공공 업무",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "공공기관 경 데이터 개방 플랫폼"
+      },
       {
        "name": "데이터 이행",
        "kind": "required",
@@ -3128,17 +3332,15 @@
        "quote": "BI Reporting 경력 1년 이상 1명"
       }
      ],
-     "mentioned_not_required": [
-      "공공 업무"
-     ],
+     "mentioned_not_required": [],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 13.15,
-      "in": 5693,
-      "out": 703,
+      "latency_s": 13.74,
+      "in": 5699,
+      "out": 846,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001205
+      "cost_usd": 0.001278
      }
     },
     {
@@ -3148,7 +3350,9 @@
      "method": "ai",
      "fallback": null,
      "missed": [],
-     "false_required": [],
+     "false_required": [
+      "DB 관리(DBA)"
+     ],
      "nonreq_as_req": [],
      "pref_ok": [],
      "pref_missed": [],
@@ -3170,13 +3374,6 @@
       },
       {
        "name": "Vue",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "사용자 화면은 웹 표준을 준수하여 Vue로 구현한다"
-      },
-      {
-       "name": "HTML/CSS",
        "kind": "required",
        "months": null,
        "headcount": null,
@@ -3208,7 +3405,14 @@
        "kind": "required",
        "months": 36,
        "headcount": 1,
-       "quote": "데이터 이행 경력 3년 이상 1명을 두며, PostgreSQL 운영 경험"
+       "quote": "데이터를 옮기는 인력은 데이터 이행 경력 3년 이상 1명"
+      },
+      {
+       "name": "DB 관리(DBA)",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "PostgreSQL 운영 경험을 갖추어야 한다"
       },
       {
        "name": "프로젝트 관리(PM)",
@@ -3221,8 +3425,8 @@
        "name": "공공 업무",
        "kind": "required",
        "months": null,
-       "headcount": null,
-       "quote": "공공 분야 정보화 사업 수행 경험이 있는 사업관리자(PM)"
+       "headcount": 1,
+       "quote": "공공 분야 정보화 사업 수행 경험이 있는 사업관리자(PM)를 지정한다"
       }
      ],
      "mentioned_not_required": [
@@ -3230,16 +3434,14 @@
       "WebLogic",
       "정보보안"
      ],
-     "unmapped": [
-      "행정정보 공동이용 시스템 연계(연계 방식 변경 없음)"
-     ],
+     "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 19.33,
+      "latency_s": 19.21,
       "in": 5639,
-      "out": 1376,
+      "out": 1311,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001534
+      "cost_usd": 0.001501
      }
     },
     {
@@ -3260,6 +3462,13 @@
      "pref_missed": [],
      "extras": [],
      "skills": [
+      {
+       "name": "정보계",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "정보계 데이터를 통합 적재"
+      },
       {
        "name": "데이터 웨어하우스(DW)",
        "kind": "required",
@@ -3286,14 +3495,14 @@
        "kind": "required",
        "months": 36,
        "headcount": 1,
-       "quote": "Tableau 대시보드 전환"
+       "quote": "경영 리포트의 Tableau 대시보드 전환"
       },
       {
        "name": "은행 업무",
        "kind": "required",
        "months": 60,
        "headcount": 1,
-       "quote": "업무 분석 | 은행 업무"
+       "quote": "업무 분석 | 은행 업무 | 5년"
       },
       {
        "name": "Kafka",
@@ -3311,8 +3520,6 @@
       }
      ],
      "mentioned_not_required": [
-      "금융 업무",
-      "정보계",
       "계정계",
       "COBOL",
       "IBM MQ",
@@ -3327,11 +3534,11 @@
       }
      ],
      "usage": {
-      "latency_s": 13.71,
+      "latency_s": 11.24,
       "in": 5537,
-      "out": 760,
+      "out": 934,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001211
+      "cost_usd": 0.001298
      }
     },
     {
@@ -3341,7 +3548,9 @@
      "method": "ai",
      "fallback": null,
      "missed": [],
-     "false_required": [],
+     "false_required": [
+      "ETL"
+     ],
      "nonreq_as_req": [],
      "pref_ok": [
       "유통 업무"
@@ -3350,17 +3559,17 @@
      "extras": [],
      "skills": [
       {
-       "name": "Spark",
+       "name": "Private Cloud",
        "kind": "required",
-       "months": 48,
-       "headcount": 2,
-       "quote": "PySpark 배치 잡을 스파크 온 쿠버네티스 구조로 재작성"
+       "months": null,
+       "headcount": null,
+       "quote": "사내 프라이빗 클라우드의 쿠버네티스(K8s) 위로"
       },
       {
-       "name": "Kafka",
+       "name": "ETL",
        "kind": "required",
-       "months": 24,
-       "headcount": 1,
+       "months": null,
+       "headcount": null,
        "quote": "카프카 기반 주문 이벤트 수집 파이프라인 구축"
       },
       {
@@ -3385,11 +3594,25 @@
        "quote": "도커 이미지 빌드·배포 자동화(젠킨스)"
       },
       {
+       "name": "Spark",
+       "kind": "required",
+       "months": 48,
+       "headcount": 2,
+       "quote": "스파크 실무 4년 이상 2명"
+      },
+      {
        "name": "Kubernetes",
        "kind": "required",
        "months": 36,
        "headcount": 1,
        "quote": "쿠버네티스 운영 3년 이상 1명"
+      },
+      {
+       "name": "Kafka",
+       "kind": "required",
+       "months": 24,
+       "headcount": 1,
+       "quote": "카프카 2년 이상 1명"
       },
       {
        "name": "Python",
@@ -3407,18 +3630,17 @@
       }
      ],
      "mentioned_not_required": [
-      "Hadoop",
       "Hive",
-      "Private Cloud"
+      "Hadoop"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 9.59,
+      "latency_s": 15.34,
       "in": 5493,
-      "out": 649,
+      "out": 1264,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001148
+      "cost_usd": 0.001456
      }
     },
     {
@@ -3446,7 +3668,7 @@
        "kind": "required",
        "months": null,
        "headcount": 1,
-       "quote": "정산 배치에서 사용하는 Oracle 프로시저를 분석"
+       "quote": "정산 배치에서 사용하는 Oracle 프로시저를 분석하고 튜닝"
       },
       {
        "name": "PL/SQL",
@@ -3488,11 +3710,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 10.38,
+      "latency_s": 8.81,
       "in": 5427,
-      "out": 568,
+      "out": 701,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001098
+      "cost_usd": 0.001165
      }
     },
     {
@@ -3503,7 +3725,7 @@
      "fallback": null,
      "missed": [],
      "false_required": [
-      "프로젝트 관리(PM)"
+      "UI/UX 설계"
      ],
      "nonreq_as_req": [],
      "pref_ok": [],
@@ -3511,16 +3733,16 @@
      "extras": [],
      "skills": [
       {
+       "name": "UI/UX 설계",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "공정 모니터링 화면 재구축"
+      },
+      {
        "name": "MES",
        "kind": "required",
        "months": 36,
-       "headcount": 1,
-       "quote": "MES 구축 경험 3년 이상 PL 1명"
-      },
-      {
-       "name": "프로젝트 관리(PM)",
-       "kind": "required",
-       "months": null,
        "headcount": 1,
        "quote": "MES 구축 경험 3년 이상 PL 1명"
       },
@@ -3553,11 +3775,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 10.03,
+      "latency_s": 6.72,
       "in": 5380,
-      "out": 624,
+      "out": 464,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001119
+      "cost_usd": 0.001039
      }
     },
     {
@@ -3589,7 +3811,7 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "검색 증강 생성(RAG) 구조와 벡터 데이터베이스 구축"
+       "quote": "약관 문서 검색 증강 생성(RAG) 구조와 벡터 데이터베이스 구축"
       },
       {
        "name": "개인정보보호",
@@ -3646,6 +3868,13 @@
        "months": null,
        "headcount": null,
        "quote": "PyTorch 기반 모델 미세 조정 경험"
+      },
+      {
+       "name": "LLM 파인튜닝",
+       "kind": "preferred",
+       "months": null,
+       "headcount": null,
+       "quote": "PyTorch 기반 모델 미세 조정 경험"
       }
      ],
      "mentioned_not_required": [
@@ -3655,11 +3884,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 15.74,
+      "latency_s": 9.27,
       "in": 5528,
-      "out": 1066,
+      "out": 815,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001362
+      "cost_usd": 0.001237
      }
     },
     {
@@ -3683,32 +3912,11 @@
        "quote": "업무 포털(JSP/Servlet, Spring)"
       },
       {
-       "name": "WAS(웹 애플리케이션 서버)",
-       "kind": "required",
-       "months": null,
-       "headcount": 1,
-       "quote": "WAS(JEUS 8)"
-      },
-      {
-       "name": "웹 서버",
-       "kind": "required",
-       "months": null,
-       "headcount": 1,
-       "quote": "웹 서버(WebtoB)"
-      },
-      {
-       "name": "SQL 튜닝",
-       "kind": "required",
-       "months": null,
-       "headcount": 1,
-       "quote": "분기별 데이터베이스 성능 점검"
-      },
-      {
        "name": "프로젝트 관리(PM)",
        "kind": "required",
        "months": 120,
        "headcount": 1,
-       "quote": "공공 정보화 유지관리 사업관리 경력 10년 이상 1명"
+       "quote": "사업관리자(PM): 공공 정보화 유지관리 사업관리 경력 10년 이상"
       },
       {
        "name": "공공 업무",
@@ -3720,23 +3928,37 @@
       {
        "name": "Spring",
        "kind": "required",
-       "months": 48,
+       "months": 36,
        "headcount": 2,
        "quote": "Spring 기반 개발 경력 4년 이상 2명"
-      },
-      {
-       "name": "DB 관리(DBA)",
-       "kind": "required",
-       "months": 60,
-       "headcount": 1,
-       "quote": "DBA: Tibero 운영·튜닝 경력 5년 이상"
       },
       {
        "name": "Tibero",
        "kind": "required",
        "months": 60,
        "headcount": 1,
-       "quote": "Tibero 운영·튜닝 경력 5년 이상 1명"
+       "quote": "DBA: Tibero 운영·튜닝 경력 5년 이상 1명"
+      },
+      {
+       "name": "DB 관리(DBA)",
+       "kind": "required",
+       "months": 60,
+       "headcount": 1,
+       "quote": "DBA: Tibero 운영·튜닝 경력 5년 이상 1명"
+      },
+      {
+       "name": "SQL 튜닝",
+       "kind": "required",
+       "months": 60,
+       "headcount": 1,
+       "quote": "Tibero 운영·튜닝 경력"
+      },
+      {
+       "name": "WebtoB",
+       "kind": "required",
+       "months": 36,
+       "headcount": 1,
+       "quote": "시스템 엔지니어: JEUS·WebtoB 운영 경력 3년 이상 1명"
       },
       {
        "name": "JEUS",
@@ -3744,26 +3966,21 @@
        "months": 36,
        "headcount": 1,
        "quote": "JEUS·WebtoB 운영 경력 3년 이상 1명"
-      },
-      {
-       "name": "WebtoB",
-       "kind": "required",
-       "months": 36,
-       "headcount": 1,
-       "quote": "JEUS·WebtoB 운영 경력 3년 이상 1명"
       }
      ],
      "mentioned_not_required": [
+      "WAS(웹 애플리케이션 서버)",
+      "웹 서버",
       "정보보안"
      ],
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 26.49,
+      "latency_s": 19.9,
       "in": 5448,
-      "out": 1471,
+      "out": 1255,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001553
+      "cost_usd": 0.001445
      }
     },
     {
@@ -3786,7 +4003,14 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "공공기관용 보안 인증을 받은 Naver Cloud Platform"
+       "quote": "공공기관용 보안 인증을 받은 Naver Cloud Platform으로 이전"
+      },
+      {
+       "name": "IaC",
+       "kind": "required",
+       "months": null,
+       "headcount": null,
+       "quote": "인프라 구성은 Terraform으로 코드화하고"
       },
       {
        "name": "취약점 진단",
@@ -3832,11 +4056,11 @@
      "unmapped": [],
      "dropped": [],
      "usage": {
-      "latency_s": 24.49,
+      "latency_s": 16.58,
       "in": 5413,
-      "out": 1068,
+      "out": 1005,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001346
+      "cost_usd": 0.001314
      }
     },
     {
@@ -3847,8 +4071,7 @@
      "fallback": null,
      "missed": [],
      "false_required": [
-      "JavaScript",
-      "UI/UX 설계"
+      "JavaScript"
      ],
      "nonreq_as_req": [],
      "pref_ok": [],
@@ -3860,31 +4083,38 @@
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "대용량 통계 조회 SQL을 분석·튜닝하고 집계 테이블을 재설계한다"
+       "quote": "대용량 통계 조회 SQL을 분석·튜닝하고"
       },
       {
        "name": "데이터 모델링",
        "kind": "required",
        "months": null,
        "headcount": null,
-       "quote": "대용량 통계 조회 SQL을 분석·튜닝하고 집계 테이블을 재설계한다"
+       "quote": "집계 테이블을 재설계한다"
       },
       {
-       "name": "UI/UX 설계",
+       "name": "HTML/CSS",
        "kind": "required",
        "months": null,
        "headcount": null,
        "quote": "통계 대시보드를 웹 화면으로 신규 구축한다"
       },
       {
-       "name": "개인정보보호",
+       "name": "BI Reporting",
+       "kind": "preferred",
+       "months": null,
+       "headcount": null,
+       "quote": "통계 대시보드를 웹 화면으로 신규 구축한다"
+      },
+      {
+       "name": "정보보안",
        "kind": "required",
        "months": null,
        "headcount": null,
        "quote": "개인정보보호법 및 기관 보안 지침을 준수하며"
       },
       {
-       "name": "정보보안",
+       "name": "개인정보보호",
        "kind": "required",
        "months": null,
        "headcount": null,
@@ -3902,28 +4132,28 @@
        "kind": "required",
        "months": 120,
        "headcount": 1,
-       "quote": "사업관리자: 공공 정보화 사업관리 경력 10년 이상 1명"
+       "quote": "공공 정보화 사업관리 경력 10년 이상 1명"
       },
       {
        "name": "공공 업무",
        "kind": "required",
        "months": 120,
        "headcount": 1,
-       "quote": "사업관리자: 공공 정보화 사업관리 경력 10년 이상 1명"
+       "quote": "공공 정보화 사업관리 경력 10년 이상 1명"
       },
       {
        "name": "SQL 튜닝",
        "kind": "required",
        "months": 84,
        "headcount": 1,
-       "quote": "DB 튜닝 전문가: SQL 튜닝 경력 7년 이상 1명(Oracle 환경)"
+       "quote": "SQL 튜닝 경력 7년 이상 1명(Oracle 환경)"
       },
       {
        "name": "Oracle Database",
        "kind": "required",
        "months": 84,
        "headcount": 1,
-       "quote": "DB 튜닝 전문가: SQL 튜닝 경력 7년 이상 1명(Oracle 환경)"
+       "quote": "SQL 튜닝 경력 7년 이상 1명(Oracle 환경)"
       },
       {
        "name": "Python",
@@ -3934,13 +4164,6 @@
       },
       {
        "name": "JavaScript",
-       "kind": "required",
-       "months": 36,
-       "headcount": 1,
-       "quote": "웹 화면 개발 경력 3년 이상 1명"
-      },
-      {
-       "name": "HTML/CSS",
        "kind": "required",
        "months": 36,
        "headcount": 1,
@@ -3967,11 +4190,11 @@
      ],
      "dropped": [],
      "usage": {
-      "latency_s": 47.72,
+      "latency_s": 51.84,
       "in": 5784,
-      "out": 2910,
+      "out": 3740,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.002323
+      "cost_usd": 0.002738
      }
     },
     {
@@ -3988,13 +4211,6 @@
      "extras": [],
      "skills": [
       {
-       "name": "Kafka",
-       "kind": "required",
-       "months": 48,
-       "headcount": 2,
-       "quote": "차량 단말 위치 수집 서버(Kafka 수집, Spring Boot)"
-      },
-      {
        "name": "AWS",
        "kind": "required",
        "months": null,
@@ -4009,13 +4225,6 @@
        "quote": "CI/CD 파이프라인 구성"
       },
       {
-       "name": "물류 업무",
-       "kind": "required",
-       "months": null,
-       "headcount": null,
-       "quote": "본 사업 수행 인력은 물류 업무 이해를 갖춘 PM 1명"
-      },
-      {
        "name": "프로젝트 관리(PM)",
        "kind": "required",
        "months": 96,
@@ -4023,7 +4232,21 @@
        "quote": "물류 업무 이해를 갖춘 PM 1명(경력 8년 이상)"
       },
       {
+       "name": "물류 업무",
+       "kind": "required",
+       "months": 96,
+       "headcount": 1,
+       "quote": "물류 업무 이해를 갖춘 PM 1명(경력 8년 이상)"
+      },
+      {
        "name": "Spring Boot",
+       "kind": "required",
+       "months": 48,
+       "headcount": 2,
+       "quote": "Spring Boot·Kafka 기반 실시간 수집 개발 경력 4년 이상 2명"
+      },
+      {
+       "name": "Kafka",
        "kind": "required",
        "months": 48,
        "headcount": 2,
@@ -4051,18 +4274,144 @@
       "RabbitMQ"
      ],
      "unmapped": [
-      "지도 API 연동"
+      "지도 API 연동 경험자는 우대한다"
      ],
      "dropped": [],
      "usage": {
-      "latency_s": 16.67,
+      "latency_s": 16.15,
       "in": 5557,
-      "out": 822,
+      "out": 1009,
       "model": "glm-5.3-flash",
-      "cost_usd": 0.001245
+      "cost_usd": 0.001338
      }
     }
    ],
+   "long": {
+    "totals": {
+     "req_gold": 4,
+     "req_tp": 4,
+     "req_fp": 3,
+     "pred_req_complete": 7,
+     "nonreq_gold": 2,
+     "nonreq_as_req": 0,
+     "pref_gold": 1,
+     "pref_as_pref": 1,
+     "any_tp": 4,
+     "months_n": 4,
+     "months_ok": 4,
+     "head_n": 4,
+     "head_ok": 4,
+     "out_of_dict": 0,
+     "dropped": 0,
+     "extras_easy": 0
+    },
+    "recall": 1.0,
+    "precision_hard": 0.571,
+    "nonreq_fp_rate": 0.0,
+    "pref_recall": 1.0,
+    "months_match": 1.0,
+    "headcount_match": 1.0,
+    "latency_p50": 14.92,
+    "cost_usd": 0.0124,
+    "chunks": [
+     3
+    ],
+    "warnings": [
+     []
+    ],
+    "rows": [
+     {
+      "set": "long",
+      "id": "long1",
+      "style": "장문 공공 RFP(8만 자) · 투입 인력 기준 5만 자 뒤 · 우대 8만 자 근처 · 현행 시스템 앞부분",
+      "method": "ai",
+      "fallback": null,
+      "missed": [],
+      "false_required": [
+       "공공 업무",
+       "테스트·QA",
+       "프로젝트 관리(PM)"
+      ],
+      "nonreq_as_req": [],
+      "pref_ok": [
+       "Kubernetes"
+      ],
+      "pref_missed": [],
+      "extras": [],
+      "skills": [
+       {
+        "name": "공공 업무",
+        "kind": "required",
+        "months": null,
+        "headcount": null,
+        "quote": "□□시 통합 민원 시스템 고도화 사업"
+       },
+       {
+        "name": "프로젝트 관리(PM)",
+        "kind": "required",
+        "months": null,
+        "headcount": null,
+        "quote": "사업 일정은 단계별 완료 기준과 함께 관리하고"
+       },
+       {
+        "name": "Java",
+        "kind": "required",
+        "months": 60,
+        "headcount": 3,
+        "quote": "응용 개발: Java 경력 5년 이상 3명"
+       },
+       {
+        "name": "전자정부 표준프레임워크",
+        "kind": "required",
+        "months": 36,
+        "headcount": 2,
+        "quote": "전자정부 표준프레임워크 경력 3년 이상 2명"
+       },
+       {
+        "name": "PostgreSQL",
+        "kind": "required",
+        "months": 36,
+        "headcount": 1,
+        "quote": "PostgreSQL 경력 3년 이상 1명"
+       },
+       {
+        "name": "데이터 이행",
+        "kind": "required",
+        "months": 48,
+        "headcount": 1,
+        "quote": "데이터 이행 경력 4년 이상 1명"
+       },
+       {
+        "name": "테스트·QA",
+        "kind": "required",
+        "months": null,
+        "headcount": null,
+        "quote": "사용자 확인 시험은 발주기관 담당자가 참여한 가운데"
+       },
+       {
+        "name": "Kubernetes",
+        "kind": "preferred",
+        "months": null,
+        "headcount": null,
+        "quote": "Kubernetes 기반 운영 환경 구축 경험자 우대"
+       }
+      ],
+      "mentioned_not_required": [
+       "Tibero",
+       "JEUS"
+      ],
+      "unmapped": [],
+      "dropped": [],
+      "usage": {
+       "latency_s": 14.92,
+       "in": 77626,
+       "out": 1430,
+       "model": "glm-5.3-flash",
+       "cost_usd": 0.012359
+      }
+     }
+    ]
+   },
    "model": "glm-5.3-flash",
    "reasoning_effort": "high"
   }
@@ -4073,6 +4422,7 @@
   "G3_nonreq": true,
   "G4_dict": true,
   "G5_numbers": true,
+  "L1_long": true,
   "all": true
  },
  "gates_glm_report_only": {
@@ -4081,6 +4431,7 @@
   "G3_nonreq": true,
   "G4_dict": true,
   "G5_numbers": true,
+  "L1_long": true,
   "all": true
  }
 }
