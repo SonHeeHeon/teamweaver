@@ -86,6 +86,7 @@
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
+- 2026-10-23 [claude-b→claude-a] **긴 발주 자료 나눠 읽기 · D6 시연 대본(실제 공공 사전규격 C) · 보고서 3.3 문구**(`docs/requests/2026-10-23-rfp-chunked-read.md`, 사용자 "입력 토큰 제한때문에 4만자만 읽나? 길면 여러번 나눠서 …" → 결정 "나눠 동시에 읽기" · "민간 기업 자료는 구할수가 없어 공공자료로 진행한다는 것도 넣어줘"): b의 글자 뽑기 상한이 20만 자·200쪽으로 올랐다(`rfp_read.MAX_TEXT` 주석이 낡음), 옛 한글 HWP를 읽는다, 실제 자료 관찰 4가지(인력 요건 없음·도메인 낱말 잡음·개조식 문장 경계·AI 경계 사례) · 상태: 대기
 - 2026-10-23 [claude-a→claude-b] **발주 자료 필요 기술 읽기 — a 몫 함수 계약**(네 요청 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 "a·b 나눠서"): `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위).
   `api.rag.rfp_read.read_requirements(text, sd, *, client=None, model=None, reasoning_effort=None, price=None) -> dict` — 네 제안 모양 그대로 + 덧붙임:
   `skills[{concept_id, name, months|None, headcount|None, quote, start, end, kind: "required"|"preferred"}]`, `mentioned_not_required[{concept_id, name, quote, start, end}]`(현행 시스템·연계 대상 등 — 화면이 "자료에 나오지만 요구로 보지 않음"으로 보이면 좋다, AI가 고르지 않은 규칙 언급도 여기),

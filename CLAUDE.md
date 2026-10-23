@@ -292,8 +292,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **AI 필요 기술 읽기**(사용자 "a·b 나눠서": 읽기 함수 `api/rag/rfp_read`·측정 = claude-a, 글자 뽑기·`POST /api/project-requirements/read`·등록 양식 ④ `SkillReader` = b):
   글자 뽑기 `extract_text`는 서버 경로에서 **`extract_text_limited`(spawn 별도 프로세스 + 시간 제한 20초 + 동시 2개)**로 돈다 -- 글자 없는 PDF가 CPU·메모리만 쓴다(실측 21KB 9초·736MB),
   데이터는 시작 인자가 아니라 시작 뒤 파이프로(시드 포트폴리오와 같은 함정), 자식 답은 JSON 바이트. XML은 iterparse 한 번(문단마다 다시 돌면 4,000칸 표 5.7초), DOCX·PPTX 탭·줄바꿈은 글자 요소의 **형제**다.
+  **옛 한글(HWP 5.x)도 읽는다**(2026-10-23 사용자가 나라장터 사전규격에서 받은 실제 자료 2/3이 HWP, 결정 "HWP 읽기 추가", `api/hwp5.py` -- 새 의존성 없이 복합 문서·raw deflate·문단 글자 레코드): 섹터 사슬·디렉터리 순환은 방문 집합, 디렉터리는 뿌리 바로 아래 저장소까지만(깊게 이은 저장소 1MB가 경로 문자열로 1.2GB를 썼다 -- 폴백 리뷰), DRM·인증서 암호화 비트도 거절, 압축 해제 합계 8MiB(0만 든 본문은 4바이트 빈 레코드라 반복이 상한/4번), 스트림 읽기 합계 파일 4배, 배포용·암호 문서는 이유 문장 DocError. 시험 파일은 `tests/hwp_builder`가 만든다(실제 기관 문서는 저장소에 넣지 않는다).
+  글자 상한은 **20만 자·PDF 200쪽**(예전 6만·80, 사용자 결정 "나눠 동시에 읽기" -- AI가 읽는 양은 claude-a `rfp_read`가 정한다, 요청 `docs/requests/2026-10-23-rfp-chunked-read.md` -- 그 전까지 라우트가 `rfp_read.MAX_TEXT`를 넘는 자료에 "앞 6만 자까지만 읽었다" 경고를 붙인다). 규칙 읽기는 줄바꿈 하나를 문장 끝으로 보지 않아(PDF 줄 넘김) 개조식 문단의 다음 줄 "우대"가 앞 기술을 우대로 바꾼다 -- 같은 요청서에 관찰로 넘김.
   화면은 읽기 전에 보내는 곳(`GET /api/project-requirements`의 `ai_destination`, `api.deps.client_is_onprem` = llm_client_for와 같은 판정)을 알리고, 결과는 제안이다 --
-  경력이나 인원이 적힌 필수만 기본 체크(경력·인원 없는 필수는 과업 범위에서 추정한 것이 섞인다, 화면 확인), 우대·이미 적은 기술은 체크 안 함.
+  경력이나 인원이 적힌 필수만 기본 체크(경력·인원 없는 필수는 과업 범위에서 추정한 것이 섞인다, 화면 확인), 우대·이미 적은 기술은 체크 안 함. 실제 공공 사전규격은 인력 요건이 없어 필수가 모두 추정이다 -- 그때 안내 + "추정 n개 모두 선택"(2026-10-23 사용자 결정, 기본 체크 규칙은 그대로).
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는
@@ -301,7 +303,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 발주 자료 필요 기술 읽기(claude-a `feat/claude-a-rfp-read`) **2146 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 367 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 실제 공공 발주 자료·옛 한글 읽기(claude-b `feat/claude-b-kg-views`, a의 rfp-read 합침) **2192 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 384 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

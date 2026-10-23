@@ -22,6 +22,22 @@
 
 ---
 
+## 2026-10-23 · claude-b · 실제 공공 발주 자료로 시연 준비 — 옛 한글(HWP) 읽기 · 글자 상한 20만 자 · 등록 양식 추정 안내
+- 브랜치/커밋: `feat/claude-b-kg-views` `c6492e8`(서버) · `66c52e5`(화면) · 이 문서 커밋. main 미병합.
+- 사용자: 나라장터 사전규격에서 받은 실제 자료 3편 "괜찮은 샘플인지 확인해봐 / 입력 토큰 제한때문에 4만자만 읽나? 길면 여러번 나눠서 … / 민간 기업 자료는 구할수가 없어 공공자료로 진행한다는 것도 넣어줘"
+  → 결정: 시연 자료 C(한국산업안전보건공단) · HWP 읽기 추가 · 긴 자료 "나눠 동시에 읽기" · 추정 안내 + 모두 선택.
+- 한 일:
+  - `api/hwp5.py`: 표준 라이브러리만으로 옛 한글(HWP 5.x) 본문 글자. 순환·깊이·DIFAT·압축 해제(8MiB)·읽기 합계 상한, 암호·배포용·DRM은 이유와 함께 거절. 시험 파일은 `tests/hwp_builder`(실제 기관 문서는 저장소에 넣지 않음).
+  - `api/project_docs.py`: 글자 상한 6만 → 20만 자, PDF 80 → 200쪽. 읽기 라우트는 글이 `rfp_read.MAX_TEXT`(6만)보다 길면 경고.
+  - 등록 양식 ④: HWP 읽기 버튼, 필수 제안이 모두 추정이면 관찰 안내 + "추정 n개 모두 선택/선택 풀기".
+  - claude-a 요청 `docs/requests/2026-10-23-rfp-chunked-read.md`: 나눠 동시에 읽기, 실제 자료 관찰 4가지, D6 대본(C 자료 + 민간 자료 문장), 보고서 3.3.
+- 상대 영향: **`extract_text(_limited)` 계약이 바뀌었다** — 최대 20만 자(예전 6만), `.hwp`도 글자를 준다(배포용·암호·DRM은 DocError). `rfp_read.MAX_TEXT` 주석("b의 extract_text가 주는 글자 수와 같다")이 낡았다 — 요청서 1.
+  테스트 기준선 2192 passed(+17), 웹 384(+2).
+- 검증: `uv run pytest -q` → 2192 passed, 1 skipped, 21 deselected · 웹 384 passed · `npx tsc -b`·build 통과.
+  실제 파일 B·C 서비스 글자 = 임시 확인 도구 글자(고정폭 빈칸만 다름). 헤드리스 화면에서 C `.hwp` → 실제 gpt-6-luna 8.3초 → 안내 + 추정 11개 모두 선택 → 등록, 콘솔 오류 0.
+  리뷰: Codex 쿼터 소진 → Claude Opus 적대적 2라운드(1차 MUST 1: 깊게 이은 저장소 메모리 1.2GB → 고침, 2차 approve).
+- 근거: 루트 `.omc/reports/2026-10-23-real-bid-docs.md`(+ `.eli5.html`), 계획 `.omc/plan/2026-10-23-real-bid-docs.md`.
+
 ## 2026-10-23 · claude-b · 발주 자료에서 필요 기술 읽기 — b 몫(글자 뽑기·라우트·등록 양식 버튼) + main·a 브랜치 합침
 - 브랜치/커밋: `feat/claude-b-kg-views`
   - `5e8dd7a`(main 합침) · `4e42ecb`(a `feat/claude-a-rfp-read` 합침). 충돌은 둘 다 "양쪽 다 살리기"(사용자 승인): `api/main.py` 라우터 줄, 이 파일 머리.
