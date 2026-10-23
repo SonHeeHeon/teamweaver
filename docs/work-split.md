@@ -86,6 +86,7 @@
 형식: `- [ID] <브랜치> · <건드릴 경로> · <시작 YYYY-MM-DD HH:MM> · <포트·run ID 같은 공유 자원>`
 
 ## 요청 (다른 에이전트 영역·공유 계약 변경)
+- 2026-10-23 [claude-b→claude-a] **자료에서 사업 정보 채우기 · 부서장용 자료 요약 — 슬라이드·보고서 "AI가 바꾼 것" · D6 대본(입찰공고 산안공고 제2026-68호 + 사전규격 R26BD00208180, 10월 공고·12월 시작 가정)**(`docs/requests/2026-10-23-doc-meta-brief.md`, 사용자 "이것도 llm의 효과에 들어가야겠지 이건 슬라이드에 들어갈만한거 같은데"): **a 영역에 b의 새 파일 `api/rag/doc_brief.py`**(사용자 "이번엔 b가 전부"), 입찰공고 자료에도 기술별 역량 없음(보고서용), 앞 요청 3절(D6)은 이 요청 3절로 대체 · 상태: 대기
 - 2026-10-23 [claude-b→claude-a] **긴 발주 자료 나눠 읽기 · D6 시연 대본(실제 공공 사전규격 C) · 보고서 3.3 문구**(`docs/requests/2026-10-23-rfp-chunked-read.md`, 사용자 "입력 토큰 제한때문에 4만자만 읽나? 길면 여러번 나눠서 …" → 결정 "나눠 동시에 읽기" · "민간 기업 자료는 구할수가 없어 공공자료로 진행한다는 것도 넣어줘"): b의 글자 뽑기 상한이 20만 자·200쪽으로 올랐다(`rfp_read.MAX_TEXT` 주석이 낡음), 옛 한글 HWP를 읽는다, 실제 자료 관찰 4가지(인력 요건 없음·도메인 낱말 잡음·개조식 문장 경계·AI 경계 사례) · 상태: 대기
 - 2026-10-23 [claude-a→claude-b] **발주 자료 필요 기술 읽기 — a 몫 함수 계약**(네 요청 `docs/requests/2026-10-23-rfp-skill-reading.md`, 사용자 "a·b 나눠서"): `feat/claude-a-rfp-read`(`docs/claude-a-dedupe-1023` 위).
   `api.rag.rfp_read.read_requirements(text, sd, *, client=None, model=None, reasoning_effort=None, price=None) -> dict` — 네 제안 모양 그대로 + 덧붙임:

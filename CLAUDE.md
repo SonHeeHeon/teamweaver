@@ -296,6 +296,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   글자 상한은 **20만 자·PDF 200쪽**(예전 6만·80, 사용자 결정 "나눠 동시에 읽기" -- AI가 읽는 양은 claude-a `rfp_read`가 정한다, 요청 `docs/requests/2026-10-23-rfp-chunked-read.md` -- 그 전까지 라우트가 `rfp_read.MAX_TEXT`를 넘는 자료에 "앞 6만 자까지만 읽었다" 경고를 붙인다). 규칙 읽기는 줄바꿈 하나를 문장 끝으로 보지 않아(PDF 줄 넘김) 개조식 문단의 다음 줄 "우대"가 앞 기술을 우대로 바꾼다 -- 같은 요청서에 관찰로 넘김.
   화면은 읽기 전에 보내는 곳(`GET /api/project-requirements`의 `ai_destination`, `api.deps.client_is_onprem` = llm_client_for와 같은 판정)을 알리고, 결과는 제안이다 --
   경력이나 인원이 적힌 필수만 기본 체크(경력·인원 없는 필수는 과업 범위에서 추정한 것이 섞인다, 화면 확인), 우대·이미 적은 기술은 체크 안 함. 실제 공공 사전규격은 인력 요건이 없어 필수가 모두 추정이다 -- 그때 안내 + "추정 n개 모두 선택"(2026-10-23 사용자 결정, 기본 체크 규칙은 그대로).
+  **자료에서 사업 정보 채우기 · 부서장용 자료 요약**(2026-10-23 사용자 "프로젝트 이름, 기간, 예산 등을 대신 작성" · "각각의 자료를 llm으로 잘 압축 요약한", 결정 "이번엔 b가 전부" -- **a 영역에 b의 `api/rag/doc_brief.py`**): `read_project_meta`(사업명·고객 구분·기간 개월·총 사업비·공고번호·마감)·`summarize_document`(8칸 + 한 줄), 칸·항목마다 근거 말(원문 확인·150자 안).
+  금액은 `parse_amount`가 덩어리째("1억 2천 5백만원") 읽고 애매하면 금액이 아니다, 요약 숫자는 날짜(년·월·일)·시각·금액·단위 붙은 수로 근거 말과 맞춘다 -- **완전한 환각 차단이 아니다**(문서에 "거른다").
+  근거 말에 "N개월"이 없는 기간은 `computed`(화면 "AI 계산", 미리 체크 안 함), 규칙 값도 미리 체크 안 함. 월 예산 = 총액 ÷ 개월 ÷ 1만 원(1점 = 1만 원 가정, 시연 자료 PDF도 원으로 다시 만듦).
+  요약은 사람이 눌러 만들고(열기만으로 AI에 안 보냄) AI 요약만 `<보관 폴더>/summaries/`에 자료 해시·`PROMPT_VERSION`으로 저장 -- 지시문·검사를 바꾸면 판을 올린다. 측정 `scripts/eval_doc_brief.py`(가상 7편은 규칙만으로도 통과하는 쉬운 세트).
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는
@@ -303,7 +307,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 실제 공공 발주 자료·옛 한글 읽기(claude-b `feat/claude-b-kg-views`, a의 rfp-read 합침) **2192 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 384 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-23 자료에서 사업 정보 채우기·부서장용 자료 요약(claude-b `feat/claude-b-kg-views`, a의 rfp-read 합침) **2216 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 399 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
