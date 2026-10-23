@@ -23,8 +23,8 @@ from api.rag.request_parse import _locate
 log = logging.getLogger(__name__)
 
 MAX_TEXT = 200_000           # b의 글자 뽑기 상한과 같다(api.project_docs.MAX_TEXT_CHARS)
-MAX_AI_TEXT = 40_000         # AI에 보내는 앞부분(rfp_read와 같은 여유값)
-PROMPT_VERSION = "doc-brief-2"   # 저장한 요약을 다시 쓸지 가르는 표지 -- 지시문·검사를 바꾸면 올린다(2: 폴백 리뷰 반영 검사)
+MAX_AI_TEXT = 40_000         # 정보 채우기가 읽는 앞부분(사업명·기간·예산은 공고문 앞머리). 요약 조각 크기는 claude-a `rfp_read`의 상수가 정한다(CACHE_VERSION에 넣음)
+PROMPT_VERSION = "doc-brief-3"   # 저장한 요약을 다시 쓸지 가르는 표지 -- 지시문·검사를 바꾸면 올린다(2: 폴백 리뷰 반영 검사 · 3: 긴 자료 나눠 읽기)
 SECTORS = ("대내", "대외금융", "대외공공")
 BUDGET_MAX = 10 ** 13
 QUOTE_MAX = 150              # 근거 말 상한 -- 길면 숫자 검사가 무력해진다(폴백 리뷰 S3: 공고 전체를 근거로 준 10억이 통과)
@@ -468,7 +468,7 @@ def rule_summary(text: str, kind: str = "") -> dict:
                 continue
             used.add(s)
             start = s + line.index(t)
-            items.append({"text": t, "quote": t, "start": start, "end": start + len(t)})
+            items.append({"text": t, "quote": t, "start": start, "end": start + len(t), "source": "rule"})
             if len(items) >= 3:
                 break
         sections.append({"key": key, "title": title, "items": items})
@@ -493,59 +493,145 @@ def _clean_item(item, ai_text: str) -> tuple[dict | None, str | None]:
         return None, "이름·연락처"
     if not numbers_supported(t, quote):
         return None, "근거 말에 없는 숫자"
-    return {"text": t, "quote": quote, "start": span[0], "end": span[1]}, None
+    return {"text": t, "quote": quote, "start": span[0], "end": span[1], "source": "ai"}, None
+
+
+def cache_version() -> str:
+    """저장한 요약을 다시 쓸지 가르는 판: 이 파일의 지시문·검사 판 + claude-a `rfp_read` 조각 규칙(바뀌면 조각이 달라진다 -- 리뷰 N1).
+    한계: 목차 정규식(`rfp_read._HEADINGS`)은 넣지 않았다 -- a가 그것을 바꾸면 PROMPT_VERSION을 올린다(2차 리뷰 N-3)."""
+    from api.rag import rfp_read as rr
+    return f"{PROMPT_VERSION}|{rr.MAX_AI_TEXT}|{rr.MAX_CHUNKS}|{rr._CUT_FROM}|{rr._OVERLAP}"
+
+
+_PART_SUM = ("이 글은 긴 자료를 나눈 {n}조각 중 {i}번째다(글자 {s:,}~{e:,}). {path}이 조각에 있는 내용만 요약하고, "
+             "근거 말(quote)은 아래 조각 글에서 그대로 복사한다. 다른 조각에 있을 내용은 짐작하지 않는다.\n\n")
+
+
+def _merge_sections(parts: list[dict[str, list[dict]]], ranks: list[int] | None = None) -> list[dict]:
+    """조각별 칸 항목 → 칸마다 같은 순위 조각끼리 번갈아 하나씩(앞 조각만 채우지 않게), 순위가 높은(작은 수) 조각을 먼저 다 돈 뒤 다음 순위로
+    (사업 내용 조각이 별첨 서식 조각에 자리를 뺏기지 않게 -- 리뷰 S1), 같은 근거 말은 한 번만, 칸마다 ITEMS_PER_SECTION개."""
+    ranks = ranks or [0] * len(parts)
+    seen: set[str] = set()                  # 같은 근거 말은 한 칸에만(첫 칸) -- 실측: "산출물은 공단에 귀속"이 유의 사항·산출물에 두 번
+    sections = []
+    for key, title in SECTIONS:
+        items: list[dict] = []
+        for rank in sorted(set(ranks)):
+            queues = [list(p.get(key, [])) for p, r in zip(parts, ranks) if r == rank]
+            while len(items) < ITEMS_PER_SECTION and any(queues):
+                for q in queues:
+                    while q:
+                        it = q.pop(0)
+                        if it["quote"] not in seen:
+                            seen.add(it["quote"])
+                            items.append(it)
+                            break
+                    if len(items) >= ITEMS_PER_SECTION:
+                        break
+        sections.append({"key": key, "title": title, "items": items})
+    return sections
 
 
 def summarize_document(text: str, kind: str = "", *, client=None, model: str | None = None, reasoning_effort: str | None = None,
                        price: dict | None = None) -> dict:
     """자료 글자 → 부서장용 요약 {doc_type, relevance: high|low, one_line, sections[{key, title, items[{text, quote, start, end}]}],
-    method: ai|rule, model, usage, warnings, fallback_reason, dropped[{section, why}]}. 위치는 넘겨받은 text 기준."""
-    text = unicodedata.normalize("NFC", str(text or ""))[:MAX_TEXT]
+    method: ai|rule, model, usage, warnings, fallback_reason, dropped[{section, why}], chunks[{start, end, method, latency_s}]}. 위치는 넘겨받은 text 기준.
+
+    긴 자료는 나눠 동시에 읽는다(2026-10-23 사용자 "자료 요약도 4만 자 넘는 자료를 끝까지" → "나눠 읽기 적용"): 필요 기술 읽기(claude-a `rfp_read`)와 같은 조각
+    (목차 경계, 조각 ≤ MAX_AI_TEXT, 최대 MAX_CHUNKS, 조각마다 제목 경로) -- 항목 근거는 그 조각 원문에서 확인하고 전체 글 위치로 옮긴다.
+    한 조각이 실패하면 그 조각은 규칙 항목, 모두 실패하면 규칙 요약."""
+    from concurrent.futures import ThreadPoolExecutor
+    from api.rag.rfp_read import _chunks, _headings, _path
+    raw = unicodedata.normalize("NFC", str(text or ""))
+    text = raw[:MAX_TEXT]
     warnings: list[str] = []
     if len(text.strip()) < 30:
         warnings.append("자료에서 읽은 글자가 거의 없다 -- 스캔 이미지 PDF면 글자로 저장한 파일을 올린다.")
+    if len(raw) > MAX_TEXT:
+        warnings.append(f"자료가 길어 앞 {MAX_TEXT:,}자만 읽었다 -- 그 뒤는 요약에 없다.")
     out = {**rule_summary(text, kind), "method": "rule", "model": None, "warnings": warnings, "usage": None,
-           "fallback_reason": None, "dropped": []}
+           "fallback_reason": None, "dropped": [], "chunks": [{"start": 0, "end": len(text), "method": "rule", "latency_s": None}]}
     if client is None or not model:
         out["fallback_reason"] = "no_client"
         return out
-    ai_text = text[:MAX_AI_TEXT]
-    if len(text) > MAX_AI_TEXT:
-        warnings.append(f"자료가 길어 앞 {MAX_AI_TEXT:,}자만 AI가 읽었다 -- 뒷부분은 요약에 없다.")
-    data, usage, err = _call(client, model, reasoning_effort, price, SYSTEM_SUM, TASK_SUM.format(kind=kind or "모름", text=ai_text))
-    if err:
-        out["fallback_reason"] = err
+    heads = _headings(text)
+    spans = _chunks(text, heads) or [(0, len(text))]
+    if spans[-1][1] < len(text):
+        warnings.append(f"자료가 길어 앞 {spans[-1][1]:,}자까지만 AI가 읽었다 -- 뒷부분은 요약에 없다.")
+
+    def prompt(i: int, s: int, e: int) -> str:
+        task = TASK_SUM.format(kind=kind or "모름", text=text[s:e])
+        if len(spans) == 1:
+            return task
+        p = _path(heads, s + 1)
+        return _PART_SUM.format(n=len(spans), i=i + 1, s=s, e=e, path=f"이 조각이 속한 제목: {p}. " if p else "") + task
+
+    def one(i: int):
+        try:
+            return _call(client, model, reasoning_effort, price, SYSTEM_SUM, prompt(i, *spans[i]))
+        except Exception as exc:                        # noqa: BLE001 -- 조각 하나의 뜻밖 오류가 풀 밖으로 새지 않게(리뷰 N2)
+            log.warning("자료 요약 조각 %d/%d 준비 실패: %s", i + 1, len(spans), exc)
+            return {}, None, f"llm_error:{type(exc).__name__}"
+    t0 = time.monotonic()
+    if len(spans) == 1:
+        got = [one(0)]
+    else:
+        with ThreadPoolExecutor(max_workers=len(spans)) as pool:
+            got = list(pool.map(one, range(len(spans))))
+    wall = round(time.monotonic() - t0, 2)
+    if all(err for _, _, err in got):
+        out["fallback_reason"] = got[0][2]
         return out
     dropped: list[dict] = []
-    raw = data.get("sections") if isinstance(data.get("sections"), dict) else {}
-    sections = []
-    seen: set[str] = set()                  # 같은 근거 말은 한 칸에만(첫 칸) -- 실측: "산출물은 공단에 귀속"이 유의 사항·산출물에 두 번
-    for key, title in SECTIONS:
-        items = []
-        for item in (raw.get(key) or [])[: ITEMS_PER_SECTION * 2] if isinstance(raw.get(key), list) else []:
-            got, why = _clean_item(item, ai_text)
-            if why:
-                dropped.append({"section": key, "why": why})
-                continue
-            if got["quote"] in seen:
-                continue
-            seen.add(got["quote"])
-            items.append(got)
-            if len(items) >= ITEMS_PER_SECTION:
-                break
-        sections.append({"key": key, "title": title, "items": items})
-    one = str(data.get("one_line") or "").strip()
+    parts: list[dict[str, list[dict]]] = []
+    ranks: list[int] = []                   # 0 = 사업 내용 조각(high) · 1 = AI 실패 조각(규칙 줄) · 2 = 서식·조항뿐(low)
+    chunks, firsts = [], []
+    pin = pout = 0
+    cost = 0.0
+    for i, ((s, e), (data, usage, err)) in enumerate(zip(spans, got)):
+        piece = text[s:e]
+        if err:
+            rs = rule_summary(piece, kind)
+            parts.append({sec["key"]: [{**it, "start": it["start"] + s, "end": it["end"] + s} for it in sec["items"]] for sec in rs["sections"]})
+            ranks.append(1)
+            warnings.append(f"{i + 1}번째 조각(글자 {s:,}~{e:,})은 AI 요약에 실패해 열쇠말 줄로 채웠다(\"열쇠말 줄\" 표시) -- 다시 만들면 AI로 읽는다.")
+            chunks.append({"start": s, "end": e, "method": "rule", "latency_s": None})
+            continue
+        pin, pout = pin + (usage or {}).get("in", 0), pout + (usage or {}).get("out", 0)
+        cost += (usage or {}).get("cost_usd", 0)
+        raw_sec = data.get("sections") if isinstance(data.get("sections"), dict) else {}
+        part: dict[str, list[dict]] = {}
+        for key, _ in SECTIONS:
+            vals = raw_sec.get(key) if isinstance(raw_sec.get(key), list) else []
+            for item in vals[: ITEMS_PER_SECTION * 2]:
+                got_item, why = _clean_item(item, piece)
+                if why:
+                    dropped.append({"section": key, "why": why})
+                    continue
+                part.setdefault(key, []).append({**got_item, "start": got_item["start"] + s, "end": got_item["end"] + s})
+        parts.append(part)
+        ranks.append(2 if data.get("relevance") == "low" else 0)
+        firsts.append((i, data))
+        chunks.append({"start": s, "end": e, "method": "ai", "latency_s": (usage or {}).get("latency_s")})
+    sections = _merge_sections(parts, ranks)
+    failed = any(c["method"] == "rule" for c in chunks)
+    # 한 줄·자료 성격은 첫 조각(자료 앞머리에 사업 개요)이 AI로 읽혔을 때만 -- 첫 조각이 실패했는데 뒤 조각(별첨 서약서)의 말을 쓰면
+    # 제안요청서가 "청렴계약 서약서"로 보였다(리뷰 M1). 그때는 규칙(사업명 표지 줄)과 고른 종류.
+    head = firsts[0][1] if firsts and firsts[0][0] == 0 else {}
+    one = str(head.get("one_line") or "").strip() if head else ("" if is_personal(out["one_line"]) else out["one_line"])
     # 한 줄 요약의 숫자는 살아남은 항목들의 근거 말에 있는 것만(자료 전체와 대조하면 "10억 원 규모"(자격 기준)가 굵은 머리말로 통과했다 -- 폴백 리뷰 S4)
     quotes = "\n".join(i["quote"] for sec in sections for i in sec["items"])
-    if len(one) > 120 or is_personal(one) or not numbers_supported(one, quotes):
+    if head and (len(one) > 120 or is_personal(one) or not numbers_supported(one, quotes)):
         dropped.append({"section": "one_line", "why": "길거나 항목 근거에 없는 숫자·이름·연락처"})
-        one = next((s["items"][0]["text"] for s in sections if s["items"]), "")
-    doc_type = str(data.get("doc_type") or "").strip()[:30] or (kind or "자료")
-    relevance = data.get("relevance") if data.get("relevance") in ("high", "low") else "high"
-    if relevance == "high" and not any(s["items"] for s in sections):
+        one = next((sec["items"][0]["text"] for sec in sections if sec["items"]), "")
+    doc_type = str(head.get("doc_type") or "").strip()[:30] or (kind or "자료")
+    rel = [d.get("relevance") for _, d in firsts if d.get("relevance") in ("high", "low")]
+    # 한 조각이라도 사업 내용이 있거나 못 읽은 조각이 있으면 high -- "볼 것 없음"은 모든 조각을 AI가 읽고 모두 low일 때만(리뷰 M1)
+    relevance = "low" if rel and not failed and all(r == "low" for r in rel) else "high"
+    if relevance == "high" and not any(sec["items"] for sec in sections):
         warnings.append("근거를 확인한 요약 항목이 없다.")
+    usage = {"latency_s": wall, "in": pin, "out": pout, "model": model, "cost_usd": round(cost, 6)}
     out.update(doc_type=doc_type, relevance=relevance, one_line=one, sections=sections, method="ai", model=model,
-               usage=usage, dropped=dropped)
+               usage=usage, dropped=dropped, chunks=chunks)
     return out
 
 

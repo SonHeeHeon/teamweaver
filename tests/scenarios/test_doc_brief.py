@@ -299,3 +299,105 @@ def test_text_values_keep_the_original_wording_on_one_line():
     text = "“비정형 데이터 기반\nAI 대전환 4대 메가트렌드 진단”\n제안요청서"
     ai = FakeAI({"name": {"value": "비정형 데이터 기반 AI 대전환 4대 메가트렌드 진단", "quote": "비정형 데이터 기반\nAI 대전환 4대 메가트렌드 진단"}})
     assert db.read_project_meta(text, client=ai, model="m")["fields"]["name"]["value"] == "비정형 데이터 기반 AI 대전환 4대 메가트렌드 진단"
+
+
+# --- 긴 자료 나눠 읽기(2026-10-23 사용자 "자료 요약도 4만 자 넘는 자료를 끝까지" → "나눠 읽기 적용") -------------------------------------------
+
+def _long_doc():
+    filler = "본 과업은 정해진 절차에 따라 성실히 수행한다.\n" * 1200            # 약 3만 자
+    parts = [("Ⅰ. 사업 개요", "사업예산(부가가치세 포함) : 120,000,000원"),
+             ("Ⅱ. 과업 내용", "계약기간 : 계약일부터 8개월"),
+             ("Ⅲ. 보안 사항", "수행 인력은 보안 서약서를 제출한다")]
+    return "".join(f"{h}\n{filler}{marker}\n{filler}" for h, marker in parts), [m for _, m in parts]
+
+
+class ChunkAI:
+    """조각 글에 든 표지 문장을 근거로 한 항목씩 돌려준다. fail_on: 이 표지가 든 조각은 실패."""
+
+    def __init__(self, markers, *, fail_on=(), relevance=None):
+        self.markers, self.fail_on, self.relevance, self.prompts = markers, set(fail_on), relevance or {}, []
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    def _create(self, **kw):
+        user = kw["messages"][1]["content"]
+        self.prompts.append(user)
+        m = next((m for m in self.markers if m in user), None)
+        if m in self.fail_on:
+            raise RuntimeError("down")
+        if m is None:                                   # 표지 없는 조각 -- 항목 없음
+            payload = {"doc_type": "제안요청서", "relevance": "low", "one_line": "", "sections": {}}
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))],
+                                   usage=SimpleNamespace(prompt_tokens=1000, completion_tokens=50))
+        key = {"사업예산": "budget", "계약기간": "schedule", "보안": "constraints"}[next(k for k in ("사업예산", "계약기간", "보안") if k in m)]
+        text = {"budget": "사업예산은 1억 2천만 원이다.", "schedule": "계약은 계약일부터 8개월이다.", "constraints": "수행 인력은 보안 서약서를 낸다."}[key]
+        payload = {"doc_type": "제안요청서", "relevance": self.relevance.get(m, "high"), "one_line": "가상 사업 제안요청서",
+                   "sections": {key: [{"text": text, "quote": m}]}}
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload, ensure_ascii=False)))],
+                               usage=SimpleNamespace(prompt_tokens=1000, completion_tokens=50))
+
+
+def test_long_document_summary_reads_every_chunk_with_document_positions():
+    text, markers = _long_doc()
+    assert len(text) > 150_000
+    ai = ChunkAI(markers)
+    out = db.summarize_document(text, "제안요청서", client=ai, model="m")
+    assert out["method"] == "ai" and len(out["chunks"]) >= 4 and all(c["method"] == "ai" for c in out["chunks"])
+    assert out["usage"]["in"] == 1000 * len(out["chunks"])                                     # 조각 사용량을 합친다
+    items = {s["key"]: s["items"] for s in out["sections"]}
+    assert [i["text"] for i in items["budget"]] == ["사업예산은 1억 2천만 원이다."]
+    assert [i["text"] for i in items["schedule"]] == ["계약은 계약일부터 8개월이다."]
+    assert [i["text"] for i in items["constraints"]] == ["수행 인력은 보안 서약서를 낸다."]      # 4만 자 훨씬 뒤(약 15만 자)
+    for its in items.values():
+        for i in its:
+            assert text[i["start"]:i["end"]] == i["quote"]                                         # 전체 글 위치
+    assert items["constraints"][0]["start"] > 100_000
+    assert sum("조각 중" in p for p in ai.prompts) == len(out["chunks"])                       # 조각임을 알리고
+    assert any("이 조각이 속한 제목: Ⅲ. 보안 사항" in p for p in ai.prompts)                       # 제목 경로를 붙인다
+    assert not any("까지만 AI가 읽었다" in w for w in out["warnings"])
+
+
+def test_long_document_summary_survives_a_failed_chunk_and_falls_back_when_all_fail():
+    text, markers = _long_doc()
+    out = db.summarize_document(text, client=ChunkAI(markers, fail_on={markers[1]}), model="m")
+    assert out["method"] == "ai" and any(c["method"] == "rule" for c in out["chunks"])
+    assert any("AI 요약에 실패해 열쇠말 줄로 채웠다" in w for w in out["warnings"])
+    assert [i["text"] for s in out["sections"] if s["key"] == "constraints" for i in s["items"]] == ["수행 인력은 보안 서약서를 낸다."]
+    out = db.summarize_document(text, client=FakeAI(RuntimeError("down")), model="m")                 # 모든 조각 실패
+    assert out["method"] == "rule" and out["fallback_reason"] == "llm_error:RuntimeError"
+
+
+def test_relevance_is_high_if_any_chunk_has_business_content():
+    text, markers = _long_doc()
+    low_all = {m: "low" for m in markers}
+    assert db.summarize_document(text, client=ChunkAI(markers, relevance=low_all), model="m")["relevance"] == "low"
+    one_high = {**low_all, markers[2]: "high"}
+    assert db.summarize_document(text, client=ChunkAI(markers, relevance=one_high), model="m")["relevance"] == "high"
+
+
+def test_failed_first_chunk_does_not_make_the_document_look_unimportant():
+    """나눠 읽기 리뷰 M1: 첫 조각이 실패하고 뒤 조각(별첨)이 low면 제안요청서가 "볼 것 없는 서약서"로 보였다 -- 머리말은 규칙, relevance는 high."""
+    text, markers = _long_doc()
+    text = "사업명 : 가상 공공기관 문서 데이터 구조화 사업\n" + text
+    ai = ChunkAI(markers, fail_on={markers[0]}, relevance={markers[1]: "low", markers[2]: "low"})
+    out = db.summarize_document(text, "제안요청서(RFP)", client=ai, model="m")
+    assert out["chunks"][0]["method"] == "rule"
+    assert out["relevance"] == "high" and out["doc_type"] == "제안요청서(RFP)"
+    assert out["one_line"] == "가상 공공기관 문서 데이터 구조화 사업"                               # 규칙(사업명 표지 줄)
+
+
+def test_business_chunks_fill_sections_before_form_only_chunks_and_items_carry_their_source():
+    """나눠 읽기 리뷰 S1·S4: 사업 내용 조각(high) 항목이 서식뿐인 조각(low) 항목보다 먼저, 항목마다 출처(ai|rule)."""
+    hi = {"staffing": [{"text": f"요건 {i}", "quote": f"q{i}", "start": i, "end": i + 2, "source": "ai"} for i in range(5)]}
+    lo = {"staffing": [{"text": f"서식 {i}", "quote": f"f{i}", "start": 100 + i, "end": 102 + i, "source": "ai"} for i in range(5)]}
+    merged = db._merge_sections([lo, hi], [2, 0])
+    assert [i["text"] for i in next(s for s in merged if s["key"] == "staffing")["items"]] == [f"요건 {i}" for i in range(5)]
+    text, markers = _long_doc()
+    out = db.summarize_document(text, client=ChunkAI(markers, fail_on={markers[1]}), model="m")
+    srcs = {i["source"] for s in out["sections"] for i in s["items"]}
+    assert srcs == {"ai", "rule"}
+
+
+def test_cache_version_includes_the_chunk_rules():
+    from api.rag import rfp_read
+    v = db.cache_version()
+    assert v.startswith(db.PROMPT_VERSION + "|") and str(rfp_read.MAX_AI_TEXT) in v

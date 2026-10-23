@@ -22,6 +22,15 @@
 
 ---
 
+## 2026-10-24 · claude-a · main 병합 — claude-a 실제 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천 + claude-b 요약 나눠 읽기·보고서 1차 수정
+- 사용자: "병합 승인할게".
+- 브랜치/커밋: main(`273cc13` -- b가 a의 `fa4f00b`까지와 b 보고서 1차 수정을 이미 올린 판)을 `feat/claude-a-real-rfp-1024`에 합친 병합 커밋 → main fast-forward → origin push.
+- 충돌(양쪽 살림, 사용자 앞선 지시 "양쪽 다 살리기"): `CLAUDE.md` 기준선 줄 · `docs/handoff-log.md` 머리(두 쪽 항목 모두, 시간 순) · `outputs/final-report.html` 9절 한계 두 줄(b의 "필요 기술 읽기·요약 20만 자 나눠 읽기" + a의 "발주 자료는 실제 공공 10편") ·
+  `final-report.pdf`(다시 만듦 9쪽, b 도구 `.omc/tools/report-export/make_pdf.py`) · `final-report.docx`(같은 곳 `html2docx.py`로 다시). `projectDocsApi.ts`는 자동 병합.
+- 함께 고침: 보고서의 낡은 시험 수(b가 남긴 메모 "3.7·4절·부록의 2,140") → 2,233·웹 403, 커밋 약 660개.
+- 상대 영향(claude-b): 네 `feat/claude-b-kg-views`는 main보다 뒤다(a의 충족 표시·등록 양식 자동 추천 -- 네 영역 화면 `NewProjectsScreen`·`ProjectForm`·`SkillReader`·`ProjectDocs`·`projectDocsApi`, 라우트 `scenarios.py` 후보 응답 `coverage`). 다음 작업 전에 main을 합친다.
+- 검증: 병합 트리 `uv run --group benchmark pytest -q` → 2233 passed, 1 skipped, 21 deselected · 웹 403 · tsc. 보고서 PDF 9쪽.
+
 ## 2026-10-24 · claude-a · 실제 공공 발주 자료 10편 측정 · D7 데이터 마트 · 신규 사업 요구 기술 충족 표시 · 등록 양식 ④ 자동 추천
 - 브랜치/커밋: `feat/claude-a-real-rfp-1024`(main `2748f18`에서) — `88d98eb`(D7) · `fa4f00b`(정답·도구, AI 전) · `86429fd`(결과) · `5242181`(충족 표시) · `554b7ab`(등록 양식) · 문서 커밋. main 미병합.
 - 사용자: "9편 넣어두었고 1편은 … 산안공고 제2026-68호 이걸로 하자" · "d7 예시를 좀 바꿀까? 데이터 플랫폼실행그룹 인력인데 …" · "병합 승인할게" ·
@@ -36,6 +45,46 @@
   병합 때 확인. `DESTINATION`·`docKey`는 `projectDocsApi`로 옮겼다. 웹 시험 402(+2).
 - 검증: `uv run --group benchmark pytest -q` → 2225 passed, 1 skipped, 21 deselected · 웹 402 · tsc · oxlint · build · 실제 화면(임시 데이터, 포트 8779) 충족 칩·등록 양식 ①·④ 자동 읽기 1번 · 보고서 PDF 10쪽 · 슬라이드 겹침 0. Codex 한도 소진 → 자체 검토.
 - 근거: `.omc/plan/2026-10-23-real-rfp-d7.md` · `.omc/reports/2026-10-24-real-rfp-d7-coverage.md`
+
+## 2026-10-23 · claude-b · 정정: 보고서 1차 수정도 main에 올림
+- 바로 아래 항목의 "main에는 아직 안 올림"을 정정 — 사용자 "main에 다 병합해줘"에 따라 main을 `c4f7094`(보고서 1차 수정) 뒤 이 정정 커밋까지 fast-forward했다. push 안 함.
+- 상대 영향: claude-a는 보고서를 고치기 전에 main을 합친다(`outputs/final-report.*` 구조가 바뀜).
+
+## 2026-10-23 · claude-b · 최종 보고서 1차 수정(사용자 점검 1~4쪽) + Word 파일
+- 사용자: "Final-report 레포트 1차 수정 요청"(1~4쪽 항목별 지시 + "수정 후 워드 파일로도 내보내기").
+- 브랜치/커밋: `feat/claude-b-kg-views`(main `f24eff4` 위). main에는 아직 안 올림.
+- 한 일(`outputs/final-report.html` → `.pdf` 9쪽 · `.docx` 새로):
+  - 1쪽: 제목 밑 줄·개요 표·"읽는 법"·목차 삭제, 과제 내용 한 줄을 첫 줄로. 1.1 "SI 사업을 하는 조직", 사업 단위 투입·이동으로 고쳐 "한 사람이 여러 사업에 동시에"로 읽히지 않게, "프로젝트 인력 배치".
+  - 1.4 가상 데이터: 실제 조직 현황 참고·과제 수행자가 쓴 이력·평가 바탕(실제 자료는 적재 안 함), v 표기·"첫 버전은 …" 삭제. 1.5(현업 요구)·2.2(수행 경과) 삭제 — 1.5 알맹이(전일 투입·동시 수행 허용·최대 K명·고정·등급 대체·확정 취소)는 1.3 한 줄로, 7절 "(1.5)" 참조는 1.3으로.
+  - 2장 요약: 어떤 데이터의 결과인지(가상 100·200·300명, 6개월, 시연 100명), 카드 6개 다시 씀 — LLM 55%는 "최적 기술 탐색"(배치는 최적화 엔진, AI는 읽기·쓰기)으로. 2.1 표는 심사위원 말로, 규모 줄 삭제.
+  - 3.1: "(6개월)"·행마다 기간, "최선안 배치 점수"(네 경우 모두 A가 최고), "이론상 최대치와의 차이"(증명 상한) 설명, 회색 주는 출처·옛 방식 없이. 3.2: 열 이름 "프로젝트 인력 배치 품질 K(옮길 수 있는 최대 인원)", "최적 확인", K=0 만석이 생성 가정(신규 사업 정원 = 대기 인력 등급 구성)임과 K를 늘리면 후보가 대기 10명 → 배치 중 87명으로 넓어진다는 설명, 출처 삭제.
+  - 9절 한계: 정보 채우기 앞 4만 자 · 필요 기술 읽기·요약 20만 자 나눠 읽기로 사실 고침.
+  - Word: macOS `textutil`은 표를 버려(표 0개) 표준 라이브러리 변환기를 썼다 — 루트 `.omc/tools/report-export/`(저장소 밖). PDF도 같은 곳 `make_pdf.py`(Playwright, A4).
+- 상대 영향: claude-a가 `outputs/final-report.html`을 고칠 때 위 구조(1.5·2.2·목차 없음, 3.1·3.2 열 이름) 위에서 고친다. 3.7·4절·부록의 시험 수 "2,140"은 이번 범위 밖이라 그대로(지금 2230).
+- 검증: PDF 9쪽(제한 10쪽, pypdf) · 쪽 그림으로 1~4·6·8쪽 배치 확인 · docx XML 8부분 모두 정상 파싱, 표 20개, Quick Look으로 1·2·3.2·5·9절 미리보기. 문서만 바꿔 코드 리뷰 생략.
+
+## 2026-10-23 · claude-b · main 병합 2차 — claude-a 실제 입찰 자료 측정·D6/D7 + b 자료 요약 나눠 읽기
+- 사용자: "main에 다 병합해줘".
+- 브랜치/커밋: claude-a `feat/claude-a-real-rfp-1024`(`fa4f00b`, main `2748f18` 포함)를 `feat/claude-b-kg-views`에 병합 → **main을 이 병합 커밋으로 fast-forward**. push 안 함.
+- 한 일: 충돌은 문서 2개뿐 — `CLAUDE.md` 기준선 줄(병합 뒤 실제 수로), `docs/handoff-log.md`(양쪽 항목 모두, 사용자 승인 "양쪽 다 살리기"). 코드 충돌 없음.
+- 상대 영향: main에 b의 자료 요약 나눠 읽기(`f6261cd`~`96a5e95`)가 올라갔다. claude-a 정답표 초안 `rehearsal/data/rfp_gold_real.json`("사용자 검토 대기")도 함께 main에 들어갔다 — 검토 상태는 그대로다.
+  claude-a 루트 체크아웃(`feat/claude-a-real-rfp-1024`)은 main보다 뒤 — 이어 작업하기 전에 main을 합친다. 기준선 2230 / 웹 401.
+- 검증: `uv run pytest -q` → 2230 passed, 1 skipped, 21 deselected(568초) · 웹 `npx vitest run` 401 passed · `npx tsc -b`·`npm run build` 통과.
+
+## 2026-10-23 · claude-b · 자료 요약도 나눠 읽기 · 글자 뽑기 잘림 표시
+- 사용자: "ai는 왜 4만자가 한계지?" → 결정 "나눠 읽기 적용"(자료 요약, 병합 뒤 별도 작업).
+- 브랜치/커밋: `feat/claude-b-kg-views`(main `92103af` 위) — main에는 아직 안 올림(사용자 결정 대기).
+- 한 일:
+  - `api/rag/doc_brief.summarize_document`: **claude-a `rfp_read._headings/_chunks/_path`를 import해** 같은 조각(≤ 4만 자, 최대 8)으로 동시에 요약, 항목 근거는 조각 원문에서 확인 후 전체 위치,
+    칸마다 사업 내용 조각 → 실패 조각(규칙 줄) → 서식뿐 조각 순으로 번갈아 합침, 머리말은 첫 조각이 AI로 읽혔을 때만, 실패 조각이 있으면 "볼 것 없음"(low) 안 함, 항목 `source`(ai|rule).
+    정보 채우기는 앞 4만 자 그대로. `cache_version()` = PROMPT_VERSION(doc-brief-3) + a 조각 상수 — 저장 요약은 다시 만들어야 한다(시연 전).
+  - 라우트: 조각이 하나라도 실패한 요약은 저장 안 함. 글자 뽑기가 상한(20만 자·PDF 200쪽·압축 해제·XML 크기)에서 끊었으면 `extract_text(..., info)`/`extract_text_limited(info=)`가
+    `truncated`를 알리고 요약·필요 기술 읽기에 "앞부분만 읽었다" 경고(정리 뒤 길이로는 못 안다 — 빈칸을 지우면 20만 자 아래).
+  - 화면: 요약 끝줄 "긴 자료라 n조각으로 나눠 읽었습니다", AI 실패 조각 항목에 "열쇠말 줄" 꼬리표. 측정 G6(긴 자료 2조각 이상·모두 AI·4만 자 뒤 AI 항목 — 구조 확인).
+- 상대 영향: **a의 비공개 함수 `rfp_read._headings/_chunks/_path`와 상수 `MAX_AI_TEXT/MAX_CHUNKS/_CUT_FROM/_OVERLAP`을 b가 import한다** — 이름·뜻을 바꾸면 `doc_brief`가 깨지거나
+  저장 요약 판이 달라진다(목차 정규식 `_HEADINGS`를 바꾸면 `doc_brief.PROMPT_VERSION`을 올려 달라). `extract_text`에 선택 인자 `info`가 생겼다(반환은 그대로).
+- 검증: 아래 리포트(전체 pytest·웹 400·측정 G1~G6). 리뷰: Codex 쿼터 소진 → Claude Opus 적대적 2라운드(1차 MUST 1: 첫 조각 실패 시 "서약서"로 잘못 표시·저장 → 고침, 2차 approve + SHOULD 2 → 고침).
+- 근거: 루트 `.omc/reports/2026-10-23-main-merge-summary-chunks.md`(+ `.eli5.html`).
 
 ## 2026-10-23 · claude-a · main 병합 — D6 공고문 흐름 · D7 J001 · 슬라이드 8 · 실제 자료 측정 도구
 - 사용자: "병합 승인할게".

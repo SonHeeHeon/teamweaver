@@ -307,7 +307,10 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
   **자료에서 사업 정보 채우기 · 부서장용 자료 요약**(2026-10-23 사용자 "프로젝트 이름, 기간, 예산 등을 대신 작성" · "각각의 자료를 llm으로 잘 압축 요약한", 결정 "이번엔 b가 전부" -- **a 영역에 b의 `api/rag/doc_brief.py`**): `read_project_meta`(사업명·고객 구분·기간 개월·총 사업비·공고번호·마감)·`summarize_document`(8칸 + 한 줄), 칸·항목마다 근거 말(원문 확인·150자 안).
   금액은 `parse_amount`가 덩어리째("1억 2천 5백만원") 읽고 애매하면 금액이 아니다, 요약 숫자는 날짜(년·월·일)·시각·금액·단위 붙은 수로 근거 말과 맞춘다 -- **완전한 환각 차단이 아니다**(문서에 "거른다").
   근거 말에 "N개월"이 없는 기간은 `computed`(화면 "AI 계산", 미리 체크 안 함), 규칙 값도 미리 체크 안 함. 월 예산 = 총액 ÷ 개월 ÷ 1만 원(1점 = 1만 원 가정, 시연 자료 PDF도 원으로 다시 만듦).
-  요약은 사람이 눌러 만들고(열기만으로 AI에 안 보냄) AI 요약만 `<보관 폴더>/summaries/`에 자료 해시·`PROMPT_VERSION`으로 저장 -- 지시문·검사를 바꾸면 판을 올린다. 측정 `scripts/eval_doc_brief.py`(가상 7편은 규칙만으로도 통과하는 쉬운 세트).
+  요약은 사람이 눌러 만들고(열기만으로 AI에 안 보냄) **모든 조각을 AI가 읽은** 요약만 `<보관 폴더>/summaries/`에 자료 해시·`cache_version()`(PROMPT_VERSION + a 조각 상수)으로 저장 -- 지시문·검사를 바꾸면 판을 올린다.
+  **요약은 나눠 읽는다**(2026-10-23 사용자 '나눠 읽기 적용'): a의 `rfp_read._headings/_chunks/_path`를 import해 같은 조각으로 동시에, 머리말은 첫 조각이 AI일 때만, 실패 조각은 규칙 줄(`source: rule`, 화면 '열쇠말 줄').
+  정보 채우기는 앞 4만 자만(공고문 앞머리). 글자 뽑기가 상한(20만 자·PDF 200쪽·압축 해제·XML)에서 끊으면 `extract_text(..., info)`의 `truncated` → 화면 '앞부분만 읽었다' -- 정리 뒤 길이로 판정하지 않는다.
+  측정 `scripts/eval_doc_brief.py`(가상 7편은 규칙만으로도 통과하는 쉬운 세트, G6 긴 자료는 구조 확인).
 - 결과 맞추기 금지: 목표 수치를 위해 datagen·계수를 조정하지 않는다(초기 설계 원칙). 실패·중단·
   미측정도 결과에서 빼지 않고 기록한다.
 - Phase 1 run 재개는 매니페스트의 `source_commit`·의존성 해시에 묶인다. **장기 run 진행 중에는
@@ -315,7 +318,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-24 실제 공공 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천(claude-a `feat/claude-a-real-rfp-1024`) **2225 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 402 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-24 main 병합(claude-a 실제 공공 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천 + claude-b 요약 나눠 읽기·보고서 1차 수정) **2233 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 403 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).

@@ -148,6 +148,10 @@ export function SummaryView({ s, createdAt, onRemake }: { s: DocSummary; created
             {sec.items.map((it, i) => (
               <li key={`${sec.key}-${i}`} className="rounded border border-slate-100 bg-white px-2 py-1">
                 <span>{it.text}</span>
+                {it.source === "rule" && s.method === "ai" && (
+                  <span className="ml-1.5 rounded-full bg-amber-50 px-1.5 text-[10.5px] text-amber-800"
+                        title="AI가 이 부분을 읽지 못해 열쇠말이 든 원문 줄을 그대로 넣었습니다 — 다시 만들면 AI로 읽습니다">열쇠말 줄</span>
+                )}
                 <details className="mt-0.5 text-[11.5px] text-slate-500">
                   <summary className="cursor-pointer select-none">근거</summary>
                   <q>{it.quote}</q>
@@ -161,6 +165,9 @@ export function SummaryView({ s, createdAt, onRemake }: { s: DocSummary; created
         {s.method === "ai"
           ? `AI 요약(${s.model ?? "모델"}${s.usage?.latency_s ? ` · ${s.usage.latency_s.toFixed(1)}초` : ""})`
           : `${fallbackText(s.fallback_reason)} AI 없이 열쇠말이 든 줄을 모았습니다`}
+        {(s.chunks?.length ?? 0) > 1 && ` · 긴 자료라 ${s.chunks!.length}조각으로 나눠 읽었습니다(${s.chars.toLocaleString()}자)`}
+        {(s.chunks ?? []).some((c) => c.method === "rule") && s.method === "ai" &&
+          ` · ${(s.chunks ?? []).filter((c) => c.method === "rule").length}조각은 AI 실패로 열쇠말 줄`}
         {s.dropped.length > 0 && ` · 근거·숫자를 확인하지 못한 항목 ${s.dropped.length}개는 뺐습니다`}
         {createdAt && ` · 저장 ${localTime(createdAt)}`}
         {onRemake && <button type="button" className="btn-ghost ml-2 px-1.5 py-0.5 text-[11.5px]" onClick={onRemake}>다시 만들기</button>}

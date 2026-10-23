@@ -127,6 +127,21 @@ describe("탭·멈추기 경합(폴백 리뷰 S8)", () => {
   });
 });
 
+describe("긴 자료 나눠 읽기 표시(2026-10-23 \"나눠 읽기 적용\")", () => {
+  it("조각 수와 AI 실패 조각을 알린다", async () => {
+    const long: DocSummary = { ...SUM, chars: 120_000, sections: [...SUM.sections,
+      { key: "constraints", title: "유의 사항", items: [{ text: "보안 서약서 제출", quote: "보안 서약서 제출", source: "rule" }] }], chunks: [
+      { start: 0, end: 40_000, method: "ai", latency_s: 9 }, { start: 40_000, end: 80_000, method: "rule", latency_s: null },
+      { start: 80_000, end: 120_000, method: "ai", latency_s: 8 }] };
+    vi.mocked(docsApi.fetchDocSummary).mockResolvedValue(resp({ summary: long, created_at: "2026-10-23T11:00:00+00:00" }));
+    render(<DocBriefDialog projectName="P" docs={[doc({})]} onClose={vi.fn()} />);
+    const footer = await screen.findByText(/긴 자료라 3조각으로 나눠 읽었습니다\(120,000자\)/);
+    expect(footer.textContent).toContain("1조각은 AI 실패로 열쇠말 줄");
+    expect(screen.getByRole("region", { name: "유의 사항" }).textContent).toContain("열쇠말 줄");      // 어느 항목인지 꼬리표(리뷰 S4)
+    expect(screen.getByRole("region", { name: "예산·계약" }).textContent).not.toContain("열쇠말 줄");
+  });
+});
+
 describe("localTime", () => {
   it("UTC ISO를 이 컴퓨터 시각으로, 못 읽으면 앞 16자", () => {
     const d = new Date("2026-10-23T10:33:00+00:00");

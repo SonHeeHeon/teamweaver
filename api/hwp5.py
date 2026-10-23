@@ -209,17 +209,18 @@ def _records_text(body: bytes, out: list[str], room: int) -> int:
     return got
 
 
-def hwp_text(data: bytes, max_chars: int) -> str:
-    """옛 한글 파일의 본문 글자(대략 앞 max_chars자 -- 문단 단위로 끊으므로 조금 넘을 수 있다). 실패는 HwpError만."""
+def hwp_text(data: bytes, max_chars: int, info: dict | None = None) -> str:
+    """옛 한글 파일의 본문 글자(대략 앞 max_chars자 -- 문단 단위로 끊으므로 조금 넘을 수 있다). 실패는 HwpError만.
+    info를 주면 상한(글자·압축 해제·읽기 합계·섹션 수)에서 끊었을 때 info["truncated"] = True."""
     try:
-        return _hwp_text(data, max_chars)
+        return _hwp_text(data, max_chars, info if info is not None else {})
     except HwpError:
         raise
     except Exception as exc:          # noqa: BLE001 -- 남이 만든 파일: 어떤 해석 오류든 "읽지 못함"으로만 알린다
         raise HwpError(f"한글 문서를 읽지 못했다: {type(exc).__name__}") from exc
 
 
-def _hwp_text(data: bytes, max_chars: int) -> str:
+def _hwp_text(data: bytes, max_chars: int, info: dict) -> str:
     cfb = _Cfb(data)
     if "FileHeader" not in cfb.paths:
         raise HwpError("한글(HWP) 문서가 아니다 -- 파일 머리 정보가 없다")
@@ -235,7 +236,10 @@ def _hwp_text(data: bytes, max_chars: int) -> str:
         raise HwpError("보안(DRM)·인증서로 암호화된 한글 문서라 글자를 읽지 못한다 -- 한글에서 PDF로 저장해 올린다")
     compressed = bool(props & 1)
     sections = sorted((p for p in cfb.paths if p.startswith("BodyText/Section") and p[16:].isascii() and p[16:].isdigit()),
-                      key=lambda p: int(p[16:]))[:_MAX_SECTIONS]
+                      key=lambda p: int(p[16:]))
+    if len(sections) > _MAX_SECTIONS:
+        info["truncated"] = True
+        sections = sections[:_MAX_SECTIONS]
     if not sections:
         raise HwpError("한글 문서에서 본문을 찾지 못했다 -- 한글에서 PDF로 저장해 올린다")
     out: list[str] = []
@@ -243,6 +247,7 @@ def _hwp_text(data: bytes, max_chars: int) -> str:
     read_budget = 4 * len(data)                                 # 스트림 읽기 합계 -- 여러 섹션이 같은 섹터를 가리키게 조작해도 파일 몇 배까지만
     for p in sections:
         if chars >= max_chars or inflated >= MAX_INFLATED or read >= read_budget:
+            info["truncated"] = True                # 뒤 섹션을 읽지 않았다
             break
         raw = cfb.stream(p, read_budget - read)
         read += len(raw)
@@ -253,6 +258,8 @@ def _hwp_text(data: bytes, max_chars: int) -> str:
             body = raw[: MAX_INFLATED - inflated]
         inflated += len(body)
         chars += _records_text(body, out, max_chars - chars)
+        if chars >= max_chars or inflated >= MAX_INFLATED:
+            info["truncated"] = True                # 이 섹션 안에서 글자·압축 해제 상한에 닿았다
     text = "".join(out)
     if broken and not text.strip():
         raise HwpError("한글 문서 본문의 압축을 풀지 못했다(깨진 파일)")
