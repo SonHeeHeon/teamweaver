@@ -1,0 +1,128 @@
+{
+ "note": "D6 시연 자료를 서비스와 같은 함수로 한 번 읽은 결과(자료 원문은 저장소 밖). 등록은 필수 제안 중 경력·인원 없는 '추정'을 모두 넣은 경우.",
+ "source": "한국산업안전보건공단 · 생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구 · 연구용역 제안요청서(안), 나라장터 사전규격 공개(2026. 3.)",
+ "when": "2026-10-23T19:47:48+09:00",
+ "chars": 17283,
+ "method": "ai",
+ "model": "gpt-6-luna",
+ "usage": {
+  "latency_s": 11.64,
+  "in": 14960,
+  "out": 889,
+  "model": "gpt-6-luna",
+  "cost_usd": 0.00194
+ },
+ "chunks": 1,
+ "warnings": [],
+ "required": [
+  {
+   "name": "정보보안",
+   "months": null,
+   "headcount": null,
+   "quote": "데이터의 안전한 활용"
+  },
+  {
+   "name": "개인정보보호",
+   "months": null,
+   "headcount": null,
+   "quote": "비정형 문서 내 민감정보를 자동으로 탐지·분류"
+  },
+  {
+   "name": "Text Analysis",
+   "months": null,
+   "headcount": null,
+   "quote": "비정형 문서의 핵심 내용을 구조화"
+  },
+  {
+   "name": "자연어 처리(NLP)",
+   "months": null,
+   "headcount": null,
+   "quote": "자연어 처리 기반 탐지 모델 설계"
+  },
+  {
+   "name": "데이터 품질 관리",
+   "months": null,
+   "headcount": null,
+   "quote": "가명처리 품질 검증지표를 설계하고 검증"
+  },
+  {
+   "name": "데이터 모델링",
+   "months": null,
+   "headcount": null,
+   "quote": "이원적 스키마 구조 설계"
+  },
+  {
+   "name": "ETL",
+   "months": null,
+   "headcount": null,
+   "quote": "구조화된 데이터셋 구축이 가능한 모델 탐색 및 파이프라인 설계"
+  },
+  {
+   "name": "검색엔진",
+   "months": null,
+   "headcount": null,
+   "quote": "유사사례 검색 기능 제공"
+  },
+  {
+   "name": "LLM Application",
+   "months": null,
+   "headcount": null,
+   "quote": "생성형 AI 기반 수준평가 보고서 자동 생성 기능 개발"
+  }
+ ],
+ "preferred": [
+  "RAG·벡터DB",
+  "LLM 파인튜닝"
+ ],
+ "mentioned_not_required": [
+  "프로젝트 관리(PM)"
+ ],
+ "unmapped_terms": [],
+ "register_skills": [
+  {
+   "name": "정보보안",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "개인정보보호",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "Text Analysis",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "자연어 처리(NLP)",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "데이터 품질 관리",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "데이터 모델링",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "ETL",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "검색엔진",
+   "min_months": 24,
+   "headcount": 1
+  },
+  {
+   "name": "LLM Application",
+   "min_months": 24,
+   "headcount": 1
+  }
+ ]
+}

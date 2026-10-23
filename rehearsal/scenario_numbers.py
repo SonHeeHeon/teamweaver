@@ -1,20 +1,29 @@
 """영상 대본 상황 2·3 장면의 숫자(2026-10-19, claude-a -- claude-b 요청 (3)): 연말형 묶음(`demo/org-n100-yearend`)으로 서버 API를 차례로 불러
 화면에 나올 이름·숫자를 모은다. 화면은 같은 API를 쓰므로 숫자가 같다. AI는 부르지 않는다(검토 자료 본문은 정해진 틀).
 
-    uv run python -m rehearsal.scenario_numbers      # → rehearsal/results/scenarios-1019.json (데이터 폴더를 안 주면 임시 폴더)
+    uv run python -m rehearsal.scenario_numbers [--d6 doc|copy]   # → rehearsal/results/scenarios-1023.json(doc) · scenarios-1019.json(copy)
+                                                                  #   (데이터 폴더를 안 주면 임시 폴더)
 
-흐름: 고도화 과제 등록(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업) → 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
+흐름: 신규 사업 등록 -- doc(2026-10-23 기본, 영상 D6): 실제 공공 사전규격(`rehearsal/data/d6_bid_doc_skills.json`, `rehearsal.d6_bid_doc`이 읽은 필요 기술
+을 등록 양식 "추정 모두 선택"처럼 경력 2년·1명으로) · copy(예전): 고도화 과제(이전 사업 J007 복사 -- 생성기 v4 연말형에서 올해 말에 끝나는 개발 사업)
+→ 후보 세 갈래(끝나 가는 인력·이전 팀원 표시) →
 손 편성 확정(끝나 가는 사람 + 빼 오는 사람) → 인사팀 검토 자료 → J004 긴급 투입(빼 오기 1명 허용) → 확정 → 검토 자료 →
 J015 긴급 투입 "프로젝트 동시 수행으로 지원"(원래 사업 유지, 허용 사유 긴급 지원 -- 2026-10-19 사용자 결정) → 확정 → 검토 자료.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "rehearsal" / "results" / "scenarios-1019.json"
+OUTS = {"doc": ROOT / "rehearsal" / "results" / "scenarios-1023.json", "copy": ROOT / "rehearsal" / "results" / "scenarios-1019.json"}
+BID_DOC = ROOT / "rehearsal" / "data" / "d6_bid_doc_skills.json"
+# 영상 D6 사업(2026-10-23): 한국산업안전보건공단 사전규격 제안요청서(안)의 사업 -- 이전 사업 없음. 정원·예산은 시연자가 양식에 적는 값
+BID_PROJECT = {"name": "생성형 AI 기반 산업안전보건 비정형 데이터 정제·구조화 및 활용체계 구축 연구", "sector": "대외공공",
+               "start_month": "2027-01", "end_month": "2027-08", "monthly_budget": 4500, "stage": "예정", "predecessor": None, "parent": None,
+               "external_headcount": 0, "grades": {"특급": 0, "고급": 1, "중급": 2, "초급": 1}}
 
 
 PREDECESSOR = "J007"       # 연말형(생성기 v4)에서 올해 말 끝나는 개발 사업 -- 고도화 과제의 이전 사업
@@ -39,6 +48,9 @@ def _brief_doc(doc):
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--d6", choices=("doc", "copy"), default="doc")
+    mode = ap.parse_args().d6
     if not os.environ.get("TEAMWEAVER_DATA_DIR", "").strip():
         # 이 스크립트는 작업 데이터를 바꾼다(등록·확정·검토 자료) -- 지정이 없으면 ~/.teamweaver가 아니라 임시 폴더에(리뷰 P2)
         import tempfile
@@ -59,18 +71,23 @@ def main() -> None:
         ws = c.get("/api/workspace").json()
         out["start"] = {"pipeline": [(p["project_id"], p["name"], p["stage"]) for p in ws["pipeline"]],
                         "ending": [o["project_id"] for o in ws["ongoing"] if o["ends_in_horizon"]], "bench": len(ws["bench"])}
-        pred = c.get(f"/api/workspace/projects/{PREDECESSOR}/form").json()
-        form = {**pred, "name": pred["name"].replace("[실행] ", "") + " 고도화", "start_month": "2027-01", "end_month": "2028-06",
-                "stage": "예정", "predecessor": PREDECESSOR}
+        if mode == "copy":
+            pred = c.get(f"/api/workspace/projects/{PREDECESSOR}/form").json()
+            form = {**pred, "name": pred["name"].replace("[실행] ", "") + " 고도화", "start_month": "2027-01", "end_month": "2028-06",
+                    "stage": "예정", "predecessor": PREDECESSOR}
+        else:
+            form = {**BID_PROJECT, "skills": json.loads(BID_DOC.read_text("utf-8"))["register_skills"]}
         r = c.post("/api/workspace/projects", json={"dataset_version": ws["dataset_version"], "project": form})
         r.raise_for_status()
         pid, ws = r.json()["project_id"], r.json()["workspace"]
-        out["register"] = {"project_id": pid, "copied_from": PREDECESSOR, "name": form["name"], "seats": next(p for p in ws["pipeline"] if p["project_id"] == pid)["seats"]}
+        out["register"] = {"project_id": pid, "copied_from": PREDECESSOR if mode == "copy" else None, "name": form["name"],
+                           "skills": [s["name"] for s in form["skills"]],
+                           "seats": next(p for p in ws["pipeline"] if p["project_id"] == pid)["seats"]}
         cands = c.get(f"/api/pipeline/{pid}/candidates", params={"dataset_version": ws["dataset_version"]}).json()
         pick = lambda rows: [{"name": x["name"], "grade": x["grade"], "delta": round(x["delta_total"], 2),   # noqa: E731
                               "predecessor_team": x.get("predecessor_team"), "from": x.get("pulled_from")} for x in rows[:3]]
         out["candidates"] = {g: pick(cands[g]) for g in ("bench", "ending", "pull")}
-        chosen = (cands["ending"][:1] or cands["bench"][:1]) + cands["pull"][:1]
+        chosen = (cands["ending"][:1] or cands["bench"][:1]) + (cands["pull"][:1] if mode == "copy" else [])   # 영상 D6은 끝나 가는 인력 맨 위 한 명
         pulled = {f"{x['person_id']}@{s}" for x in chosen for s in x.get("pulled_from") or []}
         entries = [e for e in _entries(ws) if f"{e['person_id']}@{e['project_id']}" not in pulled]
         entries += [{"person_id": x["person_id"], "project_id": pid, "alloc": x["alloc"]} for x in chosen]
@@ -143,7 +160,7 @@ def main() -> None:
             r = c.post(f"/api/review-docs/{ws3['dataset_version']}/{SUPPORT}")
             r.raise_for_status()
             out["review_concurrent"] = _brief_doc(r.json())
-    OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), "utf-8")
+    OUTS[mode].write_text(json.dumps(out, ensure_ascii=False, indent=1), "utf-8")
     print(json.dumps(out, ensure_ascii=False, indent=1)[:6000])
 
 
