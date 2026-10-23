@@ -22,6 +22,12 @@
 
 ---
 
+## 2026-10-24 · claude-b · main(`dd407a6`)을 b 브랜치에 받음 — 보고서는 2차 판
+- a가 같은 두 갈래(a 10-24 + b 보고서 1차)를 00:53에 main으로 합치고 push했다(`dd407a6`, 사용자 승인). b도 01:00에 같은 두 갈래를 b 브랜치에 합쳐(`f84c4c7`) 2차 수정(`20c3e92`)을 했다 — 두 병합의 **코드 트리는 같고** 문서 5개만 달랐다.
+- main을 합침: `CLAUDE.md` 기준선 줄은 main 문구(같은 2233 / 웹 403), handoff는 양쪽 항목 모두(시간 순), 보고서 HTML·PDF·Word는 b 2차 판(main의 시험 수 고침 2,233·웹 403·커밋 약 660을 이미 포함하고 출처·코드·개발자 말까지 정리).
+- 상대 영향(claude-a): 이 브랜치가 main + 보고서 2차다. 보고서를 고치기 전에 이 판을 받는다. main에 올리는 것은 사용자 결정.
+- 검증: 병합 뒤 트리와 `20c3e92`의 차이는 `CLAUDE.md` 한 줄·handoff뿐(`git diff --cached --stat`) — 코드가 같아 시험은 `f84c4c7`의 2233 / 웹 403 그대로.
+
 ## 2026-10-24 · claude-b · 최종 보고서 2차 수정 — 낡은 값 · 1차 원칙을 나머지 쪽에
 - 사용자: "목차는 빼고 범위 밖 낡은 값도 고쳐줘. 그리고 요청한걸 기반해서 수정 안한 페이지들에서 수정해줘야하는게 있는지 탐색해줘".
 - 브랜치/커밋: `feat/claude-b-kg-views`(병합 `f84c4c7` 위). main 안 옮김, push 안 함.
@@ -38,6 +44,15 @@
 - 충돌(문서 4개, 코드 없음 — `git merge-tree`로 먼저 확인): `CLAUDE.md` 기준선 줄(병합 뒤 수), `docs/handoff-log.md`(a 10-24 항목 위, b 항목 아래 그대로), `outputs/final-report.html` 한계 절 두 줄(첫 줄 b, 둘째 줄 a의 "실제 공공 10편" + b의 나눠 읽기 사실), `.pdf`(합친 HTML로 다시 찍음). a의 b 영역 화면·라우트 수정은 저절로 합쳐졌다.
 - 상대 영향(claude-a): 보고서는 이제 1차 수정(목차·1.5·2.2 없음, 9쪽) + 네 3.3·8.3 위에 있다 — 고치기 전에 이 브랜치(또는 main 병합 뒤 main)를 합친다. 기준선 2233 / 웹 403.
 - 검증: `uv run --group benchmark pytest -q` → 2233 passed, 1 skipped, 21 deselected(563초) · 웹 `npx vitest run` 403 passed · `npx tsc -b` · `npm run build` 통과.
+
+## 2026-10-24 · claude-a · main 병합 — claude-a 실제 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천 + claude-b 요약 나눠 읽기·보고서 1차 수정
+- 사용자: "병합 승인할게".
+- 브랜치/커밋: main(`273cc13` -- b가 a의 `fa4f00b`까지와 b 보고서 1차 수정을 이미 올린 판)을 `feat/claude-a-real-rfp-1024`에 합친 병합 커밋 → main fast-forward → origin push.
+- 충돌(양쪽 살림, 사용자 앞선 지시 "양쪽 다 살리기"): `CLAUDE.md` 기준선 줄 · `docs/handoff-log.md` 머리(두 쪽 항목 모두, 시간 순) · `outputs/final-report.html` 9절 한계 두 줄(b의 "필요 기술 읽기·요약 20만 자 나눠 읽기" + a의 "발주 자료는 실제 공공 10편") ·
+  `final-report.pdf`(다시 만듦 9쪽, b 도구 `.omc/tools/report-export/make_pdf.py`) · `final-report.docx`(같은 곳 `html2docx.py`로 다시). `projectDocsApi.ts`는 자동 병합.
+- 함께 고침: 보고서의 낡은 시험 수(b가 남긴 메모 "3.7·4절·부록의 2,140") → 2,233·웹 403, 커밋 약 660개.
+- 상대 영향(claude-b): 네 `feat/claude-b-kg-views`는 main보다 뒤다(a의 충족 표시·등록 양식 자동 추천 -- 네 영역 화면 `NewProjectsScreen`·`ProjectForm`·`SkillReader`·`ProjectDocs`·`projectDocsApi`, 라우트 `scenarios.py` 후보 응답 `coverage`). 다음 작업 전에 main을 합친다.
+- 검증: 병합 트리 `uv run --group benchmark pytest -q` → 2233 passed, 1 skipped, 21 deselected · 웹 403 · tsc. 보고서 PDF 9쪽.
 
 ## 2026-10-24 · claude-a · 실제 공공 발주 자료 10편 측정 · D7 데이터 마트 · 신규 사업 요구 기술 충족 표시 · 등록 양식 ④ 자동 추천
 - 브랜치/커밋: `feat/claude-a-real-rfp-1024`(main `2748f18`에서) — `88d98eb`(D7) · `fa4f00b`(정답·도구, AI 전) · `86429fd`(결과) · `5242181`(충족 표시) · `554b7ab`(등록 양식) · 문서 커밋. main 미병합.

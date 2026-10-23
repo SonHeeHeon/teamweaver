@@ -318,7 +318,7 @@ task를 끝내면 `docs/handoff-log.md` 맨 위에 항목을 추가한다.
 
 ## 명령과 검증 기준
 
-- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-24 claude-a `feat/claude-a-real-rfp-1024`(실제 공공 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천)을 claude-b 브랜치에 병합 **2233 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 403 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
+- 설정 `uv sync` · 테스트 `uv run pytest -q` (기준선: 2026-10-24 main 병합(claude-a 실제 공공 자료 측정·요구 기술 충족 표시·등록 양식 자동 추천 + claude-b 요약 나눠 읽기·보고서 1차 수정) **2233 passed, 1 skipped, 21 deselected**, `--group benchmark` 포함 · slow 21 passed(10-23 claude-a -- 10-21·22에 깨진 2개를 고침, 느린 시험도 함께 돌린다), 웹 403 -- 브라우저 E2E는 `web/dist`가 최신이어야 한다(`cd web && npm run build`))
 - 서비스 솔버 HiGHS(`highspy`)는 기본 의존성(2026-10-06 이전엔 benchmark 그룹에만 있어 `uv sync`가 지웠다). SCIP 포함 실행 `uv run --group benchmark ...`, tiktoken 캐시는
   `TIKTOKEN_CACHE_DIR=/private/tmp/teamweaver-tiktoken-cache`.
 - 느린 E2E `uv run pytest -m slow` · API 개발 시 `TEAMWEAVER_SKIP_WARM=1`(부팅 시 ~30초 사전계산 생략).
