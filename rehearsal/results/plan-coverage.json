@@ -1,0 +1,51 @@
+{
+  "experiment": "plan-coverage",
+  "when": "2026-10-24T11:51:48+09:00",
+  "commit": "793c6e9",
+  "definition": {
+    "coverage": "사업 요구(기술·최소 레벨·인원) 중 안 A 팀이 레벨 이상 인원을 채운 비율(core.evaluate.skill_coverage)",
+    "fulfillment_ui": "화면 카드의 요구 기술 충족률(core.optimize.metrics.matching_fulfillment, 한 사람을 여러 요구에 나눠 셈)",
+    "ai_text_share": "묶음 CSV 전체 글자 수 대비 평가 글(positive_text·negative_text) 글자 수 -- AI에 보내는 글자의 어림(추정)"
+  },
+  "bundles": {
+    "org-n100": {
+      "dataset_version": "364d7ee50b109d8b86878e8b2fc3b4733b8b54db2e918ac694ee758ce7282a55",
+      "plan_objective": 59.46731547619083,
+      "requirements": 74,
+      "met": 50,
+      "coverage": 0.6757,
+      "fulfillment_ui": 0.4869
+    },
+    "org-n200": {
+      "dataset_version": "84899b9a4f713cc1598db5b3c20f57bfae769c736338502d5ea3f142a6f710c9",
+      "plan_objective": 151.43279285714303,
+      "requirements": 151,
+      "met": 133,
+      "coverage": 0.8808,
+      "fulfillment_ui": 0.6193
+    },
+    "org-n300": {
+      "dataset_version": "e7568ebe3cfd113b539f9ffa7018a084f55205456979accd23255a3e0d59ce3f",
+      "plan_objective": 228.09793544973547,
+      "requirements": 227,
+      "met": 204,
+      "coverage": 0.8987,
+      "fulfillment_ui": 0.6146
+    },
+    "org-n100-annual": {
+      "dataset_version": "a579c965a18cc38e7ce42352e4b8cf1bdd8f222213e82eeee758ae678ecbcedd",
+      "plan_objective": 119.48744841269819,
+      "requirements": 146,
+      "met": 108,
+      "coverage": 0.7397,
+      "fulfillment_ui": 0.5218
+    }
+  },
+  "ai_text_share": {
+    "bundle": "org-n300.zip",
+    "csv_files": 14,
+    "total_chars": 2715364,
+    "review_text_chars": 799630,
+    "share": 0.2945
+  }
+}
