@@ -34,7 +34,7 @@
 - 측정 등록: `python -m rehearsal.plan_coverage` → `rehearsal/results/plan-coverage.json`(안 A의 요구 기술 충족률 = `core.evaluate.skill_coverage` 기준 68/88/90/74%, 화면 충족률 = `matching_fulfillment` 49/62/62/52%, 300명 CSV 글자 비율 29.4%). PDF 시간은 `rehearsal/results/n300/pipeline-real.json`(1.92초, 10-06).
 - 슬라이드 6 하단·대본 T2 화면 설명에 "1차 설계서 지표 대비는 1.2" 참조, 대본 출처 표에 1.2 숫자 출처 한 줄. 2장은 바꾸지 않음(3장 요약이 맞다).
 - 상대 영향: 보고서 1장 구조가 바뀜(1.2 내용·1.6 신설, 1.3~1.5 번호 그대로). 코드는 `rehearsal/plan_coverage.py` 추가뿐(서비스 코드 변경 없음).
-- 검증: `make_pdf.py` → `pages 9`(쪽별 글 채움 86~93%, 1·2·4·5·9쪽 그림 확인) · `html2docx.py` → 표 19개, 1.2·1.6 포함 · 슬라이드 6 넘침 검사 720/1280 · `ruff check` 통과 · 금지어 0건. Codex는 10-25 16:31까지 쿼터 소진이라 측정 스크립트는 자체 리뷰(판정 기준이 검토 자료와 같은 함수인지, 데이터 폴더를 임시로 쓰는지 확인).
+- 검증: `make_pdf.py` → `pages 9`(쪽별 글 채움 86~93%, 1·2·4·5·9쪽 그림 확인) · `html2docx.py` → 표 19개, 1.2·1.6 포함 · 슬라이드 6 넘침 검사 720/1280 · 스크립트 문법 검사(ast) 통과(ruff는 이 환경에 없음) · 금지어 0건. Codex는 10-25 16:31까지 쿼터 소진이라 측정 스크립트는 자체 리뷰(판정 기준이 검토 자료와 같은 함수인지, 데이터 폴더를 임시로 쓰는지 확인).
 - 근거: 루트 `.omc/reports/2026-10-24-proposal-alignment.md`(+ `.eli5.html`).
 
 ## 2026-10-24 · claude-a · 최종 산출물 검토 반영(보고서·슬라이드·대본)
