@@ -7,6 +7,7 @@
 <!-- 시연 영상의 개요(1~3)·구현 안내(4)·기술/성과(5~9) 구간에 띄우는 슬라이드. 대본: docs/demo-script.md.
      2026-10-23 보고서와 겹침 정리: 5 기술은 "무엇을, 왜"만(정식은 보고서 6장), 6 성과는 숫자 셋, 7·8 AI가 바꾼 것(겹쳐 두는 핵심), 9 맺음(비용 숫자는 보고서 8.2).
      2026-10-24 3 구성은 "결정은 방정식, 방정식에 들어갈 값과 근거 글은 검사받는 AI"로 다시 그리고(7·8은 그 값의 증거), 가상 데이터 안내는 1에서 4(화면 들어가기 직전)로 옮겼다.
+     2026-10-25 처음 보는 사람 기준: 1 "AI 인증 과제 시연"·이름 풀이(Team + Weaver), 2 쓰는 사람 줄·칸 순서를 말 순서(상황 → 조건 → 어려움)로, 9 위 글씨.
      ←/→·스페이스로 넘기고 F로 전체 화면. 녹화 화면이 시스템 테마에 따라 바뀌지 않게 밝은 색만 쓴다. -->
 <style>
 :root{--bg:#f4f2ec;--card:#fff;--ink:#1f2328;--muted:#5b6168;--line:#d9d6cf;--acc:#2f5f8a;--acc2:#2f6f5e;--warn:#9a5b13;--chip:#e9eef4;--soft:#eef5f1}
@@ -52,6 +53,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 .tag{display:inline-block;font-size:15px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--acc2);color:#fff;vertical-align:4px;margin-left:8px}
 .tag.out{background:var(--acc)}
 .title-wrap{margin:auto 0}
+.title-wrap .name{font-size:26px;color:var(--acc);font-weight:700;margin:10px 0 0;letter-spacing:.01em}
 .title-wrap .sub{font-size:30px;color:var(--ink);margin:18px 0 28px;line-height:1.4}
 .title-wrap .meta{font-size:20px;color:var(--muted)}
 .steps8{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex:1}
@@ -77,24 +79,25 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 
 <section class="slide">
   <div class="title-wrap">
-    <div class="kicker">과제 시연</div>
+    <div class="kicker">AI 인증 과제 시연</div>
     <h1>TeamWeaver</h1>
+    <p class="name">Team + Weaver — 팀을 짜는 사람</p>
     <p class="sub">SI 사업 조직의 프로젝트 인력 배치 최적화와<br>근거를 검사받는 AI 설명</p>
   </div>
 </section>
 
 <section class="slide">
-  <div class="kicker">개요 · 과제 수행 배경</div>
+  <div class="kicker">개요 · 과제 수행 배경 — 프로젝트 인력 배치</div>
   <h2>누구를 어느 사업에 넣을까 — 다섯 가지를 한꺼번에</h2>
-  <p class="lead">SI 현업 관행 그대로 — 한 사람은 한 사업에 100%, 동시 수행은 부서장이 허용한 사람만</p>
+  <p class="lead">쓰는 사람: 실행 부서의 부서장 · PM · 인력 운영 담당 &nbsp;·&nbsp; 한 사람은 한 사업에 100%(SI 현업 관행)</p>
   <div class="grid g3">
-    <div class="card"><h3>한꺼번에 맞출 조건</h3>
-      <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">휴직·쉬는 달</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
-      <p class="cap">하나만 보면 다른 조건을 어기기 쉽다</p></div>
-    <div class="card"><h3>세 상황</h3><ul>
+    <div class="card"><h3>언제 — 세 상황</h3><ul>
       <li><b>신규 사업 편성</b>(가장 잦음) — 쉬는·끝나 가는 사람, 몇 명만 옮겨 새 사업 팀을 짬</li>
       <li><b>긴급 투입</b> — 진행 사업에 이슈, 사람을 더 넣고 빼 온 자리까지 메움</li>
       <li><b>연간 계획</b>(드묾) — 백지에서 6개월·1년 치를 한 번에</li></ul></div>
+    <div class="card"><h3>한꺼번에 맞출 조건</h3>
+      <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">휴직·쉬는 달</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
+      <p class="cap">하나만 보면 다른 조건을 어기기 쉽다 · 동시 수행은 부서장이 허용한 사람만</p></div>
     <div class="card"><h3>지금 방식의 어려움</h3><ul>
       <li>조건을 어겼는지 알기 어렵다</li>
       <li>더 나은 배치가 있었는지 모른다</li>
@@ -216,7 +219,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 
 <section class="slide">
   <div class="title-wrap">
-    <div class="kicker">맺음</div>
+    <div class="kicker">맺음 · TeamWeaver — 엑셀과 경험으로 하던 배치를 계산과 근거로</div>
     <h1 style="font-size:52px;line-height:1.25">결정은 방정식이,<br>방정식의 값과 근거는 검사받는 AI가</h1>
     <p class="sub">AI가 없으면 그 값을 사람이 손으로 채워야 한다. 계산이 맞다는 것은 증명했고,<br>사업 효과는 실제 도입 때 기존 편성과 나란히 돌리는 섀도 운영으로 확인한다.</p>
     <p class="meta" style="font-size:30px;color:var(--ink)">감사합니다</p>
