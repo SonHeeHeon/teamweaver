@@ -394,7 +394,7 @@ people.csv 2행 등급 빈칸 · person_skills.csv 1행 '열두달' · availabil
 | (슬라이드 8, 10-23 밤부터 1순위가 머리 숫자) 낯선 기술 이름: 1순위 27% → 95%, 관리자에게 보이는 후보 3개 안에 정답 53.6% → 100%(280 → 522/522) — 사전의 실제 별칭 522개를 숨겨 이름만 주고 원래 기술로 되돌리는지. 틀린 기술 점수 34.7% → 0은 **정답대로 승인했을 때**(승인 장치의 효과, AI 정확도가 아님 — 시연 표기 14개는 AI 1순위가 14/14 정답) | `rehearsal/results/skill-mapping.json`(사전 등록) |
 | (슬라이드 7·8) 사람 시간: 평가 글 건당 30초 가정 × 3,495 = 약 29시간 → 기계 판정 약 9분 + 5% 표본 확인 약 1.5시간 · 소명 37~40% 단축(Noy & Zhang 2023) | 결과 보고서 8.3(추정·근거 등급) |
 | (슬라이드 8의 99%, 주입 오류는 보고서만) 소명 글 99.0%·100%, 주입 오류 13,316/13,316 | `rehearsal/results/justify-scale-e7c.html`(10-12) |
-| (보고서 1.2, 10-24) 1차 설계서 지표: 요구 기술 충족률 100명 68%·200명 88%·300명 90%·연간 74%(요구 중 레벨·인원을 채운 비율, 안 A) · 화면 카드 충족률 49~62% · AI에 보내는 글자 29%(300명 CSV 272만 자 중 평가 글 80만 자) · PDF 1.9초(300명 리허설 10-06) | `python -m rehearsal.plan_coverage` → `rehearsal/results/plan-coverage.json` · `rehearsal/results/n300/pipeline-real.json` |
+| (보고서 1.2·3.1, 10-24) 1차 설계서 지표: 요구 기술 충족률 100명 68%·200명 88%·300명 90%·연간 74%(요구 중 레벨·인원을 채운 비율, 안 A) · 화면 카드 충족률 49~62% · AI에 보내는 글자 29%(300명 CSV 272만 자 중 평가 글 80만 자) · PDF 1.9초(300명 리허설 10-06) · 3.1 점수 구성(안 A = 기술 + 협업 − 익숙한 쌍 감점, 자리 수 67·167·260·134, 자리당 기술 적합 78~81%) | `python -m rehearsal.plan_coverage` → `rehearsal/results/plan-coverage.json` · `rehearsal/results/n300/pipeline-real.json` |
 | 시험 2,233 · Phase 0 13/13 · Phase 1 357칸 | `uv run --group benchmark pytest -q`(10-24 main 기준선) · `experiments/bench/phase0_model.py` · `docs/phase1-checkpoint.md` |
 
 ## 하지 말 말

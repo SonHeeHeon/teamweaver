@@ -1,7 +1,7 @@
 {
   "experiment": "plan-coverage",
-  "when": "2026-10-24T11:51:48+09:00",
-  "commit": "793c6e9",
+  "when": "2026-10-24T13:01:51+09:00",
+  "commit": "284fc29",
   "definition": {
     "coverage": "사업 요구(기술·최소 레벨·인원) 중 안 A 팀이 레벨 이상 인원을 채운 비율(core.evaluate.skill_coverage)",
     "fulfillment_ui": "화면 카드의 요구 기술 충족률(core.optimize.metrics.matching_fulfillment, 한 사람을 여러 요구에 나눠 셈)",
@@ -14,7 +14,15 @@
       "requirements": 74,
       "met": 50,
       "coverage": 0.6757,
-      "fulfillment_ui": 0.4869
+      "fulfillment_ui": 0.4869,
+      "score": {
+        "seats": 67,
+        "total": 59.467,
+        "skill": 52.383,
+        "synergy": 7.684,
+        "overfamiliarity": -0.6,
+        "skill_per_seat": 0.7818
+      }
     },
     "org-n200": {
       "dataset_version": "84899b9a4f713cc1598db5b3c20f57bfae769c736338502d5ea3f142a6f710c9",
@@ -22,7 +30,15 @@
       "requirements": 151,
       "met": 133,
       "coverage": 0.8808,
-      "fulfillment_ui": 0.6193
+      "fulfillment_ui": 0.6193,
+      "score": {
+        "seats": 167,
+        "total": 151.433,
+        "skill": 135.85,
+        "synergy": 16.383,
+        "overfamiliarity": -0.8,
+        "skill_per_seat": 0.8135
+      }
     },
     "org-n300": {
       "dataset_version": "e7568ebe3cfd113b539f9ffa7018a084f55205456979accd23255a3e0d59ce3f",
@@ -30,7 +46,15 @@
       "requirements": 227,
       "met": 204,
       "coverage": 0.8987,
-      "fulfillment_ui": 0.6146
+      "fulfillment_ui": 0.6146,
+      "score": {
+        "seats": 260,
+        "total": 228.098,
+        "skill": 209.305,
+        "synergy": 19.193,
+        "overfamiliarity": -0.4,
+        "skill_per_seat": 0.805
+      }
     },
     "org-n100-annual": {
       "dataset_version": "a579c965a18cc38e7ce42352e4b8cf1bdd8f222213e82eeee758ae678ecbcedd",
@@ -38,7 +62,15 @@
       "requirements": 146,
       "met": 108,
       "coverage": 0.7397,
-      "fulfillment_ui": 0.5218
+      "fulfillment_ui": 0.5218,
+      "score": {
+        "seats": 134,
+        "total": 119.487,
+        "skill": 105.881,
+        "synergy": 14.007,
+        "overfamiliarity": -0.4,
+        "skill_per_seat": 0.7902
+      }
     }
   },
   "ai_text_share": {
