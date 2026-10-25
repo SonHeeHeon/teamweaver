@@ -10,6 +10,7 @@
      2026-10-25 처음 보는 사람 기준: 1 "AI 인증 과제 시연"·이름 풀이(Team + Weaver), 2 쓰는 사람 줄·칸 순서를 말 순서(상황 → 조건 → 어려움)로, 9 위 글씨.
      2026-10-25 검토 루프 반영: 2 머리 줄은 쓰는 사람만·"한 사업에 100%"는 조건 칸으로, 4 머리 줄에 What-if·인사팀 검토 자료·칸 6 "옮길 인원별"(K는 영상에서 설명하지 않는다), 5 발 글에 어떤 LLM인지.
      2026-10-25 기술/성과 압축(사용자 "슬라이드 5부터는 보고서에 있는 내용은 거의 다 쳐내고 핵심만"): 5~8(기술 넷 · 숫자 셋 · AI가 만드는 값 ①·②) → 한 장 5 "숫자로 본 결과", 9 맺음 → 6. 9장 → 6장. 뺀 내용은 보고서 3.3·3.5·8.2·8.3.
+     2026-10-25 A안(사용자 "뒤에 슬라이드는 빼도 되나?" → 한 장 30초): 5 숫자 + 6 맺음 → 한 장 5(숫자 두 칸 + 맺음 띠 + 감사합니다). 6장 → 5장. 영상 8분 40초 → 8분.
      ←/→·스페이스로 넘기고 F로 전체 화면. 녹화 화면이 시스템 테마에 따라 바뀌지 않게 밝은 색만 쓴다. -->
 <style>
 :root{--bg:#f4f2ec;--card:#fff;--ink:#1f2328;--muted:#5b6168;--line:#d9d6cf;--acc:#2f5f8a;--acc2:#2f6f5e;--warn:#9a5b13;--chip:#e9eef4;--soft:#eef5f1}
@@ -58,6 +59,8 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 .kv .s{display:block;font-size:16px;color:var(--muted);font-weight:400;margin-top:2px}
 .kv .v{font-size:27px;font-weight:800;color:var(--acc);white-space:nowrap;text-align:right;letter-spacing:-.01em}
 .kv .v small{font-size:18px;color:var(--muted);font-weight:700}
+.tight .card{padding:16px 22px;font-size:20px}.tight .card h3{font-size:23px;margin-bottom:8px}.tight .cap{font-size:18px;line-height:1.45}
+.tight .kv{font-size:20px;gap:7px 16px;margin-top:4px}.tight .kv .v{font-size:25px}.tight .kv .s{font-size:14px}
 .title-wrap{margin:auto 0}
 .title-wrap .name{font-size:26px;color:var(--acc);font-weight:700;margin:10px 0 0;letter-spacing:.01em}
 .title-wrap .sub{font-size:30px;color:var(--ink);margin:18px 0 28px;line-height:1.4}
@@ -154,18 +157,18 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 </section>
 
 <section class="slide">
-  <div class="kicker">기술/성과 · 주요 적용 기술과 구현 결과</div>
+  <div class="kicker">기술/성과 · 주요 적용 기술과 구현 결과 · 맺음</div>
   <h2>숫자로 본 결과 — 결정은 방정식이, 값은 AI가</h2>
-  <div class="grid g2" style="margin-top:14px;gap:16px">
+  <div class="grid g2 tight" style="margin-top:10px;gap:14px">
     <div class="card"><h3>결정 — 수학 최적화(혼합정수계획 · HiGHS) + 독립 검증기</h3>
-      <div class="num" style="font-size:54px">+5~13<small>%</small></div>
-      <div class="cap" style="margin-top:2px">같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 배치 점수가 높다 · 100·200·300명</div>
-      <div class="num" style="font-size:54px;margin-top:12px">0.9<small>%</small></div>
-      <div class="cap" style="margin-top:2px">300명 최선안과 이론상 최대치의 거리 — 더 좋은 배치가 있어도 최대 0.9% · 빈자리 0 · 위반 0 · 92초</div>
-      <div class="cap" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);color:var(--ink)">GPT에게 100명 배치를 직접 맡기면 규칙 위반 또는 최적화의 <b>55%</b> → 배치는 AI에 맡기지 않는다</div>
+      <div class="num" style="font-size:48px">+5~13<small>%</small></div>
+      <div class="cap" style="margin-top:0">같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 배치 점수가 높다 · 100·200·300명</div>
+      <div class="num" style="font-size:48px;margin-top:8px">0.9<small>%</small></div>
+      <div class="cap" style="margin-top:0">300명 최선안과 이론상 최대치의 거리 — 더 좋은 배치가 있어도 최대 0.9% · 빈자리 0 · 위반 0 · 92초</div>
+      <div class="cap" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);color:var(--ink)">GPT에게 100명 배치를 직접 맡기면 규칙 위반 또는 최적화의 <b>55%</b> → 배치는 AI에 맡기지 않는다</div>
     </div>
     <div class="card"><h3>값과 근거 — 검사받는 생성형 AI(외부 LLM API) · 기술 이름 사전</h3>
-      <div class="cap" style="margin:-6px 0 4px;font-size:18px">AI 없이(규칙) → AI, 같은 데이터</div>
+      <div class="cap" style="margin:-6px 0 2px;font-size:17px">AI 없이(규칙) → AI, 같은 데이터</div>
       <div class="kv">
         <div><b>동료 평가 글</b>의 혹평 찾기<span class="s">나쁜 사이가 협업 보상에 든 쌍 28 → 0</span></div><div class="v">12% → 100%</div>
         <div><b>발주 자료 → 필요 기술</b> 정밀도<span class="s">실제 공공 자료 10편</span></div><div class="v">0.32 → 0.78</div>
@@ -175,16 +178,8 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
       </div>
     </div>
   </div>
-  <div class="foot">정식·솔버 비교·측정 방법·사람 시간과 비용 추정은 결과 보고서(2·3·6~8장) · 지식 그래프는 근거 글·기술 지도의 사실 연결(7장) · 정답과 기준은 AI 실행 전에 기록 · 실제 조직을 본뜬 가상 데이터, 사업 효과는 검증 전(NOT_CALIBRATED)</div>
-</section>
-
-<section class="slide">
-  <div class="title-wrap">
-    <div class="kicker">맺음 · TeamWeaver — 엑셀과 경험으로 하던 배치를 계산과 근거로</div>
-    <h1 style="font-size:52px;line-height:1.25">결정은 방정식이,<br>방정식의 값과 근거는 검사받는 AI가</h1>
-    <p class="sub">AI가 없으면 그 값을 사람이 손으로 채워야 한다. 계산이 맞다는 것은 증명했고,<br>사업 효과는 실제 도입 때 기존 편성과 나란히 돌리는 섀도 운영으로 확인한다.</p>
-    <p class="meta" style="font-size:30px;color:var(--ink)">감사합니다</p>
-  </div>
+  <div class="banner" style="margin-top:12px;padding:11px 22px;font-size:21px">엑셀과 경험으로 하던 배치를 계산과 근거로 — 결정은 방정식이, 값과 근거는 검사받는 AI가 &nbsp;·&nbsp; 감사합니다</div>
+  <div class="foot" style="padding-top:8px;font-size:15px">정식·솔버 비교·측정 방법·시간과 비용 추정은 결과 보고서(2·3·6~8장) · 정답과 기준은 AI 실행 전에 기록 · 실제 조직을 본뜬 가상 데이터 — 계산이 맞다는 것은 증명했고, 사업 효과는 실제 도입 때 기존 편성과 나란히 돌리는 섀도 운영으로 확인(NOT_CALIBRATED)</div>
 </section>
 
 </div>
