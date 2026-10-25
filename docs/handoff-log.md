@@ -24,7 +24,7 @@
 
 ## 2026-10-25 · claude-a · 결과 보고서에 "부록. 화면 한눈에" 한 쪽(화면 캡처 6장) — 9쪽 → 10쪽
 - 사용자: "레포트에 화면을 캡처해서 넣어둘건 없나? 시연이 좀 빠듯해서 …" → "10쪽안에 들어가면 진행해주고 넘어가면 넣을 화면을 줄여서 해줘".
-- 브랜치/커밋: `feat/claude-a-report-figures-1025`(main `c3d4804` 위, push). **main 병합은 사용자 승인 대기.**
+- 브랜치/커밋: `feat/claude-a-report-figures-1025` `4643fe9`(main `c3d4804` 위, push) → **main에 ff 병합(사용자 승인 "병합해줘")**.
 - 한 일: 앱을 임시 데이터 폴더(AI 키 켬)로 띄워 Playwright로 여섯 화면을 찍고(연간 기록 안 A~D 카드 · What-if XAI 브리핑+팀원과의 관계 · 신규 사업 등록 양식의 AI 사업 정보·필요 기술 제안(산안공단 제안요청서 .hwp 한 편) · 긴급 투입 상황 글→AI 읽기→최선 조합 · 인사팀 검토 자료 · 300명 조직 기술 지도),
   `outputs/report-figures/f1~f6.png`(폭 1,800px, 2.8MB)로 잘라 `outputs/final-report.html` 끝에 `<section class="pb">` 부록(2×3 그림 + 한 줄 설명, 괄호에 영상 장면 번호)을 붙였다. 2.1 제목에 "(화면 캡처는 부록)". PDF 10쪽(9쪽 본문 그대로 + 부록 1쪽, 4.2MB), Word 다시 만듦(2.9MB).
   **Word 변환기(`.omc/tools/report-export/html2docx.py`, b의 로컬 도구)에 `<figure><img><figcaption>`·`div.figs`(2열 그림 표) 지원을 더했다** — PNG 머리에서 크기를 읽어 인라인 그림, `word/media/`·관계·콘텐츠 타입 추가. 다른 모양은 그대로.
