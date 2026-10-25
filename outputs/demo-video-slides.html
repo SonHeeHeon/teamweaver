@@ -8,6 +8,7 @@
      2026-10-23 보고서와 겹침 정리: 5 기술은 "무엇을, 왜"만(정식은 보고서 6장), 6 성과는 숫자 셋, 7·8 AI가 바꾼 것(겹쳐 두는 핵심), 9 맺음(비용 숫자는 보고서 8.2).
      2026-10-24 3 구성은 "결정은 방정식, 방정식에 들어갈 값과 근거 글은 검사받는 AI"로 다시 그리고(7·8은 그 값의 증거), 가상 데이터 안내는 1에서 4(화면 들어가기 직전)로 옮겼다.
      2026-10-25 처음 보는 사람 기준: 1 "AI 인증 과제 시연"·이름 풀이(Team + Weaver), 2 쓰는 사람 줄·칸 순서를 말 순서(상황 → 조건 → 어려움)로, 9 위 글씨.
+     2026-10-25 검토 루프 반영: 2 머리 줄은 쓰는 사람만·"한 사업에 100%"는 조건 칸으로, 4 머리 줄에 What-if·인사팀 검토 자료·칸 6 "옮길 인원별"(K는 영상에서 설명하지 않는다), 5 발 글에 어떤 LLM인지.
      ←/→·스페이스로 넘기고 F로 전체 화면. 녹화 화면이 시스템 테마에 따라 바뀌지 않게 밝은 색만 쓴다. -->
 <style>
 :root{--bg:#f4f2ec;--card:#fff;--ink:#1f2328;--muted:#5b6168;--line:#d9d6cf;--acc:#2f5f8a;--acc2:#2f6f5e;--warn:#9a5b13;--chip:#e9eef4;--soft:#eef5f1}
@@ -89,7 +90,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 <section class="slide">
   <div class="kicker">개요 · 과제 수행 배경 — 프로젝트 인력 배치</div>
   <h2>누구를 어느 사업에 넣을까 — 다섯 가지를 한꺼번에</h2>
-  <p class="lead">쓰는 사람: 실행 부서의 부서장 · PM · 인력 운영 담당 &nbsp;·&nbsp; 한 사람은 한 사업에 100%(SI 현업 관행)</p>
+  <p class="lead">쓰는 사람: 실행 부서의 부서장 · PM · 인력 운영 담당</p>
   <div class="grid g3">
     <div class="card"><h3>언제 — 세 상황</h3><ul>
       <li><b>신규 사업 편성</b>(가장 잦음) — 쉬는·끝나 가는 사람, 몇 명만 옮겨 새 사업 팀을 짬</li>
@@ -97,7 +98,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
       <li><b>연간 계획</b>(드묾) — 백지에서 6개월·1년 치를 한 번에</li></ul></div>
     <div class="card"><h3>한꺼번에 맞출 조건</h3>
       <div class="chips"><span class="chip">기술 적합</span><span class="chip">협업 이력</span><span class="chip">휴직·쉬는 달</span><span class="chip">등급 정원</span><span class="chip">월 예산</span></div>
-      <p class="cap">하나만 보면 다른 조건을 어기기 쉽다 · 동시 수행은 부서장이 허용한 사람만</p></div>
+      <p class="cap">하나만 보면 다른 조건을 어기기 쉽다 · 한 사람은 한 사업에 100%(SI 현업 관행), 동시 수행은 부서장 허용만</p></div>
     <div class="card"><h3>지금 방식의 어려움</h3><ul>
       <li>조건을 어겼는지 알기 어렵다</li>
       <li>더 나은 배치가 있었는지 모른다</li>
@@ -132,14 +133,14 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 <section class="slide">
   <div class="kicker">구현 · 동작 화면 시연</div>
   <h2>시연 흐름</h2>
-  <p class="lead" style="margin-bottom:14px">100명 조직: 1년 계획(백지) → 확정 → 지금 배치에서 바꿔 보기 → 연말 운영 중(신규 사업·긴급 투입) → 300명</p>
+  <p class="lead" style="margin-bottom:14px">100명 조직: 1년 계획(백지) → 확정 → What-if → 연말 운영 중(신규 사업·긴급 투입) → 인사팀 검토 자료 → 300명</p>
   <div class="steps8 steps9">
     <div class="card"><h3><span class="n">1</span>데이터 검증</h3>틀린 파일은 오류만 · 낯선 기술 이름은 AI 제안 → 승인</div>
     <div class="card"><h3><span class="n">2</span>연간 계획</h3>안 A~D · 계산 신뢰도 · 계산 멈추기 · 요구 기술</div>
     <div class="card"><h3><span class="n">3</span>인사팀 소명 글</h3>"왜 이 팀인가" — 세 문장 요약 · 근거 사실 연결</div>
     <div class="card"><h3><span class="n">4</span>안 확정</h3>고른 안이 실제 배치로 — 지금 대비 옮김·새로·빠짐</div>
     <div class="card"><h3><span class="n">5</span>What-if</h3>지금 배치에서 교체 · AI 설명 · 담기 → 사유 적고 확정</div>
-    <div class="card"><h3><span class="n">6</span>신규 사업 편성</h3>K별 자동 편성 · 공고문으로 사업 정보·필요 기술 채우기 · 자료 요약</div>
+    <div class="card"><h3><span class="n">6</span>신규 사업 편성</h3>옮길 인원별 자동 편성 · 공고문으로 사업 정보·필요 기술 채우기 · 자료 요약</div>
     <div class="card"><h3><span class="n">7</span>긴급 투입</h3>상황을 말로 → 추천안 · 빼 온 자리 메움 · 동시 수행</div>
     <div class="card"><h3><span class="n">8</span>인사팀 검토 자료</h3>잠긴 사실 + 부서장 판단 → PDF</div>
     <div class="card"><h3><span class="n">9</span>300명·기술 지도</h3>규모 확장 · 빠듯한 기술</div>
@@ -160,7 +161,7 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
     <div class="card"><h3><span class="n">4</span>지식 그래프 · 기술 이름 사전</h3>
       같은 기술의 여러 이름을 하나로 묶고("postgres" = PostgreSQL), 사업·기술·사람 사실을 이어 근거 글과 기술 지도에 쓴다.</div>
   </div>
-  <div class="foot">목적식·제약, 솔버 3종 비교는 결과 보고서 6~7장.</div>
+  <div class="foot">목적식·제약, 솔버 3종 비교는 결과 보고서 6~7장 · 생성형 AI는 외부 LLM API로 운영하고 사내 GLM 계열과 비교(3.6)</div>
 </section>
 
 <section class="slide">
