@@ -52,6 +52,11 @@
   table.stack td.area, table.stack th.area { background: var(--chip); font-weight: 700; color: var(--accent); white-space: nowrap; width: 6.5em; }
   table.stack .half { border-left: 3px solid var(--accent); }
   @media (max-width: 640px) { .kpi { grid-template-columns: 1fr 1fr; } .arch { grid-template-columns: 1fr; } }
+  /* 부록 화면 한눈에(2026-10-25): 2열 그림 + 설명, 그림은 칸 높이에 맞춰 축소 */
+  .figs { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-top:6px; }
+  .figs figure { margin:0; break-inside: avoid; }
+  .figs img { display:block; width:100%; height:62mm; object-fit:contain; object-position:left top; background:#fff; border:1px solid var(--line); border-radius:6px; }
+  .figs figcaption { font-size:.8rem; line-height:1.4; margin-top:3px; }
   @page { size: A4; margin: 14mm 14mm 15mm; }
   @media print {
     body { background:#fff; font-size: 9.4pt; line-height:1.42; }
@@ -70,6 +75,7 @@
     .wrap.split { break-inside: auto; }
     .wrap.split tr:first-child { break-after: avoid; }   /* 머리줄만 쪽 끝에 남지 않게 */   /* 긴 표는 행 단위로 쪽을 넘긴다(통째로 넘기면 앞 쪽이 비어 10쪽을 넘었다) */
     .pb { break-before: page; }
+    .figs figcaption { font-size: 8pt; line-height: 1.35; }
     a { color: inherit; text-decoration: none; }
   }
 </style>
@@ -139,7 +145,7 @@
 <tr><td>AI 결과를 믿을 수 있나?</td><td class="big">99% · 0.78</td><td>소명 글 99%가 사실 검사 통과. 실제 공공 발주 자료에서 고른 필요 기술 중 맞은 비율 0.78(규칙 0.32), 낯선 기술 이름 첫 후보 정답 95%(글자 비교 27%).</td><td>3.3 · 3.6</td></tr>
 <tr><td>배치 기술은 어떻게 골랐나?</td><td class="big">HiGHS</td><td>솔버 3종을 같은 문제로 357번 풀어 가장 많이 푼 HiGHS를 골랐다. LLM에게 배치를 맡기면 규칙 위반 또는 최적화 결과의 55% — 배치는 최적화가, 입력값은 AI가(1.5).</td><td>3.4 · 7장</td></tr>
 </table></div>
-<h3>2.1 구현 기능 — 영상에 나오지 않는 것 중심</h3>
+<h3>2.1 구현 기능 — 영상에 나오지 않는 것 중심(화면 캡처는 부록)</h3>
 <div class="wrap"><table>
 <tr><th style="white-space:nowrap">영역</th><th>영상 밖 기능 · 규칙</th></tr>
 <tr><td style="white-space:nowrap">데이터</td><td>인사 시스템에서 매일 자동으로 받기(받기에 실패하면 지금 데이터 유지). 인력이 진행 중인 사업에서 쓰는 기술의 경력 개월을 달이 지나면 서비스가 자동으로 더하기. 한 번의 편성(데이터·설정·결과)을 파일 하나로 저장하고 다시 불러오기(불러올 때 지금 규칙으로 다시 검사)</td></tr>
@@ -409,6 +415,19 @@
 <li>AI 전후 측정은 발주 자료(실제 공공 10편)를 빼면 가상 데이터·문장이고(요청 48문장은 구간이 넓다), 8.3의 시간은 추정이다. 발주 자료의 사업 정보 채우기는 AI가 앞 4만 자만 읽고(사업명·기간·예산은 앞머리에 있다), 필요 기술 읽기·요약은 20만 자까지 나눠 읽는다. 요약 검사는 근거 없는 항목을 거를 뿐 모두 막지는 못한다. 월 예산 환산(1점 = 1만 원)은 가정이다.</li>
 <li>운영 기능은 시제품 수준(관리자 하나·단일 서버)이고, 전일 투입은 가용률 0 또는 1을 전제로 한다.</li>
 </ul>
+
+<section class="pb">
+<h2>부록. 화면 한눈에</h2>
+<p class="muted">시연 영상의 아홉 장면 가운데 여섯 — 영상에서 빠르게 지나가거나 시간이 모자라면 잘릴 수 있는 장면을 모았다(괄호는 영상 장면 번호). 모두 실제 조직을 본뜬 가상 데이터 화면(100명 · ⑥은 300명)이고, ③의 발주 자료만 나라장터 공개 자료(한국산업안전보건공단 제안요청서)다.</p>
+<div class="figs">
+<figure><img src="report-figures/f1-plans.png" alt="연간 계획 편성안 A~D 카드"><figcaption><b>① 연간 계획 — 안 A~D</b>(D2) 안마다 "위반 없음 · 다시 채점" 도장과 배치 품질·빈자리·기술 적합, 편성 기록에서 연 결과임을 띠와 배지("최적인지는 다시 계산해야 확인")가 밝힌다.</figcaption></figure>
+<figure><img src="report-figures/f2-whatif.png" alt="What-if XAI 브리핑과 팀원과의 관계"><figcaption><b>② What-if — XAI 브리핑 · 팀원과의 관계</b>(D5) 교체 전후 점수는 참고값(재최적화 아님), 설명은 동료 평가를 직접 인용한 근거를 단다. 오른쪽은 빠질 사람·팀원·들어올 사람의 협업 관계.</figcaption></figure>
+<figure><img src="report-figures/f3-register.png" alt="신규 사업 등록 양식의 AI 제안"><figcaption><b>③ 신규 사업 등록 — 발주 자료에서 읽은 사업 정보·필요 기술</b>(D6) 왼쪽은 사업명·고객 구분 제안과 근거 문장, 오른쪽은 제안요청서에서 추정한 필요 기술(필수 · 근거). 넣을 것은 사람이 고른다.</figcaption></figure>
+<figure><img src="report-figures/f4-emergency.png" alt="긴급 투입 — 상황을 말로 쓰고 AI가 읽은 요구와 최선 조합"><figcaption><b>④ 긴급 투입 — 상황을 말로</b>(D7) 기술 이름 없이 쓴 글에서 AI가 기술 셋과 인원 2를 읽고("미루어 봄"은 부서장이 켠다), 기존 계산이 최선 조합과 빼 온 자리를 메울 사람까지 낸다.</figcaption></figure>
+<figure><img src="report-figures/f5-review.png" alt="인사팀 검토 자료"><figcaption><b>⑤ 인사팀 검토 자료</b>(D8) 서버가 계산한 사실은 잠겨 있고(🔒 수정 불가), 부서장은 판단·합의 상태를 적는다. 불리한 사실에는 지우는 대신 해명·이의만 달 수 있다.</figcaption></figure>
+<figure><img src="report-figures/f6-skillmap.png" alt="조직 기술 지도(300명)"><figcaption><b>⑥ 조직 기술 지도 — 300명</b>(D9) 기술마다 실무 가능 인원(넓이) × 평균 경력(깊이)의 사분면. 하위 기술 인정분이 절반 넘는 기술은 점선 원으로 따로 표시한다.</figcaption></figure>
+</div>
+</section>
 
 </main>
 </body>
