@@ -9,6 +9,7 @@
      2026-10-24 3 구성은 "결정은 방정식, 방정식에 들어갈 값과 근거 글은 검사받는 AI"로 다시 그리고(7·8은 그 값의 증거), 가상 데이터 안내는 1에서 4(화면 들어가기 직전)로 옮겼다.
      2026-10-25 처음 보는 사람 기준: 1 "AI 인증 과제 시연"·이름 풀이(Team + Weaver), 2 쓰는 사람 줄·칸 순서를 말 순서(상황 → 조건 → 어려움)로, 9 위 글씨.
      2026-10-25 검토 루프 반영: 2 머리 줄은 쓰는 사람만·"한 사업에 100%"는 조건 칸으로, 4 머리 줄에 What-if·인사팀 검토 자료·칸 6 "옮길 인원별"(K는 영상에서 설명하지 않는다), 5 발 글에 어떤 LLM인지.
+     2026-10-25 기술/성과 압축(사용자 "슬라이드 5부터는 보고서에 있는 내용은 거의 다 쳐내고 핵심만"): 5~8(기술 넷 · 숫자 셋 · AI가 만드는 값 ①·②) → 한 장 5 "숫자로 본 결과", 9 맺음 → 6. 9장 → 6장. 뺀 내용은 보고서 3.3·3.5·8.2·8.3.
      ←/→·스페이스로 넘기고 F로 전체 화면. 녹화 화면이 시스템 테마에 따라 바뀌지 않게 밝은 색만 쓴다. -->
 <style>
 :root{--bg:#f4f2ec;--card:#fff;--ink:#1f2328;--muted:#5b6168;--line:#d9d6cf;--acc:#2f5f8a;--acc2:#2f6f5e;--warn:#9a5b13;--chip:#e9eef4;--soft:#eef5f1}
@@ -53,6 +54,10 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 .sys .arrow{font-size:24px}
 .tag{display:inline-block;font-size:15px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--acc2);color:#fff;vertical-align:4px;margin-left:8px}
 .tag.out{background:var(--acc)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:12px 18px;align-items:center;font-size:21px;line-height:1.4;margin-top:6px}
+.kv .s{display:block;font-size:16px;color:var(--muted);font-weight:400;margin-top:2px}
+.kv .v{font-size:27px;font-weight:800;color:var(--acc);white-space:nowrap;text-align:right;letter-spacing:-.01em}
+.kv .v small{font-size:18px;color:var(--muted);font-weight:700}
 .title-wrap{margin:auto 0}
 .title-wrap .name{font-size:26px;color:var(--acc);font-weight:700;margin:10px 0 0;letter-spacing:.01em}
 .title-wrap .sub{font-size:30px;color:var(--ink);margin:18px 0 28px;line-height:1.4}
@@ -149,73 +154,28 @@ h2{font-size:38px;margin:0 0 6px;color:var(--acc)}
 </section>
 
 <section class="slide">
-  <div class="kicker">기술 · 주요 적용 기술</div>
-  <h2>네 가지 핵심 기술 — 무엇을, 왜</h2>
-  <div class="grid g2" style="margin-top:14px">
-    <div class="card"><h3><span class="n">1</span>수학 최적화 (혼합정수계획 · HiGHS)</h3>
-      다섯 조건을 <b>모두 지키는</b> 배치 가운데 점수가 가장 높은 것을 찾는다. 사람 손으로는 어겼는지도 모르는 일을 계산이 맡고, "이보다 좋은 배치는 없다"는 이론상 최대치와의 거리까지 낸다.</div>
-    <div class="card"><h3><span class="n">2</span>독립 검증기</h3>
-      솔버의 답도 그대로 믿지 않는다. 원자료로 다시 계산해 통과한 배치만 화면·PDF로 낸다. 교체·확정·불러온 기록도 같은 잣대로 채점한다.</div>
-    <div class="card"><h3><span class="n">3</span>검사받는 생성형 AI</h3>
-      방정식에 들어갈 값(요구 기술·기술 이름·평가)과 근거 글을 만든다. 결과는 원문·사실 목록·기술 사전과 기계로 대조하고, 어긋나면 버리고 규칙으로 대신한다.</div>
-    <div class="card"><h3><span class="n">4</span>지식 그래프 · 기술 이름 사전</h3>
-      같은 기술의 여러 이름을 하나로 묶고("postgres" = PostgreSQL), 사업·기술·사람 사실을 이어 근거 글과 기술 지도에 쓴다.</div>
+  <div class="kicker">기술/성과 · 주요 적용 기술과 구현 결과</div>
+  <h2>숫자로 본 결과 — 결정은 방정식이, 값은 AI가</h2>
+  <div class="grid g2" style="margin-top:14px;gap:16px">
+    <div class="card"><h3>결정 — 수학 최적화(혼합정수계획 · HiGHS) + 독립 검증기</h3>
+      <div class="num" style="font-size:54px">+5~13<small>%</small></div>
+      <div class="cap" style="margin-top:2px">같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 배치 점수가 높다 · 100·200·300명</div>
+      <div class="num" style="font-size:54px;margin-top:12px">0.9<small>%</small></div>
+      <div class="cap" style="margin-top:2px">300명 최선안과 이론상 최대치의 거리 — 더 좋은 배치가 있어도 최대 0.9% · 빈자리 0 · 위반 0 · 92초</div>
+      <div class="cap" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);color:var(--ink)">GPT에게 100명 배치를 직접 맡기면 규칙 위반 또는 최적화의 <b>55%</b> → 배치는 AI에 맡기지 않는다</div>
+    </div>
+    <div class="card"><h3>값과 근거 — 검사받는 생성형 AI(외부 LLM API) · 기술 이름 사전</h3>
+      <div class="cap" style="margin:-6px 0 4px;font-size:18px">AI 없이(규칙) → AI, 같은 데이터</div>
+      <div class="kv">
+        <div><b>동료 평가 글</b>의 혹평 찾기<span class="s">나쁜 사이가 협업 보상에 든 쌍 28 → 0</span></div><div class="v">12% → 100%</div>
+        <div><b>발주 자료 → 필요 기술</b> 정밀도<span class="s">실제 공공 자료 10편</span></div><div class="v">0.32 → 0.78</div>
+        <div><b>말로 쓴 긴급 요청</b>, 찾은 정답<span class="s">일로만 설명한 요구 0/6 → 6/6</span></div><div class="v">46 → 55<small> / 55</small></div>
+        <div><b>낯선 기술 이름</b> 1순위 정답<span class="s">숨긴 실제 별칭 522개</span></div><div class="v">27% → 95%</div>
+        <div><b>"왜 이 팀인가" 글</b><span class="s">사실 검사 통과 99% · 8초</span></div><div class="v">77줄 → 3문장</div>
+      </div>
+    </div>
   </div>
-  <div class="foot">목적식·제약, 솔버 3종 비교는 결과 보고서 6~7장 · 생성형 AI는 외부 LLM API로 운영하고 사내 GLM 계열과 비교(3.6)</div>
-</section>
-
-<section class="slide">
-  <div class="kicker">성과 · 구현 결과</div>
-  <h2>숫자로 본 결과</h2>
-  <div class="grid g3" style="margin-top:18px">
-    <div class="card"><div class="num" style="font-size:72px">+5~13<small>%</small></div><div class="cap" style="font-size:24px">같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 프로젝트 인력 배치 점수가 5~13% 더 높다(100·200·300명)</div></div>
-    <div class="card"><div class="num" style="font-size:72px">0.9<small>%</small></div><div class="cap" style="font-size:24px">300명 최선안과 "어떤 배치도 넘을 수 없는" 천장 점수의 차이 — 더 좋은 배치가 있어도 최대 0.9% 높을 뿐<br>빈자리 0 · 위반 0 · 92초</div></div>
-    <div class="card"><div class="cap" style="font-size:22px;margin:0">배치를 맡을 기술을 비교해 골랐다</div><div class="num" style="font-size:56px">HiGHS</div><div class="cap" style="font-size:22px">솔버 3종(CBC·SCIP·HiGHS) 357번 풀이 비교 · GPT에게 100명 배치를 맡기면 규칙 위반 또는 최적화 결과의 55%</div></div>
-  </div>
-  <div class="banner">그래서 배치는 방정식이 정하고, AI는 그 방정식에 들어갈 값을 글에서 만든다 — 다음 두 장</div>
-  <div class="foot">프로젝트 인력 배치 점수 = 기술 적합 + 협업 · 규모별 표·K 비교는 결과 보고서 3장, 1차 설계서 지표 대비는 1.2 · 실제 조직을 본뜬 가상 데이터(6개월 계획), 사업 효과는 검증 전(NOT_CALIBRATED)</div>
-</section>
-
-<section class="slide">
-  <div class="kicker">성과 · AI가 만드는 방정식의 값 ①</div>
-  <h2>동료 사이 평가 — 평가 글은 AI가 읽어야 한다</h2>
-  <div class="grid g2" style="margin-top:14px">
-    <div class="card" style="font-size:24px"><h3>평가 글 한 건(가상)</h3>
-      <div class="cap">체크: 좋은 점 5 · 아쉬운 점 2</div>
-      <p style="margin:10px 0;font-size:27px;color:var(--ink)">"자기 범위만 챙기고 팀 일에는 무관심했습니다 … 다시 함께 일정을 잡고 싶지 않습니다."</p><ul>
-      <li>항목만 세면 <b>+0.43</b>&nbsp;→ "궁합 좋은 쌍"으로 같은 팀에</li>
-      <li>AI가 글을 읽으면 <b>−0.80</b>&nbsp;→ 협업 보상에서 뺌</li></ul></div>
-    <div class="card" style="font-size:24px"><h3>AI 없이 → AI (같은 데이터)</h3><ul>
-      <li>글에만 쓴 혹평 찾기 12%&nbsp;→&nbsp;<b>100%</b>, 돌려 말한 지적 <b>89%</b></li>
-      <li>나쁘게 쓴 사이가 협업 보상에 든 수 28쌍&nbsp;→&nbsp;<b>0</b>, 같은 팀에 9쌍&nbsp;→&nbsp;4쌍(100명)</li>
-      <li>300명 평가 글 3,495건: 사람이 다 읽으면 약 <b>29시간</b>(추정) → AI 판정 약 9분 + 표본 확인, $0.28</li></ul></div>
-  </div>
-  <div class="foot">판정값은 협업 점수 = 0.4 × 함께 일한 개월 + 0.6 × 평가로 방정식에 들어간다 · 판정 기준은 측정 전에 기록 · 시간은 공개 연구의 읽기 속도로 낸 추정</div>
-</section>
-
-<section class="slide">
-  <div class="kicker">성과 · AI가 만드는 방정식의 값 ② · 근거 글</div>
-  <h2>요구 기술·기술 이름을 글에서 옮기고, 근거를 쓴다</h2>
-  <div class="grid g2" style="margin-top:8px;gap:12px">
-    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">발주 자료 → 필요 기술<span class="tag">값: 요구 기술</span></h3>
-      <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 표지·사전 이름 + "우대·현행" 같은 말</div>
-      <div class="num" style="font-size:36px;margin-top:4px">정밀도 0.32 → 0.78<small> 실제 공공 자료 10편</small></div>
-      <div style="font-size:19px;margin-top:4px">양식 목록·현행 시스템을 요구로 99% → 11% · 편당 13초(사람은 40분~2.4시간, 추정) · 기간을 날짜로 계산</div></div>
-    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">긴급 요청을 말로<span class="tag">값: 요구 기술·인원</span></h3>
-      <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 사전 기술 이름이 글에 그대로 적혀야만</div>
-      <div class="num" style="font-size:36px;margin-top:4px">찾은 정답 46 → 55<small> / 55개</small></div>
-      <div style="font-size:19px;margin-top:4px">일로만 설명한 요구 0/6 → 6/6 · 대신 정답에 없는 기술 4개를 더 붙임 · 사람 특성 말은 안 씀</div></div>
-    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">낯선 기술 이름<span class="tag">값: 기술 경력</span></h3>
-      <div class="cap" style="margin-top:0;font-size:18px">AI 없이(규칙): 글자가 비슷한 이름만 후보로</div>
-      <div class="num" style="font-size:36px;margin-top:4px">1순위 27 → 95<small>%</small></div>
-      <div style="font-size:19px;margin-top:4px">숨긴 실제 별칭 522개 · 후보 3개 안 54 → 100% · 정답대로 승인하면 틀린 기술 점수 35%&nbsp;→&nbsp;0</div></div>
-    <div class="card" style="padding:12px 22px"><h3 style="margin-bottom:4px">"왜 이 팀인가" 글<span class="tag out">결과의 근거</span></h3>
-      <div class="cap" style="margin-top:0;font-size:18px">AI 없이: 근거 77줄 나열, 사람이 쓰면 30~90분</div>
-      <div class="num" style="font-size:36px;margin-top:4px">77줄 → 3문장</div>
-      <div style="font-size:19px;margin-top:4px">사실 검사 통과 <b>99%</b>(세 문장 요약은 92.6%) · 8초 · 쓰는 시간 37~40% 단축(추정)</div></div>
-  </div>
-  <div class="banner" style="margin-top:12px">AI는 사실 번호를 고르고 사전 말로 옮기기만 — 사람 정보는 보내지 않고, 고르는 것은 사람</div>
-  <div class="foot" style="padding-top:8px;font-size:15px">정답은 AI 실행 전에 기록 · 발주 자료 = 나라장터 공공 자료 10편(AI 3회 평균) · 긴급 요청 = 가상 48문장 · 정밀도 = 뽑은 것 중 맞은 비율</div>
+  <div class="foot">정식·솔버 비교·측정 방법·사람 시간과 비용 추정은 결과 보고서(2·3·6~8장) · 지식 그래프는 근거 글·기술 지도의 사실 연결(7장) · 정답과 기준은 AI 실행 전에 기록 · 실제 조직을 본뜬 가상 데이터, 사업 효과는 검증 전(NOT_CALIBRATED)</div>
 </section>
 
 <section class="slide">

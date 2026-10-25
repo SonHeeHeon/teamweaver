@@ -67,10 +67,10 @@ body.say-only .sep~.chip{display:none}
 <body>
 <header>
   <div class="bar"><h1>TeamWeaver 시연 대본</h1><button class="toggle" type="button" id="say">말만 보기</button></div>
-  <nav class="chips"><a class="chip sc" href="#S1">S1</a><a class="chip sc" href="#S2">S2</a><a class="chip sc" href="#S3">S3</a><a class="chip sc" href="#D0">D0</a><a class="chip sc" href="#D1">D1</a><a class="chip sc" href="#D2">D2</a><a class="chip sc" href="#D3">D3</a><a class="chip sc" href="#D4">D4</a><a class="chip sc" href="#D5">D5</a><a class="chip sc" href="#D6">D6</a><a class="chip sc" href="#D7">D7</a><a class="chip sc" href="#D8">D8</a><a class="chip sc" href="#D9">D9</a><a class="chip sc" href="#T1">T1</a><a class="chip sc" href="#T2">T2</a><a class="chip sc" href="#T2b">T2b</a><a class="chip sc" href="#T2c">T2c</a><a class="chip sc" href="#T3">T3</a><span class="sep"></span><a class="chip" href="#sec2">가이드 대응</a><a class="chip" href="#sec3">큐시트</a><a class="chip" href="#sec26">녹화·편집 안내</a><a class="chip" href="#sec27">녹화 준비</a><a class="chip" href="#sec28">길이 점검</a><a class="chip" href="#sec29">장면별 숫자</a><a class="chip" href="#sec41">하지 말 말</a><a class="chip" href="#sec42">막혔을 때</a><a class="chip" href="#sec43">부록: 현장 시연으로 할 때</a></nav>
+  <nav class="chips"><a class="chip sc" href="#S1">S1</a><a class="chip sc" href="#S2">S2</a><a class="chip sc" href="#S3">S3</a><a class="chip sc" href="#D0">D0</a><a class="chip sc" href="#D1">D1</a><a class="chip sc" href="#D2">D2</a><a class="chip sc" href="#D3">D3</a><a class="chip sc" href="#D4">D4</a><a class="chip sc" href="#D5">D5</a><a class="chip sc" href="#D6">D6</a><a class="chip sc" href="#D7">D7</a><a class="chip sc" href="#D8">D8</a><a class="chip sc" href="#D9">D9</a><a class="chip sc" href="#T1">T1</a><a class="chip sc" href="#T2">T2</a><span class="sep"></span><a class="chip" href="#sec2">가이드 대응</a><a class="chip" href="#sec3">큐시트</a><a class="chip" href="#sec23">녹화·편집 안내</a><a class="chip" href="#sec24">녹화 준비</a><a class="chip" href="#sec25">길이 점검</a><a class="chip" href="#sec26">장면별 숫자</a><a class="chip" href="#sec38">하지 말 말</a><a class="chip" href="#sec39">막혔을 때</a><a class="chip" href="#sec40">부록: 현장 시연으로 할 때</a></nav>
 </header>
 <main>
-<h1 class="doc-title">TeamWeaver 과제 시연 영상 대본 (9분 50초 · 최대 10분)</h1>
+<h1 class="doc-title">TeamWeaver 과제 시연 영상 대본 (8분 40초 · 최대 10분)</h1>
 <div class="preamble"><div class="body"><ul>
 <li>작성 2026-10-06 · claude-a. 최종판 2026-10-25. <strong>2026-10-14 제출 가이드에 맞춰 녹화 영상 대본으로 다시 짰다.</strong>
 가이드: 분량 최대 10분, (개요) 과제 수행 배경과 시스템 전반, (구현) 전체 흐름이 보이는 동작 화면(긴 대기는 편집 가능), (기술/성과) 주요 적용 기술과 구현 결과·성과.</li>
@@ -80,7 +80,7 @@ body.say-only .sep~.chip{display:none}
 &quot;계산이 맞다&quot;와 &quot;현실 성과가 좋아진다&quot;는 다른 주장이다. 대본 전체에서 앞의 것만 말한다.</li>
 <li>이전 기록: 10-18 화면 개편(앱 전체 로그인 <code>admin</code>/<code>admin1234</code>, 편성 기록 JSON), 10-19 3가지 핵심 상황·인사팀 검토 자료·전일 투입과 사람 단위 프로젝트 동시 수행·생성기 v3~v5(사업 수명 주기). 녹화 전 <code>demo/records/</code>를 불러온다.</li>
 </ul>
-</div><details class="hist"><summary>수정 이력 13건 (펼치기)</summary><div class="body"><ul>
+</div><details class="hist"><summary>수정 이력 14건 (펼치기)</summary><div class="body"><ul>
 <li><strong>2026-10-21 다시 짬(claude-a, 사용자 &quot;7,2번 시연 대본에 넣어주고, 시연 전체 … 업데이트&quot;)</strong>: 메뉴가 연간 계획(① 조건·계산 → ② 편성안 비교·확정)과 지금 배치 › What-if로 나뉜 화면에 맞췄다.
 <ul>
 <li>새 장면 <strong>D4 &quot;안 A로 확정&quot;</strong>(계산한 안을 실제 배치로 — 확정 창이 지금 대비 옮김·새로·빠짐을 먼저 보인다)과 <strong>D5 What-if</strong>(지금 배치에서 바꿔 보기 → 담기 → 사유 적고 확정, 예전 D4 교체 검토를 옮김). 뒤 장면 번호가 하나씩 밀렸다.</li>
@@ -132,6 +132,9 @@ S1은 이름의 뜻(팀을 짜는 사람)과 무엇을 하는 서비스인지, S
 <li><strong>2026-10-25 검토 루프 반영(claude-a — 한 시간 검토 뒤 제안 diff를 사용자가 승인: &quot;J001은 그대로&quot;, &quot;D6 선택 문장은 빼자&quot;, &quot;소속 날짜 발표자는 지금처럼 없는 상태&quot;, &quot;사내 실행 그룹으로 하자&quot;, 나머지 전부)</strong>:
 처음 듣는 사람에게 뜻이 안 오는 말(&quot;사전&quot; → &quot;기술 사전&quot;, &quot;규칙&quot; → &quot;AI 없이 사전 이름만 찾는 규칙&quot;, &quot;K&quot; → &quot;옮길 인원&quot;), 화면 글자와 다른 말(&quot;AI 설명&quot; → &quot;XAI 브리핑&quot;, &quot;검토 자료&quot; → &quot;인사팀 검토 자료&quot;, &quot;배치 점수&quot;), 장면의 핵심 근거가 말에 없던 곳(D2 조건 화면 문장, D7 &quot;세 기술을 다 가진 사람은 없어&quot;), D6 공개 자료 안내를 자료 올리기 앞으로, D9 &quot;화면 시연의 마지막&quot;(뒤에 기술/성과가 남는다), T2·T2b·T2c 입말. 12장면(S3·D1·D2·D4·D5·D6·D7·D8·D9·T2·T2b·T2c), 숫자·조작·시각 배정은 그대로 — 음절은 아래 &quot;길이 점검&quot;.
 슬라이드 2 머리 줄은 쓰는 사람만, &quot;한 사람은 한 사업에 100%&quot;는 조건 칸으로(동시 수행 예외와 나란히), 4 머리 줄에 What-if·인사팀 검토 자료, 칸 6 &quot;옮길 인원별 자동 편성&quot;, 5 발 글에 어떤 LLM인지(외부 LLM API · 사내 GLM 계열과 비교). 사람 정보를 AI에 보내지 않는다는 말은 슬라이드 8 띠와 화면 안내로만(사용자 결정).</li>
+<li><strong>2026-10-25 기술/성과 구간 압축(사용자 &quot;시연하다보니 너무 기네.. 화면까지는 그대로 가고 뒤에 슬라이드 5부터는 보고서에 있는 내용은 거의 다 쳐내고 핵심만 남겨서 슬라이드 자료랑 대본 준비해줘&quot; · &quot;d9까지&quot; 그대로)</strong>:
+S1~D9(말·조작·시각 배정)는 그대로. 슬라이드 5~8(기술 넷 · 숫자 셋 · AI가 만드는 방정식의 값 ①·②)을 <strong>한 장</strong>(새 슬라이드 5 &quot;숫자로 본 결과&quot; — 왼쪽 결정: 최적화 +5~13% · 0.9% · GPT 직접 배치 55%, 오른쪽 값과 근거: AI 없이(규칙) → AI 다섯 줄)으로 합치고, 맺음은 그대로(슬라이드 6).
+장면 T1~T3 다섯 → T1(숫자 한 장)·T2(맺음) 둘, 기술/성과 2분 20초 → 1분 10초, 영상 9분 50초 → <strong>8분 40초</strong>(여유 1분 20초 — 구현 구간이 실제로 늘어나도 10분 안). 평가 글 예시·사람 시간·비용·세부 측정(돌려 말한 지적 89%, 같은 팀 9 → 4, 92.6%, 양식 목록 99 → 11%, 후보 3개 안, 틀린 기술 점수, 사업 정보·요약)은 보고서에만(3.3·3.5·8.2·8.3). 슬라이드 9장 → 6장.</li>
 </ul>
 </div></details></div><section class="sec" id="sec2"><h2>가이드 대응</h2><div class="body"><div class="tw"><table class="narrow">
 <thead>
@@ -156,16 +159,16 @@ S1은 이름의 뜻(팀을 짜는 사람)과 무엇을 하는 서비스인지, S
 <td>슬라이드 4(흐름 안내) → 앱 9장면</td>
 </tr>
 <tr>
-<td>(기술/성과) 주요 적용 기술, 구현 결과·성과, AI가 만드는 방정식의 값</td>
-<td>7:30–9:50</td>
-<td>2분 20초</td>
-<td>슬라이드 5~9</td>
+<td>(기술/성과) 주요 적용 기술, 구현 결과·성과</td>
+<td>7:30–8:40</td>
+<td>1분 10초</td>
+<td>슬라이드 5(숫자 한 장)~6(맺음)</td>
 </tr>
 <tr>
 <td>여유</td>
-<td>9:50–10:00</td>
-<td>10초</td>
-<td>편집 오차·자막</td>
+<td>8:40–10:00</td>
+<td>1분 20초</td>
+<td>편집 오차·자막 · 구현 구간이 실제로 늘어나면 여기서 흡수</td>
 </tr>
 </tbody>
 </table></div>
@@ -287,47 +290,23 @@ S1은 이름의 뜻(팀을 짜는 사람)과 무엇을 하는 서비스인지, S
 </tr>
 <tr>
 <td>T1</td>
-<td>7:30–8:05</td>
-<td>기술</td>
-<td>슬라이드 5 주요 적용 기술</td>
-<td>최적화·독립 검증·검사받는 AI·지식 그래프 — 무엇을, 왜</td>
+<td>7:30–8:15</td>
+<td>기술/성과</td>
+<td>슬라이드 5 <strong>숫자로 본 결과(한 장)</strong></td>
+<td>결정은 방정식 — 규칙 기반 자동 배치보다 +5~13%, 300명 이론상 최대치와 0.9%, GPT 직접 배치는 55% · 값은 AI — AI 없이(규칙) → AI 숫자 다섯 줄</td>
 <td>—</td>
 </tr>
 <tr>
 <td>T2</td>
-<td>8:05–8:30</td>
+<td>8:15–8:40</td>
 <td>성과</td>
-<td>슬라이드 6 구현 결과</td>
-<td>규칙 기반 자동 배치보다 낫고 이론상 최대치와 0.9%, 배치 기술은 비교해 골랐다(GPT 직접 배치는 55%) — 그래서 AI는 방정식의 값을 만드는 데</td>
-<td>—</td>
-</tr>
-<tr>
-<td>T2b</td>
-<td>8:30–8:58</td>
-<td>성과</td>
-<td>슬라이드 7 <strong>AI가 만드는 방정식의 값 ① 동료 사이 평가</strong></td>
-<td>평가 글을 AI가 읽어야 협업 점수가 맞다 — 나쁜 사이를 팀에서 뺀다</td>
-<td>—</td>
-</tr>
-<tr>
-<td>T2c</td>
-<td>8:58–9:28</td>
-<td>성과</td>
-<td>슬라이드 8 <strong>AI가 만드는 방정식의 값 ② · 근거 글</strong></td>
-<td>요구 기술·기술 이름을 글에서 옮기고 근거 글을 쓴다, 고르는 것은 사람</td>
-<td>—</td>
-</tr>
-<tr>
-<td>T3</td>
-<td>9:28–9:50</td>
-<td>성과</td>
-<td>슬라이드 9 맺음</td>
+<td>슬라이드 6 맺음</td>
 <td>엑셀과 경험으로 하던 배치를 계산과 근거로 — 결정은 방정식이, 방정식의 값과 근거는 검사받는 AI가, 효과는 섀도 운영으로</td>
 <td>—</td>
 </tr>
 </tbody>
 </table></div>
-<p>내레이션은 모두 약 2,600음절로, 한국어 발표 속도(초당 약 5음절)면 8분 42초쯤이다. 구간마다 말하는 시간이 배정 시간 안에 든다(2026-10-25 음절 수로 다시 확인 — 아래 &quot;길이 점검&quot;).
+<p>내레이션은 모두 약 2,300음절로, 한국어 발표 속도(초당 약 5음절)면 7분 31초쯤이다. 구간마다 말하는 시간이 배정 시간 안에 든다(2026-10-25 기술/성과 압축 뒤 음절 수로 다시 확인 — 아래 &quot;길이 점검&quot;).
 구현 구간은 배정 시간의 7~9할을 말한다 — 화면은 말하는 동안 움직이고, AI·계산 대기와 양식 입력은 잘라 내거나 빠르게 돌린다.</p>
 </div></section><section class="sec script" id="sec4"><h2>대본</h2><div class="block part"><h3 id="h5">[개요] 0:00–1:28</h3></div><div class="block"><h4 class="scene" id="S1"><span class="code">S1</span><span class="time">0:00–0:20</span><span class="t">타이틀 — 슬라이드 1</span></h4><div class="body"><ul>
 <li>화면: 위 작은 글씨 &quot;AI 인증 과제 시연&quot;, 제목 &quot;TeamWeaver&quot;, 이름 풀이 &quot;Team + Weaver — 팀을 짜는 사람&quot;, 아래 &quot;SI 사업 조직의 프로젝트 인력 배치 최적화와 근거를 검사받는 AI 설명&quot;. 가상 데이터 안내는 여기 두지 않는다(2026-10-24 — 슬라이드 4로 옮김).</li>
@@ -462,46 +441,28 @@ J021 대기 인력 맨 위 임민우·전다은·윤시현(중급) — 임민우
 </ul>
 <blockquote class="say"><div class="say-tag">말</div><p>&quot;화면 시연의 마지막은 규모입니다. 300명 조직의 기록도 같은 검사를 거칩니다. 조직 기술 지도에서는 수요에 비해 사람이 가장 빠듯한 기술이 한눈에 보입니다.&quot;</p>
 </blockquote>
-</div></div><div class="block part"><h3 id="h20">[기술/성과] 7:30–9:50</h3></div><div class="block"><h4 class="scene" id="T1"><span class="code">T1</span><span class="time">7:30–8:05</span><span class="t">주요 적용 기술 — 슬라이드 5</span></h4><div class="body"><ul>
-<li>화면: 네 칸 — ① 수학 최적화(혼합정수계획 · HiGHS: 다섯 조건을 모두 지키는 배치 중 최선, 이론상 최대치와의 거리) ② 독립 검증기(원자료로 다시 계산, 통과한 것만) ③ 검사받는 생성형 AI(방정식에 들어갈 값과 근거 글을 만든다, 원문·사실 목록·사전과 대조, 어긋나면 규칙) ④ 지식 그래프·기술 이름 사전. 아래 &quot;목적식·제약, 솔버 3종 비교는 결과 보고서 6~7장&quot;.</li>
+</div></div><div class="block part"><h3 id="h20">[기술/성과] 7:30–8:40</h3></div><div class="block"><h4 class="scene" id="T1"><span class="code">T1</span><span class="time">7:30–8:15</span><span class="t">주요 적용 기술과 구현 결과 — 숫자 한 장 — 슬라이드 5 (2026-10-25 압축: 예전 슬라이드 5~8을 합침)</span></h4><div class="body"><ul>
+<li>화면: 한 장. 왼쪽 <strong>결정 — 수학 최적화(혼합정수계획 · HiGHS) + 독립 검증기</strong>: +5~13%(같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 배치 점수가 높다, 100·200·300명) · 0.9%(300명 최선안과 이론상 최대치의 거리 — 더 좋은 배치가 있어도 최대 0.9%, 빈자리 0 · 위반 0 · 92초) · 밑줄 &quot;GPT에게 100명 배치를 직접 맡기면 규칙 위반 또는 최적화의 55% → 배치는 AI에 맡기지 않는다&quot;.
+오른쪽 <strong>값과 근거 — 검사받는 생성형 AI(외부 LLM API) · 기술 이름 사전</strong>, AI 없이(규칙) → AI 다섯 줄: 동료 평가 글의 혹평 찾기 12% → 100%(나쁜 사이가 협업 보상에 든 쌍 28 → 0) · 발주 자료 → 필요 기술 정밀도 0.32 → 0.78(실제 공공 자료 10편) · 말로 쓴 긴급 요청 찾은 정답 46 → 55/55(일로만 설명한 요구 0/6 → 6/6) · 낯선 기술 이름 1순위 27% → 95%(숨긴 실제 별칭 522개) · &quot;왜 이 팀인가&quot; 글 77줄 → 3문장(사실 검사 통과 99% · 8초).
+발 글: 정식·솔버 비교·측정 방법·사람 시간과 비용 추정은 결과 보고서(2·3·6~8장), 정답과 기준은 AI 실행 전에 기록, 지식 그래프는 근거 글·기술 지도의 사실 연결(7장), 실제 조직을 본뜬 가상 데이터 · 사업 효과는 검증 전(NOT_CALIBRATED).</li>
+<li>보고서에만 두는 것(압축 전 슬라이드 5~8에 있었다): 기술 넷의 설명 글, 평가 글 예시(항목 +0.43 → AI −0.80), 돌려 말한 지적 89%, 같은 팀 9 → 4, 평가 글 3,495건 29시간 → 9분·$0.28, 세 문장 요약 92.6%, 쓰는 시간 37~40% 단축, 양식 목록·현행 시스템을 요구로 99% → 11%, 편당 13초·사람 40분~2.4시간, 후보 3개 안 54 → 100%, 틀린 기술 점수 35% → 0, 정답에 없는 기술 4개, 발주 자료 사업 정보·요약(기간을 날짜로 계산). 숫자의 출처는 아래 &quot;장면별 숫자&quot;.</li>
+<li>말은 슬라이드의 숫자를 왼쪽 위에서 오른쪽 아래로 읊는 순서다. 긴급 요청 줄(46 → 55)은 말하지 않는다(D7에서 &quot;규칙은 0개·1명&quot;으로 이미 보였다).</li>
 </ul>
-<blockquote class="say"><div class="say-tag">말</div><p>&quot;지금까지 본 화면 뒤의 핵심 기술은 넷입니다. 수학 최적화가 다섯 조건을 모두 지키는 배치 가운데 가장 좋은 것을 찾고, 이론상 최대치와의 거리까지 냅니다. 솔버의 답은 독립 검증기가 원자료로 다시 계산해 통과한 것만 냅니다. AI는 방정식에 들어갈 값과 근거 글을 만들고, 그 결과는 원문과 사실, 사전에 기계로 대조해 어긋나면 버립니다. 기술 이름 사전과 지식 그래프는 여러 이름을 하나로 묶고 근거 사실을 잇습니다.&quot;</p>
+<blockquote class="say"><div class="say-tag">말</div><p>&quot;화면 뒤의 결과를 숫자로 정리합니다. 수학 최적화는 규칙 기반 자동 배치보다 배치 점수가 5에서 13퍼센트 높았고, 300명도 이론상 최대치와 0.9퍼센트 차이임을 증명했습니다. GPT에게 배치를 직접 맡기면 최적화의 55퍼센트에 그쳤습니다. 값을 만드는 AI는 규칙과 비교해 평가 글의 혹평을 12퍼센트에서 전부 찾고, 발주 자료의 필요 기술 정밀도를 0.32에서 0.78로, 기술 이름의 1순위 정답을 27에서 95퍼센트로 올렸습니다. 근거 글은 77줄이 세 문장이 되어 사실 검사를 99퍼센트 통과합니다.&quot;</p>
 </blockquote>
-</div></div><div class="block"><h4 class="scene" id="T2"><span class="code">T2</span><span class="time">8:05–8:30</span><span class="t">구현 결과 — 슬라이드 6</span></h4><div class="body"><ul>
-<li>화면: 숫자 카드 셋 — +5~13%(같은 시간을 쓴 규칙 기반 자동 배치(휴리스틱)보다 프로젝트 인력 배치 점수가 5~13% 더 높다, 100·200·300명) · 0.9%(300명 최선안과 &quot;어떤 배치도 넘을 수 없는&quot; 천장 점수의 차이 — 더 좋은 배치가 있어도 최대 0.9% 높을 뿐, 빈자리 0 · 위반 0 · 92초) · &quot;배치를 맡을 기술을 비교해 골랐다 — HiGHS&quot;(솔버 3종 357번 풀이 비교 · GPT에게 100명 배치를 맡기면 규칙 위반 또는 최적화 결과의 55%). 아래 &quot;배치 점수 = 기술 적합 + 협업 · 규모별 표·K 비교는 결과 보고서 3장, 1차 설계서 지표 대비는 1.2&quot;, 실제 조직을 본뜬 가상 데이터(6개월 계획). 띠 &quot;그래서 배치는 방정식이 정하고, AI는 그 방정식에 들어갈 값을 글에서 만든다 — 다음 두 장&quot;.</li>
-</ul>
-<blockquote class="say"><div class="say-tag">말</div><p>&quot;결과를 보면, 같은 시간을 쓴 규칙 기반 자동 배치보다 배치 점수가 5에서 13퍼센트 높았고, 300명은 더 좋은 배치가 남아 있어도 최대 0.9%임을 증명했습니다. 배치 기술도 비교해 골랐습니다. GPT에게 맡기면 규칙을 어기거나 최적화의 55%에 그쳐, AI는 방정식의 값을 만드는 데 썼습니다.&quot;</p>
-</blockquote>
-</div></div><div class="block"><h4 class="scene" id="T2b"><span class="code">T2b</span><span class="time">8:30–8:58</span><span class="t">AI가 만드는 방정식의 값 ① 동료 사이 평가 — 슬라이드 7</span></h4><div class="body"><ul>
-<li>화면: 제목 &quot;동료 사이 평가 — 평가 글은 AI가 읽어야 한다&quot;, 아래 줄 &quot;판정값은 협업 점수 = 0.4 × 함께 일한 개월 + 0.6 × 평가로 방정식에 들어간다&quot;. 왼쪽 평가 글 한 건(체크 좋은 점 5 · 아쉬운 점 2, 글 &quot;자기 범위만 챙기고 팀 일에는 무관심했습니다 … 다시 함께 일정을 잡고 싶지 않습니다&quot;, 항목만 세면 +0.43 → 같은 팀 · AI −0.80 → 보상에서 뺌),
-오른쪽 AI 없이 → AI: 글에만 쓴 혹평 찾기 12% → 100%(돌려 말한 지적 89%) · 나쁘게 쓴 사이의 협업 보상 28쌍 → 0, 같은 팀 9 → 4 · 300명 평가 글 3,495건 사람이 읽으면 약 29시간(추정) → AI 약 9분 + 표본 확인, $0.28.</li>
-</ul>
-<blockquote class="say"><div class="say-tag">말</div><p>&quot;AI가 만드는 방정식의 값, 먼저 동료 사이 평가입니다. 이 평가는 체크 항목만 보면 좋은 사이인데, 글에는 다시 함께하고 싶지 않다고 썼습니다. 항목만 세면 둘이 궁합 좋은 쌍으로 같은 팀에 들어가고, AI가 글을 읽으면 빠집니다. 이런 사이가 스물여덟 쌍에서 영이 됐고, 사람이 다 읽으면 스물아홉 시간 걸릴 삼천오백 건을 AI가 읽습니다.&quot;</p>
-</blockquote>
-</div></div><div class="block"><h4 class="scene" id="T2c"><span class="code">T2c</span><span class="time">8:58–9:28</span><span class="t">AI가 만드는 방정식의 값 ② · 근거 글 — 슬라이드 8 (2026-10-23 밤 · 10-24 순서와 꼬리표)</span></h4><div class="body"><ul>
-<li>화면: 제목 &quot;요구 기술·기술 이름을 글에서 옮기고, 근거를 쓴다&quot;, 카드 넷(2×2, 2026-10-24부터 방정식의 값 셋이 앞, 근거 글이 마지막 — 카드마다 꼬리표 &quot;값: 요구 기술&quot;·&quot;값: 요구 기술·인원&quot;·&quot;값: 기술 경력&quot;·&quot;결과의 근거&quot;), 카드마다 &quot;AI 없이(규칙)&quot; 줄이 규칙이 무엇인지 말한다 —
-<strong>발주 자료 → 필요 기술</strong> 정밀도 0.32 → 0.78(실제 공공 자료 10편, AI 3회 평균 — 규칙: 표지·사전 이름 + &quot;우대·현행&quot; 같은 말, 양식 목록·현행 시스템을 요구로 99% → 11%, 편당 13초, 사람은 편당 40분~2.4시간(추정), 기간을 날짜로 계산) ·
-긴급 요청을 말로 <strong>찾은 정답 46 → 55 / 55개</strong>(일로만 설명한 요구 0/6 → 6/6 · 대신 정답에 없는 기술 4개를 더 붙임 · 사람 특성 말은 안 씀) ·
-낯선 기술 이름 <strong>1순위 27 → 95%</strong>(숨긴 실제 별칭 522개 · 후보 3개 안 54 → 100% · 정답대로 승인하면 틀린 기술 점수 35% → 0) ·
-&quot;왜 이 팀인가&quot; 글 77줄 → 3문장(사실 검사 통과 99% — 전체 글 값, 세 문장 요약은 92.6% · 8초 · 쓰는 시간 37~40% 단축 추정).
-띠 &quot;AI는 사실 번호를 고르고 사전 말로 옮기기만 — 사람 정보는 보내지 않고, 고르는 것은 사람&quot;, 아래 출처 한 줄(정답·기준은 AI 실행 전에 기록, 가상 자료, &quot;다 맞힌 것은 이 표본에서 놓친 것이 없다는 뜻&quot;).
-(10-23 밤: 100%를 머리 숫자로 쓰지 않는다 — 긴급은 분수, 낯선 기술은 1순위. 10-24: 발주 자료는 실제 공공 자료 10편 숫자로 바꿨다.)</li>
-</ul>
-<blockquote class="say"><div class="say-tag">말</div><p>&quot;다음은 요구 기술과 기술 이름입니다. 발주 자료에서 필요한 기술을 근거와 함께 뽑고, 현행 시스템 설명은 요구로 잡지 않습니다. 말로 쓴 급한 요청과 제각각인 기술 이름도 사전의 기술 이름으로 옮깁니다. 비교 기준인 'AI 없이'는 사전 이름을 글자로 찾는 규칙입니다. &quot;왜 이 팀인가&quot; 글은 사실 번호만 골라 쓰고 검사를 99% 통과합니다. 고르는 것은 사람입니다.&quot;</p>
-</blockquote>
-</div></div><div class="block"><h4 class="scene" id="T3"><span class="code">T3</span><span class="time">9:28–9:50</span><span class="t">맺음 — 슬라이드 9</span></h4><div class="body"><ul>
-<li>화면: 위 작은 글씨 &quot;맺음 · TeamWeaver — 엑셀과 경험으로 하던 배치를 계산과 근거로&quot;, &quot;결정은 방정식이, 방정식의 값과 근거는 검사받는 AI가&quot; · &quot;AI가 없으면 그 값을 사람이 손으로 채워야 한다. 계산이 맞다는 것은 증명했고, 사업 효과는 실제 도입 때 기존 편성과 나란히 돌리는 섀도 운영으로 확인한다&quot; · 감사합니다. 비용(솔버 0원 · AI $0.3)은 보고서 8.2에만 둔다.</li>
+</div></div><div class="block"><h4 class="scene" id="T2"><span class="code">T2</span><span class="time">8:15–8:40</span><span class="t">맺음 — 슬라이드 6</span></h4><div class="body"><ul>
+<li>화면: 위 작은 글씨 &quot;맺음 · TeamWeaver — 엑셀과 경험으로 하던 배치를 계산과 근거로&quot;, &quot;결정은 방정식이, 방정식의 값과 근거는 검사받는 AI가&quot; · &quot;AI가 없으면 그 값을 사람이 손으로 채워야 한다. 계산이 맞다는 것은 증명했고, 사업 효과는 실제 도입 때 기존 편성과 나란히 돌리는 섀도 운영으로 확인한다&quot; · 감사합니다. 비용(솔버 0원 · AI $0.3)은 보고서 8.2에만 둔다. (압축 전 슬라이드 9 그대로.)</li>
 </ul>
 <blockquote class="say"><div class="say-tag">말</div><p>&quot;정리하면, TeamWeaver는 엑셀과 경험으로 하던 프로젝트 인력 배치를 계산과 근거로 바꿉니다. 결정은 방정식이 내리고, 그 방정식에 들어갈 값과 근거 글은 검사받는 AI가 만듭니다. 사업 효과는 실제 도입 때 기존 편성과 나란히 돌려 확인하겠습니다. 감사합니다.&quot;</p>
 </blockquote>
-</div></div></section><section class="sec" id="sec26"><h2>녹화·편집 안내</h2><div class="body"><ul>
+</div></div></section><section class="sec" id="sec23"><h2>녹화·편집 안내</h2><div class="body"><ul>
 <li><strong>화면</strong>: 1920×1080, 브라우저 확대 110~125%(표 글자가 영상에서 읽히게), 북마크 막대·알림 끄기. macOS는 <code>Cmd+Shift+5</code> 화면 기록. 슬라이드는 전체 화면(<code>F</code>)으로 띄운다.</li>
 <li><strong>녹음</strong>: 화면을 먼저 녹화하고 내레이션을 따로 입히면 구간 길이를 맞추기 쉽다. 그대로 말하며 녹화하면 구간마다 끊어 찍고 이어 붙인다.</li>
 <li><strong>잘라도 되는 곳</strong>(가이드: 흐름 파악에 지장이 없는 범위의 중간 과정 편집): 파일 고르기 대화 상자, 데이터 전환 대기, 다시 계산 진행, AI 대기(소명 약 8초·교체 약 6초·D6 정보 채우기·필요 기술·자료 요약), 검토 자료 화면에 들렀다 돌아오는 클릭(D7), PDF 생성 대기. 자를 때는 &quot;(계산 중 일부 생략)&quot;처럼 짧은 자막을 넣는다.</li>
 <li><strong>자르지 않는 곳</strong>: 편성 기록 띠, &quot;위반 없음&quot; 도장과 계산 신뢰도 배지, &quot;참고값 · 재최적화 아님&quot;, 확정 창의 &quot;지금 배치 대비&quot; 줄과 등급 대체 사유 칸, 오류 6건 목록 — 결과를 어떻게 읽어야 하는지 알려 주는 표시다.</li>
-<li><strong>길이 점검</strong>: 구간 끝 시각을 큐시트와 맞춘다. 넘치면 D9 → D7 → D5(근거 막기 시험 화면) 순서로 줄인다(D7은 J009만, D9는 기술 지도만).</li>
+<li><strong>길이 점검</strong>: 구간 끝 시각을 큐시트와 맞춘다. 구현 구간(D1~D9)은 실제 녹화에서 합쳐 1분 20초까지 늘어나도 10분 안이다(2026-10-25 기술/성과 압축으로 생긴 여유 — 앞 장면이 밀리면 뒤 장면 시각을 그만큼 뒤로 미룬다). 그보다 넘치면 D9 → D7 → D5(근거 막기 시험 화면) 순서로 줄인다(D7은 J009만, D9는 기술 지도만).</li>
 </ul>
-</div></section><section class="sec" id="sec27"><h2>녹화 준비</h2><div class="body"><ol>
+</div></section><section class="sec" id="sec24"><h2>녹화 준비</h2><div class="body"><ol>
 <li><code>scripts/run_poc.sh</code>로 띄워 화면·PDF가 되는지 본다(처음이면 웹 빌드·Chromium 설치까지 몇 분). 8000번이 쓰이고 있으면 <code>PORT=8010 scripts/run_poc.sh</code>.</li>
 <li><strong>편성 기록 불러오기</strong>: 로그인(아이디 <code>admin</code>, 비밀번호 <code>admin1234</code> — 바꿨으면 그 값) → 왼쪽 <strong>편성 기록</strong> → <strong>기록 파일 불러오기</strong>로 <code>demo/records/</code>의 파일을 넣는다(파일당 수 초). 영상에 쓰는 것은 셋이다:
 <code>org-n100-annual.json</code>(D1~D5) · <code>org-n100-yearend.json</code>(D6~D8) · <code>org-n300.json</code>(D9). 나머지 다섯(<code>org-n100</code> · <code>org-n100-operating</code> · <code>org-n200</code> · <code>org-n200-operating</code> · <code>org-n300-operating</code>)은 보고서 숫자의 근거다.
@@ -513,7 +474,7 @@ J021 대기 인력 맨 위 임민우·전다은·윤시현(중급) — 임민우
 <li>시작은 로그인 화면에서 한다(D1). 들어온 뒤 편성안 비교·확정이 &quot;아직 볼 편성안이 없습니다&quot; 안내인지 본다 — 기록을 열면 바뀐다.</li>
 <li>녹화 순서대로 한 번 미리 눌러 본다. D4·D5·D6·D7에서 데이터를 바꾸므로, 다시 찍을 때는 그 장면의 기록을 <strong>다시 열기</strong>하고 시작한다(D2~D5 = 연간 기록, D6~D8 = 연말 기록).</li>
 </ol>
-</div></section><section class="sec" id="sec28"><h2>길이 점검 (2026-10-25 · 검토 루프 반영 뒤 다시 셈 — 장면 배정은 그대로, 내레이션 2,513 → 2,609음절. 음절 ÷ 초당 5음절)</h2><div class="body"><div class="tw"><table class="narrow">
+</div></section><section class="sec" id="sec25"><h2>길이 점검 (2026-10-25 · 기술/성과 압축 뒤 다시 셈 — S1~D9 배정은 그대로, T1·T2는 새 장면, 내레이션 2,609 → 2,255음절. 음절 ÷ 초당 5음절)</h2><div class="body"><div class="tw"><table class="narrow">
 <thead>
 <tr>
 <th>구간</th>
@@ -603,45 +564,27 @@ J021 대기 인력 맨 위 임민우·전다은·윤시현(중급) — 임민우
 </tr>
 <tr>
 <td>T1</td>
-<td>35초</td>
-<td>166</td>
-<td>33초</td>
+<td>45초</td>
+<td>211</td>
+<td>42초</td>
 </tr>
 <tr>
 <td>T2</td>
 <td>25초</td>
-<td>123</td>
-<td>25초</td>
-</tr>
-<tr>
-<td>T2b</td>
-<td>28초</td>
-<td>132</td>
-<td>26초</td>
-</tr>
-<tr>
-<td>T2c</td>
-<td>30초</td>
-<td>144</td>
-<td>29초</td>
-</tr>
-<tr>
-<td>T3</td>
-<td>22초</td>
 <td>104</td>
 <td>21초</td>
 </tr>
 <tr>
 <td>합계</td>
-<td>9분 50초</td>
-<td>2,609</td>
-<td>8분 42초</td>
+<td>8분 40초</td>
+<td>2,255</td>
+<td>7분 31초</td>
 </tr>
 </tbody>
 </table></div>
 <p>음절 수는 한글 글자 수에 숫자·영문 읽는 소리를 어림해 더한 값이다(넉넉하게 센다 — 10-24까지의 표와 셈법이 조금 달라 같은 문장도 몇 음절 차이가 난다).
-S1·S2·S3·D0·D2·T1·T2·T2b·T2c·T3는 배정의 9할 넘게 말하니 천천히 말하지 말고, 넘치면 화면 시간을 늘리는 대신 문장을 줄인다 — D2는 마지막 문장(조건 화면), S3은 &quot;제각각인&quot;, T2는 &quot;결과를 보면,&quot;을 먼저 뺀다. 구현 장면은 말하는 동안 화면을 움직이고 대기를 잘라 낸다 — 그래도 넘치면 D9 → D7(J015 지원) → D5(근거 막기 시험 화면) 순서로 줄인다.</p>
-</div></section><section class="sec" id="sec29"><h2>장면별 숫자 (녹화 참고)</h2><div class="block"><h3 id="h30">D2 연간 계획 100명 · 12개월 백지 (<code>demo/precomputed/org-n100-annual.json</code> · <code>rehearsal/results/whatif-scenes-1021.json</code>)</h3><div class="body"><div class="tw"><table class="wide">
+S2·S3·D0·D2·T1은 배정의 9할 넘게 말하니 천천히 말하지 말고, 넘치면 화면 시간을 늘리는 대신 문장을 줄인다 — D2는 마지막 문장(조건 화면), S3은 &quot;제각각인&quot;, T1은 GPT 문장(&quot;GPT에게 … 그쳤습니다&quot;)을 먼저 뺀다(슬라이드에 남는다). 구현 장면은 말하는 동안 화면을 움직이고 대기를 잘라 낸다 — 그래도 넘치면 D9 → D7(J015 지원) → D5(근거 막기 시험 화면) 순서로 줄인다.</p>
+</div></section><section class="sec" id="sec26"><h2>장면별 숫자 (녹화 참고)</h2><div class="block"><h3 id="h27">D2 연간 계획 100명 · 12개월 백지 (<code>demo/precomputed/org-n100-annual.json</code> · <code>rehearsal/results/whatif-scenes-1021.json</code>)</h3><div class="body"><div class="tw"><table class="wide">
 <thead>
 <tr>
 <th>안</th>
@@ -693,20 +636,20 @@ S1·S2·S3·D0·D2·T1·T2·T2b·T2c·T3는 배정의 9할 넘게 말하니 천�
 <li>화면은 &quot;기록에서 연 결과 · 최적인지는 다시 계산해야 확인&quot;으로 보인다(10-22 전 문구 &quot;기록에서 불러옴 · 증명은 다시 계산 시&quot;). 안 A가 가장 높지만 시간 한도에서 멈춘 해다 — &quot;A가 최선&quot;이라고 말하지 않는다.</li>
 <li>다시 계산 → 10초에 멈춤(리허설): 안 A 104.83 · 131건 · &quot;사용자가 멈춤 · 최적값이 이 해보다 최대 29% 높을 수 있음&quot;. 멈춘 시점마다 다르다.</li>
 </ul>
-</div></div><div class="block"><h3 id="h31">D3 소명 글 (안 A, J001)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h28">D3 소명 글 (안 A, J001)</h3><div class="body"><ul>
 <li>팀 8명: 노민준(특급)·전채원·이가영·하예준(고급)·김슬기·김우진·김서현(중급)·주성진(초급). 근거 사실 77개 · 불리한 사실 6개(AI 없이 사실 재료만, 화면도 같은 수).</li>
 <li>측정(10-12 데이터): 조율 데이터 618편 중 99.0%, 처음 보는 데이터 225편 100%가 검사 통과(<code>rehearsal/results/justify-scale-e7c.html</code>). 요약(10-22 다시 잼 — 고를 수 없는 대안은 불리한 사실에서 뺌): 229건 AI 92.6% · 규칙 7.4% · 무결성 실패 0(<code>rehearsal/results/justify-summary.json</code>).</li>
 </ul>
-</div></div><div class="block"><h3 id="h32">D4 안 A로 확정</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h29">D4 안 A로 확정</h3><div class="body"><ul>
 <li>확정 창: 지금 배치 대비 옮김 0명 · 새로 82명 · 빠짐 0명(지금 배치 0건 → 134건), 등급 대체·예산 증액·새 위반·고정 충돌 없음. 확정은 손 편성이 아니라 &quot;연간 계획 확정&quot;(검토 자료를 만들지 않는다 — 연간 계획의 보고 자료는 PDF).</li>
 </ul>
-</div></div><div class="block"><h3 id="h33">D5 What-if (지금 배치 = 확정한 안 A)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h30">D5 What-if (지금 배치 = 확정한 안 A)</h3><div class="body"><ul>
 <li>교체: J001 하예준(고급) → 주경민(특급, 대기 인력): 변화 <strong>+0.00</strong>(기술 0 · 협업 0 · 감점 0 · 빈자리 0), 위반 없음, 등급 대체 J001 고급 자리 1 → 특급, 예산 증액 없음. 쉬는 사람 18명 중 고급은 없다(특급 2 · 중급 8 · 초급 8).</li>
 <li>J001 팀원 8명 × 쉬는 사람 18명 144가지를 다 재 보고 고른 장면이다: 새 위반·예산 증액 없는 등급 대체 가운데 점수가 가장 높다(다음: 전채원 → 주경민 −0.19). 같은 등급 교체 중 가장 나은 것은 주성진 → 정지윤(초급) −0.08.</li>
 <li>확정 창: 옮김 0명 · 새로 1명 · 빠짐 1명(&quot;주경민: 대기 → J001&quot;, &quot;하예준: J001 → 대기&quot;), 등급 대체 1건(사유 필수). 확정 뒤 J001 정원 특급 2 · 고급 2 · 중급 3 · 초급 1(모두 채움).</li>
 <li>검토 자료(J001): 사실 84개 · 불리한 사실 7개, 잠긴 사실 &quot;J001: 등급 대체 — 고급 자리 1개를 특급으로 채움(위 등급), 사유 …. 이 확정으로 정원 고급 −1 · 특급 +1&quot;. 아래 등급으로 대체하면 같은 사실이 &quot;확인할 사실&quot;(불리)로 들어간다.</li>
 </ul>
-</div></div><div class="block"><h3 id="h34">D6 신규 사업 편성 (<code>demo/records/org-n100-yearend.json</code> · <code>demo/precomputed/org-n100-yearend.json</code> · <code>rehearsal/results/scenarios-1023.json</code>)</h3><div class="body"><div class="tw"><table class="wide">
+</div></div><div class="block"><h3 id="h31">D6 신규 사업 편성 (<code>demo/records/org-n100-yearend.json</code> · <code>demo/precomputed/org-n100-yearend.json</code> · <code>rehearsal/results/scenarios-1023.json</code>)</h3><div class="body"><div class="tw"><table class="wide">
 <thead>
 <tr>
 <th>K(옮기는 사람 수)</th>
@@ -758,7 +701,7 @@ S1·S2·S3·D0·D2·T1·T2·T2b·T2c·T3는 배정의 9할 넘게 말하니 천�
 <li>사업 정보 채우기·자료 요약 숫자는 claude-b 측정(<code>rehearsal/results/doc-brief.json</code>, 루트 <code>.omc/reports/2026-10-23-doc-meta-brief.md</code>): 실제 공고문 → 사업명·대외공공·7개월(날짜로 셈)·1억 원·공고번호·마감, 한 번 5~14초, 요약 공고문 약 9초·제안요청서 약 14초.</li>
 <li>예전 D6(10-23 낮, 사전규격 한 편 · 2027-01~08 · 월 4,500 · 고급1·중급2·초급1): 배선영 확정, J021 0.00 → 0.44, 사실 21개 · 불리한 사실 9개. 그 전(고도화 과제, J007 복사): 권다현 확정, 사실 14개 · 불리한 사실 3개(<code>scenarios-1019.json</code>).</li>
 </ul>
-</div></div><div class="block"><h3 id="h35">D7 긴급 투입 (J009, D6 확정 뒤 판 · <code>rehearsal/results/scenarios-1023.json</code>)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h32">D7 긴급 투입 (J009, D6 확정 뒤 판 · <code>rehearsal/results/scenarios-1023.json</code>)</h3><div class="body"><ul>
 <li>사업을 고를 때 뜨는 &quot;지금 바로 넣을 수 있는 사람&quot;(기술 없이 뽑은 순위): 이보람 · 주경민 · 박나연.</li>
 <li>상황을 말로(2026-10-24, <code>emergency_spoken</code>): &quot;고도화 범위에 손글씨 신청서 인식이 추가됐는데, 인식한 결과를 싣는 새벽 적재 배치도 계속 실패해요. 스캔 문서에서 글자 뽑아 본 사람 한 명, 적재 프로그램이랑 쿼리 고칠 사람 한 명, 둘 다 중급으로 급히 필요합니다&quot; →
 규칙(AI 없음): 기술 0개 · 인원 1 · 중급. AI: 비정형 문서 처리(OCR) · ETL · SQL(모두 미루어 봄) · <strong>인원 2</strong> · 중급 — OpenAI 3/3 · GLM 2/2(GLM 한 번은 딥러닝·SQL 튜닝을 더 냄). 시연자가 세 기술을 켠다.</li>
@@ -770,24 +713,25 @@ S1·S2·S3·D0·D2·T1·T2·T2b·T2c·T3는 배정의 9할 넘게 말하니 천�
 J009 손글씨만(OCR·IDP → 권다현 J007→J009 + 전다은) · J014 스캔 약관(OCR·IDP → 대기 전다은).</li>
 <li>예전 D7: J004 &quot;원천 시스템 테이블 구조가 바뀌어서 …&quot;(이지유 +1.21) · J001 AI 에이전트(경력 없는 특급이 1위) · 10-22 J004 &quot;스파크랑 금융 업무 …&quot;(규칙과 AI가 같았다).</li>
 </ul>
-</div></div><div class="block"><h3 id="h36">D8 인사팀 검토 자료 (J009 · J015)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h33">D8 인사팀 검토 자료 (J009 · J015)</h3><div class="body"><ul>
 <li>J009: 사실 44개 중 불리한 사실 6개. 옮겨 온 인력 카드: &quot;권다현(중급): 진행 사업에서 옮겨 옴, J009 투입률 1, 이 사업 요구 기술 중 충족: 금융 업무, ETL, 비정형 문서 처리(OCR), 메타데이터 관리, Text Analysis&quot; · &quot;윤시현(중급): 대기 인력 … 충족: 금융 업무, 메타데이터 관리, SQL&quot; ·
 &quot;J007 사업(이 확정 전체로 인한 변화): 점수 5.17 → 5.17&quot; · &quot;J007의 자리를 같은 확정에서 전다은(중급, 대기 인력)이 채움&quot;. J009 점수 5.40 → 7.21, 빈자리 2 → 0석.
 불리한 사실: &quot;요구 기술 SQL: 2명 필요, 팀에서 해당자 1명 → 부족&quot;(요청 인원을 더한 기술에 그대로 적는 규칙) · 윤시현의 ETL 12개월·OCR 4개월·Text Analysis 9개월 → 미달 · 권다현의 SQL 6개월 → 미달 · 배치 전체 빈자리 9석(다른 사업).</li>
 <li>두 사람이 나눠 맡으니 각자 모자란 기술이 불리한 사실로 남는다 — 지우지 않고 해명을 단다. 결론 문장은 서버가 쓰지 않는다.</li>
 <li>J015: &quot;지준우(중급): 프로젝트 동시 수행(원래 사업 유지)&quot; · &quot;프로젝트 동시 수행 허용 — 사유 긴급 지원 …, 같은 달 최대 2개 사업(사업마다 100%)&quot; — 둘 다 잠긴 사실. 사실 27개 · 불리한 사실 3개.</li>
 </ul>
-</div></div><div class="block"><h3 id="h37">D1 낯선 기술 이름(<code>demo/org-n100-messy-skills.zip</code>, <code>scripts/make_messy_skill_demo.py</code> · <code>rehearsal/results/skill-mapping.json</code>)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h34">D1 낯선 기술 이름(<code>demo/org-n100-messy-skills.zip</code>, <code>scripts/make_messy_skill_demo.py</code> · <code>rehearsal/results/skill-mapping.json</code>)</h3><div class="body"><ul>
 <li>사전에 없는 표기 14개(사람 행 264개·사업 요구 2개): Kuberentes · Apache Kafak · 파이선 · Dokcer · Apache Sparks · 하둡 에코시스템 · 스칼라 언어 · 이티엘 · 스프링 프레임웍 · 리엑트 · SQL 쿼리 작성 · 자바 개발 · Fast API 서버 · 데이타 모델링.</li>
 <li>그대로 두면 사람×사업 기술 점수의 34.7%(729/2,100)가 틀어진다. 정답대로 합치면 0. 측정에서 AI는 14개 모두 맞는 기술을 1위로 냈다(문자열 유사도는 8개). &quot;확실&quot;(AI = 문자열 1위·헷갈리는 짝 없음)만 한 번에 반영하고 나머지는 하나씩 확인한다.</li>
 </ul>
-</div></div><div class="block"><h3 id="h38">D1 틀린 파일 오류 6건</h3><div class="body"><p>people.csv 2행 등급 빈칸 · person_skills.csv 1행 '열두달' · availability.csv 3행 1.5(&gt;1) · reviews.csv 1행 없는 사람 XX9999 · current_assignments.csv 2행 중복 · projects.csv 2행 종료&lt;시작.</p>
-</div></div><div class="block"><h3 id="h39">D9 300명 (<code>demo/precomputed/org-n300.json</code>, 한도 90초)</h3><div class="body"><ul>
+</div></div><div class="block"><h3 id="h35">D1 틀린 파일 오류 6건</h3><div class="body"><p>people.csv 2행 등급 빈칸 · person_skills.csv 1행 '열두달' · availability.csv 3행 1.5(&gt;1) · reviews.csv 1행 없는 사람 XX9999 · current_assignments.csv 2행 중복 · projects.csv 2행 종료&lt;시작.</p>
+</div></div><div class="block"><h3 id="h36">D9 300명 (<code>demo/precomputed/org-n300.json</code>, 한도 90초)</h3><div class="body"><ul>
 <li>사업 62개(계획 전에 시작한 진행 사업 30 · 추가 과제 2 포함). 안 A 종합 점수 228.10, 빈자리 0, 260건(235명), 최적화율 89.4%, 상한 대비 0.9%(92초에 최선 증명). 안 B~D &quot;다양성 조건 · 허용 차이 안에서 최선 증명&quot;(3.3~3.5%). 안 A~D 합계 약 4.2분.</li>
 <li>지금 대비(이 기록의 진행 사업 팀 기준): 안 A 옮김 116명 · 새로 115명 · 빠짐 32명(B~D 112~113명 옮김).</li>
 <li>기술 지도: 기술 41개 · 요구 기술 30개, 공급/수요가 가장 빠듯한 기술 AI 에이전트 프레임워크 1.62배(실무 가능 34명 · 필요 21명).</li>
 </ul>
-</div></div><div class="block"><h3 id="h40">T2~T2c 성과 숫자의 출처</h3><div class="body"><div class="tw"><table class="narrow">
+</div></div><div class="block"><h3 id="h37">T1 성과 숫자의 출처 (압축 전 T2~T2c · 슬라이드 5~8의 표를 그대로 둔다)</h3><div class="body"><p>2026-10-25 압축 뒤 영상(슬라이드 5)에 남은 숫자는 +5~13% · 0.9%(92초) · GPT 55% · 혹평 12 → 100%(협업 보상 28 → 0) · 발주 자료 정밀도 0.32 → 0.78(10편) · 긴급 요청 46 → 55/55(0/6 → 6/6) · 낯선 기술 이름 1순위 27 → 95%(522개) · 77줄 → 3문장 · 99% · 8초뿐이다. 표의 나머지 숫자(돌려 말한 지적 89%, 같은 팀 9 → 4, 사람 시간·비용, 92.6%, 양식 목록 99 → 11%, 편당 13초, 후보 3개 안, 틀린 기술 점수, 사업 정보·요약, 37~40%)는 보고서에만 있다. 표 안의 &quot;슬라이드 7&quot;·&quot;슬라이드 8&quot;은 압축 전 번호다.</p>
+<div class="tw"><table class="narrow">
 <thead>
 <tr>
 <th>숫자</th>
@@ -861,7 +805,7 @@ J009 손글씨만(OCR·IDP → 권다현 J007→J009 + 전다은) · J014 스캔
 </tr>
 </tbody>
 </table></div>
-</div></div></section><section class="sec" id="sec41"><h2>하지 말 말</h2><div class="body"><div class="tw"><table class="narrow">
+</div></div></section><section class="sec" id="sec38"><h2>하지 말 말</h2><div class="body"><div class="tw"><table class="narrow">
 <thead>
 <tr>
 <th>하지 말 것</th>
@@ -903,7 +847,7 @@ J009 손글씨만(OCR·IDP → 권다현 J007→J009 + 전다은) · J014 스캔
 </tr>
 </tbody>
 </table></div>
-</div></section><section class="sec" id="sec42"><h2>막혔을 때</h2><div class="body"><div class="tw"><table class="narrow">
+</div></section><section class="sec" id="sec39"><h2>막혔을 때</h2><div class="body"><div class="tw"><table class="narrow">
 <thead>
 <tr>
 <th>증상</th>
@@ -961,14 +905,14 @@ J009 손글씨만(OCR·IDP → 권다현 J007→J009 + 전다은) · J014 스캔
 </tr>
 </tbody>
 </table></div>
-</div></section><section class="sec" id="sec43"><h2>부록: 현장 시연으로 할 때</h2><div class="body"><p>영상 순서를 그대로 따르고, 시간이 있으면 세 장면을 끼운다(각 1분).</p>
+</div></section><section class="sec" id="sec40"><h2>부록: 현장 시연으로 할 때</h2><div class="body"><p>영상 순서를 그대로 따르고, 시간이 있으면 세 장면을 끼운다(각 1분).</p>
 <ul>
 <li><strong>단순 규칙 대비</strong>: 편성안 비교·확정의 <strong>단순 규칙 비교</strong> 탭(열면 저절로 계산, 약 1초). 연초 100명 기록에서 자리당 평균 기술 적합은 단순 규칙이 높다(0.76 대 0.62) — 최적화가 정원에 없는 등급을 예산 안에서 더 넣어 전체 기여를 늘리기 때문이다. 우리 점수표 안의 비교다.</li>
 <li><strong>확정 취소</strong>: 신규 사업 편성의 &quot;지금 팀&quot; 줄 오른쪽 <strong>확정 취소</strong> → 미리 보기(돌릴 것·건너뛸 것) → 취소. 그 확정 하나만 거꾸로 돌린 새 판이 된다(그 뒤 변경은 그대로, 빼 온 사람은 원래 사업으로).</li>
 <li><strong>&quot;그냥 GPT에게 시키면?&quot;</strong>: <code>rehearsal/results/llm-vs-solver.html</code>. 표본이 작다(칸당 2~3회)는 것, 사내 GLM은 잔액 문제로 큰 문제를 못 쟀다는 것을 함께 말한다(<code>docs/demo-notes.md</code> 8절).</li>
 </ul>
 </div></section>
-<p class="stamp">원본 docs/demo-script.md · 커밋 6eafc74 2026-10-25 + 커밋 안 된 수정 · 변환 2026-10-25 15:34</p>
+<p class="stamp">원본 docs/demo-script.md · 커밋 8aa4041 2026-10-25 + 커밋 안 된 수정 · 변환 2026-10-25 21:28</p>
 </main>
 <script>
 (function(){
