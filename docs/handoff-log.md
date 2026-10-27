@@ -22,6 +22,16 @@
 
 ---
 
+## 2026-10-27 · claude-a · Word(.docx) 보고서 10쪽 안으로 — 글은 그대로, 글꼴·줄 간격·쪽 나눔만
+- 사용자: "final-report.docx 파일이 현재 11페이지인데 10페이지로 줄여야 해. 최대한 내용은 수정하지않고 줄이는 방법이 없을까? 그리고 docx를 키니 유실된 글씨체가 있다고 떠. 해결 방법이 있나?"
+- 브랜치/커밋: `feat/claude-a-docx-10pages-1027` `2ff5676`(main `d6adba5` 위, push) — **main 병합은 승인 대기**.
+- 원인: docx가 Windows 글꼴(Malgun Gothic·Consolas)을 지정해 이 Mac(Pages만 있음)에서 "유실 글꼴" 경고 + 대체 글꼴로 다시 흘러 11쪽. 줄 간격이 글꼴 고유 높이 기준(auto)이라 글꼴이 바뀌면 세로 길이가 달라진다. PDF(10쪽)는 Chromium이 HTML을 찍은 것이라 별개.
+- 한 일(변환기 `.omc/tools/report-export/html2docx.py`, 로컬): 본문 글꼴 **Apple SD Gothic Neo**(이 Mac에 있음 → 경고 없음) + fontTable altName 맑은 고딕(Windows Word는 이것으로 대체), 코드 글꼴 Courier New(양쪽 다 있음) · 줄 간격을 **exact**(9.5pt 본문 12.4pt, 8.5pt 표 11pt …)로 → 글꼴이 대체돼도 세로 길이 같음 · 문단·제목 간격과 표 칸 위아래 여백(2 → 1pt) 조금 줄임 · 부록 앞 쪽 나눔(PDF의 `.pb`와 같게) · 그림 문단만 auto(exact면 Word가 그림을 줄 높이로 자른다). 글자 수 25,411 동일·그림 6장 동일·여백·글자 크기 그대로.
+- 쪽수 가늠 도구 `.omc/tools/report-export/docx_pages.py`(새, 로컬): docx를 같은 글꼴·크기·줄 간격·표 폭으로 HTML에 옮겨 Chromium A4로 쪽수를 잰다(Pages가 자동화로 문서를 열지 않고 Word가 없어 실제 쪽수는 못 잼). 새 docx: Apple SD Gothic Neo **9쪽**(본문 8쪽 꽉 참 + 부록), NanumGothic(맑은 고딕 폭 대리) 10쪽(본문 9쪽의 1/4), AppleGothic(더 넓은 글꼴, 최악 가정) 10쪽(9쪽 꽉 참), 어절 단위 줄 바꿈 10쪽. 예전 docx는 같은 도구로 10쪽(9쪽 꽉 참)이었는데 Pages가 11쪽 — 도구가 한 쪽쯤 낙관적일 수 있어 한 쪽 여유를 둔 것.
+- 상대 영향: 없음(`outputs/final-report.docx`만). PDF는 안 바꿈 — 작업 폴더의 `outputs/final-report.pdf`는 사용자가 제출용 이름으로 바꿔 둔 상태(추적 파일 삭제로 보임, 커밋 안 함).
+- 검증: XML 5개 파싱·textutil·Quick Look 읽힘, 도구 4회 + 래스터 눈 확인. **Pages·Word 실제 쪽수는 사용자 확인 필요.** 코드 변경 없음(로컬 도구·산출물) → Codex 리뷰 생략.
+- 근거: `.omc/reports/2026-10-27-docx-10pages.md`
+
 ## 2026-10-25 · claude-a · 보고서 부록 설명에서 영상 장면 번호(D2~D9) 뺌
 - 사용자: "보고서에 영상 장면 번호 내용은 빼줘. 어차피 영상 장면 번호는 나만 아는거라서 제출용으론 필요없는 내용이야".
 - 브랜치/커밋: `feat/claude-a-report-figures-nocodes-1025` `0eb7c64`(main `1051e7f` 위, push) → **main에 ff 병합(사용자 승인 "승인할게")**.
