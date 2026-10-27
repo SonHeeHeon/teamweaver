@@ -22,6 +22,12 @@
 
 ---
 
+## 2026-10-28 · claude-a · Word 보고서 10쪽 브랜치 main 병합(사용자 승인 "병합해줘")
+- 브랜치/커밋: `feat/claude-a-docx-10pages-1027`(`2ff5676`·`63486a8`·`b531a41`·`00cdb7d`) → **main에 ff 병합·push**(main = origin/main `00cdb7d`, 그 전 main `d6adba5`).
+- 한 일: 병합만. 내용은 아래 두 항목(10-27 글꼴·exact 줄 간격, 10-28 Pages 실측 재조정).
+- 상대 영향: 없음(`outputs/final-report.docx`·이 기록만).
+- 검증: ff 병합(충돌 없음), 코드 변경 없음 → Codex 리뷰 생략.
+
 ## 2026-10-28 · claude-a · Word 보고서, 진짜 Pages로 재니 11쪽 → 다시 맞춰 10쪽(글은 그대로)
 - 사용자: "아직 docx를 열어보면 11쪽이야."
 - 브랜치/커밋: `feat/claude-a-docx-10pages-1027` `b531a41`(10-27 `2ff5676` 위, push) — **main 병합은 승인 대기**.
