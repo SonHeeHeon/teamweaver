@@ -22,6 +22,17 @@
 
 ---
 
+## 2026-10-28 · claude-a · Word 보고서, 진짜 Pages로 재니 11쪽 → 다시 맞춰 10쪽(글은 그대로)
+- 사용자: "아직 docx를 열어보면 11쪽이야."
+- 브랜치/커밋: `feat/claude-a-docx-10pages-1027` `b531a41`(10-27 `2ff5676` 위, push) — **main 병합은 승인 대기**.
+- 원인: 이번엔 Pages 자동화가 됐다(샌드박스 밖 AppleEvent + 파일마다 Pages 새로 띄우기). 10-27 파일은 **Pages 실측 11쪽**(가늠 도구는 9쪽). Pages는 docx의 셀 위아래 여백을 어떤 형태(tblCellMar·셀마다 tcMar·표 스타일)로 줘도 무시하고 고정 안쪽 여백을 써서 **한 줄 행 = 줄 높이 + 8.85pt**(Word 모델 2.5pt) → 표 105행에서 약 0.9쪽. 또 행을 쪽 사이에서 나누지 않아 긴 행이 통째로 밀려 6~8쪽 아래 25~30%가 빈다. 가늠 도구(`docx_pages.py`)는 Word 쪽 모델이라 Pages보다 한 쪽쯤 낙관적.
+- 한 일(변환기 `.omc/tools/report-export/html2docx.py`, 로컬): 쪽 여백 14/15 → **13mm**, 표 줄 높이 11 → **10.5pt**, 제목 간격 축소(큰 제목 앞/뒤 8/3 → 6/2pt, 작은 제목 5/2 → 4/1.5pt), 행 나눔 금지(cantSplit) 제거(Pages는 어차피 안 나누고 Word에서는 빈 공간만 만든다). 글자 25,411·그림 6장 동일. 측정 도구 `pages_measure.sh`(진짜 Pages로 쪽수·표 행 높이·PDF 내보내기)·`pdf_used.py`(쪽마다 쓴 높이 %) 추가.
+- 결과: **Pages 10쪽**(본문 9쪽 68%에서 끝, 부록 10쪽 77%). Word 모델 가늠: NanumGothic(맑은 고딕 폭 대리) 9쪽, AppleGothic(최악) 10쪽(본문 9쪽 35%). Windows Word 실제 쪽수는 여전히 미측정(【추정】 9~10쪽).
+- 상대 영향: 없음(`outputs/final-report.docx`만).
+- 검증: `pages_measure.sh` → pages=10, `pdf_used.py` → p9 68%·p10 77%; textutil 25,411자; XML 5개 파싱. 코드 변경 없음(로컬 도구·산출물) → Codex 리뷰 생략.
+- 주의: 측정하느라 Pages를 여러 번 종료했다 — 열어 두었던 Pages 창이 닫혔을 수 있다.
+- 근거: `.omc/reports/2026-10-28-docx-pages-measured.md`
+
 ## 2026-10-27 · claude-a · Word(.docx) 보고서 10쪽 안으로 — 글은 그대로, 글꼴·줄 간격·쪽 나눔만
 - 사용자: "final-report.docx 파일이 현재 11페이지인데 10페이지로 줄여야 해. 최대한 내용은 수정하지않고 줄이는 방법이 없을까? 그리고 docx를 키니 유실된 글씨체가 있다고 떠. 해결 방법이 있나?"
 - 브랜치/커밋: `feat/claude-a-docx-10pages-1027` `2ff5676`(main `d6adba5` 위, push) — **main 병합은 승인 대기**.
